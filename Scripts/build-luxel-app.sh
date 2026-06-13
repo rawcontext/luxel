@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_NAME="Luxel"
+CONFIGURATION="${CONFIGURATION:-release}"
+PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
+ENTITLEMENTS="${ENTITLEMENTS:-${PACKAGE_ROOT}/Configuration/Luxel/Luxel.DeveloperID.entitlements}"
+APP_PATH="${APP_PATH:-${PACKAGE_ROOT}/.build/${APP_NAME}.app}"
+SIGN_IDENTITY="${SIGN_IDENTITY:--}"
+
+cd "${PACKAGE_ROOT}"
+
+swift build --configuration "${CONFIGURATION}" --product "${APP_NAME}"
+BIN_DIR="$(swift build --configuration "${CONFIGURATION}" --show-bin-path)"
+
+rm -rf "${APP_PATH}"
+mkdir -p "${APP_PATH}/Contents/MacOS"
+cp "${INFO_PLIST}" "${APP_PATH}/Contents/Info.plist"
+cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
+
+chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
+
+if [[ -n "${SIGN_IDENTITY}" ]]; then
+	CODESIGN_ARGS=(
+		--force
+		--sign "${SIGN_IDENTITY}"
+		--options runtime
+		--entitlements "${ENTITLEMENTS}"
+	)
+
+	if [[ "${SIGN_IDENTITY}" == "-" ]]; then
+		CODESIGN_ARGS+=(--timestamp=none)
+	else
+		CODESIGN_ARGS+=(--timestamp)
+	fi
+
+	codesign "${CODESIGN_ARGS[@]}" "${APP_PATH}"
+fi
+
+echo "${APP_PATH}"

@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "name": "Debug Luxel",
+      "target": "Luxel",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug Luxel"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "name": "Release Luxel",
+      "target": "Luxel",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release Luxel"
+    }
+  ]
+}

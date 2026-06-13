@@ -1,0 +1,124 @@
+import Foundation
+
+public final class RecordingHistoryService: Sendable {
+    private let store: any RecordingHistoryStore
+    private let fileSystem: any FileSystem
+    private let dateProvider: any DateProvider
+    private let mediaProbe: any MediaProbe
+    private let diagnosticClient: any RecordingDiagnosticClient
+    private let corruptRecordingClassifier: CorruptRecordingClassifier
+    private let calendar: Calendar
+
+    public init(
+        store: any RecordingHistoryStore,
+        fileSystem: any FileSystem,
+        dateProvider: any DateProvider,
+        mediaProbe: any MediaProbe,
+        diagnosticClient: any RecordingDiagnosticClient = NoopRecordingDiagnosticClient(),
+        corruptRecordingClassifier: CorruptRecordingClassifier = CorruptRecordingClassifier(),
+        calendar: Calendar = .current
+    ) {
+        self.store = store
+        self.fileSystem = fileSystem
+        self.dateProvider = dateProvider
+        self.mediaProbe = mediaProbe
+        self.diagnosticClient = diagnosticClient
+        self.corruptRecordingClassifier = corruptRecordingClassifier
+        self.calendar = calendar
+    }
+
+    public func getPastRecordings() -> [PastRecording] {
+        let validRecordings = store.recordings.filter { fileSystem.fileExists(at: $0.fileURL) }
+        store.recordings = validRecordings
+        return validRecordings
+    }
+
+    public func getCurrentRecording() -> ActiveRecording? {
+        store.activeRecording
+    }
+
+    @discardableResult
+    public func addRecording(_ recording: PastRecording) -> [PastRecording] {
+        let recordings = [recording] + store.recordings
+        let validRecordings = recordings.filter { fileSystem.fileExists(at: $0.fileURL) }
+        store.recordings = validRecordings
+        return validRecordings
+    }
+
+    @discardableResult
+    public func setCurrentRecording(
+        fileURL: URL,
+        name: String? = nil,
+        options: RecordingOptions
+    ) -> ActiveRecording {
+        let now = dateProvider.now()
+        let recordingName = name ?? RecordingName.timestamped(now: now, calendar: calendar).value
+        let recording = ActiveRecording(
+            fileURL: fileURL,
+            name: recordingName,
+            date: now,
+            options: options
+        )
+        store.activeRecording = recording
+        return recording
+    }
+
+    @discardableResult
+    public func stopCurrentRecording(recordingName: String? = nil) -> PastRecording? {
+        guard let activeRecording = store.activeRecording else {
+            return nil
+        }
+
+        let recording = PastRecording(
+            fileURL: activeRecording.fileURL,
+            name: recordingName ?? activeRecording.name,
+            date: dateProvider.now()
+        )
+        addRecording(recording)
+        store.activeRecording = nil
+        return recording
+    }
+
+    public func clearCurrentRecording() {
+        store.activeRecording = nil
+    }
+
+    public func cleanPastRecordings() throws {
+        let validRecordings = getPastRecordings()
+
+        for recording in validRecordings {
+            try fileSystem.removeFile(at: recording.fileURL)
+        }
+
+        store.recordings = []
+    }
+
+    @discardableResult
+    public func recoverActiveRecording() async -> RecordingRecoveryResult {
+        guard let activeRecording = store.activeRecording else {
+            return .none
+        }
+
+        let result: RecordingRecoveryResult
+        switch await mediaProbe.inspectRecording(at: activeRecording.fileURL) {
+        case .playable:
+            addRecording(activeRecording.pastRecording)
+            result = .playable(activeRecording.pastRecording)
+        case let .corrupt(reason):
+            switch corruptRecordingClassifier.recoveryKind(for: reason) {
+            case .knownRepairable:
+                result = .knownCorrupt(fileURL: activeRecording.fileURL, reason: reason)
+            case .unknown:
+                diagnosticClient.recordCorruptRecording(CorruptRecordingDiagnostic(
+                    fileURL: activeRecording.fileURL,
+                    reason: reason,
+                    recordedAt: dateProvider.now()
+                ))
+                result = .unknownCorrupt(fileURL: activeRecording.fileURL, reason: reason)
+            }
+        }
+
+        store.activeRecording = nil
+        return result
+    }
+}
