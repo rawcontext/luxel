@@ -75,6 +75,9 @@ struct LuxelMenu: View {
         .task(id: model.recordingAudioLevelMonitorTaskID) {
             await model.watchAudioLevels(onlyWhenRecording: true)
         }
+        .task {
+            await model.watchRecordingAutoStops(openRecording: openRecording)
+        }
         .fileImporter(
             isPresented: $isImportingRecording,
             allowedContentTypes: [.movie, .mpeg4Movie, .quickTimeMovie],

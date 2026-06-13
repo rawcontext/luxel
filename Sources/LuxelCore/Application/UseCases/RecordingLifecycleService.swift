@@ -7,6 +7,7 @@ public final class RecordingLifecycleService: Sendable {
     private let autoStopScheduler: any RecordingAutoStopScheduler
     private let userNotifier: (any UserNotifier)?
     private let autoStopState = RecordingLifecycleAutoStopState()
+    private let autoStopEvents = RecordingLifecycleAutoStopEvents()
 
     public init(
         recorder: any CaptureRecorder,
@@ -20,6 +21,10 @@ public final class RecordingLifecycleService: Sendable {
         self.dateProvider = dateProvider
         self.autoStopScheduler = autoStopScheduler
         self.userNotifier = userNotifier
+    }
+
+    public var autoStoppedRecordings: AsyncStream<PastRecording> {
+        autoStopEvents.stream()
     }
 
     @discardableResult
@@ -111,10 +116,11 @@ public final class RecordingLifecycleService: Sendable {
                 return
             }
 
-            guard (try? await self.stopRecording()) != nil else {
+            guard let recording = try? await self.stopRecording() else {
                 return
             }
 
+            self.autoStopEvents.yield(recording)
             try? await self.userNotifier?.notifyRecordingAutoStopped(duration: timing.maxRecordedDuration)
         }
         await autoStopState.setTask(task)
@@ -129,6 +135,39 @@ public enum RecordingLifecycleError: Error, Equatable {
 private struct RecordingLifecycleAutoStopTiming: Sendable {
     let remaining: TimeInterval
     let maxRecordedDuration: TimeInterval
+}
+
+private final class RecordingLifecycleAutoStopEvents: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuations: [UUID: AsyncStream<PastRecording>.Continuation] = [:]
+
+    func stream() -> AsyncStream<PastRecording> {
+        AsyncStream(bufferingPolicy: .unbounded) { continuation in
+            let id = UUID()
+            lock.withLock {
+                continuations[id] = continuation
+            }
+            continuation.onTermination = { [weak self] _ in
+                self?.removeContinuation(id: id)
+            }
+        }
+    }
+
+    func yield(_ recording: PastRecording) {
+        let continuations = lock.withLock {
+            Array(self.continuations.values)
+        }
+
+        for continuation in continuations {
+            continuation.yield(recording)
+        }
+    }
+
+    private func removeContinuation(id: UUID) {
+        lock.withLock {
+            continuations[id] = nil
+        }
+    }
 }
 
 private actor RecordingLifecycleAutoStopState {

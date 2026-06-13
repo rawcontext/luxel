@@ -188,6 +188,12 @@ extension LuxelMenuModel {
         }
     }
 
+    func watchRecordingAutoStops(openRecording: @escaping @MainActor (URL) -> Void) async {
+        for await recording in recordingLifecycleService.autoStoppedRecordings {
+            await handleAutoStoppedRecording(recording, openRecording: openRecording)
+        }
+    }
+
     func pauseOrResumeRecording() async {
         switch recordingState {
         case .recording:
@@ -196,6 +202,30 @@ extension LuxelMenuModel {
             await resumeRecording()
         case .idle, .starting, .pausing, .resuming, .stopping, .exporting, .failed:
             return
+        }
+    }
+
+    private func handleAutoStoppedRecording(
+        _ recording: PastRecording,
+        openRecording: @escaping @MainActor (URL) -> Void
+    ) async {
+        guard recordingState.activeRecording?.fileURL == recording.fileURL else {
+            refreshRecentRecordings()
+            return
+        }
+
+        recordingNoticeMessage = nil
+        recordingActionErrorMessage = nil
+        quickExportStatusMessage = nil
+        recordingState = .stopping
+        refreshRecentRecordings()
+
+        switch recording.options.captureKind {
+        case .standard:
+            recordingState = .idle
+            openRecording(recording.fileURL)
+        case .quick(let presetID):
+            _ = await runQuickExport(recording: recording, presetID: presetID)
         }
     }
 

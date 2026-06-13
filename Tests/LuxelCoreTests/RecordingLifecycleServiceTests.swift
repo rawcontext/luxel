@@ -235,6 +235,30 @@ struct RecordingLifecycleServiceTests {
         #expect(await notifier.recordingAutoStoppedDurations() == [60])
     }
 
+    @Test("auto stop publishes stopped recording")
+    func autoStopPublishesStoppedRecording() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
+        let scheduler = ManualAutoStopScheduler()
+        let service = makeService(
+            store: store,
+            recorder: SpyCaptureRecorder(),
+            dateProvider: dateProvider,
+            autoStopScheduler: scheduler
+        )
+        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
+        let stream = service.autoStoppedRecordings
+        let eventTask = Task<PastRecording?, Never> {
+            var iterator = stream.makeAsyncIterator()
+            return await iterator.next()
+        }
+
+        let activeRecording = try await service.startRecording(request)
+        await scheduler.fireScheduledTask(at: 0)
+
+        #expect(await eventTask.value == activeRecording.pastRecording)
+    }
+
     @Test("pause suspends auto stop and resume schedules remaining recorded time")
     func pauseSuspendsAutoStopAndResumeSchedulesRemainingRecordedTime() async throws {
         let store = InMemoryRecordingHistoryStore()
