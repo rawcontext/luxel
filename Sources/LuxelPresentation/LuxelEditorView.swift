@@ -4,6 +4,7 @@ import SwiftUI
 
 public struct LuxelEditorView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismissWindow) private var dismissWindow
     @Bindable var model: LuxelEditorModel
     @State private var isConfirmingDiscard = false
 
@@ -146,6 +147,7 @@ public struct LuxelEditorView: View {
 
     private func discardRecording() {
         if model.discardRecording() {
+            dismissWindow(id: LuxelEditorScene.id)
             dismiss()
         }
     }
