@@ -1,4 +1,5 @@
 import AVKit
+import AppKit
 import LuxelCore
 import SwiftUI
 
@@ -7,6 +8,7 @@ public struct LuxelEditorView: View {
     @Environment(\.dismissWindow) private var dismissWindow
     @Bindable var model: LuxelEditorModel
     @State private var isConfirmingDiscard = false
+    @State private var editorWindow: NSWindow?
 
     public init(model: LuxelEditorModel) {
         self.model = model
@@ -23,6 +25,7 @@ public struct LuxelEditorView: View {
                 .background(.thinMaterial)
         }
         .frame(minWidth: 900, minHeight: 560)
+        .background(EditorWindowReader(window: $editorWindow))
         .toolbar {
             ToolbarItemGroup {
                 Button {
@@ -147,6 +150,7 @@ public struct LuxelEditorView: View {
 
     private func discardRecording() {
         if model.discardRecording() {
+            editorWindow?.close()
             dismissWindow(id: LuxelEditorScene.id)
             dismiss()
         }
@@ -645,6 +649,30 @@ public struct LuxelEditorView: View {
 
         return String(format: "%.2fx", speed)
             .replacingOccurrences(of: #"\.?0+x$"#, with: "x", options: .regularExpression)
+    }
+}
+
+private struct EditorWindowReader: NSViewRepresentable {
+    @Binding var window: NSWindow?
+
+    func makeNSView(context: Context) -> WindowReaderView {
+        WindowReaderView()
+    }
+
+    func updateNSView(_ nsView: WindowReaderView, context: Context) {
+        nsView.onWindowChange = { window in
+            self.window = window
+        }
+        window = nsView.window
+    }
+}
+
+private final class WindowReaderView: NSView {
+    var onWindowChange: ((NSWindow?) -> Void)?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        onWindowChange?(window)
     }
 }
 
