@@ -122,6 +122,26 @@ struct LuxelEditorModelTests {
         #expect(model.quality == .lossless)
     }
 
+    @Test("format selection keeps at least one format")
+    func formatSelectionKeepsAtLeastOneFormat() async throws {
+        let model = makeModel()
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+
+        model.setFormatSelection(.mp4, isSelected: false)
+        #expect(model.selectedFormats == [.mp4])
+        #expect(model.selectedFormatSummary == "MP4 (H264)")
+
+        model.setFormatSelection(.gif, isSelected: true)
+        #expect(model.selectedFormats == [.mp4, .gif])
+        #expect(model.format == .gif)
+        #expect(model.selectedFormatSummary == "2 Formats")
+
+        model.setFormatSelection(.gif, isSelected: false)
+        #expect(model.selectedFormats == [.mp4])
+        #expect(model.format == .mp4)
+    }
+
     @Test("export memory seeds controls when opening and changing formats")
     func exportMemorySeedsControlsWhenOpeningAndChangingFormats() async throws {
         let memory: [ExportFormat: ExportMemory] = [
@@ -194,6 +214,48 @@ struct LuxelEditorModelTests {
         #expect(captured.count == 1)
         #expect(captured.first?.0 == .hevc)
         #expect(captured.first?.1 == expectedMemory)
+    }
+
+    @Test("batch export runs selected formats and exposes job rows")
+    func batchExportRunsSelectedFormatsAndExposesJobRows() async throws {
+        let exporter = SpyMediaExporter()
+        var rememberedFormats: [ExportFormat] = []
+        let model = makeModel(exporter: exporter) { format, _ in
+            rememberedFormats.append(format)
+        }
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormatSelection(.hevc, isSelected: true)
+        model.setFormatSelection(.gif, isSelected: true)
+        model.startExport()
+
+        while model.isExporting {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let captured = await exporter.capturedExports()
+
+        #expect(captured.map(\.request.format) == [.mp4, .hevc, .gif])
+        #expect(captured.map(\.outputFileURL.path) == [
+            "/tmp/source Export H264.mp4",
+            "/tmp/source Export H265.mp4",
+            "/tmp/source Export GIF.gif"
+        ])
+        #expect(model.status == .exportedBatch([
+            URL(fileURLWithPath: "/tmp/source Export H264.mp4"),
+            URL(fileURLWithPath: "/tmp/source Export H265.mp4"),
+            URL(fileURLWithPath: "/tmp/source Export GIF.gif")
+        ]))
+        #expect(model.exportPanelMessage == "3 files exported")
+        #expect(model.exportProgressValue == 1)
+        #expect(model.exportJobs.map(\.format) == [.mp4, .hevc, .gif])
+        #expect(model.exportJobs.map(\.statusSummary) == ["Complete", "Complete", "Complete"])
+        #expect(model.exportJobs.compactMap(\.fileURL).map(\.path) == [
+            "/tmp/source Export H264.mp4",
+            "/tmp/source Export H265.mp4",
+            "/tmp/source Export GIF.gif"
+        ])
+        #expect(rememberedFormats == [.mp4, .hevc, .gif])
     }
 
     @Test("unsupported estimate clears stale value")
@@ -280,6 +342,24 @@ private struct StubMediaExporter: MediaExporter {
             pixelSize: try request.outputPixelSize,
             shouldMute: request.outputShouldMute
         )
+    }
+}
+
+private actor SpyMediaExporter: MediaExporter {
+    private var captured: [(request: ExportRequest, outputFileURL: URL)] = []
+
+    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+        captured.append((request, outputFileURL))
+        return ExportedMedia(
+            fileURL: outputFileURL,
+            format: request.format,
+            pixelSize: try request.outputPixelSize,
+            shouldMute: request.outputShouldMute
+        )
+    }
+
+    func capturedExports() -> [(request: ExportRequest, outputFileURL: URL)] {
+        captured
     }
 }
 

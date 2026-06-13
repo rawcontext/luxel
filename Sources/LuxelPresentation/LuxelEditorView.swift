@@ -141,12 +141,17 @@ public struct LuxelEditorView: View {
             VStack(alignment: .leading, spacing: 12) {
                 SectionLabel("Export")
 
-                Picker("Format", selection: formatSelection) {
+                Menu {
                     ForEach(LuxelEditorModel.supportedFormats, id: \.self) { format in
-                        Text(format.prettyName).tag(format)
+                        Toggle(isOn: formatSelectionBinding(format)) {
+                            Text(format.prettyName)
+                        }
                     }
+                } label: {
+                    Label(model.selectedFormatSummary, systemImage: "checklist")
+                        .frame(maxWidth: .infinity)
                 }
-                .pickerStyle(.menu)
+                .menuStyle(.button)
 
                 if model.canChooseQuality {
                     Picker("Quality", selection: qualitySelection) {
@@ -214,6 +219,14 @@ public struct LuxelEditorView: View {
                 if model.isExporting || model.exportProgress != nil {
                     ProgressView(value: model.exportProgressValue)
                         .progressViewStyle(.linear)
+                }
+
+                if !model.exportJobs.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(model.exportJobs) { job in
+                            exportJobRow(job)
+                        }
+                    }
                 }
 
                 ControlGroup {
@@ -366,7 +379,7 @@ public struct LuxelEditorView: View {
 
     private var exportPanelTint: Color {
         switch model.status {
-        case .exported, .saved:
+        case .exported, .exportedBatch, .saved:
             .green
         case .failed:
             .red
@@ -377,11 +390,71 @@ public struct LuxelEditorView: View {
         }
     }
 
-    private var formatSelection: Binding<ExportFormat> {
+    private func exportJobRow(_ job: ExportJobSnapshot) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: exportJobSystemImage(job))
+                .foregroundStyle(exportJobTint(job))
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(job.format.prettyName)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+
+                    Spacer(minLength: 8)
+
+                    Text(job.statusSummary)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+
+                ProgressView(value: job.progressValue)
+                    .progressViewStyle(.linear)
+            }
+
+            if job.fileURL != nil {
+                Button {
+                    model.revealExportJob(job)
+                } label: {
+                    Label("Reveal", systemImage: "magnifyingglass")
+                }
+                .labelStyle(.iconOnly)
+                .help("Reveal in Finder")
+            }
+        }
+    }
+
+    private func exportJobSystemImage(_ job: ExportJobSnapshot) -> String {
+        switch job.progress?.phase {
+        case .preparing, .exporting:
+            "arrow.triangle.2.circlepath"
+        case .completed:
+            "checkmark.circle"
+        case .canceled:
+            "xmark.circle"
+        case .none:
+            "clock"
+        }
+    }
+
+    private func exportJobTint(_ job: ExportJobSnapshot) -> Color {
+        switch job.progress?.phase {
+        case .completed:
+            .green
+        case .canceled:
+            .secondary
+        default:
+            .accentColor
+        }
+    }
+
+    private func formatSelectionBinding(_ format: ExportFormat) -> Binding<Bool> {
         Binding {
-            model.format
-        } set: { format in
-            model.setFormat(format)
+            model.selectedFormats.contains(format)
+        } set: { isSelected in
+            model.setFormatSelection(format, isSelected: isSelected)
         }
     }
 
