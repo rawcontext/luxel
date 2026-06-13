@@ -174,35 +174,127 @@ struct RecordingLifecycleServiceTests {
         #expect(store.recordings.isEmpty)
     }
 
+    @Test("start schedules auto stop when request has max recorded duration")
+    func startSchedulesAutoStop() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
+        let scheduler = ManualAutoStopScheduler()
+        let service = makeService(
+            store: store,
+            recorder: SpyCaptureRecorder(),
+            dateProvider: dateProvider,
+            autoStopScheduler: scheduler
+        )
+        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
+
+        _ = try await service.startRecording(request)
+
+        #expect(scheduler.scheduledIntervals == [60])
+    }
+
+    @Test("auto stop uses normal stop path")
+    func autoStopUsesNormalStopPath() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
+        let scheduler = ManualAutoStopScheduler()
+        let recorder = SpyCaptureRecorder()
+        let service = makeService(
+            store: store,
+            recorder: recorder,
+            dateProvider: dateProvider,
+            autoStopScheduler: scheduler
+        )
+        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
+
+        let activeRecording = try await service.startRecording(request, name: "Timed")
+        await scheduler.fireScheduledTask(at: 0)
+
+        #expect(recorder.stopCount == 1)
+        #expect(store.activeRecording == nil)
+        #expect(store.recordings == [activeRecording.pastRecording])
+    }
+
+    @Test("pause suspends auto stop and resume schedules remaining recorded time")
+    func pauseSuspendsAutoStopAndResumeSchedulesRemainingRecordedTime() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
+        let scheduler = ManualAutoStopScheduler()
+        let service = makeService(
+            store: store,
+            recorder: SpyCaptureRecorder(),
+            dateProvider: dateProvider,
+            autoStopScheduler: scheduler
+        )
+        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
+
+        _ = try await service.startRecording(request)
+        dateProvider.setDate(Date(timeIntervalSince1970: 1_010))
+        try await service.pauseRecording()
+        dateProvider.setDate(Date(timeIntervalSince1970: 1_040))
+        try await service.resumeRecording()
+
+        #expect(scheduler.scheduledIntervals == [60, 50])
+        #expect(scheduler.isCanceled(at: 0))
+        #expect(!scheduler.isCanceled(at: 1))
+    }
+
+    @Test("manual stop cancels pending auto stop")
+    func manualStopCancelsPendingAutoStop() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
+        let scheduler = ManualAutoStopScheduler()
+        let recorder = SpyCaptureRecorder()
+        let service = makeService(
+            store: store,
+            recorder: recorder,
+            dateProvider: dateProvider,
+            autoStopScheduler: scheduler
+        )
+        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
+
+        _ = try await service.startRecording(request)
+        _ = try await service.stopRecording()
+        await scheduler.fireScheduledTask(at: 0)
+
+        #expect(recorder.stopCount == 1)
+        #expect(scheduler.isCanceled(at: 0))
+    }
+
     private func makeService(
         store: InMemoryRecordingHistoryStore,
-        recorder: SpyCaptureRecorder
+        recorder: SpyCaptureRecorder,
+        dateProvider: any DateProvider = FixedDateProvider(date: Date(timeIntervalSince1970: 1_595_348_846)),
+        autoStopScheduler: any RecordingAutoStopScheduler = ManualAutoStopScheduler()
     ) -> RecordingLifecycleService {
         RecordingLifecycleService(
             recorder: recorder,
-            history: makeHistory(store: store)
+            history: makeHistory(store: store, dateProvider: dateProvider),
+            dateProvider: dateProvider,
+            autoStopScheduler: autoStopScheduler
         )
     }
 
     private func makeHistory(
         store: InMemoryRecordingHistoryStore,
-        fileSystem: StubFileSystem = StubFileSystem(existingFiles: [URL(fileURLWithPath: "/tmp/luxel.mp4")])
+        fileSystem: StubFileSystem = StubFileSystem(existingFiles: [URL(fileURLWithPath: "/tmp/luxel.mp4")]),
+        dateProvider: any DateProvider = FixedDateProvider(date: Date(timeIntervalSince1970: 1_595_348_846))
     ) -> RecordingHistoryService {
         RecordingHistoryService(
             store: store,
             fileSystem: fileSystem,
-            dateProvider: FixedDateProvider(date: Date(timeIntervalSince1970: 1_595_348_846)),
+            dateProvider: dateProvider,
             mediaProbe: StaticMediaProbe(result: .playable),
             calendar: Calendar(identifier: .gregorian)
         )
     }
 
-    private func makeRequest() throws -> RecordingRequest {
+    private func makeRequest(schedule: RecordingSchedule? = nil) throws -> RecordingRequest {
         try RecordingRequest(
             target: .display(DisplayID(9)),
             outputFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
             pixelSize: PixelSize(width: 640, height: 480),
-            frameRate: FrameRate(30)
+            frameRate: FrameRate(30),
+            schedule: schedule
         )
     }
 }
@@ -278,6 +370,101 @@ private struct FixedDateProvider: DateProvider {
 
     func now() -> Date {
         date
+    }
+}
+
+private final class MutableDateProvider: DateProvider, @unchecked Sendable {
+    private let lock = NSLock()
+    private var date: Date
+
+    init(_ date: Date) {
+        self.date = date
+    }
+
+    func now() -> Date {
+        lock.withLock {
+            date
+        }
+    }
+
+    func setDate(_ date: Date) {
+        lock.withLock {
+            self.date = date
+        }
+    }
+}
+
+private final class ManualAutoStopScheduler: RecordingAutoStopScheduler, @unchecked Sendable {
+    private let lock = NSLock()
+    private var scheduledTasks: [ManualAutoStopScheduledTask] = []
+
+    var scheduledIntervals: [TimeInterval] {
+        lock.withLock {
+            scheduledTasks.map(\.interval)
+        }
+    }
+
+    func schedule(
+        after interval: TimeInterval,
+        operation: @escaping @Sendable () async -> Void
+    ) -> any RecordingAutoStopTask {
+        let task = ManualAutoStopTask()
+        let scheduledTask = ManualAutoStopScheduledTask(
+            interval: interval,
+            task: task,
+            operation: operation
+        )
+
+        lock.withLock {
+            scheduledTasks.append(scheduledTask)
+        }
+
+        return task
+    }
+
+    func isCanceled(at index: Int) -> Bool {
+        lock.withLock {
+            guard scheduledTasks.indices.contains(index) else {
+                return false
+            }
+
+            return scheduledTasks[index].task.isCanceled
+        }
+    }
+
+    func fireScheduledTask(at index: Int) async {
+        let scheduledTask = lock.withLock {
+            scheduledTasks.indices.contains(index) ? scheduledTasks[index] : nil
+        }
+
+        guard let scheduledTask, !scheduledTask.task.isCanceled else {
+            return
+        }
+
+        await scheduledTask.operation()
+    }
+}
+
+private struct ManualAutoStopScheduledTask: Sendable {
+    let interval: TimeInterval
+    let task: ManualAutoStopTask
+    let operation: @Sendable () async -> Void
+}
+
+private final class ManualAutoStopTask: RecordingAutoStopTask, @unchecked Sendable {
+    private let lock = NSLock()
+    private var canceled = false
+
+    var isCanceled: Bool {
+        lock.withLock {
+            canceled
+        }
+    }
+
+    func cancel() {
+        lock.withLock {
+            canceled = true
+        }
     }
 }
 
