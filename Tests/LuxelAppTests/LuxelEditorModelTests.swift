@@ -117,6 +117,25 @@ struct LuxelEditorModelTests {
         }
     }
 
+    @Test("discard confirmation setting emits changes")
+    func discardConfirmationSettingEmitsChanges() {
+        var capturedSettings: [Bool] = []
+        let model = makeModel()
+        model.configureDiscard(
+            confirmDiscard: true,
+            onConfirmDiscardChange: { confirmDiscard in
+                capturedSettings.append(confirmDiscard)
+            }
+        )
+
+        model.setConfirmDiscard(false)
+        model.setConfirmDiscard(false)
+        model.setConfirmDiscard(true)
+
+        #expect(model.confirmDiscard)
+        #expect(capturedSettings == [false, true])
+    }
+
     @Test("refreshing export estimate builds request from current editor state")
     func refreshingExportEstimateBuildsRequestFromCurrentEditorState() async throws {
         let estimator = SpyExportSizeEstimator()

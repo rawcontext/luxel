@@ -58,6 +58,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored private var exportTask: Task<Void, Never>?
     @ObservationIgnored private var exportMemoryByFormat: [ExportFormat: ExportMemory]
     @ObservationIgnored private var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
+    @ObservationIgnored private var onConfirmDiscardChange: (@MainActor (Bool) -> Void)?
     @ObservationIgnored private var onDiscardRecording: (@MainActor (URL) -> Void)?
 
     public init(
@@ -355,10 +356,21 @@ public final class LuxelEditorModel {
 
     public func configureDiscard(
         confirmDiscard: Bool,
-        onDiscard: (@MainActor (URL) -> Void)? = nil
+        onDiscard: (@MainActor (URL) -> Void)? = nil,
+        onConfirmDiscardChange: (@MainActor (Bool) -> Void)? = nil
     ) {
         self.confirmDiscard = confirmDiscard
         self.onDiscardRecording = onDiscard
+        self.onConfirmDiscardChange = onConfirmDiscardChange
+    }
+
+    func setConfirmDiscard(_ confirmDiscard: Bool) {
+        guard self.confirmDiscard != confirmDiscard else {
+            return
+        }
+
+        self.confirmDiscard = confirmDiscard
+        onConfirmDiscardChange?(confirmDiscard)
     }
 
     public func reportImportFailure(_ error: Error) {

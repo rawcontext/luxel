@@ -109,6 +109,10 @@ public struct LuxelEditorView: View {
         } message: {
             Text("Move this recording to the Trash.")
         }
+        .dialogSuppressionToggle(
+            Text("Don't ask me again"),
+            isSuppressed: suppressDiscardConfirmation
+        )
     }
 
     private func requestDiscard() {
@@ -116,6 +120,14 @@ public struct LuxelEditorView: View {
             isConfirmingDiscard = true
         } else {
             model.discardRecording()
+        }
+    }
+
+    private var suppressDiscardConfirmation: Binding<Bool> {
+        Binding {
+            !model.confirmDiscard
+        } set: { isSuppressed in
+            model.setConfirmDiscard(!isSuppressed)
         }
     }
 
