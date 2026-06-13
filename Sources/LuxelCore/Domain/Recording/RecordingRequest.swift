@@ -44,6 +44,8 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
     public let audio: RecordingAudioMode
     public let videoCodec: RecordingCodec
     public let captureKind: QuickCaptureKind
+    public let schedule: RecordingSchedule?
+    public let timelapse: TimelapseOptions?
 
     public init(
         target: CaptureTarget,
@@ -54,7 +56,9 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         highlightClicks: Bool = false,
         audio: RecordingAudioMode = .none,
         videoCodec: RecordingCodec = .h264,
-        captureKind: QuickCaptureKind = .standard
+        captureKind: QuickCaptureKind = .standard,
+        schedule: RecordingSchedule? = nil,
+        timelapse: TimelapseOptions? = nil
     ) {
         self.target = target
         self.outputFileURL = outputFileURL
@@ -62,9 +66,11 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         self.frameRate = frameRate
         self.showCursor = showCursor
         self.highlightClicks = highlightClicks
-        self.audio = audio
+        self.audio = timelapse == nil ? audio : .none
         self.videoCodec = videoCodec
         self.captureKind = captureKind
+        self.schedule = schedule
+        self.timelapse = timelapse
     }
 
     public var recordingOptions: RecordingOptions {
@@ -76,7 +82,9 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
             displayID: displayID,
             audio: audio,
             videoCodec: videoCodec,
-            captureKind: captureKind
+            captureKind: captureKind,
+            schedule: schedule,
+            timelapse: timelapse
         )
     }
 

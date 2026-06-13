@@ -116,6 +116,8 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
     public let videoCodec: RecordingCodec
     public let captureKind: QuickCaptureKind
     public let isAudioOnly: Bool
+    public let schedule: RecordingSchedule?
+    public let timelapse: TimelapseOptions?
 
     public init(
         frameRate: Int,
@@ -126,7 +128,9 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         audio: RecordingAudioMode = .none,
         videoCodec: RecordingCodec = .h264,
         captureKind: QuickCaptureKind = .standard,
-        isAudioOnly: Bool = false
+        isAudioOnly: Bool = false,
+        schedule: RecordingSchedule? = nil,
+        timelapse: TimelapseOptions? = nil
     ) {
         self.frameRate = frameRate
         self.captureRect = captureRect
@@ -137,6 +141,8 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         self.videoCodec = videoCodec
         self.captureKind = captureKind
         self.isAudioOnly = isAudioOnly
+        self.schedule = schedule
+        self.timelapse = timelapse
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -149,6 +155,8 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         case videoCodec
         case captureKind
         case isAudioOnly
+        case schedule
+        case timelapse
     }
 
     public init(from decoder: any Decoder) throws {
@@ -169,6 +177,8 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
             ?? .standard
         isAudioOnly = try container.decodeIfPresent(Bool.self, forKey: .isAudioOnly)
             ?? false
+        schedule = try container.decodeIfPresent(RecordingSchedule.self, forKey: .schedule)
+        timelapse = try container.decodeIfPresent(TimelapseOptions.self, forKey: .timelapse)
     }
 }
 
