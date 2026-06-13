@@ -42,19 +42,19 @@ struct LuxelApp: App {
 
 private struct LuxelMenuBarLabel: View {
     @Bindable var model: LuxelMenuModel
+    @State private var now = Date()
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
-            let presentation = model.recordingPresentation(now: context.date)
+        let presentation = model.recordingPresentation(now: now)
 
-            Label {
-                Text(presentation.menuBarTitle)
-                    .monospacedDigit()
-            } icon: {
-                Image(systemName: presentation.menuBarSystemImage)
-            }
+        Image(systemName: presentation.menuBarSystemImage)
             .accessibilityLabel(Text(presentation.accessibilityLabel))
-        }
+            .task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    now = Date()
+                }
+            }
     }
 }
 
