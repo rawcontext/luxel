@@ -47,6 +47,17 @@ struct RecordingSessionPresentationTests {
         #expect(presentation.accessibilityLabel == "Luxel recording")
     }
 
+    @Test("recording timer shows remaining time in menu bar")
+    func recordingTimerShowsRemainingTimeInMenuBar() {
+        let presentation = RecordingSessionPresentation(
+            state: .recording(elapsed: 18, remaining: 42),
+            canStartRecording: false
+        )
+
+        #expect(presentation.menuBarTitle == "● −0:42")
+        #expect(presentation.accessibilityLabel == "Luxel recording, remaining 0:42")
+    }
+
     @Test("paused uses frozen pause glyph and resume action")
     func pausedUsesFrozenPauseGlyphAndResumeAction() {
         let presentation = RecordingSessionPresentation(
@@ -61,6 +72,17 @@ struct RecordingSessionPresentationTests {
         #expect(presentation.secondaryActionTitle == "Resume")
         #expect(presentation.secondaryActionSystemImage == "play.circle")
         #expect(presentation.canUseSecondaryAction)
+    }
+
+    @Test("paused timer freezes remaining time in menu bar")
+    func pausedTimerFreezesRemainingTimeInMenuBar() {
+        let presentation = RecordingSessionPresentation(
+            state: .paused(elapsed: 12, remaining: 18),
+            canStartRecording: false
+        )
+
+        #expect(presentation.menuBarTitle == "‖ −0:18")
+        #expect(presentation.accessibilityLabel == "Luxel recording paused, remaining 0:18")
     }
 
     @Test("transitional states disable actions")

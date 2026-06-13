@@ -3,10 +3,10 @@ import Foundation
 public enum RecordingSessionPresentationState: Equatable, Sendable {
     case idle
     case starting
-    case recording(elapsed: TimeInterval)
-    case pausing(elapsed: TimeInterval)
-    case paused(elapsed: TimeInterval)
-    case resuming(elapsed: TimeInterval)
+    case recording(elapsed: TimeInterval, remaining: TimeInterval? = nil)
+    case pausing(elapsed: TimeInterval, remaining: TimeInterval? = nil)
+    case paused(elapsed: TimeInterval, remaining: TimeInterval? = nil)
+    case resuming(elapsed: TimeInterval, remaining: TimeInterval? = nil)
     case stopping
     case exporting(ExportProgressSnapshot)
     case failed(String)
@@ -31,7 +31,11 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
     ) {
         let elapsed = state.elapsed
         let elapsedText = elapsed.map(Self.elapsedTimeText)
-        let displaysElapsedTime = showElapsedTimeInMenuBar && elapsedText != nil
+        let remaining = state.remaining
+        let remainingText = remaining.map(Self.elapsedTimeText)
+        let displaysTimerTime = showElapsedTimeInMenuBar && remainingText != nil
+        let displaysElapsedTime = showElapsedTimeInMenuBar && elapsedText != nil && !displaysTimerTime
+        let timerMenuText = remainingText.map { "−\($0)" }
 
         switch state {
         case .idle:
@@ -57,11 +61,19 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             canUseSecondaryAction = false
             statusMessage = "Starting recording"
         case .recording:
-            menuBarTitle = displaysElapsedTime ? "● \(elapsedText ?? "0:00")" : "●"
+            menuBarTitle = if displaysTimerTime {
+                "● \(timerMenuText ?? "−0:00")"
+            } else {
+                displaysElapsedTime ? "● \(elapsedText ?? "0:00")" : "●"
+            }
             menuBarSystemImage = "record.circle.fill"
-            accessibilityLabel = displaysElapsedTime
-                ? "Luxel recording, elapsed \(elapsedText ?? "0:00")"
-                : "Luxel recording"
+            accessibilityLabel = if displaysTimerTime {
+                "Luxel recording, remaining \(remainingText ?? "0:00")"
+            } else if displaysElapsedTime {
+                "Luxel recording, elapsed \(elapsedText ?? "0:00")"
+            } else {
+                "Luxel recording"
+            }
             primaryActionTitle = "Stop"
             primaryActionSystemImage = "stop.circle.fill"
             canUsePrimaryAction = true
@@ -70,7 +82,11 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             canUseSecondaryAction = true
             statusMessage = "Recording"
         case .pausing:
-            menuBarTitle = displaysElapsedTime ? "● \(elapsedText ?? "0:00")" : "●"
+            menuBarTitle = if displaysTimerTime {
+                "● \(timerMenuText ?? "−0:00")"
+            } else {
+                displaysElapsedTime ? "● \(elapsedText ?? "0:00")" : "●"
+            }
             menuBarSystemImage = "pause.circle"
             accessibilityLabel = "Luxel pausing recording"
             primaryActionTitle = "Stop"
@@ -81,11 +97,19 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             canUseSecondaryAction = false
             statusMessage = "Pausing recording"
         case .paused:
-            menuBarTitle = displaysElapsedTime ? "‖ \(elapsedText ?? "0:00")" : "‖"
+            menuBarTitle = if displaysTimerTime {
+                "‖ \(timerMenuText ?? "−0:00")"
+            } else {
+                displaysElapsedTime ? "‖ \(elapsedText ?? "0:00")" : "‖"
+            }
             menuBarSystemImage = "pause.circle.fill"
-            accessibilityLabel = displaysElapsedTime
-                ? "Luxel recording paused at \(elapsedText ?? "0:00")"
-                : "Luxel recording paused"
+            accessibilityLabel = if displaysTimerTime {
+                "Luxel recording paused, remaining \(remainingText ?? "0:00")"
+            } else if displaysElapsedTime {
+                "Luxel recording paused at \(elapsedText ?? "0:00")"
+            } else {
+                "Luxel recording paused"
+            }
             primaryActionTitle = "Stop"
             primaryActionSystemImage = "stop.circle.fill"
             canUsePrimaryAction = true
@@ -94,7 +118,11 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             canUseSecondaryAction = true
             statusMessage = "Paused"
         case .resuming:
-            menuBarTitle = displaysElapsedTime ? "‖ \(elapsedText ?? "0:00")" : "‖"
+            menuBarTitle = if displaysTimerTime {
+                "‖ \(timerMenuText ?? "−0:00")"
+            } else {
+                displaysElapsedTime ? "‖ \(elapsedText ?? "0:00")" : "‖"
+            }
             menuBarSystemImage = "play.circle"
             accessibilityLabel = "Luxel resuming recording"
             primaryActionTitle = "Stop"
@@ -162,11 +190,23 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
 private extension RecordingSessionPresentationState {
     var elapsed: TimeInterval? {
         switch self {
-        case .recording(let elapsed),
-             .pausing(let elapsed),
-             .paused(let elapsed),
-             .resuming(let elapsed):
+        case .recording(let elapsed, _),
+             .pausing(let elapsed, _),
+             .paused(let elapsed, _),
+             .resuming(let elapsed, _):
             elapsed
+        case .idle, .starting, .stopping, .exporting, .failed:
+            nil
+        }
+    }
+
+    var remaining: TimeInterval? {
+        switch self {
+        case .recording(_, let remaining),
+             .pausing(_, let remaining),
+             .paused(_, let remaining),
+             .resuming(_, let remaining):
+            remaining
         case .idle, .starting, .stopping, .exporting, .failed:
             nil
         }

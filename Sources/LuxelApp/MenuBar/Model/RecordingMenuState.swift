@@ -71,14 +71,14 @@ extension RecordingMenuState {
             .idle
         case .starting:
             .starting
-        case .recording(_, let clock):
-            .recording(elapsed: clock.elapsed(at: now))
-        case .pausing(_, let clock):
-            .pausing(elapsed: clock.elapsed(at: now))
-        case .paused(_, let clock):
-            .paused(elapsed: clock.elapsed(at: now))
-        case .resuming(_, let clock):
-            .resuming(elapsed: clock.elapsed(at: now))
+        case .recording(let recording, let clock):
+            presentationState(for: recording, clock: clock, now: now, phase: .recording)
+        case .pausing(let recording, let clock):
+            presentationState(for: recording, clock: clock, now: now, phase: .pausing)
+        case .paused(let recording, let clock):
+            presentationState(for: recording, clock: clock, now: now, phase: .paused)
+        case .resuming(let recording, let clock):
+            presentationState(for: recording, clock: clock, now: now, phase: .resuming)
         case .stopping:
             .stopping
         case .exporting(let snapshot):
@@ -98,5 +98,41 @@ extension RecordingMenuState {
         case .idle, .starting, .stopping, .exporting, .failed:
             nil
         }
+    }
+
+    private enum ActivePresentationPhase {
+        case recording
+        case pausing
+        case paused
+        case resuming
+    }
+
+    private func presentationState(
+        for recording: ActiveRecording,
+        clock: RecordingMenuClock,
+        now: Date,
+        phase: ActivePresentationPhase
+    ) -> RecordingSessionPresentationState {
+        let elapsed = clock.elapsed(at: now)
+        let remaining = remainingRecordedTime(for: recording, elapsed: elapsed)
+
+        switch phase {
+        case .recording:
+            return .recording(elapsed: elapsed, remaining: remaining)
+        case .pausing:
+            return .pausing(elapsed: elapsed, remaining: remaining)
+        case .paused:
+            return .paused(elapsed: elapsed, remaining: remaining)
+        case .resuming:
+            return .resuming(elapsed: elapsed, remaining: remaining)
+        }
+    }
+
+    private func remainingRecordedTime(for recording: ActiveRecording, elapsed: TimeInterval) -> TimeInterval? {
+        guard let maxRecordedDuration = recording.options.schedule?.maxRecordedDuration else {
+            return nil
+        }
+
+        return max(0, maxRecordedDuration - elapsed)
     }
 }
