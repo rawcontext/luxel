@@ -3,6 +3,7 @@ import LuxelCore
 import SwiftUI
 
 public struct LuxelEditorView: View {
+    @Environment(\.dismiss) private var dismiss
     @Bindable var model: LuxelEditorModel
     @State private var isConfirmingDiscard = false
 
@@ -122,7 +123,7 @@ public struct LuxelEditorView: View {
             titleVisibility: .visible
         ) {
             Button("Discard Recording", role: .destructive) {
-                model.discardRecording()
+                discardRecording()
             }
 
             Button("Cancel", role: .cancel) {}
@@ -139,7 +140,13 @@ public struct LuxelEditorView: View {
         if model.confirmDiscard {
             isConfirmingDiscard = true
         } else {
-            model.discardRecording()
+            discardRecording()
+        }
+    }
+
+    private func discardRecording() {
+        if model.discardRecording() {
+            dismiss()
         }
     }
 

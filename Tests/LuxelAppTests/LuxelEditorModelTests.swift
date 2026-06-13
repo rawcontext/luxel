@@ -103,8 +103,9 @@ struct LuxelEditorModelTests {
         }
 
         await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
-        model.discardRecording()
+        let didDiscard = model.discardRecording()
 
+        #expect(didDiscard)
         #expect(fileSystem.trashedFiles == [sourceURL])
         #expect(discardedURLs == [sourceURL])
         #expect(!model.hasSource)
@@ -124,8 +125,9 @@ struct LuxelEditorModelTests {
         }
 
         await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
-        model.discardRecording()
+        let didDiscard = model.discardRecording()
 
+        #expect(!didDiscard)
         #expect(fileSystem.trashedFiles == [sourceURL])
         #expect(discardedURLs.isEmpty)
         #expect(model.hasSource)

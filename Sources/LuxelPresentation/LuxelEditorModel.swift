@@ -702,9 +702,10 @@ public final class LuxelEditorModel {
         }
     }
 
-    func discardRecording() {
+    @discardableResult
+    func discardRecording() -> Bool {
         guard canDiscard, let source else {
-            return
+            return false
         }
 
         do {
@@ -713,8 +714,10 @@ public final class LuxelEditorModel {
             clearSource()
             status = .discarded(fileURL.lastPathComponent)
             onDiscardRecording?(fileURL)
+            return true
         } catch {
             status = .failed(errorMessage(error))
+            return false
         }
     }
 
