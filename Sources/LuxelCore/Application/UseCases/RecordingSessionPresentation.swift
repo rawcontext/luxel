@@ -15,6 +15,7 @@ public enum RecordingSessionPresentationState: Equatable, Sendable {
 public struct RecordingSessionPresentation: Equatable, Sendable {
     public let menuBarTitle: String
     public let menuBarSystemImage: String
+    public let alternateMenuBarSystemImage: String?
     public let animatesMenuBarSystemImage: Bool
     public let accessibilityLabel: String
     public let primaryActionTitle: String
@@ -42,6 +43,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         case .idle:
             menuBarTitle = "Luxel"
             menuBarSystemImage = "record.circle"
+            alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = false
             accessibilityLabel = "Luxel"
             primaryActionTitle = "Record"
@@ -54,6 +56,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         case .starting:
             menuBarTitle = "Starting"
             menuBarSystemImage = "record.circle"
+            alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = false
             accessibilityLabel = "Luxel starting recording"
             primaryActionTitle = "Starting"
@@ -70,6 +73,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
                 displaysElapsedTime ? "● \(elapsedText ?? "0:00")" : "●"
             }
             menuBarSystemImage = "record.circle"
+            alternateMenuBarSystemImage = "record.circle.fill"
             animatesMenuBarSystemImage = true
             accessibilityLabel = if displaysTimerTime {
                 "Luxel recording, remaining \(remainingText ?? "0:00")"
@@ -92,6 +96,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
                 displaysElapsedTime ? "● \(elapsedText ?? "0:00")" : "●"
             }
             menuBarSystemImage = "pause.circle"
+            alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = false
             accessibilityLabel = "Luxel pausing recording"
             primaryActionTitle = "Stop"
@@ -108,6 +113,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
                 displaysElapsedTime ? "‖ \(elapsedText ?? "0:00")" : "‖"
             }
             menuBarSystemImage = "pause.circle.fill"
+            alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = false
             accessibilityLabel = if displaysTimerTime {
                 "Luxel recording paused, remaining \(remainingText ?? "0:00")"
@@ -130,6 +136,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
                 displaysElapsedTime ? "‖ \(elapsedText ?? "0:00")" : "‖"
             }
             menuBarSystemImage = "play.circle"
+            alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = false
             accessibilityLabel = "Luxel resuming recording"
             primaryActionTitle = "Stop"
@@ -142,6 +149,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         case .stopping:
             menuBarTitle = "Stopping"
             menuBarSystemImage = "stop.circle.fill"
+            alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = false
             accessibilityLabel = "Luxel stopping recording"
             primaryActionTitle = "Stopping"
@@ -155,6 +163,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             let progress = Int((snapshot.progress * 100).rounded())
             menuBarTitle = "\(progress)%"
             menuBarSystemImage = "square.and.arrow.up"
+            alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = false
             accessibilityLabel = "Luxel exporting, \(progress)% complete"
             primaryActionTitle = "Exporting"
@@ -167,6 +176,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         case .failed(let message):
             menuBarTitle = "Luxel"
             menuBarSystemImage = "exclamationmark.triangle.fill"
+            alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = false
             accessibilityLabel = "Luxel recording failed"
             primaryActionTitle = "Record"
