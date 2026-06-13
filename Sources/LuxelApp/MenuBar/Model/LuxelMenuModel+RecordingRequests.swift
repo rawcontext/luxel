@@ -11,6 +11,9 @@ extension LuxelMenuModel {
         let frameRate = try FrameRate(settings.record60FPS ? 60 : 30)
         let outputFileURL = try nextRecordingFileURL(now: Date())
         let resolvedAudio = resolveRecordingAudioMode()
+        let schedule = try settings.lastStopAfter.map {
+            try RecordingSchedule(maxRecordedDuration: $0)
+        }
 
         return (
             RecordingRequest(
@@ -22,7 +25,8 @@ extension LuxelMenuModel {
                 highlightClicks: settings.highlightClicks,
                 audio: resolvedAudio.mode,
                 videoCodec: .h264,
-                captureKind: captureKind
+                captureKind: captureKind,
+                schedule: schedule
             ),
             resolvedAudio.noticeMessage
         )

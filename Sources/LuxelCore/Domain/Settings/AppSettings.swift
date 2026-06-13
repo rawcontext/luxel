@@ -46,6 +46,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var lastCaptureMemory: LastCaptureMemory?
     public var perFormatExportMemory: [ExportFormat: ExportMemory]
     public var confirmDiscard: Bool
+    public var lastStopAfter: TimeInterval?
 
     public init(
         recordingsDirectory: URL,
@@ -69,7 +70,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         rememberLastCapture: Bool = true,
         lastCaptureMemory: LastCaptureMemory? = nil,
         perFormatExportMemory: [ExportFormat: ExportMemory] = [:],
-        confirmDiscard: Bool = true
+        confirmDiscard: Bool = true,
+        lastStopAfter: TimeInterval? = nil
     ) {
         self.recordingsDirectory = recordingsDirectory
         self.showCursor = showCursor
@@ -93,6 +95,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.lastCaptureMemory = lastCaptureMemory
         self.perFormatExportMemory = perFormatExportMemory
         self.confirmDiscard = confirmDiscard
+        self.lastStopAfter = lastStopAfter
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -118,6 +121,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case lastCaptureMemory
         case perFormatExportMemory
         case confirmDiscard
+        case lastStopAfter
     }
 
     public init(from decoder: any Decoder) throws {
@@ -179,6 +183,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         ) ?? [:]
         confirmDiscard = try container.decodeIfPresent(Bool.self, forKey: .confirmDiscard)
             ?? true
+        lastStopAfter = try container.decodeIfPresent(TimeInterval.self, forKey: .lastStopAfter)
     }
 }
 

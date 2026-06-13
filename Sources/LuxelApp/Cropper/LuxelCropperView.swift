@@ -63,6 +63,18 @@ struct LuxelCropperView: View {
                 .toggleStyle(.button)
                 .help("Lock 16:9")
 
+                Picker(selection: stopAfterSelection) {
+                    Text("Off").tag(Optional<TimeInterval>.none)
+                    ForEach(StopAfterPreset.all) { preset in
+                        Text(preset.title).tag(Optional(preset.duration))
+                    }
+                } label: {
+                    Label(model.stopAfterSummary, systemImage: "timer")
+                }
+                .pickerStyle(.menu)
+                .frame(width: 82)
+                .help("Stop After")
+
                 if let audioLevelModel {
                     CropperAudioLevelMeter(model: audioLevelModel)
                 }
@@ -144,6 +156,30 @@ struct LuxelCropperView: View {
             NSSound.beep()
         }
     }
+
+    private var stopAfterSelection: Binding<TimeInterval?> {
+        Binding {
+            model.stopAfterDuration
+        } set: { duration in
+            model.setStopAfterDuration(duration)
+        }
+    }
+}
+
+private struct StopAfterPreset: Identifiable {
+    let duration: TimeInterval
+    let title: String
+
+    var id: TimeInterval {
+        duration
+    }
+
+    static let all: [StopAfterPreset] = [
+        StopAfterPreset(duration: 10, title: "10 s"),
+        StopAfterPreset(duration: 30, title: "30 s"),
+        StopAfterPreset(duration: 60, title: "1 min"),
+        StopAfterPreset(duration: 300, title: "5 min")
+    ]
 }
 
 private struct CropperAudioLevelMeter: View {

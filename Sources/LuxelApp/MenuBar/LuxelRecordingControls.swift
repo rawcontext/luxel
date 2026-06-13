@@ -77,7 +77,12 @@ struct LuxelRecordingControls: View {
 
         Button {
             cropperPanelController.show(
-                audioLevelConfiguration: model.cropperAudioLevelConfiguration()
+                stopAfterDuration: model.settings.lastStopAfter,
+                audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
+                onStopAfterDurationChange: { duration in
+                    model.settings.lastStopAfter = duration
+                    model.saveSettings()
+                }
             ) { draft in
                 Task {
                     await model.startRecording(from: draft)

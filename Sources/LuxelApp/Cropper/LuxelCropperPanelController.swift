@@ -23,7 +23,9 @@ final class LuxelCropperPanelController {
     }
 
     func show(
+        stopAfterDuration: TimeInterval? = nil,
         audioLevelConfiguration: CropperAudioLevelConfiguration? = nil,
+        onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
     ) {
         close()
@@ -33,7 +35,9 @@ final class LuxelCropperPanelController {
                 let displays = try await targetService.availableDisplays()
                 present(
                     displays: displays,
+                    stopAfterDuration: stopAfterDuration,
                     audioLevelConfiguration: audioLevelConfiguration,
+                    onStopAfterDurationChange: onStopAfterDurationChange,
                     onSelect: onSelect
                 )
             } catch {
@@ -53,7 +57,9 @@ final class LuxelCropperPanelController {
 
     private func present(
         displays: [DisplayBounds],
+        stopAfterDuration: TimeInterval?,
         audioLevelConfiguration: CropperAudioLevelConfiguration?,
+        onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
         onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
     ) {
         let displaysByID = Dictionary(uniqueKeysWithValues: displays.map { ($0.id, $0) })
@@ -77,7 +83,11 @@ final class LuxelCropperPanelController {
                 continue
             }
 
-            let model = LuxelCropperModel(display: display)
+            let model = LuxelCropperModel(
+                display: display,
+                stopAfterDuration: stopAfterDuration,
+                onStopAfterDurationChange: onStopAfterDurationChange
+            )
             let panel = NSPanel(
                 contentRect: screen.frame,
                 styleMask: [.borderless],

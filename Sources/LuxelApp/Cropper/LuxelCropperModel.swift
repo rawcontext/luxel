@@ -38,11 +38,19 @@ final class LuxelCropperModel {
     let display: DisplayBounds
     var selection: CaptureRect?
     var locksWidescreenRatio = false
+    var stopAfterDuration: TimeInterval?
     var errorMessage: String?
+    @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
     private var resizeStartSelection: CaptureRect?
 
-    init(display: DisplayBounds) {
+    init(
+        display: DisplayBounds,
+        stopAfterDuration: TimeInterval? = nil,
+        onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in }
+    ) {
         self.display = display
+        self.stopAfterDuration = stopAfterDuration
+        self.onStopAfterDurationChange = onStopAfterDurationChange
     }
 
     var selectionSummary: String {
@@ -55,6 +63,23 @@ final class LuxelCropperModel {
 
     var canRecordSelection: Bool {
         selection != nil
+    }
+
+    var stopAfterSummary: String {
+        guard let stopAfterDuration else {
+            return "Off"
+        }
+
+        return Self.durationSummary(stopAfterDuration)
+    }
+
+    func setStopAfterDuration(_ duration: TimeInterval?) {
+        guard stopAfterDuration != duration else {
+            return
+        }
+
+        stopAfterDuration = duration
+        onStopAfterDurationChange(duration)
     }
 
     func updateSelection(start: CGPoint, current: CGPoint, viewSize: CGSize) {
@@ -162,5 +187,14 @@ final class LuxelCropperModel {
     private func errorMessage(for error: Error) -> String {
         let description = (error as NSError).localizedDescription
         return description.isEmpty ? String(describing: error) : description
+    }
+
+    private static func durationSummary(_ duration: TimeInterval) -> String {
+        if duration < 60 {
+            return "\(Int(duration)) s"
+        }
+
+        let minutes = Int(duration / 60)
+        return "\(minutes) min"
     }
 }
