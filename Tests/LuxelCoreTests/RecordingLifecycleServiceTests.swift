@@ -214,6 +214,27 @@ struct RecordingLifecycleServiceTests {
         #expect(store.recordings == [activeRecording.pastRecording])
     }
 
+    @Test("auto stop notifies recording completion")
+    func autoStopNotifiesRecordingCompletion() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
+        let scheduler = ManualAutoStopScheduler()
+        let notifier = SpyUserNotifier()
+        let service = makeService(
+            store: store,
+            recorder: SpyCaptureRecorder(),
+            dateProvider: dateProvider,
+            autoStopScheduler: scheduler,
+            userNotifier: notifier
+        )
+        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
+
+        _ = try await service.startRecording(request)
+        await scheduler.fireScheduledTask(at: 0)
+
+        #expect(await notifier.recordingAutoStoppedDurations() == [60])
+    }
+
     @Test("pause suspends auto stop and resume schedules remaining recorded time")
     func pauseSuspendsAutoStopAndResumeSchedulesRemainingRecordedTime() async throws {
         let store = InMemoryRecordingHistoryStore()
@@ -260,17 +281,40 @@ struct RecordingLifecycleServiceTests {
         #expect(scheduler.isCanceled(at: 0))
     }
 
+    @Test("manual stop does not notify recording auto stop")
+    func manualStopDoesNotNotifyRecordingAutoStop() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
+        let scheduler = ManualAutoStopScheduler()
+        let notifier = SpyUserNotifier()
+        let service = makeService(
+            store: store,
+            recorder: SpyCaptureRecorder(),
+            dateProvider: dateProvider,
+            autoStopScheduler: scheduler,
+            userNotifier: notifier
+        )
+        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
+
+        _ = try await service.startRecording(request)
+        _ = try await service.stopRecording()
+
+        #expect(await notifier.recordingAutoStoppedDurations().isEmpty)
+    }
+
     private func makeService(
         store: InMemoryRecordingHistoryStore,
         recorder: SpyCaptureRecorder,
         dateProvider: any DateProvider = FixedDateProvider(date: Date(timeIntervalSince1970: 1_595_348_846)),
-        autoStopScheduler: any RecordingAutoStopScheduler = ManualAutoStopScheduler()
+        autoStopScheduler: any RecordingAutoStopScheduler = ManualAutoStopScheduler(),
+        userNotifier: (any UserNotifier)? = nil
     ) -> RecordingLifecycleService {
         RecordingLifecycleService(
             recorder: recorder,
             history: makeHistory(store: store, dateProvider: dateProvider),
             dateProvider: dateProvider,
-            autoStopScheduler: autoStopScheduler
+            autoStopScheduler: autoStopScheduler,
+            userNotifier: userNotifier
         )
     }
 
@@ -465,6 +509,20 @@ private final class ManualAutoStopTask: RecordingAutoStopTask, @unchecked Sendab
         lock.withLock {
             canceled = true
         }
+    }
+}
+
+private actor SpyUserNotifier: UserNotifier {
+    private var recordingDurations: [TimeInterval] = []
+
+    func notifyExportCompleted(fileURL: URL, presetName: String) async throws {}
+
+    func notifyRecordingAutoStopped(duration: TimeInterval) async throws {
+        recordingDurations.append(duration)
+    }
+
+    func recordingAutoStoppedDurations() -> [TimeInterval] {
+        recordingDurations
     }
 }
 

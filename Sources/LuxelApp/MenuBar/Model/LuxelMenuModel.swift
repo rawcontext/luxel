@@ -79,7 +79,8 @@ final class LuxelMenuModel {
         self.appMetadata = appMetadata
         self.recordingLifecycleService = RecordingLifecycleService(
             recorder: recorder,
-            history: recordingHistoryService
+            history: recordingHistoryService,
+            userNotifier: UserNotificationsNotifier()
         )
         self.audioRecordingLifecycleService = AudioRecordingLifecycleService(
             recorder: audioRecorder,

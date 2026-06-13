@@ -5,18 +5,21 @@ public final class RecordingLifecycleService: Sendable {
     private let history: RecordingHistoryService
     private let dateProvider: any DateProvider
     private let autoStopScheduler: any RecordingAutoStopScheduler
+    private let userNotifier: (any UserNotifier)?
     private let autoStopState = RecordingLifecycleAutoStopState()
 
     public init(
         recorder: any CaptureRecorder,
         history: RecordingHistoryService,
         dateProvider: any DateProvider = SystemDateProvider(),
-        autoStopScheduler: any RecordingAutoStopScheduler = TaskRecordingAutoStopScheduler()
+        autoStopScheduler: any RecordingAutoStopScheduler = TaskRecordingAutoStopScheduler(),
+        userNotifier: (any UserNotifier)? = nil
     ) {
         self.recorder = recorder
         self.history = history
         self.dateProvider = dateProvider
         self.autoStopScheduler = autoStopScheduler
+        self.userNotifier = userNotifier
     }
 
     @discardableResult
@@ -108,7 +111,11 @@ public final class RecordingLifecycleService: Sendable {
                 return
             }
 
-            _ = try? await self.stopRecording()
+            guard (try? await self.stopRecording()) != nil else {
+                return
+            }
+
+            try? await self.userNotifier?.notifyRecordingAutoStopped(duration: timing.maxRecordedDuration)
         }
         await autoStopState.setTask(task)
     }
@@ -121,6 +128,7 @@ public enum RecordingLifecycleError: Error, Equatable {
 
 private struct RecordingLifecycleAutoStopTiming: Sendable {
     let remaining: TimeInterval
+    let maxRecordedDuration: TimeInterval
 }
 
 private actor RecordingLifecycleAutoStopState {
@@ -204,12 +212,18 @@ private actor RecordingLifecycleAutoStopState {
     }
 
     private func timing(at now: Date) -> RecordingLifecycleAutoStopTiming? {
-        guard let schedule, let clock, clock.isRecording(at: now),
+        guard let schedule,
+              let maxRecordedDuration = schedule.maxRecordedDuration,
+              let clock,
+              clock.isRecording(at: now),
               let remaining = clock.remainingRecordedTime(for: schedule, at: now) else {
             return nil
         }
 
-        return RecordingLifecycleAutoStopTiming(remaining: remaining)
+        return RecordingLifecycleAutoStopTiming(
+            remaining: remaining,
+            maxRecordedDuration: maxRecordedDuration
+        )
     }
 
     private func clearStoredState() {
