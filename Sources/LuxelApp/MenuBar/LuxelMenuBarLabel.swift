@@ -4,40 +4,47 @@ import SwiftUI
 struct LuxelMenuBarLabel: View {
     @Bindable var model: LuxelMenuModel
     @State private var now = Date()
-    @State private var pulsePhase = false
 
     var body: some View {
         let presentation = model.recordingPresentation(now: now)
-        let systemImage = systemImage(for: presentation)
 
-        Image(systemName: systemImage)
-            .contentTransition(.symbolEffect)
-            .animation(.easeInOut(duration: 0.2), value: systemImage)
+        TimelineView(
+            .animation(
+                minimumInterval: 1.0 / 30.0,
+                paused: !presentation.animatesMenuBarSystemImage
+            )
+        ) { timeline in
+            let blend = blendValue(for: presentation, at: timeline.date)
+
+            ZStack {
+                Image(systemName: presentation.menuBarSystemImage)
+                    .opacity(1 - blend)
+
+                if let alternateMenuBarSystemImage = presentation.alternateMenuBarSystemImage {
+                    Image(systemName: alternateMenuBarSystemImage)
+                        .opacity(blend)
+                }
+            }
             .accessibilityLabel(Text(presentation.accessibilityLabel))
-            .task {
-                while !Task.isCancelled {
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
-                    now = Date()
-                }
+        }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                now = Date()
             }
-            .task(id: presentation.animatesMenuBarSystemImage) {
-                guard presentation.animatesMenuBarSystemImage else {
-                    pulsePhase = false
-                    return
-                }
-
-                while !Task.isCancelled {
-                    pulsePhase.toggle()
-                    try? await Task.sleep(nanoseconds: 550_000_000)
-                }
-            }
+        }
     }
 
-    private func systemImage(for presentation: RecordingSessionPresentation) -> String {
-        guard pulsePhase, let alternateSystemImage = presentation.alternateMenuBarSystemImage else {
-            return presentation.menuBarSystemImage
+    private func blendValue(for presentation: RecordingSessionPresentation, at date: Date) -> Double {
+        guard presentation.animatesMenuBarSystemImage,
+              presentation.alternateMenuBarSystemImage != nil else {
+            return 0
         }
 
-        return alternateSystemImage
+        let period = 1.1
+        let phase = date.timeIntervalSinceReferenceDate
+            .truncatingRemainder(dividingBy: period) / period
+
+        return (1 - cos(phase * 2 * .pi)) / 2
     }
 }
