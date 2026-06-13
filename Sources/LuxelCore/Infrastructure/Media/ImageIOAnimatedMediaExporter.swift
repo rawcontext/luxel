@@ -14,16 +14,16 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         }
 
         let outputPixelSize = try request.outputPixelSize
-        let frameTimes = frameTimes(for: request)
+        let asset = AVURLAsset(url: request.inputFileURL)
+        let schedule = await animatedFrameSchedule(for: request, asset: asset)
         let destination = try makeDestination(
             format: request.format,
             outputFileURL: outputFileURL,
-            frameCount: frameTimes.count
+            frameCount: schedule.frameTimes.count
         )
         let destinationProperties = destinationProperties(for: request.format)
         CGImageDestinationSetProperties(destination, destinationProperties as CFDictionary)
 
-        let asset = AVURLAsset(url: request.inputFileURL)
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true
         imageGenerator.requestedTimeToleranceBefore = .zero
@@ -32,7 +32,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         try? FileManager.default.removeItem(at: outputFileURL)
 
         do {
-            for time in frameTimes {
+            for time in schedule.frameTimes {
                 let frame = try await imageGenerator.image(at: time).image
                 let renderedFrame = try render(
                     frame,
@@ -42,7 +42,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
                 CGImageDestinationAddImage(
                     destination,
                     renderedFrame,
-                    frameProperties(for: request.format, frameDelay: frameDelay(for: request)) as CFDictionary
+                    frameProperties(for: request.format, frameDelay: schedule.frameDelay) as CFDictionary
                 )
             }
 
@@ -87,23 +87,6 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         }
 
         return destination
-    }
-
-    private func frameTimes(for request: ExportRequest) -> [CMTime] {
-        let framesPerSecond = request.frameRate.framesPerSecond
-        let frameCount = max(1, Int((request.timeRange.duration * Double(framesPerSecond)).rounded()))
-        let start = request.timeRange.start
-
-        return (0..<frameCount).map { index in
-            CMTime(
-                seconds: start + (Double(index) / Double(framesPerSecond)),
-                preferredTimescale: 600
-            )
-        }
-    }
-
-    private func frameDelay(for request: ExportRequest) -> TimeInterval {
-        1 / Double(request.frameRate.framesPerSecond)
     }
 
     private func destinationProperties(for format: ExportFormat) -> [CFString: Any] {

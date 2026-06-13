@@ -346,6 +346,10 @@ public struct LuxelEditorView: View {
                     LabeledContent("End", value: model.formatTime(model.trimEnd))
                     Slider(value: trimEndSelection, in: model.minimumTrimDuration...max(model.duration, model.minimumTrimDuration))
                 }
+
+                LabeledContent("Output Duration", value: model.outputDurationSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -381,6 +385,30 @@ public struct LuxelEditorView: View {
                     Stepper(value: frameRateSelection, in: 1...model.maximumFrameRate) {
                         Text("\(model.frameRate) fps")
                             .monospacedDigit()
+                    }
+                }
+
+                LabeledContent("Speed") {
+                    HStack(spacing: 8) {
+                        TextField("Speed", value: playbackSpeedSelection, format: .number.precision(.fractionLength(2)))
+                            .frame(width: 58)
+                            .multilineTextAlignment(.trailing)
+                            .monospacedDigit()
+
+                        Text("x")
+                            .foregroundStyle(.secondary)
+
+                        Menu {
+                            ForEach(LuxelEditorModel.playbackSpeedDetents, id: \.self) { speed in
+                                Button(speedPresetLabel(speed)) {
+                                    model.setPlaybackSpeed(speed)
+                                }
+                            }
+                        } label: {
+                            Label("Speed Presets", systemImage: "speedometer")
+                        }
+                        .labelStyle(.iconOnly)
+                        .help("Speed Presets")
                     }
                 }
 
@@ -585,12 +613,29 @@ public struct LuxelEditorView: View {
         }
     }
 
+    private var playbackSpeedSelection: Binding<Double> {
+        Binding {
+            model.playbackSpeedValue
+        } set: { value in
+            model.setPlaybackSpeed(value)
+        }
+    }
+
     private var shouldCropSelection: Binding<Bool> {
         Binding {
             model.shouldCrop
         } set: { shouldCrop in
             model.setShouldCrop(shouldCrop)
         }
+    }
+
+    private func speedPresetLabel(_ speed: Double) -> String {
+        if speed == speed.rounded() {
+            return "\(Int(speed))x"
+        }
+
+        return String(format: "%.2fx", speed)
+            .replacingOccurrences(of: #"\.?0+x$"#, with: "x", options: .regularExpression)
     }
 }
 

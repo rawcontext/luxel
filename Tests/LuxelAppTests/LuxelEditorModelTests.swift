@@ -167,6 +167,7 @@ struct LuxelEditorModelTests {
         model.setOutputWidth(640)
         model.setOutputHeight(360)
         model.setFrameRate(24)
+        model.setPlaybackSpeed(2)
         model.setQuality(.high)
         model.setIncludesAudio(false)
         await model.refreshExportEstimate()
@@ -183,6 +184,7 @@ struct LuxelEditorModelTests {
         #expect(captured?.timeRange == expectedRange)
         #expect(captured?.pixelSize == expectedPixelSize)
         #expect(captured?.frameRate == expectedFrameRate)
+        #expect(captured?.speed == (try PlaybackSpeed(2)))
         #expect(captured?.quality == .high)
         #expect(captured?.outputShouldMute == true)
     }
@@ -347,6 +349,33 @@ struct LuxelEditorModelTests {
         #expect(!model.includesAudio)
         #expect(model.shouldCrop)
         #expect(model.canUndoEditorChange)
+    }
+
+    @Test("playback speed participates in undo and export requests")
+    func playbackSpeedParticipatesInUndoAndExportRequests() async throws {
+        let exporter = SpyMediaExporter()
+        let model = makeModel(exporter: exporter)
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setPlaybackSpeed(2)
+
+        #expect(model.playbackSpeed == (try PlaybackSpeed(2)))
+        #expect(model.outputDurationSummary == "0:06")
+
+        model.undoEditorChange()
+        #expect(model.playbackSpeed == .normal)
+        #expect(model.outputDurationSummary == "0:12")
+
+        model.redoEditorChange()
+        #expect(model.playbackSpeed == (try PlaybackSpeed(2)))
+
+        model.startExport()
+        while model.isExporting {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let captured = await exporter.capturedExports()
+        #expect(captured.first?.request.speed == (try PlaybackSpeed(2)))
     }
 
     @Test("trim start changes coalesce into one undo step")

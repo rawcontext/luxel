@@ -90,6 +90,31 @@ struct AVFoundationMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
+    @Test("mp4 export applies playback speed to video and audio")
+    func mp4ExportAppliesPlaybackSpeedToVideoAndAudio() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "mp4")
+        let request = try ExportRequest(
+            inputFileURL: fixtureURL("input@2x.mp4"),
+            format: .mp4,
+            pixelSize: PixelSize(width: 320, height: 180),
+            frameRate: FrameRate(30),
+            timeRange: TimeRange(start: 1, end: 1.8),
+            shouldMute: false,
+            shouldCrop: false,
+            speed: PlaybackSpeed(2)
+        )
+
+        let exported = try await AVFoundationMediaExporter().export(request, to: outputURL)
+        let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: outputURL)
+
+        #expect(exported.fileURL == outputURL)
+        #expect(source.duration > 0.35)
+        #expect(source.duration < 0.45)
+        #expect(source.hasAudio)
+
+        try? FileManager.default.removeItem(at: outputURL)
+    }
+
     @Test("h264 export uses compatibility profile metadata")
     func h264ExportUsesCompatibilityProfileMetadata() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")

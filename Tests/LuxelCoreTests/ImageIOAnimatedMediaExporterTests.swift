@@ -43,6 +43,24 @@ struct ImageIOAnimatedMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
+    @Test("gif export applies playback speed to frame delay")
+    func gifExportAppliesPlaybackSpeedToFrameDelay() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "gif")
+        let request = try makeRequest(
+            format: .gif,
+            pixelSize: PixelSize(width: 320, height: 180),
+            speed: PlaybackSpeed(2)
+        )
+
+        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
+        let metadata = try animatedImageMetadata(at: outputURL)
+
+        #expect(metadata.frameCount == 3)
+        #expect(abs(metadata.frameDelay - 0.05) < 0.02)
+
+        try? FileManager.default.removeItem(at: outputURL)
+    }
+
     @Test("video formats are rejected")
     func videoFormatsAreRejected() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")
@@ -54,7 +72,11 @@ struct ImageIOAnimatedMediaExporterTests {
         #expect(!FileManager.default.fileExists(atPath: outputURL.path))
     }
 
-    private func makeRequest(format: ExportFormat, pixelSize: PixelSize) throws -> ExportRequest {
+    private func makeRequest(
+        format: ExportFormat,
+        pixelSize: PixelSize,
+        speed: PlaybackSpeed = .normal
+    ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: fixtureURL("input.mp4"),
             format: format,
@@ -62,19 +84,32 @@ struct ImageIOAnimatedMediaExporterTests {
             frameRate: FrameRate(10),
             timeRange: TimeRange(start: 1, end: 1.3),
             shouldMute: false,
-            shouldCrop: true
+            shouldCrop: true,
+            speed: speed
         )
     }
 
-    private func animatedImageMetadata(at fileURL: URL) throws -> (frameCount: Int, width: Int, height: Int) {
+    private func animatedImageMetadata(at fileURL: URL) throws -> (
+        frameCount: Int,
+        width: Int,
+        height: Int,
+        frameDelay: TimeInterval
+    ) {
         let source = try #require(CGImageSourceCreateWithURL(fileURL as CFURL, nil))
         let properties = try #require(
             CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
         )
         let width = try #require(properties[kCGImagePropertyPixelWidth] as? Int)
         let height = try #require(properties[kCGImagePropertyPixelHeight] as? Int)
+        let gifProperties = properties[kCGImagePropertyGIFDictionary] as? [CFString: Any]
+        let pngProperties = properties[kCGImagePropertyPNGDictionary] as? [CFString: Any]
+        let frameDelay = gifProperties?[kCGImagePropertyGIFUnclampedDelayTime] as? TimeInterval
+            ?? gifProperties?[kCGImagePropertyGIFDelayTime] as? TimeInterval
+            ?? pngProperties?[kCGImagePropertyAPNGUnclampedDelayTime] as? TimeInterval
+            ?? pngProperties?[kCGImagePropertyAPNGDelayTime] as? TimeInterval
+            ?? 0
 
-        return (CGImageSourceGetCount(source), width, height)
+        return (CGImageSourceGetCount(source), width, height, frameDelay)
     }
 
     private func fixtureURL(_ fileName: String) throws -> URL {

@@ -26,6 +26,7 @@ public final class LuxelEditorModel {
 
     static let supportedFormats = ExportFormat.appleNativeV1Formats
     static let sizePresets = EditorSizePreset.allCases
+    static let playbackSpeedDetents: [Double] = [0.25, 0.5, 1, 1.5, 2, 3, 4]
 
     var source: SourceMedia?
     var status: Status = .empty
@@ -37,6 +38,7 @@ public final class LuxelEditorModel {
     var outputWidth = 1280
     var outputHeight = 720
     var frameRate = 30
+    var playbackSpeed: PlaybackSpeed = .normal
     var shouldMute = false
     var shouldCrop = true
     var quality: ExportQuality = .balanced
@@ -134,6 +136,14 @@ public final class LuxelEditorModel {
 
     var includesAudio: Bool {
         canIncludeAudio && !shouldMute
+    }
+
+    var playbackSpeedValue: Double {
+        playbackSpeed.value
+    }
+
+    var outputDurationSummary: String {
+        formatTime(max(minimumTrimDuration, trimEnd - trimStart) / playbackSpeed.value)
     }
 
     var isExporting: Bool {
@@ -244,6 +254,7 @@ public final class LuxelEditorModel {
             outputWidth: outputWidth,
             outputHeight: outputHeight,
             frameRate: frameRate,
+            playbackSpeed: playbackSpeed.value,
             quality: quality,
             shouldMute: shouldMute,
             shouldCrop: shouldCrop
@@ -341,11 +352,14 @@ public final class LuxelEditorModel {
             source = media
             trimStart = 0
             trimEnd = media.duration
+            playbackSpeed = .normal
             applySizePreset(.original)
             applyFrameRate(media.nominalFrameRate.framesPerSecond)
             applyExportMemory(for: format)
             shouldMute = !media.hasAudio || format.dropsAudio
-            player.replaceCurrentItem(with: AVPlayerItem(url: fileURL))
+            let item = AVPlayerItem(url: fileURL)
+            item.audioTimePitchAlgorithm = .timeDomain
+            player.replaceCurrentItem(with: item)
             status = .ready
             resetEditorUndoStack()
         } catch {
@@ -476,6 +490,17 @@ public final class LuxelEditorModel {
         recordEditorDraftChange(coalescingToken: "frame-rate")
     }
 
+    func setPlaybackSpeed(_ value: Double) {
+        let clampedValue = min(max(value, 0.1), 10)
+        guard let nextSpeed = try? PlaybackSpeed(clampedValue), nextSpeed != playbackSpeed else {
+            return
+        }
+
+        playbackSpeed = nextSpeed
+        applyPlaybackRateIfNeeded()
+        recordEditorDraftChange(coalescingToken: "playback-speed")
+    }
+
     func setTrimStart(_ value: TimeInterval) {
         let maxStart = max(0, min(duration - minimumTrimDuration, trimEnd - minimumTrimDuration))
         trimStart = min(max(value, 0), maxStart)
@@ -521,7 +546,7 @@ public final class LuxelEditorModel {
             playbackRequested = false
         } else {
             seekPlaybackIntoTrimRangeIfNeeded()
-            player.play()
+            player.rate = Float(playbackSpeed.value)
             playbackRequested = true
         }
     }
@@ -1044,6 +1069,7 @@ public final class LuxelEditorModel {
             outputWidth: outputWidth,
             outputHeight: outputHeight,
             frameRate: frameRate,
+            playbackSpeed: playbackSpeed,
             shouldMute: shouldMute,
             shouldCrop: shouldCrop,
             quality: quality
@@ -1063,6 +1089,8 @@ public final class LuxelEditorModel {
         outputWidth = state.outputWidth
         outputHeight = state.outputHeight
         frameRate = min(max(state.frameRate, 1), maximumFrameRate)
+        playbackSpeed = state.playbackSpeed
+        applyPlaybackRateIfNeeded()
         quality = state.quality.isAvailable(for: format)
             ? state.quality
             : ExportQuality.defaultQuality(for: format)
@@ -1097,7 +1125,8 @@ public final class LuxelEditorModel {
             frameRate: FrameRate(frameRate),
             shouldMute: shouldMute,
             shouldCrop: shouldCrop,
-            quality: quality
+            quality: quality,
+            speed: playbackSpeed
         )
     }
 
@@ -1110,8 +1139,17 @@ public final class LuxelEditorModel {
             timeRange: TimeRange(start: trimStart, end: trimEnd),
             shouldMute: shouldMute,
             shouldCrop: shouldCrop,
-            quality: quality
+            quality: quality,
+            speed: playbackSpeed
         )
+    }
+
+    private func applyPlaybackRateIfNeeded() {
+        guard playbackRequested else {
+            return
+        }
+
+        player.rate = Float(playbackSpeed.value)
     }
 
     private func errorMessage(_ error: Error) -> String {
@@ -1130,6 +1168,7 @@ private struct EditorDraftState: Equatable, Sendable {
         outputWidth: 1280,
         outputHeight: 720,
         frameRate: 30,
+        playbackSpeed: .normal,
         shouldMute: false,
         shouldCrop: true,
         quality: .balanced
@@ -1143,6 +1182,7 @@ private struct EditorDraftState: Equatable, Sendable {
     let outputWidth: Int
     let outputHeight: Int
     let frameRate: Int
+    let playbackSpeed: PlaybackSpeed
     let shouldMute: Bool
     let shouldCrop: Bool
     let quality: ExportQuality
@@ -1156,6 +1196,7 @@ struct ExportEstimateTaskID: Equatable, Hashable {
     let outputWidth: Int
     let outputHeight: Int
     let frameRate: Int
+    let playbackSpeed: Double
     let quality: ExportQuality
     let shouldMute: Bool
     let shouldCrop: Bool

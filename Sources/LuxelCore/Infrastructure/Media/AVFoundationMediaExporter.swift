@@ -15,27 +15,43 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         let asset = AVURLAsset(url: plan.inputFileURL)
         let sourceVideoTrack = try await firstVideoTrack(in: asset)
         let composition = AVMutableComposition()
-        let compositionTimeRange = CMTimeRange(start: .zero, duration: plan.timeRange.duration)
+        let sourceCompositionTimeRange = CMTimeRange(start: .zero, duration: plan.timeRange.duration)
+        let outputDuration = CMTime(seconds: request.outputDuration, preferredTimescale: 60_000)
+        let outputCompositionTimeRange = CMTimeRange(start: .zero, duration: outputDuration)
         let compositionVideoTrack = try addVideoTrack(
             to: composition,
             from: sourceVideoTrack,
             sourceTimeRange: plan.timeRange
         )
+        let compositionAudioTracks: [AVMutableCompositionTrack]
 
         if !plan.shouldMute {
-            try await addAudioTracks(to: composition, from: asset, sourceTimeRange: plan.timeRange)
+            compositionAudioTracks = try await addAudioTracks(
+                to: composition,
+                from: asset,
+                sourceTimeRange: plan.timeRange
+            )
+        } else {
+            compositionAudioTracks = []
+        }
+
+        if request.speed != .normal {
+            composition.scaleTimeRange(sourceCompositionTimeRange, toDuration: outputDuration)
         }
 
         let exportSession = try makeExportSession(for: composition, plan: plan)
         exportSession.videoComposition = try await makeVideoComposition(
             sourceVideoTrack: sourceVideoTrack,
             compositionVideoTrack: compositionVideoTrack,
-            timeRange: compositionTimeRange,
+            timeRange: outputCompositionTimeRange,
             outputPixelSize: plan.outputPixelSize,
             frameRate: request.frameRate,
             shouldCrop: request.shouldCrop
         )
-        exportSession.timeRange = compositionTimeRange
+        exportSession.timeRange = outputCompositionTimeRange
+        exportSession.audioMix = request.speed == .normal
+            ? nil
+            : makeAudioMix(for: compositionAudioTracks)
         exportSession.shouldOptimizeForNetworkUse = true
 
         try? FileManager.default.removeItem(at: plan.outputFileURL)
@@ -83,7 +99,9 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         to composition: AVMutableComposition,
         from asset: AVURLAsset,
         sourceTimeRange: CMTimeRange
-    ) async throws {
+    ) async throws -> [AVMutableCompositionTrack] {
+        var audioTracks: [AVMutableCompositionTrack] = []
+
         for sourceAudioTrack in try await asset.loadTracks(withMediaType: .audio) {
             guard let audioTrack = composition.addMutableTrack(
                 withMediaType: .audio,
@@ -93,7 +111,24 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
             }
 
             try audioTrack.insertTimeRange(sourceTimeRange, of: sourceAudioTrack, at: .zero)
+            audioTracks.append(audioTrack)
         }
+
+        return audioTracks
+    }
+
+    private func makeAudioMix(for audioTracks: [AVMutableCompositionTrack]) -> AVAudioMix? {
+        guard !audioTracks.isEmpty else {
+            return nil
+        }
+
+        let audioMix = AVMutableAudioMix()
+        audioMix.inputParameters = audioTracks.map { audioTrack in
+            let parameters = AVMutableAudioMixInputParameters(track: audioTrack)
+            parameters.audioTimePitchAlgorithm = .timeDomain
+            return parameters
+        }
+        return audioMix
     }
 
     private func makeExportSession(

@@ -48,7 +48,9 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         }
 
         let outputPixelSize = try request.outputPixelSize
-        let totalFrameCount = frameCount(for: request)
+        let asset = AVURLAsset(url: request.inputFileURL)
+        let schedule = await animatedFrameSchedule(for: request, asset: asset)
+        let totalFrameCount = schedule.frameTimes.count
         let key = SampledAnimatedSizeEstimateCacheKey(
             inputFileURL: request.inputFileURL.standardizedFileURL,
             format: request.format,
@@ -57,6 +59,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             framesPerSecond: request.frameRate.framesPerSecond,
             trimStart: request.timeRange.start,
             trimEnd: request.timeRange.end,
+            speed: request.speed.value,
             shouldCrop: request.shouldCrop,
             quality: request.resolvedQuality
         )
@@ -68,7 +71,9 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         let estimate = try await estimateUncached(
             request,
             outputPixelSize: outputPixelSize,
-            totalFrameCount: totalFrameCount
+            totalFrameCount: totalFrameCount,
+            schedule: schedule,
+            asset: asset
         )
         await cache.store(estimate, for: key)
         return estimate
@@ -77,9 +82,10 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
     private func estimateUncached(
         _ request: ExportRequest,
         outputPixelSize: PixelSize,
-        totalFrameCount: Int
+        totalFrameCount: Int,
+        schedule: AnimatedFrameSchedule,
+        asset: AVURLAsset
     ) async throws -> ExportEstimate {
-        let asset = AVURLAsset(url: request.inputFileURL)
         let imageGenerator = AVAssetImageGenerator(asset: asset)
         imageGenerator.appliesPreferredTrackTransform = true
         imageGenerator.requestedTimeToleranceBefore = .zero
@@ -98,13 +104,14 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
                 atFrameIndex: index,
                 request: request,
                 outputPixelSize: outputPixelSize,
+                schedule: schedule,
                 imageGenerator: imageGenerator
             )
             sampleFrames.append(frame)
             sampleByteCounts.append(try encodedByteCount(
                 frames: [frame],
                 format: request.format,
-                frameDelay: frameDelay(for: request)
+                frameDelay: schedule.frameDelay
             ))
         }
 
@@ -112,7 +119,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             let bytes = try encodedByteCount(
                 frames: sampleFrames,
                 format: request.format,
-                frameDelay: frameDelay(for: request)
+                frameDelay: schedule.frameDelay
             )
             return try ExportEstimate(bytes: Int64(bytes), confidence: .sampled)
         }
@@ -121,6 +128,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             request: request,
             outputPixelSize: outputPixelSize,
             totalFrameCount: totalFrameCount,
+            schedule: schedule,
             imageGenerator: imageGenerator
         )
         let model = try SampledAnimatedEstimateModel(
@@ -136,6 +144,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         request: ExportRequest,
         outputPixelSize: PixelSize,
         totalFrameCount: Int,
+        schedule: AnimatedFrameSchedule,
         imageGenerator: AVAssetImageGenerator
     ) async throws -> [SampledAnimatedAdjacentPairSize] {
         let pairStartIndices = adjacentPairStartIndices(totalFrameCount: totalFrameCount)
@@ -147,15 +156,17 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
                 atFrameIndex: startIndex,
                 request: request,
                 outputPixelSize: outputPixelSize,
+                schedule: schedule,
                 imageGenerator: imageGenerator
             )
             let secondFrame = try await renderedFrame(
                 atFrameIndex: startIndex + 1,
                 request: request,
                 outputPixelSize: outputPixelSize,
+                schedule: schedule,
                 imageGenerator: imageGenerator
             )
-            let frameDelay = frameDelay(for: request)
+            let frameDelay = schedule.frameDelay
             let firstBytes = try encodedByteCount(
                 frames: [firstFrame],
                 format: request.format,
@@ -185,10 +196,11 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         atFrameIndex index: Int,
         request: ExportRequest,
         outputPixelSize: PixelSize,
+        schedule: AnimatedFrameSchedule,
         imageGenerator: AVAssetImageGenerator
     ) async throws -> CGImage {
         let sourceFrame = try await imageGenerator.image(
-            at: frameTime(atFrameIndex: index, for: request)
+            at: schedule.frameTimes[index]
         ).image
         return try render(
             sourceFrame,
@@ -233,10 +245,6 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         return data.length
     }
 
-    private func frameCount(for request: ExportRequest) -> Int {
-        max(1, Int((request.timeRange.duration * Double(request.frameRate.framesPerSecond)).rounded()))
-    }
-
     private func sampleFrameIndices(totalFrameCount: Int, requestedSampleCount: Int) -> [Int] {
         let sampleCount = min(max(1, requestedSampleCount), totalFrameCount)
         guard sampleCount > 1 else {
@@ -255,17 +263,6 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
 
         let middleStart = max(0, min(totalFrameCount - 2, (totalFrameCount / 2) - 1))
         return Array(Set([0, middleStart])).sorted()
-    }
-
-    private func frameTime(atFrameIndex index: Int, for request: ExportRequest) -> CMTime {
-        CMTime(
-            seconds: request.timeRange.start + (Double(index) / Double(request.frameRate.framesPerSecond)),
-            preferredTimescale: 600
-        )
-    }
-
-    private func frameDelay(for request: ExportRequest) -> TimeInterval {
-        1 / Double(request.frameRate.framesPerSecond)
     }
 
     private func typeIdentifier(for format: ExportFormat) throws -> String {
@@ -441,6 +438,7 @@ private struct SampledAnimatedSizeEstimateCacheKey: Hashable, Sendable {
     let framesPerSecond: Int
     let trimStart: TimeInterval
     let trimEnd: TimeInterval
+    let speed: Double
     let shouldCrop: Bool
     let quality: ExportQuality
 }
