@@ -17,6 +17,7 @@ public final class LuxelEditorModel {
         case exporting
         case savingOriginal
         case exported(URL)
+        case exportedBatch([URL])
         case saved(URL)
         case canceled
         case failed(String)
@@ -28,6 +29,7 @@ public final class LuxelEditorModel {
     var source: SourceMedia?
     var status: Status = .empty
     var format: ExportFormat = .mp4
+    var selectedFormats: [ExportFormat] = [.mp4]
     var trimStart: TimeInterval = 0
     var trimEnd: TimeInterval = 1
     var sizePreset: EditorSizePreset? = .original
@@ -39,6 +41,7 @@ public final class LuxelEditorModel {
     var quality: ExportQuality = .balanced
     var outputDirectory = LuxelEditorModel.defaultRecordingsDirectory
     var exportProgress: ExportProgressSnapshot?
+    var exportJobs: [ExportJobSnapshot] = []
     var exportEstimate: ExportEstimate?
     var isEstimatingExportSize = false
 
@@ -51,6 +54,8 @@ public final class LuxelEditorModel {
     @ObservationIgnored private var playbackRequested = false
     @ObservationIgnored private var playbackTimeObserver: PlaybackTimeObserver?
     @ObservationIgnored private var exportTask: Task<Void, Never>?
+    @ObservationIgnored private var exportMemoryByFormat: [ExportFormat: ExportMemory]
+    @ObservationIgnored private var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
 
     public init(
         metadataReader: any MediaMetadataReader = AVFoundationMediaMetadataReader(),
@@ -59,7 +64,7 @@ public final class LuxelEditorModel {
             fileSystem: LocalFileSystem()
         ),
         exportSizeEstimationService: ExportSizeEstimationService = ExportSizeEstimationService(
-            estimator: BitrateModelSizeEstimator()
+            estimator: NativeExportSizeEstimator()
         ),
         passthroughExportService: PassthroughExportService = PassthroughExportService(
             fileSystem: LocalFileSystem(),
@@ -67,13 +72,17 @@ public final class LuxelEditorModel {
         ),
         fileWorkflowService: ExportedFileWorkflowService = ExportedFileWorkflowService(
             client: AppKitExportedFileActionClient()
-        )
+        ),
+        exportMemory: [ExportFormat: ExportMemory] = [:],
+        onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
     ) {
         self.metadataReader = metadataReader
         self.exportService = exportService
         self.exportSizeEstimationService = exportSizeEstimationService
         self.passthroughExportService = passthroughExportService
         self.fileWorkflowService = fileWorkflowService
+        self.exportMemoryByFormat = exportMemory
+        self.onExportMemoryChange = onExportMemoryChange
         player.actionAtItemEnd = .none
         installPlaybackLoopObserver()
     }
@@ -104,6 +113,14 @@ public final class LuxelEditorModel {
 
     var canChooseQuality: Bool {
         availableQualities.count > 1
+    }
+
+    var selectedFormatSummary: String {
+        if selectedFormats.count == 1 {
+            return selectedFormats[0].prettyName
+        }
+
+        return "\(selectedFormats.count) Formats"
     }
 
     var includesAudio: Bool {
@@ -138,7 +155,7 @@ public final class LuxelEditorModel {
         switch status {
         case .exporting, .savingOriginal:
             exportProgressTitle
-        case .exported, .saved:
+        case .exported, .exportedBatch, .saved:
             "Export Complete"
         case .canceled:
             "Export Canceled"
@@ -153,6 +170,8 @@ public final class LuxelEditorModel {
         switch status {
         case .exported(let url), .saved(let url):
             url.lastPathComponent
+        case .exportedBatch(let urls):
+            "\(urls.count) files exported"
         case .savingOriginal:
             "Copying the source recording without re-encoding."
         case .failed(let message):
@@ -168,7 +187,7 @@ public final class LuxelEditorModel {
         switch status {
         case .exporting, .savingOriginal:
             "arrow.triangle.2.circlepath"
-        case .exported, .saved:
+        case .exported, .exportedBatch, .saved:
             "checkmark.circle"
         case .canceled:
             "xmark.circle"
@@ -230,6 +249,10 @@ public final class LuxelEditorModel {
             return url
         }
 
+        if case .exportedBatch(let urls) = status {
+            return urls.first
+        }
+
         if case .saved(let url) = status {
             return url
         }
@@ -260,11 +283,13 @@ public final class LuxelEditorModel {
         case .ready:
             sourceSummary
         case .exporting:
-            "Exporting \(format.prettyName)"
+            "Exporting \(selectedFormatSummary)"
         case .savingOriginal:
             "Saving original"
         case .exported(let url):
             "Exported \(url.lastPathComponent)"
+        case .exportedBatch(let urls):
+            "Exported \(urls.count) files"
         case .saved(let url):
             "Saved \(url.lastPathComponent)"
         case .canceled:
@@ -278,6 +303,7 @@ public final class LuxelEditorModel {
         self.outputDirectory = outputDirectory
         status = .loading(fileURL.lastPathComponent)
         exportProgress = nil
+        exportJobs = []
         exportEstimate = nil
         isEstimatingExportSize = false
         player.pause()
@@ -290,6 +316,7 @@ public final class LuxelEditorModel {
             trimEnd = media.duration
             setSizePreset(.original)
             setFrameRate(media.nominalFrameRate.framesPerSecond)
+            applyExportMemory(for: format)
             shouldMute = !media.hasAudio || format.dropsAudio
             player.replaceCurrentItem(with: AVPlayerItem(url: fileURL))
             status = .ready
@@ -298,6 +325,15 @@ public final class LuxelEditorModel {
             player.replaceCurrentItem(with: nil)
             status = .failed(errorMessage(error))
         }
+    }
+
+    public func configureExportMemory(
+        _ memory: [ExportFormat: ExportMemory],
+        onChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
+    ) {
+        exportMemoryByFormat = memory
+        onExportMemoryChange = onChange
+        applyExportMemory(for: format)
     }
 
     public func reportImportFailure(_ error: Error) {
@@ -311,9 +347,34 @@ public final class LuxelEditorModel {
 
     func setFormat(_ nextFormat: ExportFormat) {
         format = nextFormat
+        selectedFormats = [nextFormat]
+        applyExportMemory(for: nextFormat)
 
-        if !quality.isAvailable(for: nextFormat) {
-            quality = ExportQuality.defaultQuality(for: nextFormat)
+        if !canIncludeAudio {
+            shouldMute = true
+        }
+
+        exportProgress = nil
+    }
+
+    func setFormatSelection(_ nextFormat: ExportFormat, isSelected: Bool) {
+        if isSelected {
+            if !selectedFormats.contains(nextFormat) {
+                selectedFormats.append(nextFormat)
+                selectedFormats = Self.supportedFormats.filter(selectedFormats.contains)
+            }
+            format = nextFormat
+            applyExportMemory(for: nextFormat)
+        } else {
+            guard selectedFormats.count > 1 else {
+                return
+            }
+
+            selectedFormats.removeAll { $0 == nextFormat }
+            if format == nextFormat, let replacement = selectedFormats.first {
+                format = replacement
+                applyExportMemory(for: replacement)
+            }
         }
 
         if !canIncludeAudio {
@@ -437,6 +498,8 @@ public final class LuxelEditorModel {
         }
 
         status = .exporting
+        let selectedFormats = selectedFormats
+        exportJobs = makeExportJobs(for: selectedFormats)
         exportProgress = .preparing(format: format)
 
         do {
@@ -445,29 +508,59 @@ public final class LuxelEditorModel {
                 withIntermediateDirectories: true
             )
 
-            let draft = try makeExportDraft(source: source)
+            let exportRequests = try selectedFormats.map { selectedFormat in
+                try makeExportRequest(source: source, format: selectedFormat)
+            }
+            let exportMemoryByFormat = try Dictionary(
+                uniqueKeysWithValues: selectedFormats.map { selectedFormat in
+                    (selectedFormat, try currentExportMemory(for: selectedFormat))
+                }
+            )
             let exportService = exportService
             let outputDirectory = outputDirectory
             let defaultName = defaultExportName(for: source.fileURL)
 
             exportTask = Task { [weak self] in
                 do {
-                    let exported = try await exportService.export(
-                        draft,
-                        to: outputDirectory,
-                        defaultName: defaultName
-                    ) { snapshot in
-                        await MainActor.run {
-                            self?.exportProgress = snapshot
+                    if exportRequests.count == 1, let request = exportRequests.first {
+                        let exported = try await exportService.export(
+                            request,
+                            to: outputDirectory,
+                            defaultName: defaultName
+                        ) { snapshot in
+                            await MainActor.run {
+                                self?.handleSingleExportProgress(snapshot)
+                            }
                         }
-                    }
 
-                    await MainActor.run {
-                        self?.finishExport(with: exported)
+                        await MainActor.run {
+                            self?.finishExport(
+                                with: exported,
+                                remembering: exportMemoryByFormat[exported.format]
+                            )
+                        }
+                    } else {
+                        let batch = try ExportBatch(exportRequests)
+                        let exported = try await exportService.runBatch(
+                            batch,
+                            to: outputDirectory,
+                            defaultName: defaultName
+                        ) { snapshot in
+                            await MainActor.run {
+                                self?.handleBatchExportProgress(snapshot)
+                            }
+                        }
+
+                        await MainActor.run {
+                            self?.finishBatchExport(
+                                with: exported,
+                                remembering: exportMemoryByFormat
+                            )
+                        }
                     }
                 } catch is CancellationError {
                     await MainActor.run {
-                        self?.finishCanceledExport(format: draft.format)
+                        self?.finishCanceledExport()
                     }
                 } catch {
                     await MainActor.run {
@@ -618,21 +711,70 @@ public final class LuxelEditorModel {
         return moviesDirectory.appending(path: "Luxel")
     }
 
-    private func finishExport(with exported: ExportedMedia) {
+    private func handleSingleExportProgress(_ snapshot: ExportProgressSnapshot) {
+        exportProgress = snapshot
+        updateExportJob(id: 0, snapshot: snapshot)
+    }
+
+    private func handleBatchExportProgress(_ batchSnapshot: ExportBatchProgressSnapshot) {
+        updateExportJob(id: batchSnapshot.jobID, snapshot: batchSnapshot.snapshot)
+
+        let jobCount = max(exportJobs.count, 1)
+        let progress = (Double(batchSnapshot.jobID) + batchSnapshot.snapshot.progress) / Double(jobCount)
+        exportProgress = ExportProgressSnapshot(
+            phase: batchSnapshot.snapshot.phase,
+            actionTitle: batchSnapshot.snapshot.actionTitle,
+            progress: progress
+        )
+    }
+
+    private func finishExport(with exported: ExportedMedia, remembering exportMemory: ExportMemory?) {
         exportTask = nil
+        if let exportMemory {
+            rememberExportMemory(exportMemory, for: exported.format)
+        }
+        updateExportJob(id: 0, exported: exported)
         exportProgress = .completed(format: exported.format)
         status = .exported(exported.fileURL)
+    }
+
+    private func finishBatchExport(
+        with exportedMedia: [ExportedMedia],
+        remembering exportMemoryByFormat: [ExportFormat: ExportMemory]
+    ) {
+        exportTask = nil
+
+        for exported in exportedMedia {
+            if let exportMemory = exportMemoryByFormat[exported.format] {
+                rememberExportMemory(exportMemory, for: exported.format)
+            }
+            updateExportJob(format: exported.format, exported: exported)
+        }
+
+        exportProgress = ExportProgressSnapshot(
+            phase: .completed,
+            actionTitle: "Exported \(exportedMedia.count) files",
+            progress: 1
+        )
+        status = .exportedBatch(exportedMedia.map(\.fileURL))
     }
 
     private func finishSavedOriginal(_ fileURL: URL) {
         exportTask = nil
         exportProgress = nil
+        exportJobs = []
         status = .saved(fileURL)
     }
 
-    private func finishCanceledExport(format: ExportFormat) {
+    private func finishCanceledExport() {
         exportTask = nil
-        exportProgress = .canceled(format: format)
+        if exportProgress?.phase != .canceled {
+            exportProgress = ExportProgressSnapshot(
+                phase: .canceled,
+                actionTitle: "Canceled Export",
+                progress: 1
+            )
+        }
         status = .canceled
     }
 
@@ -640,6 +782,49 @@ public final class LuxelEditorModel {
         exportTask = nil
         exportProgress = nil
         status = .failed(errorMessage(error))
+    }
+
+    private func makeExportJobs(for formats: [ExportFormat]) -> [ExportJobSnapshot] {
+        formats.enumerated().map { index, format in
+            ExportJobSnapshot(id: index, format: format)
+        }
+    }
+
+    private func updateExportJob(id: Int, snapshot: ExportProgressSnapshot) {
+        guard let index = exportJobs.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        exportJobs[index].progress = snapshot
+    }
+
+    private func updateExportJob(id: Int, exported: ExportedMedia) {
+        guard let index = exportJobs.firstIndex(where: { $0.id == id }) else {
+            return
+        }
+
+        exportJobs[index].fileURL = exported.fileURL
+        exportJobs[index].fileSizeBytes = fileSizeBytes(at: exported.fileURL)
+        exportJobs[index].progress = .completed(format: exported.format)
+    }
+
+    private func updateExportJob(format: ExportFormat, exported: ExportedMedia) {
+        guard let index = exportJobs.firstIndex(where: { $0.format == format }) else {
+            return
+        }
+
+        exportJobs[index].fileURL = exported.fileURL
+        exportJobs[index].fileSizeBytes = fileSizeBytes(at: exported.fileURL)
+        exportJobs[index].progress = .completed(format: exported.format)
+    }
+
+    private func fileSizeBytes(at fileURL: URL) -> Int64? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+              let size = attributes[.size] as? NSNumber else {
+            return nil
+        }
+
+        return size.int64Value
     }
 
     private func installPlaybackLoopObserver() {
@@ -685,6 +870,14 @@ public final class LuxelEditorModel {
         return EditorPlaybackLoop(trimRange: trimRange)
     }
 
+    func revealExportJob(_ job: ExportJobSnapshot) {
+        guard let fileURL = job.fileURL else {
+            return
+        }
+
+        fileWorkflowService.revealInFinder(fileURL)
+    }
+
     private var isRecoverableExportFailure: Bool {
         if case .failed = status {
             return hasSource
@@ -708,6 +901,34 @@ public final class LuxelEditorModel {
         }
     }
 
+    private func applyExportMemory(for format: ExportFormat) {
+        guard let memory = exportMemoryByFormat[format] else {
+            if !quality.isAvailable(for: format) {
+                quality = ExportQuality.defaultQuality(for: format)
+            }
+            return
+        }
+
+        setSizePreset(memory.sizePreset)
+        setFrameRate(memory.frameRate.framesPerSecond)
+        quality = memory.quality.isAvailable(for: format)
+            ? memory.quality
+            : ExportQuality.defaultQuality(for: format)
+    }
+
+    private func currentExportMemory(for format: ExportFormat) throws -> ExportMemory {
+        ExportMemory(
+            sizePreset: sizePreset ?? .original,
+            frameRate: try FrameRate(frameRate),
+            quality: quality.isAvailable(for: format) ? quality : ExportQuality.defaultQuality(for: format)
+        )
+    }
+
+    private func rememberExportMemory(_ memory: ExportMemory, for format: ExportFormat) {
+        exportMemoryByFormat[format] = memory
+        onExportMemoryChange?(format, memory)
+    }
+
     private func makeExportDraft(source: SourceMedia) throws -> EditorExportDraft {
         try EditorExportDraft(
             source: source,
@@ -715,6 +936,19 @@ public final class LuxelEditorModel {
             trimRange: TimeRange(start: trimStart, end: trimEnd),
             pixelSize: PixelSize(width: outputWidth, height: outputHeight),
             frameRate: FrameRate(frameRate),
+            shouldMute: shouldMute,
+            shouldCrop: shouldCrop,
+            quality: quality
+        )
+    }
+
+    private func makeExportRequest(source: SourceMedia, format: ExportFormat) throws -> ExportRequest {
+        try ExportRequest(
+            inputFileURL: source.fileURL,
+            format: format,
+            pixelSize: PixelSize(width: outputWidth, height: outputHeight),
+            frameRate: FrameRate(frameRate),
+            timeRange: TimeRange(start: trimStart, end: trimEnd),
             shouldMute: shouldMute,
             shouldCrop: shouldCrop,
             quality: quality
@@ -738,6 +972,39 @@ struct ExportEstimateTaskID: Equatable, Hashable {
     let quality: ExportQuality
     let shouldMute: Bool
     let shouldCrop: Bool
+}
+
+struct ExportJobSnapshot: Identifiable, Equatable {
+    let id: Int
+    let format: ExportFormat
+    var progress: ExportProgressSnapshot?
+    var fileURL: URL?
+    var fileSizeBytes: Int64?
+
+    var progressValue: Double {
+        progress?.progress ?? 0
+    }
+
+    var statusSummary: String {
+        if let fileSizeBytes {
+            return ByteCountFormatter.string(fromByteCount: fileSizeBytes, countStyle: .file)
+        }
+
+        guard let progress else {
+            return "Queued"
+        }
+
+        switch progress.phase {
+        case .preparing:
+            return "Preparing"
+        case .exporting:
+            return "\(Int((progress.progress * 100).rounded()))%"
+        case .completed:
+            return "Complete"
+        case .canceled:
+            return "Canceled"
+        }
+    }
 }
 
 private final class PlaybackTimeObserver {

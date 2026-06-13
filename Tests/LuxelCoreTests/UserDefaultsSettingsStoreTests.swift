@@ -60,7 +60,19 @@ struct UserDefaultsSettingsStoreTests {
             exportPresets: [preset],
             quickExportPresetID: presetID,
             rememberLastCapture: false,
-            lastCaptureMemory: lastCaptureMemory
+            lastCaptureMemory: lastCaptureMemory,
+            perFormatExportMemory: [
+                .mp4: try ExportMemory(
+                    sizePreset: .percent50,
+                    frameRate: FrameRate(24),
+                    quality: .high
+                ),
+                .apng: try ExportMemory(
+                    sizePreset: .percent75,
+                    frameRate: FrameRate(12),
+                    quality: .lossless
+                )
+            ]
         )
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
 
@@ -114,6 +126,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.quickExportPresetID == ExportPreset.quickGIFID)
         #expect(settings.rememberLastCapture)
         #expect(settings.lastCaptureMemory == nil)
+        #expect(settings.perFormatExportMemory.isEmpty)
     }
 
     @Test("load preserves explicit nil quick preset")

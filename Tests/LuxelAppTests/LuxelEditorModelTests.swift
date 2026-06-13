@@ -122,6 +122,80 @@ struct LuxelEditorModelTests {
         #expect(model.quality == .lossless)
     }
 
+    @Test("export memory seeds controls when opening and changing formats")
+    func exportMemorySeedsControlsWhenOpeningAndChangingFormats() async throws {
+        let memory: [ExportFormat: ExportMemory] = [
+            .mp4: try ExportMemory(
+                sizePreset: .percent50,
+                frameRate: FrameRate(24),
+                quality: .high
+            ),
+            .gif: try ExportMemory(
+                sizePreset: .percent25,
+                frameRate: FrameRate(12),
+                quality: .compact
+            ),
+            .apng: try ExportMemory(
+                sizePreset: .percent75,
+                frameRate: FrameRate(120),
+                quality: .balanced
+            )
+        ]
+        let model = makeModel(exportMemory: memory)
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(model.sizePreset == .percent50)
+        #expect(model.outputWidth == 640)
+        #expect(model.outputHeight == 360)
+        #expect(model.frameRate == 24)
+        #expect(model.quality == .high)
+
+        model.setFormat(.gif)
+
+        #expect(model.sizePreset == .percent25)
+        #expect(model.outputWidth == 320)
+        #expect(model.outputHeight == 180)
+        #expect(model.frameRate == 12)
+        #expect(model.quality == .compact)
+
+        model.setFormat(.apng)
+
+        #expect(model.sizePreset == .percent75)
+        #expect(model.outputWidth == 960)
+        #expect(model.outputHeight == 540)
+        #expect(model.frameRate == 30)
+        #expect(model.quality == .lossless)
+    }
+
+    @Test("successful export emits format memory")
+    func successfulExportEmitsFormatMemory() async throws {
+        var captured: [(ExportFormat, ExportMemory)] = []
+        let model = makeModel { format, memory in
+            captured.append((format, memory))
+        }
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormat(.hevc)
+        model.setSizePreset(.percent50)
+        model.setFrameRate(24)
+        model.setQuality(.high)
+        model.startExport()
+
+        while model.isExporting {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let expectedMemory = try ExportMemory(
+            sizePreset: .percent50,
+            frameRate: FrameRate(24),
+            quality: .high
+        )
+        #expect(captured.count == 1)
+        #expect(captured.first?.0 == .hevc)
+        #expect(captured.first?.1 == expectedMemory)
+    }
+
     @Test("unsupported estimate clears stale value")
     func unsupportedEstimateClearsStaleValue() async throws {
         let model = makeModel(exportSizeEstimator: StubFailingExportSizeEstimator())
@@ -137,7 +211,9 @@ struct LuxelEditorModelTests {
     private func makeModel(
         exporter: any MediaExporter = StubMediaExporter(),
         exportSizeEstimator: any ExportSizeEstimator = StubExportSizeEstimator(),
-        fileSystem: any FileSystem = StubFileSystem()
+        fileSystem: any FileSystem = StubFileSystem(),
+        exportMemory: [ExportFormat: ExportMemory] = [:],
+        onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
     ) -> LuxelEditorModel {
         LuxelEditorModel(
             metadataReader: StubMetadataReader(),
@@ -154,7 +230,9 @@ struct LuxelEditorModelTests {
             ),
             fileWorkflowService: ExportedFileWorkflowService(
                 client: StubExportedFileActionClient()
-            )
+            ),
+            exportMemory: exportMemory,
+            onExportMemoryChange: onExportMemoryChange
         )
     }
 

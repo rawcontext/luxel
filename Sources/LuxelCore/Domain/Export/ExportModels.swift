@@ -143,6 +143,22 @@ public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, S
     }
 }
 
+public struct ExportMemory: Codable, Equatable, Sendable {
+    public var sizePreset: EditorSizePreset
+    public var frameRate: FrameRate
+    public var quality: ExportQuality
+
+    public init(
+        sizePreset: EditorSizePreset,
+        frameRate: FrameRate,
+        quality: ExportQuality
+    ) {
+        self.sizePreset = sizePreset
+        self.frameRate = frameRate
+        self.quality = quality
+    }
+}
+
 public struct PixelSize: Codable, Equatable, Sendable {
     public let width: Int
     public let height: Int

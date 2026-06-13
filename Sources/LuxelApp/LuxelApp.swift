@@ -373,6 +373,7 @@ private struct LuxelMenu: View {
         NSApplication.shared.activate(ignoringOtherApps: true)
 
         Task {
+            model.configureEditor(editorModel)
             await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
         }
     }
@@ -586,6 +587,7 @@ private struct LuxelSettingsView: View {
         NSApplication.shared.activate(ignoringOtherApps: true)
 
         Task {
+            model.configureEditor(editorModel)
             await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
         }
     }
@@ -1023,6 +1025,12 @@ private final class LuxelMenuModel {
         try? settingsStore.save(settings)
     }
 
+    func configureEditor(_ editorModel: LuxelEditorModel) {
+        editorModel.configureExportMemory(settings.perFormatExportMemory) { [weak self] format, memory in
+            self?.rememberExportMemory(memory, for: format)
+        }
+    }
+
     func chooseRecordingsDirectory() {
         guard let directory = fileWorkflowService.chooseOutputDirectory(
             currentDirectory: settings.recordingsDirectory
@@ -1104,6 +1112,11 @@ private final class LuxelMenuModel {
         }
 
         return resolution
+    }
+
+    private func rememberExportMemory(_ memory: ExportMemory, for format: ExportFormat) {
+        settings.perFormatExportMemory[format] = memory
+        saveSettings()
     }
 
     func refreshRecentRecordings() {

@@ -32,6 +32,7 @@ struct SettingsTests {
         #expect(settings.quickExportPresetID == ExportPreset.quickGIFID)
         #expect(settings.rememberLastCapture)
         #expect(settings.lastCaptureMemory == nil)
+        #expect(settings.perFormatExportMemory.isEmpty)
     }
 
     @Test("update channels expose settings labels")
