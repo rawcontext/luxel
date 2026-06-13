@@ -16,7 +16,7 @@ public struct BitrateModelSizeEstimator: ExportSizeEstimator, Sendable {
         let pixelRate = Double(outputPixelSize.width * outputPixelSize.height * request.frameRate.framesPerSecond)
         let videoBitsPerSecond = pixelRate * videoBitsPerPixel
         let audioBits = request.outputShouldMute ? 0 : Double(audioBitsPerSecond)
-        let totalBits = (videoBitsPerSecond + audioBits) * request.timeRange.duration
+        let totalBits = (videoBitsPerSecond + audioBits) * request.outputDuration
         let bytes = Int64((totalBits / 8).rounded(.up))
 
         return try ExportEstimate(bytes: bytes, confidence: .modeled)

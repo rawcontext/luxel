@@ -40,6 +40,25 @@ struct BitrateModelSizeEstimatorTests {
         #expect(estimate == expected)
     }
 
+    @Test("uses playback-adjusted output duration")
+    func usesPlaybackAdjustedOutputDuration() async throws {
+        let request = try makeRequest(
+            format: .mp4,
+            width: 100,
+            height: 200,
+            frameRate: 10,
+            timeRange: TimeRange(start: 1, end: 5),
+            quality: .balanced,
+            shouldMute: false,
+            speed: PlaybackSpeed(2)
+        )
+
+        let estimate = try await BitrateModelSizeEstimator().estimate(request)
+        let expected = try ExportEstimate(bytes: 38_000, confidence: .modeled)
+
+        #expect(estimate == expected)
+    }
+
     @Test("rounds video dimensions before estimating")
     func roundsVideoDimensionsBeforeEstimating() async throws {
         let request = try makeRequest(
@@ -85,7 +104,8 @@ struct BitrateModelSizeEstimatorTests {
             pixelSize: PixelSize(width: 320, height: 240),
             frameRate: FrameRate(24),
             shouldMute: true,
-            quality: .high
+            quality: .high,
+            speed: PlaybackSpeed(2)
         )
 
         let estimate = try await service.estimate(draft)
@@ -102,6 +122,7 @@ struct BitrateModelSizeEstimatorTests {
         #expect(captured?.frameRate == expectedFrameRate)
         #expect(captured?.outputShouldMute == true)
         #expect(captured?.quality == .high)
+        #expect(captured?.speed == (try PlaybackSpeed(2)))
     }
 
     private func makeRequest(
@@ -111,7 +132,8 @@ struct BitrateModelSizeEstimatorTests {
         frameRate: Int = 10,
         timeRange: TimeRange? = nil,
         quality: ExportQuality = .balanced,
-        shouldMute: Bool = false
+        shouldMute: Bool = false,
+        speed: PlaybackSpeed = .normal
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -121,7 +143,8 @@ struct BitrateModelSizeEstimatorTests {
             timeRange: timeRange ?? TimeRange(start: 0, end: 1),
             shouldMute: shouldMute,
             shouldCrop: false,
-            quality: quality
+            quality: quality,
+            speed: speed
         )
     }
 }

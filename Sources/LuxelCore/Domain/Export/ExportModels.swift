@@ -195,6 +195,24 @@ public struct FrameRate: Codable, Equatable, Sendable {
     }
 }
 
+public struct PlaybackSpeed: Codable, Equatable, Sendable {
+    public static let normal = try! PlaybackSpeed(1)
+
+    public let value: Double
+
+    public init(_ value: Double) throws {
+        guard value.isFinite, (0.1...10).contains(value) else {
+            throw ExportModelError.invalidPlaybackSpeed
+        }
+
+        self.value = value
+    }
+
+    public static func == (lhs: PlaybackSpeed, rhs: PlaybackSpeed) -> Bool {
+        abs(lhs.value - rhs.value) < 0.000_001
+    }
+}
+
 public struct TimeRange: Codable, Equatable, Sendable {
     public let start: TimeInterval
     public let end: TimeInterval
@@ -222,6 +240,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
     public let shouldMute: Bool
     public let shouldCrop: Bool
     public let quality: ExportQuality
+    public let speed: PlaybackSpeed
 
     public init(
         inputFileURL: URL,
@@ -231,7 +250,8 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         timeRange: TimeRange,
         shouldMute: Bool,
         shouldCrop: Bool,
-        quality: ExportQuality = .balanced
+        quality: ExportQuality = .balanced,
+        speed: PlaybackSpeed = .normal
     ) {
         self.inputFileURL = inputFileURL
         self.format = format
@@ -241,6 +261,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         self.shouldMute = shouldMute
         self.shouldCrop = shouldCrop
         self.quality = quality
+        self.speed = speed
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -252,6 +273,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         case shouldMute
         case shouldCrop
         case quality
+        case speed
     }
 
     public init(from decoder: any Decoder) throws {
@@ -266,6 +288,8 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
         quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
             ?? .balanced
+        speed = try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed)
+            ?? .normal
     }
 
     public var resolvedQuality: ExportQuality {
@@ -284,6 +308,10 @@ public struct ExportRequest: Codable, Equatable, Sendable {
 
     public var outputShouldMute: Bool {
         shouldMute || format.dropsAudio
+    }
+
+    public var outputDuration: TimeInterval {
+        timeRange.duration / speed.value
     }
 
     public func outputFileName(defaultName: String) -> String {
@@ -562,6 +590,7 @@ public struct ExportProgressSnapshot: Codable, Equatable, Sendable {
 public enum ExportModelError: Error, Equatable {
     case invalidPixelSize
     case invalidFrameRate
+    case invalidPlaybackSpeed
     case invalidTimeRange
     case invalidEstimateByteCount
     case emptyExportBatch

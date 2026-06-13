@@ -20,6 +20,7 @@ struct EditorModelTests {
         #expect(!request.shouldMute)
         #expect(!request.shouldCrop)
         #expect(request.quality == .balanced)
+        #expect(request.speed == .normal)
     }
 
     @Test("draft applies trim resize frame rate and mute overrides")
@@ -32,7 +33,8 @@ struct EditorModelTests {
             frameRate: FrameRate(12),
             shouldMute: true,
             shouldCrop: true,
-            quality: .high
+            quality: .high,
+            speed: PlaybackSpeed(2)
         )
 
         let request = try draft.exportRequest
@@ -47,10 +49,12 @@ struct EditorModelTests {
         #expect(request.outputShouldMute)
         #expect(request.shouldCrop)
         #expect(request.quality == .high)
+        #expect(request.speed == (try PlaybackSpeed(2)))
+        #expect(request.outputDuration == 2)
     }
 
-    @Test("draft decodes missing quality as balanced")
-    func draftDecodesMissingQualityAsBalanced() throws {
+    @Test("draft decodes missing quality and speed as defaults")
+    func draftDecodesMissingQualityAndSpeedAsDefaults() throws {
         let source = try makeSource()
         let encoder = JSONEncoder()
         let sourceData = try encoder.encode(source)
@@ -67,7 +71,9 @@ struct EditorModelTests {
         let draft = try JSONDecoder().decode(EditorExportDraft.self, from: data)
 
         #expect(draft.quality == .balanced)
+        #expect(draft.speed == .normal)
         #expect(try draft.exportRequest.quality == .balanced)
+        #expect(try draft.exportRequest.speed == .normal)
     }
 
     @Test("source media without audio mutes export request")

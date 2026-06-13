@@ -35,6 +35,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
     public let shouldMute: Bool
     public let shouldCrop: Bool
     public let quality: ExportQuality
+    public let speed: PlaybackSpeed
 
     public init(
         source: SourceMedia,
@@ -44,7 +45,8 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         frameRate: FrameRate? = nil,
         shouldMute: Bool = false,
         shouldCrop: Bool = false,
-        quality: ExportQuality = .balanced
+        quality: ExportQuality = .balanced,
+        speed: PlaybackSpeed = .normal
     ) {
         self.source = source
         self.format = format
@@ -54,6 +56,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         self.shouldMute = shouldMute
         self.shouldCrop = shouldCrop
         self.quality = quality
+        self.speed = speed
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -65,6 +68,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         case shouldMute
         case shouldCrop
         case quality
+        case speed
     }
 
     public init(from decoder: any Decoder) throws {
@@ -79,6 +83,8 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
         quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
             ?? .balanced
+        speed = try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed)
+            ?? .normal
     }
 
     public var exportRequest: ExportRequest {
@@ -91,7 +97,8 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
                 timeRange: trimRange ?? TimeRange(start: 0, end: source.duration),
                 shouldMute: shouldMute || !source.hasAudio,
                 shouldCrop: shouldCrop,
-                quality: quality
+                quality: quality,
+                speed: speed
             )
         }
     }

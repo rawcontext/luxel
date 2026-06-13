@@ -76,6 +76,7 @@ struct ExportModelTests {
 
         #expect(request.quality == .balanced)
         #expect(request.resolvedQuality == .balanced)
+        #expect(request.speed == .normal)
     }
 
     @Test("export request falls back from unavailable quality")
@@ -84,6 +85,32 @@ struct ExportModelTests {
 
         #expect(request.quality == .balanced)
         #expect(request.resolvedQuality == .lossless)
+    }
+
+    @Test("playback speed validates bounds and compares with tolerance")
+    func playbackSpeedValidatesBounds() throws {
+        #expect(try PlaybackSpeed(0.1).value == 0.1)
+        #expect(try PlaybackSpeed(10).value == 10)
+        #expect(try PlaybackSpeed(1.000_000_4) == .normal)
+
+        #expect(throws: ExportModelError.invalidPlaybackSpeed) {
+            _ = try PlaybackSpeed(0.09)
+        }
+        #expect(throws: ExportModelError.invalidPlaybackSpeed) {
+            _ = try PlaybackSpeed(10.01)
+        }
+        #expect(throws: ExportModelError.invalidPlaybackSpeed) {
+            _ = try PlaybackSpeed(.infinity)
+        }
+    }
+
+    @Test("export request derives output duration from playback speed")
+    func exportRequestOutputDurationUsesPlaybackSpeed() throws {
+        let slow = try makeRequest(format: .mp4, speed: PlaybackSpeed(0.5))
+        let fast = try makeRequest(format: .mp4, speed: PlaybackSpeed(2))
+
+        #expect(slow.outputDuration == 20)
+        #expect(fast.outputDuration == 5)
     }
 
     @Test("v1 apple-native formats exclude deferred native codec formats")
@@ -205,6 +232,9 @@ struct ExportModelTests {
         #expect(throws: ExportModelError.invalidFrameRate) {
             _ = try FrameRate(0)
         }
+        #expect(throws: ExportModelError.invalidPlaybackSpeed) {
+            _ = try PlaybackSpeed(0)
+        }
         #expect(throws: ExportModelError.invalidTimeRange) {
             _ = try TimeRange(start: 5, end: 5)
         }
@@ -218,7 +248,8 @@ struct ExportModelTests {
         width: Int = 100,
         height: Int = 200,
         shouldMute: Bool = false,
-        quality: ExportQuality = .balanced
+        quality: ExportQuality = .balanced,
+        speed: PlaybackSpeed = .normal
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -228,7 +259,8 @@ struct ExportModelTests {
             timeRange: TimeRange(start: 0, end: 10),
             shouldMute: shouldMute,
             shouldCrop: true,
-            quality: quality
+            quality: quality,
+            speed: speed
         )
     }
 }
