@@ -1051,6 +1051,9 @@ private final class LuxelMenuModel {
         editorModel.configureExportMemory(settings.perFormatExportMemory) { [weak self] format, memory in
             self?.rememberExportMemory(memory, for: format)
         }
+        editorModel.configureDiscard(confirmDiscard: settings.confirmDiscard) { [weak self] _ in
+            self?.refreshRecentRecordings()
+        }
     }
 
     func chooseRecordingsDirectory() {

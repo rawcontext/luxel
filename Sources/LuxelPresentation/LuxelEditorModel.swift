@@ -20,6 +20,7 @@ public final class LuxelEditorModel {
         case exportedBatch([URL])
         case saved(URL)
         case canceled
+        case discarded(String)
         case failed(String)
     }
 
@@ -51,11 +52,13 @@ public final class LuxelEditorModel {
     @ObservationIgnored private let exportSizeEstimationService: ExportSizeEstimationService
     @ObservationIgnored private let passthroughExportService: PassthroughExportService
     @ObservationIgnored private let fileWorkflowService: ExportedFileWorkflowService
+    @ObservationIgnored private let fileSystem: any FileSystem
     @ObservationIgnored private var playbackRequested = false
     @ObservationIgnored private var playbackTimeObserver: PlaybackTimeObserver?
     @ObservationIgnored private var exportTask: Task<Void, Never>?
     @ObservationIgnored private var exportMemoryByFormat: [ExportFormat: ExportMemory]
     @ObservationIgnored private var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
+    @ObservationIgnored private var onDiscardRecording: (@MainActor (URL) -> Void)?
 
     public init(
         metadataReader: any MediaMetadataReader = AVFoundationMediaMetadataReader(),
@@ -73,6 +76,7 @@ public final class LuxelEditorModel {
         fileWorkflowService: ExportedFileWorkflowService = ExportedFileWorkflowService(
             client: AppKitExportedFileActionClient()
         ),
+        fileSystem: any FileSystem = LocalFileSystem(),
         exportMemory: [ExportFormat: ExportMemory] = [:],
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
     ) {
@@ -81,11 +85,14 @@ public final class LuxelEditorModel {
         self.exportSizeEstimationService = exportSizeEstimationService
         self.passthroughExportService = passthroughExportService
         self.fileWorkflowService = fileWorkflowService
+        self.fileSystem = fileSystem
         self.exportMemoryByFormat = exportMemory
         self.onExportMemoryChange = onExportMemoryChange
         player.actionAtItemEnd = .none
         installPlaybackLoopObserver()
     }
+
+    public var confirmDiscard = true
 
     var hasSource: Bool {
         source != nil
@@ -139,6 +146,10 @@ public final class LuxelEditorModel {
         hasSource && !isExporting
     }
 
+    var canDiscard: Bool {
+        hasSource && !isExporting
+    }
+
     var canCancelExport: Bool {
         isExporting && exportTask != nil
     }
@@ -161,6 +172,8 @@ public final class LuxelEditorModel {
             "Export Canceled"
         case .failed:
             "Export Failed"
+        case .discarded:
+            "Recording Discarded"
         case .empty, .loading, .ready:
             exportProgressTitle
         }
@@ -191,6 +204,8 @@ public final class LuxelEditorModel {
             "checkmark.circle"
         case .canceled:
             "xmark.circle"
+        case .discarded:
+            "trash"
         case .failed:
             "exclamationmark.triangle"
         case .empty, .loading, .ready:
@@ -294,6 +309,8 @@ public final class LuxelEditorModel {
             "Saved \(url.lastPathComponent)"
         case .canceled:
             "Export canceled"
+        case .discarded(let fileName):
+            "Discarded \(fileName)"
         case .failed(let message):
             message
         }
@@ -334,6 +351,14 @@ public final class LuxelEditorModel {
         exportMemoryByFormat = memory
         onExportMemoryChange = onChange
         applyExportMemory(for: format)
+    }
+
+    public func configureDiscard(
+        confirmDiscard: Bool,
+        onDiscard: (@MainActor (URL) -> Void)? = nil
+    ) {
+        self.confirmDiscard = confirmDiscard
+        self.onDiscardRecording = onDiscard
     }
 
     public func reportImportFailure(_ error: Error) {
@@ -607,6 +632,22 @@ public final class LuxelEditorModel {
         }
     }
 
+    func discardRecording() {
+        guard canDiscard, let source else {
+            return
+        }
+
+        do {
+            let fileURL = source.fileURL
+            try fileSystem.trashItem(at: fileURL)
+            clearSource()
+            status = .discarded(fileURL.lastPathComponent)
+            onDiscardRecording?(fileURL)
+        } catch {
+            status = .failed(errorMessage(error))
+        }
+    }
+
     func cancelExport() {
         exportTask?.cancel()
     }
@@ -782,6 +823,17 @@ public final class LuxelEditorModel {
         exportTask = nil
         exportProgress = nil
         status = .failed(errorMessage(error))
+    }
+
+    private func clearSource() {
+        source = nil
+        exportProgress = nil
+        exportJobs = []
+        exportEstimate = nil
+        isEstimatingExportSize = false
+        player.pause()
+        playbackRequested = false
+        player.replaceCurrentItem(with: nil)
     }
 
     private func makeExportJobs(for formats: [ExportFormat]) -> [ExportJobSnapshot] {

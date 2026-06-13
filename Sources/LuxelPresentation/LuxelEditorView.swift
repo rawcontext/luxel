@@ -4,6 +4,7 @@ import SwiftUI
 
 public struct LuxelEditorView: View {
     @Bindable var model: LuxelEditorModel
+    @State private var isConfirmingDiscard = false
 
     public init(model: LuxelEditorModel) {
         self.model = model
@@ -35,6 +36,15 @@ public struct LuxelEditorView: View {
                     Label("Export", systemImage: "square.and.arrow.down")
                 }
                 .disabled(!model.canExport)
+
+                Button {
+                    requestDiscard()
+                } label: {
+                    Label("Discard", systemImage: "trash")
+                }
+                .disabled(!model.canDiscard)
+                .keyboardShortcut("d", modifiers: .command)
+                .help("Discard Recording")
 
                 if model.canCancelExport {
                     Button {
@@ -85,6 +95,27 @@ public struct LuxelEditorView: View {
                     .labelStyle(.iconOnly)
                 }
             }
+        }
+        .confirmationDialog(
+            "Discard Recording?",
+            isPresented: $isConfirmingDiscard,
+            titleVisibility: .visible
+        ) {
+            Button("Discard Recording", role: .destructive) {
+                model.discardRecording()
+            }
+
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Move this recording to the Trash.")
+        }
+    }
+
+    private func requestDiscard() {
+        if model.confirmDiscard {
+            isConfirmingDiscard = true
+        } else {
+            model.discardRecording()
         }
     }
 

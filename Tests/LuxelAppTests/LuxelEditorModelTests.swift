@@ -73,6 +73,50 @@ struct LuxelEditorModelTests {
         ])
     }
 
+    @Test("discard recording trashes source and clears editor")
+    func discardRecordingTrashesSourceAndClearsEditor() async throws {
+        let fileSystem = SpyFileSystem()
+        let sourceURL = URL(fileURLWithPath: "/tmp/source.mp4")
+        var discardedURLs: [URL] = []
+        let model = makeModel(fileSystem: fileSystem)
+        model.configureDiscard(confirmDiscard: false) { fileURL in
+            discardedURLs.append(fileURL)
+        }
+
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.discardRecording()
+
+        #expect(fileSystem.trashedFiles == [sourceURL])
+        #expect(discardedURLs == [sourceURL])
+        #expect(!model.hasSource)
+        #expect(!model.canDiscard)
+        #expect(model.status == .discarded("source.mp4"))
+        #expect(model.statusMessage == "Discarded source.mp4")
+    }
+
+    @Test("discard recording keeps source when trash fails")
+    func discardRecordingKeepsSourceWhenTrashFails() async throws {
+        let fileSystem = SpyFileSystem(trashError: StubError.trashFailed)
+        let sourceURL = URL(fileURLWithPath: "/tmp/source.mp4")
+        var discardedURLs: [URL] = []
+        let model = makeModel(fileSystem: fileSystem)
+        model.configureDiscard(confirmDiscard: false) { fileURL in
+            discardedURLs.append(fileURL)
+        }
+
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.discardRecording()
+
+        #expect(fileSystem.trashedFiles == [sourceURL])
+        #expect(discardedURLs.isEmpty)
+        #expect(model.hasSource)
+
+        if case .failed = model.status {
+        } else {
+            Issue.record("Expected discard failure status")
+        }
+    }
+
     @Test("refreshing export estimate builds request from current editor state")
     func refreshingExportEstimateBuildsRequestFromCurrentEditorState() async throws {
         let estimator = SpyExportSizeEstimator()
@@ -293,6 +337,7 @@ struct LuxelEditorModelTests {
             fileWorkflowService: ExportedFileWorkflowService(
                 client: StubExportedFileActionClient()
             ),
+            fileSystem: fileSystem,
             exportMemory: exportMemory,
             onExportMemoryChange: onExportMemoryChange
         )
@@ -310,6 +355,7 @@ struct LuxelEditorModelTests {
 
 private enum StubError: Error {
     case importFailed
+    case trashFailed
 }
 
 private struct StubMetadataReader: MediaMetadataReader {
@@ -412,6 +458,12 @@ private final class SpyFileSystem: FileSystem, @unchecked Sendable {
     private let lock = NSLock()
     private var capturedCreatedDirectories: [URL] = []
     private var capturedCopiedFiles: [CopiedFile] = []
+    private var capturedTrashedFiles: [URL] = []
+    private let trashError: Error?
+
+    init(trashError: Error? = nil) {
+        self.trashError = trashError
+    }
 
     var createdDirectories: [URL] {
         lock.withLock {
@@ -422,6 +474,12 @@ private final class SpyFileSystem: FileSystem, @unchecked Sendable {
     var copiedFiles: [CopiedFile] {
         lock.withLock {
             capturedCopiedFiles
+        }
+    }
+
+    var trashedFiles: [URL] {
+        lock.withLock {
+            capturedTrashedFiles
         }
     }
 
@@ -443,7 +501,15 @@ private final class SpyFileSystem: FileSystem, @unchecked Sendable {
 
     func removeFile(at url: URL) throws {}
 
-    func trashItem(at url: URL) throws {}
+    func trashItem(at url: URL) throws {
+        lock.withLock {
+            capturedTrashedFiles.append(url)
+        }
+
+        if let trashError {
+            throw trashError
+        }
+    }
 }
 
 private struct CopiedFile: Equatable {
