@@ -7,44 +7,17 @@ struct LuxelMenuBarLabel: View {
 
     var body: some View {
         let presentation = model.recordingPresentation(now: now)
+        let systemImage = presentation.alternateMenuBarSystemImage ?? presentation.menuBarSystemImage
 
-        TimelineView(
-            .animation(
-                minimumInterval: 1.0 / 30.0,
-                paused: !presentation.animatesMenuBarSystemImage
-            )
-        ) { timeline in
-            let blend = blendValue(for: presentation, at: timeline.date)
-
-            ZStack {
-                Image(systemName: presentation.menuBarSystemImage)
-                    .opacity(1 - blend)
-
-                if let alternateMenuBarSystemImage = presentation.alternateMenuBarSystemImage {
-                    Image(systemName: alternateMenuBarSystemImage)
-                        .opacity(blend)
-                }
-            }
+        Image(systemName: systemImage)
+            .contentTransition(.symbolEffect(.replace))
+            .animation(.easeInOut(duration: 0.2), value: systemImage)
             .accessibilityLabel(Text(presentation.accessibilityLabel))
-        }
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 now = Date()
             }
         }
-    }
-
-    private func blendValue(for presentation: RecordingSessionPresentation, at date: Date) -> Double {
-        guard presentation.animatesMenuBarSystemImage,
-              presentation.alternateMenuBarSystemImage != nil else {
-            return 0
-        }
-
-        let period = 1.1
-        let phase = date.timeIntervalSinceReferenceDate
-            .truncatingRemainder(dividingBy: period) / period
-
-        return (1 - cos(phase * 2 * .pi)) / 2
     }
 }
