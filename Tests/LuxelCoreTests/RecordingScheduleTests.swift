@@ -46,6 +46,43 @@ struct RecordingScheduleTests {
         }
     }
 
+    @Test("duration text parses stop-after input")
+    func durationTextParsesStopAfterInput() throws {
+        #expect(try RecordingDurationText.parse("45") == 45)
+        #expect(try RecordingDurationText.parse("1:30") == 90)
+        #expect(try RecordingDurationText.parse("2:03:04") == 7_384)
+        #expect(try RecordingDurationText.parse(" 12:00:00 ") == 43_200)
+    }
+
+    @Test("duration text rejects invalid stop-after input")
+    func durationTextRejectsInvalidStopAfterInput() {
+        #expect(throws: RecordingDurationTextError.invalidFormat) {
+            _ = try RecordingDurationText.parse("")
+        }
+        #expect(throws: RecordingDurationTextError.invalidFormat) {
+            _ = try RecordingDurationText.parse("1::00")
+        }
+        #expect(throws: RecordingDurationTextError.invalidFormat) {
+            _ = try RecordingDurationText.parse("1:60")
+        }
+        #expect(throws: RecordingDurationTextError.invalidFormat) {
+            _ = try RecordingDurationText.parse("1:00:60")
+        }
+        #expect(throws: RecordingDurationTextError.invalidDuration) {
+            _ = try RecordingDurationText.parse("0")
+        }
+        #expect(throws: RecordingDurationTextError.invalidDuration) {
+            _ = try RecordingDurationText.parse("12:00:01")
+        }
+    }
+
+    @Test("duration text formats stop-after input")
+    func durationTextFormatsStopAfterInput() {
+        #expect(RecordingDurationText.format(45) == "0:45")
+        #expect(RecordingDurationText.format(90) == "1:30")
+        #expect(RecordingDurationText.format(7_384) == "2:03:04")
+    }
+
     @Test("recording clock excludes paused wall time from elapsed duration")
     func recordingClockExcludesPausedWallTime() {
         let start = Date(timeIntervalSince1970: 1_000)

@@ -150,6 +150,79 @@ public enum RecordingScheduleError: Error, Equatable {
     case invalidTimelapseSpeed
 }
 
+public enum RecordingDurationText {
+    public static func parse(_ text: String) throws -> TimeInterval {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = trimmedText.split(separator: ":", omittingEmptySubsequences: false)
+        guard !parts.isEmpty, parts.count <= 3 else {
+            throw RecordingDurationTextError.invalidFormat
+        }
+
+        let values = try parts.map { part -> Int in
+            guard !part.isEmpty, let value = Int(part), value >= 0 else {
+                throw RecordingDurationTextError.invalidFormat
+            }
+
+            return value
+        }
+
+        let duration = switch values.count {
+        case 1:
+            values[0]
+        case 2:
+            try seconds(minutes: values[0], seconds: values[1])
+        case 3:
+            try seconds(hours: values[0], minutes: values[1], seconds: values[2])
+        default:
+            throw RecordingDurationTextError.invalidFormat
+        }
+
+        guard (1...43_200).contains(duration) else {
+            throw RecordingDurationTextError.invalidDuration
+        }
+
+        return TimeInterval(duration)
+    }
+
+    public static func format(_ duration: TimeInterval) -> String {
+        let totalSeconds = max(0, Int(duration.rounded(.down)))
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        if hours > 0 {
+            return "\(hours):\(twoDigits(minutes)):\(twoDigits(seconds))"
+        }
+
+        return "\(minutes):\(twoDigits(seconds))"
+    }
+
+    private static func seconds(minutes: Int, seconds: Int) throws -> Int {
+        guard seconds < 60 else {
+            throw RecordingDurationTextError.invalidFormat
+        }
+
+        return minutes * 60 + seconds
+    }
+
+    private static func seconds(hours: Int, minutes: Int, seconds: Int) throws -> Int {
+        guard minutes < 60, seconds < 60 else {
+            throw RecordingDurationTextError.invalidFormat
+        }
+
+        return hours * 3600 + minutes * 60 + seconds
+    }
+
+    private static func twoDigits(_ value: Int) -> String {
+        value < 10 ? "0\(value)" : "\(value)"
+    }
+}
+
+public enum RecordingDurationTextError: Error, Equatable {
+    case invalidFormat
+    case invalidDuration
+}
+
 private extension Array where Element == RecordingClockEvent {
     var sortedByDate: [RecordingClockEvent] {
         sorted { lhs, rhs in

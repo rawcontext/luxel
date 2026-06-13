@@ -63,15 +63,28 @@ struct LuxelCropperView: View {
                 .toggleStyle(.button)
                 .help("Lock 16:9")
 
-                Picker(selection: stopAfterSelection) {
-                    Text("Off").tag(Optional<TimeInterval>.none)
+                Menu {
+                    stopAfterButton(title: "Off", duration: nil)
+
+                    Divider()
+
                     ForEach(StopAfterPreset.all) { preset in
-                        Text(preset.title).tag(Optional(preset.duration))
+                        stopAfterButton(title: preset.title, duration: preset.duration)
+                    }
+
+                    Divider()
+
+                    TextField("h:mm:ss", text: customStopAfterText)
+                        .frame(width: 84)
+
+                    Button {
+                        applyCustomStopAfterDuration()
+                    } label: {
+                        Label("Set Custom", systemImage: "timer")
                     }
                 } label: {
                     Label(model.stopAfterSummary, systemImage: "timer")
                 }
-                .pickerStyle(.menu)
                 .frame(width: 82)
                 .help("Stop After")
 
@@ -157,11 +170,31 @@ struct LuxelCropperView: View {
         }
     }
 
-    private var stopAfterSelection: Binding<TimeInterval?> {
-        Binding {
-            model.stopAfterDuration
-        } set: { duration in
+    @ViewBuilder
+    private func stopAfterButton(title: String, duration: TimeInterval?) -> some View {
+        Button {
             model.setStopAfterDuration(duration)
+        } label: {
+            if model.stopAfterDuration == duration {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
+            }
+        }
+    }
+
+    private func applyCustomStopAfterDuration() {
+        guard model.applyCustomStopAfterDuration() else {
+            NSSound.beep()
+            return
+        }
+    }
+
+    private var customStopAfterText: Binding<String> {
+        Binding {
+            model.customStopAfterText
+        } set: { text in
+            model.setCustomStopAfterText(text)
         }
     }
 }

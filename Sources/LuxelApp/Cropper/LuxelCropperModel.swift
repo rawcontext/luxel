@@ -39,6 +39,7 @@ final class LuxelCropperModel {
     var selection: CaptureRect?
     var locksWidescreenRatio = false
     var stopAfterDuration: TimeInterval?
+    var customStopAfterText: String
     var errorMessage: String?
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
     private var resizeStartSelection: CaptureRect?
@@ -50,6 +51,7 @@ final class LuxelCropperModel {
     ) {
         self.display = display
         self.stopAfterDuration = stopAfterDuration
+        self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
         self.onStopAfterDurationChange = onStopAfterDurationChange
     }
 
@@ -79,7 +81,26 @@ final class LuxelCropperModel {
         }
 
         stopAfterDuration = duration
+        if let duration {
+            customStopAfterText = RecordingDurationText.format(duration)
+        }
         onStopAfterDurationChange(duration)
+    }
+
+    func setCustomStopAfterText(_ text: String) {
+        customStopAfterText = text
+    }
+
+    func applyCustomStopAfterDuration() -> Bool {
+        do {
+            let duration = try RecordingDurationText.parse(customStopAfterText)
+            setStopAfterDuration(duration)
+            errorMessage = nil
+            return true
+        } catch {
+            errorMessage = "Use h:mm:ss from 0:01 to 12:00:00"
+            return false
+        }
     }
 
     func updateSelection(start: CGPoint, current: CGPoint, viewSize: CGSize) {
