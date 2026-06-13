@@ -194,6 +194,78 @@ struct RecordingHistoryTests {
         #expect(store.recordings == [existing])
     }
 
+    @Test("recordExport stores exported file metadata on matching history entry")
+    func recordExportStoresMetadata() throws {
+        let recordingURL = URL(fileURLWithPath: "/tmp/new.mp4")
+        let exportURL = URL(fileURLWithPath: "/tmp/new Quick GIF.gif")
+        let now = Date(timeIntervalSince1970: 300)
+        let recording = PastRecording(
+            fileURL: recordingURL,
+            name: "Existing",
+            date: Date(timeIntervalSince1970: 2)
+        )
+        let store = InMemoryRecordingHistoryStore(recordings: [recording])
+        let service = makeService(
+            store: store,
+            existingFiles: [recordingURL, exportURL],
+            now: now
+        )
+        let exportedMedia = try ExportedMedia(
+            fileURL: exportURL,
+            format: .gif,
+            pixelSize: PixelSize(width: 640, height: 360),
+            shouldMute: true,
+            fileSizeBytes: 42_000
+        )
+
+        let recordings = service.recordExport(exportedMedia, presetName: "Quick GIF", for: recording)
+
+        let expectedExport = RecordingExport(
+            fileURL: exportURL,
+            format: .gif,
+            fileSizeBytes: 42_000,
+            date: now,
+            presetName: "Quick GIF"
+        )
+        #expect(recordings == [recording.addingExport(expectedExport)])
+        #expect(store.recordings == recordings)
+    }
+
+    @Test("getPastRecordings prunes missing export history entries")
+    func getPastRecordingsPrunesMissingExports() {
+        let recordingURL = URL(fileURLWithPath: "/tmp/new.mp4")
+        let existingExportURL = URL(fileURLWithPath: "/tmp/new Quick GIF.gif")
+        let missingExportURL = URL(fileURLWithPath: "/tmp/new Missing.mp4")
+        let recording = PastRecording(
+            fileURL: recordingURL,
+            name: "Existing",
+            date: Date(timeIntervalSince1970: 2),
+            exports: [
+                RecordingExport(
+                    fileURL: existingExportURL,
+                    format: .gif,
+                    date: Date(timeIntervalSince1970: 3),
+                    presetName: "Quick GIF"
+                ),
+                RecordingExport(
+                    fileURL: missingExportURL,
+                    format: .mp4,
+                    date: Date(timeIntervalSince1970: 4),
+                    presetName: "Missing MP4"
+                )
+            ]
+        )
+        let store = InMemoryRecordingHistoryStore(recordings: [recording])
+        let service = makeService(store: store, existingFiles: [recordingURL, existingExportURL])
+
+        let recordings = service.getPastRecordings()
+
+        #expect(recordings == [
+            recording.filteringExports { $0.fileURL == existingExportURL }
+        ])
+        #expect(store.recordings == recordings)
+    }
+
     private func makeService(
         store: InMemoryRecordingHistoryStore,
         existingFiles: Set<URL> = [],

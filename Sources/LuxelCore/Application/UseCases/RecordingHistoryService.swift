@@ -28,7 +28,13 @@ public final class RecordingHistoryService: Sendable {
     }
 
     public func getPastRecordings() -> [PastRecording] {
-        let validRecordings = store.recordings.filter { fileSystem.fileExists(at: $0.fileURL) }
+        let validRecordings = store.recordings.compactMap { recording -> PastRecording? in
+            guard fileSystem.fileExists(at: recording.fileURL) else {
+                return nil
+            }
+
+            return recording.filteringExports { fileSystem.fileExists(at: $0.fileURL) }
+        }
         store.recordings = validRecordings
         return validRecordings
     }
@@ -43,6 +49,32 @@ public final class RecordingHistoryService: Sendable {
         let validRecordings = recordings.filter { fileSystem.fileExists(at: $0.fileURL) }
         store.recordings = validRecordings
         return validRecordings
+    }
+
+    @discardableResult
+    public func recordExport(
+        _ exportedMedia: ExportedMedia,
+        presetName: String? = nil,
+        for recording: PastRecording
+    ) -> [PastRecording] {
+        let validRecordings = getPastRecordings()
+
+        guard fileSystem.fileExists(at: exportedMedia.fileURL),
+              let recordingIndex = validRecordings.firstIndex(where: { $0.fileURL == recording.fileURL }) else {
+            return validRecordings
+        }
+
+        let export = RecordingExport(
+            fileURL: exportedMedia.fileURL,
+            format: exportedMedia.format,
+            fileSizeBytes: exportedMedia.fileSizeBytes,
+            date: dateProvider.now(),
+            presetName: presetName
+        )
+        var updatedRecordings = validRecordings
+        updatedRecordings[recordingIndex] = validRecordings[recordingIndex].addingExport(export)
+        store.recordings = updatedRecordings
+        return updatedRecordings
     }
 
     @discardableResult

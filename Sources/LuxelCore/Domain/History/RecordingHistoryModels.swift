@@ -5,17 +5,44 @@ public struct PastRecording: Codable, Equatable, Sendable {
     public let name: String
     public let date: Date
     public let options: RecordingOptions
+    public let exports: [RecordingExport]
 
     public init(
         fileURL: URL,
         name: String,
         date: Date,
-        options: RecordingOptions = RecordingOptions(frameRate: 0)
+        options: RecordingOptions = RecordingOptions(frameRate: 0),
+        exports: [RecordingExport] = []
     ) {
         self.fileURL = fileURL
         self.name = name
         self.date = date
         self.options = options
+        self.exports = exports
+    }
+
+    public var latestExport: RecordingExport? {
+        exports.first
+    }
+
+    public func addingExport(_ export: RecordingExport) -> PastRecording {
+        PastRecording(
+            fileURL: fileURL,
+            name: name,
+            date: date,
+            options: options,
+            exports: [export] + exports
+        )
+    }
+
+    public func filteringExports(_ isIncluded: (RecordingExport) -> Bool) -> PastRecording {
+        PastRecording(
+            fileURL: fileURL,
+            name: name,
+            date: date,
+            options: options,
+            exports: exports.filter(isIncluded)
+        )
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -23,6 +50,7 @@ public struct PastRecording: Codable, Equatable, Sendable {
         case name
         case date
         case options
+        case exports
     }
 
     public init(from decoder: any Decoder) throws {
@@ -33,6 +61,30 @@ public struct PastRecording: Codable, Equatable, Sendable {
         date = try container.decode(Date.self, forKey: .date)
         options = try container.decodeIfPresent(RecordingOptions.self, forKey: .options)
             ?? RecordingOptions(frameRate: 0)
+        exports = try container.decodeIfPresent([RecordingExport].self, forKey: .exports)
+            ?? []
+    }
+}
+
+public struct RecordingExport: Codable, Equatable, Sendable {
+    public let fileURL: URL
+    public let format: ExportFormat
+    public let fileSizeBytes: Int64?
+    public let date: Date
+    public let presetName: String?
+
+    public init(
+        fileURL: URL,
+        format: ExportFormat,
+        fileSizeBytes: Int64? = nil,
+        date: Date,
+        presetName: String? = nil
+    ) {
+        self.fileURL = fileURL
+        self.format = format
+        self.fileSizeBytes = fileSizeBytes
+        self.date = date
+        self.presetName = presetName
     }
 }
 

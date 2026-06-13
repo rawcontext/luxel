@@ -5,12 +5,30 @@ public struct ExportedMedia: Equatable, Sendable {
     public let format: ExportFormat
     public let pixelSize: PixelSize
     public let shouldMute: Bool
+    public let fileSizeBytes: Int64?
 
-    public init(fileURL: URL, format: ExportFormat, pixelSize: PixelSize, shouldMute: Bool) {
+    public init(
+        fileURL: URL,
+        format: ExportFormat,
+        pixelSize: PixelSize,
+        shouldMute: Bool,
+        fileSizeBytes: Int64? = nil
+    ) {
         self.fileURL = fileURL
         self.format = format
         self.pixelSize = pixelSize
         self.shouldMute = shouldMute
+        self.fileSizeBytes = fileSizeBytes
+    }
+
+    public func withFileSizeBytes(_ fileSizeBytes: Int64?) -> ExportedMedia {
+        ExportedMedia(
+            fileURL: fileURL,
+            format: format,
+            pixelSize: pixelSize,
+            shouldMute: shouldMute,
+            fileSizeBytes: fileSizeBytes ?? self.fileSizeBytes
+        )
     }
 }
 

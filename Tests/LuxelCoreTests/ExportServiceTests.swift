@@ -59,6 +59,25 @@ struct ExportServiceTests {
         ])
     }
 
+    @Test("service records actual output file size")
+    func serviceRecordsActualOutputFileSize() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "luxel-export-service-tests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let exporter = WritingMediaExporter(byteCount: 1_234)
+        let service = ExportService(exporter: exporter)
+
+        let exported = try await service.export(
+            try makeRequest(format: .mp4),
+            to: directory,
+            defaultName: "Luxel Clip"
+        )
+
+        #expect(exported.fileSizeBytes == 1_234)
+    }
+
     @Test("service removes intended output when export task is canceled")
     func serviceRemovesIntendedOutputWhenExportTaskIsCanceled() async throws {
         let exporter = CancellableMediaExporter()
@@ -204,6 +223,21 @@ private actor SpyMediaExporter: MediaExporter {
 
     func capturedExports() -> [(request: ExportRequest, outputFileURL: URL)] {
         captured
+    }
+}
+
+private struct WritingMediaExporter: MediaExporter {
+    let byteCount: Int
+
+    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+        let data = Data(repeating: 0x5A, count: byteCount)
+        try data.write(to: outputFileURL)
+        return ExportedMedia(
+            fileURL: outputFileURL,
+            format: request.format,
+            pixelSize: try request.outputPixelSize,
+            shouldMute: request.outputShouldMute
+        )
     }
 }
 

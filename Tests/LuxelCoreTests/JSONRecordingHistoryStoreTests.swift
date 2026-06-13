@@ -20,7 +20,16 @@ struct JSONRecordingHistoryStoreTests {
         let past = PastRecording(
             fileURL: fileURL,
             name: "Finished",
-            date: Date(timeIntervalSince1970: 200)
+            date: Date(timeIntervalSince1970: 200),
+            exports: [
+                RecordingExport(
+                    fileURL: directory.appending(path: "recording Quick GIF.gif"),
+                    format: .gif,
+                    fileSizeBytes: 12_345,
+                    date: Date(timeIntervalSince1970: 300),
+                    presetName: "Quick GIF"
+                )
+            ]
         )
 
         let writer = try JSONRecordingHistoryStore(fileURL: storeURL)

@@ -259,8 +259,17 @@ private struct LuxelMenu: View {
                                 }
                             } label: {
                                 Label {
-                                    Text(recording.name)
-                                        .lineLimit(1)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(recording.name)
+                                            .lineLimit(1)
+
+                                        if let subtitle = recentRecordingSubtitle(for: recording) {
+                                            Text(subtitle)
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                                .lineLimit(1)
+                                        }
+                                    }
                                 } icon: {
                                     Image(systemName: recording.options.isAudioOnly ? "waveform" : "clock")
                                 }
@@ -382,6 +391,18 @@ private struct LuxelMenu: View {
         model.refreshRecentRecordings()
         await model.refreshPermissions()
         await model.refreshCaptureTargets()
+    }
+
+    private func recentRecordingSubtitle(for recording: PastRecording) -> String? {
+        guard let export = recording.latestExport else {
+            return nil
+        }
+
+        if let fileSizeBytes = export.fileSizeBytes {
+            return "\(export.format.prettyName) - \(ByteCountFormatter.string(fromByteCount: fileSizeBytes, countStyle: .file))"
+        }
+
+        return export.format.prettyName
     }
 
     private var permissionPromptPresented: Binding<Bool> {
@@ -1393,13 +1414,29 @@ private final class LuxelMenuModel {
             }
 
             recordingState = .idle
-            quickExportStatusMessage = "Exported \(result.exportedMedia.fileURL.lastPathComponent)"
+            recentRecordings = Array(recordingHistoryService.recordExport(
+                result.exportedMedia,
+                presetName: result.preset.name,
+                for: recording
+            ).prefix(5))
+            quickExportStatusMessage = quickExportStatusText(for: result.exportedMedia)
             return .quickExported(result.exportedMedia.fileURL)
         } catch {
             recordingState = .idle
             recordingActionErrorMessage = errorMessage(error)
             return nil
         }
+    }
+
+    private func quickExportStatusText(for exportedMedia: ExportedMedia) -> String {
+        let fileName = exportedMedia.fileURL.lastPathComponent
+
+        guard let fileSizeBytes = exportedMedia.fileSizeBytes else {
+            return "Exported \(fileName)"
+        }
+
+        let fileSize = ByteCountFormatter.string(fromByteCount: fileSizeBytes, countStyle: .file)
+        return "Exported \(fileName) (\(fileSize))"
     }
 
     private func pauseRecording() async {

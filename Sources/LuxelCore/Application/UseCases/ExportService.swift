@@ -44,10 +44,11 @@ public struct ExportService: Sendable {
                 await progress?(.exporting(format: request.format, progress: 0.05))
 
                 let exported = try await exporter.export(request, to: outputURL)
+                let exportedWithFileSize = exported.withFileSizeBytes(fileSizeBytes(at: exported.fileURL))
 
                 try Task.checkCancellation()
                 await progress?(.completed(format: request.format))
-                return exported
+                return exportedWithFileSize
             } catch is CancellationError {
                 cleanup.removeOutput()
                 await progress?(.canceled(format: request.format))
@@ -104,6 +105,15 @@ public struct ExportService: Sendable {
         case .apng:
             "APNG"
         }
+    }
+
+    private func fileSizeBytes(at fileURL: URL) -> Int64? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+              let size = attributes[.size] as? NSNumber else {
+            return nil
+        }
+
+        return size.int64Value
     }
 }
 

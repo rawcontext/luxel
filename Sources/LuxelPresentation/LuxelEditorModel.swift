@@ -804,7 +804,7 @@ public final class LuxelEditorModel {
         }
 
         exportJobs[index].fileURL = exported.fileURL
-        exportJobs[index].fileSizeBytes = fileSizeBytes(at: exported.fileURL)
+        exportJobs[index].fileSizeBytes = exported.fileSizeBytes
         exportJobs[index].progress = .completed(format: exported.format)
     }
 
@@ -814,17 +814,8 @@ public final class LuxelEditorModel {
         }
 
         exportJobs[index].fileURL = exported.fileURL
-        exportJobs[index].fileSizeBytes = fileSizeBytes(at: exported.fileURL)
+        exportJobs[index].fileSizeBytes = exported.fileSizeBytes
         exportJobs[index].progress = .completed(format: exported.format)
-    }
-
-    private func fileSizeBytes(at fileURL: URL) -> Int64? {
-        guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-              let size = attributes[.size] as? NSNumber else {
-            return nil
-        }
-
-        return size.int64Value
     }
 
     private func installPlaybackLoopObserver() {
