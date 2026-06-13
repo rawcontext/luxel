@@ -484,6 +484,7 @@ private struct LuxelSettingsView: View {
                 }
 
                 Toggle("Loop Exports", isOn: $model.settings.loopExports)
+                Toggle("Confirm Discard", isOn: $model.settings.confirmDiscard)
             }
 
             Section("Quick Recording") {
