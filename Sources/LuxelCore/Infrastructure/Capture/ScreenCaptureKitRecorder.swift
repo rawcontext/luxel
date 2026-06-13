@@ -7,6 +7,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
     private let segmentComposer: AVFoundationRecordingSegmentComposer
     private let fileManager: FileManager
     private let recordingOutputFinishTimeout: Duration = .seconds(2)
+    private let streamStopTimeout: Duration = .seconds(5)
     private var stream: SCStream?
     private var isStreamCapturing = false
     private var request: RecordingRequest?
@@ -114,13 +115,13 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         }
 
         do {
-            if let segmentFileURL = try await finishCurrentSegment() {
-                segmentFileURLs.append(segmentFileURL)
+            if isStreamCapturing {
+                try await stopStreamCapture(stream)
+                isStreamCapturing = false
             }
 
-            if isStreamCapturing {
-                try await stream.stopCapture()
-                isStreamCapturing = false
+            if let segmentFileURL = try await finishStoppedCurrentSegment() {
+                segmentFileURLs.append(segmentFileURL)
             }
 
             if let outputFileURL = request?.outputFileURL {
@@ -159,6 +160,63 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         self.recordingOutput = nil
         currentSegmentFileURL = nil
         return segmentFileURL
+    }
+
+    private func finishStoppedCurrentSegment() async throws -> URL? {
+        guard let recordingOutput, let delegate else {
+            return nil
+        }
+
+        let segmentFileURL = currentSegmentFileURL
+        try await delegate.waitUntilFinished(recordingOutput, timeout: recordingOutputFinishTimeout)
+        self.recordingOutput = nil
+        currentSegmentFileURL = nil
+        return segmentFileURL
+    }
+
+    private func stopStreamCapture(_ stream: SCStream) async throws {
+        let timeout = streamStopTimeout
+
+        try await withCheckedThrowingContinuation { continuation in
+            let completion = ScreenCaptureKitRecorderStopCompletion(continuation)
+            stream.stopCapture { error in
+                if let error {
+                    completion.resume(with: .failure(error))
+                } else {
+                    completion.resume(with: .success(()))
+                }
+            }
+
+            Task {
+                do {
+                    try await Task.sleep(for: timeout)
+                    completion.resume(with: .success(()))
+                } catch is CancellationError {
+                    return
+                } catch {
+                    return
+                }
+            }
+        }
+    }
+
+    private final class ScreenCaptureKitRecorderStopCompletion: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<Void, any Error>?
+
+        init(_ continuation: CheckedContinuation<Void, any Error>) {
+            self.continuation = continuation
+        }
+
+        func resume(with result: Result<Void, any Error>) {
+            let continuation = lock.withLock {
+                let continuation = self.continuation
+                self.continuation = nil
+                return continuation
+            }
+
+            continuation?.resume(with: result)
+        }
     }
 
     private func finalizeSegments(to outputFileURL: URL) async throws {
