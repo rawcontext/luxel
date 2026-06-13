@@ -8,6 +8,7 @@ struct LuxelMenuBarLabel: View {
         let presentation = model.recordingPresentation(now: now)
 
         Image(systemName: presentation.menuBarSystemImage)
+            .symbolEffect(.pulse, isActive: presentation.animatesMenuBarSystemImage)
             .accessibilityLabel(Text(presentation.accessibilityLabel))
             .task {
                 while !Task.isCancelled {

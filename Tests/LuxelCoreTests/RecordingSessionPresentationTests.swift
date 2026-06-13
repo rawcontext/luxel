@@ -10,6 +10,7 @@ struct RecordingSessionPresentationTests {
 
         #expect(disabled.menuBarTitle == "Luxel")
         #expect(disabled.menuBarSystemImage == "record.circle")
+        #expect(!disabled.animatesMenuBarSystemImage)
         #expect(disabled.primaryActionTitle == "Record")
         #expect(disabled.primaryActionSystemImage == "record.circle.fill")
         #expect(!disabled.canUsePrimaryAction)
@@ -25,7 +26,8 @@ struct RecordingSessionPresentationTests {
         )
 
         #expect(presentation.menuBarTitle == "● 1:42")
-        #expect(presentation.menuBarSystemImage == "record.circle.fill")
+        #expect(presentation.menuBarSystemImage == "record.circle")
+        #expect(presentation.animatesMenuBarSystemImage)
         #expect(presentation.accessibilityLabel == "Luxel recording, elapsed 1:42")
         #expect(presentation.primaryActionTitle == "Stop")
         #expect(presentation.primaryActionSystemImage == "stop.circle.fill")
@@ -67,6 +69,7 @@ struct RecordingSessionPresentationTests {
 
         #expect(presentation.menuBarTitle == "‖ 1:02:03")
         #expect(presentation.menuBarSystemImage == "pause.circle.fill")
+        #expect(!presentation.animatesMenuBarSystemImage)
         #expect(presentation.primaryActionTitle == "Stop")
         #expect(presentation.canUsePrimaryAction)
         #expect(presentation.secondaryActionTitle == "Resume")
