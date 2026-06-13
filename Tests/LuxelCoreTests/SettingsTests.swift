@@ -33,6 +33,7 @@ struct SettingsTests {
         #expect(settings.rememberLastCapture)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)
+        #expect(settings.confirmDiscard)
     }
 
     @Test("update channels expose settings labels")

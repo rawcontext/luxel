@@ -362,4 +362,6 @@ private final class SpyFileSystem: FileSystem, @unchecked Sendable {
             capturedRemovedURLs.append(url)
         }
     }
+
+    func trashItem(at url: URL) throws {}
 }

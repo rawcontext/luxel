@@ -138,6 +138,8 @@ private final class SpyFileSystem: FileSystem, @unchecked Sendable {
     }
 
     func removeFile(at url: URL) throws {}
+
+    func trashItem(at url: URL) throws {}
 }
 
 private actor SpyPassthroughExporter: PassthroughExporter {

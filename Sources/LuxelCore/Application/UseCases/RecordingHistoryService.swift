@@ -127,6 +127,20 @@ public final class RecordingHistoryService: Sendable {
     }
 
     @discardableResult
+    public func discardRecording(_ recording: PastRecording) throws -> [PastRecording] {
+        let validRecordings = getPastRecordings()
+
+        guard validRecordings.contains(where: { $0.fileURL == recording.fileURL }) else {
+            return validRecordings
+        }
+
+        try fileSystem.trashItem(at: recording.fileURL)
+        let remainingRecordings = validRecordings.filter { $0.fileURL != recording.fileURL }
+        store.recordings = remainingRecordings
+        return remainingRecordings
+    }
+
+    @discardableResult
     public func recoverActiveRecording() async -> RecordingRecoveryResult {
         guard let activeRecording = store.activeRecording else {
             return .none

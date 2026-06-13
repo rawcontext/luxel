@@ -72,7 +72,8 @@ struct UserDefaultsSettingsStoreTests {
                     frameRate: FrameRate(12),
                     quality: .lossless
                 )
-            ]
+            ],
+            confirmDiscard: false
         )
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
 
@@ -127,6 +128,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.rememberLastCapture)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)
+        #expect(settings.confirmDiscard)
     }
 
     @Test("load preserves explicit nil quick preset")

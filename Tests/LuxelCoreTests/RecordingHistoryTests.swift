@@ -179,6 +179,39 @@ struct RecordingHistoryTests {
         #expect(store.recordings.isEmpty)
     }
 
+    @Test("discardRecording trashes existing file and removes history entry")
+    func discardRecordingTrashesFileAndRemovesHistoryEntry() throws {
+        let keptURL = URL(fileURLWithPath: "/tmp/kept.mp4")
+        let discardedURL = URL(fileURLWithPath: "/tmp/discarded.mp4")
+        let kept = PastRecording(fileURL: keptURL, name: "Kept", date: Date(timeIntervalSince1970: 1))
+        let discarded = PastRecording(fileURL: discardedURL, name: "Discarded", date: Date(timeIntervalSince1970: 2))
+        let fileSystem = FakeFileSystem(existingFiles: [keptURL, discardedURL])
+        let store = InMemoryRecordingHistoryStore(recordings: [discarded, kept])
+        let service = makeService(store: store, fileSystem: fileSystem)
+
+        let recordings = try service.discardRecording(discarded)
+
+        #expect(fileSystem.trashedFiles == [discardedURL])
+        #expect(recordings == [kept])
+        #expect(store.recordings == [kept])
+    }
+
+    @Test("discardRecording keeps history entry when trash fails")
+    func discardRecordingKeepsHistoryWhenTrashFails() throws {
+        let fileURL = URL(fileURLWithPath: "/tmp/discarded.mp4")
+        let recording = PastRecording(fileURL: fileURL, name: "Discarded", date: Date(timeIntervalSince1970: 2))
+        let fileSystem = FakeFileSystem(existingFiles: [fileURL], trashError: StubError.trashFailed)
+        let store = InMemoryRecordingHistoryStore(recordings: [recording])
+        let service = makeService(store: store, fileSystem: fileSystem)
+
+        #expect(throws: StubError.trashFailed) {
+            try service.discardRecording(recording)
+        }
+
+        #expect(fileSystem.trashedFiles == [fileURL])
+        #expect(store.recordings == [recording])
+    }
+
     @Test("addRecording stores only existing files")
     func addRecordingStoresOnlyExistingFiles() {
         let fileURL = URL(fileURLWithPath: "/tmp/new.mp4")
@@ -315,12 +348,19 @@ private struct FixedDateProvider: DateProvider {
     }
 }
 
+private enum StubError: Error, Equatable {
+    case trashFailed
+}
+
 private final class FakeFileSystem: FileSystem, @unchecked Sendable {
     private var existingFiles: Set<URL>
     private(set) var removedFiles: [URL] = []
+    private(set) var trashedFiles: [URL] = []
+    private let trashError: Error?
 
-    init(existingFiles: Set<URL> = []) {
+    init(existingFiles: Set<URL> = [], trashError: Error? = nil) {
         self.existingFiles = existingFiles
+        self.trashError = trashError
     }
 
     func fileExists(at url: URL) -> Bool {
@@ -333,6 +373,16 @@ private final class FakeFileSystem: FileSystem, @unchecked Sendable {
 
     func removeFile(at url: URL) {
         removedFiles.append(url)
+        existingFiles.remove(url)
+    }
+
+    func trashItem(at url: URL) throws {
+        trashedFiles.append(url)
+
+        if let trashError {
+            throw trashError
+        }
+
         existingFiles.remove(url)
     }
 }

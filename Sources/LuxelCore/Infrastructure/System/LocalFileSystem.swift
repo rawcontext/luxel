@@ -18,4 +18,9 @@ public struct LocalFileSystem: FileSystem {
     public func removeFile(at url: URL) throws {
         try FileManager.default.removeItem(at: url)
     }
+
+    public func trashItem(at url: URL) throws {
+        var resultingURL: NSURL?
+        try FileManager.default.trashItem(at: url, resultingItemURL: &resultingURL)
+    }
 }

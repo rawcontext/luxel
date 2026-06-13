@@ -45,6 +45,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var rememberLastCapture: Bool
     public var lastCaptureMemory: LastCaptureMemory?
     public var perFormatExportMemory: [ExportFormat: ExportMemory]
+    public var confirmDiscard: Bool
 
     public init(
         recordingsDirectory: URL,
@@ -67,7 +68,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         quickExportPresetID: UUID? = ExportPreset.quickGIFID,
         rememberLastCapture: Bool = true,
         lastCaptureMemory: LastCaptureMemory? = nil,
-        perFormatExportMemory: [ExportFormat: ExportMemory] = [:]
+        perFormatExportMemory: [ExportFormat: ExportMemory] = [:],
+        confirmDiscard: Bool = true
     ) {
         self.recordingsDirectory = recordingsDirectory
         self.showCursor = showCursor
@@ -90,6 +92,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.rememberLastCapture = rememberLastCapture
         self.lastCaptureMemory = lastCaptureMemory
         self.perFormatExportMemory = perFormatExportMemory
+        self.confirmDiscard = confirmDiscard
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -114,6 +117,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case rememberLastCapture
         case lastCaptureMemory
         case perFormatExportMemory
+        case confirmDiscard
     }
 
     public init(from decoder: any Decoder) throws {
@@ -173,6 +177,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
             [ExportFormat: ExportMemory].self,
             forKey: .perFormatExportMemory
         ) ?? [:]
+        confirmDiscard = try container.decodeIfPresent(Bool.self, forKey: .confirmDiscard)
+            ?? true
     }
 }
 

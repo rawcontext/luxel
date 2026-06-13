@@ -297,4 +297,6 @@ private final class StubFileSystem: FileSystem, @unchecked Sendable {
     func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
 
     func removeFile(at url: URL) throws {}
+
+    func trashItem(at url: URL) throws {}
 }
