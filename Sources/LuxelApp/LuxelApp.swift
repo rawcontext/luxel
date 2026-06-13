@@ -128,6 +128,24 @@ private struct LuxelMenu: View {
                 }
                 .disabled(!model.canUseQuickRecordButton)
 
+                Button {
+                    Task {
+                        await model.startRecordingFromLastCapture()
+                    }
+                } label: {
+                    Label("Record Again", systemImage: "arrow.clockwise")
+                }
+                .disabled(!model.canUseRecordAgainButton)
+
+                Button {
+                    Task {
+                        await model.startQuickRecordingFromLastCapture()
+                    }
+                } label: {
+                    Label("Quick Record Last", systemImage: "bolt.circle")
+                }
+                .disabled(!model.canUseQuickRecordLastButton)
+
                 if model.canPauseOrResumeRecording {
                     Button {
                         Task {
@@ -563,6 +581,7 @@ private final class LuxelMenuModel {
     @ObservationIgnored private let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored private let quickExportService: QuickExportService
     @ObservationIgnored private let permissionGuidanceService: PermissionGuidanceService
+    @ObservationIgnored private let lastCaptureRecordingPlanner: LastCaptureRecordingPlanner
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
@@ -582,6 +601,7 @@ private final class LuxelMenuModel {
         ),
         quickExportService: QuickExportService? = nil,
         permissionGuidanceService: PermissionGuidanceService = PermissionGuidanceService(),
+        lastCaptureRecordingPlanner: LastCaptureRecordingPlanner = LastCaptureRecordingPlanner(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
         recorder: any CaptureRecorder = LuxelCompositionRoot.captureRecorder()
     ) {
@@ -595,6 +615,7 @@ private final class LuxelMenuModel {
         self.quickExportService = quickExportService
             ?? LuxelCompositionRoot.quickExportService(fileWorkflowService: fileWorkflowService)
         self.permissionGuidanceService = permissionGuidanceService
+        self.lastCaptureRecordingPlanner = lastCaptureRecordingPlanner
         self.appMetadata = appMetadata
         self.recordingLifecycleService = RecordingLifecycleService(
             recorder: recorder,
@@ -634,6 +655,19 @@ private final class LuxelMenuModel {
         }
     }
 
+    var canUseRecordAgainButton: Bool {
+        switch recordingState {
+        case .idle, .failed:
+            screenRecordingStatus == .authorized && settings.lastCaptureMemory != nil
+        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+            false
+        }
+    }
+
+    var canUseQuickRecordLastButton: Bool {
+        canUseRecordAgainButton && settings.quickExportPresetID != nil
+    }
+
     var canSelectArea: Bool {
         switch recordingState {
         case .idle, .failed:
@@ -649,6 +683,10 @@ private final class LuxelMenuModel {
         }
 
         return captureTargets.first { $0.id == selectedCaptureTargetID }
+    }
+
+    private var lastCaptureFallbackDisplay: CaptureTargetOption? {
+        captureTargets.first { $0.kind == .display }
     }
 
     private var canStartRecording: Bool {
@@ -872,6 +910,37 @@ private final class LuxelMenuModel {
         )
     }
 
+    func startRecordingFromLastCapture() async {
+        await startRecordingFromLastCapture(captureKind: .standard)
+    }
+
+    func startQuickRecordingFromLastCapture() async {
+        guard let presetID = settings.quickExportPresetID else {
+            recordingState = .failed("No quick export preset selected")
+            return
+        }
+
+        await startRecordingFromLastCapture(captureKind: .quick(presetID: presetID))
+    }
+
+    private func startRecordingFromLastCapture(captureKind: QuickCaptureKind) async {
+        recordingActionErrorMessage = nil
+        quickExportStatusMessage = nil
+
+        do {
+            let request = try lastCaptureRecordingPlanner.recordingRequest(
+                from: settings.lastCaptureMemory,
+                availableTargets: captureTargets,
+                fallbackDisplay: lastCaptureFallbackDisplay,
+                outputFileURL: try nextRecordingFileURL(now: Date()),
+                captureKind: captureKind
+            )
+            await startRecording(request)
+        } catch {
+            recordingState = .failed(errorMessage(error))
+        }
+    }
+
     func startQuickRecordingFromSelectedTarget() async {
         guard let presetID = settings.quickExportPresetID else {
             recordingState = .failed("No quick export preset selected")
@@ -897,7 +966,6 @@ private final class LuxelMenuModel {
     ) async {
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
-        recordingState = .starting
 
         do {
             let request = try makeRecordingRequest(
@@ -905,6 +973,18 @@ private final class LuxelMenuModel {
                 pixelSize: pixelSize,
                 captureKind: captureKind
             )
+            await startRecording(request)
+        } catch {
+            recordingState = .failed(errorMessage(error))
+        }
+    }
+
+    private func startRecording(_ request: RecordingRequest) async {
+        recordingActionErrorMessage = nil
+        quickExportStatusMessage = nil
+        recordingState = .starting
+
+        do {
             let recordingName = request.outputFileURL.deletingPathExtension().lastPathComponent
             let activeRecording = try await recordingLifecycleService.startRecording(
                 request,
