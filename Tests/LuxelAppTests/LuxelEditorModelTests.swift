@@ -251,6 +251,107 @@ struct LuxelEditorModelTests {
         #expect(model.quality == .lossless)
     }
 
+    @Test("format change with memory is one undo step")
+    func formatChangeWithMemoryIsOneUndoStep() async throws {
+        let memory: [ExportFormat: ExportMemory] = [
+            .hevc: try ExportMemory(
+                sizePreset: .percent50,
+                frameRate: FrameRate(24),
+                quality: .high
+            )
+        ]
+        let model = makeModel(exportMemory: memory)
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormat(.hevc)
+
+        #expect(model.format == .hevc)
+        #expect(model.selectedFormats == [.hevc])
+        #expect(model.sizePreset == .percent50)
+        #expect(model.outputWidth == 640)
+        #expect(model.frameRate == 24)
+        #expect(model.quality == .high)
+
+        model.undoEditorChange()
+
+        #expect(model.format == .mp4)
+        #expect(model.selectedFormats == [.mp4])
+        #expect(model.sizePreset == .original)
+        #expect(model.outputWidth == 1280)
+        #expect(model.frameRate == 30)
+        #expect(model.quality == .balanced)
+        #expect(!model.canUndoEditorChange)
+        #expect(model.canRedoEditorChange)
+
+        model.redoEditorChange()
+
+        #expect(model.format == .hevc)
+        #expect(model.sizePreset == .percent50)
+        #expect(model.outputWidth == 640)
+        #expect(model.frameRate == 24)
+        #expect(model.quality == .high)
+    }
+
+    @Test("editor undo redo restores draft options")
+    func editorUndoRedoRestoresDraftOptions() async throws {
+        let model = makeModel()
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        #expect(!model.canUndoEditorChange)
+        #expect(!model.canRedoEditorChange)
+
+        model.setSizePreset(.percent50)
+        model.setIncludesAudio(false)
+        model.setShouldCrop(false)
+
+        #expect(model.sizePreset == .percent50)
+        #expect(model.outputWidth == 640)
+        #expect(!model.includesAudio)
+        #expect(!model.shouldCrop)
+
+        model.undoEditorChange()
+
+        #expect(model.sizePreset == .percent50)
+        #expect(model.outputWidth == 640)
+        #expect(!model.includesAudio)
+        #expect(model.shouldCrop)
+
+        model.undoEditorChange()
+
+        #expect(model.sizePreset == .percent50)
+        #expect(model.outputWidth == 640)
+        #expect(model.includesAudio)
+        #expect(model.shouldCrop)
+
+        model.redoEditorChange()
+
+        #expect(!model.includesAudio)
+        #expect(model.shouldCrop)
+        #expect(model.canUndoEditorChange)
+    }
+
+    @Test("trim start changes coalesce into one undo step")
+    func trimStartChangesCoalesceIntoOneUndoStep() async throws {
+        let model = makeModel()
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setTrimStart(1)
+        model.setTrimStart(2)
+        model.setTrimStart(3)
+
+        #expect(model.trimStart == 3)
+
+        model.undoEditorChange()
+
+        #expect(model.trimStart == 0)
+        #expect(!model.canUndoEditorChange)
+        #expect(model.canRedoEditorChange)
+
+        model.redoEditorChange()
+
+        #expect(model.trimStart == 3)
+    }
+
     @Test("successful export emits format memory")
     func successfulExportEmitsFormatMemory() async throws {
         var captured: [(ExportFormat, ExportMemory)] = []

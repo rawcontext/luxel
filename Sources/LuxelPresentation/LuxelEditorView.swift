@@ -208,7 +208,7 @@ public struct LuxelEditorView: View {
                 Toggle("Include Audio", isOn: includeAudioSelection)
                     .disabled(!model.canIncludeAudio)
 
-                Toggle("Crop to Fill", isOn: $model.shouldCrop)
+                Toggle("Crop to Fill", isOn: shouldCropSelection)
 
                 if let exportEstimateSummary = model.exportEstimateSummary {
                     LabeledContent("Estimated Size", value: exportEstimateSummary)
@@ -562,6 +562,14 @@ public struct LuxelEditorView: View {
             model.frameRate
         } set: { value in
             model.setFrameRate(value)
+        }
+    }
+
+    private var shouldCropSelection: Binding<Bool> {
+        Binding {
+            model.shouldCrop
+        } set: { shouldCrop in
+            model.setShouldCrop(shouldCrop)
         }
     }
 }

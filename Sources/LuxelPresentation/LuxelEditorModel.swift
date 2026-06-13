@@ -45,6 +45,7 @@ public final class LuxelEditorModel {
     var exportJobs: [ExportJobSnapshot] = []
     var exportEstimate: ExportEstimate?
     var isEstimatingExportSize = false
+    private var editorUndoStack = UndoStack(initialState: EditorDraftState.defaults)
 
     @ObservationIgnored var player = AVPlayer()
     @ObservationIgnored private let metadataReader: any MediaMetadataReader
@@ -157,6 +158,14 @@ public final class LuxelEditorModel {
 
     var canRetryExport: Bool {
         hasSource && !isExporting
+    }
+
+    var canUndoEditorChange: Bool {
+        editorUndoStack.canUndo
+    }
+
+    var canRedoEditorChange: Bool {
+        editorUndoStack.canRedo
     }
 
     var showsExportProgressPanel: Bool {
@@ -332,16 +341,18 @@ public final class LuxelEditorModel {
             source = media
             trimStart = 0
             trimEnd = media.duration
-            setSizePreset(.original)
-            setFrameRate(media.nominalFrameRate.framesPerSecond)
+            applySizePreset(.original)
+            applyFrameRate(media.nominalFrameRate.framesPerSecond)
             applyExportMemory(for: format)
             shouldMute = !media.hasAudio || format.dropsAudio
             player.replaceCurrentItem(with: AVPlayerItem(url: fileURL))
             status = .ready
+            resetEditorUndoStack()
         } catch {
             source = nil
             player.replaceCurrentItem(with: nil)
             status = .failed(errorMessage(error))
+            resetEditorUndoStack()
         }
     }
 
@@ -352,6 +363,7 @@ public final class LuxelEditorModel {
         exportMemoryByFormat = memory
         onExportMemoryChange = onChange
         applyExportMemory(for: format)
+        resetEditorUndoStack()
     }
 
     public func configureDiscard(
@@ -380,6 +392,7 @@ public final class LuxelEditorModel {
         isEstimatingExportSize = false
         player.replaceCurrentItem(with: nil)
         status = .failed(errorMessage(error))
+        resetEditorUndoStack()
     }
 
     func setFormat(_ nextFormat: ExportFormat) {
@@ -392,6 +405,7 @@ public final class LuxelEditorModel {
         }
 
         exportProgress = nil
+        recordEditorDraftChange()
     }
 
     func setFormatSelection(_ nextFormat: ExportFormat, isSelected: Bool) {
@@ -419,63 +433,82 @@ public final class LuxelEditorModel {
         }
 
         exportProgress = nil
+        recordEditorDraftChange()
     }
 
     func setQuality(_ nextQuality: ExportQuality) {
         guard nextQuality.isAvailable(for: format) else {
             quality = ExportQuality.defaultQuality(for: format)
             exportProgress = nil
+            recordEditorDraftChange()
             return
         }
 
         quality = nextQuality
         exportProgress = nil
+        recordEditorDraftChange()
     }
 
     func setIncludesAudio(_ includesAudio: Bool) {
         shouldMute = !includesAudio
+        recordEditorDraftChange()
     }
 
     func setSizePreset(_ preset: EditorSizePreset?) {
-        sizePreset = preset
-
-        guard let preset, let source else {
-            return
-        }
-
-        do {
-            let pixelSize = try preset.pixelSize(for: source.pixelSize)
-            outputWidth = pixelSize.width
-            outputHeight = pixelSize.height
-        } catch {
-            status = .failed(errorMessage(error))
-        }
+        applySizePreset(preset)
+        recordEditorDraftChange()
     }
 
     func setOutputWidth(_ value: Int) {
         outputWidth = clampedPixelDimension(value)
         updateSizePresetFromDimensions()
+        recordEditorDraftChange(coalescingToken: "output-width")
     }
 
     func setOutputHeight(_ value: Int) {
         outputHeight = clampedPixelDimension(value)
         updateSizePresetFromDimensions()
+        recordEditorDraftChange(coalescingToken: "output-height")
     }
 
     func setFrameRate(_ value: Int) {
-        frameRate = min(max(value, 1), maximumFrameRate)
+        applyFrameRate(value)
+        recordEditorDraftChange(coalescingToken: "frame-rate")
     }
 
     func setTrimStart(_ value: TimeInterval) {
         let maxStart = max(0, min(duration - minimumTrimDuration, trimEnd - minimumTrimDuration))
         trimStart = min(max(value, 0), maxStart)
         seekPlaybackIntoTrimRangeIfNeeded()
+        recordEditorDraftChange(coalescingToken: "trim-start")
     }
 
     func setTrimEnd(_ value: TimeInterval) {
         let minEnd = min(duration, trimStart + minimumTrimDuration)
         trimEnd = min(max(value, minEnd), duration)
         seekPlaybackIntoTrimRangeIfNeeded()
+        recordEditorDraftChange(coalescingToken: "trim-end")
+    }
+
+    func setShouldCrop(_ shouldCrop: Bool) {
+        self.shouldCrop = shouldCrop
+        recordEditorDraftChange()
+    }
+
+    func undoEditorChange() {
+        guard let state = editorUndoStack.undo() else {
+            return
+        }
+
+        applyEditorDraftState(state)
+    }
+
+    func redoEditorChange() {
+        guard let state = editorUndoStack.redo() else {
+            return
+        }
+
+        applyEditorDraftState(state)
     }
 
     func togglePlayback() {
@@ -846,6 +879,7 @@ public final class LuxelEditorModel {
         player.pause()
         playbackRequested = false
         player.replaceCurrentItem(with: nil)
+        resetEditorUndoStack()
     }
 
     private func makeExportJobs(for formats: [ExportFormat]) -> [ExportJobSnapshot] {
@@ -956,6 +990,26 @@ public final class LuxelEditorModel {
         }
     }
 
+    private func applySizePreset(_ preset: EditorSizePreset?) {
+        sizePreset = preset
+
+        guard let preset, let source else {
+            return
+        }
+
+        do {
+            let pixelSize = try preset.pixelSize(for: source.pixelSize)
+            outputWidth = pixelSize.width
+            outputHeight = pixelSize.height
+        } catch {
+            status = .failed(errorMessage(error))
+        }
+    }
+
+    private func applyFrameRate(_ value: Int) {
+        frameRate = min(max(value, 1), maximumFrameRate)
+    }
+
     private func applyExportMemory(for format: ExportFormat) {
         guard let memory = exportMemoryByFormat[format] else {
             if !quality.isAvailable(for: format) {
@@ -964,11 +1018,61 @@ public final class LuxelEditorModel {
             return
         }
 
-        setSizePreset(memory.sizePreset)
-        setFrameRate(memory.frameRate.framesPerSecond)
+        applySizePreset(memory.sizePreset)
+        applyFrameRate(memory.frameRate.framesPerSecond)
         quality = memory.quality.isAvailable(for: format)
             ? memory.quality
             : ExportQuality.defaultQuality(for: format)
+    }
+
+    private func recordEditorDraftChange(coalescingToken: String? = nil) {
+        guard hasSource else {
+            return
+        }
+
+        editorUndoStack.push(currentEditorDraftState, coalescingToken: coalescingToken)
+        exportProgress = nil
+    }
+
+    private var currentEditorDraftState: EditorDraftState {
+        EditorDraftState(
+            format: format,
+            selectedFormats: selectedFormats,
+            trimStart: trimStart,
+            trimEnd: trimEnd,
+            sizePreset: sizePreset,
+            outputWidth: outputWidth,
+            outputHeight: outputHeight,
+            frameRate: frameRate,
+            shouldMute: shouldMute,
+            shouldCrop: shouldCrop,
+            quality: quality
+        )
+    }
+
+    private func resetEditorUndoStack() {
+        editorUndoStack = UndoStack(initialState: currentEditorDraftState)
+    }
+
+    private func applyEditorDraftState(_ state: EditorDraftState) {
+        format = state.format
+        selectedFormats = state.selectedFormats.isEmpty ? [state.format] : state.selectedFormats
+        trimStart = state.trimStart
+        trimEnd = state.trimEnd
+        sizePreset = state.sizePreset
+        outputWidth = state.outputWidth
+        outputHeight = state.outputHeight
+        frameRate = min(max(state.frameRate, 1), maximumFrameRate)
+        quality = state.quality.isAvailable(for: format)
+            ? state.quality
+            : ExportQuality.defaultQuality(for: format)
+        shouldMute = state.shouldMute
+        if !canIncludeAudio {
+            shouldMute = true
+        }
+        shouldCrop = state.shouldCrop
+        exportProgress = nil
+        seekPlaybackIntoTrimRangeIfNeeded()
     }
 
     private func currentExportMemory(for format: ExportFormat) throws -> ExportMemory {
@@ -1014,6 +1118,34 @@ public final class LuxelEditorModel {
         let description = (error as NSError).localizedDescription
         return description.isEmpty ? String(describing: error) : description
     }
+}
+
+private struct EditorDraftState: Equatable, Sendable {
+    static let defaults = EditorDraftState(
+        format: .mp4,
+        selectedFormats: [.mp4],
+        trimStart: 0,
+        trimEnd: 1,
+        sizePreset: .original,
+        outputWidth: 1280,
+        outputHeight: 720,
+        frameRate: 30,
+        shouldMute: false,
+        shouldCrop: true,
+        quality: .balanced
+    )
+
+    let format: ExportFormat
+    let selectedFormats: [ExportFormat]
+    let trimStart: TimeInterval
+    let trimEnd: TimeInterval
+    let sizePreset: EditorSizePreset?
+    let outputWidth: Int
+    let outputHeight: Int
+    let frameRate: Int
+    let shouldMute: Bool
+    let shouldCrop: Bool
+    let quality: ExportQuality
 }
 
 struct ExportEstimateTaskID: Equatable, Hashable {
