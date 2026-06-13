@@ -18,6 +18,8 @@ struct SettingsTests {
         #expect(settings.audioInputDeviceID == "SYSTEM_DEFAULT")
         #expect(settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "")
+        #expect(settings.toggleRecordingShortcut == "")
+        #expect(settings.quickRecordLastShortcut == "")
         #expect(settings.updatePreferences == .defaults)
         #expect(settings.updatePreferences.automaticallyCheckForUpdates)
         #expect(!settings.updatePreferences.automaticallyDownloadAndInstall)

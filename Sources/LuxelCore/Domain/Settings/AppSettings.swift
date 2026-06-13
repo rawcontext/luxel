@@ -33,6 +33,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var audioInputDeviceID: String?
     public var enableShortcuts: Bool
     public var triggerCropperShortcut: String
+    public var toggleRecordingShortcut: String
+    public var quickRecordLastShortcut: String
     public var updatePreferences: UpdatePreferences
     public var showTimeInMenuBar: Bool
     public var exportPresets: [ExportPreset]
@@ -50,6 +52,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         audioInputDeviceID: String? = AudioInputDeviceID.systemDefault,
         enableShortcuts: Bool = true,
         triggerCropperShortcut: String = "",
+        toggleRecordingShortcut: String = "",
+        quickRecordLastShortcut: String = "",
         updatePreferences: UpdatePreferences = .defaults,
         showTimeInMenuBar: Bool = true,
         exportPresets: [ExportPreset] = ExportPreset.builtInDefaults,
@@ -66,6 +70,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.audioInputDeviceID = audioInputDeviceID
         self.enableShortcuts = enableShortcuts
         self.triggerCropperShortcut = triggerCropperShortcut
+        self.toggleRecordingShortcut = toggleRecordingShortcut
+        self.quickRecordLastShortcut = quickRecordLastShortcut
         self.updatePreferences = updatePreferences
         self.showTimeInMenuBar = showTimeInMenuBar
         self.exportPresets = exportPresets
@@ -84,6 +90,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case audioInputDeviceID
         case enableShortcuts
         case triggerCropperShortcut
+        case toggleRecordingShortcut
+        case quickRecordLastShortcut
         case updatePreferences
         case showTimeInMenuBar
         case exportPresets
@@ -115,6 +123,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
         enableShortcuts = try container.decodeIfPresent(Bool.self, forKey: .enableShortcuts)
             ?? true
         triggerCropperShortcut = try container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut)
+            ?? ""
+        toggleRecordingShortcut = try container.decodeIfPresent(String.self, forKey: .toggleRecordingShortcut)
+            ?? ""
+        quickRecordLastShortcut = try container.decodeIfPresent(String.self, forKey: .quickRecordLastShortcut)
             ?? ""
         updatePreferences = try container.decodeIfPresent(UpdatePreferences.self, forKey: .updatePreferences)
             ?? defaultUpdatePreferences

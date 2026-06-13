@@ -45,6 +45,9 @@ struct UserDefaultsSettingsStoreTests {
             record60FPS: true,
             recordAudio: true,
             audioInputDeviceID: "mic-1",
+            triggerCropperShortcut: "command+control+option+r",
+            toggleRecordingShortcut: "command+control+option+t",
+            quickRecordLastShortcut: "command+control+option+q",
             updatePreferences: UpdatePreferences(
                 automaticallyCheckForUpdates: false,
                 automaticallyDownloadAndInstall: false,
@@ -97,6 +100,8 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.audioInputDeviceID == "device-1")
         #expect(!settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "command+shift+5")
+        #expect(settings.toggleRecordingShortcut == "")
+        #expect(settings.quickRecordLastShortcut == "")
         #expect(settings.updatePreferences == .defaults)
         #expect(settings.showTimeInMenuBar)
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)

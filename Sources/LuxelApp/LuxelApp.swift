@@ -30,14 +30,12 @@ struct LuxelApp: App {
         }
 
         Settings {
-            LuxelSettingsView(model: model)
-                .background {
-                    LuxelShortcutInstaller(
-                        model: model,
-                        cropperPanelController: cropperPanelController,
-                        shortcutController: shortcutController
-                    )
-                }
+            LuxelSettingsView(
+                model: model,
+                editorModel: editorModel,
+                cropperPanelController: cropperPanelController,
+                shortcutController: shortcutController
+            )
         }
     }
 }
@@ -268,7 +266,9 @@ private struct LuxelMenu: View {
                 model: model,
                 cropperPanelController: cropperPanelController,
                 shortcutController: shortcutController
-            )
+            ) { fileURL in
+                openRecording(fileURL)
+            }
         }
         .task {
             model.refreshRecentRecordings()
@@ -364,7 +364,12 @@ private struct LuxelMenu: View {
 }
 
 private struct LuxelSettingsView: View {
+    @Environment(\.openWindow) private var openWindow
+
     @Bindable var model: LuxelMenuModel
+    let editorModel: LuxelEditorModel
+    let cropperPanelController: LuxelCropperPanelController
+    let shortcutController: LuxelShortcutController
 
     var body: some View {
         Form {
@@ -422,9 +427,25 @@ private struct LuxelSettingsView: View {
             Section("System") {
                 Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
                 Toggle("Keyboard Shortcuts", isOn: $model.settings.enableShortcuts)
-                Picker("Capture Shortcut", selection: $model.settings.triggerCropperShortcut) {
+                Picker("Select Area", selection: $model.settings.triggerCropperShortcut) {
                     Text("None").tag("")
                     ForEach(AppKeyboardShortcutPresets.capture) { shortcut in
+                        Text(shortcut.displayName).tag(shortcut.rawValue)
+                    }
+                }
+                .disabled(!model.settings.enableShortcuts)
+
+                Picker("Toggle Recording", selection: $model.settings.toggleRecordingShortcut) {
+                    Text("None").tag("")
+                    ForEach(AppKeyboardShortcutPresets.toggleRecording) { shortcut in
+                        Text(shortcut.displayName).tag(shortcut.rawValue)
+                    }
+                }
+                .disabled(!model.settings.enableShortcuts)
+
+                Picker("Quick Record Last", selection: $model.settings.quickRecordLastShortcut) {
+                    Text("None").tag("")
+                    ForEach(AppKeyboardShortcutPresets.quickRecordLast) { shortcut in
                         Text(shortcut.displayName).tag(shortcut.rawValue)
                     }
                 }
@@ -461,6 +482,15 @@ private struct LuxelSettingsView: View {
         .formStyle(.grouped)
         .padding(24)
         .frame(width: 460)
+        .background {
+            LuxelShortcutInstaller(
+                model: model,
+                cropperPanelController: cropperPanelController,
+                shortcutController: shortcutController
+            ) { fileURL in
+                openRecording(fileURL)
+            }
+        }
         .task {
             model.refreshAudioInputDevices()
         }
@@ -477,6 +507,14 @@ private struct LuxelSettingsView: View {
             model.settings.audioInputDeviceID ?? AudioInputDeviceID.systemDefault
         } set: { deviceID in
             model.settings.audioInputDeviceID = deviceID
+        }
+    }
+
+    private func openRecording(_ url: URL) {
+        openWindow(id: LuxelEditorScene.id)
+
+        Task {
+            await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
         }
     }
 }
@@ -518,6 +556,7 @@ private struct LuxelShortcutInstaller: View {
     let model: LuxelMenuModel
     let cropperPanelController: LuxelCropperPanelController
     let shortcutController: LuxelShortcutController
+    let openRecording: (URL) -> Void
 
     var body: some View {
         Color.clear
@@ -531,23 +570,56 @@ private struct LuxelShortcutInstaller: View {
             .onChange(of: model.settings.triggerCropperShortcut) {
                 configureShortcut()
             }
+            .onChange(of: model.settings.toggleRecordingShortcut) {
+                configureShortcut()
+            }
+            .onChange(of: model.settings.quickRecordLastShortcut) {
+                configureShortcut()
+            }
     }
 
     private func configureShortcut() {
         shortcutController.configure(
             enabled: model.settings.enableShortcuts,
-            rawShortcut: model.settings.triggerCropperShortcut
-        ) {
-            guard model.canSelectArea else {
-                return
-            }
+            registrations: [
+                LuxelShortcutRegistration(rawShortcut: model.settings.triggerCropperShortcut) {
+                    guard model.canSelectArea else {
+                        return
+                    }
 
-            cropperPanelController.show { draft in
-                Task {
-                    await model.startRecording(from: draft)
+                    cropperPanelController.show { draft in
+                        Task {
+                            await model.startRecording(from: draft)
+                        }
+                    }
+                },
+                LuxelShortcutRegistration(rawShortcut: model.settings.toggleRecordingShortcut) {
+                    Task {
+                        if model.hasActiveRecording {
+                            if let stopAction = await model.stopRecording() {
+                                switch stopAction {
+                                case .openEditor(let fileURL):
+                                    openRecording(fileURL)
+                                case .quickExported:
+                                    break
+                                }
+                            }
+                        } else if model.canUseRecordAgainButton {
+                            await model.startRecordingFromLastCapture()
+                        }
+                    }
+                },
+                LuxelShortcutRegistration(rawShortcut: model.settings.quickRecordLastShortcut) {
+                    guard model.canUseQuickRecordLastButton else {
+                        return
+                    }
+
+                    Task {
+                        await model.startQuickRecordingFromLastCapture()
+                    }
                 }
-            }
-        }
+            ]
+        )
     }
 }
 

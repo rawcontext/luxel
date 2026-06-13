@@ -1,27 +1,38 @@
 import AppKit
 import LuxelCore
 
+struct LuxelShortcutRegistration {
+    let rawShortcut: String
+    let action: @MainActor () -> Void
+}
+
 final class LuxelShortcutController: @unchecked Sendable {
     private let lock = NSLock()
     private var monitors: [Any] = []
-    private var shortcut: AppKeyboardShortcut?
-    private var action: (@MainActor @Sendable () -> Void)?
+    private var registrations: [(shortcut: AppKeyboardShortcut, action: @MainActor () -> Void)] = []
 
     @MainActor
     func configure(
         enabled: Bool,
-        rawShortcut: String,
-        action: @escaping @MainActor @Sendable () -> Void
+        registrations nextRegistrations: [LuxelShortcutRegistration]
     ) {
         removeMonitors()
 
-        let nextShortcut = enabled ? AppKeyboardShortcut(rawValue: rawShortcut) : nil
+        let nextRegistrations = enabled
+            ? nextRegistrations.compactMap { registration -> (shortcut: AppKeyboardShortcut, action: @MainActor () -> Void)? in
+                guard let shortcut = AppKeyboardShortcut(rawValue: registration.rawShortcut) else {
+                    return nil
+                }
+
+                return (shortcut, registration.action)
+            }
+            : []
+
         lock.lock()
-        shortcut = nextShortcut
-        self.action = action
+        registrations = nextRegistrations
         lock.unlock()
 
-        guard nextShortcut != nil else {
+        guard !nextRegistrations.isEmpty else {
             return
         }
 
@@ -47,25 +58,21 @@ final class LuxelShortcutController: @unchecked Sendable {
         removeMonitors()
 
         lock.lock()
-        shortcut = nil
-        action = nil
+        registrations = []
         lock.unlock()
     }
 
     private func handle(_ event: NSEvent) -> Bool {
         lock.lock()
-        let currentShortcut = shortcut
-        let currentAction = action
+        let currentRegistrations = registrations
         lock.unlock()
 
-        guard let currentShortcut, event.matches(currentShortcut) else {
+        guard let registration = currentRegistrations.first(where: { event.matches($0.shortcut) }) else {
             return false
         }
 
-        if let currentAction {
-            Task { @MainActor in
-                currentAction()
-            }
+        Task { @MainActor in
+            registration.action()
         }
 
         return true
