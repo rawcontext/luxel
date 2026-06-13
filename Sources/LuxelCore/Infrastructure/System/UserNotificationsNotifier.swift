@@ -3,11 +3,11 @@ import Foundation
 import UserNotifications
 
 public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
-    private let notificationCenter: UNUserNotificationCenter
+    private let notificationCenter: UNUserNotificationCenter?
     private let shouldNotifyRecordingFinished: @Sendable () async -> Bool
 
     public init(
-        notificationCenter: UNUserNotificationCenter = .current(),
+        notificationCenter: UNUserNotificationCenter? = nil,
         shouldNotifyRecordingFinished: @escaping @Sendable () async -> Bool = {
             await MainActor.run {
                 !NSApplication.shared.isActive
@@ -19,6 +19,10 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
     }
 
     public func notifyExportCompleted(fileURL: URL, presetName: String) async throws {
+        guard let notificationCenter = notificationCenter ?? Self.currentNotificationCenter() else {
+            return
+        }
+
         let isAuthorized = try await notificationCenter.requestAuthorization(options: [.alert, .sound])
         guard isAuthorized else {
             return
@@ -38,6 +42,10 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
     }
 
     public func notifyRecordingAutoStopped(duration: TimeInterval) async throws {
+        guard let notificationCenter = notificationCenter ?? Self.currentNotificationCenter() else {
+            return
+        }
+
         guard await shouldNotifyRecordingFinished() else {
             return
         }
@@ -75,5 +83,13 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
 
     private static func twoDigits(_ value: Int) -> String {
         value < 10 ? "0\(value)" : "\(value)"
+    }
+
+    private static func currentNotificationCenter() -> UNUserNotificationCenter? {
+        guard Bundle.main.bundleURL.pathExtension == "app" else {
+            return nil
+        }
+
+        return .current()
     }
 }
