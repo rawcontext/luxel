@@ -40,6 +40,25 @@ struct LuxelEditorModelTests {
         #expect(model.status == .ready)
     }
 
+    @Test("opening a new recording resets editor undo history")
+    func openingNewRecordingResetsEditorUndoHistory() async throws {
+        let model = makeModel()
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setTrimStart(3)
+        #expect(model.canUndoEditorChange)
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/next.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(!model.canUndoEditorChange)
+        #expect(!model.canRedoEditorChange)
+
+        model.undoEditorChange()
+
+        #expect(model.trimStart == 0)
+        #expect(model.source?.fileURL == URL(fileURLWithPath: "/tmp/next.mp4"))
+    }
+
     @Test("import failure clears stale export progress")
     func importFailureClearsStaleExportProgress() {
         let model = makeModel()

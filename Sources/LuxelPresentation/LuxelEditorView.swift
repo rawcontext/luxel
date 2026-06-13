@@ -24,6 +24,26 @@ public struct LuxelEditorView: View {
         .toolbar {
             ToolbarItemGroup {
                 Button {
+                    model.undoEditorChange()
+                } label: {
+                    Label("Undo", systemImage: "arrow.uturn.backward")
+                }
+                .disabled(!model.canUndoEditorChange)
+                .keyboardShortcut("z", modifiers: .command)
+                .help("Undo Editor Change")
+
+                Button {
+                    model.redoEditorChange()
+                } label: {
+                    Label("Redo", systemImage: "arrow.uturn.forward")
+                }
+                .disabled(!model.canRedoEditorChange)
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+                .help("Redo Editor Change")
+
+                Divider()
+
+                Button {
                     model.togglePlayback()
                 } label: {
                     Label("Play", systemImage: "playpause")
