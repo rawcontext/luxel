@@ -7,6 +7,14 @@ public struct LocalFileSystem: FileSystem {
         FileManager.default.fileExists(atPath: url.path)
     }
 
+    public func createDirectory(at url: URL) throws {
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+    }
+
+    public func copyFile(from sourceURL: URL, to destinationURL: URL) throws {
+        try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+    }
+
     public func removeFile(at url: URL) throws {
         try FileManager.default.removeItem(at: url)
     }

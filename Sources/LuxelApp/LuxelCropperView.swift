@@ -5,6 +5,7 @@ import SwiftUI
 
 struct LuxelCropperView: View {
     @Bindable var model: LuxelCropperModel
+    let audioLevelModel: LuxelAudioLevelModel?
     let onCancel: () -> Void
     let onSelect: (CaptureSelectionDraft) -> Void
 
@@ -61,6 +62,10 @@ struct LuxelCropperView: View {
                 }
                 .toggleStyle(.button)
                 .help("Lock 16:9")
+
+                if let audioLevelModel {
+                    CropperAudioLevelMeter(model: audioLevelModel)
+                }
 
                 Button {
                     onCancel()
@@ -138,6 +143,14 @@ struct LuxelCropperView: View {
         } catch {
             NSSound.beep()
         }
+    }
+}
+
+private struct CropperAudioLevelMeter: View {
+    @Bindable var model: LuxelAudioLevelModel
+
+    var body: some View {
+        AudioLevelMeterView(sample: model.sample)
     }
 }
 

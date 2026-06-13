@@ -24,6 +24,7 @@ struct AVFoundationExportPlanFactoryTests {
         #expect(plan.timeRange.duration == CMTime(seconds: 4, preferredTimescale: 600))
         #expect(plan.outputPixelSize == expectedPixelSize)
         #expect(!plan.shouldMute)
+        #expect(plan.quality == .balanced)
     }
 
     @Test("hevc export maps to HEVC highest quality plan")
@@ -37,6 +38,33 @@ struct AVFoundationExportPlanFactoryTests {
 
         #expect(plan.presetName == AVAssetExportPresetHEVCHighestQuality)
         #expect(plan.outputFileType == .mp4)
+        #expect(plan.quality == .balanced)
+    }
+
+    @Test("compact mp4 export maps to medium quality preset")
+    func compactMP4ExportMapsToMediumQualityPreset() throws {
+        let request = try makeRequest(format: .mp4, quality: .compact)
+
+        let plan = try AVFoundationExportPlanFactory().makePlan(
+            for: request,
+            outputFileURL: URL(fileURLWithPath: "/tmp/output.mp4")
+        )
+
+        #expect(plan.presetName == AVAssetExportPresetMediumQuality)
+        #expect(plan.quality == .compact)
+    }
+
+    @Test("unavailable lossless video export falls back to balanced")
+    func unavailableLosslessVideoExportFallsBackToBalanced() throws {
+        let request = try makeRequest(format: .mp4, quality: .lossless)
+
+        let plan = try AVFoundationExportPlanFactory().makePlan(
+            for: request,
+            outputFileURL: URL(fileURLWithPath: "/tmp/output.mp4")
+        )
+
+        #expect(plan.presetName == AVAssetExportPresetHighestQuality)
+        #expect(plan.quality == .balanced)
     }
 
     @Test("non AVFoundation formats are rejected")
@@ -56,7 +84,8 @@ struct AVFoundationExportPlanFactoryTests {
     private func makeRequest(
         format: ExportFormat,
         width: Int = 1280,
-        height: Int = 720
+        height: Int = 720,
+        quality: ExportQuality = .balanced
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -65,7 +94,8 @@ struct AVFoundationExportPlanFactoryTests {
             frameRate: FrameRate(30),
             timeRange: TimeRange(start: 2, end: 6),
             shouldMute: false,
-            shouldCrop: false
+            shouldCrop: false,
+            quality: quality
         )
     }
 }

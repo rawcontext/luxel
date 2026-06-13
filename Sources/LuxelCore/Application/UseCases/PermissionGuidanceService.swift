@@ -46,9 +46,9 @@ public struct PermissionGuidanceService: Sendable {
         case .notDetermined, .denied, .restricted, .unknown:
             PermissionGuidance(
                 title: "Screen Recording Permission",
-                message: "Luxel needs Screen Recording permission to capture displays, windows, and selected areas. Open System Settings, enable Luxel, then quit and reopen Luxel if macOS does not update the permission immediately.",
-                actionTitle: "Open Settings",
-                action: .openSettings
+                message: "Luxel needs Screen Recording permission to capture displays, windows, and selected areas. Continue, enable Luxel in System Settings if prompted, then quit and reopen Luxel.",
+                actionTitle: "Continue",
+                action: .request
             )
         }
     }

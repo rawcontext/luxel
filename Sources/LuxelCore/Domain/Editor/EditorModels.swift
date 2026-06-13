@@ -34,6 +34,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
     public let frameRate: FrameRate?
     public let shouldMute: Bool
     public let shouldCrop: Bool
+    public let quality: ExportQuality
 
     public init(
         source: SourceMedia,
@@ -42,7 +43,8 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         pixelSize: PixelSize? = nil,
         frameRate: FrameRate? = nil,
         shouldMute: Bool = false,
-        shouldCrop: Bool = false
+        shouldCrop: Bool = false,
+        quality: ExportQuality = .balanced
     ) {
         self.source = source
         self.format = format
@@ -51,6 +53,32 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         self.frameRate = frameRate
         self.shouldMute = shouldMute
         self.shouldCrop = shouldCrop
+        self.quality = quality
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case source
+        case format
+        case trimRange
+        case pixelSize
+        case frameRate
+        case shouldMute
+        case shouldCrop
+        case quality
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        source = try container.decode(SourceMedia.self, forKey: .source)
+        format = try container.decode(ExportFormat.self, forKey: .format)
+        trimRange = try container.decodeIfPresent(TimeRange.self, forKey: .trimRange)
+        pixelSize = try container.decodeIfPresent(PixelSize.self, forKey: .pixelSize)
+        frameRate = try container.decodeIfPresent(FrameRate.self, forKey: .frameRate)
+        shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
+        shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
+        quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
+            ?? .balanced
     }
 
     public var exportRequest: ExportRequest {
@@ -62,7 +90,8 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
                 frameRate: frameRate ?? source.nominalFrameRate,
                 timeRange: trimRange ?? TimeRange(start: 0, end: source.duration),
                 shouldMute: shouldMute || !source.hasAudio,
-                shouldCrop: shouldCrop
+                shouldCrop: shouldCrop,
+                quality: quality
             )
         }
     }

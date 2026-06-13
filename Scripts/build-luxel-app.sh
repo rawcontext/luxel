@@ -7,6 +7,15 @@ PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
 ENTITLEMENTS="${ENTITLEMENTS:-${PACKAGE_ROOT}/Configuration/Luxel/Luxel.DeveloperID.entitlements}"
 APP_PATH="${APP_PATH:-${PACKAGE_ROOT}/.build/${APP_NAME}.app}"
+SIGN_IDENTITY="${SIGN_IDENTITY:-}"
+
+if [[ -z "${SIGN_IDENTITY}" ]]; then
+	SIGN_IDENTITY="$(
+		security find-identity -v -p codesigning 2>/dev/null |
+			awk -F '"' '/"Apple Development: / { print $2; exit }'
+	)"
+fi
+
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 
 cd "${PACKAGE_ROOT}"

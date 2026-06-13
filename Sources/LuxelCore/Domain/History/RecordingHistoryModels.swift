@@ -4,11 +4,35 @@ public struct PastRecording: Codable, Equatable, Sendable {
     public let fileURL: URL
     public let name: String
     public let date: Date
+    public let options: RecordingOptions
 
-    public init(fileURL: URL, name: String, date: Date) {
+    public init(
+        fileURL: URL,
+        name: String,
+        date: Date,
+        options: RecordingOptions = RecordingOptions(frameRate: 0)
+    ) {
         self.fileURL = fileURL
         self.name = name
         self.date = date
+        self.options = options
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case fileURL
+        case name
+        case date
+        case options
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        fileURL = try container.decode(URL.self, forKey: .fileURL)
+        name = try container.decode(String.self, forKey: .name)
+        date = try container.decode(Date.self, forKey: .date)
+        options = try container.decodeIfPresent(RecordingOptions.self, forKey: .options)
+            ?? RecordingOptions(frameRate: 0)
     }
 }
 
@@ -26,7 +50,7 @@ public struct ActiveRecording: Codable, Equatable, Sendable {
     }
 
     public var pastRecording: PastRecording {
-        PastRecording(fileURL: fileURL, name: name, date: date)
+        PastRecording(fileURL: fileURL, name: name, date: date, options: options)
     }
 }
 
@@ -39,6 +63,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
     public let audio: RecordingAudioMode
     public let videoCodec: RecordingCodec
     public let captureKind: QuickCaptureKind
+    public let isAudioOnly: Bool
 
     public init(
         frameRate: Int,
@@ -48,7 +73,8 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         displayID: DisplayID? = nil,
         audio: RecordingAudioMode = .none,
         videoCodec: RecordingCodec = .h264,
-        captureKind: QuickCaptureKind = .standard
+        captureKind: QuickCaptureKind = .standard,
+        isAudioOnly: Bool = false
     ) {
         self.frameRate = frameRate
         self.captureRect = captureRect
@@ -58,6 +84,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         self.audio = audio
         self.videoCodec = videoCodec
         self.captureKind = captureKind
+        self.isAudioOnly = isAudioOnly
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -69,6 +96,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         case audio
         case videoCodec
         case captureKind
+        case isAudioOnly
     }
 
     public init(from decoder: any Decoder) throws {
@@ -87,6 +115,8 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
             ?? .h264
         captureKind = try container.decodeIfPresent(QuickCaptureKind.self, forKey: .captureKind)
             ?? .standard
+        isAudioOnly = try container.decodeIfPresent(Bool.self, forKey: .isAudioOnly)
+            ?? false
     }
 }
 

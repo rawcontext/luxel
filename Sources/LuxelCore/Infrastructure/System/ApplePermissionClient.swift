@@ -1,7 +1,8 @@
 import AppKit
-import AVFoundation
+import AVFAudio
 import CoreGraphics
 import Foundation
+import ScreenCaptureKit
 
 public struct ApplePermissionClient: PermissionClient {
     public init() {}
@@ -9,9 +10,13 @@ public struct ApplePermissionClient: PermissionClient {
     public func status(for permission: SystemPermission) async -> PermissionStatus {
         switch permission {
         case .screenRecording:
-            CGPreflightScreenCaptureAccess() ? PermissionStatus.authorized : PermissionStatus.denied
+            if CGPreflightScreenCaptureAccess() {
+                return .authorized
+            }
+
+            return await screenCaptureKitStatus()
         case .microphone:
-            AVCaptureDevice.authorizationStatus(for: .audio).permissionStatus
+            return AVAudioApplication.shared.recordPermission.permissionStatus
         }
     }
 
@@ -20,7 +25,7 @@ public struct ApplePermissionClient: PermissionClient {
         case .screenRecording:
             return CGRequestScreenCaptureAccess() ? PermissionStatus.authorized : PermissionStatus.denied
         case .microphone:
-            if await AVCaptureDevice.requestAccess(for: .audio) {
+            if await AVAudioApplication.requestRecordPermission() {
                 return .authorized
             }
 
@@ -36,18 +41,25 @@ public struct ApplePermissionClient: PermissionClient {
 
         NSWorkspace.shared.open(url)
     }
+
+    private func screenCaptureKitStatus() async -> PermissionStatus {
+        do {
+            _ = try await SCShareableContent.current
+            return .authorized
+        } catch {
+            return .denied
+        }
+    }
 }
 
-private extension AVAuthorizationStatus {
+private extension AVAudioApplication.recordPermission {
     var permissionStatus: PermissionStatus {
         switch self {
-        case .notDetermined:
+        case .undetermined:
             .notDetermined
-        case .restricted:
-            .restricted
         case .denied:
             .denied
-        case .authorized:
+        case .granted:
             .authorized
         @unknown default:
             .unknown

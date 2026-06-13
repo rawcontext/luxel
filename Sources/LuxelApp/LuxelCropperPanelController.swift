@@ -5,23 +5,37 @@ import SwiftUI
 @MainActor
 final class LuxelCropperPanelController {
     private let targetService: CaptureTargetService
+    private let audioLevelMonitorFactory: () -> any AudioLevelMonitor
     private var panels: [NSPanel] = []
+    private var audioLevelModel: LuxelAudioLevelModel?
+    private var audioLevelTask: Task<Void, Never>?
 
     init(
         targetService: CaptureTargetService = CaptureTargetService(
             catalog: ScreenCaptureKitCaptureTargetCatalog()
-        )
+        ),
+        audioLevelMonitorFactory: @escaping () -> any AudioLevelMonitor = {
+            AVCaptureAudioLevelMonitor()
+        }
     ) {
         self.targetService = targetService
+        self.audioLevelMonitorFactory = audioLevelMonitorFactory
     }
 
-    func show(onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void) {
+    func show(
+        audioLevelConfiguration: CropperAudioLevelConfiguration? = nil,
+        onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
+    ) {
         close()
 
         Task { @MainActor in
             do {
                 let displays = try await targetService.availableDisplays()
-                present(displays: displays, onSelect: onSelect)
+                present(
+                    displays: displays,
+                    audioLevelConfiguration: audioLevelConfiguration,
+                    onSelect: onSelect
+                )
             } catch {
                 NSSound.beep()
             }
@@ -29,15 +43,33 @@ final class LuxelCropperPanelController {
     }
 
     func close() {
+        audioLevelTask?.cancel()
+        audioLevelTask = nil
+        audioLevelModel?.stop()
+        audioLevelModel = nil
         panels.forEach { $0.close() }
         panels = []
     }
 
     private func present(
         displays: [DisplayBounds],
+        audioLevelConfiguration: CropperAudioLevelConfiguration?,
         onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
     ) {
         let displaysByID = Dictionary(uniqueKeysWithValues: displays.map { ($0.id, $0) })
+        let sharedAudioLevelModel = audioLevelConfiguration.map {
+            LuxelAudioLevelModel(
+                deviceID: $0.deviceID,
+                monitor: audioLevelMonitorFactory()
+            )
+        }
+
+        audioLevelModel = sharedAudioLevelModel
+        if let sharedAudioLevelModel {
+            audioLevelTask = Task {
+                await sharedAudioLevelModel.watch()
+            }
+        }
 
         for screen in NSScreen.screens {
             guard let displayID = screen.displayID,
@@ -61,6 +93,7 @@ final class LuxelCropperPanelController {
             panel.contentView = NSHostingView(
                 rootView: LuxelCropperView(
                     model: model,
+                    audioLevelModel: sharedAudioLevelModel,
                     onCancel: { [weak self] in
                         self?.close()
                     },

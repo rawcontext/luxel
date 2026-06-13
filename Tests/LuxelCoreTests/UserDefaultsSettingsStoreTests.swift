@@ -6,7 +6,7 @@ import Testing
 struct UserDefaultsSettingsStoreTests {
     @Test("load returns defaults before settings are saved")
     func loadReturnsDefaultsBeforeSettingsAreSaved() throws {
-        let defaults = try makeUserDefaults()
+        let defaults = makeUserDefaults()
         let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
 
@@ -15,7 +15,7 @@ struct UserDefaultsSettingsStoreTests {
 
     @Test("save persists settings")
     func savePersistsSettings() throws {
-        let defaults = try makeUserDefaults()
+        let defaults = makeUserDefaults()
         let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
         let presetID = UUID(uuidString: "00000000-0000-0000-0000-000000000401")!
         let preset = try ExportPreset(
@@ -45,8 +45,11 @@ struct UserDefaultsSettingsStoreTests {
             record60FPS: true,
             recordAudio: true,
             audioInputDeviceID: "mic-1",
+            audioInputDeviceName: "Studio Mic",
+            audioOnlyFormat: .alac,
             triggerCropperShortcut: "command+control+option+r",
             toggleRecordingShortcut: "command+control+option+t",
+            audioOnlyRecordingShortcut: "command+control+option+a",
             quickRecordLastShortcut: "command+control+option+q",
             updatePreferences: UpdatePreferences(
                 automaticallyCheckForUpdates: false,
@@ -69,7 +72,7 @@ struct UserDefaultsSettingsStoreTests {
 
     @Test("load ignores removed clean-room settings keys")
     func loadIgnoresRemovedCleanRoomSettingsKeys() throws {
-        let defaults = try makeUserDefaults()
+        let defaults = makeUserDefaults()
         let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
         let oldPayload = """
         {
@@ -98,9 +101,12 @@ struct UserDefaultsSettingsStoreTests {
         #expect(!settings.loopExports)
         #expect(settings.recordAudio)
         #expect(settings.audioInputDeviceID == "device-1")
+        #expect(settings.audioInputDeviceName == nil)
+        #expect(settings.audioOnlyFormat == .aac)
         #expect(!settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "command+shift+5")
         #expect(settings.toggleRecordingShortcut == "")
+        #expect(settings.audioOnlyRecordingShortcut == "")
         #expect(settings.quickRecordLastShortcut == "")
         #expect(settings.updatePreferences == .defaults)
         #expect(settings.showTimeInMenuBar)
@@ -112,7 +118,7 @@ struct UserDefaultsSettingsStoreTests {
 
     @Test("load preserves explicit nil quick preset")
     func loadPreservesExplicitNilQuickPreset() throws {
-        let defaults = try makeUserDefaults()
+        let defaults = makeUserDefaults()
         let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
         let payload = """
         {
@@ -129,10 +135,19 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)
     }
 
-    private func makeUserDefaults() throws -> UserDefaults {
-        let suiteName = "LuxelCoreTests-\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suiteName))
-        defaults.removePersistentDomain(forName: suiteName)
-        return defaults
+    private func makeUserDefaults() -> UserDefaults {
+        InMemoryUserDefaults()
+    }
+}
+
+private final class InMemoryUserDefaults: UserDefaults, @unchecked Sendable {
+    private var storage: [String: Any] = [:]
+
+    override func data(forKey defaultName: String) -> Data? {
+        storage[defaultName] as? Data
+    }
+
+    override func set(_ value: Any?, forKey defaultName: String) {
+        storage[defaultName] = value
     }
 }

@@ -50,6 +50,9 @@ struct AppKeyboardShortcutTests {
         #expect(AppKeyboardShortcutPresets.toggleRecording.map(\.rawValue) == [
             "command+control+option+t"
         ])
+        #expect(AppKeyboardShortcutPresets.audioOnlyRecording.map(\.rawValue) == [
+            "command+control+option+a"
+        ])
         #expect(AppKeyboardShortcutPresets.quickRecordLast.map(\.rawValue) == [
             "command+control+option+q"
         ])

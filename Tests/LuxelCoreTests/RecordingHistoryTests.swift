@@ -45,7 +45,12 @@ struct RecordingHistoryTests {
 
         let result = await service.recoverActiveRecording()
 
-        let expected = PastRecording(fileURL: fileURL, name: "Playable", date: date)
+        let expected = PastRecording(
+            fileURL: fileURL,
+            name: "Playable",
+            date: date,
+            options: activeRecording.options
+        )
         #expect(result == .playable(expected))
         #expect(store.activeRecording == nil)
         #expect(store.recordings == [expected])
@@ -148,7 +153,12 @@ struct RecordingHistoryTests {
 
         #expect(store.activeRecording == nil)
         #expect(store.recordings == [
-            PastRecording(fileURL: fileURL, name: "Renamed", date: stopDate)
+            PastRecording(
+                fileURL: fileURL,
+                name: "Renamed",
+                date: stopDate,
+                options: activeRecording.options
+            )
         ])
     }
 
@@ -244,6 +254,10 @@ private final class FakeFileSystem: FileSystem, @unchecked Sendable {
     func fileExists(at url: URL) -> Bool {
         existingFiles.contains(url)
     }
+
+    func createDirectory(at url: URL) throws {}
+
+    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
 
     func removeFile(at url: URL) {
         removedFiles.append(url)

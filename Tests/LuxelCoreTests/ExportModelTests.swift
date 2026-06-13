@@ -21,6 +21,54 @@ struct ExportModelTests {
         #expect(ExportFormat.apng.prettyName == "APNG")
     }
 
+    @Test("quality exposes format availability and labels")
+    func qualityAvailability() {
+        #expect(ExportQuality.compact.label == "Compact")
+        #expect(ExportQuality.balanced.label == "Balanced")
+        #expect(ExportQuality.high.label == "High")
+        #expect(ExportQuality.lossless.label == "Lossless")
+
+        for format in [ExportFormat.mp4, .hevc, .gif, .webm, .av1] {
+            #expect(ExportQuality.availableQualities(for: format) == [.compact, .balanced, .high])
+            #expect(ExportQuality.defaultQuality(for: format) == .balanced)
+            #expect(ExportQuality.high.isAvailable(for: format))
+            #expect(!ExportQuality.lossless.isAvailable(for: format))
+        }
+
+        #expect(ExportQuality.availableQualities(for: .apng) == [.lossless])
+        #expect(ExportQuality.defaultQuality(for: .apng) == .lossless)
+        #expect(ExportQuality.lossless.isAvailable(for: .apng))
+        #expect(!ExportQuality.balanced.isAvailable(for: .apng))
+    }
+
+    @Test("export request defaults legacy quality to balanced")
+    func exportRequestDefaultsLegacyQualityToBalanced() throws {
+        let data = Data("""
+        {
+          "inputFileURL": "file:///tmp/input.mp4",
+          "format": "mp4",
+          "pixelSize": { "width": 100, "height": 200 },
+          "frameRate": { "framesPerSecond": 30 },
+          "timeRange": { "start": 0, "end": 10 },
+          "shouldMute": false,
+          "shouldCrop": true
+        }
+        """.utf8)
+
+        let request = try JSONDecoder().decode(ExportRequest.self, from: data)
+
+        #expect(request.quality == .balanced)
+        #expect(request.resolvedQuality == .balanced)
+    }
+
+    @Test("export request falls back from unavailable quality")
+    func exportRequestFallsBackFromUnavailableQuality() throws {
+        let request = try makeRequest(format: .apng, quality: .balanced)
+
+        #expect(request.quality == .balanced)
+        #expect(request.resolvedQuality == .lossless)
+    }
+
     @Test("v1 apple-native formats exclude deferred native codec formats")
     func v1AppleNativeFormatsExcludeDeferredNativeCodecFormats() {
         #expect(ExportFormat.appleNativeV1Formats == [.mp4, .hevc, .gif, .apng])
@@ -105,7 +153,8 @@ struct ExportModelTests {
         format: ExportFormat,
         width: Int = 100,
         height: Int = 200,
-        shouldMute: Bool = false
+        shouldMute: Bool = false,
+        quality: ExportQuality = .balanced
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -114,7 +163,8 @@ struct ExportModelTests {
             frameRate: FrameRate(30),
             timeRange: TimeRange(start: 0, end: 10),
             shouldMute: shouldMute,
-            shouldCrop: true
+            shouldCrop: true,
+            quality: quality
         )
     }
 }

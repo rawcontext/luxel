@@ -15,6 +15,7 @@ public final class LuxelEditorModel {
         case loading(String)
         case ready
         case exporting
+        case savingOriginal
         case exported(URL)
         case saved(URL)
         case canceled
@@ -41,6 +42,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored var player = AVPlayer()
     @ObservationIgnored private let metadataReader: any MediaMetadataReader
     @ObservationIgnored private let exportService: ExportService
+    @ObservationIgnored private let passthroughExportService: PassthroughExportService
     @ObservationIgnored private let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored private var playbackRequested = false
     @ObservationIgnored private var playbackTimeObserver: PlaybackTimeObserver?
@@ -52,12 +54,16 @@ public final class LuxelEditorModel {
             exporter: NativeMediaExporter(),
             fileSystem: LocalFileSystem()
         ),
+        passthroughExportService: PassthroughExportService = PassthroughExportService(
+            fileSystem: LocalFileSystem()
+        ),
         fileWorkflowService: ExportedFileWorkflowService = ExportedFileWorkflowService(
             client: AppKitExportedFileActionClient()
         )
     ) {
         self.metadataReader = metadataReader
         self.exportService = exportService
+        self.passthroughExportService = passthroughExportService
         self.fileWorkflowService = fileWorkflowService
         player.actionAtItemEnd = .none
         installPlaybackLoopObserver()
@@ -88,10 +94,14 @@ public final class LuxelEditorModel {
     }
 
     var isExporting: Bool {
-        status == .exporting
+        status == .exporting || status == .savingOriginal
     }
 
     var canExport: Bool {
+        hasSource && !isExporting
+    }
+
+    var canSaveOriginal: Bool {
         hasSource && !isExporting
     }
 
@@ -109,7 +119,7 @@ public final class LuxelEditorModel {
 
     var exportPanelTitle: String {
         switch status {
-        case .exporting:
+        case .exporting, .savingOriginal:
             exportProgressTitle
         case .exported, .saved:
             "Export Complete"
@@ -126,6 +136,8 @@ public final class LuxelEditorModel {
         switch status {
         case .exported(let url), .saved(let url):
             url.lastPathComponent
+        case .savingOriginal:
+            "Copying the source recording without re-encoding."
         case .failed(let message):
             message
         case .canceled:
@@ -137,7 +149,7 @@ public final class LuxelEditorModel {
 
     var exportPanelSystemImage: String {
         switch status {
-        case .exporting:
+        case .exporting, .savingOriginal:
             "arrow.triangle.2.circlepath"
         case .exported, .saved:
             "checkmark.circle"
@@ -194,6 +206,8 @@ public final class LuxelEditorModel {
             sourceSummary
         case .exporting:
             "Exporting \(format.prettyName)"
+        case .savingOriginal:
+            "Saving original"
         case .exported(let url):
             "Exported \(url.lastPathComponent)"
         case .saved(let url):
@@ -369,6 +383,39 @@ public final class LuxelEditorModel {
         }
     }
 
+    func saveOriginal() {
+        guard let source else {
+            return
+        }
+
+        guard exportTask == nil else {
+            return
+        }
+
+        status = .savingOriginal
+        exportProgress = nil
+
+        let passthroughExportService = passthroughExportService
+        let request = PassthroughExportRequest(
+            inputFileURL: source.fileURL,
+            outputFileURL: originalOutputURL(for: source.fileURL)
+        )
+
+        exportTask = Task { [weak self] in
+            do {
+                let result = try await passthroughExportService.export(request)
+
+                await MainActor.run {
+                    self?.finishSavedOriginal(result.fileURL)
+                }
+            } catch {
+                await MainActor.run {
+                    self?.finishFailedExport(error)
+                }
+            }
+        }
+    }
+
     func cancelExport() {
         exportTask?.cancel()
     }
@@ -454,6 +501,18 @@ public final class LuxelEditorModel {
         "\(fileURL.deletingPathExtension().lastPathComponent) Export"
     }
 
+    private func originalOutputURL(for fileURL: URL) -> URL {
+        let baseName = "\(fileURL.deletingPathExtension().lastPathComponent) Original"
+        let fileExtension = fileURL.pathExtension
+        let outputURL = outputDirectory.appending(path: baseName)
+
+        guard !fileExtension.isEmpty else {
+            return outputURL
+        }
+
+        return outputURL.appendingPathExtension(fileExtension)
+    }
+
     private static var defaultRecordingsDirectory: URL {
         let moviesDirectory = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Movies")
@@ -465,6 +524,12 @@ public final class LuxelEditorModel {
         exportTask = nil
         exportProgress = .completed(format: exported.format)
         status = .exported(exported.fileURL)
+    }
+
+    private func finishSavedOriginal(_ fileURL: URL) {
+        exportTask = nil
+        exportProgress = nil
+        status = .saved(fileURL)
     }
 
     private func finishCanceledExport(format: ExportFormat) {

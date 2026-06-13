@@ -170,6 +170,10 @@ private final class SpyFileSystem: FileSystem, @unchecked Sendable {
         true
     }
 
+    func createDirectory(at url: URL) throws {}
+
+    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
+
     func removeFile(at url: URL) throws {
         lock.withLock {
             capturedRemovedURLs.append(url)

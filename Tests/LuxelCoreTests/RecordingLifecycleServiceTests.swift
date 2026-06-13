@@ -292,5 +292,9 @@ private final class StubFileSystem: FileSystem, @unchecked Sendable {
         existingFiles.contains(url)
     }
 
+    func createDirectory(at url: URL) throws {}
+
+    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
+
     func removeFile(at url: URL) throws {}
 }

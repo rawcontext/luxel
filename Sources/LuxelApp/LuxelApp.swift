@@ -103,7 +103,7 @@ private struct LuxelMenu: View {
                                 switch stopAction {
                                 case .openEditor(let fileURL):
                                     openRecording(fileURL)
-                                case .quickExported:
+                                case .quickExported, .audioRecorded:
                                     break
                                 }
                             }
@@ -125,6 +125,15 @@ private struct LuxelMenu: View {
                     Label("Quick Record", systemImage: "bolt.circle")
                 }
                 .disabled(!model.canUseQuickRecordButton)
+
+                Button {
+                    Task {
+                        await model.startAudioOnlyRecording()
+                    }
+                } label: {
+                    Label("Record Audio Only", systemImage: "waveform")
+                }
+                .disabled(!model.canUseAudioOnlyButton)
 
                 Button {
                     Task {
@@ -156,7 +165,9 @@ private struct LuxelMenu: View {
                 }
 
                 Button {
-                    cropperPanelController.show { draft in
+                    cropperPanelController.show(
+                        audioLevelConfiguration: model.cropperAudioLevelConfiguration()
+                    ) { draft in
                         Task {
                             await model.startRecording(from: draft)
                         }
@@ -170,6 +181,17 @@ private struct LuxelMenu: View {
                     Text(recordingStatusMessage)
                         .font(.caption)
                         .foregroundStyle(model.recordingStatusTint)
+                        .lineLimit(2)
+                }
+
+                if model.shouldShowRecordingAudioLevelMeter {
+                    AudioLevelMeterView(sample: model.audioLevelSample)
+                }
+
+                if let recordingNoticeMessage = model.recordingNoticeMessage {
+                    Text(recordingNoticeMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
 
@@ -230,13 +252,17 @@ private struct LuxelMenu: View {
 
                         ForEach(model.recentRecordings.prefix(5), id: \.fileURL) { recording in
                             Button {
-                                openRecording(recording.fileURL)
+                                if recording.options.isAudioOnly {
+                                    model.revealRecording(recording)
+                                } else {
+                                    openRecording(recording.fileURL)
+                                }
                             } label: {
                                 Label {
                                     Text(recording.name)
                                         .lineLimit(1)
                                 } icon: {
-                                    Image(systemName: "clock")
+                                    Image(systemName: recording.options.isAudioOnly ? "waveform" : "clock")
                                 }
                             }
                             .help(recording.fileURL.path)
@@ -248,6 +274,7 @@ private struct LuxelMenu: View {
 
                 Button {
                     openSettings()
+                    NSApplication.shared.activate(ignoringOtherApps: true)
                 } label: {
                     Label("Settings", systemImage: "gearshape")
                 }
@@ -270,13 +297,19 @@ private struct LuxelMenu: View {
                 openRecording(fileURL)
             }
         }
+        .onAppear {
+            Task {
+                await refreshMenuState()
+            }
+        }
         .task {
-            model.refreshRecentRecordings()
-            await model.refreshPermissions()
-            await model.refreshCaptureTargets()
+            await refreshMenuState()
             if let recoveredRecording = await model.recoverInterruptedRecording() {
                 openRecording(recoveredRecording.fileURL)
             }
+        }
+        .task(id: model.recordingAudioLevelMonitorTaskID) {
+            await model.watchAudioLevels(onlyWhenRecording: true)
         }
         .fileImporter(
             isPresented: $isImportingRecording,
@@ -284,6 +317,7 @@ private struct LuxelMenu: View {
             allowsMultipleSelection: false
         ) { result in
             openWindow(id: LuxelEditorScene.id)
+            NSApplication.shared.activate(ignoringOtherApps: true)
 
             switch result {
             case .success(let urls):
@@ -336,10 +370,17 @@ private struct LuxelMenu: View {
 
     private func openRecording(_ url: URL) {
         openWindow(id: LuxelEditorScene.id)
+        NSApplication.shared.activate(ignoringOtherApps: true)
 
         Task {
             await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
         }
+    }
+
+    private func refreshMenuState() async {
+        model.refreshRecentRecordings()
+        await model.refreshPermissions()
+        await model.refreshCaptureTargets()
     }
 
     private var permissionPromptPresented: Binding<Bool> {
@@ -391,6 +432,17 @@ private struct LuxelSettingsView: View {
                     }
                 }
                 .disabled(!model.settings.recordAudio)
+
+                Picker("Audio-Only Format", selection: $model.settings.audioOnlyFormat) {
+                    ForEach(AudioRecordingFormat.allCases, id: \.self) { format in
+                        Text(format.label).tag(format)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                if model.settings.recordAudio, model.microphoneStatus == .authorized {
+                    AudioLevelMeterView(sample: model.audioLevelSample)
+                }
             }
 
             Section("Output") {
@@ -438,6 +490,14 @@ private struct LuxelSettingsView: View {
                 Picker("Toggle Recording", selection: $model.settings.toggleRecordingShortcut) {
                     Text("None").tag("")
                     ForEach(AppKeyboardShortcutPresets.toggleRecording) { shortcut in
+                        Text(shortcut.displayName).tag(shortcut.rawValue)
+                    }
+                }
+                .disabled(!model.settings.enableShortcuts)
+
+                Picker("Audio Only", selection: $model.settings.audioOnlyRecordingShortcut) {
+                    Text("None").tag("")
+                    ForEach(AppKeyboardShortcutPresets.audioOnlyRecording) { shortcut in
                         Text(shortcut.displayName).tag(shortcut.rawValue)
                     }
                 }
@@ -492,7 +552,15 @@ private struct LuxelSettingsView: View {
             }
         }
         .task {
+            await model.refreshPermissions()
             model.refreshAudioInputDevices()
+            await model.watchAudioInputDeviceUpdates()
+        }
+        .task(id: model.audioLevelMonitorTaskID) {
+            await model.watchAudioLevels()
+        }
+        .onAppear {
+            NSApplication.shared.activate(ignoringOtherApps: true)
         }
         .onChange(of: model.settings) {
             model.saveSettings()
@@ -507,11 +575,15 @@ private struct LuxelSettingsView: View {
             model.settings.audioInputDeviceID ?? AudioInputDeviceID.systemDefault
         } set: { deviceID in
             model.settings.audioInputDeviceID = deviceID
+            model.settings.audioInputDeviceName = model.audioInputDevices
+                .first { $0.id == deviceID }?
+                .name
         }
     }
 
     private func openRecording(_ url: URL) {
         openWindow(id: LuxelEditorScene.id)
+        NSApplication.shared.activate(ignoringOtherApps: true)
 
         Task {
             await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
@@ -573,6 +645,9 @@ private struct LuxelShortcutInstaller: View {
             .onChange(of: model.settings.toggleRecordingShortcut) {
                 configureShortcut()
             }
+            .onChange(of: model.settings.audioOnlyRecordingShortcut) {
+                configureShortcut()
+            }
             .onChange(of: model.settings.quickRecordLastShortcut) {
                 configureShortcut()
             }
@@ -587,7 +662,9 @@ private struct LuxelShortcutInstaller: View {
                         return
                     }
 
-                    cropperPanelController.show { draft in
+                    cropperPanelController.show(
+                        audioLevelConfiguration: model.cropperAudioLevelConfiguration()
+                    ) { draft in
                         Task {
                             await model.startRecording(from: draft)
                         }
@@ -600,12 +677,21 @@ private struct LuxelShortcutInstaller: View {
                                 switch stopAction {
                                 case .openEditor(let fileURL):
                                     openRecording(fileURL)
-                                case .quickExported:
+                                case .quickExported, .audioRecorded:
                                     break
                                 }
                             }
                         } else if model.canUseRecordAgainButton {
                             await model.startRecordingFromLastCapture()
+                        }
+                    }
+                },
+                LuxelShortcutRegistration(rawShortcut: model.settings.audioOnlyRecordingShortcut) {
+                    Task {
+                        if model.hasActiveAudioOnlyRecording {
+                            _ = await model.stopRecording()
+                        } else if model.canUseAudioOnlyButton {
+                            await model.startAudioOnlyRecording()
                         }
                     }
                 },
@@ -630,12 +716,14 @@ private final class LuxelMenuModel {
     var launchAtLogin: Bool
     var screenRecordingStatus: PermissionStatus = .unknown
     var microphoneStatus: PermissionStatus = .unknown
+    var audioLevelSample: AudioLevelSample = .silent
     var audioInputDevices: [AudioInputDeviceOption] = [.systemDefault]
     var recentRecordings: [PastRecording] = []
     var captureTargets: [CaptureTargetOption] = []
     var selectedCaptureTargetID: String?
     var captureTargetStatusMessage: String?
     var recordingState: RecordingMenuState = .idle
+    var recordingNoticeMessage: String?
     var recordingActionErrorMessage: String?
     var quickExportStatusMessage: String?
     var recoveryState: RecordingRecoveryMenuState?
@@ -648,8 +736,10 @@ private final class LuxelMenuModel {
     @ObservationIgnored private let launchAtLoginService: LaunchAtLoginService
     @ObservationIgnored private let recordingHistoryService: RecordingHistoryService
     @ObservationIgnored private let recordingLifecycleService: RecordingLifecycleService
+    @ObservationIgnored private let audioRecordingLifecycleService: AudioRecordingLifecycleService
     @ObservationIgnored private let captureTargetService: CaptureTargetService
     @ObservationIgnored private let audioInputDeviceService: AudioInputDeviceService
+    @ObservationIgnored private let audioLevelMonitorFactory: () -> any AudioLevelMonitor
     @ObservationIgnored private let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored private let quickExportService: QuickExportService
     @ObservationIgnored private let permissionGuidanceService: PermissionGuidanceService
@@ -666,8 +756,12 @@ private final class LuxelMenuModel {
             catalog: ScreenCaptureKitCaptureTargetCatalog()
         ),
         audioInputDeviceService: AudioInputDeviceService = AudioInputDeviceService(
-            catalog: AVFoundationAudioInputDeviceCatalog()
+            catalog: AVFoundationAudioInputDeviceCatalog(),
+            updateSource: AVFoundationAudioInputDeviceUpdateSource()
         ),
+        audioLevelMonitorFactory: @escaping () -> any AudioLevelMonitor = {
+            AVCaptureAudioLevelMonitor()
+        },
         fileWorkflowService: ExportedFileWorkflowService = ExportedFileWorkflowService(
             client: AppKitExportedFileActionClient()
         ),
@@ -675,7 +769,8 @@ private final class LuxelMenuModel {
         permissionGuidanceService: PermissionGuidanceService = PermissionGuidanceService(),
         lastCaptureRecordingPlanner: LastCaptureRecordingPlanner = LastCaptureRecordingPlanner(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
-        recorder: any CaptureRecorder = LuxelCompositionRoot.captureRecorder()
+        recorder: any CaptureRecorder = LuxelCompositionRoot.captureRecorder(),
+        audioRecorder: any AudioRecorder = LuxelCompositionRoot.audioRecorder()
     ) {
         self.settingsStore = settingsStore
         self.permissionClient = permissionClient
@@ -683,6 +778,7 @@ private final class LuxelMenuModel {
         self.recordingHistoryService = recordingHistoryService
         self.captureTargetService = captureTargetService
         self.audioInputDeviceService = audioInputDeviceService
+        self.audioLevelMonitorFactory = audioLevelMonitorFactory
         self.fileWorkflowService = fileWorkflowService
         self.quickExportService = quickExportService
             ?? LuxelCompositionRoot.quickExportService(fileWorkflowService: fileWorkflowService)
@@ -691,6 +787,10 @@ private final class LuxelMenuModel {
         self.appMetadata = appMetadata
         self.recordingLifecycleService = RecordingLifecycleService(
             recorder: recorder,
+            history: recordingHistoryService
+        )
+        self.audioRecordingLifecycleService = AudioRecordingLifecycleService(
+            recorder: audioRecorder,
             history: recordingHistoryService
         )
         self.settings = (try? settingsStore.load()) ?? LuxelCompositionRoot.defaultSettings
@@ -706,22 +806,52 @@ private final class LuxelMenuModel {
         }
     }
 
+    var hasActiveAudioOnlyRecording: Bool {
+        isRecordingAudioOnly
+    }
+
     var canUseRecordButton: Bool {
         recordingPresentation().canUsePrimaryAction
     }
 
+    var audioLevelMonitorTaskID: String {
+        [
+            settings.recordAudio.description,
+            String(describing: microphoneStatus),
+            settings.audioInputDeviceID ?? AudioInputDeviceID.systemDefault
+        ].joined(separator: ":")
+    }
+
+    var recordingAudioLevelMonitorTaskID: String {
+        "\(audioLevelMonitorTaskID):\(hasActiveRecording)"
+    }
+
+    var shouldShowRecordingAudioLevelMeter: Bool {
+        recordingState.activeRecording?.options.audio.capturesMicrophone == true
+            && microphoneStatus == .authorized
+    }
+
     var canPauseOrResumeRecording: Bool {
-        recordingPresentation().secondaryActionTitle != nil
+        !isRecordingAudioOnly && recordingPresentation().secondaryActionTitle != nil
     }
 
     var canUsePauseResumeButton: Bool {
-        recordingPresentation().canUseSecondaryAction
+        !isRecordingAudioOnly && recordingPresentation().canUseSecondaryAction
     }
 
     var canUseQuickRecordButton: Bool {
         switch recordingState {
         case .idle, .failed:
             canStartRecording && settings.quickExportPresetID != nil
+        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+            false
+        }
+    }
+
+    var canUseAudioOnlyButton: Bool {
+        switch recordingState {
+        case .idle, .failed:
+            microphoneStatus == .authorized
         case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
@@ -763,6 +893,10 @@ private final class LuxelMenuModel {
 
     private var canStartRecording: Bool {
         screenRecordingStatus == .authorized && selectedCaptureTarget != nil
+    }
+
+    private var isRecordingAudioOnly: Bool {
+        recordingState.activeRecording?.options.isAudioOnly == true
     }
 
     func recordingPresentation(now: Date = Date()) -> RecordingSessionPresentation {
@@ -864,6 +998,9 @@ private final class LuxelMenuModel {
     }
 
     func performPermissionAction(_ prompt: PermissionPrompt) async {
+        permissionPrompt = nil
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
         switch prompt.guidance.action {
         case .request:
             _ = await permissionClient.request(prompt.permission)
@@ -871,10 +1008,13 @@ private final class LuxelMenuModel {
             await permissionClient.openSettings(for: prompt.permission)
         }
 
-        permissionPrompt = nil
         await refreshPermissions()
 
         if prompt.permission == .screenRecording {
+            if screenRecordingStatus != .authorized {
+                await permissionClient.openSettings(for: .screenRecording)
+            }
+
             await refreshCaptureTargets()
         }
     }
@@ -895,12 +1035,75 @@ private final class LuxelMenuModel {
     }
 
     func refreshAudioInputDevices() {
-        audioInputDevices = audioInputDeviceService.availableInputDevices()
+        _ = resolveSelectedAudioInputDevice()
+    }
 
-        let selectedID = settings.audioInputDeviceID ?? AudioInputDeviceID.systemDefault
-        if !audioInputDevices.contains(where: { $0.id == selectedID }) {
-            settings.audioInputDeviceID = AudioInputDeviceID.systemDefault
+    func watchAudioInputDeviceUpdates() async {
+        for await _ in audioInputDeviceService.inputDeviceUpdates() {
+            refreshAudioInputDevices()
         }
+    }
+
+    func watchAudioLevels(onlyWhenRecording: Bool = false) async {
+        let audioLevelMonitor = audioLevelMonitorFactory()
+        defer {
+            audioLevelMonitor.stop()
+        }
+
+        audioLevelSample = .silent
+
+        guard microphoneStatus == .authorized else {
+            return
+        }
+
+        let microphoneDeviceID: String?
+        if onlyWhenRecording {
+            guard let activeRecording = recordingState.activeRecording,
+                  activeRecording.options.audio.capturesMicrophone else {
+                return
+            }
+
+            microphoneDeviceID = activeRecording.options.audio.microphoneDeviceID
+        } else {
+            guard settings.recordAudio else {
+                return
+            }
+
+            microphoneDeviceID = resolveSelectedAudioInputDevice().microphoneDeviceID
+        }
+
+        for await sample in audioLevelMonitor.start(deviceID: microphoneDeviceID) {
+            audioLevelSample = sample
+        }
+    }
+
+    func cropperAudioLevelConfiguration() -> CropperAudioLevelConfiguration? {
+        guard settings.recordAudio, microphoneStatus == .authorized else {
+            return nil
+        }
+
+        let resolution = resolveSelectedAudioInputDevice()
+
+        return CropperAudioLevelConfiguration(deviceID: resolution.microphoneDeviceID)
+    }
+
+    @discardableResult
+    private func resolveSelectedAudioInputDevice() -> AudioInputDeviceResolution {
+        audioInputDevices = audioInputDeviceService.availableInputDevices()
+        let resolution = audioInputDeviceService.resolveInputDevice(
+            selectedID: settings.audioInputDeviceID,
+            selectedName: settings.audioInputDeviceName,
+            in: audioInputDevices
+        )
+
+        if settings.audioInputDeviceID != resolution.device.id
+            || settings.audioInputDeviceName != resolution.device.name {
+            settings.audioInputDeviceID = resolution.device.id
+            settings.audioInputDeviceName = resolution.device.name
+            saveSettings()
+        }
+
+        return resolution
     }
 
     func refreshRecentRecordings() {
@@ -929,6 +1132,10 @@ private final class LuxelMenuModel {
     }
 
     func recoverInterruptedRecording() async -> PastRecording? {
+        guard !hasActiveRecording else {
+            return nil
+        }
+
         switch await recordingHistoryService.recoverActiveRecording() {
         case .none:
             return nil
@@ -957,6 +1164,10 @@ private final class LuxelMenuModel {
     func copyRecoveryError(_ prompt: RecoveryPrompt) {
         fileWorkflowService.copyText(prompt.reason)
         recoveryPrompt = nil
+    }
+
+    func revealRecording(_ recording: PastRecording) {
+        fileWorkflowService.revealInFinder(recording.fileURL)
     }
 
     func startRecording(from draft: CaptureSelectionDraft) async {
@@ -996,6 +1207,7 @@ private final class LuxelMenuModel {
     }
 
     private func startRecordingFromLastCapture(captureKind: QuickCaptureKind) async {
+        recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
 
@@ -1031,27 +1243,64 @@ private final class LuxelMenuModel {
         )
     }
 
-    private func startRecording(
-        target: CaptureTarget,
-        pixelSize: PixelSize,
-        captureKind: QuickCaptureKind
-    ) async {
+    func startAudioOnlyRecording() async {
+        recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
 
+        guard microphoneStatus == .authorized else {
+            recordingState = .failed("Microphone permission is required")
+            return
+        }
+
+        recordingState = .starting
+
         do {
-            let request = try makeRecordingRequest(
-                target: target,
-                pixelSize: pixelSize,
-                captureKind: captureKind
+            let preparedRequest = try makeAudioRecordingRequest()
+            recordingNoticeMessage = preparedRequest.noticeMessage
+
+            let recordingName = preparedRequest.request.outputFileURL
+                .deletingPathExtension()
+                .lastPathComponent
+            let activeRecording = try await audioRecordingLifecycleService.startRecording(
+                preparedRequest.request,
+                name: recordingName
             )
-            await startRecording(request)
+            recordingState = .recording(
+                activeRecording,
+                RecordingMenuClock(startedAt: activeRecording.date)
+            )
         } catch {
             recordingState = .failed(errorMessage(error))
         }
     }
 
-    private func startRecording(_ request: RecordingRequest) async {
+    private func startRecording(
+        target: CaptureTarget,
+        pixelSize: PixelSize,
+        captureKind: QuickCaptureKind
+    ) async {
+        recordingNoticeMessage = nil
+        recordingActionErrorMessage = nil
+        quickExportStatusMessage = nil
+
+        do {
+            let preparedRequest = try makeRecordingRequest(
+                target: target,
+                pixelSize: pixelSize,
+                captureKind: captureKind
+            )
+            await startRecording(
+                preparedRequest.request,
+                noticeMessage: preparedRequest.noticeMessage
+            )
+        } catch {
+            recordingState = .failed(errorMessage(error))
+        }
+    }
+
+    private func startRecording(_ request: RecordingRequest, noticeMessage: String? = nil) async {
+        recordingNoticeMessage = noticeMessage
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
         recordingState = .starting
@@ -1074,11 +1323,21 @@ private final class LuxelMenuModel {
 
     func stopRecording() async -> RecordingStopAction? {
         let previousRecordingState = recordingState
-        let captureKind = previousRecordingState.activeRecording?.options.captureKind ?? .standard
+        let activeRecording = previousRecordingState.activeRecording
+        let captureKind = activeRecording?.options.captureKind ?? .standard
+        recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
         recordingState = .stopping
 
         do {
+            if activeRecording?.options.isAudioOnly == true {
+                let recording = try await audioRecordingLifecycleService.stopRecording()
+                refreshRecentRecordings()
+                recordingState = .idle
+                quickExportStatusMessage = "Recorded \(recording.fileURL.lastPathComponent)"
+                return .audioRecorded(recording.fileURL)
+            }
+
             let recording = try await recordingLifecycleService.stopRecording()
             refreshRecentRecordings()
 
@@ -1177,20 +1436,37 @@ private final class LuxelMenuModel {
         target: CaptureTarget,
         pixelSize: PixelSize,
         captureKind: QuickCaptureKind
-    ) throws -> RecordingRequest {
+    ) throws -> (request: RecordingRequest, noticeMessage: String?) {
         let frameRate = try FrameRate(settings.record60FPS ? 60 : 30)
         let outputFileURL = try nextRecordingFileURL(now: Date())
+        let resolvedAudio = resolveRecordingAudioMode()
 
-        return RecordingRequest(
-            target: target,
-            outputFileURL: outputFileURL,
-            pixelSize: pixelSize,
-            frameRate: frameRate,
-            showCursor: settings.showCursor,
-            highlightClicks: settings.highlightClicks,
-            audio: recordingAudioMode,
-            videoCodec: .h264,
-            captureKind: captureKind
+        return (
+            RecordingRequest(
+                target: target,
+                outputFileURL: outputFileURL,
+                pixelSize: pixelSize,
+                frameRate: frameRate,
+                showCursor: settings.showCursor,
+                highlightClicks: settings.highlightClicks,
+                audio: resolvedAudio.mode,
+                videoCodec: .h264,
+                captureKind: captureKind
+            ),
+            resolvedAudio.noticeMessage
+        )
+    }
+
+    private func makeAudioRecordingRequest() throws -> (request: AudioRecordingRequest, noticeMessage: String?) {
+        let resolution = resolveSelectedAudioInputDevice()
+
+        return (
+            try AudioRecordingRequest(
+                outputFileURL: try nextAudioRecordingFileURL(now: Date(), format: settings.audioOnlyFormat),
+                audio: .microphone(deviceID: resolution.microphoneDeviceID),
+                format: settings.audioOnlyFormat
+            ),
+            resolution.fallbackMessage
         )
     }
 
@@ -1203,22 +1479,17 @@ private final class LuxelMenuModel {
         saveSettings()
     }
 
-    private var recordingAudioMode: RecordingAudioMode {
+    private func resolveRecordingAudioMode() -> (mode: RecordingAudioMode, noticeMessage: String?) {
         guard settings.recordAudio else {
-            return .none
+            return (.none, nil)
         }
 
-        return .systemAndMicrophone(deviceID: microphoneDeviceID)
-    }
+        let resolution = resolveSelectedAudioInputDevice()
 
-    private var microphoneDeviceID: String? {
-        guard let audioInputDeviceID = settings.audioInputDeviceID,
-              audioInputDeviceID != AudioInputDeviceID.systemDefault
-        else {
-            return nil
-        }
-
-        return audioInputDeviceID
+        return (
+            .systemAndMicrophone(deviceID: resolution.microphoneDeviceID),
+            resolution.fallbackMessage
+        )
     }
 
     private func permissionGuidance(for permission: SystemPermission) -> PermissionGuidance {
@@ -1249,6 +1520,18 @@ private final class LuxelMenuModel {
             .appendingPathExtension("mp4")
     }
 
+    private func nextAudioRecordingFileURL(now: Date, format: AudioRecordingFormat) throws -> URL {
+        try FileManager.default.createDirectory(
+            at: settings.recordingsDirectory,
+            withIntermediateDirectories: true
+        )
+
+        let recordingName = RecordingName.timestamped(now: now).value
+        return settings.recordingsDirectory
+            .appending(path: recordingName)
+            .appendingPathExtension(format.fileExtension)
+    }
+
     private func errorMessage(_ error: Error) -> String {
         let description = (error as NSError).localizedDescription
         return description.isEmpty ? String(describing: error) : description
@@ -1270,6 +1553,7 @@ private enum RecordingMenuState: Equatable {
 private enum RecordingStopAction {
     case openEditor(URL)
     case quickExported(URL)
+    case audioRecorded(URL)
 }
 
 private struct RecordingMenuClock: Equatable {
@@ -1430,6 +1714,10 @@ enum LuxelCompositionRoot {
 
     static func captureRecorder() -> any CaptureRecorder {
         ScreenCaptureKitRecorder()
+    }
+
+    static func audioRecorder() -> any AudioRecorder {
+        AVFoundationAudioOnlyRecorder()
     }
 
     @MainActor

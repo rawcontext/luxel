@@ -44,17 +44,41 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
 
     public func inspectRecording(at fileURL: URL) async -> MediaProbeResult {
         do {
-            _ = try await readSourceMedia(at: fileURL)
+            let asset = AVURLAsset(url: fileURL)
+            _ = try await validDuration(for: asset)
+            let videoTracks = try await asset.loadTracks(withMediaType: .video)
+            let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+
+            guard !videoTracks.isEmpty || !audioTracks.isEmpty else {
+                throw AVFoundationMediaMetadataReaderError.missingMediaTracks
+            }
+
+            if !videoTracks.isEmpty {
+                _ = try await readSourceMedia(at: fileURL)
+            }
+
             return .playable
         } catch {
             return .corrupt(reason: String(describing: error))
         }
+    }
+
+    private func validDuration(for asset: AVURLAsset) async throws -> TimeInterval {
+        let duration = try await asset.load(.duration)
+        let durationSeconds = duration.seconds
+
+        guard durationSeconds.isFinite, durationSeconds > 0 else {
+            throw AVFoundationMediaMetadataReaderError.invalidDuration
+        }
+
+        return durationSeconds
     }
 }
 
 public enum AVFoundationMediaMetadataReaderError: Error, Equatable {
     case invalidDuration
     case missingVideoTrack
+    case missingMediaTracks
     case invalidNaturalSize
     case invalidFrameRate
 }

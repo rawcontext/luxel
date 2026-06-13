@@ -52,14 +52,39 @@ struct LuxelEditorModelTests {
         #expect(!model.hasSource)
     }
 
+    @Test("save original copies source without exporting")
+    func saveOriginalCopiesSourceWithoutExporting() async throws {
+        let fileSystem = SpyFileSystem()
+        let model = makeModel(fileSystem: fileSystem)
+        let sourceURL = URL(fileURLWithPath: "/tmp/source.mp4")
+
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.saveOriginal()
+
+        while model.isExporting {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let expectedOutputURL = URL(fileURLWithPath: "/tmp/source Original.mp4")
+        #expect(model.status == .saved(expectedOutputURL))
+        #expect(fileSystem.createdDirectories.map(\.path) == ["/tmp"])
+        #expect(fileSystem.copiedFiles == [
+            CopiedFile(sourceURL: sourceURL, destinationURL: expectedOutputURL)
+        ])
+    }
+
     private func makeModel(
-        exporter: any MediaExporter = StubMediaExporter()
+        exporter: any MediaExporter = StubMediaExporter(),
+        fileSystem: any FileSystem = StubFileSystem()
     ) -> LuxelEditorModel {
         LuxelEditorModel(
             metadataReader: StubMetadataReader(),
             exportService: ExportService(
                 exporter: exporter,
-                fileSystem: StubFileSystem()
+                fileSystem: fileSystem
+            ),
+            passthroughExportService: PassthroughExportService(
+                fileSystem: fileSystem
             ),
             fileWorkflowService: ExportedFileWorkflowService(
                 client: StubExportedFileActionClient()
@@ -119,7 +144,52 @@ private struct StubFileSystem: FileSystem {
         true
     }
 
+    func createDirectory(at url: URL) throws {}
+
+    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
+
     func removeFile(at url: URL) throws {}
+}
+
+private final class SpyFileSystem: FileSystem, @unchecked Sendable {
+    private let lock = NSLock()
+    private var capturedCreatedDirectories: [URL] = []
+    private var capturedCopiedFiles: [CopiedFile] = []
+
+    var createdDirectories: [URL] {
+        lock.withLock {
+            capturedCreatedDirectories
+        }
+    }
+
+    var copiedFiles: [CopiedFile] {
+        lock.withLock {
+            capturedCopiedFiles
+        }
+    }
+
+    func fileExists(at url: URL) -> Bool {
+        false
+    }
+
+    func createDirectory(at url: URL) throws {
+        lock.withLock {
+            capturedCreatedDirectories.append(url)
+        }
+    }
+
+    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {
+        lock.withLock {
+            capturedCopiedFiles.append(CopiedFile(sourceURL: sourceURL, destinationURL: destinationURL))
+        }
+    }
+
+    func removeFile(at url: URL) throws {}
+}
+
+private struct CopiedFile: Equatable {
+    let sourceURL: URL
+    let destinationURL: URL
 }
 
 @MainActor

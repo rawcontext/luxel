@@ -10,16 +10,16 @@ struct PermissionClientTests {
         #expect(PermissionStatus.denied != .restricted)
     }
 
-    @Test("screen recording guidance opens settings and mentions relaunch")
-    func screenRecordingGuidanceOpensSettingsAndMentionsRelaunch() {
+    @Test("screen recording guidance requests access and mentions relaunch")
+    func screenRecordingGuidanceRequestsAccessAndMentionsRelaunch() {
         let guidance = PermissionGuidanceService().guidance(
             for: .screenRecording,
             status: .denied
         )
 
         #expect(guidance.title == "Screen Recording Permission")
-        #expect(guidance.actionTitle == "Open Settings")
-        #expect(guidance.action == .openSettings)
+        #expect(guidance.actionTitle == "Continue")
+        #expect(guidance.action == .request)
         #expect(guidance.message.contains("System Settings"))
         #expect(guidance.message.contains("quit and reopen Luxel"))
     }

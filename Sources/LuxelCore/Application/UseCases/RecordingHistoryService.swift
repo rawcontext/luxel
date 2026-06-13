@@ -72,7 +72,8 @@ public final class RecordingHistoryService: Sendable {
         let recording = PastRecording(
             fileURL: activeRecording.fileURL,
             name: recordingName ?? activeRecording.name,
-            date: dateProvider.now()
+            date: dateProvider.now(),
+            options: activeRecording.options
         )
         addRecording(recording)
         store.activeRecording = nil

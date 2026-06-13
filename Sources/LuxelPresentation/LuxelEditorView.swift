@@ -94,7 +94,7 @@ public struct LuxelEditorView: View {
                 .fill(.black)
 
             if model.hasSource {
-                VideoPlayer(player: model.player)
+                LuxelPlayerView(player: model.player)
                     .background(.black)
             } else {
                 ContentUnavailableView("No Recording", systemImage: "film")
@@ -161,6 +161,14 @@ public struct LuxelEditorView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(!model.canExport)
+
+                Button {
+                    model.saveOriginal()
+                } label: {
+                    Label("Save Original", systemImage: "doc.on.doc")
+                        .frame(maxWidth: .infinity)
+                }
+                .disabled(!model.canSaveOriginal)
             }
         }
     }
@@ -412,6 +420,24 @@ public struct LuxelEditorView: View {
             model.frameRate
         } set: { value in
             model.setFrameRate(value)
+        }
+    }
+}
+
+private struct LuxelPlayerView: NSViewRepresentable {
+    let player: AVPlayer
+
+    func makeNSView(context: Context) -> AVPlayerView {
+        let view = AVPlayerView()
+        view.controlsStyle = .floating
+        view.videoGravity = .resizeAspect
+        view.player = player
+        return view
+    }
+
+    func updateNSView(_ nsView: AVPlayerView, context: Context) {
+        if nsView.player !== player {
+            nsView.player = player
         }
     }
 }

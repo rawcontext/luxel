@@ -31,9 +31,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var loopExports: Bool
     public var recordAudio: Bool
     public var audioInputDeviceID: String?
+    public var audioInputDeviceName: String?
+    public var audioOnlyFormat: AudioRecordingFormat
     public var enableShortcuts: Bool
     public var triggerCropperShortcut: String
     public var toggleRecordingShortcut: String
+    public var audioOnlyRecordingShortcut: String
     public var quickRecordLastShortcut: String
     public var updatePreferences: UpdatePreferences
     public var showTimeInMenuBar: Bool
@@ -50,9 +53,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         loopExports: Bool = true,
         recordAudio: Bool = false,
         audioInputDeviceID: String? = AudioInputDeviceID.systemDefault,
+        audioInputDeviceName: String? = AudioInputDeviceOption.systemDefault.name,
+        audioOnlyFormat: AudioRecordingFormat = .aac,
         enableShortcuts: Bool = true,
         triggerCropperShortcut: String = "",
         toggleRecordingShortcut: String = "",
+        audioOnlyRecordingShortcut: String = "",
         quickRecordLastShortcut: String = "",
         updatePreferences: UpdatePreferences = .defaults,
         showTimeInMenuBar: Bool = true,
@@ -68,9 +74,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.loopExports = loopExports
         self.recordAudio = recordAudio
         self.audioInputDeviceID = audioInputDeviceID
+        self.audioInputDeviceName = audioInputDeviceName
+        self.audioOnlyFormat = audioOnlyFormat
         self.enableShortcuts = enableShortcuts
         self.triggerCropperShortcut = triggerCropperShortcut
         self.toggleRecordingShortcut = toggleRecordingShortcut
+        self.audioOnlyRecordingShortcut = audioOnlyRecordingShortcut
         self.quickRecordLastShortcut = quickRecordLastShortcut
         self.updatePreferences = updatePreferences
         self.showTimeInMenuBar = showTimeInMenuBar
@@ -88,9 +97,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case loopExports
         case recordAudio
         case audioInputDeviceID
+        case audioInputDeviceName
+        case audioOnlyFormat
         case enableShortcuts
         case triggerCropperShortcut
         case toggleRecordingShortcut
+        case audioOnlyRecordingShortcut
         case quickRecordLastShortcut
         case updatePreferences
         case showTimeInMenuBar
@@ -120,11 +132,22 @@ public struct AppSettings: Codable, Equatable, Sendable {
         } else {
             audioInputDeviceID = AudioInputDeviceID.systemDefault
         }
+        if container.contains(.audioInputDeviceName) {
+            audioInputDeviceName = try container.decodeIfPresent(String.self, forKey: .audioInputDeviceName)
+        } else if audioInputDeviceID == AudioInputDeviceID.systemDefault {
+            audioInputDeviceName = AudioInputDeviceOption.systemDefault.name
+        } else {
+            audioInputDeviceName = nil
+        }
+        audioOnlyFormat = try container.decodeIfPresent(AudioRecordingFormat.self, forKey: .audioOnlyFormat)
+            ?? .aac
         enableShortcuts = try container.decodeIfPresent(Bool.self, forKey: .enableShortcuts)
             ?? true
         triggerCropperShortcut = try container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut)
             ?? ""
         toggleRecordingShortcut = try container.decodeIfPresent(String.self, forKey: .toggleRecordingShortcut)
+            ?? ""
+        audioOnlyRecordingShortcut = try container.decodeIfPresent(String.self, forKey: .audioOnlyRecordingShortcut)
             ?? ""
         quickRecordLastShortcut = try container.decodeIfPresent(String.self, forKey: .quickRecordLastShortcut)
             ?? ""

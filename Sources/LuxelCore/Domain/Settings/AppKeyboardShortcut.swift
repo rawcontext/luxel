@@ -77,6 +77,10 @@ public enum AppKeyboardShortcutPresets {
         AppKeyboardShortcut(rawValue: "command+control+option+t")
     ].compactMap { $0 }
 
+    public static let audioOnlyRecording: [AppKeyboardShortcut] = [
+        AppKeyboardShortcut(rawValue: "command+control+option+a")
+    ].compactMap { $0 }
+
     public static let quickRecordLast: [AppKeyboardShortcut] = [
         AppKeyboardShortcut(rawValue: "command+control+option+q")
     ].compactMap { $0 }

@@ -72,6 +72,48 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
     }
 }
 
+public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
+    case compact
+    case balanced
+    case high
+    case lossless
+
+    public var label: String {
+        switch self {
+        case .compact:
+            "Compact"
+        case .balanced:
+            "Balanced"
+        case .high:
+            "High"
+        case .lossless:
+            "Lossless"
+        }
+    }
+
+    public static func availableQualities(for format: ExportFormat) -> [ExportQuality] {
+        switch format {
+        case .mp4, .hevc, .gif, .webm, .av1:
+            [.compact, .balanced, .high]
+        case .apng:
+            [.lossless]
+        }
+    }
+
+    public func isAvailable(for format: ExportFormat) -> Bool {
+        Self.availableQualities(for: format).contains(self)
+    }
+
+    public static func defaultQuality(for format: ExportFormat) -> ExportQuality {
+        switch format {
+        case .apng:
+            .lossless
+        case .mp4, .hevc, .gif, .webm, .av1:
+            .balanced
+        }
+    }
+}
+
 public struct PixelSize: Codable, Equatable, Sendable {
     public let width: Int
     public let height: Int
@@ -134,6 +176,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
     public let timeRange: TimeRange
     public let shouldMute: Bool
     public let shouldCrop: Bool
+    public let quality: ExportQuality
 
     public init(
         inputFileURL: URL,
@@ -142,7 +185,8 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         frameRate: FrameRate,
         timeRange: TimeRange,
         shouldMute: Bool,
-        shouldCrop: Bool
+        shouldCrop: Bool,
+        quality: ExportQuality = .balanced
     ) {
         self.inputFileURL = inputFileURL
         self.format = format
@@ -151,6 +195,36 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         self.timeRange = timeRange
         self.shouldMute = shouldMute
         self.shouldCrop = shouldCrop
+        self.quality = quality
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case inputFileURL
+        case format
+        case pixelSize
+        case frameRate
+        case timeRange
+        case shouldMute
+        case shouldCrop
+        case quality
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        inputFileURL = try container.decode(URL.self, forKey: .inputFileURL)
+        format = try container.decode(ExportFormat.self, forKey: .format)
+        pixelSize = try container.decode(PixelSize.self, forKey: .pixelSize)
+        frameRate = try container.decode(FrameRate.self, forKey: .frameRate)
+        timeRange = try container.decode(TimeRange.self, forKey: .timeRange)
+        shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
+        shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
+        quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
+            ?? .balanced
+    }
+
+    public var resolvedQuality: ExportQuality {
+        quality.isAvailable(for: format) ? quality : ExportQuality.defaultQuality(for: format)
     }
 
     public var outputPixelSize: PixelSize {
@@ -169,6 +243,34 @@ public struct ExportRequest: Codable, Equatable, Sendable {
 
     public func outputFileName(defaultName: String) -> String {
         "\(defaultName).\(format.fileExtension)"
+    }
+}
+
+public struct PassthroughExportRequest: Codable, Equatable, Sendable {
+    public let inputFileURL: URL
+    public let outputFileURL: URL
+    public let timeRange: TimeRange?
+
+    public init(
+        inputFileURL: URL,
+        outputFileURL: URL,
+        timeRange: TimeRange? = nil
+    ) {
+        self.inputFileURL = inputFileURL
+        self.outputFileURL = outputFileURL
+        self.timeRange = timeRange
+    }
+
+    public var outputFileName: String {
+        outputFileURL.lastPathComponent
+    }
+}
+
+public struct PassthroughExportResult: Codable, Equatable, Sendable {
+    public let fileURL: URL
+
+    public init(fileURL: URL) {
+        self.fileURL = fileURL
     }
 }
 

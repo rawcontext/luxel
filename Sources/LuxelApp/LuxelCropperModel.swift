@@ -2,6 +2,36 @@ import Foundation
 import LuxelCore
 import Observation
 
+struct CropperAudioLevelConfiguration {
+    let deviceID: String?
+}
+
+@MainActor
+@Observable
+final class LuxelAudioLevelModel {
+    var sample: AudioLevelSample = .silent
+
+    @ObservationIgnored private let deviceID: String?
+    @ObservationIgnored private let monitor: any AudioLevelMonitor
+
+    init(deviceID: String?, monitor: any AudioLevelMonitor) {
+        self.deviceID = deviceID
+        self.monitor = monitor
+    }
+
+    func watch() async {
+        sample = .silent
+
+        for await sample in monitor.start(deviceID: deviceID) {
+            self.sample = sample
+        }
+    }
+
+    func stop() {
+        monitor.stop()
+    }
+}
+
 @MainActor
 @Observable
 final class LuxelCropperModel {
