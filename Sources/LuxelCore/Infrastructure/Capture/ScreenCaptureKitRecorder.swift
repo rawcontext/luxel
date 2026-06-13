@@ -6,6 +6,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
     private let configurationFactory: ScreenCaptureKitRecordingConfigurationFactory
     private let segmentComposer: AVFoundationRecordingSegmentComposer
     private let fileManager: FileManager
+    private let recordingOutputFinishTimeout: Duration = .seconds(2)
     private var stream: SCStream?
     private var isStreamCapturing = false
     private var request: RecordingRequest?
@@ -154,7 +155,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
 
         let segmentFileURL = currentSegmentFileURL
         try stream.removeRecordingOutput(recordingOutput)
-        try await delegate.waitUntilFinished(recordingOutput)
+        try await delegate.waitUntilFinished(recordingOutput, timeout: recordingOutputFinishTimeout)
         self.recordingOutput = nil
         currentSegmentFileURL = nil
         return segmentFileURL
@@ -220,9 +221,23 @@ private final class ScreenCaptureKitRecorderDelegate: NSObject, SCStreamDelegate
     private let lock = NSLock()
     private var finishedResults: [ObjectIdentifier: Result<Void, any Error>] = [:]
     private var finishContinuations: [ObjectIdentifier: CheckedContinuation<Void, any Error>] = [:]
+    private var timedOutOutputIDs: Set<ObjectIdentifier> = []
 
-    func waitUntilFinished(_ recordingOutput: SCRecordingOutput) async throws {
+    func waitUntilFinished(_ recordingOutput: SCRecordingOutput, timeout: Duration) async throws {
         let outputID = ObjectIdentifier(recordingOutput)
+        let timeoutTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: timeout)
+                self?.finishTimedOut(outputID)
+            } catch is CancellationError {
+                return
+            } catch {
+                return
+            }
+        }
+        defer {
+            timeoutTask.cancel()
+        }
 
         try await withCheckedThrowingContinuation { continuation in
             let finishedResult: Result<Void, any Error>? = lock.withLock {
@@ -250,7 +265,15 @@ private final class ScreenCaptureKitRecorderDelegate: NSObject, SCStreamDelegate
 
     private func finish(_ recordingOutput: SCRecordingOutput, with result: Result<Void, any Error>) {
         let outputID = ObjectIdentifier(recordingOutput)
+        finish(outputID, with: result)
+    }
+
+    private func finish(_ outputID: ObjectIdentifier, with result: Result<Void, any Error>) {
         let continuation: CheckedContinuation<Void, any Error>? = lock.withLock {
+            if timedOutOutputIDs.remove(outputID) != nil {
+                return nil
+            }
+
             if let continuation = finishContinuations.removeValue(forKey: outputID) {
                 return continuation
             }
@@ -260,5 +283,14 @@ private final class ScreenCaptureKitRecorderDelegate: NSObject, SCStreamDelegate
         }
 
         continuation?.resume(with: result)
+    }
+
+    private func finishTimedOut(_ outputID: ObjectIdentifier) {
+        let continuation: CheckedContinuation<Void, any Error>? = lock.withLock {
+            timedOutOutputIDs.insert(outputID)
+            return finishContinuations.removeValue(forKey: outputID)
+        }
+
+        continuation?.resume(returning: ())
     }
 }
