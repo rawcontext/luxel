@@ -41,6 +41,23 @@ struct ExportModelTests {
         #expect(!ExportQuality.balanced.isAvailable(for: .apng))
     }
 
+    @Test("quality maps video bitrates for apple native movie formats")
+    func qualityMapsVideoBitrates() {
+        #expect(ExportQuality.compact.videoBitsPerPixel(for: .mp4) == 0.07)
+        #expect(ExportQuality.balanced.videoBitsPerPixel(for: .mp4) == 0.12)
+        #expect(ExportQuality.high.videoBitsPerPixel(for: .mp4) == 0.20)
+        #expect(ExportQuality.lossless.videoBitsPerPixel(for: .mp4) == nil)
+
+        #expect(ExportQuality.compact.videoBitsPerPixel(for: .hevc) == 0.05)
+        #expect(ExportQuality.balanced.videoBitsPerPixel(for: .hevc) == 0.09)
+        #expect(ExportQuality.high.videoBitsPerPixel(for: .hevc) == 0.15)
+        #expect(ExportQuality.lossless.videoBitsPerPixel(for: .hevc) == nil)
+
+        for format in [ExportFormat.gif, .apng, .webm, .av1] {
+            #expect(ExportQuality.balanced.videoBitsPerPixel(for: format) == nil)
+        }
+    }
+
     @Test("export request defaults legacy quality to balanced")
     func exportRequestDefaultsLegacyQualityToBalanced() throws {
         let data = Data("""
@@ -136,6 +153,50 @@ struct ExportModelTests {
         #expect(canceled.actionTitle == "Canceled MP4 (H265)")
     }
 
+    @Test("export batch requires one source and one time range")
+    func exportBatchRequiresOneSourceAndTimeRange() throws {
+        let mp4Request = try makeRequest(format: .mp4)
+        let hevcRequest = try makeRequest(format: .hevc)
+
+        let batch = try ExportBatch([mp4Request, hevcRequest])
+
+        #expect(batch.requests == [mp4Request, hevcRequest])
+    }
+
+    @Test("invalid export batches throw")
+    func invalidExportBatchesThrow() throws {
+        #expect(throws: ExportModelError.emptyExportBatch) {
+            _ = try ExportBatch([])
+        }
+
+        let request = try makeRequest(format: .mp4)
+        let mixedSourceRequest = try ExportRequest(
+            inputFileURL: URL(fileURLWithPath: "/tmp/other.mp4"),
+            format: .hevc,
+            pixelSize: PixelSize(width: 100, height: 200),
+            frameRate: FrameRate(30),
+            timeRange: TimeRange(start: 0, end: 10),
+            shouldMute: false,
+            shouldCrop: true
+        )
+        let mixedRangeRequest = try ExportRequest(
+            inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
+            format: .hevc,
+            pixelSize: PixelSize(width: 100, height: 200),
+            frameRate: FrameRate(30),
+            timeRange: TimeRange(start: 1, end: 10),
+            shouldMute: false,
+            shouldCrop: true
+        )
+
+        #expect(throws: ExportModelError.mixedExportBatchSources) {
+            _ = try ExportBatch([request, mixedSourceRequest])
+        }
+        #expect(throws: ExportModelError.mixedExportBatchTimeRanges) {
+            _ = try ExportBatch([request, mixedRangeRequest])
+        }
+    }
+
     @Test("invalid value objects throw")
     func invalidValuesThrow() {
         #expect(throws: ExportModelError.invalidPixelSize) {
@@ -146,6 +207,9 @@ struct ExportModelTests {
         }
         #expect(throws: ExportModelError.invalidTimeRange) {
             _ = try TimeRange(start: 5, end: 5)
+        }
+        #expect(throws: ExportModelError.invalidEstimateByteCount) {
+            _ = try ExportEstimate(bytes: -1, confidence: .modeled)
         }
     }
 

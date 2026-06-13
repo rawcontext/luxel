@@ -86,6 +86,82 @@ struct ExportServiceTests {
         #expect(fileSystem.removedURLs == [expectedOutputURL])
     }
 
+    @Test("batch export runs requests sequentially with keyed progress")
+    func batchExportRunsSequentiallyWithKeyedProgress() async throws {
+        let exporter = SpyMediaExporter()
+        let progress = BatchProgressRecorder()
+        let service = ExportService(exporter: exporter)
+        let batch = try ExportBatch([
+            makeRequest(format: .mp4),
+            makeRequest(format: .hevc),
+            makeRequest(format: .gif)
+        ])
+
+        let exported = try await service.runBatch(
+            batch,
+            to: URL(fileURLWithPath: "/tmp/exports"),
+            defaultName: "Luxel Clip"
+        ) { snapshot in
+            await progress.append(snapshot)
+        }
+
+        let captured = await exporter.capturedExports()
+        let snapshots = await progress.snapshots()
+
+        #expect(exported.map(\.format) == [.mp4, .hevc, .gif])
+        #expect(captured.map(\.request.format) == [.mp4, .hevc, .gif])
+        #expect(captured.map(\.outputFileURL.path) == [
+            "/tmp/exports/Luxel Clip H264.mp4",
+            "/tmp/exports/Luxel Clip H265.mp4",
+            "/tmp/exports/Luxel Clip GIF.gif"
+        ])
+        #expect(snapshots.map(\.jobID) == [0, 0, 0, 1, 1, 1, 2, 2, 2])
+        #expect(snapshots.map(\.snapshot) == [
+            .preparing(format: .mp4),
+            .exporting(format: .mp4, progress: 0.05),
+            .completed(format: .mp4),
+            .preparing(format: .hevc),
+            .exporting(format: .hevc, progress: 0.05),
+            .completed(format: .hevc),
+            .preparing(format: .gif),
+            .exporting(format: .gif, progress: 0.05),
+            .completed(format: .gif)
+        ])
+    }
+
+    @Test("batch cancellation keeps completed output and removes in-flight output")
+    func batchCancellationKeepsCompletedOutputAndRemovesInFlightOutput() async throws {
+        let exporter = CancellableBatchMediaExporter()
+        let fileSystem = SpyFileSystem()
+        let service = ExportService(exporter: exporter, fileSystem: fileSystem)
+        let batch = try ExportBatch([
+            makeRequest(format: .mp4),
+            makeRequest(format: .gif),
+            makeRequest(format: .hevc)
+        ])
+
+        let task = Task {
+            try await service.runBatch(
+                batch,
+                to: URL(fileURLWithPath: "/tmp/exports"),
+                defaultName: "Luxel Clip"
+            )
+        }
+
+        await exporter.waitUntilSecondExportStarted()
+        task.cancel()
+
+        await #expect(throws: CancellationError.self) {
+            _ = try await task.value
+        }
+
+        let captured = await exporter.capturedExports()
+        #expect(captured.map(\.request.format) == [.mp4, .gif])
+        #expect(fileSystem.removedURLs == [
+            URL(fileURLWithPath: "/tmp/exports/Luxel Clip GIF.gif")
+        ])
+    }
+
     private func makeSource() throws -> SourceMedia {
         try SourceMedia(
             fileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -95,13 +171,25 @@ struct ExportServiceTests {
             hasAudio: true
         )
     }
+
+    private func makeRequest(format: ExportFormat) throws -> ExportRequest {
+        try ExportRequest(
+            inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
+            format: format,
+            pixelSize: PixelSize(width: 640, height: 480),
+            frameRate: FrameRate(30),
+            timeRange: TimeRange(start: 0, end: 10),
+            shouldMute: false,
+            shouldCrop: false
+        )
+    }
 }
 
 private actor SpyMediaExporter: MediaExporter {
-    private var captured: (request: ExportRequest, outputFileURL: URL)?
+    private var captured: [(request: ExportRequest, outputFileURL: URL)] = []
 
     func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
-        captured = (request, outputFileURL)
+        captured.append((request, outputFileURL))
         return try ExportedMedia(
             fileURL: outputFileURL,
             format: request.format,
@@ -111,6 +199,10 @@ private actor SpyMediaExporter: MediaExporter {
     }
 
     func capturedExport() -> (request: ExportRequest, outputFileURL: URL)? {
+        captured.last
+    }
+
+    func capturedExports() -> [(request: ExportRequest, outputFileURL: URL)] {
         captured
     }
 }
@@ -123,6 +215,18 @@ private actor ProgressRecorder {
     }
 
     func snapshots() -> [ExportProgressSnapshot] {
+        captured
+    }
+}
+
+private actor BatchProgressRecorder {
+    private var captured: [ExportBatchProgressSnapshot] = []
+
+    func append(_ snapshot: ExportBatchProgressSnapshot) {
+        captured.append(snapshot)
+    }
+
+    func snapshots() -> [ExportBatchProgressSnapshot] {
         captured
     }
 }
@@ -153,6 +257,51 @@ private actor CancellableMediaExporter: MediaExporter {
         started = true
         startContinuation?.resume()
         startContinuation = nil
+    }
+}
+
+private actor CancellableBatchMediaExporter: MediaExporter {
+    private var captured: [(request: ExportRequest, outputFileURL: URL)] = []
+    private var secondExportStarted = false
+    private var secondExportContinuation: CheckedContinuation<Void, Never>?
+
+    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+        captured.append((request, outputFileURL))
+
+        if captured.count == 1 {
+            return try ExportedMedia(
+                fileURL: outputFileURL,
+                format: request.format,
+                pixelSize: request.outputPixelSize,
+                shouldMute: request.outputShouldMute
+            )
+        }
+
+        markSecondExportStarted()
+
+        while true {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+    }
+
+    func waitUntilSecondExportStarted() async {
+        if secondExportStarted {
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            secondExportContinuation = continuation
+        }
+    }
+
+    func capturedExports() -> [(request: ExportRequest, outputFileURL: URL)] {
+        captured
+    }
+
+    private func markSecondExportStarted() {
+        secondExportStarted = true
+        secondExportContinuation?.resume()
+        secondExportContinuation = nil
     }
 }
 

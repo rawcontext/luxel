@@ -148,10 +148,25 @@ public struct LuxelEditorView: View {
                 }
                 .pickerStyle(.menu)
 
+                if model.canChooseQuality {
+                    Picker("Quality", selection: qualitySelection) {
+                        ForEach(model.availableQualities, id: \.self) { quality in
+                            Text(quality.label).tag(quality)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 Toggle("Include Audio", isOn: includeAudioSelection)
                     .disabled(!model.canIncludeAudio)
 
                 Toggle("Crop to Fill", isOn: $model.shouldCrop)
+
+                if let exportEstimateSummary = model.exportEstimateSummary {
+                    LabeledContent("Estimated Size", value: exportEstimateSummary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 Button {
                     model.startExport()
@@ -170,6 +185,9 @@ public struct LuxelEditorView: View {
                 }
                 .disabled(!model.canSaveOriginal)
             }
+        }
+        .task(id: model.exportEstimateTaskID) {
+            await model.refreshExportEstimate()
         }
     }
 
@@ -372,6 +390,14 @@ public struct LuxelEditorView: View {
             model.includesAudio
         } set: { includesAudio in
             model.setIncludesAudio(includesAudio)
+        }
+    }
+
+    private var qualitySelection: Binding<ExportQuality> {
+        Binding {
+            model.quality
+        } set: { quality in
+            model.setQuality(quality)
         }
     }
 

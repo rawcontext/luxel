@@ -112,6 +112,35 @@ public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, S
             .balanced
         }
     }
+
+    public func videoBitsPerPixel(for format: ExportFormat) -> Double? {
+        switch format {
+        case .mp4:
+            switch self {
+            case .compact:
+                0.07
+            case .balanced:
+                0.12
+            case .high:
+                0.20
+            case .lossless:
+                nil
+            }
+        case .hevc:
+            switch self {
+            case .compact:
+                0.05
+            case .balanced:
+                0.09
+            case .high:
+                0.15
+            case .lossless:
+                nil
+            }
+        case .gif, .apng, .webm, .av1:
+            nil
+        }
+    }
 }
 
 public struct PixelSize: Codable, Equatable, Sendable {
@@ -271,6 +300,58 @@ public struct PassthroughExportResult: Codable, Equatable, Sendable {
 
     public init(fileURL: URL) {
         self.fileURL = fileURL
+    }
+}
+
+public struct ExportBatch: Codable, Equatable, Sendable {
+    public let requests: [ExportRequest]
+
+    public init(_ requests: [ExportRequest]) throws {
+        guard let firstRequest = requests.first else {
+            throw ExportModelError.emptyExportBatch
+        }
+
+        let sourceFileURL = firstRequest.inputFileURL.standardizedFileURL
+        guard requests.allSatisfy({ $0.inputFileURL.standardizedFileURL == sourceFileURL }) else {
+            throw ExportModelError.mixedExportBatchSources
+        }
+
+        let timeRange = firstRequest.timeRange
+        guard requests.allSatisfy({ $0.timeRange == timeRange }) else {
+            throw ExportModelError.mixedExportBatchTimeRanges
+        }
+
+        self.requests = requests
+    }
+}
+
+public struct ExportBatchProgressSnapshot: Codable, Equatable, Sendable {
+    public let jobID: Int
+    public let snapshot: ExportProgressSnapshot
+
+    public init(jobID: Int, snapshot: ExportProgressSnapshot) {
+        self.jobID = jobID
+        self.snapshot = snapshot
+    }
+}
+
+public enum ExportEstimateConfidence: String, Codable, Equatable, Sendable {
+    case exact
+    case modeled
+    case sampled
+}
+
+public struct ExportEstimate: Codable, Equatable, Sendable {
+    public let bytes: Int64
+    public let confidence: ExportEstimateConfidence
+
+    public init(bytes: Int64, confidence: ExportEstimateConfidence) throws {
+        guard bytes >= 0 else {
+            throw ExportModelError.invalidEstimateByteCount
+        }
+
+        self.bytes = bytes
+        self.confidence = confidence
     }
 }
 
@@ -466,4 +547,8 @@ public enum ExportModelError: Error, Equatable {
     case invalidPixelSize
     case invalidFrameRate
     case invalidTimeRange
+    case invalidEstimateByteCount
+    case emptyExportBatch
+    case mixedExportBatchSources
+    case mixedExportBatchTimeRanges
 }

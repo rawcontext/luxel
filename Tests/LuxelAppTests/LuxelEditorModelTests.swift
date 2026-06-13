@@ -73,8 +73,70 @@ struct LuxelEditorModelTests {
         ])
     }
 
+    @Test("refreshing export estimate builds request from current editor state")
+    func refreshingExportEstimateBuildsRequestFromCurrentEditorState() async throws {
+        let estimator = SpyExportSizeEstimator()
+        let model = makeModel(exportSizeEstimator: estimator)
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormat(.hevc)
+        model.setTrimStart(2)
+        model.setTrimEnd(8)
+        model.setOutputWidth(640)
+        model.setOutputHeight(360)
+        model.setFrameRate(24)
+        model.setQuality(.high)
+        model.setIncludesAudio(false)
+        await model.refreshExportEstimate()
+
+        let expectedEstimate = try ExportEstimate(bytes: 1_500_000, confidence: .modeled)
+        let expectedRange = try TimeRange(start: 2, end: 8)
+        let expectedPixelSize = try PixelSize(width: 640, height: 360)
+        let expectedFrameRate = try FrameRate(24)
+        let captured = await estimator.request()
+
+        #expect(model.exportEstimate == expectedEstimate)
+        #expect(model.exportEstimateSummary == "~ 1.5 MB")
+        #expect(captured?.format == .hevc)
+        #expect(captured?.timeRange == expectedRange)
+        #expect(captured?.pixelSize == expectedPixelSize)
+        #expect(captured?.frameRate == expectedFrameRate)
+        #expect(captured?.quality == .high)
+        #expect(captured?.outputShouldMute == true)
+    }
+
+    @Test("format changes clamp unavailable quality")
+    func formatChangesClampUnavailableQuality() {
+        let model = makeModel()
+
+        model.setQuality(.high)
+        #expect(model.quality == .high)
+        #expect(model.availableQualities == [.compact, .balanced, .high])
+
+        model.setFormat(.apng)
+        #expect(model.quality == .lossless)
+        #expect(model.availableQualities == [.lossless])
+        #expect(!model.canChooseQuality)
+
+        model.setQuality(.balanced)
+        #expect(model.quality == .lossless)
+    }
+
+    @Test("unsupported estimate clears stale value")
+    func unsupportedEstimateClearsStaleValue() async throws {
+        let model = makeModel(exportSizeEstimator: StubFailingExportSizeEstimator())
+
+        model.exportEstimate = try ExportEstimate(bytes: 42, confidence: .modeled)
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.refreshExportEstimate()
+
+        #expect(model.exportEstimate == nil)
+        #expect(model.exportEstimateSummary == nil)
+    }
+
     private func makeModel(
         exporter: any MediaExporter = StubMediaExporter(),
+        exportSizeEstimator: any ExportSizeEstimator = StubExportSizeEstimator(),
         fileSystem: any FileSystem = StubFileSystem()
     ) -> LuxelEditorModel {
         LuxelEditorModel(
@@ -83,8 +145,12 @@ struct LuxelEditorModelTests {
                 exporter: exporter,
                 fileSystem: fileSystem
             ),
+            exportSizeEstimationService: ExportSizeEstimationService(
+                estimator: exportSizeEstimator
+            ),
             passthroughExportService: PassthroughExportService(
-                fileSystem: fileSystem
+                fileSystem: fileSystem,
+                trimmedExporter: StubPassthroughExporter()
             ),
             fileWorkflowService: ExportedFileWorkflowService(
                 client: StubExportedFileActionClient()
@@ -136,6 +202,37 @@ private struct StubMediaExporter: MediaExporter {
             pixelSize: try request.outputPixelSize,
             shouldMute: request.outputShouldMute
         )
+    }
+}
+
+private struct StubPassthroughExporter: PassthroughExporter {
+    func export(_ request: PassthroughExportRequest) async throws -> PassthroughExportResult {
+        PassthroughExportResult(fileURL: request.outputFileURL)
+    }
+}
+
+private struct StubExportSizeEstimator: ExportSizeEstimator {
+    func estimate(_ request: ExportRequest) async throws -> ExportEstimate {
+        try ExportEstimate(bytes: 1_500_000, confidence: .modeled)
+    }
+}
+
+private struct StubFailingExportSizeEstimator: ExportSizeEstimator {
+    func estimate(_ request: ExportRequest) async throws -> ExportEstimate {
+        throw StubError.importFailed
+    }
+}
+
+private actor SpyExportSizeEstimator: ExportSizeEstimator {
+    private var capturedRequest: ExportRequest?
+
+    func estimate(_ request: ExportRequest) async throws -> ExportEstimate {
+        capturedRequest = request
+        return try ExportEstimate(bytes: 1_500_000, confidence: .modeled)
+    }
+
+    func request() -> ExportRequest? {
+        capturedRequest
     }
 }
 

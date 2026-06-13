@@ -2,6 +2,7 @@ import Foundation
 
 public struct ExportService: Sendable {
     public typealias ProgressHandler = @Sendable (ExportProgressSnapshot) async -> Void
+    public typealias BatchProgressHandler = @Sendable (ExportBatchProgressSnapshot) async -> Void
 
     private let exporter: any MediaExporter
     private let fileSystem: (any FileSystem)?
@@ -56,6 +57,52 @@ public struct ExportService: Sendable {
             }
         } onCancel: {
             cleanup.removeOutput()
+        }
+    }
+
+    public func runBatch(
+        _ batch: ExportBatch,
+        to outputDirectory: URL,
+        defaultName: String,
+        progress: BatchProgressHandler? = nil
+    ) async throws -> [ExportedMedia] {
+        var exportedMedia: [ExportedMedia] = []
+
+        for (jobID, request) in batch.requests.enumerated() {
+            try Task.checkCancellation()
+
+            let exported = try await export(
+                request,
+                to: outputDirectory,
+                defaultName: batchDefaultName(defaultName, format: request.format)
+            ) { snapshot in
+                await progress?(ExportBatchProgressSnapshot(jobID: jobID, snapshot: snapshot))
+            }
+
+            exportedMedia.append(exported)
+        }
+
+        return exportedMedia
+    }
+
+    private func batchDefaultName(_ defaultName: String, format: ExportFormat) -> String {
+        "\(defaultName) \(batchNameComponent(for: format))"
+    }
+
+    private func batchNameComponent(for format: ExportFormat) -> String {
+        switch format {
+        case .gif:
+            "GIF"
+        case .hevc:
+            "H265"
+        case .mp4:
+            "H264"
+        case .av1:
+            "AV1"
+        case .webm:
+            "WebM"
+        case .apng:
+            "APNG"
         }
     }
 }

@@ -1,0 +1,140 @@
+import Foundation
+import LuxelCore
+import Testing
+
+@Suite("Bitrate model size estimator")
+struct BitrateModelSizeEstimatorTests {
+    @Test("estimates movie bytes from quality mapping and audio bitrate")
+    func estimatesMovieBytes() async throws {
+        let request = try makeRequest(
+            format: .mp4,
+            width: 100,
+            height: 200,
+            frameRate: 10,
+            timeRange: TimeRange(start: 1, end: 5),
+            quality: .balanced,
+            shouldMute: false
+        )
+
+        let estimate = try await BitrateModelSizeEstimator().estimate(request)
+        let expected = try ExportEstimate(bytes: 76_000, confidence: .modeled)
+
+        #expect(estimate == expected)
+    }
+
+    @Test("drops audio bitrate when output is muted")
+    func dropsAudioBitrateWhenMuted() async throws {
+        let request = try makeRequest(
+            format: .mp4,
+            width: 100,
+            height: 200,
+            frameRate: 10,
+            timeRange: TimeRange(start: 1, end: 5),
+            quality: .balanced,
+            shouldMute: true
+        )
+
+        let estimate = try await BitrateModelSizeEstimator().estimate(request)
+        let expected = try ExportEstimate(bytes: 12_000, confidence: .modeled)
+
+        #expect(estimate == expected)
+    }
+
+    @Test("rounds video dimensions before estimating")
+    func roundsVideoDimensionsBeforeEstimating() async throws {
+        let request = try makeRequest(
+            format: .hevc,
+            width: 101,
+            height: 201,
+            frameRate: 10,
+            timeRange: TimeRange(start: 0, end: 1),
+            quality: .compact,
+            shouldMute: true
+        )
+
+        let estimate = try await BitrateModelSizeEstimator().estimate(request)
+        let expected = try ExportEstimate(bytes: 1_288, confidence: .modeled)
+
+        #expect(estimate == expected)
+    }
+
+    @Test("rejects formats without arithmetic bitrate model")
+    func rejectsFormatsWithoutArithmeticModel() async throws {
+        let request = try makeRequest(format: .gif)
+
+        await #expect(throws: BitrateModelSizeEstimatorError.unsupportedFormat(.gif)) {
+            _ = try await BitrateModelSizeEstimator().estimate(request)
+        }
+    }
+
+    @Test("service resolves draft before estimating")
+    func serviceResolvesDraftBeforeEstimating() async throws {
+        let estimator = SpyExportSizeEstimator()
+        let service = ExportSizeEstimationService(estimator: estimator)
+        let source = try SourceMedia(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            duration: 8,
+            pixelSize: PixelSize(width: 640, height: 480),
+            nominalFrameRate: FrameRate(30),
+            hasAudio: true
+        )
+        let draft = try EditorExportDraft(
+            source: source,
+            format: .hevc,
+            trimRange: TimeRange(start: 2, end: 6),
+            pixelSize: PixelSize(width: 320, height: 240),
+            frameRate: FrameRate(24),
+            shouldMute: true,
+            quality: .high
+        )
+
+        let estimate = try await service.estimate(draft)
+        let captured = await estimator.request()
+        let expectedEstimate = try ExportEstimate(bytes: 42, confidence: .modeled)
+        let expectedRange = try TimeRange(start: 2, end: 6)
+        let expectedPixelSize = try PixelSize(width: 320, height: 240)
+        let expectedFrameRate = try FrameRate(24)
+
+        #expect(estimate == expectedEstimate)
+        #expect(captured?.format == .hevc)
+        #expect(captured?.timeRange == expectedRange)
+        #expect(captured?.pixelSize == expectedPixelSize)
+        #expect(captured?.frameRate == expectedFrameRate)
+        #expect(captured?.outputShouldMute == true)
+        #expect(captured?.quality == .high)
+    }
+
+    private func makeRequest(
+        format: ExportFormat,
+        width: Int = 100,
+        height: Int = 200,
+        frameRate: Int = 10,
+        timeRange: TimeRange? = nil,
+        quality: ExportQuality = .balanced,
+        shouldMute: Bool = false
+    ) throws -> ExportRequest {
+        try ExportRequest(
+            inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
+            format: format,
+            pixelSize: PixelSize(width: width, height: height),
+            frameRate: FrameRate(frameRate),
+            timeRange: timeRange ?? TimeRange(start: 0, end: 1),
+            shouldMute: shouldMute,
+            shouldCrop: false,
+            quality: quality
+        )
+    }
+}
+
+private actor SpyExportSizeEstimator: ExportSizeEstimator {
+    private var capturedRequest: ExportRequest?
+
+    func estimate(_ request: ExportRequest) async throws -> ExportEstimate {
+        capturedRequest = request
+        return try ExportEstimate(bytes: 42, confidence: .modeled)
+    }
+
+    func request() -> ExportRequest? {
+        capturedRequest
+    }
+}

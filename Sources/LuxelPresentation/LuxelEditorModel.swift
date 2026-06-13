@@ -36,12 +36,16 @@ public final class LuxelEditorModel {
     var frameRate = 30
     var shouldMute = false
     var shouldCrop = true
+    var quality: ExportQuality = .balanced
     var outputDirectory = LuxelEditorModel.defaultRecordingsDirectory
     var exportProgress: ExportProgressSnapshot?
+    var exportEstimate: ExportEstimate?
+    var isEstimatingExportSize = false
 
     @ObservationIgnored var player = AVPlayer()
     @ObservationIgnored private let metadataReader: any MediaMetadataReader
     @ObservationIgnored private let exportService: ExportService
+    @ObservationIgnored private let exportSizeEstimationService: ExportSizeEstimationService
     @ObservationIgnored private let passthroughExportService: PassthroughExportService
     @ObservationIgnored private let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored private var playbackRequested = false
@@ -54,8 +58,12 @@ public final class LuxelEditorModel {
             exporter: NativeMediaExporter(),
             fileSystem: LocalFileSystem()
         ),
+        exportSizeEstimationService: ExportSizeEstimationService = ExportSizeEstimationService(
+            estimator: BitrateModelSizeEstimator()
+        ),
         passthroughExportService: PassthroughExportService = PassthroughExportService(
-            fileSystem: LocalFileSystem()
+            fileSystem: LocalFileSystem(),
+            trimmedExporter: AVFoundationPassthroughExporter()
         ),
         fileWorkflowService: ExportedFileWorkflowService = ExportedFileWorkflowService(
             client: AppKitExportedFileActionClient()
@@ -63,6 +71,7 @@ public final class LuxelEditorModel {
     ) {
         self.metadataReader = metadataReader
         self.exportService = exportService
+        self.exportSizeEstimationService = exportSizeEstimationService
         self.passthroughExportService = passthroughExportService
         self.fileWorkflowService = fileWorkflowService
         player.actionAtItemEnd = .none
@@ -87,6 +96,14 @@ public final class LuxelEditorModel {
 
     var maximumFrameRate: Int {
         max(1, source?.nominalFrameRate.framesPerSecond ?? 120)
+    }
+
+    var availableQualities: [ExportQuality] {
+        ExportQuality.availableQualities(for: format)
+    }
+
+    var canChooseQuality: Bool {
+        availableQualities.count > 1
     }
 
     var includesAudio: Bool {
@@ -170,6 +187,44 @@ public final class LuxelEditorModel {
         exportProgress?.progress ?? 0
     }
 
+    var exportEstimateTaskID: ExportEstimateTaskID? {
+        guard let source else {
+            return nil
+        }
+
+        return ExportEstimateTaskID(
+            sourceFileURL: source.fileURL,
+            format: format,
+            trimStart: trimStart,
+            trimEnd: trimEnd,
+            outputWidth: outputWidth,
+            outputHeight: outputHeight,
+            frameRate: frameRate,
+            quality: quality,
+            shouldMute: shouldMute,
+            shouldCrop: shouldCrop
+        )
+    }
+
+    var exportEstimateSummary: String? {
+        if isEstimatingExportSize {
+            return "Estimating..."
+        }
+
+        guard let exportEstimate else {
+            return nil
+        }
+
+        let formatted = ByteCountFormatter.string(fromByteCount: exportEstimate.bytes, countStyle: .file)
+
+        switch exportEstimate.confidence {
+        case .exact:
+            return formatted
+        case .modeled, .sampled:
+            return "~ \(formatted)"
+        }
+    }
+
     var exportedURL: URL? {
         if case .exported(let url) = status {
             return url
@@ -223,6 +278,8 @@ public final class LuxelEditorModel {
         self.outputDirectory = outputDirectory
         status = .loading(fileURL.lastPathComponent)
         exportProgress = nil
+        exportEstimate = nil
+        isEstimatingExportSize = false
         player.pause()
         playbackRequested = false
 
@@ -246,6 +303,8 @@ public final class LuxelEditorModel {
     public func reportImportFailure(_ error: Error) {
         source = nil
         exportProgress = nil
+        exportEstimate = nil
+        isEstimatingExportSize = false
         player.replaceCurrentItem(with: nil)
         status = .failed(errorMessage(error))
     }
@@ -253,10 +312,25 @@ public final class LuxelEditorModel {
     func setFormat(_ nextFormat: ExportFormat) {
         format = nextFormat
 
+        if !quality.isAvailable(for: nextFormat) {
+            quality = ExportQuality.defaultQuality(for: nextFormat)
+        }
+
         if !canIncludeAudio {
             shouldMute = true
         }
 
+        exportProgress = nil
+    }
+
+    func setQuality(_ nextQuality: ExportQuality) {
+        guard nextQuality.isAvailable(for: format) else {
+            quality = ExportQuality.defaultQuality(for: format)
+            exportProgress = nil
+            return
+        }
+
+        quality = nextQuality
         exportProgress = nil
     }
 
@@ -321,6 +395,38 @@ public final class LuxelEditorModel {
         }
     }
 
+    func refreshExportEstimate() async {
+        guard let source else {
+            exportEstimate = nil
+            isEstimatingExportSize = false
+            return
+        }
+
+        let taskID = exportEstimateTaskID
+        isEstimatingExportSize = true
+        defer {
+            if exportEstimateTaskID == taskID {
+                isEstimatingExportSize = false
+            }
+        }
+
+        do {
+            try await Task.sleep(for: .milliseconds(300))
+            let draft = try makeExportDraft(source: source)
+            let estimate = try await exportSizeEstimationService.estimate(draft)
+
+            guard !Task.isCancelled, exportEstimateTaskID == taskID else {
+                return
+            }
+
+            exportEstimate = estimate
+        } catch is CancellationError {
+            return
+        } catch {
+            exportEstimate = nil
+        }
+    }
+
     func startExport() {
         guard let source else {
             return
@@ -339,15 +445,7 @@ public final class LuxelEditorModel {
                 withIntermediateDirectories: true
             )
 
-            let draft = EditorExportDraft(
-                source: source,
-                format: format,
-                trimRange: try TimeRange(start: trimStart, end: trimEnd),
-                pixelSize: try PixelSize(width: outputWidth, height: outputHeight),
-                frameRate: try FrameRate(frameRate),
-                shouldMute: shouldMute,
-                shouldCrop: shouldCrop
-            )
+            let draft = try makeExportDraft(source: source)
             let exportService = exportService
             let outputDirectory = outputDirectory
             let defaultName = defaultExportName(for: source.fileURL)
@@ -610,10 +708,36 @@ public final class LuxelEditorModel {
         }
     }
 
+    private func makeExportDraft(source: SourceMedia) throws -> EditorExportDraft {
+        try EditorExportDraft(
+            source: source,
+            format: format,
+            trimRange: TimeRange(start: trimStart, end: trimEnd),
+            pixelSize: PixelSize(width: outputWidth, height: outputHeight),
+            frameRate: FrameRate(frameRate),
+            shouldMute: shouldMute,
+            shouldCrop: shouldCrop,
+            quality: quality
+        )
+    }
+
     private func errorMessage(_ error: Error) -> String {
         let description = (error as NSError).localizedDescription
         return description.isEmpty ? String(describing: error) : description
     }
+}
+
+struct ExportEstimateTaskID: Equatable, Hashable {
+    let sourceFileURL: URL
+    let format: ExportFormat
+    let trimStart: TimeInterval
+    let trimEnd: TimeInterval
+    let outputWidth: Int
+    let outputHeight: Int
+    let frameRate: Int
+    let quality: ExportQuality
+    let shouldMute: Bool
+    let shouldCrop: Bool
 }
 
 private final class PlaybackTimeObserver {
