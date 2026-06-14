@@ -5,6 +5,10 @@ public enum ScreenshotFormat: String, Codable, CaseIterable, Equatable, Sendable
     case jpeg
     case heic
 
+    public var fileExtension: String {
+        rawValue
+    }
+
     public var supportsAlpha: Bool {
         switch self {
         case .png, .heic:
@@ -108,6 +112,20 @@ public struct FrameGrabRequest: Codable, Equatable, Sendable {
         self.time = time
         self.cropRect = cropRect
         self.format = format
+    }
+
+    public var suggestedFileName: String {
+        let sourceName = sourceFileURL.deletingPathExtension().lastPathComponent
+        return "\(sourceName) (frame \(Self.frameTimeText(time))).\(format.fileExtension)"
+    }
+
+    private static func frameTimeText(_ time: TimeInterval) -> String {
+        let totalTenths = Int((time * 10).rounded(.down))
+        let minutes = totalTenths / 600
+        let seconds = (totalTenths / 10) % 60
+        let tenths = totalTenths % 10
+
+        return String(format: "%d.%02d.%d", minutes, seconds, tenths)
     }
 }
 
