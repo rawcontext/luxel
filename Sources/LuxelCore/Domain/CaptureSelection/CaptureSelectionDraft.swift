@@ -59,6 +59,60 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
         )
     }
 
+    public func replacingSelection(
+        x: Int? = nil,
+        y: Int? = nil,
+        width: Int? = nil,
+        height: Int? = nil
+    ) throws -> CaptureSelectionDraft {
+        let resolvedWidth = clamp(
+            width ?? topLeftSelection.width,
+            minimum: minimumWidth,
+            maximum: display.width
+        )
+        let resolvedHeight = clamp(
+            height ?? topLeftSelection.height,
+            minimum: minimumHeight,
+            maximum: display.height
+        )
+        let resolvedX = clamp(
+            x ?? topLeftSelection.x,
+            minimum: 0,
+            maximum: display.width - resolvedWidth
+        )
+        let resolvedY = clamp(
+            y ?? topLeftSelection.y,
+            minimum: 0,
+            maximum: display.height - resolvedHeight
+        )
+
+        return try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(
+                x: resolvedX,
+                y: resolvedY,
+                width: resolvedWidth,
+                height: resolvedHeight
+            ),
+            minimumWidth: minimumWidth,
+            minimumHeight: minimumHeight
+        )
+    }
+
+    public func moved(by delta: CaptureResizeDelta) throws -> CaptureSelectionDraft {
+        try replacingSelection(
+            x: topLeftSelection.x + delta.x,
+            y: topLeftSelection.y + delta.y
+        )
+    }
+
+    public func resized(by delta: CaptureResizeDelta) throws -> CaptureSelectionDraft {
+        try replacingSelection(
+            width: topLeftSelection.width + delta.x,
+            height: topLeftSelection.height + delta.y
+        )
+    }
+
     private func freeformResize(
         dragging handle: CaptureResizeHandle,
         by delta: CaptureResizeDelta
@@ -158,6 +212,10 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
             max(1, min(outputWidth, maxWidth)),
             max(1, min(outputHeight, maxHeight))
         )
+    }
+
+    private func clamp(_ value: Int, minimum: Int, maximum: Int) -> Int {
+        min(max(value, minimum), maximum)
     }
 }
 

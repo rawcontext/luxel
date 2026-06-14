@@ -139,6 +139,54 @@ struct CaptureSelectionDraftTests {
         #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 100, width: 480, height: 270)))
     }
 
+    @Test("exact selection replacement clamps to display and minimum size")
+    func exactSelectionReplacementClampsToDisplayAndMinimumSize() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 80, width: 200, height: 120),
+            minimumWidth: 40,
+            minimumHeight: 30
+        )
+
+        let replaced = try draft.replacingSelection(
+            x: 490,
+            y: -20,
+            width: 20,
+            height: 800
+        )
+
+        #expect(replaced.topLeftSelection == (try CaptureRect(x: 460, y: 0, width: 40, height: 400)))
+    }
+
+    @Test("move nudge keeps selection inside display")
+    func moveNudgeKeepsSelectionInsideDisplay() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 450, y: 360, width: 50, height: 40)
+        )
+
+        let moved = try draft.moved(by: CaptureResizeDelta(x: 10, y: 10))
+
+        #expect(moved.topLeftSelection == (try CaptureRect(x: 450, y: 360, width: 50, height: 40)))
+    }
+
+    @Test("keyboard resize nudge preserves top-left anchor")
+    func keyboardResizeNudgePreservesTopLeftAnchor() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 80, width: 200, height: 120),
+            minimumWidth: 40,
+            minimumHeight: 30
+        )
+
+        let resized = try draft.resized(by: CaptureResizeDelta(x: -500, y: 20))
+
+        #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 80, width: 40, height: 140)))
+    }
+
     @Test("invalid resize minimums throw")
     func invalidResizeMinimumsThrow() throws {
         let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)

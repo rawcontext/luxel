@@ -212,6 +212,50 @@ final class LuxelCropperModel {
         }
     }
 
+    func setSelectionX(_ x: Int) {
+        replaceSelection(x: x)
+    }
+
+    func setSelectionY(_ y: Int) {
+        replaceSelection(y: y)
+    }
+
+    func setSelectionWidth(_ width: Int) {
+        replaceSelection(width: width)
+    }
+
+    func setSelectionHeight(_ height: Int) {
+        replaceSelection(height: height)
+    }
+
+    func nudgeSelection(x: Int, y: Int) {
+        guard let selection else {
+            return
+        }
+
+        do {
+            let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
+            self.selection = try draft.moved(by: CaptureResizeDelta(x: x, y: y)).topLeftSelection
+            errorMessage = nil
+        } catch {
+            errorMessage = errorMessage(for: error)
+        }
+    }
+
+    func resizeSelectionBy(width: Int, height: Int) {
+        guard let selection else {
+            return
+        }
+
+        do {
+            let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
+            self.selection = try draft.resized(by: CaptureResizeDelta(x: width, y: height)).topLeftSelection
+            errorMessage = nil
+        } catch {
+            errorMessage = errorMessage(for: error)
+        }
+    }
+
     func finishResizeSelection() {
         resizeStartSelection = nil
     }
@@ -243,6 +287,30 @@ final class LuxelCropperModel {
         }
 
         return try CaptureSelectionDraft(display: display, topLeftSelection: selection)
+    }
+
+    private func replaceSelection(
+        x: Int? = nil,
+        y: Int? = nil,
+        width: Int? = nil,
+        height: Int? = nil
+    ) {
+        guard let selection else {
+            return
+        }
+
+        do {
+            let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
+            self.selection = try draft.replacingSelection(
+                x: x,
+                y: y,
+                width: width,
+                height: height
+            ).topLeftSelection
+            errorMessage = nil
+        } catch {
+            errorMessage = errorMessage(for: error)
+        }
     }
 
     private func capturePoint(from point: CGPoint, viewSize: CGSize) -> CapturePoint {

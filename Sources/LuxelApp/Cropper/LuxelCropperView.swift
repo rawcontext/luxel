@@ -54,16 +54,17 @@ struct LuxelCropperView: View {
                         )
                     }
             )
+            .focusable()
+            .onMoveCommand { direction in
+                handleMoveCommand(direction)
+            }
         }
     }
 
     private var cropperControls: some View {
         GlassPanel {
             HStack(spacing: 12) {
-                Text(model.selectionSummary)
-                    .font(.callout)
-                    .monospacedDigit()
-                    .frame(minWidth: 96, alignment: .leading)
+                selectionGeometryControls
 
                 Picker("Mode", selection: $model.mode) {
                     ForEach(LuxelCropperMode.allCases) { mode in
@@ -148,6 +149,24 @@ struct LuxelCropperView: View {
             }
         }
         .fixedSize()
+    }
+
+    @ViewBuilder
+    private var selectionGeometryControls: some View {
+        if model.selection == nil {
+            Text(model.selectionSummary)
+                .font(.callout)
+                .monospacedDigit()
+                .frame(minWidth: 96, alignment: .leading)
+        } else {
+            HStack(spacing: 6) {
+                SelectionNumberField(title: "X", value: selectionX)
+                SelectionNumberField(title: "Y", value: selectionY)
+                SelectionNumberField(title: "W", value: selectionWidth)
+                SelectionNumberField(title: "H", value: selectionHeight)
+            }
+            .help("Selection Geometry")
+        }
     }
 
     @ViewBuilder
@@ -362,6 +381,33 @@ struct LuxelCropperView: View {
         }
     }
 
+    private func handleMoveCommand(_ direction: MoveCommandDirection) {
+        guard model.selection != nil else {
+            return
+        }
+
+        let flags = NSEvent.modifierFlags
+        let step = flags.contains(.shift) ? 10 : 1
+        let delta: CaptureResizeDelta = switch direction {
+        case .up:
+            CaptureResizeDelta(x: 0, y: -step)
+        case .down:
+            CaptureResizeDelta(x: 0, y: step)
+        case .left:
+            CaptureResizeDelta(x: -step, y: 0)
+        case .right:
+            CaptureResizeDelta(x: step, y: 0)
+        @unknown default:
+            CaptureResizeDelta(x: 0, y: 0)
+        }
+
+        if flags.contains(.option) {
+            model.resizeSelectionBy(width: delta.x, height: delta.y)
+        } else {
+            model.nudgeSelection(x: delta.x, y: delta.y)
+        }
+    }
+
     @ViewBuilder
     private func countdownButton(title: String, duration: TimeInterval?) -> some View {
         Button {
@@ -400,6 +446,38 @@ struct LuxelCropperView: View {
             model.customStopAfterText
         } set: { text in
             model.setCustomStopAfterText(text)
+        }
+    }
+
+    private var selectionX: Binding<Int> {
+        Binding {
+            model.selection?.x ?? 0
+        } set: { value in
+            model.setSelectionX(value)
+        }
+    }
+
+    private var selectionY: Binding<Int> {
+        Binding {
+            model.selection?.y ?? 0
+        } set: { value in
+            model.setSelectionY(value)
+        }
+    }
+
+    private var selectionWidth: Binding<Int> {
+        Binding {
+            model.selection?.width ?? 0
+        } set: { value in
+            model.setSelectionWidth(value)
+        }
+    }
+
+    private var selectionHeight: Binding<Int> {
+        Binding {
+            model.selection?.height ?? 0
+        } set: { value in
+            model.setSelectionHeight(value)
         }
     }
 
@@ -568,6 +646,31 @@ private struct CropperAudioLevelMeter: View {
 
     var body: some View {
         AudioLevelMeterView(sample: model.sample)
+    }
+}
+
+private struct SelectionNumberField: View {
+    let title: String
+    @Binding var value: Int
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(width: 10, alignment: .leading)
+
+            TextField(title, value: $value, format: .number)
+                .labelsHidden()
+                .font(.callout)
+                .monospacedDigit()
+                .multilineTextAlignment(.trailing)
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.small)
+                .frame(width: 58)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
     }
 }
 
