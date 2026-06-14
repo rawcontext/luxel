@@ -95,6 +95,103 @@ struct CodecComplianceModelTests {
         #expect(CodecLicensePolicy().decision(for: tool) == .developmentToolExempt)
     }
 
+    @Test("license gate passes when no shipped codec dependencies are bundled")
+    func licenseGatePassesWhenNoShippedCodecDependenciesAreBundled() {
+        let report = CodecLicenseGate().validate(dependencies: [], ledger: CodecLicenseLedger())
+
+        #expect(report.isPassing)
+        #expect(report.violations.isEmpty)
+    }
+
+    @Test("license gate requires ledger entries for planned shipped codec stack")
+    func licenseGateRequiresLedgerEntriesForPlannedShippedCodecStack() {
+        let report = CodecLicenseGate().validate(
+            dependencies: CodecDependency.plannedNativeCodecStack,
+            ledger: CodecLicenseLedger()
+        )
+
+        #expect(!report.isPassing)
+        #expect(report.violations == [
+            .missingLedgerEntry(dependencyID: "libvpx"),
+            .missingLedgerEntry(dependencyID: "libopus"),
+            .missingLedgerEntry(dependencyID: "svt-av1"),
+            .missingLedgerEntry(dependencyID: "libaom")
+        ])
+    }
+
+    @Test("license gate passes planned stack with matching license ledger")
+    func licenseGatePassesPlannedStackWithMatchingLicenseLedger() {
+        let ledger = CodecLicenseLedger(
+            entries: CodecDependency.plannedNativeCodecStack.map { dependency in
+                CodecLicenseLedgerEntry(
+                    dependencyID: dependency.id,
+                    name: dependency.name,
+                    license: dependency.license,
+                    copyrightNotice: "Copyright notice for \(dependency.name)",
+                    licenseText: "\(dependency.license.rawValue) license text for \(dependency.name)"
+                )
+            }
+        )
+
+        let report = CodecLicenseGate().validate(
+            dependencies: CodecDependency.plannedNativeCodecStack,
+            ledger: ledger
+        )
+
+        #expect(report.isPassing)
+    }
+
+    @Test("license gate reports denied licenses and invalid ledger content")
+    func licenseGateReportsDeniedLicensesAndInvalidLedgerContent() {
+        let dependencies = [
+            CodecDependency(
+                id: "libvpx",
+                name: "libvpx",
+                role: "VP9 video encode",
+                license: .bsd3Clause
+            ),
+            CodecDependency(
+                id: "forbidden",
+                name: "Forbidden Encoder",
+                role: "Fixture",
+                license: .gpl3
+            ),
+            CodecDependency(
+                id: "dev-tool",
+                name: "Dev Tool",
+                role: "Fixture",
+                license: .gpl3,
+                use: .developmentTool
+            )
+        ]
+        let ledger = CodecLicenseLedger(entries: [
+            CodecLicenseLedgerEntry(
+                dependencyID: "libvpx",
+                name: "libvpx",
+                license: .mit,
+                copyrightNotice: "",
+                licenseText: "   "
+            ),
+            CodecLicenseLedgerEntry(
+                dependencyID: "libvpx",
+                name: "libvpx duplicate",
+                license: .bsd3Clause,
+                copyrightNotice: "Copyright notice",
+                licenseText: "BSD-3-Clause license text"
+            )
+        ])
+
+        let report = CodecLicenseGate().validate(dependencies: dependencies, ledger: ledger)
+
+        #expect(report.violations == [
+            .duplicateLedgerEntry(dependencyID: "libvpx"),
+            .licenseMismatch(dependencyID: "libvpx", expected: .bsd3Clause, actual: .mit),
+            .missingCopyrightNotice(dependencyID: "libvpx"),
+            .missingLicenseText(dependencyID: "libvpx"),
+            .deniedShippedDependency(dependencyID: "forbidden", license: .gpl3)
+        ])
+    }
+
     @Test("shipped non-public-domain dependencies require bundled license text")
     func shippedDependenciesRequireBundledLicenseText() {
         let policy = CodecLicensePolicy()
