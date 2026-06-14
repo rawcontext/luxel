@@ -723,6 +723,151 @@ public struct GIFIndexedFrame: Codable, Equatable, Sendable {
     }
 }
 
+public struct GIFNearestColorQuantizer: Sendable {
+    public init() {}
+
+    public func indexedFrame(
+        from frame: GIFFrameBitmap,
+        palette: GIFColorPalette
+    ) throws -> GIFIndexedFrame {
+        try GIFIndexedFrame(
+            pixelSize: frame.pixelSize,
+            colorIndexes: frame.pixels.map { palette.nearestColorIndex(for: $0) }
+        )
+    }
+}
+
+public struct OrderedDitherer: Sendable {
+    private static let bayer4x4 = [
+        [0, 8, 2, 10],
+        [12, 4, 14, 6],
+        [3, 11, 1, 9],
+        [15, 7, 13, 5]
+    ]
+
+    public init() {}
+
+    public func indexedFrame(
+        from frame: GIFFrameBitmap,
+        palette: GIFColorPalette
+    ) throws -> GIFIndexedFrame {
+        var colorIndexes: [UInt8] = []
+        colorIndexes.reserveCapacity(frame.pixels.count)
+
+        for y in 0..<frame.pixelSize.height {
+            for x in 0..<frame.pixelSize.width {
+                let index = y * frame.pixelSize.width + x
+                let threshold = Self.bayer4x4[y % 4][x % 4]
+                let adjustment = (Double(threshold) - 7.5) * 16
+                colorIndexes.append(palette.nearestColorIndex(
+                    for: frame.pixels[index].adjustedRGB(by: adjustment)
+                ))
+            }
+        }
+
+        return try GIFIndexedFrame(pixelSize: frame.pixelSize, colorIndexes: colorIndexes)
+    }
+}
+
+public struct FloydSteinbergDitherer: Sendable {
+    public init() {}
+
+    public func indexedFrame(
+        from frame: GIFFrameBitmap,
+        palette: GIFColorPalette
+    ) throws -> GIFIndexedFrame {
+        var workingPixels = frame.pixels.map(DitherWorkingPixel.init(pixel:))
+        var colorIndexes = Array(repeating: UInt8(0), count: frame.pixels.count)
+
+        for y in 0..<frame.pixelSize.height {
+            for x in 0..<frame.pixelSize.width {
+                let index = y * frame.pixelSize.width + x
+                let colorIndex = palette.nearestColorIndex(for: workingPixels[index].pixel)
+                let paletteColor = palette.colors[Int(colorIndex)]
+                colorIndexes[index] = colorIndex
+
+                let error = workingPixels[index].error(from: paletteColor)
+                diffuse(error, factor: 7.0 / 16.0, x: x + 1, y: y, frame: frame, pixels: &workingPixels)
+                diffuse(error, factor: 3.0 / 16.0, x: x - 1, y: y + 1, frame: frame, pixels: &workingPixels)
+                diffuse(error, factor: 5.0 / 16.0, x: x, y: y + 1, frame: frame, pixels: &workingPixels)
+                diffuse(error, factor: 1.0 / 16.0, x: x + 1, y: y + 1, frame: frame, pixels: &workingPixels)
+            }
+        }
+
+        return try GIFIndexedFrame(pixelSize: frame.pixelSize, colorIndexes: colorIndexes)
+    }
+
+    private func diffuse(
+        _ error: DitherError,
+        factor: Double,
+        x: Int,
+        y: Int,
+        frame: GIFFrameBitmap,
+        pixels: inout [DitherWorkingPixel]
+    ) {
+        guard x >= 0, x < frame.pixelSize.width, y >= 0, y < frame.pixelSize.height else {
+            return
+        }
+
+        pixels[y * frame.pixelSize.width + x].apply(error, factor: factor)
+    }
+}
+
+private struct DitherError: Sendable {
+    let red: Double
+    let green: Double
+    let blue: Double
+}
+
+private struct DitherWorkingPixel: Sendable {
+    var red: Double
+    var green: Double
+    var blue: Double
+
+    init(pixel: GIFRGBAPixel) {
+        red = Double(pixel.red)
+        green = Double(pixel.green)
+        blue = Double(pixel.blue)
+    }
+
+    var pixel: GIFRGBAPixel {
+        GIFRGBAPixel(
+            red: clampToUInt8(red),
+            green: clampToUInt8(green),
+            blue: clampToUInt8(blue)
+        )
+    }
+
+    func error(from color: GIFPaletteColor) -> DitherError {
+        DitherError(
+            red: red - Double(color.red),
+            green: green - Double(color.green),
+            blue: blue - Double(color.blue)
+        )
+    }
+
+    mutating func apply(_ error: DitherError, factor: Double) {
+        red += error.red * factor
+        green += error.green * factor
+        blue += error.blue * factor
+    }
+}
+
+private extension GIFRGBAPixel {
+    func adjustedRGB(by adjustment: Double) -> GIFRGBAPixel {
+        GIFRGBAPixel(
+            red: clampToUInt8(Double(red) + adjustment),
+            green: clampToUInt8(Double(green) + adjustment),
+            blue: clampToUInt8(Double(blue) + adjustment),
+            alpha: alpha
+        )
+    }
+}
+
+private func clampToUInt8(_ value: Double) -> UInt8 {
+    UInt8(min(255, max(0, Int(value.rounded()))))
+}
+
 public struct GIFPixelRect: Codable, Equatable, Sendable {
     public let x: Int
     public let y: Int

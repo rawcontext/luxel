@@ -232,6 +232,54 @@ struct GIFEngineModelTests {
         }
     }
 
+    @Test("nearest color quantizer maps pixels to palette indexes")
+    func nearestColorQuantizerMapsPixelsToPaletteIndexes() throws {
+        let palette = try blackWhitePalette()
+        let frame = try GIFFrameBitmap(
+            pixelSize: PixelSize(width: 2, height: 1),
+            pixels: [
+                GIFRGBAPixel(red: 10, green: 10, blue: 10),
+                GIFRGBAPixel(red: 240, green: 240, blue: 240)
+            ]
+        )
+
+        let indexed = try GIFNearestColorQuantizer().indexedFrame(from: frame, palette: palette)
+
+        #expect(indexed.colorIndexes == [0, 1])
+    }
+
+    @Test("ordered ditherer emits stable Bayer pattern")
+    func orderedDithererEmitsStableBayerPattern() throws {
+        let palette = try blackWhitePalette()
+        let frame = try solidBitmap(width: 4, height: 4, color: GIFRGBAPixel(red: 128, green: 128, blue: 128))
+
+        let indexed = try OrderedDitherer().indexedFrame(from: frame, palette: palette)
+
+        #expect(indexed.colorIndexes == [
+            0, 1, 0, 1,
+            1, 0, 1, 0,
+            0, 1, 0, 1,
+            1, 0, 1, 0
+        ])
+    }
+
+    @Test("floyd steinberg ditherer diffuses quantization error")
+    func floydSteinbergDithererDiffusesQuantizationError() throws {
+        let palette = try blackWhitePalette()
+        let frame = try GIFFrameBitmap(
+            pixelSize: PixelSize(width: 3, height: 1),
+            pixels: [
+                GIFRGBAPixel(red: 96, green: 96, blue: 96),
+                GIFRGBAPixel(red: 96, green: 96, blue: 96),
+                GIFRGBAPixel(red: 96, green: 96, blue: 96)
+            ]
+        )
+
+        let indexed = try FloydSteinbergDitherer().indexedFrame(from: frame, palette: palette)
+
+        #expect(indexed.colorIndexes == [0, 1, 0])
+    }
+
     @Test("frame differ emits full first frame and transparent static deltas")
     func frameDifferEmitsFullFirstFrameAndTransparentStaticDeltas() throws {
         let bitmap = try solidBitmap(width: 3, height: 2, color: GIFRGBAPixel(red: 10, green: 20, blue: 30))
@@ -366,5 +414,12 @@ struct GIFEngineModelTests {
             pixelSize: PixelSize(width: width, height: height),
             colorIndexes: indexes
         )
+    }
+
+    private func blackWhitePalette() throws -> GIFColorPalette {
+        try GIFColorPalette(colors: [
+            GIFPaletteColor(red: 0, green: 0, blue: 0),
+            GIFPaletteColor(red: 255, green: 255, blue: 255)
+        ])
     }
 }
