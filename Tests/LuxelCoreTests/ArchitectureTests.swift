@@ -73,6 +73,19 @@ struct ArchitectureTests {
         #expect(statusItemOccurrences == 1)
     }
 
+    @Test("menu bar status click stops pulsing recording before opening popover")
+    func menuBarStatusClickStopsPulsingRecordingBeforeOpeningPopover() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/App/LuxelStatusItemController.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("button.action = #selector(handleStatusItemClick)"))
+        #expect(source.contains("model.menuBarStatusPresentation().animatesMenuBarSystemImage"))
+        #expect(source.contains("stopRecordingFromStatusItem()"))
+        #expect(source.contains("windowPresenter.openEditor(fileURL: fileURL)"))
+    }
+
     @Test("update settings milestone does not link Sparkle yet")
     func updateSettingsMilestoneDoesNotLinkSparkleYet() throws {
         let packageRoot = try packageRootURL()

@@ -19,6 +19,7 @@ final class LuxelStatusItemController: NSObject {
     private var recordingAnimationTimer: Timer?
     private var recordingFrameIndex = 0
     private var currentImageKey: String?
+    private var isHandlingStatusItemStop = false
 
     private let iconSize = NSSize(width: 18, height: 18)
     private lazy var recordingFrames = makeRecordingFrames()
@@ -50,7 +51,7 @@ final class LuxelStatusItemController: NSObject {
         }
 
         button.target = self
-        button.action = #selector(togglePopover)
+        button.action = #selector(handleStatusItemClick)
         button.imagePosition = .imageOnly
         button.setButtonType(.momentaryChange)
     }
@@ -113,7 +114,16 @@ final class LuxelStatusItemController: NSObject {
         }
     }
 
-    @objc private func togglePopover() {
+    @objc private func handleStatusItemClick() {
+        if model.menuBarStatusPresentation().animatesMenuBarSystemImage {
+            stopRecordingFromStatusItem()
+            return
+        }
+
+        togglePopover()
+    }
+
+    private func togglePopover() {
         guard let button = statusItem.button else {
             return
         }
@@ -123,6 +133,35 @@ final class LuxelStatusItemController: NSObject {
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApplication.shared.activate(ignoringOtherApps: true)
+        }
+    }
+
+    private func stopRecordingFromStatusItem() {
+        guard !isHandlingStatusItemStop else {
+            return
+        }
+
+        isHandlingStatusItemStop = true
+        popover.performClose(nil)
+
+        Task { [weak self] in
+            guard let self else {
+                return
+            }
+
+            let stopAction = await model.stopRecording()
+            handleStatusItemStopAction(stopAction)
+        }
+    }
+
+    private func handleStatusItemStopAction(_ stopAction: RecordingStopAction?) {
+        isHandlingStatusItemStop = false
+
+        switch stopAction {
+        case .openEditor(let fileURL):
+            windowPresenter.openEditor(fileURL: fileURL)
+        case .quickExported, .audioRecorded, nil:
+            break
         }
     }
 
