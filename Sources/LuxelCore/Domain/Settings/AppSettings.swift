@@ -26,8 +26,25 @@ public struct AppSettings: Codable, Equatable, Sendable {
 
     public var recordingsDirectory: URL
     public var recordingsDirectoryBookmark: BookmarkedDirectory?
-    public var showCursor: Bool
-    public var highlightClicks: Bool
+    public var showCursor: Bool {
+        didSet {
+            cursorMode = Self.cursorMode(showCursor: showCursor)
+            cursorRenderOptions = Self.cursorRenderOptions(
+                showCursor: showCursor,
+                highlightClicks: highlightClicks
+            )
+        }
+    }
+    public var highlightClicks: Bool {
+        didSet {
+            cursorRenderOptions = Self.cursorRenderOptions(
+                showCursor: showCursor,
+                highlightClicks: highlightClicks
+            )
+        }
+    }
+    public var cursorMode: CursorMode
+    public var cursorRenderOptions: CursorRenderOptions
     public var record60FPS: Bool
     public var loopExports: Bool
     public var recordAudio: Bool
@@ -66,6 +83,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         recordingsDirectoryBookmark: BookmarkedDirectory? = nil,
         showCursor: Bool = true,
         highlightClicks: Bool = false,
+        cursorMode: CursorMode? = nil,
+        cursorRenderOptions: CursorRenderOptions? = nil,
         record60FPS: Bool = false,
         loopExports: Bool = true,
         recordAudio: Bool = false,
@@ -103,6 +122,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.recordingsDirectoryBookmark = recordingsDirectoryBookmark
         self.showCursor = showCursor
         self.highlightClicks = highlightClicks
+        self.cursorMode = cursorMode ?? Self.cursorMode(showCursor: showCursor)
+        self.cursorRenderOptions = cursorRenderOptions ?? Self.cursorRenderOptions(
+            showCursor: showCursor,
+            highlightClicks: highlightClicks
+        )
         self.record60FPS = record60FPS
         self.loopExports = loopExports
         self.recordAudio = recordAudio
@@ -142,6 +166,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case recordingsDirectoryBookmark
         case showCursor
         case highlightClicks
+        case cursorMode
+        case cursorRenderOptions
         case record60FPS
         case loopExports
         case recordAudio
@@ -189,6 +215,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
             ?? true
         highlightClicks = try container.decodeIfPresent(Bool.self, forKey: .highlightClicks)
             ?? false
+        cursorMode = try container.decodeIfPresent(CursorMode.self, forKey: .cursorMode)
+            ?? Self.cursorMode(showCursor: showCursor)
+        cursorRenderOptions = try container.decodeIfPresent(
+            CursorRenderOptions.self,
+            forKey: .cursorRenderOptions
+        ) ?? Self.cursorRenderOptions(showCursor: showCursor, highlightClicks: highlightClicks)
         record60FPS = try container.decodeIfPresent(Bool.self, forKey: .record60FPS)
             ?? false
         loopExports = try container.decodeIfPresent(Bool.self, forKey: .loopExports)
@@ -266,6 +298,20 @@ public struct AppSettings: Codable, Equatable, Sendable {
         confirmDiscard = try container.decodeIfPresent(Bool.self, forKey: .confirmDiscard)
             ?? true
         lastStopAfter = try container.decodeIfPresent(TimeInterval.self, forKey: .lastStopAfter)
+    }
+
+    private static func cursorMode(showCursor: Bool) -> CursorMode {
+        showCursor ? .baked : .hidden
+    }
+
+    private static func cursorRenderOptions(
+        showCursor: Bool,
+        highlightClicks: Bool
+    ) -> CursorRenderOptions {
+        try! CursorRenderOptions(
+            isVisible: showCursor,
+            clickStyle: highlightClicks ? .ringRipple : .none
+        )
     }
 }
 

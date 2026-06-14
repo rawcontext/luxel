@@ -209,6 +209,17 @@ public struct CursorRenderOptions: Codable, Equatable, Sendable {
     public let clickDuration: TimeInterval
     public let spotlight: CursorSpotlightOptions?
 
+    public static let standard = CursorRenderOptions(
+        uncheckedIsVisible: true,
+        sizeMultiplier: 1,
+        smoothing: .off,
+        clickStyle: .none,
+        clickColor: .accent,
+        clickSize: 1,
+        clickDuration: 0.5,
+        spotlight: nil
+    )
+
     public init(
         isVisible: Bool = true,
         sizeMultiplier: Double = 1,
@@ -231,6 +242,28 @@ public struct CursorRenderOptions: Codable, Equatable, Sendable {
             throw CursorEffectModelError.invalidRenderOption
         }
 
+        self.init(
+            uncheckedIsVisible: isVisible,
+            sizeMultiplier: sizeMultiplier,
+            smoothing: smoothing,
+            clickStyle: clickStyle,
+            clickColor: clickColor,
+            clickSize: clickSize,
+            clickDuration: clickDuration,
+            spotlight: spotlight
+        )
+    }
+
+    private init(
+        uncheckedIsVisible isVisible: Bool,
+        sizeMultiplier: Double,
+        smoothing: CursorSmoothingLevel,
+        clickStyle: CursorClickStyle,
+        clickColor: CursorRGBAColor,
+        clickSize: Double,
+        clickDuration: TimeInterval,
+        spotlight: CursorSpotlightOptions?
+    ) {
         self.isVisible = isVisible
         self.sizeMultiplier = sizeMultiplier
         self.smoothing = smoothing

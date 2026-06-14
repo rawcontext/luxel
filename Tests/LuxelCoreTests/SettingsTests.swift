@@ -13,6 +13,8 @@ struct SettingsTests {
         #expect(settings.recordingsDirectoryBookmark == nil)
         #expect(settings.showCursor)
         #expect(!settings.highlightClicks)
+        #expect(settings.cursorMode == .baked)
+        #expect(settings.cursorRenderOptions == .standard)
         #expect(!settings.record60FPS)
         #expect(settings.loopExports)
         #expect(!settings.recordAudio)
@@ -48,6 +50,25 @@ struct SettingsTests {
         #expect(settings.screenshotBackdrop == .opaque)
         #expect(settings.confirmDiscard)
         #expect(settings.lastStopAfter == nil)
+    }
+
+    @Test("legacy cursor toggles keep cursor effect settings synchronized")
+    func legacyCursorTogglesKeepCursorEffectSettingsSynchronized() {
+        let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
+        var settings = AppSettings.defaults(recordingsDirectory: directory)
+
+        settings.showCursor = false
+        settings.highlightClicks = true
+
+        #expect(settings.cursorMode == .hidden)
+        #expect(settings.cursorRenderOptions.isVisible == false)
+        #expect(settings.cursorRenderOptions.clickStyle == .ringRipple)
+
+        settings.showCursor = true
+
+        #expect(settings.cursorMode == .baked)
+        #expect(settings.cursorRenderOptions.isVisible)
+        #expect(settings.cursorRenderOptions.clickStyle == .ringRipple)
     }
 
     @Test("update channels expose settings labels")

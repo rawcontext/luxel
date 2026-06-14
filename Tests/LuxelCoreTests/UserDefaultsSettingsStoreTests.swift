@@ -47,6 +47,12 @@ struct UserDefaultsSettingsStoreTests {
             ),
             showCursor: false,
             highlightClicks: true,
+            cursorMode: .editable,
+            cursorRenderOptions: try CursorRenderOptions(
+                sizeMultiplier: 1.5,
+                smoothing: .light,
+                clickStyle: .ringRipple
+            ),
             record60FPS: true,
             recordAudio: true,
             audioInputDeviceID: "mic-1",
@@ -129,6 +135,9 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.recordingsDirectoryBookmark == nil)
         #expect(!settings.showCursor)
         #expect(settings.highlightClicks)
+        #expect(settings.cursorMode == .hidden)
+        #expect(settings.cursorRenderOptions.isVisible == false)
+        #expect(settings.cursorRenderOptions.clickStyle == .ringRipple)
         #expect(settings.record60FPS)
         #expect(!settings.loopExports)
         #expect(settings.recordAudio)

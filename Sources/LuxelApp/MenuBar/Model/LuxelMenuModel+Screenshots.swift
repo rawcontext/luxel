@@ -93,7 +93,7 @@ extension LuxelMenuModel {
     ) async throws -> (job: ScreenshotCaptureJob, result: ScreenshotCaptureResult) {
         let job = try screenshotCapturePlanner.captureJob(
             target: target,
-            includeCursor: settings.showCursor,
+            includeCursor: settings.cursorMode == .baked,
             format: format,
             destinations: settings.screenshotDestinations,
             outputDirectory: settings.recordingsDirectory,

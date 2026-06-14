@@ -14,6 +14,7 @@ extension LuxelMenuModel {
         let schedule = try settings.lastStopAfter.map {
             try RecordingSchedule(maxRecordedDuration: $0)
         }
+        let usesBakedCursor = settings.cursorMode == .baked
 
         return (
             RecordingRequest(
@@ -21,8 +22,8 @@ extension LuxelMenuModel {
                 outputFileURL: outputFileURL,
                 pixelSize: pixelSize,
                 frameRate: frameRate,
-                showCursor: settings.showCursor,
-                highlightClicks: settings.highlightClicks,
+                showCursor: usesBakedCursor,
+                highlightClicks: usesBakedCursor && settings.highlightClicks,
                 audio: resolvedAudio.mode,
                 videoCodec: .h264,
                 captureKind: captureKind,
