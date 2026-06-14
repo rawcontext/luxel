@@ -111,6 +111,7 @@ struct KeystrokeModelTests {
         #expect(defaults.size == .medium)
         #expect(defaults.theme == .darkGlass)
         #expect(defaults.displayDuration == 1.5)
+        #expect(KeystrokeRenderOptions.standard == defaults)
         #expect(!custom.isVisible)
         #expect(custom.anchor == .topRight)
         #expect(custom.size == .large)
@@ -151,7 +152,164 @@ struct KeystrokeModelTests {
         #expect(decoded == timeline)
     }
 
+    @Test("chip planner renders shortcuts and modifier holds")
+    func chipPlannerRendersShortcutsAndModifierHolds() throws {
+        let timeline = try KeystrokeTimeline(events: [
+            flagsChanged(time: 0, modifiers: [.command]),
+            flagsChanged(time: 0.75, modifiers: []),
+            keyDown(time: 2, keyCode: 40, characters: "k", modifiers: [.command, .shift])
+        ])
+
+        let chips = try KeystrokeChipPlanner().plannedChips(for: timeline)
+
+        #expect(chips.map(\.text) == ["⌘", "⌘⇧K"])
+        #expect(chips.map(\.kind) == [.modifier, .shortcut])
+        try #require(chips.count == 2)
+        expectRange(chips[0].timeRange, start: 0.5, end: 2.25)
+        expectRange(chips[1].timeRange, start: 2, end: 3.5)
+    }
+
+    @Test("chip planner coalesces typing caps text and splits after gaps")
+    func chipPlannerCoalescesTypingCapsTextAndSplitsAfterGaps() throws {
+        let letters = Array("abcdefghijklmnopqrstuvwxyz")
+        let events = try letters.enumerated().map { index, character in
+            try keyDown(
+                time: TimeInterval(index) / 10,
+                keyCode: index,
+                characters: String(character)
+            )
+        } + [
+            keyDown(time: 4, keyCode: 18, characters: "!", modifiers: [.shift])
+        ]
+        let timeline = try KeystrokeTimeline(events: events)
+
+        let chips = try KeystrokeChipPlanner().plannedChips(for: timeline)
+
+        #expect(chips.map(\.text) == ["…hijklmnopqrstuvwxyz", "!"])
+        #expect(chips.map(\.kind) == [.typing, .typing])
+        try #require(chips.count == 2)
+        expectRange(chips[0].timeRange, start: 0, end: 4)
+        expectRange(chips[1].timeRange, start: 4, end: 5.5)
+    }
+
+    @Test("chip planner collapses repeats and hides paused events")
+    func chipPlannerCollapsesRepeatsAndHidesPausedEvents() throws {
+        let repeatEvents = try (0..<11).map { offset in
+            try keyDown(
+                time: 1.05 + TimeInterval(offset) * 0.05,
+                keyCode: 123,
+                isRepeat: true
+            )
+        }
+        let timeline = try KeystrokeTimeline(
+            events: [
+                keyDown(time: 0.1, keyCode: 0, characters: "a"),
+                keyDown(time: 0.3, keyCode: 11, characters: "b"),
+                keyDown(time: 1, keyCode: 123)
+            ] + repeatEvents,
+            pauses: [
+                KeystrokePauseInterval(
+                    timeRange: TimeRange(start: 0.2, end: 0.4),
+                    cause: .secureInput
+                )
+            ]
+        )
+
+        let chips = try KeystrokeChipPlanner().plannedChips(for: timeline)
+
+        #expect(chips.map(\.text) == ["a", "←×12"])
+        #expect(chips.map(\.kind) == [.typing, .special])
+        try #require(chips.count == 2)
+        expectRange(chips[0].timeRange, start: 0.1, end: 1.6)
+        expectRange(chips[1].timeRange, start: 1, end: 2.5)
+    }
+
+    @Test("chip planner trims oldest overlapping chip at stack limit")
+    func chipPlannerTrimsOldestOverlappingChipAtStackLimit() throws {
+        let renderOptions = try KeystrokeRenderOptions(displayDuration: 2)
+        let rules = try KeystrokeChipPlannerRules(maxVisibleChips: 3)
+        let timeline = try KeystrokeTimeline(events: [
+            keyDown(time: 0, keyCode: 0, characters: "a", modifiers: [.command]),
+            keyDown(time: 0.1, keyCode: 1, characters: "b", modifiers: [.command]),
+            keyDown(time: 0.2, keyCode: 2, characters: "c", modifiers: [.command]),
+            keyDown(time: 0.3, keyCode: 3, characters: "d", modifiers: [.command])
+        ])
+
+        let chips = try KeystrokeChipPlanner(
+            renderOptions: renderOptions,
+            rules: rules
+        ).plannedChips(for: timeline)
+
+        #expect(chips.map(\.text) == ["⌘A", "⌘B", "⌘C", "⌘D"])
+        try #require(chips.count == 4)
+        expectRange(chips[0].timeRange, start: 0, end: 0.3)
+        expectRange(chips[1].timeRange, start: 0.1, end: 2.1)
+        expectRange(chips[2].timeRange, start: 0.2, end: 2.2)
+        expectRange(chips[3].timeRange, start: 0.3, end: 2.3)
+    }
+
+    @Test("chip planner validates rules chips and disabled rendering")
+    func chipPlannerValidatesRulesChipsAndDisabledRendering() throws {
+        let hiddenOptions = try KeystrokeRenderOptions(isVisible: false)
+        let timeline = try KeystrokeTimeline(events: [
+            keyDown(time: 0, keyCode: 0, characters: "a")
+        ])
+
+        let chips = try KeystrokeChipPlanner(renderOptions: hiddenOptions)
+            .plannedChips(for: timeline)
+
+        #expect(chips.isEmpty)
+        #expect(throws: KeystrokeModelError.invalidChipPlannerRules) {
+            _ = try KeystrokeChipPlannerRules(maxVisibleChips: 0)
+        }
+        #expect(throws: KeystrokeModelError.invalidChipText) {
+            _ = try KeystrokeChip(
+                timeRange: TimeRange(start: 0, end: 1),
+                text: " ",
+                kind: .typing
+            )
+        }
+    }
+
     private func event(time: TimeInterval, keyCode: Int) throws -> KeystrokeEvent {
         try KeystrokeEvent(time: time, kind: .keyDown, keyCode: keyCode)
+    }
+
+    private func keyDown(
+        time: TimeInterval,
+        keyCode: Int,
+        characters: String? = nil,
+        modifiers: Set<KeystrokeModifier> = [],
+        isRepeat: Bool = false
+    ) throws -> KeystrokeEvent {
+        try KeystrokeEvent(
+            time: time,
+            kind: .keyDown,
+            keyCode: keyCode,
+            characters: characters,
+            modifiers: modifiers,
+            isRepeat: isRepeat
+        )
+    }
+
+    private func flagsChanged(
+        time: TimeInterval,
+        modifiers: Set<KeystrokeModifier>
+    ) throws -> KeystrokeEvent {
+        try KeystrokeEvent(
+            time: time,
+            kind: .flagsChanged,
+            keyCode: 55,
+            modifiers: modifiers
+        )
+    }
+
+    private func expectRange(
+        _ range: TimeRange,
+        start: TimeInterval,
+        end: TimeInterval
+    ) {
+        #expect(abs(range.start - start) < 0.000_001)
+        #expect(abs(range.end - end) < 0.000_001)
     }
 }
