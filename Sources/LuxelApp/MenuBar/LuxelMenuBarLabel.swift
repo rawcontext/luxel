@@ -4,8 +4,6 @@ import SwiftUI
 struct LuxelMenuBarLabel: View {
     @Bindable var model: LuxelMenuModel
     @State private var now = Date()
-    @State private var recordingPulseOpacity = 1.0
-    @State private var recordingPulseScale = 1.0
     @State private var quickExportProgressPanelController = QuickExportProgressPanelController()
 
     var body: some View {
@@ -18,8 +16,7 @@ struct LuxelMenuBarLabel: View {
                 .font(.system(size: 14, weight: .regular))
                 .imageScale(.medium)
                 .frame(width: 18, height: 18)
-                .scaleEffect(isRecordingAnimationActive ? recordingPulseScale : 1.0)
-                .opacity(isRecordingAnimationActive ? recordingPulseOpacity : 1.0)
+                .symbolEffect(.pulse, isActive: isRecordingAnimationActive)
 
             if let title {
                 Text(title)
@@ -43,9 +40,6 @@ struct LuxelMenuBarLabel: View {
             .task {
                 await model.keepCaptureTargetCacheWarm()
             }
-            .task(id: isRecordingAnimationActive) {
-                await runRecordingPulse(isAnimating: isRecordingAnimationActive)
-            }
     }
 
     private func menuBarTitle(for presentation: RecordingSessionPresentation) -> String? {
@@ -57,36 +51,4 @@ struct LuxelMenuBarLabel: View {
         }
     }
 
-    @MainActor
-    private func runRecordingPulse(isAnimating: Bool) async {
-        guard isAnimating else {
-            withAnimation(.easeOut(duration: 0.18)) {
-                recordingPulseOpacity = 1.0
-                recordingPulseScale = 1.0
-            }
-            return
-        }
-
-        recordingPulseOpacity = 0.86
-        recordingPulseScale = 0.96
-
-        while !Task.isCancelled {
-            withAnimation(.easeInOut(duration: 0.85)) {
-                recordingPulseOpacity = 1.0
-                recordingPulseScale = 1.08
-            }
-
-            try? await Task.sleep(nanoseconds: 850_000_000)
-            guard !Task.isCancelled else {
-                break
-            }
-
-            withAnimation(.easeInOut(duration: 0.85)) {
-                recordingPulseOpacity = 0.86
-                recordingPulseScale = 0.96
-            }
-
-            try? await Task.sleep(nanoseconds: 850_000_000)
-        }
-    }
 }
