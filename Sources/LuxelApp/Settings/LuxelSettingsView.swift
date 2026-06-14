@@ -205,17 +205,34 @@ struct LuxelSettingsView: View {
             }
 
             Section("Updates") {
-                Toggle("Check Automatically", isOn: $model.settings.updatePreferences.automaticallyCheckForUpdates)
+                let updatePresentation = updateSettingsPresentation
 
-                Toggle("Install Automatically", isOn: $model.settings.updatePreferences.automaticallyDownloadAndInstall)
-                    .disabled(!model.settings.updatePreferences.automaticallyCheckForUpdates)
+                LabeledContent("Current Version", value: model.appMetadata.versionSummary)
+                LabeledContent("Status", value: updatePresentation.statusText)
 
-                Picker("Channel", selection: $model.settings.updatePreferences.channel) {
-                    ForEach(UpdateChannel.allCases) { channel in
-                        Text(channel.label).tag(channel)
+                if updatePresentation.showsDeveloperIDUpdateControls {
+                    Toggle("Check Automatically", isOn: $model.settings.updatePreferences.automaticallyCheckForUpdates)
+
+                    Toggle("Install Automatically", isOn: $model.settings.updatePreferences.automaticallyDownloadAndInstall)
+                        .disabled(!updatePresentation.automaticInstallToggleEnabled)
+
+                    Picker("Channel", selection: $model.settings.updatePreferences.channel) {
+                        ForEach(UpdateChannel.allCases) { channel in
+                            Text(channel.label).tag(channel)
+                        }
                     }
+                    .pickerStyle(.menu)
+
+                    Button {} label: {
+                        Label("Check Now", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(!updatePresentation.canCheckNow)
+                    .help(updatePresentation.checkNowHelp)
                 }
-                .pickerStyle(.menu)
+
+                Text(updatePresentation.networkPolicyText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("About") {
@@ -311,6 +328,13 @@ struct LuxelSettingsView: View {
         }
 
         return cameraDeviceID
+    }
+
+    private var updateSettingsPresentation: UpdateSettingsPresentation {
+        UpdateSettingsPresentation(
+            preferences: model.settings.updatePreferences,
+            distribution: AppDistribution.current
+        )
     }
 
     private var audioInputDeviceSelection: Binding<String> {

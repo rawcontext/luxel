@@ -59,6 +59,27 @@ struct ArchitectureTests {
         }
     }
 
+    @Test("update settings milestone does not link Sparkle yet")
+    func updateSettingsMilestoneDoesNotLinkSparkleYet() throws {
+        let packageRoot = try packageRootURL()
+        let checkedURLs = [packageRoot.appending(path: "Package.swift")]
+            + (try swiftFiles(under: packageRoot.appending(path: "Sources")))
+        let forbiddenSnippets = [
+            ".package(url: \"https://github.com/sparkle-project/Sparkle\"",
+            "import Sparkle",
+            "SPUUpdater",
+            "SPUStandardUpdaterController",
+            "SUUpdater"
+        ]
+
+        for fileURL in checkedURLs {
+            let contents = try String(contentsOf: fileURL, encoding: .utf8)
+            for forbiddenSnippet in forbiddenSnippets {
+                #expect(!contents.contains(forbiddenSnippet), "\(fileURL.path) contains \(forbiddenSnippet)")
+            }
+        }
+    }
+
     private func swiftFiles(under directory: URL) throws -> [URL] {
         guard let enumerator = FileManager.default.enumerator(
             at: directory,
