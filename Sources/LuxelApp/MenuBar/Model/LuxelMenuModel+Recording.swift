@@ -160,6 +160,10 @@ extension LuxelMenuModel {
     }
 
     func startAudioOnlyRecording() async {
+        guard canBeginRecordingStart else {
+            return
+        }
+
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
@@ -197,6 +201,13 @@ extension LuxelMenuModel {
         captureKind: QuickCaptureKind,
         latencySpan: RecordingStartLatencySpan? = nil
     ) async {
+        guard canBeginRecordingStart else {
+            if let latencySpan {
+                LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "start-already-in-progress")
+            }
+            return
+        }
+
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
@@ -225,6 +236,13 @@ extension LuxelMenuModel {
         noticeMessage: String? = nil,
         latencySpan: RecordingStartLatencySpan? = nil
     ) async {
+        guard canBeginRecordingStart else {
+            if let latencySpan {
+                LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "start-already-in-progress")
+            }
+            return
+        }
+
         recordingNoticeMessage = noticeMessage
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
@@ -256,6 +274,15 @@ extension LuxelMenuModel {
             if let latencySpan {
                 LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "recorder-start-failed")
             }
+        }
+    }
+
+    private var canBeginRecordingStart: Bool {
+        switch recordingState {
+        case .idle, .failed:
+            true
+        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+            false
         }
     }
 
