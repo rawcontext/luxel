@@ -1,5 +1,25 @@
 import Foundation
 
+public enum CameraDeviceKind: String, Codable, Equatable, Sendable {
+    case builtIn
+    case external
+    case continuity
+    case deskView
+    case unknown
+}
+
+public struct CameraDeviceOption: Codable, Equatable, Identifiable, Sendable {
+    public let id: String
+    public let name: String
+    public let kind: CameraDeviceKind
+
+    public init(id: String, name: String, kind: CameraDeviceKind) {
+        self.id = id
+        self.name = name
+        self.kind = kind
+    }
+}
+
 public struct CameraRecordingOptions: Codable, Equatable, Sendable {
     public let deviceID: String?
     public let isEnabled: Bool
