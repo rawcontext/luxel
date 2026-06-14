@@ -112,6 +112,7 @@ struct UserDefaultsSettingsStoreTests {
             screenshotShowThumbnail: false,
             screenshotBackdrop: .transparentWithShadow,
             confirmDiscard: false,
+            defaultCountdown: 5,
             lastStopAfter: 60
         )
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
@@ -192,6 +193,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.screenshotShowThumbnail)
         #expect(settings.screenshotBackdrop == .opaque)
         #expect(settings.confirmDiscard)
+        #expect(settings.defaultCountdown == nil)
         #expect(settings.lastStopAfter == nil)
     }
 

@@ -56,10 +56,15 @@ struct LuxelShortcutInstaller: View {
                     }
 
                     cropperPanelController.show(
+                        countdownDuration: model.settings.defaultCountdown,
                         stopAfterDuration: model.settings.lastStopAfter,
                         audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
                         quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                         showsNotificationReminder: model.settings.notificationReminder,
+                        onCountdownDurationChange: { duration in
+                            model.settings.defaultCountdown = duration
+                            model.saveSettings()
+                        },
                         onStopAfterDurationChange: { duration in
                             model.settings.lastStopAfter = duration
                             model.saveSettings()
@@ -85,10 +90,15 @@ struct LuxelShortcutInstaller: View {
 
                     cropperPanelController.show(
                         initialMode: .photo,
+                        countdownDuration: model.settings.defaultCountdown,
                         stopAfterDuration: model.settings.lastStopAfter,
                         audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
                         quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                         showsNotificationReminder: model.settings.notificationReminder,
+                        onCountdownDurationChange: { duration in
+                            model.settings.defaultCountdown = duration
+                            model.saveSettings()
+                        },
                         onStopAfterDurationChange: { duration in
                             model.settings.lastStopAfter = duration
                             model.saveSettings()

@@ -93,6 +93,20 @@ struct LuxelCropperView: View {
                     cameraMenu
 
                     Menu {
+                        countdownButton(title: "Off", duration: nil)
+
+                        Divider()
+
+                        ForEach(CountdownPreset.all) { preset in
+                            countdownButton(title: preset.title, duration: preset.duration)
+                        }
+                    } label: {
+                        Label(model.countdownSummary, systemImage: "hourglass")
+                    }
+                    .frame(width: 82)
+                    .help("Countdown")
+
+                    Menu {
                         stopAfterButton(title: "Off", duration: nil)
 
                         Divider()
@@ -349,6 +363,19 @@ struct LuxelCropperView: View {
     }
 
     @ViewBuilder
+    private func countdownButton(title: String, duration: TimeInterval?) -> some View {
+        Button {
+            model.setCountdownDuration(duration)
+        } label: {
+            if model.countdownDuration == duration {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
+            }
+        }
+    }
+
+    @ViewBuilder
     private func stopAfterButton(title: String, duration: TimeInterval?) -> some View {
         Button {
             model.setStopAfterDuration(duration)
@@ -503,6 +530,21 @@ private extension LuxelCropperModel {
             "Capture"
         }
     }
+}
+
+private struct CountdownPreset: Identifiable {
+    let duration: TimeInterval
+    let title: String
+
+    var id: TimeInterval {
+        duration
+    }
+
+    static let all: [CountdownPreset] = [
+        CountdownPreset(duration: 3, title: "3 s"),
+        CountdownPreset(duration: 5, title: "5 s"),
+        CountdownPreset(duration: 10, title: "10 s")
+    ]
 }
 
 private struct StopAfterPreset: Identifiable {

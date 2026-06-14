@@ -24,6 +24,7 @@ final class LuxelCropperPanelController {
 
     func show(
         initialMode: LuxelCropperMode = .video,
+        countdownDuration: TimeInterval? = nil,
         stopAfterDuration: TimeInterval? = nil,
         audioLevelConfiguration: CropperAudioLevelConfiguration? = nil,
         cameraConfiguration: CropperCameraConfiguration = CropperCameraConfiguration(
@@ -36,6 +37,7 @@ final class LuxelCropperPanelController {
             presets: []
         ),
         showsNotificationReminder: Bool = false,
+        onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onCameraSelectionChange: @escaping @MainActor (String?) -> Void = { _ in },
         onCameraPreviewStyleChange: @escaping @MainActor (CameraPreviewStyle) -> Void = { _ in },
@@ -52,11 +54,13 @@ final class LuxelCropperPanelController {
                 present(
                     displays: displays,
                     initialMode: initialMode,
+                    countdownDuration: countdownDuration,
                     stopAfterDuration: stopAfterDuration,
                     audioLevelConfiguration: audioLevelConfiguration,
                     cameraConfiguration: cameraConfiguration,
                     quickRecordingConfiguration: quickRecordingConfiguration,
                     showsNotificationReminder: showsNotificationReminder,
+                    onCountdownDurationChange: onCountdownDurationChange,
                     onStopAfterDurationChange: onStopAfterDurationChange,
                     onCameraSelectionChange: onCameraSelectionChange,
                     onCameraPreviewStyleChange: onCameraPreviewStyleChange,
@@ -83,11 +87,13 @@ final class LuxelCropperPanelController {
     private func present(
         displays: [DisplayBounds],
         initialMode: LuxelCropperMode,
+        countdownDuration: TimeInterval?,
         stopAfterDuration: TimeInterval?,
         audioLevelConfiguration: CropperAudioLevelConfiguration?,
         cameraConfiguration: CropperCameraConfiguration,
         quickRecordingConfiguration: CropperQuickRecordingConfiguration,
         showsNotificationReminder: Bool,
+        onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
         onCameraSelectionChange: @escaping @MainActor (String?) -> Void,
         onCameraPreviewStyleChange: @escaping @MainActor (CameraPreviewStyle) -> Void,
@@ -120,7 +126,9 @@ final class LuxelCropperPanelController {
             let model = LuxelCropperModel(
                 display: display,
                 mode: initialMode,
+                countdownDuration: countdownDuration,
                 stopAfterDuration: stopAfterDuration,
+                onCountdownDurationChange: onCountdownDurationChange,
                 onStopAfterDurationChange: onStopAfterDurationChange
             )
             let panel = NSPanel(

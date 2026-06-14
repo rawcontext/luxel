@@ -101,6 +101,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var screenshotShowThumbnail: Bool
     public var screenshotBackdrop: CaptureBackdrop
     public var confirmDiscard: Bool
+    public var defaultCountdown: TimeInterval?
     public var lastStopAfter: TimeInterval?
 
     public var cameraRecordingOptions: CameraRecordingOptions? {
@@ -161,6 +162,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         screenshotShowThumbnail: Bool = true,
         screenshotBackdrop: CaptureBackdrop = .opaque,
         confirmDiscard: Bool = true,
+        defaultCountdown: TimeInterval? = nil,
         lastStopAfter: TimeInterval? = nil
     ) {
         self.recordingsDirectory = recordingsDirectory
@@ -210,6 +212,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.screenshotShowThumbnail = screenshotShowThumbnail
         self.screenshotBackdrop = screenshotBackdrop
         self.confirmDiscard = confirmDiscard
+        self.defaultCountdown = defaultCountdown
         self.lastStopAfter = lastStopAfter
     }
 
@@ -258,6 +261,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case screenshotShowThumbnail
         case screenshotBackdrop
         case confirmDiscard
+        case defaultCountdown
         case lastStopAfter
     }
 
@@ -376,6 +380,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
             ?? .opaque
         confirmDiscard = try container.decodeIfPresent(Bool.self, forKey: .confirmDiscard)
             ?? true
+        defaultCountdown = try container.decodeIfPresent(TimeInterval.self, forKey: .defaultCountdown)
         lastStopAfter = try container.decodeIfPresent(TimeInterval.self, forKey: .lastStopAfter)
     }
 

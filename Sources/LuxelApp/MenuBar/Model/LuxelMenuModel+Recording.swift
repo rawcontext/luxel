@@ -7,7 +7,12 @@ extension LuxelMenuModel {
         do {
             let target = try draft.captureTarget
             let pixelSize = try draft.pixelSize
-            await startRecording(target: target, pixelSize: pixelSize, captureKind: .standard)
+            await startRecording(
+                target: target,
+                pixelSize: pixelSize,
+                captureKind: .standard,
+                countdownSeconds: cropperCountdownSeconds
+            )
         } catch {
             recordingState = .failed(errorMessage(error))
         }
@@ -20,7 +25,8 @@ extension LuxelMenuModel {
             await startRecording(
                 target: target,
                 pixelSize: pixelSize,
-                captureKind: .quick(presetID: presetID)
+                captureKind: .quick(presetID: presetID),
+                countdownSeconds: cropperCountdownSeconds
             )
         } catch {
             recordingState = .failed(errorMessage(error))
@@ -239,6 +245,10 @@ extension LuxelMenuModel {
         } catch {
             recordingState = .failed(errorMessage(error))
         }
+    }
+
+    private var cropperCountdownSeconds: Int? {
+        settings.defaultCountdown.map(Int.init)
     }
 
     private func startRecording(

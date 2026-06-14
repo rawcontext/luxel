@@ -57,6 +57,7 @@ struct SettingsTests {
         #expect(settings.screenshotShowThumbnail)
         #expect(settings.screenshotBackdrop == .opaque)
         #expect(settings.confirmDiscard)
+        #expect(settings.defaultCountdown == nil)
         #expect(settings.lastStopAfter == nil)
     }
 

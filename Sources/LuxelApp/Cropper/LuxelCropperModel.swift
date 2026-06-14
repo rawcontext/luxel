@@ -75,22 +75,28 @@ final class LuxelCropperModel {
     var selection: CaptureRect?
     var mode: LuxelCropperMode
     var locksWidescreenRatio = false
+    var countdownDuration: TimeInterval?
     var stopAfterDuration: TimeInterval?
     var customStopAfterText: String
     var errorMessage: String?
+    @ObservationIgnored private let onCountdownDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
     private var resizeStartSelection: CaptureRect?
 
     init(
         display: DisplayBounds,
         mode: LuxelCropperMode = .video,
+        countdownDuration: TimeInterval? = nil,
         stopAfterDuration: TimeInterval? = nil,
+        onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in }
     ) {
         self.display = display
         self.mode = mode
+        self.countdownDuration = countdownDuration
         self.stopAfterDuration = stopAfterDuration
         self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
+        self.onCountdownDurationChange = onCountdownDurationChange
         self.onStopAfterDurationChange = onStopAfterDurationChange
     }
 
@@ -112,6 +118,23 @@ final class LuxelCropperModel {
         }
 
         return Self.durationSummary(stopAfterDuration)
+    }
+
+    var countdownSummary: String {
+        guard let countdownDuration else {
+            return "Off"
+        }
+
+        return Self.durationSummary(countdownDuration)
+    }
+
+    func setCountdownDuration(_ duration: TimeInterval?) {
+        guard countdownDuration != duration else {
+            return
+        }
+
+        countdownDuration = duration
+        onCountdownDurationChange(duration)
     }
 
     func setStopAfterDuration(_ duration: TimeInterval?) {
