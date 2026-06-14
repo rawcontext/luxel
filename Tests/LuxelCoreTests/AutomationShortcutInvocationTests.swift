@@ -52,6 +52,19 @@ struct AutomationShortcutInvocationTests {
         )
     }
 
+    @Test("clip replay buffer maps optional duration")
+    func clipReplayBufferMapsOptionalDuration() {
+        let defaultInvocation = AutomationShortcutInvocationBuilder.clipReplayBuffer()
+        let timedInvocation = AutomationShortcutInvocationBuilder.clipReplayBuffer(seconds: 30)
+
+        #expect(defaultInvocation == AutomationInvocation(command: .clip(seconds: nil)))
+        #expect(timedInvocation == AutomationInvocation(command: .clip(seconds: 30)))
+        #expect(
+            AutomationInvocationURLBuilder.url(for: timedInvocation).absoluteString
+                == "luxel://clip?seconds=30"
+        )
+    }
+
     @Test("capture screenshot maps shortcut target and format")
     func captureScreenshotMapsShortcutTargetAndFormat() {
         let invocation = AutomationShortcutInvocationBuilder.captureScreenshot(

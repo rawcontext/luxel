@@ -48,6 +48,10 @@ public enum AutomationShortcutInvocationBuilder {
         AutomationInvocation(command: .stop)
     }
 
+    public static func clipReplayBuffer(seconds: Int? = nil) -> AutomationInvocation {
+        AutomationInvocation(command: .clip(seconds: seconds))
+    }
+
     public static func latestRecording(reveal: Bool = false) -> AutomationInvocation {
         AutomationInvocation(command: .latest(reveal: reveal))
     }

@@ -183,6 +183,31 @@ struct LuxelCaptureScreenshotIntent: AppIntent {
     }
 }
 
+struct LuxelClipReplayBufferIntent: AppIntent {
+    static let title: LocalizedStringResource = "Clip Replay Buffer"
+    static let description = IntentDescription("Clips Luxel's replay buffer.")
+    static let openAppWhenRun = true
+
+    @Parameter(title: "Seconds")
+    var seconds: Int?
+
+    init() {
+        seconds = nil
+    }
+
+    init(seconds: Int? = nil) {
+        self.seconds = seconds
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        try LuxelAppIntentURLOpener.open(AutomationShortcutInvocationBuilder.clipReplayBuffer(
+            seconds: seconds
+        ))
+        return .result()
+    }
+}
+
 struct LuxelOpenLatestRecordingIntent: AppIntent {
     static let title: LocalizedStringResource = "Get Latest Recording"
     static let description = IntentDescription("Opens or reveals the latest Luxel recording.")
@@ -248,6 +273,16 @@ struct LuxelAppShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Capture Screenshot",
             systemImageName: "camera"
+        )
+
+        AppShortcut(
+            intent: LuxelClipReplayBufferIntent(),
+            phrases: [
+                "Clip replay buffer with \(.applicationName)",
+                "Clip the last moment with \(.applicationName)"
+            ],
+            shortTitle: "Clip Replay",
+            systemImageName: "gobackward"
         )
 
         AppShortcut(
