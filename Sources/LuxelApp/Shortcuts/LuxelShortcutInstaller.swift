@@ -32,6 +32,9 @@ struct LuxelShortcutInstaller: View {
             .onChange(of: model.settings.captureScreenshotShortcut) {
                 configureShortcut()
             }
+            .onChange(of: model.settings.screenshotActiveWindowShortcut) {
+                configureShortcut()
+            }
             .onChange(of: model.settings.screenshotFullscreenShortcut) {
                 configureShortcut()
             }
@@ -81,6 +84,15 @@ struct LuxelShortcutInstaller: View {
                         Task {
                             await model.startRecording(from: draft)
                         }
+                    }
+                },
+                LuxelShortcutRegistration(rawShortcut: model.settings.screenshotActiveWindowShortcut) {
+                    guard model.canSelectArea else {
+                        return
+                    }
+
+                    Task {
+                        await model.captureActiveWindowScreenshot()
                     }
                 },
                 LuxelShortcutRegistration(rawShortcut: model.settings.screenshotFullscreenShortcut) {

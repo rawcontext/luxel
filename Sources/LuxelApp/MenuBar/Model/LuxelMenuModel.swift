@@ -40,6 +40,8 @@ final class LuxelMenuModel {
     @ObservationIgnored let permissionGuidanceService: PermissionGuidanceService
     @ObservationIgnored let lastCaptureRecordingPlanner: LastCaptureRecordingPlanner
     @ObservationIgnored let screenshotCapturePlanner: ScreenshotCapturePlanner
+    @ObservationIgnored let activeWindowCatalog: any ActiveWindowCatalog
+    @ObservationIgnored let activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
@@ -67,6 +69,8 @@ final class LuxelMenuModel {
         permissionGuidanceService: PermissionGuidanceService = PermissionGuidanceService(),
         lastCaptureRecordingPlanner: LastCaptureRecordingPlanner = LastCaptureRecordingPlanner(),
         screenshotCapturePlanner: ScreenshotCapturePlanner = ScreenshotCapturePlanner(),
+        activeWindowCatalog: any ActiveWindowCatalog = CoreGraphicsActiveWindowCatalog(),
+        activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver = ActiveWindowCaptureTargetResolver(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
         recorder: any CaptureRecorder = LuxelCompositionRoot.captureRecorder(),
         audioRecorder: any AudioRecorder = LuxelCompositionRoot.audioRecorder()
@@ -87,6 +91,8 @@ final class LuxelMenuModel {
         self.permissionGuidanceService = permissionGuidanceService
         self.lastCaptureRecordingPlanner = lastCaptureRecordingPlanner
         self.screenshotCapturePlanner = screenshotCapturePlanner
+        self.activeWindowCatalog = activeWindowCatalog
+        self.activeWindowCaptureTargetResolver = activeWindowCaptureTargetResolver
         self.appMetadata = appMetadata
         self.recordingLifecycleService = RecordingLifecycleService(
             recorder: recorder,

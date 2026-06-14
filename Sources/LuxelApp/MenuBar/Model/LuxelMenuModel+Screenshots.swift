@@ -34,6 +34,25 @@ extension LuxelMenuModel {
         await captureScreenshot(target: displayTarget.target)
     }
 
+    func captureActiveWindowScreenshot() async {
+        guard canSelectArea else {
+            recordingActionErrorMessage = "No active window target available"
+            return
+        }
+
+        await refreshCaptureTargets()
+
+        guard let windowTarget = activeWindowCaptureTargetResolver.resolve(
+            from: captureTargets,
+            orderedWindowIDs: activeWindowCatalog.orderedActiveWindowIDs()
+        ) else {
+            recordingActionErrorMessage = "No active window target available"
+            return
+        }
+
+        await captureScreenshot(target: windowTarget.target)
+    }
+
     private func captureScreenshot(target: CaptureTarget) async {
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
