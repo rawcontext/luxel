@@ -94,7 +94,7 @@ extension GIFLoopMode: Codable {
     }
 }
 
-public struct RGBColor: Codable, Equatable, Sendable {
+public struct RGBColor: Codable, Equatable, Hashable, Sendable {
     public let red: Double
     public let green: Double
     public let blue: Double

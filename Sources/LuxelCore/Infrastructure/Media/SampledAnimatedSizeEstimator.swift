@@ -51,6 +51,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         let asset = AVURLAsset(url: request.inputFileURL)
         let schedule = await animatedFrameSchedule(for: request, asset: asset)
         let totalFrameCount = schedule.frameTimes.count
+        let gifOptions = try gifRenderOptions(for: request)
         let key = SampledAnimatedSizeEstimateCacheKey(
             inputFileURL: request.inputFileURL.standardizedFileURL,
             format: request.format,
@@ -61,7 +62,12 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             trimEnd: request.timeRange.end,
             speed: request.speed.value,
             shouldCrop: request.shouldCrop,
-            quality: request.resolvedQuality
+            quality: request.resolvedQuality,
+            gifLoopMode: gifOptions?.loopMode,
+            gifDithering: gifOptions?.dithering,
+            gifPaletteSize: gifOptions?.paletteSize,
+            gifLossyTolerance: gifOptions?.lossyTolerance,
+            gifBackgroundMatte: gifOptions?.backgroundMatte
         )
 
         if let cached = await cache.estimate(for: key) {
@@ -80,6 +86,32 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
     }
 
     private func estimateUncached(
+        _ request: ExportRequest,
+        outputPixelSize: PixelSize,
+        totalFrameCount: Int,
+        schedule: AnimatedFrameSchedule,
+        asset: AVURLAsset
+    ) async throws -> ExportEstimate {
+        if request.format == .gif {
+            return try await estimateGIFUncached(
+                request,
+                outputPixelSize: outputPixelSize,
+                totalFrameCount: totalFrameCount,
+                schedule: schedule,
+                asset: asset
+            )
+        }
+
+        return try await estimateImageIOUncached(
+            request,
+            outputPixelSize: outputPixelSize,
+            totalFrameCount: totalFrameCount,
+            schedule: schedule,
+            asset: asset
+        )
+    }
+
+    private func estimateImageIOUncached(
         _ request: ExportRequest,
         outputPixelSize: PixelSize,
         totalFrameCount: Int,
@@ -140,6 +172,79 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         return try ExportEstimate(bytes: model.estimatedByteCount, confidence: .sampled)
     }
 
+    private func estimateGIFUncached(
+        _ request: ExportRequest,
+        outputPixelSize: PixelSize,
+        totalFrameCount: Int,
+        schedule: AnimatedFrameSchedule,
+        asset: AVURLAsset
+    ) async throws -> ExportEstimate {
+        guard let options = try gifRenderOptions(for: request) else {
+            throw SampledAnimatedSizeEstimatorError.unsupportedFormat(request.format)
+        }
+
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        imageGenerator.appliesPreferredTrackTransform = true
+        imageGenerator.requestedTimeToleranceBefore = .zero
+        imageGenerator.requestedTimeToleranceAfter = .zero
+
+        let sampleIndices = sampleFrameIndices(
+            totalFrameCount: totalFrameCount,
+            requestedSampleCount: sampleFrameCount
+        )
+        let encoder = NativeGIFEncoder()
+        var sampleFrames: [GIFFrameBitmap] = []
+        var sampleByteCounts: [Int] = []
+
+        for index in sampleIndices {
+            try Task.checkCancellation()
+            let frame = try await renderedGIFFrame(
+                atFrameIndex: index,
+                request: request,
+                outputPixelSize: outputPixelSize,
+                schedule: schedule,
+                imageGenerator: imageGenerator
+            )
+            sampleFrames.append(frame)
+            sampleByteCounts.append(try gifEncodedByteCount(
+                frames: [frame],
+                outputPixelSize: outputPixelSize,
+                frameDelay: schedule.frameDelay,
+                options: options,
+                encoder: encoder
+            ))
+        }
+
+        if sampleFrames.count == totalFrameCount {
+            let frames = try encoder.sequencedFrames(from: sampleFrames, loopMode: options.loopMode)
+            let bytes = try gifEncodedByteCount(
+                frames: frames,
+                outputPixelSize: outputPixelSize,
+                frameDelay: schedule.frameDelay,
+                options: options,
+                encoder: encoder
+            )
+            return try ExportEstimate(bytes: Int64(bytes), confidence: .sampled)
+        }
+
+        let adjacentPairs = try await gifAdjacentPairSizes(
+            request: request,
+            outputPixelSize: outputPixelSize,
+            totalFrameCount: totalFrameCount,
+            schedule: schedule,
+            imageGenerator: imageGenerator,
+            options: options,
+            encoder: encoder
+        )
+        let model = try SampledAnimatedEstimateModel(
+            totalFrameCount: try outputFrameCount(baseFrameCount: totalFrameCount, loopMode: options.loopMode),
+            sampleByteCounts: sampleByteCounts,
+            adjacentPairs: adjacentPairs
+        )
+
+        return try ExportEstimate(bytes: model.estimatedByteCount, confidence: .sampled)
+    }
+
     private func adjacentPairSizes(
         request: ExportRequest,
         outputPixelSize: PixelSize,
@@ -192,6 +297,66 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         return pairs
     }
 
+    private func gifAdjacentPairSizes(
+        request: ExportRequest,
+        outputPixelSize: PixelSize,
+        totalFrameCount: Int,
+        schedule: AnimatedFrameSchedule,
+        imageGenerator: AVAssetImageGenerator,
+        options: GIFRenderOptions,
+        encoder: NativeGIFEncoder
+    ) async throws -> [SampledAnimatedAdjacentPairSize] {
+        let pairStartIndices = adjacentPairStartIndices(totalFrameCount: totalFrameCount)
+        var pairs: [SampledAnimatedAdjacentPairSize] = []
+
+        for startIndex in pairStartIndices {
+            try Task.checkCancellation()
+            let firstFrame = try await renderedGIFFrame(
+                atFrameIndex: startIndex,
+                request: request,
+                outputPixelSize: outputPixelSize,
+                schedule: schedule,
+                imageGenerator: imageGenerator
+            )
+            let secondFrame = try await renderedGIFFrame(
+                atFrameIndex: startIndex + 1,
+                request: request,
+                outputPixelSize: outputPixelSize,
+                schedule: schedule,
+                imageGenerator: imageGenerator
+            )
+            let frameDelay = schedule.frameDelay
+            let firstBytes = try gifEncodedByteCount(
+                frames: [firstFrame],
+                outputPixelSize: outputPixelSize,
+                frameDelay: frameDelay,
+                options: options,
+                encoder: encoder
+            )
+            let secondBytes = try gifEncodedByteCount(
+                frames: [secondFrame],
+                outputPixelSize: outputPixelSize,
+                frameDelay: frameDelay,
+                options: options,
+                encoder: encoder
+            )
+            let combinedBytes = try gifEncodedByteCount(
+                frames: [firstFrame, secondFrame],
+                outputPixelSize: outputPixelSize,
+                frameDelay: frameDelay,
+                options: options,
+                encoder: encoder
+            )
+            pairs.append(SampledAnimatedAdjacentPairSize(
+                firstBytes: firstBytes,
+                secondBytes: secondBytes,
+                combinedBytes: combinedBytes
+            ))
+        }
+
+        return pairs
+    }
+
     private func renderedFrame(
         atFrameIndex index: Int,
         request: ExportRequest,
@@ -202,7 +367,24 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         let sourceFrame = try await imageGenerator.image(
             at: schedule.frameTimes[index]
         ).image
-        return try render(
+        return try AnimatedFrameRenderer().renderImage(
+            sourceFrame,
+            outputPixelSize: outputPixelSize,
+            shouldCrop: request.shouldCrop
+        )
+    }
+
+    private func renderedGIFFrame(
+        atFrameIndex index: Int,
+        request: ExportRequest,
+        outputPixelSize: PixelSize,
+        schedule: AnimatedFrameSchedule,
+        imageGenerator: AVAssetImageGenerator
+    ) async throws -> GIFFrameBitmap {
+        let sourceFrame = try await imageGenerator.image(
+            at: schedule.frameTimes[index]
+        ).image
+        return try AnimatedFrameRenderer().renderGIFBitmap(
             sourceFrame,
             outputPixelSize: outputPixelSize,
             shouldCrop: request.shouldCrop
@@ -243,6 +425,27 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         }
 
         return data.length
+    }
+
+    private func gifEncodedByteCount(
+        frames: [GIFFrameBitmap],
+        outputPixelSize: PixelSize,
+        frameDelay: TimeInterval,
+        options: GIFRenderOptions,
+        encoder: NativeGIFEncoder
+    ) throws -> Int {
+        try encoder.data(
+            pixelSize: outputPixelSize,
+            frames: frames,
+            frameDelay: frameDelay,
+            options: options
+        ).count
+    }
+
+    private func outputFrameCount(baseFrameCount: Int, loopMode: GIFLoopMode) throws -> Int {
+        try GIFFrameSequencePlanner()
+            .frameIndexes(frameCount: baseFrameCount, loopMode: loopMode)
+            .count
     }
 
     private func sampleFrameIndices(totalFrameCount: Int, requestedSampleCount: Int) -> [Int] {
@@ -319,53 +522,16 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         }
     }
 
-    private func render(
-        _ image: CGImage,
-        outputPixelSize: PixelSize,
-        shouldCrop: Bool
-    ) throws -> CGImage {
-        let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
-        guard let context = CGContext(
-            data: nil,
-            width: outputPixelSize.width,
-            height: outputPixelSize.height,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
-            throw SampledAnimatedSizeEstimatorError.cannotCreateFrameContext
+    private func gifRenderOptions(for request: ExportRequest) throws -> GIFRenderOptions? {
+        guard request.format == .gif else {
+            return nil
         }
 
-        context.setFillColor(CGColor(gray: 0, alpha: 1))
-        context.fill(CGRect(origin: .zero, size: outputSize))
-        context.interpolationQuality = .high
-        context.draw(image, in: drawRect(for: image, outputSize: outputSize, shouldCrop: shouldCrop))
-
-        guard let renderedImage = context.makeImage() else {
-            throw SampledAnimatedSizeEstimatorError.cannotRenderFrame
+        if let gifOptions = request.gifOptions {
+            return gifOptions
         }
 
-        return renderedImage
-    }
-
-    private func drawRect(
-        for image: CGImage,
-        outputSize: CGSize,
-        shouldCrop: Bool
-    ) -> CGRect {
-        let inputSize = CGSize(width: image.width, height: image.height)
-        let widthScale = outputSize.width / inputSize.width
-        let heightScale = outputSize.height / inputSize.height
-        let scale = shouldCrop ? max(widthScale, heightScale) : min(widthScale, heightScale)
-        let scaledSize = CGSize(width: inputSize.width * scale, height: inputSize.height * scale)
-
-        return CGRect(
-            x: (outputSize.width - scaledSize.width) / 2,
-            y: (outputSize.height - scaledSize.height) / 2,
-            width: scaledSize.width,
-            height: scaledSize.height
-        )
+        return try GIFRenderOptions(quality: request.resolvedQuality)
     }
 }
 
@@ -441,6 +607,11 @@ private struct SampledAnimatedSizeEstimateCacheKey: Hashable, Sendable {
     let speed: Double
     let shouldCrop: Bool
     let quality: ExportQuality
+    let gifLoopMode: GIFLoopMode?
+    let gifDithering: GIFDitheringMode?
+    let gifPaletteSize: Int?
+    let gifLossyTolerance: Int?
+    let gifBackgroundMatte: RGBColor?
 }
 
 private actor SampledAnimatedSizeEstimateCache {

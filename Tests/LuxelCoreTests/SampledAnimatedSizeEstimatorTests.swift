@@ -46,8 +46,8 @@ struct SampledAnimatedSizeEstimatorTests {
         }
     }
 
-    @Test("gif estimate stays within tolerance of actual export")
-    func gifEstimateStaysWithinToleranceOfActualExport() async throws {
+    @Test("gif estimate matches native export for fully sampled clips")
+    func gifEstimateMatchesNativeExportForFullySampledClips() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "gif")
         defer {
             try? FileManager.default.removeItem(at: outputURL)
@@ -62,7 +62,63 @@ struct SampledAnimatedSizeEstimatorTests {
         let actualBytes = try fileSize(at: outputURL)
 
         #expect(estimate.confidence == .sampled)
-        #expect(isWithinRelativeTolerance(estimate.bytes, actualBytes, tolerance: 0.35))
+        #expect(estimate.bytes == actualBytes)
+    }
+
+    @Test("gif estimate cache keys include render options")
+    func gifEstimateCacheKeysIncludeRenderOptions() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "gif")
+        defer {
+            try? FileManager.default.removeItem(at: outputURL)
+        }
+        let estimator = SampledAnimatedSizeEstimator()
+        let baseRequest = try makeRequest(
+            format: .gif,
+            gifOptions: GIFRenderOptions(
+                quality: .balanced,
+                loopMode: .forever,
+                dithering: .none
+            )
+        )
+        let bounceRequest = try makeRequest(
+            format: .gif,
+            gifOptions: GIFRenderOptions(
+                quality: .balanced,
+                loopMode: .bounce,
+                dithering: .none
+            )
+        )
+
+        let baseEstimate = try await estimator.estimate(baseRequest)
+        let bounceEstimate = try await estimator.estimate(bounceRequest)
+        _ = try await ImageIOAnimatedMediaExporter().export(bounceRequest, to: outputURL)
+        let actualBounceBytes = try fileSize(at: outputURL)
+
+        #expect(bounceEstimate.bytes > baseEstimate.bytes)
+        #expect(bounceEstimate.bytes == actualBounceBytes)
+    }
+
+    @Test("gif estimates preserve size and quality budgets")
+    func gifEstimatesPreserveSizeAndQualityBudgets() async throws {
+        let estimator = SampledAnimatedSizeEstimator()
+        let balancedLarge = try await estimator.estimate(try makeRequest(
+            format: .gif,
+            pixelSize: PixelSize(width: 160, height: 90),
+            quality: .balanced
+        ))
+        let balancedSmall = try await estimator.estimate(try makeRequest(
+            format: .gif,
+            pixelSize: PixelSize(width: 80, height: 45),
+            quality: .balanced
+        ))
+        let compactLarge = try await estimator.estimate(try makeRequest(
+            format: .gif,
+            pixelSize: PixelSize(width: 160, height: 90),
+            quality: .compact
+        ))
+
+        #expect(balancedSmall.bytes < balancedLarge.bytes)
+        #expect(compactLarge.bytes <= balancedLarge.bytes)
     }
 
     @Test("apng estimate returns sampled confidence")
@@ -93,7 +149,9 @@ struct SampledAnimatedSizeEstimatorTests {
 
     private func makeRequest(
         format: ExportFormat,
-        pixelSize: PixelSize? = nil
+        pixelSize: PixelSize? = nil,
+        quality: ExportQuality = .balanced,
+        gifOptions: GIFRenderOptions? = nil
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: fixtureURL("input.mp4"),
@@ -102,7 +160,9 @@ struct SampledAnimatedSizeEstimatorTests {
             frameRate: FrameRate(10),
             timeRange: TimeRange(start: 1, end: 1.3),
             shouldMute: false,
-            shouldCrop: true
+            shouldCrop: true,
+            quality: quality,
+            gifOptions: gifOptions
         )
     }
 
@@ -110,15 +170,6 @@ struct SampledAnimatedSizeEstimatorTests {
         let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
         let size = try #require(attributes[.size] as? NSNumber)
         return size.int64Value
-    }
-
-    private func isWithinRelativeTolerance(
-        _ estimate: Int64,
-        _ actual: Int64,
-        tolerance: Double
-    ) -> Bool {
-        let delta = abs(Double(estimate - actual))
-        return delta / Double(actual) <= tolerance
     }
 
     private func fixtureURL(_ fileName: String) throws -> URL {
