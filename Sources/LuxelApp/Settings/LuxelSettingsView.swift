@@ -16,7 +16,22 @@ struct LuxelSettingsView: View {
     let editorModel: LuxelEditorModel
     let cropperPanelController: LuxelCropperPanelController
     let shortcutController: LuxelShortcutController
+    private let openEditorWindowOverride: (@MainActor () -> Void)?
     private let shortcutConflictDetector = AppKeyboardShortcutConflictDetector()
+
+    init(
+        model: LuxelMenuModel,
+        editorModel: LuxelEditorModel,
+        cropperPanelController: LuxelCropperPanelController,
+        shortcutController: LuxelShortcutController,
+        openEditorWindow: (@MainActor () -> Void)? = nil
+    ) {
+        self.model = model
+        self.editorModel = editorModel
+        self.cropperPanelController = cropperPanelController
+        self.shortcutController = shortcutController
+        openEditorWindowOverride = openEditorWindow
+    }
 
     var body: some View {
         Form {
@@ -672,12 +687,20 @@ struct LuxelSettingsView: View {
     }
 
     private func openRecording(_ url: URL) {
-        openWindow(id: LuxelEditorScene.id)
-        NSApplication.shared.activate(ignoringOtherApps: true)
+        openEditorWindow()
 
         Task {
             model.configureEditor(editorModel)
             await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
+        }
+    }
+
+    private func openEditorWindow() {
+        if let openEditorWindowOverride {
+            openEditorWindowOverride()
+        } else {
+            openWindow(id: LuxelEditorScene.id)
+            NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }
 }

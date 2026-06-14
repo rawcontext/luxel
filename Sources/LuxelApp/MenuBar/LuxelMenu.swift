@@ -4,14 +4,14 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct LuxelMenu: View {
-    @Environment(\.openWindow) private var openWindow
-    @Environment(\.openSettings) private var openSettings
     @State private var isImportingRecording = false
 
     @Bindable var model: LuxelMenuModel
     let editorModel: LuxelEditorModel
     let cropperPanelController: LuxelCropperPanelController
     let shortcutController: LuxelShortcutController
+    let openEditorWindow: @MainActor () -> Void
+    let openSettingsWindow: @MainActor () -> Void
 
     var body: some View {
         GlassPanel {
@@ -38,8 +38,7 @@ struct LuxelMenu: View {
                 Divider()
 
                 Button {
-                    openSettings()
-                    NSApplication.shared.activate(ignoringOtherApps: true)
+                    openLuxelSettings()
                 } label: {
                     Label("Settings", systemImage: "gearshape")
                 }
@@ -93,8 +92,7 @@ struct LuxelMenu: View {
             allowedContentTypes: [.movie, .mpeg4Movie, .quickTimeMovie],
             allowsMultipleSelection: false
         ) { result in
-            openWindow(id: LuxelEditorScene.id)
-            NSApplication.shared.activate(ignoringOtherApps: true)
+            openEditorWindow()
 
             switch result {
             case .success(let urls):
@@ -177,8 +175,7 @@ struct LuxelMenu: View {
     }
 
     private func openRecording(_ url: URL) {
-        openWindow(id: LuxelEditorScene.id)
-        NSApplication.shared.activate(ignoringOtherApps: true)
+        openEditorWindow()
 
         Task {
             model.configureEditor(editorModel)
@@ -187,8 +184,7 @@ struct LuxelMenu: View {
     }
 
     private func openLuxelSettings() {
-        openSettings()
-        NSApplication.shared.activate(ignoringOtherApps: true)
+        openSettingsWindow()
     }
 
     private func refreshMenuState() async {

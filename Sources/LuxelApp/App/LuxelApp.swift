@@ -6,35 +6,43 @@ struct LuxelApp: App {
     @State private var model: LuxelMenuModel
     @State private var editorModel: LuxelEditorModel
     @State private var cropperPanelController: LuxelCropperPanelController
-    @State private var shortcutController = LuxelShortcutController()
+    @State private var shortcutController: LuxelShortcutController
+    @State private var windowPresenter: LuxelWindowPresenter
+    @State private var statusItemController: LuxelStatusItemController
 
     init() {
         let captureTargetCatalog = LuxelCompositionRoot.captureTargetCatalog()
         let captureTargetService = LuxelCompositionRoot.captureTargetService(catalog: captureTargetCatalog)
+        let model = LuxelMenuModel(captureTargetService: captureTargetService)
+        let editorModel = LuxelCompositionRoot.editorModel()
+        let cropperPanelController = LuxelCropperPanelController(targetService: captureTargetService)
+        let shortcutController = LuxelShortcutController()
+        let windowPresenter = LuxelWindowPresenter(
+            model: model,
+            editorModel: editorModel,
+            cropperPanelController: cropperPanelController,
+            shortcutController: shortcutController
+        )
 
-        _model = State(initialValue: LuxelMenuModel(captureTargetService: captureTargetService))
-        _editorModel = State(initialValue: LuxelCompositionRoot.editorModel())
-        _cropperPanelController = State(initialValue: LuxelCropperPanelController(
-            targetService: captureTargetService
+        _model = State(initialValue: model)
+        _editorModel = State(initialValue: editorModel)
+        _cropperPanelController = State(initialValue: cropperPanelController)
+        _shortcutController = State(initialValue: shortcutController)
+        _windowPresenter = State(initialValue: windowPresenter)
+        _statusItemController = State(initialValue: LuxelStatusItemController(
+            model: model,
+            editorModel: editorModel,
+            cropperPanelController: cropperPanelController,
+            shortcutController: shortcutController,
+            windowPresenter: windowPresenter
         ))
     }
 
     var body: some Scene {
-        MenuBarExtra {
-            LuxelMenu(
-                model: model,
-                editorModel: editorModel,
-                cropperPanelController: cropperPanelController,
-                shortcutController: shortcutController
-            )
-        } label: {
-            LuxelMenuBarLabel(model: model)
-        }
-        .menuBarExtraStyle(.window)
-
         WindowGroup(id: LuxelEditorScene.id) {
             LuxelEditorView(model: editorModel)
         }
+        .defaultLaunchBehavior(.suppressed)
         .commands {
             LuxelEditorCommands()
         }
@@ -44,7 +52,10 @@ struct LuxelApp: App {
                 model: model,
                 editorModel: editorModel,
                 cropperPanelController: cropperPanelController,
-                shortcutController: shortcutController
+                shortcutController: shortcutController,
+                openEditorWindow: {
+                    windowPresenter.openEditor()
+                }
             )
         }
     }

@@ -59,6 +59,20 @@ struct ArchitectureTests {
         }
     }
 
+    @Test("menu bar status is owned by one AppKit status item")
+    func menuBarStatusIsOwnedByOneAppKitStatusItem() throws {
+        let sourceDirectory = try packageRootURL().appending(path: "Sources/LuxelApp")
+        var statusItemOccurrences = 0
+
+        for fileURL in try swiftFiles(under: sourceDirectory) {
+            let contents = try String(contentsOf: fileURL, encoding: .utf8)
+            #expect(!contents.contains("MenuBarExtra"), "\(fileURL.path) reintroduces a second menu bar owner")
+            statusItemOccurrences += contents.components(separatedBy: "NSStatusBar.system.statusItem").count - 1
+        }
+
+        #expect(statusItemOccurrences == 1)
+    }
+
     @Test("update settings milestone does not link Sparkle yet")
     func updateSettingsMilestoneDoesNotLinkSparkleYet() throws {
         let packageRoot = try packageRootURL()
