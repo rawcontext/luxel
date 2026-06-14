@@ -1,4 +1,5 @@
 import AppKit
+import LuxelCore
 import QuartzCore
 import SwiftUI
 
@@ -10,9 +11,11 @@ struct LuxelMenuBarLabel: View {
 
     var body: some View {
         let presentation = model.recordingPresentation(now: now)
+        let title = menuBarTitle(for: presentation)
 
         LuxelMenuBarIconView(
             systemImageName: presentation.menuBarSystemImage,
+            title: title,
             isAnimating: presentation.animatesMenuBarSystemImage,
             animationState: iconAnimationState
         )
@@ -33,10 +36,20 @@ struct LuxelMenuBarLabel: View {
                 await model.keepCaptureTargetCacheWarm()
             }
     }
+
+    private func menuBarTitle(for presentation: RecordingSessionPresentation) -> String? {
+        switch presentation.menuBarTitle {
+        case "Luxel", "●", "‖":
+            nil
+        default:
+            presentation.menuBarTitle
+        }
+    }
 }
 
 private struct LuxelMenuBarIconView: NSViewRepresentable {
     let systemImageName: String
+    let title: String?
     let isAnimating: Bool
     let animationState: LuxelMenuBarIconAnimationState
 
@@ -44,6 +57,7 @@ private struct LuxelMenuBarIconView: NSViewRepresentable {
         let view = LuxelMenuBarIconNSView()
         view.update(
             systemImageName: systemImageName,
+            title: title,
             isAnimating: isAnimating,
             animationState: animationState
         )
@@ -53,6 +67,7 @@ private struct LuxelMenuBarIconView: NSViewRepresentable {
     func updateNSView(_ nsView: LuxelMenuBarIconNSView, context: Context) {
         nsView.update(
             systemImageName: systemImageName,
+            title: title,
             isAnimating: isAnimating,
             animationState: animationState
         )
@@ -68,9 +83,13 @@ private final class LuxelMenuBarIconAnimationState {
 private final class LuxelMenuBarIconNSView: NSView {
     private let previousImageView = NSImageView()
     private let currentImageView = NSImageView()
+    private let titleField = NSTextField(labelWithString: "")
     private var currentSystemImageName: String?
+    private var currentTitle: String?
     private var isAnimating = false
     private let recordingAnimationKey = "media.luxel.menu-bar-recording-opacity"
+    private let iconSize: CGFloat = 18
+    private let spacing: CGFloat = 4
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -83,17 +102,28 @@ private final class LuxelMenuBarIconNSView: NSView {
     }
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: 18, height: 18)
+        let titleWidth = currentTitle == nil ? 0 : titleField.intrinsicContentSize.width + spacing
+        return NSSize(width: iconSize + titleWidth, height: iconSize)
     }
 
     override func layout() {
         super.layout()
-        previousImageView.frame = bounds
-        currentImageView.frame = bounds
+        let iconFrame = NSRect(x: 0, y: 0, width: iconSize, height: iconSize)
+        previousImageView.frame = iconFrame
+        currentImageView.frame = iconFrame
+
+        let titleSize = titleField.intrinsicContentSize
+        titleField.frame = NSRect(
+            x: iconFrame.maxX + spacing,
+            y: (bounds.height - titleSize.height) / 2,
+            width: titleSize.width,
+            height: titleSize.height
+        )
     }
 
     func update(
         systemImageName: String,
+        title: String?,
         isAnimating: Bool,
         animationState: LuxelMenuBarIconAnimationState
     ) {
@@ -102,6 +132,7 @@ private final class LuxelMenuBarIconNSView: NSView {
         }
 
         animationState.systemImageName = systemImageName
+        updateTitle(title)
         updateRecordingAnimation(isAnimating)
     }
 
@@ -115,6 +146,24 @@ private final class LuxelMenuBarIconNSView: NSView {
             imageView.alphaValue = imageView === currentImageView ? 1 : 0
             addSubview(imageView)
         }
+
+        titleField.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        titleField.textColor = .labelColor
+        titleField.lineBreakMode = .byClipping
+        titleField.alphaValue = 0
+        addSubview(titleField)
+    }
+
+    private func updateTitle(_ title: String?) {
+        guard currentTitle != title else {
+            return
+        }
+
+        currentTitle = title
+        titleField.stringValue = title ?? ""
+        titleField.alphaValue = title == nil ? 0 : 1
+        invalidateIntrinsicContentSize()
+        needsLayout = true
     }
 
     private func transition(to systemImageName: String, from rememberedSystemImageName: String?) {
