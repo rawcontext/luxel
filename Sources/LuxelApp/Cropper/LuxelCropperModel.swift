@@ -6,6 +6,13 @@ struct CropperAudioLevelConfiguration {
     let deviceID: String?
 }
 
+enum LuxelCropperMode: String, CaseIterable, Identifiable {
+    case video
+    case photo
+
+    var id: Self { self }
+}
+
 @MainActor
 @Observable
 final class LuxelAudioLevelModel {
@@ -37,6 +44,7 @@ final class LuxelAudioLevelModel {
 final class LuxelCropperModel {
     let display: DisplayBounds
     var selection: CaptureRect?
+    var mode: LuxelCropperMode
     var locksWidescreenRatio = false
     var stopAfterDuration: TimeInterval?
     var customStopAfterText: String
@@ -46,10 +54,12 @@ final class LuxelCropperModel {
 
     init(
         display: DisplayBounds,
+        mode: LuxelCropperMode = .video,
         stopAfterDuration: TimeInterval? = nil,
         onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in }
     ) {
         self.display = display
+        self.mode = mode
         self.stopAfterDuration = stopAfterDuration
         self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
         self.onStopAfterDurationChange = onStopAfterDurationChange

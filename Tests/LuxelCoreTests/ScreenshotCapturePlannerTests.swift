@@ -57,4 +57,21 @@ struct ScreenshotCapturePlannerTests {
         #expect(job.outputFileURL == nil)
         #expect(job.historyName == "Luxel 1970-01-01 at 00.00.00")
     }
+
+    @Test("planner keeps area screenshot targets")
+    func plannerKeepsAreaScreenshotTargets() throws {
+        let rect = try CaptureRect(x: 120, y: 240, width: 640, height: 360)
+        let target = CaptureTarget.area(displayID: DisplayID(9), rect: rect)
+
+        let job = try planner.captureJob(
+            target: target,
+            includeCursor: true,
+            format: .png,
+            destinations: [.clipboard],
+            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel"),
+            now: Date(timeIntervalSince1970: 0)
+        )
+
+        #expect(job.request.target == target)
+    }
 }

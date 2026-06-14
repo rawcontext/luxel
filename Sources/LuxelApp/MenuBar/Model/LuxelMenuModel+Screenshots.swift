@@ -13,9 +13,26 @@ extension LuxelMenuModel {
             return
         }
 
+        await captureScreenshot(target: selectedCaptureTarget.target)
+    }
+
+    func captureScreenshot(from draft: CaptureSelectionDraft) async {
+        do {
+            let target = try draft.captureTarget
+            await captureScreenshot(target: target)
+        } catch {
+            recordingActionErrorMessage = errorMessage(error)
+        }
+    }
+
+    private func captureScreenshot(target: CaptureTarget) async {
+        recordingNoticeMessage = nil
+        recordingActionErrorMessage = nil
+        quickExportStatusMessage = nil
+
         do {
             let job = try screenshotCapturePlanner.captureJob(
-                target: selectedCaptureTarget.target,
+                target: target,
                 includeCursor: settings.showCursor,
                 format: settings.screenshotFormat,
                 destinations: settings.screenshotDestinations,

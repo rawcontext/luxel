@@ -8,6 +8,7 @@ struct LuxelCropperView: View {
     let audioLevelModel: LuxelAudioLevelModel?
     let onCancel: () -> Void
     let onSelect: (CaptureSelectionDraft) -> Void
+    let onCaptureScreenshot: (CaptureSelectionDraft) -> Void
 
     var body: some View {
         GeometryReader { geometry in
@@ -49,6 +50,16 @@ struct LuxelCropperView: View {
                     .monospacedDigit()
                     .frame(minWidth: 96, alignment: .leading)
 
+                Picker("Mode", selection: $model.mode) {
+                    ForEach(LuxelCropperMode.allCases) { mode in
+                        Text(mode.toolbarLabel).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .controlSize(.small)
+                .frame(width: 126)
+                .help("Capture Mode")
+
                 Button {
                     model.selectFullDisplay()
                 } label: {
@@ -63,33 +74,35 @@ struct LuxelCropperView: View {
                 .toggleStyle(.button)
                 .help("Lock 16:9")
 
-                Menu {
-                    stopAfterButton(title: "Off", duration: nil)
+                if model.mode == .video {
+                    Menu {
+                        stopAfterButton(title: "Off", duration: nil)
 
-                    Divider()
+                        Divider()
 
-                    ForEach(StopAfterPreset.all) { preset in
-                        stopAfterButton(title: preset.title, duration: preset.duration)
-                    }
+                        ForEach(StopAfterPreset.all) { preset in
+                            stopAfterButton(title: preset.title, duration: preset.duration)
+                        }
 
-                    Divider()
+                        Divider()
 
-                    TextField("h:mm:ss", text: customStopAfterText)
-                        .frame(width: 84)
+                        TextField("h:mm:ss", text: customStopAfterText)
+                            .frame(width: 84)
 
-                    Button {
-                        applyCustomStopAfterDuration()
+                        Button {
+                            applyCustomStopAfterDuration()
+                        } label: {
+                            Label("Set Custom", systemImage: "timer")
+                        }
                     } label: {
-                        Label("Set Custom", systemImage: "timer")
+                        Label(model.stopAfterSummary, systemImage: "timer")
                     }
-                } label: {
-                    Label(model.stopAfterSummary, systemImage: "timer")
-                }
-                .frame(width: 82)
-                .help("Stop After")
+                    .frame(width: 82)
+                    .help("Stop After")
 
-                if let audioLevelModel {
-                    CropperAudioLevelMeter(model: audioLevelModel)
+                    if let audioLevelModel {
+                        CropperAudioLevelMeter(model: audioLevelModel)
+                    }
                 }
 
                 Button {
@@ -101,9 +114,9 @@ struct LuxelCropperView: View {
                 .help("Cancel")
 
                 Button {
-                    selectDraft()
+                    commitSelection()
                 } label: {
-                    Label("Record", systemImage: "record.circle")
+                    Label(model.primaryActionTitle, systemImage: model.primaryActionSystemImage)
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(!model.canRecordSelection)
@@ -158,13 +171,18 @@ struct LuxelCropperView: View {
         )
     }
 
-    private func selectDraft() {
+    private func commitSelection() {
         do {
             guard let draft = try model.draft() else {
                 return
             }
 
-            onSelect(draft)
+            switch model.mode {
+            case .video:
+                onSelect(draft)
+            case .photo:
+                onCaptureScreenshot(draft)
+            }
         } catch {
             NSSound.beep()
         }
@@ -195,6 +213,37 @@ struct LuxelCropperView: View {
             model.customStopAfterText
         } set: { text in
             model.setCustomStopAfterText(text)
+        }
+    }
+}
+
+private extension LuxelCropperMode {
+    var toolbarLabel: String {
+        switch self {
+        case .video:
+            "Video"
+        case .photo:
+            "Photo"
+        }
+    }
+}
+
+private extension LuxelCropperModel {
+    var primaryActionTitle: String {
+        switch mode {
+        case .video:
+            "Record"
+        case .photo:
+            "Capture"
+        }
+    }
+
+    var primaryActionSystemImage: String {
+        switch mode {
+        case .video:
+            "record.circle"
+        case .photo:
+            "camera"
         }
     }
 }

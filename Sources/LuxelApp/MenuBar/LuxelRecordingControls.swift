@@ -91,6 +91,11 @@ struct LuxelRecordingControls: View {
                 onStopAfterDurationChange: { duration in
                     model.settings.lastStopAfter = duration
                     model.saveSettings()
+                },
+                onCaptureScreenshot: { draft in
+                    Task {
+                        await model.captureScreenshot(from: draft)
+                    }
                 }
             ) { draft in
                 Task {
