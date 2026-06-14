@@ -67,6 +67,13 @@ enum LuxelCompositionRoot {
         PurchaseGateService(gate: AlwaysEntitledPurchaseGate())
     }
 
+    static func commandLineToolInstallService() -> CommandLineToolInstallService {
+        CommandLineToolInstallService(
+            installer: BundledCommandLineToolInstaller(),
+            homeDirectory: FileManager.default.homeDirectoryForCurrentUser
+        )
+    }
+
     static func codecAdapterRegistry() -> CodecAdapterRegistry {
         .empty
     }

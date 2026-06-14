@@ -1,5 +1,11 @@
+import Foundation
 import LuxelCore
 import LuxelPresentation
+
+enum CommandLineToolInstallStatus: Equatable {
+    case installed(URL)
+    case failed(String)
+}
 
 @MainActor
 extension LuxelMenuModel {
@@ -48,6 +54,16 @@ extension LuxelMenuModel {
             recordingActionErrorMessage = errorMessage(error)
         }
     }
+
+    func installCommandLineTool() {
+        do {
+            let destination = try commandLineToolInstallService.installToDefaultLocation()
+            commandLineToolInstallStatus = .installed(destination)
+        } catch {
+            commandLineToolInstallStatus = .failed(errorMessage(error))
+        }
+    }
+
     private func rememberExportMemory(_ memory: ExportMemory, for format: ExportFormat) {
         settings.perFormatExportMemory[format] = memory
         saveSettings()

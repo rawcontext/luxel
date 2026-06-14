@@ -26,6 +26,7 @@ final class LuxelMenuModel {
     var permissionPrompt: PermissionPrompt?
     var recoveryPrompt: RecoveryPrompt?
     var automationPrompt: AutomationURLPrompt?
+    var commandLineToolInstallStatus: CommandLineToolInstallStatus?
     let appMetadata: AppMetadata
 
     @ObservationIgnored let settingsStore: any SettingsStore
@@ -54,6 +55,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let pointerDisplayProvider: any PointerDisplayProvider
     @ObservationIgnored let fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver
     @ObservationIgnored let screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter
+    @ObservationIgnored let commandLineToolInstallService: CommandLineToolInstallService
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
@@ -92,6 +94,8 @@ final class LuxelMenuModel {
         pointerDisplayProvider: any PointerDisplayProvider = AppKitPointerDisplayProvider(),
         fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver = FullscreenCaptureTargetResolver(),
         screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter = AppKitScreenshotThumbnailPresenter(),
+        commandLineToolInstallService: CommandLineToolInstallService = LuxelCompositionRoot
+            .commandLineToolInstallService(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
         recorder: (any CaptureRecorder)? = nil,
         audioRecorder: any AudioRecorder = LuxelCompositionRoot.audioRecorder()
@@ -121,6 +125,7 @@ final class LuxelMenuModel {
         self.pointerDisplayProvider = pointerDisplayProvider
         self.fullscreenCaptureTargetResolver = fullscreenCaptureTargetResolver
         self.screenshotThumbnailPresenter = screenshotThumbnailPresenter
+        self.commandLineToolInstallService = commandLineToolInstallService
         self.appMetadata = appMetadata
         let recordingOutputFinalizer = LuxelCompositionRoot.recordingOutputFinalizer()
         self.recordingLifecycleService = RecordingLifecycleService(

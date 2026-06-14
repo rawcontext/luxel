@@ -147,6 +147,23 @@ struct LuxelSettingsView: View {
                 Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
                 Toggle("Remind About Notifications", isOn: $model.settings.notificationReminder)
                 Toggle("Allow URL Automation", isOn: $model.settings.allowURLAutomation)
+                if AppDistribution.current.capabilities.allowsCommandLineToolInstaller {
+                    LabeledContent("Command Line Tool") {
+                        Button {
+                            model.installCommandLineTool()
+                        } label: {
+                            Label("Install luxel", systemImage: "terminal")
+                        }
+                        .help("Install to \(model.commandLineToolInstallService.defaultDestination.path)")
+                    }
+
+                    if let installStatus = model.commandLineToolInstallStatus {
+                        Label(installStatus.message, systemImage: installStatus.systemImage)
+                            .font(.caption)
+                            .foregroundStyle(installStatus.tint)
+                    }
+                }
+
                 Toggle("Keyboard Shortcuts", isOn: $model.settings.enableShortcuts)
                 shortcutPicker(
                     "Select Area",
@@ -443,6 +460,35 @@ private extension CaptureBackdrop {
             "Transparent"
         case .transparentWithShadow:
             "Transparent + Shadow"
+        }
+    }
+}
+
+private extension CommandLineToolInstallStatus {
+    var message: String {
+        switch self {
+        case .installed(let destination):
+            "Installed at \(destination.path)"
+        case .failed(let message):
+            message
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .installed:
+            "checkmark.circle"
+        case .failed:
+            "exclamationmark.triangle"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .installed:
+            .secondary
+        case .failed:
+            .orange
         }
     }
 }
