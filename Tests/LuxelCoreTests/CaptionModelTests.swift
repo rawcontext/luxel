@@ -130,6 +130,36 @@ struct CaptionModelTests {
         #expect(PlainTextCaptionSerializer.serialize(track) == "")
     }
 
+    @Test("export time mapper trims and scales cues")
+    func exportTimeMapperTrimsAndScalesCues() throws {
+        let track = try CaptionTrack(
+            cues: [
+                cue(start: 0.5, end: 1.5, text: "Before"),
+                cue(start: 1.5, end: 2.5, text: "Starts before trim"),
+                cue(start: 3, end: 5, text: "Inside"),
+                cue(start: 5.5, end: 6.5, text: "Ends after trim"),
+                cue(start: 6.5, end: 7, text: "After")
+            ],
+            language: Locale.LanguageCode("en"),
+            sourceTrack: .system
+        )
+        let mapper = try CaptionExportTimeMapper(
+            trimRange: TimeRange(start: 2, end: 6),
+            speed: PlaybackSpeed(2)
+        )
+
+        let mapped = try mapper.map(track)
+        let expectedCues = [
+            try cue(start: 0, end: 0.25, text: "Starts before trim"),
+            try cue(start: 0.5, end: 1.5, text: "Inside"),
+            try cue(start: 1.75, end: 2, text: "Ends after trim")
+        ]
+
+        #expect(mapped.language == Locale.LanguageCode("en"))
+        #expect(mapped.sourceTrack == .system)
+        #expect(mapped.cues == expectedCues)
+    }
+
     @Test("cue builder segments sentences and wraps caption lines")
     func cueBuilderSegmentsSentencesAndWrapsCaptionLines() throws {
         let builder = CaptionCueBuilder(configuration: try CaptionCueBuilderConfiguration(

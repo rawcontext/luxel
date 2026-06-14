@@ -80,6 +80,46 @@ public struct CaptionSidecarDocument: Codable, Equatable, Sendable {
     }
 }
 
+public struct CaptionExportTimeMapper: Equatable, Sendable {
+    public let trimRange: TimeRange
+    public let speed: PlaybackSpeed
+
+    public init(
+        trimRange: TimeRange,
+        speed: PlaybackSpeed = .normal
+    ) {
+        self.trimRange = trimRange
+        self.speed = speed
+    }
+
+    public func map(_ track: CaptionTrack) throws -> CaptionTrack {
+        try CaptionTrack(
+            cues: track.cues.compactMap { cue in
+                try map(cue)
+            },
+            language: track.language,
+            sourceTrack: track.sourceTrack
+        )
+    }
+
+    private func map(_ cue: CaptionCue) throws -> CaptionCue? {
+        let start = max(cue.timeRange.start, trimRange.start)
+        let end = min(cue.timeRange.end, trimRange.end)
+
+        guard end > start else {
+            return nil
+        }
+
+        return try CaptionCue(
+            timeRange: TimeRange(
+                start: (start - trimRange.start) / speed.value,
+                end: (end - trimRange.start) / speed.value
+            ),
+            text: cue.text
+        )
+    }
+}
+
 public struct CaptionRenderOptions: Codable, Equatable, Sendable {
     public let burnIn: Bool
     public let position: CaptionPosition

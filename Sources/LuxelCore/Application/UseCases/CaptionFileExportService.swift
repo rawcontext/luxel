@@ -4,15 +4,18 @@ public struct CaptionFileExportRequest: Equatable, Sendable {
     public let track: CaptionTrack
     public let format: CaptionFileFormat
     public let outputFileURL: URL
+    public let timeMapper: CaptionExportTimeMapper?
 
     public init(
         track: CaptionTrack,
         format: CaptionFileFormat,
-        outputFileURL: URL
+        outputFileURL: URL,
+        timeMapper: CaptionExportTimeMapper? = nil
     ) {
         self.track = track
         self.format = format
         self.outputFileURL = outputFileURL
+        self.timeMapper = timeMapper
     }
 }
 
@@ -34,7 +37,8 @@ public struct CaptionFileExportService: Sendable {
     }
 
     public func export(_ request: CaptionFileExportRequest) throws -> ExportedCaptionFile {
-        let text = request.format.serialize(request.track)
+        let track = try request.timeMapper?.map(request.track) ?? request.track
+        let text = request.format.serialize(track)
         try fileSystem.writeData(Data(text.utf8), to: request.outputFileURL)
         return ExportedCaptionFile(
             fileURL: request.outputFileURL,

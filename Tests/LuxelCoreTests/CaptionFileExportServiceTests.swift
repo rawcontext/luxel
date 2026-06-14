@@ -98,6 +98,36 @@ struct CaptionFileExportServiceTests {
         ])
     }
 
+    @Test("service maps captions for trimmed speed-adjusted export")
+    func serviceMapsCaptionsForTrimmedSpeedAdjustedExport() throws {
+        let fileSystem = SpyFileSystem()
+        let service = CaptionFileExportService(fileSystem: fileSystem)
+        let fileURL = URL(fileURLWithPath: "/tmp/captions.srt")
+
+        _ = try service.export(CaptionFileExportRequest(
+            track: sampleTrack(),
+            format: .srt,
+            outputFileURL: fileURL,
+            timeMapper: CaptionExportTimeMapper(
+                trimRange: TimeRange(start: 2.2, end: 4.2),
+                speed: PlaybackSpeed(2)
+            )
+        ))
+
+        #expect(fileSystem.writes == [
+            WrittenData(
+                text: """
+                1
+                00:00:00,000 --> 00:00:00,600
+                Hello
+                world
+
+                """,
+                fileURL: fileURL
+            )
+        ])
+    }
+
     @Test("service writes empty caption tracks")
     func serviceWritesEmptyCaptionTracks() throws {
         let track = try CaptionTrack(cues: [], language: Locale.LanguageCode("en"))
