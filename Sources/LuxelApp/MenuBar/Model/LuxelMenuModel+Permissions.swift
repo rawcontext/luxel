@@ -38,6 +38,8 @@ extension LuxelMenuModel {
             }
 
             await refreshCaptureTargets()
+        } else if prompt.permission == .camera {
+            await syncCameraPreviewPanelWithSettings()
         }
     }
     private func permissionGuidance(for permission: SystemPermission) -> PermissionGuidance {

@@ -20,6 +20,16 @@ struct LuxelPermissionSummary: View {
             ) {
                 model.presentPermissionPrompt(for: .microphone)
             }
+
+            if model.settings.cameraDeviceID != nil {
+                PermissionRow(
+                    title: "Camera",
+                    status: model.cameraStatus,
+                    actionTitle: model.permissionActionTitle(for: .camera)
+                ) {
+                    model.presentPermissionPrompt(for: .camera)
+                }
+            }
         }
     }
 }

@@ -47,6 +47,38 @@ struct LuxelSettingsView: View {
                 }
             }
 
+            Section("Camera") {
+                Picker("Camera", selection: $model.settings.cameraDeviceID) {
+                    Text("Off").tag(String?.none)
+                    if let unavailableCameraDeviceID {
+                        Text("Unavailable Camera").tag(Optional(unavailableCameraDeviceID))
+                    }
+                    ForEach(model.cameraDevices) { device in
+                        Text(device.settingsLabel).tag(Optional(device.id))
+                    }
+                }
+                .pickerStyle(.menu)
+
+                Picker("Shape", selection: cameraPreviewShapeSelection) {
+                    ForEach(CameraOverlayShape.allCases, id: \.self) { shape in
+                        Text(shape.settingsLabel).tag(shape)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(model.settings.cameraDeviceID == nil)
+
+                Picker("Size", selection: cameraPreviewSizeSelection) {
+                    ForEach(CameraPreviewSize.allCases, id: \.self) { size in
+                        Text(size.settingsLabel).tag(size)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(model.settings.cameraDeviceID == nil)
+
+                Toggle("Mirror Preview", isOn: cameraPreviewMirroredSelection)
+                    .disabled(model.settings.cameraDeviceID == nil)
+            }
+
             Section("Output") {
                 LabeledContent("Folder") {
                     Button {
@@ -201,6 +233,8 @@ struct LuxelSettingsView: View {
         .task {
             await model.refreshPermissions()
             model.refreshAudioInputDevices()
+            model.refreshCameraDevices()
+            await model.syncCameraPreviewPanelWithSettings()
             await model.watchAudioInputDeviceUpdates()
         }
         .task(id: model.audioLevelMonitorTaskID) {
@@ -218,12 +252,48 @@ struct LuxelSettingsView: View {
                 model.settings.screenshotBackdrop = .opaque
             }
         }
+        .onChange(of: model.settings.cameraDeviceID) {
+            Task {
+                await model.syncCameraPreviewPanelWithSettings()
+            }
+        }
+        .onChange(of: model.settings.cameraPreviewStyle) {
+            Task {
+                await model.syncCameraPreviewPanelWithSettings()
+            }
+        }
         .onChange(of: model.launchAtLogin) {
             model.setLaunchAtLogin(model.launchAtLogin)
+        }
+        .alert(
+            Text(model.permissionPrompt?.guidance.title ?? "Permission"),
+            isPresented: permissionPromptPresented,
+            presenting: model.permissionPrompt
+        ) { prompt in
+            Button(prompt.guidance.actionTitle) {
+                Task {
+                    await model.performPermissionAction(prompt)
+                }
+            }
+
+            Button("Cancel", role: .cancel) {
+                model.permissionPrompt = nil
+            }
+        } message: { prompt in
+            Text(prompt.guidance.message)
         }
         .sheet(isPresented: $isShowingAcknowledgements) {
             CodecAcknowledgementsView(text: CodecAcknowledgementsResource.bundledText())
         }
+    }
+
+    private var unavailableCameraDeviceID: String? {
+        guard let cameraDeviceID = model.settings.cameraDeviceID,
+              !model.cameraDevices.contains(where: { $0.id == cameraDeviceID }) else {
+            return nil
+        }
+
+        return cameraDeviceID
     }
 
     private var audioInputDeviceSelection: Binding<String> {
@@ -234,6 +304,45 @@ struct LuxelSettingsView: View {
             model.settings.audioInputDeviceName = model.audioInputDevices
                 .first { $0.id == deviceID }?
                 .name
+        }
+    }
+
+    private var cameraPreviewShapeSelection: Binding<CameraOverlayShape> {
+        Binding {
+            model.settings.cameraPreviewStyle.shape
+        } set: { shape in
+            let style = model.settings.cameraPreviewStyle
+            model.settings.cameraPreviewStyle = CameraPreviewStyle(
+                shape: shape,
+                size: style.size,
+                isMirrored: style.isMirrored
+            )
+        }
+    }
+
+    private var cameraPreviewSizeSelection: Binding<CameraPreviewSize> {
+        Binding {
+            model.settings.cameraPreviewStyle.size
+        } set: { size in
+            let style = model.settings.cameraPreviewStyle
+            model.settings.cameraPreviewStyle = CameraPreviewStyle(
+                shape: style.shape,
+                size: size,
+                isMirrored: style.isMirrored
+            )
+        }
+    }
+
+    private var cameraPreviewMirroredSelection: Binding<Bool> {
+        Binding {
+            model.settings.cameraPreviewStyle.isMirrored
+        } set: { isMirrored in
+            let style = model.settings.cameraPreviewStyle
+            model.settings.cameraPreviewStyle = CameraPreviewStyle(
+                shape: style.shape,
+                size: style.size,
+                isMirrored: isMirrored
+            )
         }
     }
 
@@ -278,6 +387,16 @@ struct LuxelSettingsView: View {
         }
     }
 
+    private var permissionPromptPresented: Binding<Bool> {
+        Binding {
+            model.permissionPrompt != nil
+        } set: { isPresented in
+            if !isPresented {
+                model.permissionPrompt = nil
+            }
+        }
+    }
+
     private func openRecording(_ url: URL) {
         openWindow(id: LuxelEditorScene.id)
         NSApplication.shared.activate(ignoringOtherApps: true)
@@ -311,6 +430,53 @@ private extension ScreenshotDestination {
             "Save File"
         case .preview:
             "Open Preview"
+        }
+    }
+}
+
+private extension CameraDeviceOption {
+    var settingsLabel: String {
+        "\(name) (\(kind.settingsLabel))"
+    }
+}
+
+private extension CameraDeviceKind {
+    var settingsLabel: String {
+        switch self {
+        case .builtIn:
+            "Built-In"
+        case .external:
+            "External"
+        case .continuity:
+            "Continuity"
+        case .deskView:
+            "Desk View"
+        case .unknown:
+            "Camera"
+        }
+    }
+}
+
+private extension CameraOverlayShape {
+    var settingsLabel: String {
+        switch self {
+        case .circle:
+            "Circle"
+        case .roundedRect:
+            "Rounded"
+        }
+    }
+}
+
+private extension CameraPreviewSize {
+    var settingsLabel: String {
+        switch self {
+        case .small:
+            "S"
+        case .medium:
+            "M"
+        case .large:
+            "L"
         }
     }
 }

@@ -11,6 +11,7 @@ final class LuxelMenuModel {
     var cameraStatus: PermissionStatus = .unknown
     var audioLevelSample: AudioLevelSample = .silent
     var audioInputDevices: [AudioInputDeviceOption] = [.systemDefault]
+    var cameraDevices: [CameraDeviceOption] = []
     var recentRecordings: [PastRecording] = []
     var recentRecordingFilter: RecordingHistoryFilter = .all
     var captureTargets: [CaptureTargetOption] = []
@@ -37,6 +38,8 @@ final class LuxelMenuModel {
     @ObservationIgnored let captureExclusionRegistry: CaptureExclusionRegistry
     @ObservationIgnored let recordingFramePanelController: RecordingFramePanelController
     @ObservationIgnored let audioInputDeviceService: AudioInputDeviceService
+    @ObservationIgnored let cameraDeviceService: CameraDeviceService
+    @ObservationIgnored let cameraPreviewPanelController: CameraPreviewPanelController
     @ObservationIgnored let audioLevelMonitorFactory: () -> any AudioLevelMonitor
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored let bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker
@@ -68,6 +71,10 @@ final class LuxelMenuModel {
             catalog: AVFoundationAudioInputDeviceCatalog(),
             updateSource: AVFoundationAudioInputDeviceUpdateSource()
         ),
+        cameraDeviceService: CameraDeviceService = CameraDeviceService(
+            catalog: AVFoundationCameraDeviceCatalog()
+        ),
+        cameraPreviewPanelController: CameraPreviewPanelController = CameraPreviewPanelController(),
         audioLevelMonitorFactory: @escaping () -> any AudioLevelMonitor = {
             AVCaptureAudioLevelMonitor()
         },
@@ -97,6 +104,8 @@ final class LuxelMenuModel {
         self.captureExclusionRegistry = captureExclusionRegistry
         self.recordingFramePanelController = recordingFramePanelController
         self.audioInputDeviceService = audioInputDeviceService
+        self.cameraDeviceService = cameraDeviceService
+        self.cameraPreviewPanelController = cameraPreviewPanelController
         self.audioLevelMonitorFactory = audioLevelMonitorFactory
         self.fileWorkflowService = fileWorkflowService
         self.bookmarkedDirectoryPicker = bookmarkedDirectoryPicker
