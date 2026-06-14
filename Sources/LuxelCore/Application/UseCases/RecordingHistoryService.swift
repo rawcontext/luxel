@@ -52,6 +52,21 @@ public final class RecordingHistoryService: Sendable {
     }
 
     @discardableResult
+    public func addScreenshot(fileURL: URL, name: String? = nil) -> PastRecording? {
+        let now = dateProvider.now()
+        let screenshotName = name ?? RecordingName.timestamped(now: now, calendar: calendar).value
+        let screenshot = PastRecording(
+            fileURL: fileURL,
+            name: screenshotName,
+            date: now,
+            kind: .screenshot
+        )
+
+        let recordings = addRecording(screenshot)
+        return recordings.first == screenshot ? screenshot : nil
+    }
+
+    @discardableResult
     public func recordExport(
         _ exportedMedia: ExportedMedia,
         presetName: String? = nil,

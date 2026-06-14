@@ -1,9 +1,15 @@
 import Foundation
 
+public enum HistoryEntryKind: String, Codable, Equatable, Sendable {
+    case recording
+    case screenshot
+}
+
 public struct PastRecording: Codable, Equatable, Sendable {
     public let fileURL: URL
     public let name: String
     public let date: Date
+    public let kind: HistoryEntryKind
     public let options: RecordingOptions
     public let exports: [RecordingExport]
 
@@ -11,12 +17,14 @@ public struct PastRecording: Codable, Equatable, Sendable {
         fileURL: URL,
         name: String,
         date: Date,
+        kind: HistoryEntryKind = .recording,
         options: RecordingOptions = RecordingOptions(frameRate: 0),
         exports: [RecordingExport] = []
     ) {
         self.fileURL = fileURL
         self.name = name
         self.date = date
+        self.kind = kind
         self.options = options
         self.exports = exports
     }
@@ -30,6 +38,7 @@ public struct PastRecording: Codable, Equatable, Sendable {
             fileURL: fileURL,
             name: name,
             date: date,
+            kind: kind,
             options: options,
             exports: [export] + exports
         )
@@ -40,6 +49,7 @@ public struct PastRecording: Codable, Equatable, Sendable {
             fileURL: fileURL,
             name: name,
             date: date,
+            kind: kind,
             options: options,
             exports: exports.filter(isIncluded)
         )
@@ -49,6 +59,7 @@ public struct PastRecording: Codable, Equatable, Sendable {
         case fileURL
         case name
         case date
+        case kind
         case options
         case exports
     }
@@ -59,6 +70,8 @@ public struct PastRecording: Codable, Equatable, Sendable {
         fileURL = try container.decode(URL.self, forKey: .fileURL)
         name = try container.decode(String.self, forKey: .name)
         date = try container.decode(Date.self, forKey: .date)
+        kind = try container.decodeIfPresent(HistoryEntryKind.self, forKey: .kind)
+            ?? .recording
         options = try container.decodeIfPresent(RecordingOptions.self, forKey: .options)
             ?? RecordingOptions(frameRate: 0)
         exports = try container.decodeIfPresent([RecordingExport].self, forKey: .exports)

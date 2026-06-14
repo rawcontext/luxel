@@ -21,6 +21,7 @@ struct JSONRecordingHistoryStoreTests {
             fileURL: fileURL,
             name: "Finished",
             date: Date(timeIntervalSince1970: 200),
+            kind: .screenshot,
             exports: [
                 RecordingExport(
                     fileURL: directory.appending(path: "recording Quick GIF.gif"),
@@ -68,6 +69,42 @@ struct JSONRecordingHistoryStoreTests {
                 fileURL: URL(fileURLWithPath: "/tmp/legacy.mp4"),
                 name: "Legacy",
                 date: Date(timeIntervalSince1970: 1)
+            )
+        ])
+    }
+
+    @Test("loads legacy past recordings without kind as recordings")
+    func loadsLegacyPastRecordingsWithoutKind() throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let storeURL = directory.appending(path: "recording-history.json")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try Data("""
+        {
+          "activeRecording": null,
+          "recordings": [
+            {
+              "date": "1970-01-01T00:00:01Z",
+              "fileURL": "file:///tmp/legacy-kind.mp4",
+              "name": "Legacy Kind",
+              "options": {
+                "frameRate": 30
+              }
+            }
+          ]
+        }
+        """.utf8).write(to: storeURL)
+
+        let store = try JSONRecordingHistoryStore(fileURL: storeURL)
+
+        #expect(store.recordings == [
+            PastRecording(
+                fileURL: URL(fileURLWithPath: "/tmp/legacy-kind.mp4"),
+                name: "Legacy Kind",
+                date: Date(timeIntervalSince1970: 1),
+                kind: .recording,
+                options: RecordingOptions(frameRate: 30)
             )
         ])
     }

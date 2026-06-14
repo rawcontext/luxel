@@ -19,10 +19,10 @@ struct LuxelRecentRecordings: View {
 
                 ForEach(model.recentRecordings.prefix(5), id: \.fileURL) { recording in
                     Button {
-                        if recording.options.isAudioOnly {
-                            model.revealRecording(recording)
-                        } else {
+                        if opensInEditor(recording) {
                             openRecording(recording.fileURL)
+                        } else {
+                            model.revealRecording(recording)
                         }
                     } label: {
                         Label {
@@ -38,7 +38,7 @@ struct LuxelRecentRecordings: View {
                                 }
                             }
                         } icon: {
-                            Image(systemName: recording.options.isAudioOnly ? "waveform" : "clock")
+                            Image(systemName: recentRecordingSystemImage(for: recording))
                         }
                     }
                     .help(recording.fileURL.path)
@@ -47,7 +47,25 @@ struct LuxelRecentRecordings: View {
         }
     }
 
+    private func opensInEditor(_ recording: PastRecording) -> Bool {
+        recording.kind == .recording && !recording.options.isAudioOnly
+    }
+
+    private func recentRecordingSystemImage(for recording: PastRecording) -> String {
+        switch recording.kind {
+        case .recording:
+            recording.options.isAudioOnly ? "waveform" : "clock"
+        case .screenshot:
+            "camera"
+        }
+    }
+
     private func recentRecordingSubtitle(for recording: PastRecording) -> String? {
+        if recording.kind == .screenshot {
+            let fileExtension = recording.fileURL.pathExtension
+            return fileExtension.isEmpty ? "Screenshot" : "\(fileExtension.uppercased()) screenshot"
+        }
+
         guard let export = recording.latestExport else {
             return nil
         }
