@@ -198,6 +198,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
     public let captureRect: CaptureRect?
     public let showCursor: Bool
     public let highlightClicks: Bool
+    public let captureKeystrokes: Bool
     public let displayID: DisplayID?
     public let audio: RecordingAudioMode
     public let videoCodec: RecordingCodec
@@ -211,6 +212,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         captureRect: CaptureRect? = nil,
         showCursor: Bool = true,
         highlightClicks: Bool = false,
+        captureKeystrokes: Bool = false,
         displayID: DisplayID? = nil,
         audio: RecordingAudioMode = .none,
         videoCodec: RecordingCodec = .h264,
@@ -223,6 +225,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         self.captureRect = captureRect
         self.showCursor = showCursor
         self.highlightClicks = highlightClicks
+        self.captureKeystrokes = captureKeystrokes
         self.displayID = displayID
         self.audio = audio
         self.videoCodec = videoCodec
@@ -237,6 +240,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         case captureRect
         case showCursor
         case highlightClicks
+        case captureKeystrokes
         case displayID
         case audio
         case videoCodec
@@ -254,6 +258,8 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         showCursor = try container.decodeIfPresent(Bool.self, forKey: .showCursor)
             ?? true
         highlightClicks = try container.decodeIfPresent(Bool.self, forKey: .highlightClicks)
+            ?? false
+        captureKeystrokes = try container.decodeIfPresent(Bool.self, forKey: .captureKeystrokes)
             ?? false
         displayID = try container.decodeIfPresent(DisplayID.self, forKey: .displayID)
         audio = try container.decodeIfPresent(RecordingAudioMode.self, forKey: .audio)

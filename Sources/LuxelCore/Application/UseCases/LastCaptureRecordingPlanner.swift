@@ -30,6 +30,7 @@ public struct LastCaptureRecordingPlanner: Sendable {
             frameRate: try FrameRate(resolution.options.frameRate),
             showCursor: resolution.options.showCursor,
             highlightClicks: resolution.options.highlightClicks,
+            captureKeystrokes: resolution.options.captureKeystrokes,
             audio: resolution.options.audio,
             videoCodec: resolution.options.videoCodec,
             captureKind: captureKind

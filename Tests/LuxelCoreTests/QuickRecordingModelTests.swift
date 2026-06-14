@@ -54,6 +54,7 @@ struct QuickRecordingModelTests {
         let options = try JSONDecoder().decode(RecordingOptions.self, from: payload)
 
         #expect(options.captureKind == .standard)
+        #expect(!options.captureKeystrokes)
     }
 
     @Test("last capture memory resolves exact window target")

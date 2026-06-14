@@ -19,7 +19,12 @@ struct JSONRecordingHistoryStoreTests {
             fileURL: fileURL,
             name: "Luxel 2020-07-21 at 11.27.26",
             date: Date(timeIntervalSince1970: 100),
-            options: RecordingOptions(frameRate: 60, showCursor: true, highlightClicks: true),
+            options: RecordingOptions(
+                frameRate: 60,
+                showCursor: true,
+                highlightClicks: true,
+                captureKeystrokes: true
+            ),
             bundleManifest: bundleManifest
         )
         let past = PastRecording(

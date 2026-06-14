@@ -53,6 +53,14 @@ struct UserDefaultsSettingsStoreTests {
                 smoothing: .light,
                 clickStyle: .ringRipple
             ),
+            keystrokeOverlayEnabled: true,
+            keystrokeRenderOptions: try KeystrokeRenderOptions(
+                anchor: .topRight,
+                size: .large,
+                theme: .highContrast,
+                displayDuration: 2.25
+            ),
+            pauseKeystrokeCaptureShortcut: "command+control+option+k",
             record60FPS: true,
             recordAudio: true,
             audioInputDeviceID: "mic-1",
@@ -138,6 +146,9 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.cursorMode == .hidden)
         #expect(settings.cursorRenderOptions.isVisible == false)
         #expect(settings.cursorRenderOptions.clickStyle == .ringRipple)
+        #expect(!settings.keystrokeOverlayEnabled)
+        #expect(settings.keystrokeRenderOptions == .standard)
+        #expect(settings.pauseKeystrokeCaptureShortcut == "")
         #expect(settings.record60FPS)
         #expect(!settings.loopExports)
         #expect(settings.recordAudio)

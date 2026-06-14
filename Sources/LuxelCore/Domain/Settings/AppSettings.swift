@@ -45,6 +45,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     }
     public var cursorMode: CursorMode
     public var cursorRenderOptions: CursorRenderOptions
+    public var keystrokeOverlayEnabled: Bool
+    public var keystrokeRenderOptions: KeystrokeRenderOptions
+    public var pauseKeystrokeCaptureShortcut: String
     public var record60FPS: Bool
     public var loopExports: Bool
     public var recordAudio: Bool
@@ -85,6 +88,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         highlightClicks: Bool = false,
         cursorMode: CursorMode? = nil,
         cursorRenderOptions: CursorRenderOptions? = nil,
+        keystrokeOverlayEnabled: Bool = false,
+        keystrokeRenderOptions: KeystrokeRenderOptions = .standard,
+        pauseKeystrokeCaptureShortcut: String = "",
         record60FPS: Bool = false,
         loopExports: Bool = true,
         recordAudio: Bool = false,
@@ -127,6 +133,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
             showCursor: showCursor,
             highlightClicks: highlightClicks
         )
+        self.keystrokeOverlayEnabled = keystrokeOverlayEnabled
+        self.keystrokeRenderOptions = keystrokeRenderOptions
+        self.pauseKeystrokeCaptureShortcut = pauseKeystrokeCaptureShortcut
         self.record60FPS = record60FPS
         self.loopExports = loopExports
         self.recordAudio = recordAudio
@@ -168,6 +177,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case highlightClicks
         case cursorMode
         case cursorRenderOptions
+        case keystrokeOverlayEnabled
+        case keystrokeRenderOptions
+        case pauseKeystrokeCaptureShortcut
         case record60FPS
         case loopExports
         case recordAudio
@@ -221,6 +233,16 @@ public struct AppSettings: Codable, Equatable, Sendable {
             CursorRenderOptions.self,
             forKey: .cursorRenderOptions
         ) ?? Self.cursorRenderOptions(showCursor: showCursor, highlightClicks: highlightClicks)
+        keystrokeOverlayEnabled = try container.decodeIfPresent(Bool.self, forKey: .keystrokeOverlayEnabled)
+            ?? false
+        keystrokeRenderOptions = try container.decodeIfPresent(
+            KeystrokeRenderOptions.self,
+            forKey: .keystrokeRenderOptions
+        ) ?? .standard
+        pauseKeystrokeCaptureShortcut = try container.decodeIfPresent(
+            String.self,
+            forKey: .pauseKeystrokeCaptureShortcut
+        ) ?? ""
         record60FPS = try container.decodeIfPresent(Bool.self, forKey: .record60FPS)
             ?? false
         loopExports = try container.decodeIfPresent(Bool.self, forKey: .loopExports)

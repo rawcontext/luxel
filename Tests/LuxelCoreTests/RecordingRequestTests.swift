@@ -37,6 +37,7 @@ struct RecordingRequestTests {
             frameRate: FrameRate(60),
             showCursor: false,
             highlightClicks: true,
+            captureKeystrokes: true,
             audio: .systemAndMicrophone(deviceID: "mic-1"),
             videoCodec: .hevc,
             schedule: schedule
@@ -46,6 +47,7 @@ struct RecordingRequestTests {
         #expect(request.recordingOptions.captureRect == rect)
         #expect(request.recordingOptions.showCursor == false)
         #expect(request.recordingOptions.highlightClicks)
+        #expect(request.recordingOptions.captureKeystrokes)
         #expect(request.recordingOptions.displayID == displayID)
         #expect(request.recordingOptions.audio == .systemAndMicrophone(deviceID: "mic-1"))
         #expect(request.recordingOptions.videoCodec == .hevc)

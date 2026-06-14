@@ -24,6 +24,7 @@ extension LuxelMenuModel {
                 frameRate: frameRate,
                 showCursor: usesBakedCursor,
                 highlightClicks: usesBakedCursor && settings.highlightClicks,
+                captureKeystrokes: settings.keystrokeOverlayEnabled,
                 audio: resolvedAudio.mode,
                 videoCodec: .h264,
                 captureKind: captureKind,

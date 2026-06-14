@@ -41,6 +41,7 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
     public let frameRate: FrameRate
     public let showCursor: Bool
     public let highlightClicks: Bool
+    public let captureKeystrokes: Bool
     public let audio: RecordingAudioMode
     public let videoCodec: RecordingCodec
     public let captureKind: QuickCaptureKind
@@ -54,6 +55,7 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         frameRate: FrameRate,
         showCursor: Bool = true,
         highlightClicks: Bool = false,
+        captureKeystrokes: Bool = false,
         audio: RecordingAudioMode = .none,
         videoCodec: RecordingCodec = .h264,
         captureKind: QuickCaptureKind = .standard,
@@ -66,6 +68,7 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         self.frameRate = frameRate
         self.showCursor = showCursor
         self.highlightClicks = highlightClicks
+        self.captureKeystrokes = captureKeystrokes
         self.audio = timelapse == nil ? audio : .none
         self.videoCodec = videoCodec
         self.captureKind = captureKind
@@ -79,12 +82,47 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
             captureRect: captureRect,
             showCursor: showCursor,
             highlightClicks: highlightClicks,
+            captureKeystrokes: captureKeystrokes,
             displayID: displayID,
             audio: audio,
             videoCodec: videoCodec,
             captureKind: captureKind,
             schedule: schedule,
             timelapse: timelapse
+        )
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case target
+        case outputFileURL
+        case pixelSize
+        case frameRate
+        case showCursor
+        case highlightClicks
+        case captureKeystrokes
+        case audio
+        case videoCodec
+        case captureKind
+        case schedule
+        case timelapse
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        try self.init(
+            target: container.decode(CaptureTarget.self, forKey: .target),
+            outputFileURL: container.decode(URL.self, forKey: .outputFileURL),
+            pixelSize: container.decode(PixelSize.self, forKey: .pixelSize),
+            frameRate: container.decode(FrameRate.self, forKey: .frameRate),
+            showCursor: container.decodeIfPresent(Bool.self, forKey: .showCursor) ?? true,
+            highlightClicks: container.decodeIfPresent(Bool.self, forKey: .highlightClicks) ?? false,
+            captureKeystrokes: container.decodeIfPresent(Bool.self, forKey: .captureKeystrokes) ?? false,
+            audio: container.decodeIfPresent(RecordingAudioMode.self, forKey: .audio) ?? .none,
+            videoCodec: container.decodeIfPresent(RecordingCodec.self, forKey: .videoCodec) ?? .h264,
+            captureKind: container.decodeIfPresent(QuickCaptureKind.self, forKey: .captureKind) ?? .standard,
+            schedule: container.decodeIfPresent(RecordingSchedule.self, forKey: .schedule),
+            timelapse: container.decodeIfPresent(TimelapseOptions.self, forKey: .timelapse)
         )
     }
 

@@ -46,6 +46,7 @@ struct LastCaptureRecordingPlannerTests {
                 captureRect: rect,
                 showCursor: false,
                 highlightClicks: true,
+                captureKeystrokes: true,
                 displayID: displayID,
                 audio: .systemAndMicrophone(deviceID: "mic-1"),
                 videoCodec: .hevc
@@ -65,6 +66,7 @@ struct LastCaptureRecordingPlannerTests {
         #expect(request.frameRate.framesPerSecond == 60)
         #expect(!request.showCursor)
         #expect(request.highlightClicks)
+        #expect(request.captureKeystrokes)
         #expect(request.audio == .systemAndMicrophone(deviceID: "mic-1"))
         #expect(request.videoCodec == .hevc)
         #expect(request.captureKind == .standard)
