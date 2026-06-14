@@ -31,6 +31,33 @@ struct ArchitectureTests {
         }
     }
 
+    @Test("recording session UX avoids media-key and system-state hacks")
+    func recordingSessionUXAvoidsSystemStateHacks() throws {
+        let sourceDirectory = try packageRootURL().appending(path: "Sources")
+        let forbiddenSnippets = [
+            "import MediaPlayer",
+            "MPRemoteCommandCenter",
+            "MPRemoteCommand",
+            "MPNowPlayingInfoCenter",
+            "remoteCommandCenter",
+            "NX_KEYTYPE",
+            "systemDefined",
+            "com.apple.finder",
+            "CreateDesktop",
+            "killall Finder",
+            "DoNotDisturb",
+            "doNotDisturb",
+            "com.apple.notificationcenterui"
+        ]
+
+        for fileURL in try swiftFiles(under: sourceDirectory) {
+            let contents = try String(contentsOf: fileURL, encoding: .utf8)
+            for forbiddenSnippet in forbiddenSnippets {
+                #expect(!contents.contains(forbiddenSnippet), "\(fileURL.path) contains \(forbiddenSnippet)")
+            }
+        }
+    }
+
     private func swiftFiles(under directory: URL) throws -> [URL] {
         guard let enumerator = FileManager.default.enumerator(
             at: directory,
