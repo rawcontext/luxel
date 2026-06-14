@@ -332,6 +332,244 @@ public struct GIFFrameSequencePlanner: Sendable {
     }
 }
 
+public struct GIFRGBAPixel: Codable, Equatable, Sendable {
+    public let red: UInt8
+    public let green: UInt8
+    public let blue: UInt8
+    public let alpha: UInt8
+
+    public init(red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8 = 255) {
+        self.red = red
+        self.green = green
+        self.blue = blue
+        self.alpha = alpha
+    }
+}
+
+public struct GIFFrameBitmap: Codable, Equatable, Sendable {
+    public let pixelSize: PixelSize
+    public let pixels: [GIFRGBAPixel]
+
+    public init(pixelSize: PixelSize, pixels: [GIFRGBAPixel]) throws {
+        guard pixels.count == pixelSize.width * pixelSize.height else {
+            throw GIFEngineModelError.invalidFrameBuffer
+        }
+
+        self.pixelSize = pixelSize
+        self.pixels = pixels
+    }
+
+    public func pixel(x: Int, y: Int) throws -> GIFRGBAPixel {
+        try pixels[linearIndex(x: x, y: y)]
+    }
+
+    public func linearIndex(x: Int, y: Int) throws -> Int {
+        guard x >= 0, x < pixelSize.width, y >= 0, y < pixelSize.height else {
+            throw GIFEngineModelError.pixelOutOfBounds
+        }
+
+        return y * pixelSize.width + x
+    }
+}
+
+public struct GIFIndexedFrame: Codable, Equatable, Sendable {
+    public let pixelSize: PixelSize
+    public let colorIndexes: [UInt8]
+
+    public init(pixelSize: PixelSize, colorIndexes: [UInt8]) throws {
+        guard colorIndexes.count == pixelSize.width * pixelSize.height else {
+            throw GIFEngineModelError.invalidFrameBuffer
+        }
+
+        self.pixelSize = pixelSize
+        self.colorIndexes = colorIndexes
+    }
+
+    public func colorIndex(x: Int, y: Int) throws -> UInt8 {
+        try colorIndexes[linearIndex(x: x, y: y)]
+    }
+
+    public func linearIndex(x: Int, y: Int) throws -> Int {
+        guard x >= 0, x < pixelSize.width, y >= 0, y < pixelSize.height else {
+            throw GIFEngineModelError.pixelOutOfBounds
+        }
+
+        return y * pixelSize.width + x
+    }
+}
+
+public struct GIFPixelRect: Codable, Equatable, Sendable {
+    public let x: Int
+    public let y: Int
+    public let width: Int
+    public let height: Int
+
+    public init(x: Int, y: Int, width: Int, height: Int) throws {
+        guard x >= 0, y >= 0, width > 0, height > 0 else {
+            throw GIFEngineModelError.invalidPixelRect
+        }
+
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+    }
+}
+
+public enum GIFFrameDisposal: String, Codable, CaseIterable, Equatable, Sendable {
+    case doNotDispose
+    case restoreToBackground
+}
+
+public struct GIFFrameDelta: Codable, Equatable, Sendable {
+    public let rect: GIFPixelRect
+    public let colorIndexes: [UInt8]
+    public let transparentColorIndex: UInt8
+    public let disposal: GIFFrameDisposal
+
+    public init(
+        rect: GIFPixelRect,
+        colorIndexes: [UInt8],
+        transparentColorIndex: UInt8,
+        disposal: GIFFrameDisposal = .doNotDispose
+    ) throws {
+        guard colorIndexes.count == rect.width * rect.height else {
+            throw GIFEngineModelError.invalidFrameBuffer
+        }
+
+        self.rect = rect
+        self.colorIndexes = colorIndexes
+        self.transparentColorIndex = transparentColorIndex
+        self.disposal = disposal
+    }
+}
+
+public struct GIFFrameDiffer: Sendable {
+    public init() {}
+
+    public func delta(
+        from previousFrame: GIFFrameBitmap?,
+        to currentFrame: GIFFrameBitmap,
+        indexedFrame: GIFIndexedFrame,
+        transparentColorIndex: UInt8 = 0,
+        lossyTolerance: Int = 0
+    ) throws -> GIFFrameDelta {
+        guard (0...32).contains(lossyTolerance) else {
+            throw GIFEngineModelError.invalidLossyTolerance
+        }
+
+        guard currentFrame.pixelSize == indexedFrame.pixelSize else {
+            throw GIFEngineModelError.frameSizeMismatch
+        }
+
+        guard let previousFrame else {
+            return try fullFrameDelta(
+                indexedFrame,
+                transparentColorIndex: transparentColorIndex
+            )
+        }
+
+        guard previousFrame.pixelSize == currentFrame.pixelSize else {
+            throw GIFEngineModelError.frameSizeMismatch
+        }
+
+        var minX = currentFrame.pixelSize.width
+        var minY = currentFrame.pixelSize.height
+        var maxX = -1
+        var maxY = -1
+
+        for y in 0..<currentFrame.pixelSize.height {
+            for x in 0..<currentFrame.pixelSize.width {
+                let index = y * currentFrame.pixelSize.width + x
+                if !isNearMatch(
+                    previousFrame.pixels[index],
+                    currentFrame.pixels[index],
+                    tolerance: lossyTolerance
+                ) {
+                    minX = min(minX, x)
+                    minY = min(minY, y)
+                    maxX = max(maxX, x)
+                    maxY = max(maxY, y)
+                }
+            }
+        }
+
+        guard maxX >= minX, maxY >= minY else {
+            return try transparentDelta(
+                at: currentFrame.pixelSize,
+                transparentColorIndex: transparentColorIndex
+            )
+        }
+
+        let rect = try GIFPixelRect(
+            x: minX,
+            y: minY,
+            width: maxX - minX + 1,
+            height: maxY - minY + 1
+        )
+        return try GIFFrameDelta(
+            rect: rect,
+            colorIndexes: croppedIndexes(from: indexedFrame, rect: rect),
+            transparentColorIndex: transparentColorIndex
+        )
+    }
+
+    private func fullFrameDelta(
+        _ frame: GIFIndexedFrame,
+        transparentColorIndex: UInt8
+    ) throws -> GIFFrameDelta {
+        try GIFFrameDelta(
+            rect: GIFPixelRect(
+                x: 0,
+                y: 0,
+                width: frame.pixelSize.width,
+                height: frame.pixelSize.height
+            ),
+            colorIndexes: frame.colorIndexes,
+            transparentColorIndex: transparentColorIndex
+        )
+    }
+
+    private func transparentDelta(
+        at pixelSize: PixelSize,
+        transparentColorIndex: UInt8
+    ) throws -> GIFFrameDelta {
+        try GIFFrameDelta(
+            rect: GIFPixelRect(x: 0, y: 0, width: 1, height: 1),
+            colorIndexes: [transparentColorIndex],
+            transparentColorIndex: transparentColorIndex
+        )
+    }
+
+    private func croppedIndexes(
+        from frame: GIFIndexedFrame,
+        rect: GIFPixelRect
+    ) -> [UInt8] {
+        var indexes: [UInt8] = []
+        indexes.reserveCapacity(rect.width * rect.height)
+
+        for y in rect.y..<(rect.y + rect.height) {
+            let rowStart = y * frame.pixelSize.width + rect.x
+            indexes.append(
+                contentsOf: frame.colorIndexes[rowStart..<(rowStart + rect.width)]
+            )
+        }
+
+        return indexes
+    }
+
+    private func isNearMatch(
+        _ lhs: GIFRGBAPixel,
+        _ rhs: GIFRGBAPixel,
+        tolerance: Int
+    ) -> Bool {
+        abs(Int(lhs.red) - Int(rhs.red)) <= tolerance
+            && abs(Int(lhs.green) - Int(rhs.green)) <= tolerance
+            && abs(Int(lhs.blue) - Int(rhs.blue)) <= tolerance
+            && abs(Int(lhs.alpha) - Int(rhs.alpha)) <= tolerance
+    }
+}
+
 public enum GIFEngineModelError: Error, Equatable {
     case invalidLoopCount
     case invalidColor
@@ -341,4 +579,8 @@ public enum GIFEngineModelError: Error, Equatable {
     case invalidFrameCount
     case invalidFrameDuration
     case invalidCentisecondDelay
+    case invalidFrameBuffer
+    case invalidPixelRect
+    case pixelOutOfBounds
+    case frameSizeMismatch
 }

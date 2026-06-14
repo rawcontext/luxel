@@ -126,4 +126,168 @@ struct GIFEngineModelTests {
             _ = try planner.frameIndexes(frameCount: 4, loopMode: .count(0))
         }
     }
+
+    @Test("frame bitmaps validate storage and expose pixel addressing")
+    func frameBitmapsValidateStorageAndExposePixelAddressing() throws {
+        let pixelSize = try PixelSize(width: 2, height: 2)
+        let bitmap = try GIFFrameBitmap(
+            pixelSize: pixelSize,
+            pixels: [
+                GIFRGBAPixel(red: 0, green: 0, blue: 0),
+                GIFRGBAPixel(red: 10, green: 20, blue: 30),
+                GIFRGBAPixel(red: 40, green: 50, blue: 60),
+                GIFRGBAPixel(red: 70, green: 80, blue: 90)
+            ]
+        )
+        let indexed = try GIFIndexedFrame(pixelSize: pixelSize, colorIndexes: [0, 1, 2, 3])
+
+        #expect(try bitmap.pixel(x: 1, y: 0) == GIFRGBAPixel(red: 10, green: 20, blue: 30))
+        #expect(try bitmap.linearIndex(x: 0, y: 1) == 2)
+        #expect(try indexed.colorIndex(x: 1, y: 1) == 3)
+        #expect(throws: GIFEngineModelError.invalidFrameBuffer) {
+            _ = try GIFFrameBitmap(pixelSize: pixelSize, pixels: [GIFRGBAPixel(red: 0, green: 0, blue: 0)])
+        }
+        #expect(throws: GIFEngineModelError.invalidFrameBuffer) {
+            _ = try GIFIndexedFrame(pixelSize: pixelSize, colorIndexes: [0, 1])
+        }
+        #expect(throws: GIFEngineModelError.pixelOutOfBounds) {
+            _ = try bitmap.pixel(x: 2, y: 0)
+        }
+    }
+
+    @Test("frame differ emits full first frame and transparent static deltas")
+    func frameDifferEmitsFullFirstFrameAndTransparentStaticDeltas() throws {
+        let bitmap = try solidBitmap(width: 3, height: 2, color: GIFRGBAPixel(red: 10, green: 20, blue: 30))
+        let indexed = try indexedFrame(width: 3, height: 2, indexes: [1, 2, 3, 4, 5, 6])
+        let differ = GIFFrameDiffer()
+
+        let first = try differ.delta(from: nil, to: bitmap, indexedFrame: indexed, transparentColorIndex: 0)
+        let repeated = try differ.delta(from: bitmap, to: bitmap, indexedFrame: indexed, transparentColorIndex: 0)
+
+        #expect(first.rect == (try GIFPixelRect(x: 0, y: 0, width: 3, height: 2)))
+        #expect(first.colorIndexes == [1, 2, 3, 4, 5, 6])
+        #expect(first.transparentColorIndex == 0)
+        #expect(first.disposal == .doNotDispose)
+        #expect(repeated.rect == (try GIFPixelRect(x: 0, y: 0, width: 1, height: 1)))
+        #expect(repeated.colorIndexes == [0])
+        #expect(repeated.transparentColorIndex == 0)
+        #expect(repeated.disposal == .doNotDispose)
+    }
+
+    @Test("frame differ crops moving regions to changed bounds")
+    func frameDifferCropsMovingRegionsToChangedBounds() throws {
+        let previous = try solidBitmap(width: 4, height: 3, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
+        let current = try bitmap(
+            width: 4,
+            height: 3,
+            changedPixels: [
+                (x: 1, y: 1, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0)),
+                (x: 2, y: 1, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0)),
+                (x: 1, y: 2, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0)),
+                (x: 2, y: 2, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0))
+            ]
+        )
+        let indexed = try indexedFrame(width: 4, height: 3, indexes: Array(0...11))
+
+        let delta = try GIFFrameDiffer().delta(
+            from: previous,
+            to: current,
+            indexedFrame: indexed,
+            transparentColorIndex: 0
+        )
+
+        #expect(delta.rect == (try GIFPixelRect(x: 1, y: 1, width: 2, height: 2)))
+        #expect(delta.colorIndexes == [5, 6, 9, 10])
+    }
+
+    @Test("frame differ applies lossy tolerance before differencing")
+    func frameDifferAppliesLossyToleranceBeforeDifferencing() throws {
+        let previous = try solidBitmap(width: 2, height: 1, color: GIFRGBAPixel(red: 10, green: 10, blue: 10))
+        let current = try bitmap(
+            width: 2,
+            height: 1,
+            baseColor: GIFRGBAPixel(red: 10, green: 10, blue: 10),
+            changedPixels: [
+                (x: 0, y: 0, pixel: GIFRGBAPixel(red: 14, green: 10, blue: 10))
+            ]
+        )
+        let indexed = try indexedFrame(width: 2, height: 1, indexes: [7, 8])
+        let differ = GIFFrameDiffer()
+
+        let tolerated = try differ.delta(
+            from: previous,
+            to: current,
+            indexedFrame: indexed,
+            transparentColorIndex: 0,
+            lossyTolerance: 4
+        )
+        let strict = try differ.delta(
+            from: previous,
+            to: current,
+            indexedFrame: indexed,
+            transparentColorIndex: 0,
+            lossyTolerance: 3
+        )
+
+        #expect(tolerated.rect == (try GIFPixelRect(x: 0, y: 0, width: 1, height: 1)))
+        #expect(tolerated.colorIndexes == [0])
+        #expect(strict.rect == (try GIFPixelRect(x: 0, y: 0, width: 1, height: 1)))
+        #expect(strict.colorIndexes == [7])
+    }
+
+    @Test("frame differ rejects invalid geometry and mismatched frames")
+    func frameDifferRejectsInvalidGeometryAndMismatchedFrames() throws {
+        let previous = try solidBitmap(width: 2, height: 2, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
+        let current = try solidBitmap(width: 3, height: 2, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
+        let indexed = try indexedFrame(width: 3, height: 2, indexes: [0, 1, 2, 3, 4, 5])
+        let wrongIndexed = try indexedFrame(width: 2, height: 2, indexes: [0, 1, 2, 3])
+
+        #expect(throws: GIFEngineModelError.frameSizeMismatch) {
+            _ = try GIFFrameDiffer().delta(from: previous, to: current, indexedFrame: indexed)
+        }
+        #expect(throws: GIFEngineModelError.frameSizeMismatch) {
+            _ = try GIFFrameDiffer().delta(from: nil, to: current, indexedFrame: wrongIndexed)
+        }
+        #expect(throws: GIFEngineModelError.invalidLossyTolerance) {
+            _ = try GIFFrameDiffer().delta(from: nil, to: current, indexedFrame: indexed, lossyTolerance: 33)
+        }
+        #expect(throws: GIFEngineModelError.invalidPixelRect) {
+            _ = try GIFPixelRect(x: 0, y: 0, width: 0, height: 1)
+        }
+    }
+
+    private func solidBitmap(width: Int, height: Int, color: GIFRGBAPixel) throws -> GIFFrameBitmap {
+        try GIFFrameBitmap(
+            pixelSize: PixelSize(width: width, height: height),
+            pixels: Array(repeating: color, count: width * height)
+        )
+    }
+
+    private func bitmap(
+        width: Int,
+        height: Int,
+        baseColor: GIFRGBAPixel = GIFRGBAPixel(red: 0, green: 0, blue: 0),
+        changedPixels: [(x: Int, y: Int, pixel: GIFRGBAPixel)]
+    ) throws -> GIFFrameBitmap {
+        var pixels = Array(
+            repeating: baseColor,
+            count: width * height
+        )
+
+        for changedPixel in changedPixels {
+            pixels[changedPixel.y * width + changedPixel.x] = changedPixel.pixel
+        }
+
+        return try GIFFrameBitmap(
+            pixelSize: PixelSize(width: width, height: height),
+            pixels: pixels
+        )
+    }
+
+    private func indexedFrame(width: Int, height: Int, indexes: [UInt8]) throws -> GIFIndexedFrame {
+        try GIFIndexedFrame(
+            pixelSize: PixelSize(width: width, height: height),
+            colorIndexes: indexes
+        )
+    }
 }
