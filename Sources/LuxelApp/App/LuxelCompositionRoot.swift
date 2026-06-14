@@ -32,8 +32,12 @@ enum LuxelCompositionRoot {
         }
     }
 
-    static func captureRecorder() -> any CaptureRecorder {
-        ScreenCaptureKitRecorder()
+    static func captureRecorder(
+        exclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry()
+    ) -> any CaptureRecorder {
+        ScreenCaptureKitRecorder(
+            contentFilterProvider: ShareableContentFilterProvider(exclusionRegistry: exclusionRegistry)
+        )
     }
 
     static func audioRecorder() -> any AudioRecorder {

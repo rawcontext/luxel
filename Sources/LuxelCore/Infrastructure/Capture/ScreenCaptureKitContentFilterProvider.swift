@@ -6,7 +6,11 @@ public protocol ScreenCaptureKitContentFilterProvider: Sendable {
 }
 
 public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvider {
-    public init() {}
+    private let exclusionRegistry: CaptureExclusionRegistry?
+
+    public init(exclusionRegistry: CaptureExclusionRegistry? = nil) {
+        self.exclusionRegistry = exclusionRegistry
+    }
 
     public func contentFilter(for target: CaptureTarget) async throws -> SCContentFilter {
         let content = try await SCShareableContent.current
@@ -17,7 +21,10 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
                 throw ScreenCaptureKitContentFilterProviderError.displayUnavailable(displayID)
             }
 
-            return SCContentFilter(display: display, excludingWindows: [])
+            return SCContentFilter(
+                display: display,
+                excludingWindows: await excludedWindows(from: content)
+            )
 
         case .window(let id):
             guard let window = content.windows.first(where: { $0.windowID == id }) else {
@@ -26,6 +33,15 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
 
             return SCContentFilter(desktopIndependentWindow: window)
         }
+    }
+
+    private func excludedWindows(from content: SCShareableContent) async -> [SCWindow] {
+        guard let exclusionRegistry else {
+            return []
+        }
+
+        let excludedWindowIDs = Set(await exclusionRegistry.excludedWindowIDs())
+        return content.windows.filter { excludedWindowIDs.contains($0.windowID) }
     }
 }
 

@@ -32,6 +32,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let recordingLifecycleService: RecordingLifecycleService
     @ObservationIgnored let audioRecordingLifecycleService: AudioRecordingLifecycleService
     @ObservationIgnored let captureTargetService: CaptureTargetService
+    @ObservationIgnored let captureExclusionRegistry: CaptureExclusionRegistry
     @ObservationIgnored let audioInputDeviceService: AudioInputDeviceService
     @ObservationIgnored let audioLevelMonitorFactory: () -> any AudioLevelMonitor
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
@@ -58,6 +59,7 @@ final class LuxelMenuModel {
         captureTargetService: CaptureTargetService = CaptureTargetService(
             catalog: ScreenCaptureKitCaptureTargetCatalog()
         ),
+        captureExclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry(),
         audioInputDeviceService: AudioInputDeviceService = AudioInputDeviceService(
             catalog: AVFoundationAudioInputDeviceCatalog(),
             updateSource: AVFoundationAudioInputDeviceUpdateSource()
@@ -80,7 +82,7 @@ final class LuxelMenuModel {
         fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver = FullscreenCaptureTargetResolver(),
         screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter = AppKitScreenshotThumbnailPresenter(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
-        recorder: any CaptureRecorder = LuxelCompositionRoot.captureRecorder(),
+        recorder: (any CaptureRecorder)? = nil,
         audioRecorder: any AudioRecorder = LuxelCompositionRoot.audioRecorder()
     ) {
         self.settingsStore = settingsStore
@@ -88,6 +90,7 @@ final class LuxelMenuModel {
         self.launchAtLoginService = launchAtLoginService
         self.recordingHistoryService = recordingHistoryService
         self.captureTargetService = captureTargetService
+        self.captureExclusionRegistry = captureExclusionRegistry
         self.audioInputDeviceService = audioInputDeviceService
         self.audioLevelMonitorFactory = audioLevelMonitorFactory
         self.fileWorkflowService = fileWorkflowService
@@ -106,7 +109,9 @@ final class LuxelMenuModel {
         self.screenshotThumbnailPresenter = screenshotThumbnailPresenter
         self.appMetadata = appMetadata
         self.recordingLifecycleService = RecordingLifecycleService(
-            recorder: recorder,
+            recorder: recorder ?? LuxelCompositionRoot.captureRecorder(
+                exclusionRegistry: captureExclusionRegistry
+            ),
             history: recordingHistoryService,
             userNotifier: UserNotificationsNotifier()
         )
