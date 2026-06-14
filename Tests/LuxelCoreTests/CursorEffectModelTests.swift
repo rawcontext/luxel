@@ -28,6 +28,115 @@ struct CursorEffectModelTests {
         #expect(point == (try CursorPoint(x: -50, y: 250)))
     }
 
+    @Test("path smoother returns exact samples and linearly interpolates when off")
+    func pathSmootherReturnsExactSamplesAndLinearlyInterpolatesWhenOff() throws {
+        let samples = [
+            try cursorSample(time: 0, x: 0, y: 0),
+            try cursorSample(time: 1, x: 10, y: 10)
+        ]
+
+        let exact = try CursorPathSmoother.sample(at: 0, from: samples, level: .off)
+        let midpoint = try CursorPathSmoother.sample(at: 0.5, from: samples, level: .off)
+
+        #expect(exact == samples[0])
+        #expect(midpoint == (try cursorSample(time: 0.5, x: 5, y: 5)))
+    }
+
+    @Test("path smoother applies Catmull Rom strength by smoothing level")
+    func pathSmootherAppliesCatmullRomStrengthBySmoothingLevel() throws {
+        let samples = [
+            try cursorSample(time: 0, x: 0, y: 10),
+            try cursorSample(time: 1, x: 0, y: 0),
+            try cursorSample(time: 2, x: 10, y: 10),
+            try cursorSample(time: 3, x: 10, y: -10)
+        ]
+
+        let light = try #require(try CursorPathSmoother.sample(at: 1.5, from: samples, level: .light))
+        let medium = try #require(try CursorPathSmoother.sample(at: 1.5, from: samples, level: .medium))
+
+        #expect(light.position == (try CursorPoint(x: 5, y: 5.3125)))
+        #expect(medium.position == (try CursorPoint(x: 5, y: 5.625)))
+        #expect(light.cursorImageID == "arrow")
+        #expect(medium.cursorImageID == "arrow")
+    }
+
+    @Test("path smoother clamps Catmull Rom overshoot at segment bounds")
+    func pathSmootherClampsCatmullRomOvershootAtSegmentBounds() throws {
+        let samples = [
+            try cursorSample(time: 0, x: 0, y: 0),
+            try cursorSample(time: 1, x: 0, y: 0),
+            try cursorSample(time: 2, x: 10, y: 0),
+            try cursorSample(time: 3, x: 10, y: 10)
+        ]
+
+        let smoothed = try #require(try CursorPathSmoother.sample(at: 1.25, from: samples, level: .medium))
+
+        #expect(smoothed.position == (try CursorPoint(x: 2.03125, y: 0)))
+    }
+
+    @Test("path smoother treats out of bounds samples as gaps")
+    func pathSmootherTreatsOutOfBoundsSamplesAsGaps() throws {
+        let samples = [
+            try cursorSample(time: 0, x: 0, y: 0),
+            try cursorSample(time: 1, x: 10, y: 10),
+            try cursorSample(time: 2, x: -10, y: 10),
+            try cursorSample(time: 3, x: 20, y: 20)
+        ]
+        let frameSize = try PixelSize(width: 100, height: 100)
+
+        let visible = try CursorPathSmoother.sample(
+            at: 0.5,
+            from: samples,
+            level: .medium,
+            frameSize: frameSize
+        )
+        let leaving = try CursorPathSmoother.sample(
+            at: 1.5,
+            from: samples,
+            level: .medium,
+            frameSize: frameSize
+        )
+        let outside = try CursorPathSmoother.sample(
+            at: 2,
+            from: samples,
+            level: .medium,
+            frameSize: frameSize
+        )
+        let reentering = try CursorPathSmoother.sample(
+            at: 2.5,
+            from: samples,
+            level: .medium,
+            frameSize: frameSize
+        )
+        let reentered = try CursorPathSmoother.sample(
+            at: 3,
+            from: samples,
+            level: .medium,
+            frameSize: frameSize
+        )
+
+        #expect(visible != nil)
+        #expect(leaving == nil)
+        #expect(outside == nil)
+        #expect(reentering == nil)
+        #expect(reentered == samples[3])
+    }
+
+    @Test("path smoother validates sample ordering and target time")
+    func pathSmootherValidatesSampleOrderingAndTargetTime() throws {
+        let samples = [
+            try cursorSample(time: 1, x: 0, y: 0),
+            try cursorSample(time: 0, x: 10, y: 10)
+        ]
+
+        #expect(throws: CursorEffectModelError.invalidTime) {
+            _ = try CursorPathSmoother.sample(at: -.leastNonzeroMagnitude, from: [], level: .off)
+        }
+        #expect(throws: CursorEffectModelError.unsortedEvents) {
+            _ = try CursorPathSmoother.sample(at: 0.5, from: samples, level: .off)
+        }
+    }
+
     @Test("timeline stores sorted samples clicks toggles and cursor images")
     func timelineStoresSortedEventsAndImages() throws {
         let arrow = try cursorImage(id: "arrow")
@@ -201,6 +310,14 @@ struct CursorEffectModelTests {
             pngData: Data([0x89, 0x50, 0x4E, 0x47]),
             hotspot: CursorPoint(x: 1, y: 2),
             scale: 2
+        )
+    }
+
+    private func cursorSample(time: TimeInterval, x: Double, y: Double) throws -> CursorSample {
+        try CursorSample(
+            time: time,
+            position: CursorPoint(x: x, y: y),
+            cursorImageID: "arrow"
         )
     }
 }
