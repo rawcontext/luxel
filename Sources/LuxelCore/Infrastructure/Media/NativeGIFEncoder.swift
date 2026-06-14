@@ -2,6 +2,7 @@ import Foundation
 
 struct NativeGIFEncoder: Sendable {
     private let transparentColorIndex = UInt8(0)
+    private let alphaTransparencyThreshold = UInt8(128)
 
     func sequencedFrames(
         from frames: [GIFFrameBitmap],
@@ -20,7 +21,8 @@ struct NativeGIFEncoder: Sendable {
     ) throws -> Data {
         let sourcePalette = try MedianCutPaletteBuilder().palette(
             from: frames,
-            maxColorCount: min(options.paletteSize, 255)
+            maxColorCount: min(options.paletteSize, 255),
+            transparentAlphaThreshold: alphaTransparencyThreshold
         )
         let palette = try GIFColorPalette(colors: [
             GIFPaletteColor(red: 0, green: 0, blue: 0)
@@ -31,10 +33,12 @@ struct NativeGIFEncoder: Sendable {
                 palette: sourcePalette,
                 dithering: options.dithering
             )
-            .map(shiftedIndexedFrame)
+        let outputIndexedFrames = try zip(frames, indexedFrames).map { bitmap, indexedFrame in
+            try shiftedIndexedFrame(indexedFrame, transparencyFrom: bitmap)
+        }
         let deltas = try frameDeltas(
             bitmaps: frames,
-            indexedFrames: indexedFrames,
+            indexedFrames: outputIndexedFrames,
             lossyTolerance: options.lossyTolerance
         )
         let delays = try CentisecondDelayPlanner().plan(
@@ -75,10 +79,19 @@ struct NativeGIFEncoder: Sendable {
         return deltas
     }
 
-    private func shiftedIndexedFrame(_ frame: GIFIndexedFrame) throws -> GIFIndexedFrame {
-        try GIFIndexedFrame(
+    private func shiftedIndexedFrame(
+        _ frame: GIFIndexedFrame,
+        transparencyFrom bitmap: GIFFrameBitmap
+    ) throws -> GIFIndexedFrame {
+        guard frame.pixelSize == bitmap.pixelSize else {
+            throw GIFEngineModelError.frameSizeMismatch
+        }
+
+        return try GIFIndexedFrame(
             pixelSize: frame.pixelSize,
-            colorIndexes: frame.colorIndexes.map { $0 + 1 }
+            colorIndexes: zip(bitmap.pixels, frame.colorIndexes).map { pixel, colorIndex in
+                pixel.alpha < alphaTransparencyThreshold ? transparentColorIndex : colorIndex + 1
+            }
         )
     }
 }

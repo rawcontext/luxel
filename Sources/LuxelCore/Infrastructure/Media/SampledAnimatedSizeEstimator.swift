@@ -212,6 +212,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
                 request: request,
                 outputPixelSize: outputPixelSize,
                 schedule: schedule,
+                backgroundMatte: options.backgroundMatte,
                 imageGenerator: imageGenerator
             )
             sampleFrames.append(frame)
@@ -329,6 +330,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
                 request: request,
                 outputPixelSize: outputPixelSize,
                 schedule: schedule,
+                backgroundMatte: options.backgroundMatte,
                 imageGenerator: imageGenerator
             )
             let secondFrame = try await renderedGIFFrame(
@@ -336,6 +338,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
                 request: request,
                 outputPixelSize: outputPixelSize,
                 schedule: schedule,
+                backgroundMatte: options.backgroundMatte,
                 imageGenerator: imageGenerator
             )
             let frameDelay = schedule.frameDelay
@@ -398,6 +401,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         request: ExportRequest,
         outputPixelSize: PixelSize,
         schedule: AnimatedFrameSchedule,
+        backgroundMatte: RGBColor?,
         imageGenerator: AVAssetImageGenerator
     ) async throws -> GIFFrameBitmap {
         let sourceFrame = try await imageGenerator.image(
@@ -408,6 +412,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             sourceFrame,
             outputPixelSize: outputPixelSize,
             shouldCrop: request.shouldCrop,
+            backgroundMatte: backgroundMatte,
             cameraTransform: try cameraTransform(
                 for: schedule.frameTimes[index],
                 request: request,

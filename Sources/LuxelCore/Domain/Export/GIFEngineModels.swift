@@ -427,7 +427,8 @@ public struct MedianCutPaletteBuilder: Sendable {
 
     public func palette(
         from frames: [GIFFrameBitmap],
-        maxColorCount: Int
+        maxColorCount: Int,
+        transparentAlphaThreshold: UInt8? = nil
     ) throws -> GIFColorPalette {
         guard !frames.isEmpty else {
             throw GIFEngineModelError.invalidFrameCount
@@ -437,9 +438,15 @@ public struct MedianCutPaletteBuilder: Sendable {
             throw GIFEngineModelError.invalidPaletteSize
         }
 
-        let weightedColors = weightedSampledColors(from: frames)
+        let weightedColors = weightedSampledColors(
+            from: frames,
+            transparentAlphaThreshold: transparentAlphaThreshold
+        )
         guard !weightedColors.isEmpty else {
-            throw GIFEngineModelError.invalidFrameBuffer
+            return try GIFColorPalette(colors: normalizedPaletteColors(
+                [.black],
+                maxColorCount: maxColorCount
+            ))
         }
 
         if weightedColors.count <= maxColorCount {
@@ -467,11 +474,18 @@ public struct MedianCutPaletteBuilder: Sendable {
         ))
     }
 
-    private func weightedSampledColors(from frames: [GIFFrameBitmap]) -> [WeightedGIFColor] {
+    private func weightedSampledColors(
+        from frames: [GIFFrameBitmap],
+        transparentAlphaThreshold: UInt8?
+    ) -> [WeightedGIFColor] {
         var counts: [GIFPaletteColor: Int] = [:]
 
         for frame in frames {
             for pixel in sampledPixels(from: frame) {
+                if let transparentAlphaThreshold, pixel.alpha < transparentAlphaThreshold {
+                    continue
+                }
+
                 counts[GIFPaletteColor(pixel: pixel), default: 0] += 1
             }
         }

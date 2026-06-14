@@ -38,6 +38,7 @@ struct AnimatedFrameRenderer: Sendable {
         _ image: CGImage,
         outputPixelSize: PixelSize,
         shouldCrop: Bool,
+        backgroundMatte: RGBColor? = nil,
         cameraTransform: CameraTransform = .identity
     ) throws -> GIFFrameBitmap {
         let drawableImage = try cameraFrame(for: image, cameraTransform: cameraTransform)
@@ -65,7 +66,7 @@ struct AnimatedFrameRenderer: Sendable {
                 throw AnimatedFrameRendererError.cannotCreateFrameContext
             }
 
-            context.setFillColor(CGColor(gray: 0, alpha: 1))
+            context.setFillColor(Self.backgroundFillColor(backgroundMatte))
             context.fill(CGRect(origin: .zero, size: outputSize))
             context.interpolationQuality = .high
             context.draw(drawableImage, in: drawRect(for: drawableImage, outputSize: outputSize, shouldCrop: shouldCrop))
@@ -74,15 +75,32 @@ struct AnimatedFrameRenderer: Sendable {
         var pixels: [GIFRGBAPixel] = []
         pixels.reserveCapacity(outputPixelSize.width * outputPixelSize.height)
         for offset in stride(from: 0, to: bytes.count, by: bytesPerPixel) {
+            let alpha = bytes[offset + 3]
             pixels.append(GIFRGBAPixel(
-                red: bytes[offset],
-                green: bytes[offset + 1],
-                blue: bytes[offset + 2],
-                alpha: bytes[offset + 3]
+                red: Self.unpremultipliedComponent(bytes[offset], alpha: alpha),
+                green: Self.unpremultipliedComponent(bytes[offset + 1], alpha: alpha),
+                blue: Self.unpremultipliedComponent(bytes[offset + 2], alpha: alpha),
+                alpha: alpha
             ))
         }
 
         return try GIFFrameBitmap(pixelSize: outputPixelSize, pixels: pixels)
+    }
+
+    private static func backgroundFillColor(_ matte: RGBColor?) -> CGColor {
+        guard let matte else {
+            return CGColor(gray: 0, alpha: 0)
+        }
+
+        return CGColor(red: matte.red, green: matte.green, blue: matte.blue, alpha: 1)
+    }
+
+    private static func unpremultipliedComponent(_ component: UInt8, alpha: UInt8) -> UInt8 {
+        guard alpha > 0, alpha < 255 else {
+            return component
+        }
+
+        return UInt8(min(255, (Int(component) * 255 + Int(alpha) / 2) / Int(alpha)))
     }
 
     private func cameraFrame(for image: CGImage, cameraTransform: CameraTransform) throws -> CGImage {

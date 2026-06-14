@@ -177,6 +177,26 @@ struct GIFEngineModelTests {
         ])
     }
 
+    @Test("median cut palette ignores transparent pixels when requested")
+    func medianCutPaletteIgnoresTransparentPixelsWhenRequested() throws {
+        let frame = try GIFFrameBitmap(
+            pixelSize: PixelSize(width: 2, height: 1),
+            pixels: [
+                GIFRGBAPixel(red: 255, green: 0, blue: 0, alpha: 0),
+                GIFRGBAPixel(red: 0, green: 255, blue: 0, alpha: 255)
+            ]
+        )
+
+        let palette = try MedianCutPaletteBuilder().palette(
+            from: [frame],
+            maxColorCount: 2,
+            transparentAlphaThreshold: 128
+        )
+
+        #expect(palette.colors.contains(GIFPaletteColor(red: 0, green: 255, blue: 0)))
+        #expect(!palette.colors.contains(GIFPaletteColor(red: 255, green: 0, blue: 0)))
+    }
+
     @Test("median cut palette caps output and is deterministic")
     func medianCutPaletteCapsOutputAndIsDeterministic() throws {
         var pixels: [GIFRGBAPixel] = []

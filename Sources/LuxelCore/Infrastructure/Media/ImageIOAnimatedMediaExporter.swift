@@ -113,6 +113,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
             request: request,
             outputPixelSize: outputPixelSize,
             shouldCrop: request.shouldCrop,
+            backgroundMatte: options.backgroundMatte,
             imageGenerator: imageGenerator
         )
         let frames = try encoder.sequencedFrames(from: baseFrames, loopMode: options.loopMode)
@@ -137,6 +138,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         request: ExportRequest,
         outputPixelSize: PixelSize,
         shouldCrop: Bool,
+        backgroundMatte: RGBColor?,
         imageGenerator: AVAssetImageGenerator
     ) async throws -> [GIFFrameBitmap] {
         var frames: [GIFFrameBitmap] = []
@@ -155,6 +157,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
                 frame,
                 outputPixelSize: outputPixelSize,
                 shouldCrop: shouldCrop,
+                backgroundMatte: backgroundMatte,
                 cameraTransform: try cameraTransform(
                     for: time,
                     request: request,
