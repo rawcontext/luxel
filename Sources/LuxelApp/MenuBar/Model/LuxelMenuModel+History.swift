@@ -25,6 +25,7 @@ extension LuxelMenuModel {
             captureTargets = []
             selectedCaptureTargetID = nil
             captureTargetStatusMessage = nil
+            syncCameraPreviewSnapArea()
             return
         }
 
@@ -34,10 +35,12 @@ extension LuxelMenuModel {
                 selectedCaptureTargetID = captureTargets.first?.id
             }
             captureTargetStatusMessage = captureTargets.isEmpty ? "No capture targets found" : nil
+            syncCameraPreviewSnapArea()
         } catch {
             captureTargets = []
             selectedCaptureTargetID = nil
             captureTargetStatusMessage = errorMessage(error)
+            syncCameraPreviewSnapArea()
         }
     }
 

@@ -12,6 +12,9 @@ struct LuxelCaptureTargetPicker: View {
                 }
             }
             .pickerStyle(.menu)
+            .onChange(of: model.selectedCaptureTargetID) {
+                model.syncCameraPreviewSnapArea()
+            }
         }
 
         if let captureTargetStatusMessage = model.captureTargetStatusMessage {

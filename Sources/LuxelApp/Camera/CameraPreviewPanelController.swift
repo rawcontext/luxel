@@ -8,12 +8,14 @@ final class CameraPreviewPanelController {
     private var panel: NSPanel?
     private var session: AVCaptureSession?
     private var panelOriginsByDisplayID: [DisplayID: NSPoint] = [:]
+    private var snapRect: NSRect?
     private var onPlacementChange: (@MainActor (DisplayID, CameraPreviewPlacement) -> Void)?
 
     func present(
         deviceID: String,
         style: CameraPreviewStyle,
         placements: [DisplayID: CameraPreviewPlacement] = [:],
+        snapRect: NSRect? = nil,
         showsHoverControls: Bool = true,
         onPlacementChange: @escaping @MainActor (DisplayID, CameraPreviewPlacement) -> Void = { _, _ in },
         onClose: @escaping @MainActor () -> Void = {}
@@ -21,6 +23,7 @@ final class CameraPreviewPanelController {
         let preferredDisplayID = panel.flatMap { Self.screen(containing: $0.frame)?.displayID }
         close()
         panelOriginsByDisplayID = placements.mapValues(\.point)
+        self.snapRect = snapRect
         self.onPlacementChange = onPlacementChange
 
         guard let device = Self.captureDevice(deviceID: deviceID) else {
@@ -36,6 +39,9 @@ final class CameraPreviewPanelController {
                 session: session,
                 style: style,
                 showsHoverControls: showsHoverControls,
+                snapOrigin: { [weak self] frame in
+                    Self.snappedOrigin(for: frame, snapRect: self?.snapRect)
+                },
                 onMove: { [weak self] frame in
                     self?.rememberPanelOrigin(frame: frame)
                 },
@@ -60,6 +66,7 @@ final class CameraPreviewPanelController {
         rememberPanelOrigin()
         panel?.close()
         panel = nil
+        snapRect = nil
         onPlacementChange = nil
 
         guard let session else {
@@ -77,6 +84,26 @@ final class CameraPreviewPanelController {
 
     func setHoverControlsEnabled(_ isEnabled: Bool) {
         (panel?.contentView as? CameraPreviewPanelView)?.setHoverControlsEnabled(isEnabled)
+    }
+
+    func setSnapRect(_ snapRect: NSRect?) {
+        self.snapRect = snapRect
+
+        guard let panel else {
+            return
+        }
+
+        let origin = Self.constrainedOrigin(
+            panel.frame.origin,
+            size: panel.frame.size,
+            in: constraintRect(for: panel.frame)
+        )
+        guard origin != panel.frame.origin else {
+            return
+        }
+
+        panel.setFrameOrigin(origin)
+        rememberPanelOrigin(frame: NSRect(origin: origin, size: panel.frame.size))
     }
 
     private static func makeSession(device: AVCaptureDevice) throws -> AVCaptureSession {
@@ -102,6 +129,7 @@ final class CameraPreviewPanelController {
         session: AVCaptureSession,
         style: CameraPreviewStyle,
         showsHoverControls: Bool,
+        snapOrigin: @escaping (NSRect) -> NSPoint,
         onMove: @escaping (NSRect) -> Void,
         onClose: @escaping @MainActor () -> Void
     ) -> NSPanel {
@@ -121,6 +149,7 @@ final class CameraPreviewPanelController {
             session: session,
             style: style,
             showsHoverControls: showsHoverControls,
+            snapOrigin: snapOrigin,
             onMove: onMove,
             onClose: onClose
         )
@@ -128,27 +157,33 @@ final class CameraPreviewPanelController {
     }
 
     private func panelFrame(size: CGSize, preferredDisplayID: DisplayID?) -> NSRect {
-        let screen = preferredDisplayID.flatMap(Self.screen(displayID:))
+        let screen = snapRect.flatMap(Self.screen(containing:))
+            ?? preferredDisplayID.flatMap(Self.screen(displayID:))
             ?? NSScreen.main
             ?? NSScreen.screens.first
         let displayID = screen?.displayID
+        let constraintRect = snapRect ?? screen?.visibleFrame ?? .zero
 
         if let displayID,
-           let origin = panelOriginsByDisplayID[displayID],
-           let screen {
+           let origin = panelOriginsByDisplayID[displayID] {
             return NSRect(
-                origin: Self.constrainedOrigin(origin, size: size, in: screen),
+                origin: Self.constrainedOrigin(origin, size: size, in: constraintRect),
                 size: size
             )
         }
 
-        let visibleFrame = screen?.visibleFrame ?? .zero
         return NSRect(
-            x: visibleFrame.maxX - size.width - Self.edgeMargin,
-            y: visibleFrame.minY + Self.edgeMargin,
+            x: constraintRect.maxX - size.width - Self.edgeMargin,
+            y: constraintRect.minY + Self.edgeMargin,
             width: size.width,
             height: size.height
         )
+    }
+
+    private func constraintRect(for frame: NSRect) -> NSRect {
+        snapRect
+            ?? Self.screen(containing: frame)?.visibleFrame
+            ?? .zero
     }
 
     private func rememberPanelOrigin() {
@@ -191,12 +226,12 @@ final class CameraPreviewPanelController {
             ?? NSScreen.screens.first
     }
 
-    fileprivate static func snappedOrigin(for frame: NSRect) -> NSPoint {
-        guard let screen = screen(containing: frame) else {
+    fileprivate static func snappedOrigin(for frame: NSRect, snapRect: NSRect?) -> NSPoint {
+        guard let constraintRect = snapRect ?? screen(containing: frame)?.visibleFrame else {
             return frame.origin
         }
 
-        let candidates = cornerOrigins(size: frame.size, in: screen)
+        let candidates = cornerOrigins(size: frame.size, in: constraintRect)
         let closest = candidates.min { first, second in
             first.distance(to: frame.origin) < second.distance(to: frame.origin)
         }
@@ -205,28 +240,44 @@ final class CameraPreviewPanelController {
             return closest
         }
 
-        return constrainedOrigin(frame.origin, size: frame.size, in: screen)
+        return constrainedOrigin(frame.origin, size: frame.size, in: constraintRect)
     }
 
-    private static func cornerOrigins(size: CGSize, in screen: NSScreen) -> [NSPoint] {
-        let visibleFrame = screen.visibleFrame
+    private static func cornerOrigins(size: CGSize, in rect: NSRect) -> [NSPoint] {
         return [
-            NSPoint(x: visibleFrame.minX + edgeMargin, y: visibleFrame.minY + edgeMargin),
-            NSPoint(x: visibleFrame.maxX - size.width - edgeMargin, y: visibleFrame.minY + edgeMargin),
-            NSPoint(x: visibleFrame.minX + edgeMargin, y: visibleFrame.maxY - size.height - edgeMargin),
-            NSPoint(x: visibleFrame.maxX - size.width - edgeMargin, y: visibleFrame.maxY - size.height - edgeMargin)
+            constrainedOrigin(
+                NSPoint(x: rect.minX + edgeMargin, y: rect.minY + edgeMargin),
+                size: size,
+                in: rect
+            ),
+            constrainedOrigin(
+                NSPoint(x: rect.maxX - size.width - edgeMargin, y: rect.minY + edgeMargin),
+                size: size,
+                in: rect
+            ),
+            constrainedOrigin(
+                NSPoint(x: rect.minX + edgeMargin, y: rect.maxY - size.height - edgeMargin),
+                size: size,
+                in: rect
+            ),
+            constrainedOrigin(
+                NSPoint(x: rect.maxX - size.width - edgeMargin, y: rect.maxY - size.height - edgeMargin),
+                size: size,
+                in: rect
+            )
         ]
     }
 
     private static func constrainedOrigin(
         _ origin: NSPoint,
         size: CGSize,
-        in screen: NSScreen
+        in rect: NSRect
     ) -> NSPoint {
-        let visibleFrame = screen.visibleFrame
+        let maxX = max(rect.minX, rect.maxX - size.width)
+        let maxY = max(rect.minY, rect.maxY - size.height)
         return NSPoint(
-            x: min(max(origin.x, visibleFrame.minX), visibleFrame.maxX - size.width),
-            y: min(max(origin.y, visibleFrame.minY), visibleFrame.maxY - size.height)
+            x: min(max(origin.x, rect.minX), maxX),
+            y: min(max(origin.y, rect.minY), maxY)
         )
     }
 
@@ -250,6 +301,7 @@ private final class CameraPreviewPanelView: NSView {
     private let previewLayer: AVCaptureVideoPreviewLayer
     private let closeButton = NSButton(frame: .zero)
     private let style: CameraPreviewStyle
+    private let snapOrigin: (NSRect) -> NSPoint
     private let onMove: (NSRect) -> Void
     private let onClose: @MainActor () -> Void
     private var trackingArea: NSTrackingArea?
@@ -262,12 +314,14 @@ private final class CameraPreviewPanelView: NSView {
         session: AVCaptureSession,
         style: CameraPreviewStyle,
         showsHoverControls: Bool,
+        snapOrigin: @escaping (NSRect) -> NSPoint,
         onMove: @escaping (NSRect) -> Void,
         onClose: @escaping @MainActor () -> Void
     ) {
         self.previewLayer = AVCaptureVideoPreviewLayer(session: session)
         self.style = style
         self.showsHoverControls = showsHoverControls
+        self.snapOrigin = snapOrigin
         self.onMove = onMove
         self.onClose = onClose
         super.init(frame: .zero)
@@ -352,7 +406,7 @@ private final class CameraPreviewPanelView: NSView {
 
     override func mouseUp(with event: NSEvent) {
         if let window {
-            let snappedOrigin = CameraPreviewPanelController.snappedOrigin(for: window.frame)
+            let snappedOrigin = snapOrigin(window.frame)
             window.setFrameOrigin(snappedOrigin)
             onMove(NSRect(origin: snappedOrigin, size: window.frame.size))
         }

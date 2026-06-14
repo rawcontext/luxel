@@ -1,3 +1,4 @@
+import AppKit
 import LuxelCore
 
 @MainActor
@@ -63,6 +64,7 @@ extension LuxelMenuModel {
             deviceID: cameraDeviceID,
             style: settings.cameraPreviewStyle,
             placements: settings.cameraPreviewPlacements,
+            snapRect: cameraPreviewSnapRect,
             showsHoverControls: canShowCameraPreviewHoverControls,
             onPlacementChange: { [weak self] displayID, placement in
                 self?.saveCameraPreviewPlacement(displayID: displayID, placement: placement)
@@ -79,6 +81,10 @@ extension LuxelMenuModel {
 
     func setCameraPreviewHoverControlsEnabled(_ isEnabled: Bool) {
         cameraPreviewPanelController.setHoverControlsEnabled(isEnabled)
+    }
+
+    func syncCameraPreviewSnapArea() {
+        cameraPreviewPanelController.setSnapRect(cameraPreviewSnapRect)
     }
 
     private func disableCameraPreviewFromPanel() {
@@ -106,5 +112,16 @@ extension LuxelMenuModel {
         case .starting, .recording, .pausing, .paused, .resuming, .stopping:
             false
         }
+    }
+
+    private var cameraPreviewSnapRect: NSRect? {
+        guard let selectedCaptureTarget else {
+            return nil
+        }
+
+        return CaptureTargetScreenRectResolver.rect(
+            for: selectedCaptureTarget.target,
+            availableTargets: captureTargets
+        )
     }
 }
