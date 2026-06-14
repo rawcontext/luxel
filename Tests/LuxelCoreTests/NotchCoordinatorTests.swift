@@ -80,6 +80,41 @@ struct NotchCoordinatorTests {
         #expect(await presenter.commands() == [.release])
     }
 
+    @Test("display update observation migrates from notch to fallback")
+    func displayUpdateObservationMigratesFromNotchToFallback() async throws {
+        let presenter = SpyNotchPresenter()
+        let coordinator = NotchCoordinator(presenter: presenter)
+        let displayUpdates = AsyncStream<[NotchDisplayDescriptor]>.makeStream()
+        let recording = NotchActivity.recording(elapsed: 5, audioLevel: .silent, muted: false)
+
+        let observation = coordinator.observeDisplayUpdates(
+            displayUpdates.stream,
+            activities: [recording]
+        )
+        var results = observation.results.makeAsyncIterator()
+
+        let notchedDisplay = try builtInNotchedDisplay()
+        displayUpdates.continuation.yield([notchedDisplay])
+        let notchedResult = try #require(await results.next())
+        let geometry = try #require(NotchGeometry.resolve(from: notchedDisplay))
+        let notchedUpdate = try #require(notchedResult.update)
+        #expect(notchedResult.selection == .notch(geometry))
+        #expect(notchedUpdate.activity == recording)
+
+        displayUpdates.continuation.yield([])
+        let fallbackResult = try #require(await results.next())
+        #expect(fallbackResult.selection == .floatingHUD(.noNotchedDisplay))
+        #expect(fallbackResult.update == nil)
+        #expect(await presenter.commands() == [
+            .acquire(geometry),
+            .present(notchedUpdate),
+            .release
+        ])
+
+        observation.cancel()
+        displayUpdates.continuation.finish()
+    }
+
     @Test("set expanded forwards to presenter")
     func setExpandedForwardsToPresenter() async {
         let presenter = SpyNotchPresenter()

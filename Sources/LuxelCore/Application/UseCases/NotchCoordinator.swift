@@ -10,6 +10,45 @@ public final class NotchCoordinator: @unchecked Sendable {
     }
 
     @discardableResult
+    public func observeDisplayUpdates(
+        _ displayUpdates: AsyncStream<[NotchDisplayDescriptor]>,
+        activities: [NotchActivity],
+        preferences: NotchSurfacePreferences = .defaults,
+        presentationState: NotchPresentationState = .collapsed,
+        motion: NotchMotion = .standard,
+        reduceMotion: Bool = false
+    ) -> NotchCoordinatorObservation {
+        let (results, continuation) = AsyncStream<NotchCoordinatorResult>.makeStream()
+        let task = Task { [weak self] in
+            defer {
+                continuation.finish()
+            }
+
+            for await displays in displayUpdates {
+                guard !Task.isCancelled else {
+                    break
+                }
+
+                guard let self else {
+                    break
+                }
+
+                let result = await present(
+                    activities: activities,
+                    displays: displays,
+                    preferences: preferences,
+                    presentationState: presentationState,
+                    motion: motion,
+                    reduceMotion: reduceMotion
+                )
+                continuation.yield(result)
+            }
+        }
+
+        return NotchCoordinatorObservation(results: results, task: task)
+    }
+
+    @discardableResult
     public func present(
         activities: [NotchActivity],
         displays: [NotchDisplayDescriptor],
@@ -45,6 +84,27 @@ public final class NotchCoordinator: @unchecked Sendable {
 
     public func setExpanded(_ isExpanded: Bool) async {
         await presenter.setExpanded(isExpanded)
+    }
+}
+
+public final class NotchCoordinatorObservation: Sendable {
+    public let results: AsyncStream<NotchCoordinatorResult>
+    private let task: Task<Void, Never>
+
+    init(
+        results: AsyncStream<NotchCoordinatorResult>,
+        task: Task<Void, Never>
+    ) {
+        self.results = results
+        self.task = task
+    }
+
+    public func cancel() {
+        task.cancel()
+    }
+
+    deinit {
+        task.cancel()
     }
 }
 
