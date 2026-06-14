@@ -55,31 +55,34 @@ struct LuxelMenuBarLabel: View {
 private struct MenuBarRecordingIcon: View {
     let systemImage: String
     let isRecording: Bool
+    @State private var isPulseExpanded = false
 
     var body: some View {
         Group {
             if systemImage == "record.circle" {
-                TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isRecording)) { timeline in
-                    let phase = isRecording ? pulsePhase(at: timeline.date) : 0
-                    ZStack {
-                        Circle()
-                            .stroke(lineWidth: 1.6)
-                            .opacity(isRecording ? 0.82 : 0.9)
+                ZStack {
+                    Circle()
+                        .stroke(lineWidth: 1.6)
+                        .opacity(isRecording ? 0.82 : 0.9)
 
-                        Circle()
-                            .fill()
-                            .frame(width: 6.2, height: 6.2)
-                            .scaleEffect(isRecording ? 0.82 + phase * 0.28 : 0.72)
-                            .opacity(isRecording ? 0.72 + phase * 0.28 : 0.9)
+                    Circle()
+                        .fill()
+                        .frame(width: 6.2, height: 6.2)
+                        .scaleEffect(isRecording ? (isPulseExpanded ? 1.1 : 0.82) : 0.72)
+                        .opacity(isRecording ? (isPulseExpanded ? 1 : 0.72) : 0.9)
 
-                        if isRecording {
-                            Circle()
-                                .stroke(lineWidth: 1.1)
-                                .scaleEffect(0.68 + phase * 0.3)
-                                .opacity(0.34 - phase * 0.22)
-                        }
+                    if isRecording {
+                        Circle()
+                            .stroke(lineWidth: 1.1)
+                            .scaleEffect(isPulseExpanded ? 0.98 : 0.68)
+                            .opacity(isPulseExpanded ? 0.12 : 0.34)
                     }
-                    .animation(.easeInOut(duration: 0.18), value: isRecording)
+                }
+                .onAppear {
+                    updatePulseAnimation(isRecording: isRecording)
+                }
+                .onChange(of: isRecording) { _, newValue in
+                    updatePulseAnimation(isRecording: newValue)
                 }
             } else {
                 Image(systemName: systemImage)
@@ -90,10 +93,16 @@ private struct MenuBarRecordingIcon: View {
         .frame(width: 18, height: 18)
     }
 
-    private func pulsePhase(at date: Date) -> CGFloat {
-        let cycle = 1.45
-        let progress = date.timeIntervalSinceReferenceDate
-            .truncatingRemainder(dividingBy: cycle) / cycle
-        return CGFloat((1 - cos(progress * 2 * .pi)) / 2)
+    private func updatePulseAnimation(isRecording: Bool) {
+        if isRecording {
+            isPulseExpanded = false
+            withAnimation(.easeInOut(duration: 0.85).repeatForever(autoreverses: true)) {
+                isPulseExpanded = true
+            }
+        } else {
+            withAnimation(.easeOut(duration: 0.18)) {
+                isPulseExpanded = false
+            }
+        }
     }
 }
