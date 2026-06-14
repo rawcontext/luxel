@@ -11,6 +11,7 @@ final class LuxelMenuModel {
     var audioLevelSample: AudioLevelSample = .silent
     var audioInputDevices: [AudioInputDeviceOption] = [.systemDefault]
     var recentRecordings: [PastRecording] = []
+    var recentRecordingFilter: RecordingHistoryFilter = .all
     var captureTargets: [CaptureTargetOption] = []
     var selectedCaptureTargetID: String?
     var captureTargetStatusMessage: String?

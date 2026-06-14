@@ -3,7 +3,7 @@ import LuxelCore
 import SwiftUI
 
 struct LuxelRecentRecordings: View {
-    let model: LuxelMenuModel
+    @Bindable var model: LuxelMenuModel
     let openRecording: (URL) -> Void
 
     var body: some View {
@@ -11,37 +11,60 @@ struct LuxelRecentRecordings: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Recent")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
+                HStack {
+                    Text("Recent")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
 
-                ForEach(model.recentRecordings.prefix(5), id: \.fileURL) { recording in
-                    Button {
-                        if opensInEditor(recording) {
-                            openRecording(recording.fileURL)
-                        } else {
-                            model.revealRecording(recording)
-                        }
-                    } label: {
-                        Label {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(recording.name)
-                                    .lineLimit(1)
+                    Spacer()
 
-                                if let subtitle = recentRecordingSubtitle(for: recording) {
-                                    Text(subtitle)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                }
+                    if model.canFilterRecentRecordings {
+                        Picker("Show", selection: $model.recentRecordingFilter) {
+                            ForEach(RecordingHistoryFilter.allCases, id: \.self) { filter in
+                                Text(filter.recentMenuLabel).tag(filter)
                             }
-                        } icon: {
-                            Image(systemName: recentRecordingSystemImage(for: recording))
                         }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .controlSize(.small)
+                        .frame(width: 116)
                     }
-                    .help(recording.fileURL.path)
+                }
+
+                if model.filteredRecentRecordings.isEmpty {
+                    Text(model.recentRecordingFilter.emptyRecentMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                } else {
+                    ForEach(model.filteredRecentRecordings, id: \.fileURL) { recording in
+                        Button {
+                            if opensInEditor(recording) {
+                                openRecording(recording.fileURL)
+                            } else {
+                                model.revealRecording(recording)
+                            }
+                        } label: {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(recording.name)
+                                        .lineLimit(1)
+
+                                    if let subtitle = recentRecordingSubtitle(for: recording) {
+                                        Text(subtitle)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                            } icon: {
+                                Image(systemName: recentRecordingSystemImage(for: recording))
+                            }
+                        }
+                        .help(recording.fileURL.path)
+                    }
                 }
             }
         }
@@ -75,5 +98,29 @@ struct LuxelRecentRecordings: View {
         }
 
         return export.format.prettyName
+    }
+}
+
+private extension RecordingHistoryFilter {
+    var recentMenuLabel: String {
+        switch self {
+        case .all:
+            "All"
+        case .recordings:
+            "Recordings"
+        case .screenshots:
+            "Screenshots"
+        }
+    }
+
+    var emptyRecentMessage: String {
+        switch self {
+        case .all:
+            "No recent items"
+        case .recordings:
+            "No recent recordings"
+        case .screenshots:
+            "No recent screenshots"
+        }
     }
 }

@@ -20,6 +20,31 @@ struct RecordingHistoryTests {
         #expect(store.recordings == recordings)
     }
 
+    @Test("getPastRecordings filters by history entry kind")
+    func getPastRecordingsFiltersByKind() {
+        let recordingURL = URL(fileURLWithPath: "/tmp/recording.mp4")
+        let screenshotURL = URL(fileURLWithPath: "/tmp/screenshot.png")
+        let recording = PastRecording(
+            fileURL: recordingURL,
+            name: "Recording",
+            date: Date(timeIntervalSince1970: 2),
+            kind: .recording
+        )
+        let screenshot = PastRecording(
+            fileURL: screenshotURL,
+            name: "Screenshot",
+            date: Date(timeIntervalSince1970: 1),
+            kind: .screenshot
+        )
+        let store = InMemoryRecordingHistoryStore(recordings: [recording, screenshot])
+        let service = makeService(store: store, existingFiles: [recordingURL, screenshotURL])
+
+        #expect(service.getPastRecordings(matching: .recordings) == [recording])
+        #expect(service.getPastRecordings(matching: .screenshots) == [screenshot])
+        #expect(service.getPastRecordings(matching: .all) == [recording, screenshot])
+        #expect(store.recordings == [recording, screenshot])
+    }
+
     @Test("recoverActiveRecording returns none with no active recording")
     func recoverActiveRecordingWithNoActiveRecording() async {
         let store = InMemoryRecordingHistoryStore()

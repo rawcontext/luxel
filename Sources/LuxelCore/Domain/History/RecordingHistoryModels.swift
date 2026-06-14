@@ -5,6 +5,23 @@ public enum HistoryEntryKind: String, Codable, Equatable, Sendable {
     case screenshot
 }
 
+public enum RecordingHistoryFilter: String, CaseIterable, Codable, Equatable, Sendable {
+    case all
+    case recordings
+    case screenshots
+
+    public func includes(_ recording: PastRecording) -> Bool {
+        switch self {
+        case .all:
+            true
+        case .recordings:
+            recording.kind == .recording
+        case .screenshots:
+            recording.kind == .screenshot
+        }
+    }
+}
+
 public struct PastRecording: Codable, Equatable, Sendable {
     public let fileURL: URL
     public let name: String

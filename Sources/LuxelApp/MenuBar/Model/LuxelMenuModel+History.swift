@@ -3,7 +3,21 @@ import LuxelCore
 @MainActor
 extension LuxelMenuModel {
     func refreshRecentRecordings() {
-        recentRecordings = Array(recordingHistoryService.getPastRecordings().prefix(5))
+        recentRecordings = recordingHistoryService.getPastRecordings()
+
+        if recentRecordingFilter != .all,
+           !recentRecordings.contains(where: recentRecordingFilter.includes) {
+            recentRecordingFilter = .all
+        }
+    }
+
+    var filteredRecentRecordings: [PastRecording] {
+        Array(recentRecordings.filter(recentRecordingFilter.includes).prefix(5))
+    }
+
+    var canFilterRecentRecordings: Bool {
+        recentRecordings.contains { $0.kind == .recording }
+            && recentRecordings.contains { $0.kind == .screenshot }
     }
 
     func refreshCaptureTargets() async {

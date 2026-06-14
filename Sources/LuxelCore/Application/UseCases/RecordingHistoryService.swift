@@ -27,7 +27,7 @@ public final class RecordingHistoryService: Sendable {
         self.calendar = calendar
     }
 
-    public func getPastRecordings() -> [PastRecording] {
+    public func getPastRecordings(matching filter: RecordingHistoryFilter = .all) -> [PastRecording] {
         let validRecordings = store.recordings.compactMap { recording -> PastRecording? in
             guard fileSystem.fileExists(at: recording.fileURL) else {
                 return nil
@@ -36,7 +36,7 @@ public final class RecordingHistoryService: Sendable {
             return recording.filteringExports { fileSystem.fileExists(at: $0.fileURL) }
         }
         store.recordings = validRecordings
-        return validRecordings
+        return validRecordings.filter(filter.includes)
     }
 
     public func getCurrentRecording() -> ActiveRecording? {
