@@ -7,10 +7,10 @@ final class CameraPreviewPanelController {
     private let sessionQueue = DispatchQueue(label: "app.luxel.cameraPreview.session")
     private var panel: NSPanel?
     private var session: AVCaptureSession?
-    private var panelOrigin: NSPoint?
+    private var panelOriginsByDisplayID: [DisplayID: NSPoint] = [:]
 
     func present(deviceID: String, style: CameraPreviewStyle) {
-        let origin = panel?.frame.origin ?? panelOrigin
+        let preferredDisplayID = panel.flatMap { Self.screen(containing: $0.frame)?.displayID }
         close()
 
         guard let device = Self.captureDevice(deviceID: deviceID) else {
@@ -20,13 +20,20 @@ final class CameraPreviewPanelController {
 
         do {
             let session = try Self.makeSession(device: device)
-            let frame = Self.panelFrame(size: style.size.panelSize, preserving: origin)
-            let panel = Self.makePanel(frame: frame, session: session, style: style)
+            let frame = panelFrame(size: style.size.panelSize, preferredDisplayID: preferredDisplayID)
+            let panel = Self.makePanel(
+                frame: frame,
+                session: session,
+                style: style,
+                onMove: { [weak self] frame in
+                    self?.rememberPanelOrigin(frame: frame)
+                }
+            )
             panel.orderFrontRegardless()
 
             self.session = session
             self.panel = panel
-            self.panelOrigin = panel.frame.origin
+            rememberPanelOrigin(frame: panel.frame)
 
             let sessionHandle = CameraCaptureSessionHandle(session)
             sessionQueue.async { [sessionHandle] in
@@ -38,7 +45,7 @@ final class CameraPreviewPanelController {
     }
 
     func close() {
-        panelOrigin = panel?.frame.origin ?? panelOrigin
+        rememberPanelOrigin()
         panel?.close()
         panel = nil
 
@@ -76,7 +83,8 @@ final class CameraPreviewPanelController {
     private static func makePanel(
         frame: NSRect,
         session: AVCaptureSession,
-        style: CameraPreviewStyle
+        style: CameraPreviewStyle,
+        onMove: @escaping (NSRect) -> Void
     ) -> NSPanel {
         let panel = NSPanel(
             contentRect: frame,
@@ -90,23 +98,48 @@ final class CameraPreviewPanelController {
         panel.isOpaque = false
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
-        panel.contentView = CameraPreviewPanelView(session: session, style: style)
+        panel.contentView = CameraPreviewPanelView(session: session, style: style, onMove: onMove)
         return panel
     }
 
-    private static func panelFrame(size: CGSize, preserving origin: NSPoint?) -> NSRect {
-        if let origin {
-            return NSRect(origin: origin, size: size)
+    private func panelFrame(size: CGSize, preferredDisplayID: DisplayID?) -> NSRect {
+        let screen = preferredDisplayID.flatMap(Self.screen(displayID:))
+            ?? NSScreen.main
+            ?? NSScreen.screens.first
+        let displayID = screen?.displayID
+
+        if let displayID,
+           let origin = panelOriginsByDisplayID[displayID],
+           let screen {
+            return NSRect(
+                origin: Self.constrainedOrigin(origin, size: size, in: screen),
+                size: size
+            )
         }
 
-        let visibleFrame = NSScreen.main?.visibleFrame ?? NSScreen.screens.first?.visibleFrame ?? .zero
-        let margin: CGFloat = 28
+        let visibleFrame = screen?.visibleFrame ?? .zero
         return NSRect(
-            x: visibleFrame.maxX - size.width - margin,
-            y: visibleFrame.minY + margin,
+            x: visibleFrame.maxX - size.width - Self.edgeMargin,
+            y: visibleFrame.minY + Self.edgeMargin,
             width: size.width,
             height: size.height
         )
+    }
+
+    private func rememberPanelOrigin() {
+        guard let panel else {
+            return
+        }
+
+        rememberPanelOrigin(frame: panel.frame)
+    }
+
+    private func rememberPanelOrigin(frame: NSRect) {
+        guard let displayID = Self.screen(containing: frame)?.displayID else {
+            return
+        }
+
+        panelOriginsByDisplayID[displayID] = frame.origin
     }
 
     private static func captureDevice(deviceID: String) -> AVCaptureDevice? {
@@ -118,6 +151,59 @@ final class CameraPreviewPanelController {
         .devices
         .first { $0.uniqueID == deviceID }
     }
+
+    private static func screen(displayID: DisplayID) -> NSScreen? {
+        NSScreen.screens.first { $0.displayID == displayID }
+    }
+
+    fileprivate static func screen(containing frame: NSRect) -> NSScreen? {
+        let center = NSPoint(x: frame.midX, y: frame.midY)
+        return NSScreen.screens.first { $0.frame.contains(center) }
+            ?? NSScreen.main
+            ?? NSScreen.screens.first
+    }
+
+    fileprivate static func snappedOrigin(for frame: NSRect) -> NSPoint {
+        guard let screen = screen(containing: frame) else {
+            return frame.origin
+        }
+
+        let candidates = cornerOrigins(size: frame.size, in: screen)
+        let closest = candidates.min { first, second in
+            first.distance(to: frame.origin) < second.distance(to: frame.origin)
+        }
+
+        if let closest, closest.distance(to: frame.origin) <= cornerSnapDistance {
+            return closest
+        }
+
+        return constrainedOrigin(frame.origin, size: frame.size, in: screen)
+    }
+
+    private static func cornerOrigins(size: CGSize, in screen: NSScreen) -> [NSPoint] {
+        let visibleFrame = screen.visibleFrame
+        return [
+            NSPoint(x: visibleFrame.minX + edgeMargin, y: visibleFrame.minY + edgeMargin),
+            NSPoint(x: visibleFrame.maxX - size.width - edgeMargin, y: visibleFrame.minY + edgeMargin),
+            NSPoint(x: visibleFrame.minX + edgeMargin, y: visibleFrame.maxY - size.height - edgeMargin),
+            NSPoint(x: visibleFrame.maxX - size.width - edgeMargin, y: visibleFrame.maxY - size.height - edgeMargin)
+        ]
+    }
+
+    private static func constrainedOrigin(
+        _ origin: NSPoint,
+        size: CGSize,
+        in screen: NSScreen
+    ) -> NSPoint {
+        let visibleFrame = screen.visibleFrame
+        return NSPoint(
+            x: min(max(origin.x, visibleFrame.minX), visibleFrame.maxX - size.width),
+            y: min(max(origin.y, visibleFrame.minY), visibleFrame.maxY - size.height)
+        )
+    }
+
+    private static let edgeMargin: CGFloat = 28
+    private static let cornerSnapDistance: CGFloat = 56
 }
 
 private enum CameraPreviewPanelError: Error {
@@ -135,12 +221,18 @@ private struct CameraCaptureSessionHandle: @unchecked Sendable {
 private final class CameraPreviewPanelView: NSView {
     private let previewLayer: AVCaptureVideoPreviewLayer
     private let style: CameraPreviewStyle
+    private let onMove: (NSRect) -> Void
     private var dragStartPoint: NSPoint?
     private var dragStartFrame: NSRect?
 
-    init(session: AVCaptureSession, style: CameraPreviewStyle) {
+    init(
+        session: AVCaptureSession,
+        style: CameraPreviewStyle,
+        onMove: @escaping (NSRect) -> Void
+    ) {
         self.previewLayer = AVCaptureVideoPreviewLayer(session: session)
         self.style = style
+        self.onMove = onMove
         super.init(frame: .zero)
         wantsLayer = true
         previewLayer.videoGravity = .resizeAspectFill
@@ -184,8 +276,20 @@ private final class CameraPreviewPanelView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
+        if let window {
+            let snappedOrigin = CameraPreviewPanelController.snappedOrigin(for: window.frame)
+            window.setFrameOrigin(snappedOrigin)
+            onMove(NSRect(origin: snappedOrigin, size: window.frame.size))
+        }
+
         dragStartPoint = nil
         dragStartFrame = nil
+    }
+}
+
+private extension NSPoint {
+    func distance(to other: NSPoint) -> CGFloat {
+        hypot(x - other.x, y - other.y)
     }
 }
 
@@ -210,5 +314,15 @@ private extension CameraOverlayShape {
         case .roundedRect:
             16
         }
+    }
+}
+
+private extension NSScreen {
+    var displayID: DisplayID? {
+        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+            return nil
+        }
+
+        return DisplayID(screenNumber.uint32Value)
     }
 }
