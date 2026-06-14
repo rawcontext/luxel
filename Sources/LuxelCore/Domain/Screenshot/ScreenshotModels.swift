@@ -24,9 +24,19 @@ public enum ScreenshotScale: String, Codable, Equatable, Sendable {
     case points
 }
 
-public enum CaptureBackdrop: String, Codable, Equatable, Sendable {
+public enum CaptureBackdrop: String, Codable, CaseIterable, Equatable, Sendable {
     case opaque
     case transparent
+    case transparentWithShadow
+
+    public var usesAlpha: Bool {
+        switch self {
+        case .transparent, .transparentWithShadow:
+            true
+        case .opaque:
+            false
+        }
+    }
 }
 
 public enum ScreenshotDestination: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
@@ -58,7 +68,7 @@ public struct ScreenshotRequest: Codable, Equatable, Sendable {
         format: ScreenshotFormat = .png,
         backdrop: CaptureBackdrop = .opaque
     ) throws {
-        if backdrop == .transparent {
+        if backdrop.usesAlpha {
             guard target.isWindow else {
                 throw ScreenshotModelError.transparentBackdropRequiresWindowTarget
             }

@@ -84,6 +84,7 @@ struct UserDefaultsSettingsStoreTests {
             screenshotFormat: .heic,
             screenshotDestinations: [.file, .preview],
             screenshotShowThumbnail: false,
+            screenshotBackdrop: .transparentWithShadow,
             confirmDiscard: false,
             lastStopAfter: 60
         )
@@ -147,6 +148,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.screenshotFormat == .png)
         #expect(settings.screenshotDestinations == [.clipboard, .file])
         #expect(settings.screenshotShowThumbnail)
+        #expect(settings.screenshotBackdrop == .opaque)
         #expect(settings.confirmDiscard)
         #expect(settings.lastStopAfter == nil)
     }

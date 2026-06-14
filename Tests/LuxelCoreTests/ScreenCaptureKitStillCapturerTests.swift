@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreVideo
 import ImageIO
 import LuxelCore
 import ScreenCaptureKit
@@ -47,6 +48,50 @@ struct ScreenCaptureKitStillCapturerTests {
         #expect(configuration.showsCursor)
         #expect(configuration.width == 1440)
         #expect(configuration.height == 900)
+    }
+
+    @Test("transparent window configuration requests alpha pixels without shadows")
+    func transparentWindowConfigurationRequestsAlphaPixelsWithoutShadows() throws {
+        let request = try ScreenshotRequest(
+            target: .window(id: 42),
+            includeCursor: false,
+            scale: .native,
+            format: .png,
+            backdrop: .transparent
+        )
+
+        let configuration = try ScreenCaptureKitStillConfigurationFactory()
+            .makeConfiguration(
+                for: request,
+                contentRect: CGRect(x: 0, y: 0, width: 640, height: 360),
+                pointPixelScale: 2
+            )
+
+        #expect(configuration.backgroundColor.alpha == 0)
+        #expect(configuration.pixelFormat == kCVPixelFormatType_32BGRA)
+        #expect(configuration.ignoreShadowsSingleWindow)
+    }
+
+    @Test("transparent shadow window configuration preserves shadows")
+    func transparentShadowWindowConfigurationPreservesShadows() throws {
+        let request = try ScreenshotRequest(
+            target: .window(id: 42),
+            includeCursor: false,
+            scale: .native,
+            format: .png,
+            backdrop: .transparentWithShadow
+        )
+
+        let configuration = try ScreenCaptureKitStillConfigurationFactory()
+            .makeConfiguration(
+                for: request,
+                contentRect: CGRect(x: 0, y: 0, width: 640, height: 360),
+                pointPixelScale: 2
+            )
+
+        #expect(configuration.backgroundColor.alpha == 0)
+        #expect(configuration.pixelFormat == kCVPixelFormatType_32BGRA)
+        #expect(!configuration.ignoreShadowsSingleWindow)
     }
 
     @Test("ImageIO encoder writes readable PNG data")

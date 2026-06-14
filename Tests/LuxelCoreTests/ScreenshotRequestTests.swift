@@ -34,34 +34,38 @@ struct ScreenshotRequestTests {
     func transparentScreenshotsRequireWindowTarget() throws {
         let rect = try CaptureRect(x: 0, y: 0, width: 640, height: 360)
 
-        #expect(throws: ScreenshotModelError.transparentBackdropRequiresWindowTarget) {
-            try ScreenshotRequest(
-                target: .display(DisplayID(1)),
-                includeCursor: false,
-                format: .png,
-                backdrop: .transparent
-            )
-        }
+        for backdrop in [CaptureBackdrop.transparent, .transparentWithShadow] {
+            #expect(throws: ScreenshotModelError.transparentBackdropRequiresWindowTarget) {
+                try ScreenshotRequest(
+                    target: .display(DisplayID(1)),
+                    includeCursor: false,
+                    format: .png,
+                    backdrop: backdrop
+                )
+            }
 
-        #expect(throws: ScreenshotModelError.transparentBackdropRequiresWindowTarget) {
-            try ScreenshotRequest(
-                target: .area(displayID: DisplayID(1), rect: rect),
-                includeCursor: false,
-                format: .heic,
-                backdrop: .transparent
-            )
+            #expect(throws: ScreenshotModelError.transparentBackdropRequiresWindowTarget) {
+                try ScreenshotRequest(
+                    target: .area(displayID: DisplayID(1), rect: rect),
+                    includeCursor: false,
+                    format: .heic,
+                    backdrop: backdrop
+                )
+            }
         }
     }
 
     @Test("transparent screenshots require alpha capable format")
     func transparentScreenshotsRequireAlphaCapableFormat() {
-        #expect(throws: ScreenshotModelError.transparentBackdropRequiresAlphaCapableFormat) {
-            try ScreenshotRequest(
-                target: .window(id: 42),
-                includeCursor: false,
-                format: .jpeg,
-                backdrop: .transparent
-            )
+        for backdrop in [CaptureBackdrop.transparent, .transparentWithShadow] {
+            #expect(throws: ScreenshotModelError.transparentBackdropRequiresAlphaCapableFormat) {
+                try ScreenshotRequest(
+                    target: .window(id: 42),
+                    includeCursor: false,
+                    format: .jpeg,
+                    backdrop: backdrop
+                )
+            }
         }
     }
 
@@ -79,9 +83,16 @@ struct ScreenshotRequestTests {
             format: .heic,
             backdrop: .transparent
         )
+        let shadow = try ScreenshotRequest(
+            target: .window(id: 42),
+            includeCursor: false,
+            format: .png,
+            backdrop: .transparentWithShadow
+        )
 
         #expect(png.format == .png)
         #expect(heic.format == .heic)
+        #expect(shadow.backdrop == .transparentWithShadow)
     }
 
     @Test("request round trips through codable")

@@ -52,6 +52,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var screenshotFormat: ScreenshotFormat
     public var screenshotDestinations: [ScreenshotDestination]
     public var screenshotShowThumbnail: Bool
+    public var screenshotBackdrop: CaptureBackdrop
     public var confirmDiscard: Bool
     public var lastStopAfter: TimeInterval?
 
@@ -84,6 +85,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         screenshotFormat: ScreenshotFormat = .png,
         screenshotDestinations: [ScreenshotDestination] = [.clipboard, .file],
         screenshotShowThumbnail: Bool = true,
+        screenshotBackdrop: CaptureBackdrop = .opaque,
         confirmDiscard: Bool = true,
         lastStopAfter: TimeInterval? = nil
     ) {
@@ -115,6 +117,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.screenshotFormat = screenshotFormat
         self.screenshotDestinations = screenshotDestinations
         self.screenshotShowThumbnail = screenshotShowThumbnail
+        self.screenshotBackdrop = screenshotBackdrop
         self.confirmDiscard = confirmDiscard
         self.lastStopAfter = lastStopAfter
     }
@@ -148,6 +151,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case screenshotFormat
         case screenshotDestinations
         case screenshotShowThumbnail
+        case screenshotBackdrop
         case confirmDiscard
         case lastStopAfter
     }
@@ -227,6 +231,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         ) ?? [.clipboard, .file]
         screenshotShowThumbnail = try container.decodeIfPresent(Bool.self, forKey: .screenshotShowThumbnail)
             ?? true
+        screenshotBackdrop = try container.decodeIfPresent(CaptureBackdrop.self, forKey: .screenshotBackdrop)
+            ?? .opaque
         confirmDiscard = try container.decodeIfPresent(Bool.self, forKey: .confirmDiscard)
             ?? true
         lastStopAfter = try container.decodeIfPresent(TimeInterval.self, forKey: .lastStopAfter)

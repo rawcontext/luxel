@@ -74,4 +74,29 @@ struct ScreenshotCapturePlannerTests {
 
         #expect(job.request.target == target)
     }
+
+    @Test("planner applies configured backdrop only to window screenshots")
+    func plannerAppliesConfiguredBackdropOnlyToWindowScreenshots() throws {
+        let windowJob = try planner.captureJob(
+            target: .window(id: 7),
+            includeCursor: true,
+            format: .png,
+            destinations: [.clipboard],
+            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel"),
+            now: Date(timeIntervalSince1970: 0),
+            backdrop: .transparentWithShadow
+        )
+        let displayJob = try planner.captureJob(
+            target: .display(DisplayID(9)),
+            includeCursor: true,
+            format: .png,
+            destinations: [.clipboard],
+            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel"),
+            now: Date(timeIntervalSince1970: 0),
+            backdrop: .transparentWithShadow
+        )
+
+        #expect(windowJob.request.backdrop == .transparentWithShadow)
+        #expect(displayJob.request.backdrop == .opaque)
+    }
 }

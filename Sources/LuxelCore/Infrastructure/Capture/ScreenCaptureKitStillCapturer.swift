@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreVideo
 import Foundation
 import ImageIO
 import ScreenCaptureKit
@@ -53,9 +54,12 @@ public struct ScreenCaptureKitStillConfigurationFactory: Sendable {
     ) throws -> SCStreamConfiguration {
         let configuration = SCStreamConfiguration()
         configuration.showsCursor = request.includeCursor
-        configuration.backgroundColor = request.backdrop == .transparent
+        configuration.backgroundColor = request.backdrop.usesAlpha
             ? Self.transparentBackgroundColor
             : Self.opaqueBackgroundColor
+        if request.backdrop.usesAlpha {
+            configuration.pixelFormat = kCVPixelFormatType_32BGRA
+        }
 
         if case .area(_, let rect) = request.target {
             configuration.sourceRect = CGRect(x: rect.x, y: rect.y, width: rect.width, height: rect.height)

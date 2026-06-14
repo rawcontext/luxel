@@ -73,6 +73,15 @@ struct LuxelSettingsView: View {
                 }
                 .pickerStyle(.menu)
 
+                Picker("Window Backdrop", selection: $model.settings.screenshotBackdrop) {
+                    ForEach(CaptureBackdrop.allCases, id: \.self) { backdrop in
+                        Text(backdrop.settingsLabel)
+                            .tag(backdrop)
+                            .disabled(backdrop.usesAlpha && !model.settings.screenshotFormat.supportsAlpha)
+                    }
+                }
+                .pickerStyle(.menu)
+
                 ForEach(ScreenshotDestination.allCases, id: \.self) { destination in
                     Toggle(destination.settingsLabel, isOn: screenshotDestinationBinding(destination))
                 }
@@ -205,6 +214,12 @@ struct LuxelSettingsView: View {
         .onChange(of: model.settings) {
             model.saveSettings()
         }
+        .onChange(of: model.settings.screenshotFormat) {
+            if model.settings.screenshotBackdrop.usesAlpha,
+               !model.settings.screenshotFormat.supportsAlpha {
+                model.settings.screenshotBackdrop = .opaque
+            }
+        }
         .onChange(of: model.launchAtLogin) {
             model.setLaunchAtLogin(model.launchAtLogin)
         }
@@ -270,6 +285,19 @@ private extension ScreenshotDestination {
             "Save File"
         case .preview:
             "Open Preview"
+        }
+    }
+}
+
+private extension CaptureBackdrop {
+    var settingsLabel: String {
+        switch self {
+        case .opaque:
+            "Opaque"
+        case .transparent:
+            "Transparent"
+        case .transparentWithShadow:
+            "Transparent + Shadow"
         }
     }
 }

@@ -65,7 +65,8 @@ extension LuxelMenuModel {
                 format: settings.screenshotFormat,
                 destinations: settings.screenshotDestinations,
                 outputDirectory: settings.recordingsDirectory,
-                now: Date()
+                now: Date(),
+                backdrop: settings.screenshotBackdrop
             )
             let result = try await screenshotCaptureService.capture(job)
             refreshRecentRecordings()

@@ -40,6 +40,7 @@ struct SettingsTests {
         #expect(settings.screenshotFormat == .png)
         #expect(settings.screenshotDestinations == [.clipboard, .file])
         #expect(settings.screenshotShowThumbnail)
+        #expect(settings.screenshotBackdrop == .opaque)
         #expect(settings.confirmDiscard)
         #expect(settings.lastStopAfter == nil)
     }
