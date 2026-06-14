@@ -12,6 +12,7 @@ final class LuxelMenuModel {
     var audioLevelSample: AudioLevelSample = .silent
     var audioInputDevices: [AudioInputDeviceOption] = [.systemDefault]
     var cameraDevices: [CameraDeviceOption] = []
+    var notchDisplays: [NotchDisplayDescriptor] = []
     var recentRecordings: [PastRecording] = []
     var recentRecordingFilter: RecordingHistoryFilter = .all
     var captureTargets: [CaptureTargetOption] = []
@@ -54,6 +55,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let activeWindowCatalog: any ActiveWindowCatalog
     @ObservationIgnored let activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver
     @ObservationIgnored let pointerDisplayProvider: any PointerDisplayProvider
+    @ObservationIgnored let notchDisplayProvider: any NotchDisplayProvider
     @ObservationIgnored let fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver
     @ObservationIgnored let screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter
     @ObservationIgnored let commandLineToolInstallService: CommandLineToolInstallService
@@ -93,6 +95,7 @@ final class LuxelMenuModel {
         activeWindowCatalog: any ActiveWindowCatalog = CoreGraphicsActiveWindowCatalog(),
         activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver = ActiveWindowCaptureTargetResolver(),
         pointerDisplayProvider: any PointerDisplayProvider = AppKitPointerDisplayProvider(),
+        notchDisplayProvider: any NotchDisplayProvider = AppKitNotchDisplayProvider(),
         fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver = FullscreenCaptureTargetResolver(),
         screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter = AppKitScreenshotThumbnailPresenter(),
         commandLineToolInstallService: CommandLineToolInstallService = LuxelCompositionRoot
@@ -124,6 +127,7 @@ final class LuxelMenuModel {
         self.activeWindowCatalog = activeWindowCatalog
         self.activeWindowCaptureTargetResolver = activeWindowCaptureTargetResolver
         self.pointerDisplayProvider = pointerDisplayProvider
+        self.notchDisplayProvider = notchDisplayProvider
         self.fullscreenCaptureTargetResolver = fullscreenCaptureTargetResolver
         self.screenshotThumbnailPresenter = screenshotThumbnailPresenter
         self.commandLineToolInstallService = commandLineToolInstallService

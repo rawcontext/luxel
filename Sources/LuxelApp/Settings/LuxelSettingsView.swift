@@ -195,6 +195,13 @@ struct LuxelSettingsView: View {
             }
 
             Section("Notch") {
+                let notchStatus = model.notchSurfaceStatusPresentation
+
+                LabeledContent("Status", value: notchStatus.statusText)
+                Text(notchStatus.detailText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
                 Toggle("Enable Notch Surface", isOn: notchSurfaceEnabled)
                 Toggle("Idle Quick Actions", isOn: notchIdleHoverActionsEnabled)
                     .disabled(!model.settings.notchSurfaceSettings.isEnabled)
@@ -344,6 +351,10 @@ struct LuxelSettingsView: View {
             model.refreshCameraDevices()
             await model.syncCameraPreviewPanelWithSettings()
             await model.watchAudioInputDeviceUpdates()
+        }
+        .task {
+            model.refreshNotchDisplays()
+            await model.watchNotchDisplayUpdates()
         }
         .task(id: model.audioLevelMonitorTaskID) {
             await model.watchAudioLevels()
