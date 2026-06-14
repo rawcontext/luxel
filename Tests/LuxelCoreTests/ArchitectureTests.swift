@@ -193,7 +193,7 @@ struct ArchitectureTests {
         )
 
         #expect(modelSource.contains("struct CropperRestoreSelectionConfiguration"))
-        #expect(modelSource.contains("memory?.restoredTopLeftAreaSelection(in: display)"))
+        #expect(modelSource.contains("memory?.restoredTopLeftSelection(in: display)"))
         #expect(modelSource.contains("initialSelection: CaptureRect? = nil"))
         #expect(modelSource.contains("selection: resolvedInitialSelection"))
         #expect(controllerSource.contains("restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled"))

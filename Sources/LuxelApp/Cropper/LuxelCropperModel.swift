@@ -40,7 +40,7 @@ struct CropperRestoreSelectionConfiguration {
             return nil
         }
 
-        return memory?.restoredTopLeftAreaSelection(in: display)
+        return memory?.restoredTopLeftSelection(in: display)
     }
 }
 

@@ -139,9 +139,24 @@ struct QuickRecordingModelTests {
         )
         let display = try DisplayBounds(id: DisplayID(3), x: 0, y: 0, width: 1920, height: 1080)
 
-        let selection = memory.restoredTopLeftAreaSelection(in: display)
+        let selection = memory.restoredTopLeftSelection(in: display)
 
         #expect(selection == (try CaptureRect(x: 10, y: 580, width: 640, height: 480)))
+    }
+
+    @Test("last display memory restores matching full cropper selection")
+    func lastDisplayMemoryRestoresMatchingFullCropperSelection() throws {
+        let memory = LastCaptureMemory(
+            target: .display(DisplayID(3)),
+            pixelSize: try PixelSize(width: 1920, height: 1080),
+            options: RecordingOptions(frameRate: 30),
+            capturedAt: Date()
+        )
+        let display = try DisplayBounds(id: DisplayID(3), x: 0, y: 0, width: 1920, height: 1080)
+
+        let selection = memory.restoredTopLeftSelection(in: display)
+
+        #expect(selection == (try CaptureRect(x: 0, y: 0, width: 1920, height: 1080)))
     }
 
     @Test("last nonmatching memory does not restore cropper selection")
@@ -163,8 +178,8 @@ struct QuickRecordingModelTests {
             capturedAt: Date()
         )
 
-        #expect(windowMemory.restoredTopLeftAreaSelection(in: display) == nil)
-        #expect(otherDisplayMemory.restoredTopLeftAreaSelection(in: display) == nil)
+        #expect(windowMemory.restoredTopLeftSelection(in: display) == nil)
+        #expect(otherDisplayMemory.restoredTopLeftSelection(in: display) == nil)
     }
 
     @Test("missing display target falls back to supplied main display")

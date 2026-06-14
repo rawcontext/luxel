@@ -32,13 +32,15 @@ public struct LastCaptureMemory: Codable, Equatable, Sendable {
         )
     }
 
-    public func restoredTopLeftAreaSelection(in display: DisplayBounds) -> CaptureRect? {
-        guard case .area(let displayID, let rect) = target,
-              displayID == display.id else {
+    public func restoredTopLeftSelection(in display: DisplayBounds) -> CaptureRect? {
+        switch target {
+        case .display(let displayID) where displayID == display.id:
+            return try? CaptureSelectionBuilder.fullDisplaySelection(in: display)
+        case .area(let displayID, let rect) where displayID == display.id:
+            return try? CaptureCoordinateMapper.topLeftSelection(fromRecordingRect: rect, in: display)
+        case .display, .area, .window:
             return nil
         }
-
-        return try? CaptureCoordinateMapper.topLeftSelection(fromRecordingRect: rect, in: display)
     }
 
     public func resolvedTarget(
