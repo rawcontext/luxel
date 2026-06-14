@@ -6,6 +6,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
     private let configurationFactory: ScreenCaptureKitRecordingConfigurationFactory
     private let segmentComposer: AVFoundationRecordingSegmentComposer
     private let fileManager: FileManager
+    private let contentFilterTimeout: Duration = .seconds(10)
     private let streamStartTimeout: Duration = .seconds(10)
     private let recordingOutputFinishTimeout: Duration = .seconds(2)
     private let streamStopTimeout: Duration = .seconds(5)
@@ -35,7 +36,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
             throw ScreenCaptureKitRecorderError.alreadyRecording
         }
 
-        let contentFilter = try await contentFilterProvider.contentFilter(for: request.target)
+        let contentFilter = try await prepareContentFilter(for: request.target)
         let delegate = ScreenCaptureKitRecorderDelegate()
         let stream = SCStream(
             filter: contentFilter,
@@ -137,6 +138,40 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         } catch {
             throw ScreenCaptureKitRecorderError.stopFailed(String(describing: error))
         }
+    }
+
+    private func prepareContentFilter(for target: CaptureTarget) async throws -> SCContentFilter {
+        let completion = ScreenCaptureKitContentFilterCompletion()
+        let providerTask = Task { [contentFilterProvider] in
+            do {
+                let filter = try await contentFilterProvider.contentFilter(for: target)
+                _ = completion.resume(with: .success(PreparedContentFilter(filter: filter)))
+            } catch {
+                _ = completion.resume(with: .failure(error))
+            }
+        }
+        let timeoutTask = Task { [contentFilterTimeout] in
+            do {
+                try await Task.sleep(for: contentFilterTimeout)
+                if completion.resume(with: .failure(ScreenCaptureKitRecorderError.startFailed("Timed out preparing capture"))) {
+                    providerTask.cancel()
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                return
+            }
+        }
+        defer {
+            providerTask.cancel()
+            timeoutTask.cancel()
+        }
+
+        return try await completion.value().filter
+    }
+
+    private struct PreparedContentFilter: @unchecked Sendable {
+        let filter: SCContentFilter
     }
 
     private func makeRecordingOutput(
@@ -265,6 +300,45 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
             }
 
             continuation.resume(with: result)
+            return true
+        }
+    }
+
+    private final class ScreenCaptureKitContentFilterCompletion: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<PreparedContentFilter, any Error>?
+        private var result: Result<PreparedContentFilter, any Error>?
+
+        func value() async throws -> PreparedContentFilter {
+            try await withCheckedThrowingContinuation { continuation in
+                let result: Result<PreparedContentFilter, any Error>? = lock.withLock {
+                    if let result = self.result {
+                        return result
+                    }
+
+                    self.continuation = continuation
+                    return nil
+                }
+
+                if let result {
+                    continuation.resume(with: result)
+                }
+            }
+        }
+
+        func resume(with result: Result<PreparedContentFilter, any Error>) -> Bool {
+            let continuation: CheckedContinuation<PreparedContentFilter, any Error>? = lock.withLock {
+                guard self.result == nil else {
+                    return nil
+                }
+
+                self.result = result
+                let continuation = self.continuation
+                self.continuation = nil
+                return continuation
+            }
+
+            continuation?.resume(with: result)
             return true
         }
     }
