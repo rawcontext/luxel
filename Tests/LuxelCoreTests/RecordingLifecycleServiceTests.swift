@@ -34,6 +34,48 @@ struct RecordingLifecycleServiceTests {
         #expect(store.activeRecording == nil)
     }
 
+    @Test("start waits for countdown before active recording snapshot")
+    func startWaitsForCountdownBeforeActiveRecordingSnapshot() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let sleeper = SpyCountdownSleeper {
+            #expect(store.activeRecording == nil)
+        }
+        let recorder = SpyCaptureRecorder {
+            #expect(sleeper.sleepDurations == [3])
+            #expect(store.activeRecording != nil)
+        }
+        let service = makeService(
+            store: store,
+            recorder: recorder,
+            countdownSleeper: sleeper
+        )
+        let request = try makeRequest(schedule: RecordingSchedule(countdown: 3))
+
+        _ = try await service.startRecording(request)
+
+        #expect(sleeper.sleepDurations == [3])
+        #expect(recorder.startCount == 1)
+    }
+
+    @Test("cancelled countdown leaves no active recording")
+    func cancelledCountdownLeavesNoActiveRecording() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let sleeper = SpyCountdownSleeper(error: CancellationError())
+        let recorder = SpyCaptureRecorder()
+        let service = makeService(
+            store: store,
+            recorder: recorder,
+            countdownSleeper: sleeper
+        )
+
+        await #expect(throws: CancellationError.self) {
+            try await service.startRecording(try makeRequest(schedule: RecordingSchedule(countdown: 5)))
+        }
+
+        #expect(store.activeRecording == nil)
+        #expect(recorder.startCount == 0)
+    }
+
     @Test("start records to staging while returning final recording URL")
     func startRecordsToStagingWhileReturningFinalRecordingURL() async throws {
         let store = InMemoryRecordingHistoryStore()
@@ -420,6 +462,7 @@ struct RecordingLifecycleServiceTests {
         recorder: SpyCaptureRecorder,
         dateProvider: any DateProvider = FixedDateProvider(date: Date(timeIntervalSince1970: 1_595_348_846)),
         autoStopScheduler: any RecordingAutoStopScheduler = ManualAutoStopScheduler(),
+        countdownSleeper: any RecordingCountdownSleeper = SpyCountdownSleeper(),
         userNotifier: (any UserNotifier)? = nil
     ) -> RecordingLifecycleService {
         RecordingLifecycleService(
@@ -427,6 +470,7 @@ struct RecordingLifecycleServiceTests {
             history: makeHistory(store: store, dateProvider: dateProvider),
             dateProvider: dateProvider,
             autoStopScheduler: autoStopScheduler,
+            countdownSleeper: countdownSleeper,
             userNotifier: userNotifier
         )
     }
@@ -525,6 +569,32 @@ private enum StubCaptureRecorderError: Error, Equatable {
     case pauseFailed
     case resumeFailed
     case stopFailed
+}
+
+private final class SpyCountdownSleeper: RecordingCountdownSleeper, @unchecked Sendable {
+    private let error: (any Error)?
+    private let onSleep: @Sendable () -> Void
+    private let lock = NSLock()
+    private(set) var sleepDurations: [TimeInterval] = []
+
+    init(
+        error: (any Error)? = nil,
+        onSleep: @escaping @Sendable () -> Void = {}
+    ) {
+        self.error = error
+        self.onSleep = onSleep
+    }
+
+    func sleep(for duration: TimeInterval) async throws {
+        lock.withLock {
+            sleepDurations.append(duration)
+        }
+        onSleep()
+
+        if let error {
+            throw error
+        }
+    }
 }
 
 private enum StubRecordingOutputError: Error, Equatable {

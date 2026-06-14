@@ -5,6 +5,7 @@ public final class RecordingLifecycleService: Sendable {
     private let history: RecordingHistoryService
     private let dateProvider: any DateProvider
     private let autoStopScheduler: any RecordingAutoStopScheduler
+    private let countdownSleeper: any RecordingCountdownSleeper
     private let userNotifier: (any UserNotifier)?
     private let outputFinalizer: any RecordingOutputFinalizer
     private let autoStopState = RecordingLifecycleAutoStopState()
@@ -16,6 +17,7 @@ public final class RecordingLifecycleService: Sendable {
         history: RecordingHistoryService,
         dateProvider: any DateProvider = SystemDateProvider(),
         autoStopScheduler: any RecordingAutoStopScheduler = TaskRecordingAutoStopScheduler(),
+        countdownSleeper: any RecordingCountdownSleeper = TaskRecordingCountdownSleeper(),
         userNotifier: (any UserNotifier)? = nil,
         outputFinalizer: any RecordingOutputFinalizer = PassthroughRecordingOutputFinalizer()
     ) {
@@ -23,6 +25,7 @@ public final class RecordingLifecycleService: Sendable {
         self.history = history
         self.dateProvider = dateProvider
         self.autoStopScheduler = autoStopScheduler
+        self.countdownSleeper = countdownSleeper
         self.userNotifier = userNotifier
         self.outputFinalizer = outputFinalizer
     }
@@ -39,6 +42,13 @@ public final class RecordingLifecycleService: Sendable {
     ) async throws -> ActiveRecording {
         let outputPlan = outputPlan ?? .direct(request.outputFileURL)
         await outputState.set(outputPlan)
+
+        do {
+            try await runCountdownIfNeeded(request.schedule)
+        } catch {
+            await outputState.clear()
+            throw error
+        }
 
         let activeRecording = history.setCurrentRecording(
             fileURL: outputPlan.stagingFileURL,
@@ -147,6 +157,15 @@ public final class RecordingLifecycleService: Sendable {
             try? await self.userNotifier?.notifyRecordingAutoStopped(duration: timing.maxRecordedDuration)
         }
         await autoStopState.setTask(task)
+    }
+
+    private func runCountdownIfNeeded(_ schedule: RecordingSchedule?) async throws {
+        guard let countdown = schedule?.countdown,
+              countdown > 0 else {
+            return
+        }
+
+        try await countdownSleeper.sleep(for: countdown)
     }
 
     private func runRecorderOperation(

@@ -70,6 +70,10 @@ struct AutomationCommandTests {
         #expect(throws: AutomationCommandParseError.invalidParameter("countdown")) {
             _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://record?target=lastArea&countdown=-1")))
         }
+
+        #expect(throws: AutomationCommandParseError.invalidParameter("countdown")) {
+            _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://record?target=lastArea&countdown=61")))
+        }
     }
 
     @Test("parser rejects duplicate parameters and file callbacks")

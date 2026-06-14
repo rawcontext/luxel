@@ -239,7 +239,7 @@ public enum AutomationCommandParser {
         return AutomationRecordingOptions(
             target: target,
             presetName: nonEmpty(query.value(for: "preset")),
-            countdownSeconds: try optionalNonNegativeInteger("countdown", in: query)
+            countdownSeconds: try optionalCountdownInteger(in: query)
         )
     }
 
@@ -314,6 +314,18 @@ public enum AutomationCommandParser {
 
         guard let integer = Int(value), integer >= 0 else {
             throw AutomationCommandParseError.invalidParameter(name)
+        }
+
+        return integer
+    }
+
+    private static func optionalCountdownInteger(in query: AutomationQuery) throws -> Int? {
+        guard let integer = try optionalNonNegativeInteger("countdown", in: query) else {
+            return nil
+        }
+
+        guard (0...60).contains(integer) else {
+            throw AutomationCommandParseError.invalidParameter("countdown")
         }
 
         return integer

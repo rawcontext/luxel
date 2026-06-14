@@ -6,14 +6,16 @@ extension LuxelMenuModel {
     func makeRecordingRequest(
         target: CaptureTarget,
         pixelSize: PixelSize,
-        captureKind: QuickCaptureKind
+        captureKind: QuickCaptureKind,
+        countdownSeconds: Int? = nil
     ) throws -> (request: RecordingRequest, noticeMessage: String?) {
         let frameRate = try FrameRate(settings.record60FPS ? 60 : 30)
         let outputFileURL = try nextRecordingFileURL(now: Date())
         let resolvedAudio = resolveRecordingAudioMode()
-        let schedule = try settings.lastStopAfter.map {
-            try RecordingSchedule(maxRecordedDuration: $0)
-        }
+        let schedule = try recordingSchedule(
+            countdownSeconds: countdownSeconds,
+            maxRecordedDuration: settings.lastStopAfter
+        )
         let usesBakedCursor = settings.cursorMode == .baked
 
         return (
@@ -32,6 +34,24 @@ extension LuxelMenuModel {
                 schedule: schedule
             ),
             resolvedAudio.noticeMessage
+        )
+    }
+
+    func recordingSchedule(
+        countdownSeconds: Int?,
+        maxRecordedDuration: TimeInterval?
+    ) throws -> RecordingSchedule? {
+        let countdown = countdownSeconds.flatMap { seconds -> TimeInterval? in
+            seconds > 0 ? TimeInterval(seconds) : nil
+        }
+
+        guard countdown != nil || maxRecordedDuration != nil else {
+            return nil
+        }
+
+        return try RecordingSchedule(
+            countdown: countdown,
+            maxRecordedDuration: maxRecordedDuration
         )
     }
 

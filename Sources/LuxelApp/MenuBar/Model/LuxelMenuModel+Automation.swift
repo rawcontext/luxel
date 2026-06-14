@@ -154,15 +154,13 @@ extension LuxelMenuModel {
     }
 
     private func startAutomationRecording(_ options: AutomationRecordingOptions) async throws {
-        if let countdownSeconds = options.countdownSeconds,
-           countdownSeconds > 0 {
-            throw LuxelAutomationError.countdownUnavailable
-        }
-
         let presetID = try automationPresetID(named: options.presetName)
 
         if options.target == .lastArea {
-            await startAutomationRecordingFromLastCapture(presetID: presetID)
+            await startAutomationRecordingFromLastCapture(
+                presetID: presetID,
+                countdownSeconds: options.countdownSeconds
+            )
             return
         }
 
@@ -170,7 +168,8 @@ extension LuxelMenuModel {
         await startAutomationRecording(
             target: target.target,
             pixelSize: target.pixelSize,
-            presetID: presetID
+            presetID: presetID,
+            countdownSeconds: options.countdownSeconds
         )
     }
 
@@ -325,7 +324,6 @@ private final class LuxelAutomationCommandExecutor: AutomationCommandExecutor, @
 }
 
 private enum LuxelAutomationError: LocalizedError, Equatable {
-    case countdownUnavailable
     case denied
     case presetUnavailable(String)
     case replayBufferUnavailable
@@ -334,8 +332,6 @@ private enum LuxelAutomationError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .countdownUnavailable:
-            "Countdown URL automation is not implemented yet"
         case .denied:
             "URL automation was denied"
         case .presetUnavailable(let name):
