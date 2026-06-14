@@ -74,7 +74,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             }
             menuBarSystemImage = "record.circle.fill"
             alternateMenuBarSystemImage = nil
-            animatesMenuBarSystemImage = false
+            animatesMenuBarSystemImage = true
             accessibilityLabel = if displaysTimerTime {
                 "Luxel recording, remaining \(remainingText ?? "0:00")"
             } else if displaysElapsedTime {
