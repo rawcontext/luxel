@@ -278,4 +278,84 @@ struct SettingsTests {
             _ = try settings.duplicateExportPreset(id: missingID)
         }
     }
+
+    @Test("adding a capture size preset creates a unique editable default")
+    func addingCaptureSizePresetCreatesUniqueEditableDefault() throws {
+        let existingPreset = try CaptureSizePreset(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000801")!,
+            name: "New Size",
+            pixelSize: PixelSize(width: 1920, height: 1080)
+        )
+        let newPresetID = UUID(uuidString: "00000000-0000-0000-0000-000000000802")!
+        var settings = AppSettings(
+            recordingsDirectory: URL(fileURLWithPath: "/Users/example/Movies/Luxel"),
+            userSizePresets: [existingPreset]
+        )
+
+        let preset = try settings.addCaptureSizePreset(id: newPresetID)
+
+        #expect(preset.id == newPresetID)
+        #expect(preset.name == "New Size 2")
+        #expect(preset.pixelSize == (try PixelSize(width: 1280, height: 720)))
+        #expect(settings.userSizePresets.map(\.id) == [existingPreset.id, newPresetID])
+    }
+
+    @Test("duplicating a capture size preset copies fields with a unique name")
+    func duplicatingCaptureSizePresetCopiesFieldsWithUniqueName() throws {
+        let presetID = UUID(uuidString: "00000000-0000-0000-0000-000000000803")!
+        let copyID = UUID(uuidString: "00000000-0000-0000-0000-000000000804")!
+        let preset = try CaptureSizePreset(
+            id: presetID,
+            name: "X/Twitter",
+            pixelSize: PixelSize(width: 1280, height: 720)
+        )
+        let existingCopy = try CaptureSizePreset(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000805")!,
+            name: "X/Twitter Copy",
+            pixelSize: PixelSize(width: 800, height: 600)
+        )
+        var settings = AppSettings(
+            recordingsDirectory: URL(fileURLWithPath: "/Users/example/Movies/Luxel"),
+            userSizePresets: [preset, existingCopy]
+        )
+
+        let copy = try settings.duplicateCaptureSizePreset(id: presetID, newID: copyID)
+
+        #expect(copy.id == copyID)
+        #expect(copy.name == "X/Twitter Copy 2")
+        #expect(copy.pixelSize == preset.pixelSize)
+        #expect(settings.userSizePresets.map(\.id) == [presetID, existingCopy.id, copyID])
+    }
+
+    @Test("deleting a capture size preset removes only the matching preset")
+    func deletingCaptureSizePresetRemovesOnlyMatchingPreset() throws {
+        let first = try CaptureSizePreset(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000806")!,
+            name: "First",
+            pixelSize: PixelSize(width: 1280, height: 720)
+        )
+        let second = try CaptureSizePreset(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000807")!,
+            name: "Second",
+            pixelSize: PixelSize(width: 800, height: 600)
+        )
+        var settings = AppSettings(
+            recordingsDirectory: URL(fileURLWithPath: "/Users/example/Movies/Luxel"),
+            userSizePresets: [first, second]
+        )
+
+        settings.deleteCaptureSizePreset(id: first.id)
+
+        #expect(settings.userSizePresets == [second])
+    }
+
+    @Test("duplicating a missing capture size preset throws")
+    func duplicatingMissingCaptureSizePresetThrows() {
+        let missingID = UUID(uuidString: "00000000-0000-0000-0000-000000000899")!
+        var settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/Users/example/Movies/Luxel"))
+
+        #expect(throws: CaptureSizePresetSettingsError.presetNotFound(missingID)) {
+            _ = try settings.duplicateCaptureSizePreset(id: missingID)
+        }
+    }
 }

@@ -238,6 +238,7 @@ struct LuxelSettingsView: View {
             }
 
             ExportPresetSettingsSection(settings: $model.settings)
+            CaptureSizePresetSettingsSection(settings: $model.settings)
 
             Section("System") {
                 Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
