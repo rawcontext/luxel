@@ -51,6 +51,9 @@ struct UserDefaultsSettingsStoreTests {
             toggleRecordingShortcut: "command+control+option+t",
             audioOnlyRecordingShortcut: "command+control+option+a",
             quickRecordLastShortcut: "command+control+option+q",
+            captureScreenshotShortcut: "command+control+option+s",
+            screenshotActiveWindowShortcut: "command+control+option+w",
+            screenshotFullscreenShortcut: "command+control+option+f",
             updatePreferences: UpdatePreferences(
                 automaticallyCheckForUpdates: false,
                 automaticallyDownloadAndInstall: false,
@@ -73,6 +76,9 @@ struct UserDefaultsSettingsStoreTests {
                     quality: .lossless
                 )
             ],
+            screenshotFormat: .heic,
+            screenshotDestinations: [.file, .preview],
+            screenshotShowThumbnail: false,
             confirmDiscard: false,
             lastStopAfter: 60
         )
@@ -122,6 +128,9 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.toggleRecordingShortcut == "")
         #expect(settings.audioOnlyRecordingShortcut == "")
         #expect(settings.quickRecordLastShortcut == "")
+        #expect(settings.captureScreenshotShortcut == "")
+        #expect(settings.screenshotActiveWindowShortcut == "")
+        #expect(settings.screenshotFullscreenShortcut == "")
         #expect(settings.updatePreferences == .defaults)
         #expect(settings.showTimeInMenuBar)
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)
@@ -129,6 +138,9 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.rememberLastCapture)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)
+        #expect(settings.screenshotFormat == .png)
+        #expect(settings.screenshotDestinations == [.clipboard, .file])
+        #expect(settings.screenshotShowThumbnail)
         #expect(settings.confirmDiscard)
         #expect(settings.lastStopAfter == nil)
     }

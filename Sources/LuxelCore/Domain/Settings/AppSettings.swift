@@ -38,6 +38,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var toggleRecordingShortcut: String
     public var audioOnlyRecordingShortcut: String
     public var quickRecordLastShortcut: String
+    public var captureScreenshotShortcut: String
+    public var screenshotActiveWindowShortcut: String
+    public var screenshotFullscreenShortcut: String
     public var updatePreferences: UpdatePreferences
     public var showTimeInMenuBar: Bool
     public var exportPresets: [ExportPreset]
@@ -45,6 +48,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var rememberLastCapture: Bool
     public var lastCaptureMemory: LastCaptureMemory?
     public var perFormatExportMemory: [ExportFormat: ExportMemory]
+    public var screenshotFormat: ScreenshotFormat
+    public var screenshotDestinations: [ScreenshotDestination]
+    public var screenshotShowThumbnail: Bool
     public var confirmDiscard: Bool
     public var lastStopAfter: TimeInterval?
 
@@ -63,6 +69,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         toggleRecordingShortcut: String = "",
         audioOnlyRecordingShortcut: String = "",
         quickRecordLastShortcut: String = "",
+        captureScreenshotShortcut: String = "",
+        screenshotActiveWindowShortcut: String = "",
+        screenshotFullscreenShortcut: String = "",
         updatePreferences: UpdatePreferences = .defaults,
         showTimeInMenuBar: Bool = true,
         exportPresets: [ExportPreset] = ExportPreset.builtInDefaults,
@@ -70,6 +79,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         rememberLastCapture: Bool = true,
         lastCaptureMemory: LastCaptureMemory? = nil,
         perFormatExportMemory: [ExportFormat: ExportMemory] = [:],
+        screenshotFormat: ScreenshotFormat = .png,
+        screenshotDestinations: [ScreenshotDestination] = [.clipboard, .file],
+        screenshotShowThumbnail: Bool = true,
         confirmDiscard: Bool = true,
         lastStopAfter: TimeInterval? = nil
     ) {
@@ -87,6 +99,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.toggleRecordingShortcut = toggleRecordingShortcut
         self.audioOnlyRecordingShortcut = audioOnlyRecordingShortcut
         self.quickRecordLastShortcut = quickRecordLastShortcut
+        self.captureScreenshotShortcut = captureScreenshotShortcut
+        self.screenshotActiveWindowShortcut = screenshotActiveWindowShortcut
+        self.screenshotFullscreenShortcut = screenshotFullscreenShortcut
         self.updatePreferences = updatePreferences
         self.showTimeInMenuBar = showTimeInMenuBar
         self.exportPresets = exportPresets
@@ -94,6 +109,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.rememberLastCapture = rememberLastCapture
         self.lastCaptureMemory = lastCaptureMemory
         self.perFormatExportMemory = perFormatExportMemory
+        self.screenshotFormat = screenshotFormat
+        self.screenshotDestinations = screenshotDestinations
+        self.screenshotShowThumbnail = screenshotShowThumbnail
         self.confirmDiscard = confirmDiscard
         self.lastStopAfter = lastStopAfter
     }
@@ -113,6 +131,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case toggleRecordingShortcut
         case audioOnlyRecordingShortcut
         case quickRecordLastShortcut
+        case captureScreenshotShortcut
+        case screenshotActiveWindowShortcut
+        case screenshotFullscreenShortcut
         case updatePreferences
         case showTimeInMenuBar
         case exportPresets
@@ -120,6 +141,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case rememberLastCapture
         case lastCaptureMemory
         case perFormatExportMemory
+        case screenshotFormat
+        case screenshotDestinations
+        case screenshotShowThumbnail
         case confirmDiscard
         case lastStopAfter
     }
@@ -163,6 +187,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
             ?? ""
         quickRecordLastShortcut = try container.decodeIfPresent(String.self, forKey: .quickRecordLastShortcut)
             ?? ""
+        captureScreenshotShortcut = try container.decodeIfPresent(String.self, forKey: .captureScreenshotShortcut)
+            ?? ""
+        screenshotActiveWindowShortcut = try container.decodeIfPresent(String.self, forKey: .screenshotActiveWindowShortcut)
+            ?? ""
+        screenshotFullscreenShortcut = try container.decodeIfPresent(String.self, forKey: .screenshotFullscreenShortcut)
+            ?? ""
         updatePreferences = try container.decodeIfPresent(UpdatePreferences.self, forKey: .updatePreferences)
             ?? defaultUpdatePreferences
         showTimeInMenuBar = try container.decodeIfPresent(Bool.self, forKey: .showTimeInMenuBar)
@@ -181,6 +211,14 @@ public struct AppSettings: Codable, Equatable, Sendable {
             [ExportFormat: ExportMemory].self,
             forKey: .perFormatExportMemory
         ) ?? [:]
+        screenshotFormat = try container.decodeIfPresent(ScreenshotFormat.self, forKey: .screenshotFormat)
+            ?? .png
+        screenshotDestinations = try container.decodeIfPresent(
+            [ScreenshotDestination].self,
+            forKey: .screenshotDestinations
+        ) ?? [.clipboard, .file]
+        screenshotShowThumbnail = try container.decodeIfPresent(Bool.self, forKey: .screenshotShowThumbnail)
+            ?? true
         confirmDiscard = try container.decodeIfPresent(Bool.self, forKey: .confirmDiscard)
             ?? true
         lastStopAfter = try container.decodeIfPresent(TimeInterval.self, forKey: .lastStopAfter)
