@@ -19,17 +19,17 @@ struct RecordingSessionPresentationTests {
         #expect(enabled.canUsePrimaryAction)
     }
 
-    @Test("recording formats elapsed time with stop and pause actions")
-    func recordingFormatsElapsedTimeWithStopAndPauseActions() {
+    @Test("recording formats elapsed time with filled status icon and stop actions")
+    func recordingFormatsElapsedTimeWithFilledStatusIconAndStopActions() {
         let presentation = RecordingSessionPresentation(
             state: .recording(elapsed: 102),
             canStartRecording: false
         )
 
         #expect(presentation.menuBarTitle == "1:42")
-        #expect(presentation.menuBarSystemImage == "record.circle")
+        #expect(presentation.menuBarSystemImage == "record.circle.fill")
         #expect(presentation.alternateMenuBarSystemImage == nil)
-        #expect(presentation.animatesMenuBarSystemImage)
+        #expect(!presentation.animatesMenuBarSystemImage)
         #expect(presentation.accessibilityLabel == "Luxel recording, elapsed 1:42")
         #expect(presentation.primaryActionTitle == "Stop")
         #expect(presentation.primaryActionSystemImage == "stop.circle.fill")

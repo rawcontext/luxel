@@ -9,14 +9,9 @@ struct LuxelMenuBarLabel: View {
     var body: some View {
         let presentation = model.recordingPresentation(now: now)
         let title = menuBarTitle(for: presentation)
-        let isRecordingAnimationActive = presentation.animatesMenuBarSystemImage
 
         HStack(spacing: 4) {
-            Image(systemName: presentation.menuBarSystemImage)
-                .font(.system(size: 14, weight: .regular))
-                .imageScale(.medium)
-                .frame(width: 18, height: 18)
-                .symbolEffect(.pulse, isActive: isRecordingAnimationActive)
+            MenuBarStatusIcon(systemImage: presentation.menuBarSystemImage)
 
             if let title {
                 Text(title)
@@ -51,4 +46,20 @@ struct LuxelMenuBarLabel: View {
         }
     }
 
+}
+
+private struct MenuBarStatusIcon: View {
+    let systemImage: String
+
+    var body: some View {
+        ZStack {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .regular))
+                .imageScale(.medium)
+                .id(systemImage)
+                .transition(.opacity.combined(with: .scale(scale: 0.88)))
+        }
+        .animation(.easeInOut(duration: 0.2), value: systemImage)
+        .frame(width: 18, height: 18)
+    }
 }
