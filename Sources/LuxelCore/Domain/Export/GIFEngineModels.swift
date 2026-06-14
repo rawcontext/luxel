@@ -346,6 +346,56 @@ public struct GIFRGBAPixel: Codable, Equatable, Sendable {
     }
 }
 
+public struct GIFPaletteColor: Codable, Equatable, Hashable, Sendable {
+    public let red: UInt8
+    public let green: UInt8
+    public let blue: UInt8
+
+    public init(red: UInt8, green: UInt8, blue: UInt8) {
+        self.red = red
+        self.green = green
+        self.blue = blue
+    }
+
+    public init(pixel: GIFRGBAPixel) {
+        self.init(red: pixel.red, green: pixel.green, blue: pixel.blue)
+    }
+}
+
+public struct GIFColorPalette: Codable, Equatable, Sendable {
+    public let colors: [GIFPaletteColor]
+
+    public init(colors: [GIFPaletteColor]) throws {
+        guard (2...256).contains(colors.count) else {
+            throw GIFEngineModelError.invalidPaletteSize
+        }
+
+        self.colors = colors
+    }
+
+    public func nearestColorIndex(for pixel: GIFRGBAPixel) -> UInt8 {
+        let target = GIFPaletteColor(pixel: pixel)
+        let bestIndex = colors.indices.min { lhs, rhs in
+            let leftDistance = squaredDistance(from: target, to: colors[lhs])
+            let rightDistance = squaredDistance(from: target, to: colors[rhs])
+            if leftDistance == rightDistance {
+                return lhs < rhs
+            }
+
+            return leftDistance < rightDistance
+        } ?? 0
+
+        return UInt8(bestIndex)
+    }
+
+    private func squaredDistance(from lhs: GIFPaletteColor, to rhs: GIFPaletteColor) -> Int {
+        let red = Int(lhs.red) - Int(rhs.red)
+        let green = Int(lhs.green) - Int(rhs.green)
+        let blue = Int(lhs.blue) - Int(rhs.blue)
+        return red * red + green * green + blue * blue
+    }
+}
+
 public struct GIFFrameBitmap: Codable, Equatable, Sendable {
     public let pixelSize: PixelSize
     public let pixels: [GIFRGBAPixel]
@@ -369,6 +419,281 @@ public struct GIFFrameBitmap: Codable, Equatable, Sendable {
         }
 
         return y * pixelSize.width + x
+    }
+}
+
+public struct MedianCutPaletteBuilder: Sendable {
+    public init() {}
+
+    public func palette(
+        from frames: [GIFFrameBitmap],
+        maxColorCount: Int
+    ) throws -> GIFColorPalette {
+        guard !frames.isEmpty else {
+            throw GIFEngineModelError.invalidFrameCount
+        }
+
+        guard (2...256).contains(maxColorCount) else {
+            throw GIFEngineModelError.invalidPaletteSize
+        }
+
+        let weightedColors = weightedSampledColors(from: frames)
+        guard !weightedColors.isEmpty else {
+            throw GIFEngineModelError.invalidFrameBuffer
+        }
+
+        if weightedColors.count <= maxColorCount {
+            return try GIFColorPalette(colors: normalizedPaletteColors(
+                weightedColors.map(\.color),
+                maxColorCount: maxColorCount
+            ))
+        }
+
+        var boxes = [MedianCutColorBox(colors: weightedColors)]
+        while boxes.count < maxColorCount {
+            guard let boxIndex = boxes.bestSplittableBoxIndex(),
+                  let splitBoxes = boxes[boxIndex].split() else {
+                break
+            }
+
+            boxes.remove(at: boxIndex)
+            boxes.append(splitBoxes.left)
+            boxes.append(splitBoxes.right)
+        }
+
+        return try GIFColorPalette(colors: normalizedPaletteColors(
+            boxes.map(\.averageColor),
+            maxColorCount: maxColorCount
+        ))
+    }
+
+    private func weightedSampledColors(from frames: [GIFFrameBitmap]) -> [WeightedGIFColor] {
+        var counts: [GIFPaletteColor: Int] = [:]
+
+        for frame in frames {
+            for pixel in sampledPixels(from: frame) {
+                counts[GIFPaletteColor(pixel: pixel), default: 0] += 1
+            }
+        }
+
+        return counts
+            .map { WeightedGIFColor(color: $0.key, count: $0.value) }
+            .sorted { lhs, rhs in
+                Self.sortsBefore(lhs.color, rhs.color)
+            }
+    }
+
+    private func sampledPixels(from frame: GIFFrameBitmap) -> [GIFRGBAPixel] {
+        let sampledWidth = min(frame.pixelSize.width, 64)
+        let sampledHeight = min(frame.pixelSize.height, 64)
+
+        guard sampledWidth < frame.pixelSize.width || sampledHeight < frame.pixelSize.height else {
+            return frame.pixels
+        }
+
+        var pixels: [GIFRGBAPixel] = []
+        pixels.reserveCapacity(sampledWidth * sampledHeight)
+
+        for sampleY in 0..<sampledHeight {
+            let y = min(frame.pixelSize.height - 1, sampleY * frame.pixelSize.height / sampledHeight)
+            for sampleX in 0..<sampledWidth {
+                let x = min(frame.pixelSize.width - 1, sampleX * frame.pixelSize.width / sampledWidth)
+                pixels.append(frame.pixels[y * frame.pixelSize.width + x])
+            }
+        }
+
+        return pixels
+    }
+
+    private func normalizedPaletteColors(
+        _ colors: [GIFPaletteColor],
+        maxColorCount: Int
+    ) -> [GIFPaletteColor] {
+        var normalized = Array(
+            colors
+                .uniqued()
+                .sorted(by: Self.sortsBefore)
+                .prefix(maxColorCount)
+        )
+
+        if normalized.count == 1 {
+            normalized.append(normalized[0] == .black ? .white : .black)
+            normalized.sort(by: Self.sortsBefore)
+        }
+
+        return normalized
+    }
+
+    fileprivate static func sortsBefore(_ lhs: GIFPaletteColor, _ rhs: GIFPaletteColor) -> Bool {
+        if lhs.red != rhs.red {
+            return lhs.red < rhs.red
+        }
+
+        if lhs.green != rhs.green {
+            return lhs.green < rhs.green
+        }
+
+        return lhs.blue < rhs.blue
+    }
+}
+
+private struct WeightedGIFColor: Equatable, Sendable {
+    let color: GIFPaletteColor
+    let count: Int
+}
+
+private enum GIFPaletteChannel {
+    case red
+    case green
+    case blue
+}
+
+private struct MedianCutColorBox: Sendable {
+    let colors: [WeightedGIFColor]
+
+    var canSplit: Bool {
+        colors.count > 1
+    }
+
+    var population: Int {
+        colors.reduce(0) { $0 + $1.count }
+    }
+
+    var longestRange: Int {
+        range(for: longestChannel)
+    }
+
+    var averageColor: GIFPaletteColor {
+        let total = max(1, population)
+        let red = colors.reduce(0) { $0 + Int($1.color.red) * $1.count }
+        let green = colors.reduce(0) { $0 + Int($1.color.green) * $1.count }
+        let blue = colors.reduce(0) { $0 + Int($1.color.blue) * $1.count }
+
+        return GIFPaletteColor(
+            red: UInt8((Double(red) / Double(total)).rounded()),
+            green: UInt8((Double(green) / Double(total)).rounded()),
+            blue: UInt8((Double(blue) / Double(total)).rounded())
+        )
+    }
+
+    func split() -> (left: MedianCutColorBox, right: MedianCutColorBox)? {
+        guard colors.count > 1 else {
+            return nil
+        }
+
+        let sortedColors = colors.sorted { lhs, rhs in
+            let channel = longestChannel
+            let leftValue = lhs.color.value(for: channel)
+            let rightValue = rhs.color.value(for: channel)
+            if leftValue == rightValue {
+                return MedianCutPaletteBuilder.sortsBefore(lhs.color, rhs.color)
+            }
+
+            return leftValue < rightValue
+        }
+        let halfPopulation = max(1, population / 2)
+        var accumulated = 0
+        var splitIndex = 1
+
+        for index in sortedColors.indices {
+            accumulated += sortedColors[index].count
+            if accumulated >= halfPopulation {
+                splitIndex = min(max(index + 1, 1), sortedColors.count - 1)
+                break
+            }
+        }
+
+        return (
+            left: MedianCutColorBox(colors: Array(sortedColors[..<splitIndex])),
+            right: MedianCutColorBox(colors: Array(sortedColors[splitIndex...]))
+        )
+    }
+
+    private var longestChannel: GIFPaletteChannel {
+        let redRange = range(for: .red)
+        let greenRange = range(for: .green)
+        let blueRange = range(for: .blue)
+
+        if redRange >= greenRange, redRange >= blueRange {
+            return .red
+        }
+
+        if greenRange >= blueRange {
+            return .green
+        }
+
+        return .blue
+    }
+
+    private func range(for channel: GIFPaletteChannel) -> Int {
+        let values = colors.map { $0.color.value(for: channel) }
+        guard let minValue = values.min(), let maxValue = values.max() else {
+            return 0
+        }
+
+        return Int(maxValue) - Int(minValue)
+    }
+}
+
+private extension Array where Element == MedianCutColorBox {
+    func bestSplittableBoxIndex() -> Int? {
+        var bestIndex: Int?
+
+        for index in indices where self[index].canSplit {
+            if let currentBest = bestIndex {
+                if self[index].hasHigherSplitPriority(than: self[currentBest]) {
+                    bestIndex = index
+                }
+            } else {
+                bestIndex = index
+            }
+        }
+
+        return bestIndex
+    }
+}
+
+private extension MedianCutColorBox {
+    func hasHigherSplitPriority(than other: MedianCutColorBox) -> Bool {
+        if longestRange != other.longestRange {
+            return longestRange > other.longestRange
+        }
+
+        if population != other.population {
+            return population > other.population
+        }
+
+        return colors.count > other.colors.count
+    }
+}
+
+private extension GIFPaletteColor {
+    static let black = GIFPaletteColor(red: 0, green: 0, blue: 0)
+    static let white = GIFPaletteColor(red: 255, green: 255, blue: 255)
+
+    func value(for channel: GIFPaletteChannel) -> UInt8 {
+        switch channel {
+        case .red:
+            red
+        case .green:
+            green
+        case .blue:
+            blue
+        }
+    }
+}
+
+private extension Array where Element == GIFPaletteColor {
+    func uniqued() -> [GIFPaletteColor] {
+        var seen: Set<GIFPaletteColor> = []
+        var result: [GIFPaletteColor] = []
+        result.reserveCapacity(count)
+
+        for color in self where seen.insert(color).inserted {
+            result.append(color)
+        }
+
+        return result
     }
 }
 

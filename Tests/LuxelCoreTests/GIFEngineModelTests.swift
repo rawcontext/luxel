@@ -155,6 +155,83 @@ struct GIFEngineModelTests {
         }
     }
 
+    @Test("median cut palette preserves exact small palettes")
+    func medianCutPalettePreservesExactSmallPalettes() throws {
+        let frame = try GIFFrameBitmap(
+            pixelSize: PixelSize(width: 2, height: 2),
+            pixels: [
+                GIFRGBAPixel(red: 255, green: 0, blue: 0),
+                GIFRGBAPixel(red: 0, green: 255, blue: 0),
+                GIFRGBAPixel(red: 0, green: 0, blue: 255),
+                GIFRGBAPixel(red: 255, green: 255, blue: 255)
+            ]
+        )
+
+        let palette = try MedianCutPaletteBuilder().palette(from: [frame], maxColorCount: 4)
+
+        #expect(Set(palette.colors) == [
+            GIFPaletteColor(red: 0, green: 0, blue: 255),
+            GIFPaletteColor(red: 0, green: 255, blue: 0),
+            GIFPaletteColor(red: 255, green: 0, blue: 0),
+            GIFPaletteColor(red: 255, green: 255, blue: 255)
+        ])
+    }
+
+    @Test("median cut palette caps output and is deterministic")
+    func medianCutPaletteCapsOutputAndIsDeterministic() throws {
+        var pixels: [GIFRGBAPixel] = []
+        for value in 0..<16 {
+            pixels.append(GIFRGBAPixel(
+                red: UInt8(value * 16),
+                green: UInt8(255 - value * 12),
+                blue: UInt8(value * 8)
+            ))
+        }
+        let frame = try GIFFrameBitmap(
+            pixelSize: PixelSize(width: 4, height: 4),
+            pixels: pixels
+        )
+        let builder = MedianCutPaletteBuilder()
+
+        let first = try builder.palette(from: [frame], maxColorCount: 4)
+        let second = try builder.palette(from: [frame], maxColorCount: 4)
+
+        #expect(first.colors.count == 4)
+        #expect(first == second)
+    }
+
+    @Test("palette pads single colors and finds nearest indexes")
+    func palettePadsSingleColorsAndFindsNearestIndexes() throws {
+        let frame = try solidBitmap(width: 2, height: 2, color: GIFRGBAPixel(red: 10, green: 20, blue: 30))
+
+        let palette = try MedianCutPaletteBuilder().palette(from: [frame], maxColorCount: 8)
+        let nearest = palette.nearestColorIndex(for: GIFRGBAPixel(red: 12, green: 19, blue: 28))
+
+        #expect(palette.colors == [
+            GIFPaletteColor(red: 0, green: 0, blue: 0),
+            GIFPaletteColor(red: 10, green: 20, blue: 30)
+        ])
+        #expect(nearest == 1)
+    }
+
+    @Test("palette builder validates inputs")
+    func paletteBuilderValidatesInputs() throws {
+        let frame = try solidBitmap(width: 1, height: 1, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
+
+        #expect(throws: GIFEngineModelError.invalidFrameCount) {
+            _ = try MedianCutPaletteBuilder().palette(from: [], maxColorCount: 4)
+        }
+        #expect(throws: GIFEngineModelError.invalidPaletteSize) {
+            _ = try MedianCutPaletteBuilder().palette(from: [frame], maxColorCount: 1)
+        }
+        #expect(throws: GIFEngineModelError.invalidPaletteSize) {
+            _ = try MedianCutPaletteBuilder().palette(from: [frame], maxColorCount: 257)
+        }
+        #expect(throws: GIFEngineModelError.invalidPaletteSize) {
+            _ = try GIFColorPalette(colors: [GIFPaletteColor(red: 0, green: 0, blue: 0)])
+        }
+    }
+
     @Test("frame differ emits full first frame and transparent static deltas")
     func frameDifferEmitsFullFirstFrameAndTransparentStaticDeltas() throws {
         let bitmap = try solidBitmap(width: 3, height: 2, color: GIFRGBAPixel(red: 10, green: 20, blue: 30))
