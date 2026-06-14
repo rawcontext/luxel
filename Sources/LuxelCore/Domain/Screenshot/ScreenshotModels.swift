@@ -25,6 +25,21 @@ public enum CaptureBackdrop: String, Codable, Equatable, Sendable {
     case transparent
 }
 
+public enum ScreenshotDestination: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
+    case clipboard
+    case file
+    case preview
+
+    public var requiresFileURL: Bool {
+        switch self {
+        case .file, .preview:
+            true
+        case .clipboard:
+            false
+        }
+    }
+}
+
 public struct ScreenshotRequest: Codable, Equatable, Sendable {
     public let target: CaptureTarget
     public let includeCursor: Bool
@@ -77,6 +92,8 @@ public enum ScreenshotModelError: Error, Equatable {
     case transparentBackdropRequiresWindowTarget
     case transparentBackdropRequiresAlphaCapableFormat
     case emptyImageData
+    case emptyScreenshotDestinations
+    case fileDestinationRequiresOutputURL
 }
 
 private extension CaptureTarget {
