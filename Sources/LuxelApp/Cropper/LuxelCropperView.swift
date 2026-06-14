@@ -53,7 +53,11 @@ struct LuxelCropperView: View {
                             viewSize: geometry.size
                         )
                     }
+                    .onEnded { _ in
+                        model.finishUpdateSelection()
+                    }
             )
+            .background(cropperKeyboardShortcuts)
             .focusable()
             .onMoveCommand { direction in
                 handleMoveCommand(direction)
@@ -61,12 +65,31 @@ struct LuxelCropperView: View {
         }
     }
 
+    private var cropperKeyboardShortcuts: some View {
+        VStack {
+            Button("Undo Cropper Selection") {
+                model.undoSelectionChange()
+            }
+            .disabled(!model.canUndoSelectionChange)
+            .keyboardShortcut("z", modifiers: .command)
+
+            Button("Redo Cropper Selection") {
+                model.redoSelectionChange()
+            }
+            .disabled(!model.canRedoSelectionChange)
+            .keyboardShortcut("z", modifiers: [.command, .shift])
+        }
+        .frame(width: 0, height: 0)
+        .opacity(0)
+        .accessibilityHidden(true)
+    }
+
     private var cropperControls: some View {
         GlassPanel {
             HStack(spacing: 12) {
                 selectionGeometryControls
 
-                Picker("Mode", selection: $model.mode) {
+                Picker("Mode", selection: cropperMode) {
                     ForEach(LuxelCropperMode.allCases) { mode in
                         Text(mode.toolbarLabel).tag(mode)
                     }
@@ -480,6 +503,14 @@ struct LuxelCropperView: View {
             model.customStopAfterText
         } set: { text in
             model.setCustomStopAfterText(text)
+        }
+    }
+
+    private var cropperMode: Binding<LuxelCropperMode> {
+        Binding {
+            model.mode
+        } set: { mode in
+            model.setMode(mode)
         }
     }
 

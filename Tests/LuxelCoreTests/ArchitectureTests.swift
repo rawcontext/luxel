@@ -105,6 +105,34 @@ struct ArchitectureTests {
         #expect(source.contains(".ignoresSafeArea()"))
     }
 
+    @Test("cropper supports local selection undo and redo")
+    func cropperSupportsLocalSelectionUndoAndRedo() throws {
+        let packageRoot = try packageRootURL()
+        let modelSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            encoding: .utf8
+        )
+        let viewSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(modelSource.contains("UndoStack<CropperUndoState>"))
+        #expect(modelSource.contains("selection: CaptureRect?"))
+        #expect(modelSource.contains("aspectRatioPreset: CaptureAspectRatioPreset"))
+        #expect(modelSource.contains("mode: LuxelCropperMode"))
+        #expect(modelSource.contains("pushUndoState(coalescingToken: selectionDragCoalescingToken)"))
+        #expect(modelSource.contains("pushUndoState(coalescingToken: resizeDragCoalescingToken)"))
+        #expect(modelSource.contains("func undoSelectionChange()"))
+        #expect(modelSource.contains("func redoSelectionChange()"))
+        #expect(viewSource.contains("model.finishUpdateSelection()"))
+        #expect(viewSource.contains("Picker(\"Mode\", selection: cropperMode)"))
+        #expect(viewSource.contains("model.undoSelectionChange()"))
+        #expect(viewSource.contains("model.redoSelectionChange()"))
+        #expect(viewSource.contains(".keyboardShortcut(\"z\", modifiers: .command)"))
+        #expect(viewSource.contains(".keyboardShortcut(\"z\", modifiers: [.command, .shift])"))
+    }
+
     @Test("update settings milestone does not link Sparkle yet")
     func updateSettingsMilestoneDoesNotLinkSparkleYet() throws {
         let packageRoot = try packageRootURL()

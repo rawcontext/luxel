@@ -43,11 +43,17 @@ struct CropperCameraConfiguration {
     }
 }
 
-enum LuxelCropperMode: String, CaseIterable, Identifiable {
+enum LuxelCropperMode: String, CaseIterable, Identifiable, Sendable {
     case video
     case photo
 
     var id: Self { self }
+}
+
+private struct CropperUndoState: Equatable, Sendable {
+    let selection: CaptureRect?
+    let aspectRatioPreset: CaptureAspectRatioPreset
+    let mode: LuxelCropperMode
 }
 
 @MainActor
@@ -90,7 +96,10 @@ final class LuxelCropperModel {
     @ObservationIgnored private let onCountdownDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored let sizePresets: [CaptureSizePreset]
-    private var resizeStartSelection: CaptureRect?
+    @ObservationIgnored private var selectionUndoStack: UndoStack<CropperUndoState>
+    @ObservationIgnored private var resizeStartSelection: CaptureRect?
+    @ObservationIgnored private var selectionDragID = 0
+    @ObservationIgnored private var resizeDragID = 0
 
     init(
         display: DisplayBounds,
@@ -111,6 +120,11 @@ final class LuxelCropperModel {
         self.sizePresets = selectionPresetConfiguration.sizePresets
         self.onCountdownDurationChange = onCountdownDurationChange
         self.onStopAfterDurationChange = onStopAfterDurationChange
+        self.selectionUndoStack = UndoStack(initialState: CropperUndoState(
+            selection: nil,
+            aspectRatioPreset: .free,
+            mode: mode
+        ))
     }
 
     var selectionSummary: String {
@@ -123,6 +137,14 @@ final class LuxelCropperModel {
 
     var canRecordSelection: Bool {
         selection != nil
+    }
+
+    var canUndoSelectionChange: Bool {
+        selectionUndoStack.canUndo
+    }
+
+    var canRedoSelectionChange: Bool {
+        selectionUndoStack.canRedo
     }
 
     var stopAfterSummary: String {
@@ -166,6 +188,15 @@ final class LuxelCropperModel {
         customStopAfterText = text
     }
 
+    func setMode(_ mode: LuxelCropperMode) {
+        guard self.mode != mode else {
+            return
+        }
+
+        self.mode = mode
+        pushUndoState()
+    }
+
     func applyCustomStopAfterDuration() -> Bool {
         do {
             let duration = try RecordingDurationText.parse(customStopAfterText)
@@ -190,10 +221,15 @@ final class LuxelCropperModel {
                 in: display,
                 aspectRatio: aspectRatioPreset.aspectRatio
             )
+            pushUndoState(coalescingToken: selectionDragCoalescingToken)
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)
         }
+    }
+
+    func finishUpdateSelection() {
+        selectionDragID += 1
     }
 
     func resizeSelection(handle: CaptureResizeHandle, translation: CGSize, viewSize: CGSize) {
@@ -219,6 +255,7 @@ final class LuxelCropperModel {
                 by: captureDelta(from: translation, viewSize: viewSize),
                 lockingAspectRatio: aspectRatioPreset != .free
             ).topLeftSelection
+            pushUndoState(coalescingToken: resizeDragCoalescingToken)
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)
@@ -226,9 +263,14 @@ final class LuxelCropperModel {
     }
 
     func setAspectRatioPreset(_ preset: CaptureAspectRatioPreset) {
+        guard aspectRatioPreset != preset else {
+            return
+        }
+
         aspectRatioPreset = preset
 
         guard let selection else {
+            pushUndoState()
             errorMessage = nil
             return
         }
@@ -236,6 +278,7 @@ final class LuxelCropperModel {
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
             self.selection = try draft.applyingAspectRatioPreset(preset).topLeftSelection
+            pushUndoState()
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)
@@ -252,6 +295,7 @@ final class LuxelCropperModel {
             }
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: startingSelection)
             selection = try draft.applyingSizePreset(preset).topLeftSelection
+            pushUndoState()
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)
@@ -282,6 +326,7 @@ final class LuxelCropperModel {
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
             self.selection = try draft.moved(by: CaptureResizeDelta(x: x, y: y)).topLeftSelection
+            pushUndoState()
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)
@@ -296,6 +341,7 @@ final class LuxelCropperModel {
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
             self.selection = try draft.resized(by: CaptureResizeDelta(x: width, y: height)).topLeftSelection
+            pushUndoState()
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)
@@ -304,15 +350,33 @@ final class LuxelCropperModel {
 
     func finishResizeSelection() {
         resizeStartSelection = nil
+        resizeDragID += 1
     }
 
     func selectFullDisplay() {
         do {
             selection = try CaptureSelectionBuilder.fullDisplaySelection(in: display)
+            pushUndoState()
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)
         }
+    }
+
+    func undoSelectionChange() {
+        guard let state = selectionUndoStack.undo() else {
+            return
+        }
+
+        applyUndoState(state)
+    }
+
+    func redoSelectionChange() {
+        guard let state = selectionUndoStack.redo() else {
+            return
+        }
+
+        applyUndoState(state)
     }
 
     func viewRect(for selection: CaptureRect, in viewSize: CGSize) -> CGRect {
@@ -353,10 +417,38 @@ final class LuxelCropperModel {
                 width: width,
                 height: height
             ).topLeftSelection
+            pushUndoState()
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)
         }
+    }
+
+    private var selectionDragCoalescingToken: String {
+        "selection-drag-\(selectionDragID)"
+    }
+
+    private var resizeDragCoalescingToken: String {
+        "resize-drag-\(resizeDragID)"
+    }
+
+    private var currentUndoState: CropperUndoState {
+        CropperUndoState(
+            selection: selection,
+            aspectRatioPreset: aspectRatioPreset,
+            mode: mode
+        )
+    }
+
+    private func pushUndoState(coalescingToken: String? = nil) {
+        selectionUndoStack.push(currentUndoState, coalescingToken: coalescingToken)
+    }
+
+    private func applyUndoState(_ state: CropperUndoState) {
+        selection = state.selection
+        aspectRatioPreset = state.aspectRatioPreset
+        mode = state.mode
+        errorMessage = nil
     }
 
     private func capturePoint(from point: CGPoint, viewSize: CGSize) -> CapturePoint {

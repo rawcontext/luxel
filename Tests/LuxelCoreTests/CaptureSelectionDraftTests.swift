@@ -247,6 +247,26 @@ struct CaptureSelectionDraftTests {
         #expect(resized.topLeftSelection == (try CaptureRect(x: 150, y: 100, width: 400, height: 300)))
     }
 
+    @Test("undo stack coalesces cropper drag snapshots")
+    func undoStackCoalescesCropperDragSnapshots() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
+        let initial = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 180)
+        )
+        let firstDragUpdate = try initial.moved(by: CaptureResizeDelta(x: 10, y: 0))
+        let finalDragUpdate = try initial.moved(by: CaptureResizeDelta(x: 80, y: 40))
+        var stack = UndoStack(initialState: initial)
+
+        stack.push(firstDragUpdate, coalescingToken: "drag-1")
+        stack.push(finalDragUpdate, coalescingToken: "drag-1")
+
+        #expect(stack.current == finalDragUpdate)
+        #expect(stack.undoCount == 1)
+        #expect(stack.undo() == initial)
+        #expect(stack.redo() == finalDragUpdate)
+    }
+
     @Test("invalid resize minimums throw")
     func invalidResizeMinimumsThrow() throws {
         let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
