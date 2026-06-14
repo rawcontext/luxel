@@ -1,24 +1,27 @@
-import AppKit
 import LuxelCore
-import QuartzCore
 import SwiftUI
 
 struct LuxelMenuBarLabel: View {
     @Bindable var model: LuxelMenuModel
     @State private var now = Date()
-    @State private var iconAnimationState = LuxelMenuBarIconAnimationState()
     @State private var quickExportProgressPanelController = QuickExportProgressPanelController()
 
     var body: some View {
         let presentation = model.recordingPresentation(now: now)
         let title = menuBarTitle(for: presentation)
 
-        LuxelMenuBarIconView(
-            systemImageName: presentation.menuBarSystemImage,
-            title: title,
-            isAnimating: presentation.animatesMenuBarSystemImage,
-            animationState: iconAnimationState
-        )
+        HStack(spacing: 4) {
+            Image(systemName: presentation.menuBarSystemImage)
+                .contentTransition(.symbolEffect(.replace))
+                .symbolEffect(.pulse, options: .repeating, value: presentation.animatesMenuBarSystemImage)
+                .animation(.easeInOut(duration: 0.24), value: presentation.menuBarSystemImage)
+
+            if let title {
+                Text(title)
+                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                    .lineLimit(1)
+            }
+        }
             .background {
                 QuickExportProgressPanelHost(
                     model: model,
@@ -44,204 +47,5 @@ struct LuxelMenuBarLabel: View {
         default:
             presentation.menuBarTitle
         }
-    }
-}
-
-private struct LuxelMenuBarIconView: NSViewRepresentable {
-    let systemImageName: String
-    let title: String?
-    let isAnimating: Bool
-    let animationState: LuxelMenuBarIconAnimationState
-
-    func makeNSView(context: Context) -> LuxelMenuBarIconNSView {
-        let view = LuxelMenuBarIconNSView()
-        view.update(
-            systemImageName: systemImageName,
-            title: title,
-            isAnimating: isAnimating,
-            animationState: animationState
-        )
-        return view
-    }
-
-    func updateNSView(_ nsView: LuxelMenuBarIconNSView, context: Context) {
-        nsView.update(
-            systemImageName: systemImageName,
-            title: title,
-            isAnimating: isAnimating,
-            animationState: animationState
-        )
-    }
-}
-
-@MainActor
-private final class LuxelMenuBarIconAnimationState {
-    var systemImageName: String?
-}
-
-@MainActor
-private final class LuxelMenuBarIconNSView: NSView {
-    private let previousImageView = NSImageView()
-    private let currentImageView = NSImageView()
-    private let titleField = NSTextField(labelWithString: "")
-    private var currentSystemImageName: String?
-    private var currentTitle: String?
-    private var isAnimating = false
-    private let recordingAnimationKey = "media.luxel.menu-bar-recording-opacity"
-    private let iconSize: CGFloat = 18
-    private let spacing: CGFloat = 4
-
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        setup()
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setup()
-    }
-
-    override var intrinsicContentSize: NSSize {
-        let titleWidth = currentTitle == nil ? 0 : titleField.intrinsicContentSize.width + spacing
-        return NSSize(width: iconSize + titleWidth, height: iconSize)
-    }
-
-    override func layout() {
-        super.layout()
-        let iconFrame = NSRect(x: 0, y: 0, width: iconSize, height: iconSize)
-        previousImageView.frame = iconFrame
-        currentImageView.frame = iconFrame
-
-        let titleSize = titleField.intrinsicContentSize
-        titleField.frame = NSRect(
-            x: iconFrame.maxX + spacing,
-            y: (bounds.height - titleSize.height) / 2,
-            width: titleSize.width,
-            height: titleSize.height
-        )
-    }
-
-    func update(
-        systemImageName: String,
-        title: String?,
-        isAnimating: Bool,
-        animationState: LuxelMenuBarIconAnimationState
-    ) {
-        if currentSystemImageName != systemImageName {
-            transition(to: systemImageName, from: animationState.systemImageName)
-        }
-
-        animationState.systemImageName = systemImageName
-        updateTitle(title)
-        updateRecordingAnimation(isAnimating)
-    }
-
-    private func setup() {
-        wantsLayer = true
-
-        for imageView in [previousImageView, currentImageView] {
-            imageView.imageScaling = .scaleProportionallyDown
-            imageView.contentTintColor = .labelColor
-            imageView.wantsLayer = true
-            imageView.alphaValue = imageView === currentImageView ? 1 : 0
-            addSubview(imageView)
-        }
-
-        titleField.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
-        titleField.textColor = .labelColor
-        titleField.lineBreakMode = .byClipping
-        titleField.alphaValue = 0
-        addSubview(titleField)
-    }
-
-    private func updateTitle(_ title: String?) {
-        guard currentTitle != title else {
-            return
-        }
-
-        currentTitle = title
-        titleField.stringValue = title ?? ""
-        titleField.alphaValue = title == nil ? 0 : 1
-        invalidateIntrinsicContentSize()
-        needsLayout = true
-    }
-
-    private func transition(to systemImageName: String, from rememberedSystemImageName: String?) {
-        let image = symbolImage(named: systemImageName)
-        defer {
-            currentSystemImageName = systemImageName
-        }
-
-        guard currentSystemImageName != nil else {
-            if let rememberedSystemImageName,
-               rememberedSystemImageName != systemImageName,
-               let rememberedImage = symbolImage(named: rememberedSystemImageName) {
-                previousImageView.image = rememberedImage
-                previousImageView.alphaValue = 1
-                currentImageView.image = image
-                currentImageView.alphaValue = 0
-                animateImageTransition()
-                return
-            }
-
-            currentImageView.image = image
-            currentImageView.alphaValue = 1
-            return
-        }
-
-        previousImageView.image = currentImageView.image
-        previousImageView.alphaValue = 1
-        currentImageView.image = image
-        currentImageView.alphaValue = 0
-        animateImageTransition()
-    }
-
-    private func animateImageTransition() {
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.24
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            previousImageView.animator().alphaValue = 0
-            currentImageView.animator().alphaValue = 1
-        } completionHandler: { [weak self] in
-            Task { @MainActor in
-                self?.previousImageView.image = nil
-                self?.previousImageView.alphaValue = 0
-            }
-        }
-    }
-
-    private func updateRecordingAnimation(_ isAnimating: Bool) {
-        guard self.isAnimating != isAnimating else {
-            return
-        }
-
-        self.isAnimating = isAnimating
-
-        if isAnimating {
-            let animation = CABasicAnimation(keyPath: "opacity")
-            animation.fromValue = 0.62
-            animation.toValue = 1.0
-            animation.duration = 1.15
-            animation.autoreverses = true
-            animation.repeatCount = .infinity
-            animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            animation.isRemovedOnCompletion = false
-            currentImageView.layer?.opacity = 1
-            currentImageView.layer?.add(animation, forKey: recordingAnimationKey)
-        } else {
-            currentImageView.layer?.removeAnimation(forKey: recordingAnimationKey)
-            currentImageView.layer?.opacity = 1
-        }
-    }
-
-    private func symbolImage(named name: String) -> NSImage? {
-        guard let baseImage = NSImage(systemSymbolName: name, accessibilityDescription: nil) else {
-            return nil
-        }
-
-        let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-        let image = baseImage.withSymbolConfiguration(configuration) ?? baseImage
-        image.isTemplate = true
-        return image
     }
 }
