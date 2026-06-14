@@ -204,6 +204,43 @@ struct ArchitectureTests {
         #expect(shortcutsSource.contains("restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
     }
 
+    @Test("cropper dims inactive displays when configured")
+    func cropperDimsInactiveDisplaysWhenConfigured() throws {
+        let packageRoot = try packageRootURL()
+        let modelSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            encoding: .utf8
+        )
+        let controllerSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperPanelController.swift"),
+            encoding: .utf8
+        )
+        let viewSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperView.swift"),
+            encoding: .utf8
+        )
+        let controlsSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/LuxelRecordingControls.swift"),
+            encoding: .utf8
+        )
+        let shortcutsSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Shortcuts/LuxelShortcutInstaller.swift"),
+            encoding: .utf8
+        )
+
+        #expect(modelSource.contains("final class CropperDisplayFocus"))
+        #expect(modelSource.contains("func dimsDisplay(_ displayID: DisplayID, dimOtherDisplays: Bool) -> Bool"))
+        #expect(modelSource.contains("var isDimmedByOtherDisplay: Bool"))
+        #expect(modelSource.contains("displayFocus.activate(display.id)"))
+        #expect(modelSource.contains("displayFocus.clear(ifMatching: display.id)"))
+        #expect(controllerSource.contains("let displayFocus = CropperDisplayFocus()"))
+        #expect(controllerSource.contains("dimOtherDisplays: dimOtherDisplays"))
+        #expect(viewSource.contains("Color.black.opacity(model.isDimmedByOtherDisplay ? 0.20 : 0.38)"))
+        #expect(viewSource.contains("if let selection = model.selection, !model.isDimmedByOtherDisplay"))
+        #expect(controlsSource.contains("dimOtherDisplays: model.settings.dimOtherDisplays"))
+        #expect(shortcutsSource.contains("dimOtherDisplays: model.settings.dimOtherDisplays"))
+    }
+
     @Test("recording FPS settings accept direct numeric entry")
     func recordingFPSSettingsAcceptDirectNumericEntry() throws {
         let packageRoot = try packageRootURL()

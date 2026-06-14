@@ -40,6 +40,7 @@ final class LuxelCropperPanelController {
             sizePresets: CaptureSizePreset.builtInDefaults
         ),
         restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled,
+        dimOtherDisplays: Bool = false,
         showsNotificationReminder: Bool = false,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
@@ -67,6 +68,7 @@ final class LuxelCropperPanelController {
                     quickRecordingConfiguration: quickRecordingConfiguration,
                     selectionPresetConfiguration: selectionPresetConfiguration,
                     restoreSelectionConfiguration: restoreSelectionConfiguration,
+                    dimOtherDisplays: dimOtherDisplays,
                     showsNotificationReminder: showsNotificationReminder,
                     onCountdownDurationChange: onCountdownDurationChange,
                     onStopAfterDurationChange: onStopAfterDurationChange,
@@ -103,6 +105,7 @@ final class LuxelCropperPanelController {
         quickRecordingConfiguration: CropperQuickRecordingConfiguration,
         selectionPresetConfiguration: CropperSelectionPresetConfiguration,
         restoreSelectionConfiguration: CropperRestoreSelectionConfiguration,
+        dimOtherDisplays: Bool,
         showsNotificationReminder: Bool,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
@@ -128,6 +131,8 @@ final class LuxelCropperPanelController {
             }
         }
 
+        let displayFocus = CropperDisplayFocus()
+
         for screen in NSScreen.screens {
             guard let displayID = screen.displayID,
                   let display = displaysByID[displayID] else {
@@ -145,6 +150,8 @@ final class LuxelCropperPanelController {
                     on: display,
                     from: targets
                 ),
+                dimOtherDisplays: dimOtherDisplays,
+                displayFocus: displayFocus,
                 onCountdownDurationChange: onCountdownDurationChange,
                 onStopAfterDurationChange: onStopAfterDurationChange
             )

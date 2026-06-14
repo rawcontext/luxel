@@ -23,26 +23,30 @@ struct LuxelCropperView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Color.black.opacity(0.38)
+                Color.black.opacity(model.isDimmedByOtherDisplay ? 0.20 : 0.38)
                     .ignoresSafeArea()
 
-                if let selection = model.selection {
+                if let selection = model.selection, !model.isDimmedByOtherDisplay {
                     let rect = model.viewRect(for: selection, in: geometry.size)
 
                     selectionOverlay(rect: rect, viewSize: geometry.size)
                 }
 
-                snapGuidesOverlay(viewSize: geometry.size)
+                if !model.isDimmedByOtherDisplay {
+                    snapGuidesOverlay(viewSize: geometry.size)
+                }
 
-                VStack {
-                    if showsNotificationReminder, model.mode == .video {
-                        notificationReminderPanel
-                            .padding(.top, 28)
+                if !model.isDimmedByOtherDisplay {
+                    VStack {
+                        if showsNotificationReminder, model.mode == .video {
+                            notificationReminderPanel
+                                .padding(.top, 28)
+                        }
+
+                        Spacer()
+                        cropperControls
+                            .padding(.bottom, 28)
                     }
-
-                    Spacer()
-                    cropperControls
-                        .padding(.bottom, 28)
                 }
             }
             .contentShape(Rectangle())

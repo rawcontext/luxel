@@ -44,6 +44,26 @@ struct CropperRestoreSelectionConfiguration {
     }
 }
 
+@MainActor
+@Observable
+final class CropperDisplayFocus {
+    var activeDisplayID: DisplayID?
+
+    func activate(_ displayID: DisplayID) {
+        activeDisplayID = displayID
+    }
+
+    func clear(ifMatching displayID: DisplayID) {
+        if activeDisplayID == displayID {
+            activeDisplayID = nil
+        }
+    }
+
+    func dimsDisplay(_ displayID: DisplayID, dimOtherDisplays: Bool) -> Bool {
+        dimOtherDisplays && activeDisplayID != nil && activeDisplayID != displayID
+    }
+}
+
 struct CropperCameraConfiguration {
     let selectedDeviceID: String?
     let devices: [CameraDeviceOption]
@@ -119,6 +139,8 @@ final class LuxelCropperModel {
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored let sizePresets: [CaptureSizePreset]
     @ObservationIgnored let windowSnapFrames: [CaptureRect]
+    let dimOtherDisplays: Bool
+    let displayFocus: CropperDisplayFocus
     @ObservationIgnored private var selectionUndoStack: UndoStack<CropperUndoState>
     @ObservationIgnored private var resizeStartSelection: CaptureRect?
     @ObservationIgnored private var selectionDragID = 0
@@ -134,6 +156,8 @@ final class LuxelCropperModel {
         ),
         initialSelection: CaptureRect? = nil,
         windowSnapFrames: [CaptureRect] = [],
+        dimOtherDisplays: Bool = false,
+        displayFocus: CropperDisplayFocus = CropperDisplayFocus(),
         onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in }
     ) {
@@ -147,8 +171,13 @@ final class LuxelCropperModel {
         self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
         self.sizePresets = selectionPresetConfiguration.sizePresets
         self.windowSnapFrames = windowSnapFrames
+        self.dimOtherDisplays = dimOtherDisplays
+        self.displayFocus = displayFocus
         self.onCountdownDurationChange = onCountdownDurationChange
         self.onStopAfterDurationChange = onStopAfterDurationChange
+        if resolvedInitialSelection != nil {
+            displayFocus.activate(display.id)
+        }
         self.selectionUndoStack = UndoStack(initialState: CropperUndoState(
             selection: resolvedInitialSelection,
             aspectRatioPreset: .free,
@@ -173,6 +202,10 @@ final class LuxelCropperModel {
 
     var canRecordSelection: Bool {
         selection != nil
+    }
+
+    var isDimmedByOtherDisplay: Bool {
+        displayFocus.dimsDisplay(display.id, dimOtherDisplays: dimOtherDisplays)
     }
 
     var canUndoSelectionChange: Bool {
@@ -276,6 +309,7 @@ final class LuxelCropperModel {
                 screenFrames: [try displaySnapFrame],
                 isDisabled: isSnappingDisabled
             )
+            activateDisplay()
             selection = snapResult.rect
             snapGuides = snapResult.guides
             pushUndoState(coalescingToken: selectionDragCoalescingToken)
@@ -314,6 +348,7 @@ final class LuxelCropperModel {
                 by: captureDelta(from: translation, viewSize: viewSize),
                 lockingAspectRatio: activeAspectRatio != nil
             ).topLeftSelection
+            activateDisplay()
             pushUndoState(coalescingToken: resizeDragCoalescingToken)
             errorMessage = nil
         } catch {
@@ -373,6 +408,7 @@ final class LuxelCropperModel {
             }
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: startingSelection)
             selection = try draft.applyingSizePreset(preset).topLeftSelection
+            activateDisplay()
             pushUndoState()
             errorMessage = nil
         } catch {
@@ -404,6 +440,7 @@ final class LuxelCropperModel {
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
             self.selection = try draft.moved(by: CaptureResizeDelta(x: x, y: y)).topLeftSelection
+            activateDisplay()
             pushUndoState()
             errorMessage = nil
         } catch {
@@ -419,6 +456,7 @@ final class LuxelCropperModel {
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
             self.selection = try draft.resized(by: CaptureResizeDelta(x: width, y: height)).topLeftSelection
+            activateDisplay()
             pushUndoState()
             errorMessage = nil
         } catch {
@@ -434,6 +472,7 @@ final class LuxelCropperModel {
     func selectFullDisplay() {
         do {
             selection = try CaptureSelectionBuilder.fullDisplaySelection(in: display)
+            activateDisplay()
             pushUndoState()
             errorMessage = nil
         } catch {
@@ -495,6 +534,7 @@ final class LuxelCropperModel {
                 width: width,
                 height: height
             ).topLeftSelection
+            activateDisplay()
             pushUndoState()
             errorMessage = nil
         } catch {
@@ -532,7 +572,20 @@ final class LuxelCropperModel {
         customAspectRatioWidthText = state.customAspectRatioWidthText
         customAspectRatioHeightText = state.customAspectRatioHeightText
         mode = state.mode
+        updateDisplayFocusForCurrentSelection()
         errorMessage = nil
+    }
+
+    private func activateDisplay() {
+        displayFocus.activate(display.id)
+    }
+
+    private func updateDisplayFocusForCurrentSelection() {
+        if selection == nil {
+            displayFocus.clear(ifMatching: display.id)
+        } else {
+            activateDisplay()
+        }
     }
 
     private var activeAspectRatio: CaptureAspectRatio? {
