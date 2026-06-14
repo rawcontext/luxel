@@ -100,13 +100,32 @@ private enum RecordingFrameStyle {
     }
 
     private static func fullDisplayCornerRadii(screen: NSScreen?) -> RecordingFrameCornerRadii {
-        guard let screen, screen.isBuiltInDisplay, screen.safeAreaInsets.top > 0 else {
+        guard let screen, screen.isBuiltInDisplay else {
             return .square
         }
 
         // AppKit exposes notched built-in displays through safeAreaInsets, but not physical corner radius.
-        let cornerRadius = min(max(screen.safeAreaInsets.top * 0.65, 18), 28)
-        return RecordingFrameCornerRadii(top: cornerRadius, bottom: cornerRadius)
+        let topCornerRadius = fullDisplayTopCornerRadius(screen: screen)
+        guard topCornerRadius > 0 else {
+            return .square
+        }
+
+        let bottomCornerRadius = min(max(topCornerRadius * 0.65, 18), 28)
+        return RecordingFrameCornerRadii(top: topCornerRadius, bottom: bottomCornerRadius)
+    }
+
+    private static func fullDisplayTopCornerRadius(screen: NSScreen) -> CGFloat {
+        let topInset = max(
+            screen.safeAreaInsets.top,
+            screen.auxiliaryTopLeftArea?.height ?? 0,
+            screen.auxiliaryTopRightArea?.height ?? 0
+        )
+
+        guard topInset > 0 else {
+            return 0
+        }
+
+        return min(max(topInset, 18), 40)
     }
 }
 
@@ -163,8 +182,74 @@ private final class RecordingFrameDrawingView: NSView {
         in rect: NSRect,
         cornerRadii: RecordingFrameCornerRadii
     ) -> NSBezierPath {
-        let radius = clampedRadius(max(cornerRadii.top, cornerRadii.bottom), in: rect)
-        return NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+        let topRadius = clampedRadius(cornerRadii.top, in: rect)
+        let bottomRadius = clampedRadius(cornerRadii.bottom, in: rect)
+        let path = NSBezierPath()
+
+        path.move(to: NSPoint(x: rect.minX + bottomRadius, y: rect.minY))
+        path.line(to: NSPoint(x: rect.maxX - bottomRadius, y: rect.minY))
+        appendArc(
+            to: path,
+            center: NSPoint(x: rect.maxX - bottomRadius, y: rect.minY + bottomRadius),
+            radius: bottomRadius,
+            startAngle: 270,
+            endAngle: 360,
+            fallback: NSPoint(x: rect.maxX, y: rect.minY)
+        )
+
+        path.line(to: NSPoint(x: rect.maxX, y: rect.maxY - topRadius))
+        appendArc(
+            to: path,
+            center: NSPoint(x: rect.maxX - topRadius, y: rect.maxY - topRadius),
+            radius: topRadius,
+            startAngle: 0,
+            endAngle: 90,
+            fallback: NSPoint(x: rect.maxX, y: rect.maxY)
+        )
+
+        path.line(to: NSPoint(x: rect.minX + topRadius, y: rect.maxY))
+        appendArc(
+            to: path,
+            center: NSPoint(x: rect.minX + topRadius, y: rect.maxY - topRadius),
+            radius: topRadius,
+            startAngle: 90,
+            endAngle: 180,
+            fallback: NSPoint(x: rect.minX, y: rect.maxY)
+        )
+
+        path.line(to: NSPoint(x: rect.minX, y: rect.minY + bottomRadius))
+        appendArc(
+            to: path,
+            center: NSPoint(x: rect.minX + bottomRadius, y: rect.minY + bottomRadius),
+            radius: bottomRadius,
+            startAngle: 180,
+            endAngle: 270,
+            fallback: NSPoint(x: rect.minX, y: rect.minY)
+        )
+
+        path.close()
+        return path
+    }
+
+    private func appendArc(
+        to path: NSBezierPath,
+        center: NSPoint,
+        radius: CGFloat,
+        startAngle: CGFloat,
+        endAngle: CGFloat,
+        fallback: NSPoint
+    ) {
+        guard radius > 0 else {
+            path.line(to: fallback)
+            return
+        }
+
+        path.appendArc(
+            withCenter: center,
+            radius: radius,
+            startAngle: startAngle,
+            endAngle: endAngle
+        )
     }
 
     private func clampedRadius(_ radius: CGFloat, in rect: NSRect) -> CGFloat {

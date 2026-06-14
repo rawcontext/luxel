@@ -97,12 +97,16 @@ struct ArchitectureTests {
 
         #expect(source.contains("case fullDisplay(cornerRadii: RecordingFrameCornerRadii)"))
         #expect(source.contains("case .area where screen.map({ frame.matches($0.frame) }) == true"))
-        #expect(source.contains("let cornerRadius = min(max(screen.safeAreaInsets.top * 0.65, 18), 28)"))
-        #expect(source.contains("RecordingFrameCornerRadii(top: cornerRadius, bottom: cornerRadius)"))
+        #expect(source.contains("fullDisplayTopCornerRadius(screen: screen)"))
+        #expect(source.contains("screen.auxiliaryTopLeftArea?.height"))
+        #expect(source.contains("screen.auxiliaryTopRightArea?.height"))
+        #expect(source.contains("RecordingFrameCornerRadii(top: topCornerRadius, bottom: bottomCornerRadius)"))
         #expect(source.contains("screen.safeAreaInsets.top"))
         #expect(source.contains("RecordingFrameDrawingView(style: style)"))
         #expect(source.contains("bounds.insetBy(dx: strokeWidth / 2, dy: strokeWidth / 2)"))
-        #expect(source.contains("NSBezierPath(roundedRect: rect"))
+        #expect(source.contains("let topRadius = clampedRadius(cornerRadii.top, in: rect)"))
+        #expect(source.contains("let bottomRadius = clampedRadius(cornerRadii.bottom, in: rect)"))
+        #expect(source.contains("path.appendArc("))
     }
 
     @Test("cropper supports local selection undo and redo")
