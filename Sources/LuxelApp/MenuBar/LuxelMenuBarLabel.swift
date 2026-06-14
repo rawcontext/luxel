@@ -1,4 +1,3 @@
-import AppKit
 import Foundation
 import LuxelCore
 import SwiftUI
@@ -13,10 +12,7 @@ struct LuxelMenuBarLabel: View {
         Label {
             Text(presentation.accessibilityLabel)
         } icon: {
-            MenuBarStatusIcon(
-                systemImage: presentation.menuBarSystemImage,
-                accessibilityLabel: presentation.accessibilityLabel
-            )
+            MenuBarStatusIcon(systemImage: presentation.menuBarSystemImage)
         }
             .labelStyle(.iconOnly)
             .background {
@@ -31,15 +27,13 @@ struct LuxelMenuBarLabel: View {
 
 private struct MenuBarStatusIcon: View {
     let systemImage: String
-    let accessibilityLabel: String
 
     @State private var displayedSystemImage: String
     @State private var previousSystemImage: String?
     @State private var transitionProgress = 1.0
 
-    init(systemImage: String, accessibilityLabel: String) {
+    init(systemImage: String) {
         self.systemImage = systemImage
-        self.accessibilityLabel = accessibilityLabel
         _displayedSystemImage = State(initialValue: systemImage)
     }
 
@@ -71,17 +65,10 @@ private struct MenuBarStatusIcon: View {
     }
 
     private func statusImage(_ systemImage: String) -> some View {
-        Image(nsImage: menuBarImage(systemImage))
-            .resizable()
-            .scaledToFit()
-    }
-
-    private func menuBarImage(_ systemImage: String) -> NSImage {
-        let image = NSImage(systemSymbolName: systemImage, accessibilityDescription: accessibilityLabel)
-            ?? NSImage(systemSymbolName: "record.circle", accessibilityDescription: "Luxel")
-            ?? NSImage(size: NSSize(width: 18, height: 18))
-        image.isTemplate = true
-        image.size = NSSize(width: 18, height: 18)
-        return image
+        Image(systemName: systemImage)
+            .symbolRenderingMode(.monochrome)
+            .foregroundStyle(.primary)
+            .font(.system(size: 14, weight: .regular))
+            .imageScale(.medium)
     }
 }
