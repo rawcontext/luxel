@@ -57,6 +57,16 @@ enum LuxelCompositionRoot {
         )
     }
 
+    @MainActor
+    static func screenshotCaptureService(history: RecordingHistoryService) -> ScreenshotCaptureService {
+        ScreenshotCaptureService(
+            capturer: ScreenCaptureKitStillCapturer(),
+            fileWriter: LocalScreenshotFileWriter(),
+            destinationClient: AppKitScreenshotDestinationClient(),
+            history: history
+        )
+    }
+
     static var defaultRecordingsDirectory: URL {
         let moviesDirectory = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Movies")

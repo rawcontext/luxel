@@ -36,8 +36,10 @@ final class LuxelMenuModel {
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored let bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker
     @ObservationIgnored let quickExportService: QuickExportService
+    @ObservationIgnored let screenshotCaptureService: ScreenshotCaptureService
     @ObservationIgnored let permissionGuidanceService: PermissionGuidanceService
     @ObservationIgnored let lastCaptureRecordingPlanner: LastCaptureRecordingPlanner
+    @ObservationIgnored let screenshotCapturePlanner: ScreenshotCapturePlanner
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
@@ -61,8 +63,10 @@ final class LuxelMenuModel {
         ),
         bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker = AppKitBookmarkedDirectoryPicker(),
         quickExportService: QuickExportService? = nil,
+        screenshotCaptureService: ScreenshotCaptureService? = nil,
         permissionGuidanceService: PermissionGuidanceService = PermissionGuidanceService(),
         lastCaptureRecordingPlanner: LastCaptureRecordingPlanner = LastCaptureRecordingPlanner(),
+        screenshotCapturePlanner: ScreenshotCapturePlanner = ScreenshotCapturePlanner(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
         recorder: any CaptureRecorder = LuxelCompositionRoot.captureRecorder(),
         audioRecorder: any AudioRecorder = LuxelCompositionRoot.audioRecorder()
@@ -78,8 +82,11 @@ final class LuxelMenuModel {
         self.bookmarkedDirectoryPicker = bookmarkedDirectoryPicker
         self.quickExportService = quickExportService
             ?? LuxelCompositionRoot.quickExportService(fileWorkflowService: fileWorkflowService)
+        self.screenshotCaptureService = screenshotCaptureService
+            ?? LuxelCompositionRoot.screenshotCaptureService(history: recordingHistoryService)
         self.permissionGuidanceService = permissionGuidanceService
         self.lastCaptureRecordingPlanner = lastCaptureRecordingPlanner
+        self.screenshotCapturePlanner = screenshotCapturePlanner
         self.appMetadata = appMetadata
         self.recordingLifecycleService = RecordingLifecycleService(
             recorder: recorder,

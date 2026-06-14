@@ -48,6 +48,15 @@ struct LuxelRecordingControls: View {
 
         Button {
             Task {
+                await model.captureScreenshotFromSelectedTarget()
+            }
+        } label: {
+            Label("Capture Screenshot", systemImage: "camera")
+        }
+        .disabled(!model.canCaptureScreenshot)
+
+        Button {
+            Task {
                 await model.startRecordingFromLastCapture()
             }
         } label: {

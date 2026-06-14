@@ -77,6 +77,15 @@ extension LuxelMenuModel {
         canUseRecordAgainButton && settings.quickExportPresetID != nil
     }
 
+    var canCaptureScreenshot: Bool {
+        switch recordingState {
+        case .idle, .failed:
+            screenRecordingStatus == .authorized && selectedCaptureTarget != nil
+        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+            false
+        }
+    }
+
     var canSelectArea: Bool {
         switch recordingState {
         case .idle, .failed:

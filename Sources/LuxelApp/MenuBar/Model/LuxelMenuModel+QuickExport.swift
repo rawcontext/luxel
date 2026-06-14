@@ -17,11 +17,12 @@ extension LuxelMenuModel {
             }
 
             recordingState = .idle
-            recentRecordings = Array(recordingHistoryService.recordExport(
+            recordingHistoryService.recordExport(
                 result.exportedMedia,
                 presetName: result.preset.name,
                 for: recording
-            ).prefix(5))
+            )
+            refreshRecentRecordings()
             quickExportStatusMessage = quickExportStatusText(for: result.exportedMedia)
             return .quickExported(result.exportedMedia.fileURL)
         } catch {
