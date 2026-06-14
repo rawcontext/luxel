@@ -169,6 +169,36 @@ public struct CursorTimeline: Codable, Equatable, Sendable {
     }
 }
 
+public struct CursorSidecarDocument: Codable, Equatable, Sendable {
+    public static let currentSchemaVersion = 1
+
+    public let schemaVersion: Int
+    public let timeline: CursorTimeline
+
+    public init(
+        schemaVersion: Int = CursorSidecarDocument.currentSchemaVersion,
+        timeline: CursorTimeline
+    ) throws {
+        guard schemaVersion == Self.currentSchemaVersion else {
+            throw CursorEffectModelError.unsupportedSidecarSchemaVersion
+        }
+
+        self.schemaVersion = schemaVersion
+        self.timeline = timeline
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        guard schemaVersion == Self.currentSchemaVersion else {
+            throw CursorEffectModelError.unsupportedSidecarSchemaVersion
+        }
+
+        self.schemaVersion = schemaVersion
+        self.timeline = try container.decode(CursorTimeline.self, forKey: .timeline)
+    }
+}
+
 public struct CursorRenderOptions: Codable, Equatable, Sendable {
     public let isVisible: Bool
     public let sizeMultiplier: Double
@@ -398,6 +428,7 @@ public enum SpotlightIntervalResolver {
 
 public enum CursorEffectModelError: Error, Equatable {
     case unsupportedSchemaVersion
+    case unsupportedSidecarSchemaVersion
     case invalidPoint
     case invalidCursorImage
     case duplicateCursorImageID
