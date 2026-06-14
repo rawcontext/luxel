@@ -61,7 +61,34 @@ extension LuxelMenuModel {
 
         cameraPreviewPanelController.present(
             deviceID: cameraDeviceID,
-            style: settings.cameraPreviewStyle
+            style: settings.cameraPreviewStyle,
+            showsHoverControls: canShowCameraPreviewHoverControls,
+            onClose: { [weak self] in
+                self?.disableCameraPreviewFromPanel()
+            }
         )
+    }
+
+    func syncCameraPreviewHoverControls() {
+        setCameraPreviewHoverControlsEnabled(canShowCameraPreviewHoverControls)
+    }
+
+    func setCameraPreviewHoverControlsEnabled(_ isEnabled: Bool) {
+        cameraPreviewPanelController.setHoverControlsEnabled(isEnabled)
+    }
+
+    private func disableCameraPreviewFromPanel() {
+        settings.cameraDeviceID = nil
+        saveSettings()
+        cameraPreviewPanelController.close()
+    }
+
+    private var canShowCameraPreviewHoverControls: Bool {
+        switch recordingState {
+        case .idle, .failed, .exporting:
+            true
+        case .starting, .recording, .pausing, .paused, .resuming, .stopping:
+            false
+        }
     }
 }

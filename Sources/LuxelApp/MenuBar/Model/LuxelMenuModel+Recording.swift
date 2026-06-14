@@ -273,6 +273,7 @@ extension LuxelMenuModel {
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
         recordingState = .starting
+        setCameraPreviewHoverControlsEnabled(false)
 
         do {
             await recordingFramePanelController.present(
@@ -297,6 +298,7 @@ extension LuxelMenuModel {
         } catch {
             await recordingFramePanelController.close()
             recordingState = .failed(errorMessage(error))
+            syncCameraPreviewHoverControls()
             if let latencySpan {
                 LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "recorder-start-failed")
             }
@@ -319,30 +321,37 @@ extension LuxelMenuModel {
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
         recordingState = .stopping
+        setCameraPreviewHoverControlsEnabled(false)
 
         do {
             if activeRecording?.options.isAudioOnly == true {
                 let recording = try await audioRecordingLifecycleService.stopRecording()
                 refreshRecentRecordings()
                 recordingState = .idle
+                syncCameraPreviewHoverControls()
                 quickExportStatusMessage = "Recorded \(recording.fileURL.lastPathComponent)"
                 return .audioRecorded(recording.fileURL)
             }
 
             let recording = try await recordingLifecycleService.stopRecording()
             await recordingFramePanelController.close()
+            setCameraPreviewHoverControlsEnabled(true)
             refreshRecentRecordings()
 
             switch captureKind {
             case .standard:
                 recordingState = .idle
+                syncCameraPreviewHoverControls()
                 return .openEditor(recording.fileURL)
             case .quick(let presetID):
-                return await runQuickExport(recording: recording, presetID: presetID)
+                let stopAction = await runQuickExport(recording: recording, presetID: presetID)
+                syncCameraPreviewHoverControls()
+                return stopAction
             }
         } catch {
             recordingActionErrorMessage = errorMessage(error)
             recordingState = previousRecordingState
+            syncCameraPreviewHoverControls()
             return nil
         }
     }
@@ -378,14 +387,17 @@ extension LuxelMenuModel {
         quickExportStatusMessage = nil
         recordingState = .stopping
         await recordingFramePanelController.close()
+        setCameraPreviewHoverControlsEnabled(true)
         refreshRecentRecordings()
 
         switch recording.options.captureKind {
         case .standard:
             recordingState = .idle
+            syncCameraPreviewHoverControls()
             openRecording(recording.fileURL)
         case .quick(let presetID):
             _ = await runQuickExport(recording: recording, presetID: presetID)
+            syncCameraPreviewHoverControls()
         }
     }
 

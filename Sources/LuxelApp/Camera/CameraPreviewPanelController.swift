@@ -9,7 +9,12 @@ final class CameraPreviewPanelController {
     private var session: AVCaptureSession?
     private var panelOriginsByDisplayID: [DisplayID: NSPoint] = [:]
 
-    func present(deviceID: String, style: CameraPreviewStyle) {
+    func present(
+        deviceID: String,
+        style: CameraPreviewStyle,
+        showsHoverControls: Bool = true,
+        onClose: @escaping @MainActor () -> Void = {}
+    ) {
         let preferredDisplayID = panel.flatMap { Self.screen(containing: $0.frame)?.displayID }
         close()
 
@@ -25,9 +30,11 @@ final class CameraPreviewPanelController {
                 frame: frame,
                 session: session,
                 style: style,
+                showsHoverControls: showsHoverControls,
                 onMove: { [weak self] frame in
                     self?.rememberPanelOrigin(frame: frame)
-                }
+                },
+                onClose: onClose
             )
             panel.orderFrontRegardless()
 
@@ -62,6 +69,10 @@ final class CameraPreviewPanelController {
         }
     }
 
+    func setHoverControlsEnabled(_ isEnabled: Bool) {
+        (panel?.contentView as? CameraPreviewPanelView)?.setHoverControlsEnabled(isEnabled)
+    }
+
     private static func makeSession(device: AVCaptureDevice) throws -> AVCaptureSession {
         let session = AVCaptureSession()
         let input = try AVCaptureDeviceInput(device: device)
@@ -84,7 +95,9 @@ final class CameraPreviewPanelController {
         frame: NSRect,
         session: AVCaptureSession,
         style: CameraPreviewStyle,
-        onMove: @escaping (NSRect) -> Void
+        showsHoverControls: Bool,
+        onMove: @escaping (NSRect) -> Void,
+        onClose: @escaping @MainActor () -> Void
     ) -> NSPanel {
         let panel = NSPanel(
             contentRect: frame,
@@ -98,7 +111,13 @@ final class CameraPreviewPanelController {
         panel.isOpaque = false
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
-        panel.contentView = CameraPreviewPanelView(session: session, style: style, onMove: onMove)
+        panel.contentView = CameraPreviewPanelView(
+            session: session,
+            style: style,
+            showsHoverControls: showsHoverControls,
+            onMove: onMove,
+            onClose: onClose
+        )
         return panel
     }
 
@@ -220,24 +239,36 @@ private struct CameraCaptureSessionHandle: @unchecked Sendable {
 
 private final class CameraPreviewPanelView: NSView {
     private let previewLayer: AVCaptureVideoPreviewLayer
+    private let closeButton = NSButton(frame: .zero)
     private let style: CameraPreviewStyle
     private let onMove: (NSRect) -> Void
+    private let onClose: @MainActor () -> Void
+    private var trackingArea: NSTrackingArea?
     private var dragStartPoint: NSPoint?
     private var dragStartFrame: NSRect?
+    private var showsHoverControls: Bool
+    private var isMouseInside = false
 
     init(
         session: AVCaptureSession,
         style: CameraPreviewStyle,
-        onMove: @escaping (NSRect) -> Void
+        showsHoverControls: Bool,
+        onMove: @escaping (NSRect) -> Void,
+        onClose: @escaping @MainActor () -> Void
     ) {
         self.previewLayer = AVCaptureVideoPreviewLayer(session: session)
         self.style = style
+        self.showsHoverControls = showsHoverControls
         self.onMove = onMove
+        self.onClose = onClose
         super.init(frame: .zero)
         wantsLayer = true
         previewLayer.videoGravity = .resizeAspectFill
         previewLayer.transform = style.isMirrored ? CATransform3DMakeScale(-1, 1, 1) : CATransform3DIdentity
         layer?.addSublayer(previewLayer)
+        configureCloseButton()
+        addSubview(closeButton)
+        updateHoverControls()
     }
 
     @available(*, unavailable)
@@ -248,8 +279,43 @@ private final class CameraPreviewPanelView: NSView {
     override func layout() {
         super.layout()
         previewLayer.frame = bounds
+        closeButton.frame = closeButtonFrame()
         layer?.cornerRadius = style.shape.cornerRadius(for: bounds.size)
         layer?.masksToBounds = true
+        layer?.borderWidth = 1
+        layer?.borderColor = NSColor.white.withAlphaComponent(0.18).cgColor
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+
+        if let trackingArea {
+            removeTrackingArea(trackingArea)
+        }
+
+        let trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.activeAlways, .inVisibleRect, .mouseEnteredAndExited],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(trackingArea)
+        self.trackingArea = trackingArea
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isMouseInside = true
+        updateHoverControls()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isMouseInside = false
+        updateHoverControls()
+    }
+
+    func setHoverControlsEnabled(_ isEnabled: Bool) {
+        showsHoverControls = isEnabled
+        updateHoverControls()
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -284,6 +350,45 @@ private final class CameraPreviewPanelView: NSView {
 
         dragStartPoint = nil
         dragStartFrame = nil
+    }
+
+    private func configureCloseButton() {
+        closeButton.bezelStyle = .circular
+        closeButton.imagePosition = .imageOnly
+        closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "Close Camera Preview")
+        closeButton.contentTintColor = .white
+        closeButton.target = self
+        closeButton.action = #selector(closePreview)
+        closeButton.toolTip = "Close Camera Preview"
+    }
+
+    private func closeButtonFrame() -> NSRect {
+        let buttonSize = CGSize(width: 24, height: 24)
+
+        switch style.shape {
+        case .circle:
+            return NSRect(
+                x: bounds.midX - buttonSize.width / 2,
+                y: bounds.maxY - buttonSize.height - 8,
+                width: buttonSize.width,
+                height: buttonSize.height
+            )
+        case .roundedRect:
+            return NSRect(
+                x: bounds.maxX - buttonSize.width - 8,
+                y: bounds.maxY - buttonSize.height - 8,
+                width: buttonSize.width,
+                height: buttonSize.height
+            )
+        }
+    }
+
+    private func updateHoverControls() {
+        closeButton.isHidden = !(showsHoverControls && isMouseInside)
+    }
+
+    @objc private func closePreview() {
+        onClose()
     }
 }
 
