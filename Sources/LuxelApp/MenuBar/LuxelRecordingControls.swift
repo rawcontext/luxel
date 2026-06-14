@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SwiftUI
 
@@ -19,6 +20,7 @@ struct LuxelRecordingControls: View {
                         }
                     }
                 } else {
+                    dismissMenuBarWindow()
                     await model.startRecordingFromSelectedTarget()
                 }
             }
@@ -128,5 +130,9 @@ struct LuxelRecordingControls: View {
             Label("Select Area", systemImage: "crop")
         }
         .disabled(!model.canSelectArea)
+    }
+
+    private func dismissMenuBarWindow() {
+        NSApplication.shared.keyWindow?.close()
     }
 }
