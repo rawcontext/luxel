@@ -22,8 +22,7 @@ struct AnimatedFrameRenderer: Sendable {
             throw AnimatedFrameRendererError.cannotCreateFrameContext
         }
 
-        context.setFillColor(CGColor(gray: 0, alpha: 1))
-        context.fill(CGRect(origin: .zero, size: outputSize))
+        context.clear(CGRect(origin: .zero, size: outputSize))
         context.interpolationQuality = .high
         context.draw(drawableImage, in: drawRect(for: drawableImage, outputSize: outputSize, shouldCrop: shouldCrop))
 

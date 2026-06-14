@@ -48,6 +48,21 @@ struct AnimatedFrameRendererTests {
         #expect(mattedBitmap.pixels[1].alpha == 255)
     }
 
+    @Test("image rendering preserves source alpha for APNG frames")
+    func imageRenderingPreservesSourceAlphaForAPNGFrames() throws {
+        let image = try transparentRedImage()
+        let renderedImage = try AnimatedFrameRenderer().renderImage(
+            image,
+            outputPixelSize: PixelSize(width: 2, height: 1),
+            shouldCrop: true
+        )
+        let pixels = try rgbaPixels(from: renderedImage)
+
+        #expect(pixels[0].alpha == 0)
+        #expect(pixels[1].red == 255)
+        #expect(pixels[1].alpha == 255)
+    }
+
     private func splitColorImage(width: Int, height: Int) throws -> CGImage {
         let outputSize = CGSize(width: width, height: height)
         let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
@@ -86,6 +101,38 @@ struct AnimatedFrameRendererTests {
         context.fill(CGRect(x: 1, y: 0, width: 1, height: 1))
 
         return try #require(context.makeImage())
+    }
+
+    private func rgbaPixels(from image: CGImage) throws -> [GIFRGBAPixel] {
+        let bytesPerPixel = 4
+        let bytesPerRow = image.width * bytesPerPixel
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+            | CGBitmapInfo.byteOrder32Big.rawValue
+        var bytes = Array(repeating: UInt8(0), count: image.height * bytesPerRow)
+
+        try bytes.withUnsafeMutableBytes { pointer in
+            let context = try #require(CGContext(
+                data: pointer.baseAddress,
+                width: image.width,
+                height: image.height,
+                bitsPerComponent: 8,
+                bytesPerRow: bytesPerRow,
+                space: colorSpace,
+                bitmapInfo: bitmapInfo
+            ))
+            context.clear(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        }
+
+        return stride(from: 0, to: bytes.count, by: bytesPerPixel).map { offset in
+            GIFRGBAPixel(
+                red: bytes[offset],
+                green: bytes[offset + 1],
+                blue: bytes[offset + 2],
+                alpha: bytes[offset + 3]
+            )
+        }
     }
 }
 
