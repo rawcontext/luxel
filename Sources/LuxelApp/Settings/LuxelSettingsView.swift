@@ -11,6 +11,7 @@ struct LuxelSettingsView: View {
     let editorModel: LuxelEditorModel
     let cropperPanelController: LuxelCropperPanelController
     let shortcutController: LuxelShortcutController
+    private let shortcutConflictDetector = AppKeyboardShortcutConflictDetector()
 
     var body: some View {
         Form {
@@ -88,29 +89,23 @@ struct LuxelSettingsView: View {
 
                 Toggle("Show Thumbnail", isOn: $model.settings.screenshotShowThumbnail)
 
-                Picker("Screenshot", selection: $model.settings.captureScreenshotShortcut) {
-                    Text("None").tag("")
-                    ForEach(AppKeyboardShortcutPresets.captureScreenshot) { shortcut in
-                        Text(shortcut.displayName).tag(shortcut.rawValue)
-                    }
-                }
-                .disabled(!model.settings.enableShortcuts)
+                shortcutPicker(
+                    "Screenshot",
+                    selection: $model.settings.captureScreenshotShortcut,
+                    presets: AppKeyboardShortcutPresets.captureScreenshot
+                )
 
-                Picker("Active Window", selection: $model.settings.screenshotActiveWindowShortcut) {
-                    Text("None").tag("")
-                    ForEach(AppKeyboardShortcutPresets.screenshotActiveWindow) { shortcut in
-                        Text(shortcut.displayName).tag(shortcut.rawValue)
-                    }
-                }
-                .disabled(!model.settings.enableShortcuts)
+                shortcutPicker(
+                    "Active Window",
+                    selection: $model.settings.screenshotActiveWindowShortcut,
+                    presets: AppKeyboardShortcutPresets.screenshotActiveWindow
+                )
 
-                Picker("Fullscreen", selection: $model.settings.screenshotFullscreenShortcut) {
-                    Text("None").tag("")
-                    ForEach(AppKeyboardShortcutPresets.screenshotFullscreen) { shortcut in
-                        Text(shortcut.displayName).tag(shortcut.rawValue)
-                    }
-                }
-                .disabled(!model.settings.enableShortcuts)
+                shortcutPicker(
+                    "Fullscreen",
+                    selection: $model.settings.screenshotFullscreenShortcut,
+                    presets: AppKeyboardShortcutPresets.screenshotFullscreen
+                )
             }
 
             Section("Quick Recording") {
@@ -128,53 +123,41 @@ struct LuxelSettingsView: View {
             Section("System") {
                 Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
                 Toggle("Keyboard Shortcuts", isOn: $model.settings.enableShortcuts)
-                Picker("Select Area", selection: $model.settings.triggerCropperShortcut) {
-                    Text("None").tag("")
-                    ForEach(AppKeyboardShortcutPresets.capture) { shortcut in
-                        Text(shortcut.displayName).tag(shortcut.rawValue)
-                    }
-                }
-                .disabled(!model.settings.enableShortcuts)
+                shortcutPicker(
+                    "Select Area",
+                    selection: $model.settings.triggerCropperShortcut,
+                    presets: AppKeyboardShortcutPresets.capture
+                )
 
-                Picker("Toggle Recording", selection: $model.settings.toggleRecordingShortcut) {
-                    Text("None").tag("")
-                    ForEach(AppKeyboardShortcutPresets.toggleRecording) { shortcut in
-                        Text(shortcut.displayName).tag(shortcut.rawValue)
-                    }
-                }
-                .disabled(!model.settings.enableShortcuts)
+                shortcutPicker(
+                    "Toggle Recording",
+                    selection: $model.settings.toggleRecordingShortcut,
+                    presets: AppKeyboardShortcutPresets.toggleRecording
+                )
 
-                Picker("Record Active Window", selection: $model.settings.recordActiveWindowShortcut) {
-                    Text("None").tag("")
-                    ForEach(AppKeyboardShortcutPresets.recordActiveWindow) { shortcut in
-                        Text(shortcut.displayName).tag(shortcut.rawValue)
-                    }
-                }
-                .disabled(!model.settings.enableShortcuts)
+                shortcutPicker(
+                    "Record Active Window",
+                    selection: $model.settings.recordActiveWindowShortcut,
+                    presets: AppKeyboardShortcutPresets.recordActiveWindow
+                )
 
-                Picker("Record Fullscreen", selection: $model.settings.recordFullscreenShortcut) {
-                    Text("None").tag("")
-                    ForEach(AppKeyboardShortcutPresets.recordFullscreen) { shortcut in
-                        Text(shortcut.displayName).tag(shortcut.rawValue)
-                    }
-                }
-                .disabled(!model.settings.enableShortcuts)
+                shortcutPicker(
+                    "Record Fullscreen",
+                    selection: $model.settings.recordFullscreenShortcut,
+                    presets: AppKeyboardShortcutPresets.recordFullscreen
+                )
 
-                Picker("Audio Only", selection: $model.settings.audioOnlyRecordingShortcut) {
-                    Text("None").tag("")
-                    ForEach(AppKeyboardShortcutPresets.audioOnlyRecording) { shortcut in
-                        Text(shortcut.displayName).tag(shortcut.rawValue)
-                    }
-                }
-                .disabled(!model.settings.enableShortcuts)
+                shortcutPicker(
+                    "Audio Only",
+                    selection: $model.settings.audioOnlyRecordingShortcut,
+                    presets: AppKeyboardShortcutPresets.audioOnlyRecording
+                )
 
-                Picker("Quick Record Last", selection: $model.settings.quickRecordLastShortcut) {
-                    Text("None").tag("")
-                    ForEach(AppKeyboardShortcutPresets.quickRecordLast) { shortcut in
-                        Text(shortcut.displayName).tag(shortcut.rawValue)
-                    }
-                }
-                .disabled(!model.settings.enableShortcuts)
+                shortcutPicker(
+                    "Quick Record Last",
+                    selection: $model.settings.quickRecordLastShortcut,
+                    presets: AppKeyboardShortcutPresets.quickRecordLast
+                )
 
                 Toggle("Launch at Login", isOn: $model.launchAtLogin)
             }
@@ -249,6 +232,31 @@ struct LuxelSettingsView: View {
             model.settings.audioInputDeviceName = model.audioInputDevices
                 .first { $0.id == deviceID }?
                 .name
+        }
+    }
+
+    @ViewBuilder
+    private func shortcutPicker(
+        _ title: String,
+        selection: Binding<String>,
+        presets: [AppKeyboardShortcut]
+    ) -> some View {
+        Picker(title, selection: selection) {
+            Text("None").tag("")
+            ForEach(presets) { shortcut in
+                Text(shortcut.displayName).tag(shortcut.rawValue)
+            }
+        }
+        .disabled(!model.settings.enableShortcuts)
+
+        if model.settings.enableShortcuts,
+           let conflict = shortcutConflictDetector.conflict(forRawValue: selection.wrappedValue) {
+            Label(
+                "Conflicts with \(conflict.systemAction)",
+                systemImage: "exclamationmark.triangle"
+            )
+            .font(.caption)
+            .foregroundStyle(.orange)
         }
     }
 

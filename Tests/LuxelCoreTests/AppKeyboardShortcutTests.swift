@@ -72,4 +72,26 @@ struct AppKeyboardShortcutTests {
             "command+control+option+f"
         ])
     }
+
+    @Test("conflict detector warns for macOS screenshot shortcuts")
+    func conflictDetectorWarnsForSystemScreenshotShortcuts() throws {
+        let detector = AppKeyboardShortcutConflictDetector()
+
+        let screenshotAppConflict = try #require(detector.conflict(forRawValue: "shift + command + 5"))
+        let clipboardConflict = try #require(detector.conflict(forRawValue: "command+control+shift+4"))
+
+        #expect(screenshotAppConflict.shortcut.rawValue == "command+shift+5")
+        #expect(screenshotAppConflict.systemAction == "macOS Screenshot")
+        #expect(clipboardConflict.shortcut.rawValue == "command+control+shift+4")
+        #expect(clipboardConflict.systemAction == "macOS selection screenshot to Clipboard")
+    }
+
+    @Test("conflict detector ignores empty invalid and Luxel default shortcuts")
+    func conflictDetectorIgnoresNonConflictingShortcuts() {
+        let detector = AppKeyboardShortcutConflictDetector()
+
+        #expect(detector.conflict(forRawValue: "") == nil)
+        #expect(detector.conflict(forRawValue: "command+invalid+r") == nil)
+        #expect(detector.conflict(forRawValue: "command+control+option+r") == nil)
+    }
 }

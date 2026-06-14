@@ -106,6 +106,58 @@ public enum AppKeyboardShortcutPresets {
     ].compactMap { $0 }
 }
 
+public struct AppKeyboardShortcutConflict: Equatable, Sendable {
+    public let shortcut: AppKeyboardShortcut
+    public let systemAction: String
+
+    public init(shortcut: AppKeyboardShortcut, systemAction: String) {
+        self.shortcut = shortcut
+        self.systemAction = systemAction
+    }
+}
+
+public struct AppKeyboardShortcutConflictDetector: Sendable {
+    public static let knownSystemConflicts: [AppKeyboardShortcutConflict] = [
+        systemConflict("command+shift+3", action: "macOS full-screen screenshot"),
+        systemConflict("command+shift+4", action: "macOS selection screenshot"),
+        systemConflict("command+shift+5", action: "macOS Screenshot"),
+        systemConflict("command+shift+6", action: "macOS Touch Bar screenshot"),
+        systemConflict("command+control+shift+3", action: "macOS full-screen screenshot to Clipboard"),
+        systemConflict("command+control+shift+4", action: "macOS selection screenshot to Clipboard")
+    ].compactMap(\.self)
+
+    private let conflictsByShortcut: [String: AppKeyboardShortcutConflict]
+
+    public init(systemConflicts: [AppKeyboardShortcutConflict] = Self.knownSystemConflicts) {
+        conflictsByShortcut = Dictionary(
+            uniqueKeysWithValues: systemConflicts.map { ($0.shortcut.rawValue, $0) }
+        )
+    }
+
+    public func conflict(forRawValue rawValue: String) -> AppKeyboardShortcutConflict? {
+        guard let shortcut = AppKeyboardShortcut(rawValue: rawValue) else {
+            return nil
+        }
+
+        return conflict(for: shortcut)
+    }
+
+    public func conflict(for shortcut: AppKeyboardShortcut) -> AppKeyboardShortcutConflict? {
+        conflictsByShortcut[shortcut.rawValue]
+    }
+
+    private static func systemConflict(
+        _ rawValue: String,
+        action: String
+    ) -> AppKeyboardShortcutConflict? {
+        guard let shortcut = AppKeyboardShortcut(rawValue: rawValue) else {
+            return nil
+        }
+
+        return AppKeyboardShortcutConflict(shortcut: shortcut, systemAction: action)
+    }
+}
+
 public enum AppKeyboardShortcutError: Error, Equatable {
     case invalidShortcut
 }
