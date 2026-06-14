@@ -34,6 +34,7 @@ struct SettingsTests {
         #expect(!settings.updatePreferences.automaticallyDownloadAndInstall)
         #expect(settings.updatePreferences.channel == .stable)
         #expect(settings.showTimeInMenuBar)
+        #expect(settings.notificationReminder)
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)
         #expect(settings.quickExportPresetID == ExportPreset.quickGIFID)
         #expect(settings.rememberLastCapture)

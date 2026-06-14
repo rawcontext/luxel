@@ -4,9 +4,13 @@ import LuxelPresentation
 import SwiftUI
 
 struct LuxelCropperView: View {
+    @Environment(\.openURL) private var openURL
+
     @Bindable var model: LuxelCropperModel
     let audioLevelModel: LuxelAudioLevelModel?
     let quickRecordingConfiguration: CropperQuickRecordingConfiguration
+    let showsNotificationReminder: Bool
+    let onNotificationReminderDismiss: () -> Void
     let onCancel: () -> Void
     let onSelect: (CaptureSelectionDraft) -> Void
     let onQuickSelect: (CaptureSelectionDraft, UUID) -> Void
@@ -25,6 +29,11 @@ struct LuxelCropperView: View {
                 }
 
                 VStack {
+                    if showsNotificationReminder, model.mode == .video {
+                        notificationReminderPanel
+                            .padding(.top, 28)
+                    }
+
                     Spacer()
                     cropperControls
                         .padding(.bottom, 28)
@@ -116,6 +125,38 @@ struct LuxelCropperView: View {
                 .help("Cancel")
 
                 primaryActionButton
+            }
+        }
+        .fixedSize()
+    }
+
+    private var notificationReminderPanel: some View {
+        GlassPanel {
+            HStack(spacing: 10) {
+                Image(systemName: "moon")
+                    .foregroundStyle(.secondary)
+
+                Text("Tip: enable a Focus to silence notifications.")
+                    .font(.callout)
+                    .foregroundStyle(.primary)
+
+                Button {
+                    openFocusSettings()
+                } label: {
+                    Label("Focus Settings", systemImage: "gearshape")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button {
+                    onNotificationReminderDismiss()
+                } label: {
+                    Label("Dismiss", systemImage: "xmark")
+                }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .help("Dismiss Reminder")
             }
         }
         .fixedSize()
@@ -264,6 +305,14 @@ struct LuxelCropperView: View {
 
     private func quickPresetSystemImage(for preset: ExportPreset) -> String {
         preset.id == quickRecordingConfiguration.activePresetID ? "bolt.circle.fill" : "bolt.circle"
+    }
+
+    private func openFocusSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.Focus-Settings.extension") else {
+            return
+        }
+
+        openURL(url)
     }
 }
 

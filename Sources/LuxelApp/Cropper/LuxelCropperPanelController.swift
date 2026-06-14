@@ -30,7 +30,9 @@ final class LuxelCropperPanelController {
             activePresetID: nil,
             presets: []
         ),
+        showsNotificationReminder: Bool = false,
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
+        onNotificationReminderDismiss: @escaping @MainActor () -> Void = {},
         onCaptureScreenshot: @escaping @MainActor (CaptureSelectionDraft) -> Void = { _ in },
         onQuickSelect: @escaping @MainActor (CaptureSelectionDraft, UUID) -> Void = { _, _ in },
         onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
@@ -46,7 +48,9 @@ final class LuxelCropperPanelController {
                     stopAfterDuration: stopAfterDuration,
                     audioLevelConfiguration: audioLevelConfiguration,
                     quickRecordingConfiguration: quickRecordingConfiguration,
+                    showsNotificationReminder: showsNotificationReminder,
                     onStopAfterDurationChange: onStopAfterDurationChange,
+                    onNotificationReminderDismiss: onNotificationReminderDismiss,
                     onCaptureScreenshot: onCaptureScreenshot,
                     onQuickSelect: onQuickSelect,
                     onSelect: onSelect
@@ -72,7 +76,9 @@ final class LuxelCropperPanelController {
         stopAfterDuration: TimeInterval?,
         audioLevelConfiguration: CropperAudioLevelConfiguration?,
         quickRecordingConfiguration: CropperQuickRecordingConfiguration,
+        showsNotificationReminder: Bool,
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
+        onNotificationReminderDismiss: @escaping @MainActor () -> Void,
         onCaptureScreenshot: @escaping @MainActor (CaptureSelectionDraft) -> Void,
         onQuickSelect: @escaping @MainActor (CaptureSelectionDraft, UUID) -> Void,
         onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
@@ -121,6 +127,8 @@ final class LuxelCropperPanelController {
                     model: model,
                     audioLevelModel: sharedAudioLevelModel,
                     quickRecordingConfiguration: quickRecordingConfiguration,
+                    showsNotificationReminder: showsNotificationReminder,
+                    onNotificationReminderDismiss: onNotificationReminderDismiss,
                     onCancel: { [weak self] in
                         self?.close()
                     },

@@ -112,6 +112,7 @@ struct LuxelSettingsView: View {
 
             Section("System") {
                 Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
+                Toggle("Remind About Notifications", isOn: $model.settings.notificationReminder)
                 Toggle("Keyboard Shortcuts", isOn: $model.settings.enableShortcuts)
                 shortcutPicker(
                     "Select Area",

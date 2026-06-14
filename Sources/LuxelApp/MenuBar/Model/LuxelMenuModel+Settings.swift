@@ -7,6 +7,15 @@ extension LuxelMenuModel {
         try? settingsStore.save(settings)
     }
 
+    func dismissNotificationReminder() {
+        guard settings.notificationReminder else {
+            return
+        }
+
+        settings.notificationReminder = false
+        saveSettings()
+    }
+
     func configureEditor(_ editorModel: LuxelEditorModel) {
         editorModel.configureExportMemory(settings.perFormatExportMemory) { [weak self] format, memory in
             self?.rememberExportMemory(memory, for: format)

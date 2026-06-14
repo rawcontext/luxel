@@ -46,6 +46,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var screenshotFullscreenShortcut: String
     public var updatePreferences: UpdatePreferences
     public var showTimeInMenuBar: Bool
+    public var notificationReminder: Bool
     public var exportPresets: [ExportPreset]
     public var quickExportPresetID: UUID?
     public var rememberLastCapture: Bool
@@ -81,6 +82,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         screenshotFullscreenShortcut: String = "",
         updatePreferences: UpdatePreferences = .defaults,
         showTimeInMenuBar: Bool = true,
+        notificationReminder: Bool = true,
         exportPresets: [ExportPreset] = ExportPreset.builtInDefaults,
         quickExportPresetID: UUID? = ExportPreset.quickGIFID,
         rememberLastCapture: Bool = true,
@@ -115,6 +117,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.screenshotFullscreenShortcut = screenshotFullscreenShortcut
         self.updatePreferences = updatePreferences
         self.showTimeInMenuBar = showTimeInMenuBar
+        self.notificationReminder = notificationReminder
         self.exportPresets = exportPresets
         self.quickExportPresetID = quickExportPresetID
         self.rememberLastCapture = rememberLastCapture
@@ -151,6 +154,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case screenshotFullscreenShortcut
         case updatePreferences
         case showTimeInMenuBar
+        case notificationReminder
         case exportPresets
         case quickExportPresetID
         case rememberLastCapture
@@ -220,6 +224,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         updatePreferences = try container.decodeIfPresent(UpdatePreferences.self, forKey: .updatePreferences)
             ?? defaultUpdatePreferences
         showTimeInMenuBar = try container.decodeIfPresent(Bool.self, forKey: .showTimeInMenuBar)
+            ?? true
+        notificationReminder = try container.decodeIfPresent(Bool.self, forKey: .notificationReminder)
             ?? true
         exportPresets = try container.decodeIfPresent([ExportPreset].self, forKey: .exportPresets)
             ?? ExportPreset.builtInDefaults

@@ -59,9 +59,13 @@ struct LuxelShortcutInstaller: View {
                         stopAfterDuration: model.settings.lastStopAfter,
                         audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
                         quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
+                        showsNotificationReminder: model.settings.notificationReminder,
                         onStopAfterDurationChange: { duration in
                             model.settings.lastStopAfter = duration
                             model.saveSettings()
+                        },
+                        onNotificationReminderDismiss: {
+                            model.dismissNotificationReminder()
                         },
                         onQuickSelect: { draft, presetID in
                             Task {
@@ -84,9 +88,13 @@ struct LuxelShortcutInstaller: View {
                         stopAfterDuration: model.settings.lastStopAfter,
                         audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
                         quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
+                        showsNotificationReminder: model.settings.notificationReminder,
                         onStopAfterDurationChange: { duration in
                             model.settings.lastStopAfter = duration
                             model.saveSettings()
+                        },
+                        onNotificationReminderDismiss: {
+                            model.dismissNotificationReminder()
                         },
                         onCaptureScreenshot: { draft in
                             Task {

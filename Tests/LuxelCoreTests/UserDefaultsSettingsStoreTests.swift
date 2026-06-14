@@ -67,6 +67,7 @@ struct UserDefaultsSettingsStoreTests {
                 channel: .beta
             ),
             showTimeInMenuBar: false,
+            notificationReminder: false,
             exportPresets: [preset],
             quickExportPresetID: presetID,
             rememberLastCapture: false,
@@ -144,6 +145,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.screenshotFullscreenShortcut == "")
         #expect(settings.updatePreferences == .defaults)
         #expect(settings.showTimeInMenuBar)
+        #expect(settings.notificationReminder)
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)
         #expect(settings.quickExportPresetID == ExportPreset.quickGIFID)
         #expect(settings.rememberLastCapture)
