@@ -88,12 +88,36 @@ public struct ImageData: Equatable, Sendable {
     }
 }
 
+public struct FrameGrabRequest: Codable, Equatable, Sendable {
+    public let sourceFileURL: URL
+    public let time: TimeInterval
+    public let cropRect: CaptureRect?
+    public let format: ScreenshotFormat
+
+    public init(
+        sourceFileURL: URL,
+        time: TimeInterval,
+        cropRect: CaptureRect? = nil,
+        format: ScreenshotFormat = .png
+    ) throws {
+        guard time.isFinite, time >= 0 else {
+            throw ScreenshotModelError.invalidFrameTime
+        }
+
+        self.sourceFileURL = sourceFileURL
+        self.time = time
+        self.cropRect = cropRect
+        self.format = format
+    }
+}
+
 public enum ScreenshotModelError: Error, Equatable {
     case transparentBackdropRequiresWindowTarget
     case transparentBackdropRequiresAlphaCapableFormat
     case emptyImageData
     case emptyScreenshotDestinations
     case fileDestinationRequiresOutputURL
+    case invalidFrameTime
 }
 
 private extension CaptureTarget {
