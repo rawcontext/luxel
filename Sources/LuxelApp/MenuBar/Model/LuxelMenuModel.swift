@@ -33,6 +33,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let audioRecordingLifecycleService: AudioRecordingLifecycleService
     @ObservationIgnored let captureTargetService: CaptureTargetService
     @ObservationIgnored let captureExclusionRegistry: CaptureExclusionRegistry
+    @ObservationIgnored let recordingFramePanelController: RecordingFramePanelController
     @ObservationIgnored let audioInputDeviceService: AudioInputDeviceService
     @ObservationIgnored let audioLevelMonitorFactory: () -> any AudioLevelMonitor
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
@@ -60,6 +61,7 @@ final class LuxelMenuModel {
             catalog: ScreenCaptureKitCaptureTargetCatalog()
         ),
         captureExclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry(),
+        recordingFramePanelController: RecordingFramePanelController = RecordingFramePanelController(),
         audioInputDeviceService: AudioInputDeviceService = AudioInputDeviceService(
             catalog: AVFoundationAudioInputDeviceCatalog(),
             updateSource: AVFoundationAudioInputDeviceUpdateSource()
@@ -91,6 +93,7 @@ final class LuxelMenuModel {
         self.recordingHistoryService = recordingHistoryService
         self.captureTargetService = captureTargetService
         self.captureExclusionRegistry = captureExclusionRegistry
+        self.recordingFramePanelController = recordingFramePanelController
         self.audioInputDeviceService = audioInputDeviceService
         self.audioLevelMonitorFactory = audioLevelMonitorFactory
         self.fileWorkflowService = fileWorkflowService

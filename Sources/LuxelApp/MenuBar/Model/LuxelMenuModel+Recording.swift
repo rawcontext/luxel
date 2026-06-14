@@ -231,6 +231,12 @@ extension LuxelMenuModel {
         recordingState = .starting
 
         do {
+            await recordingFramePanelController.present(
+                for: request,
+                availableTargets: captureTargets,
+                exclusionRegistry: captureExclusionRegistry
+            )
+
             let recordingName = request.outputFileURL.deletingPathExtension().lastPathComponent
             let activeRecording = try await recordingLifecycleService.startRecording(
                 request,
@@ -245,6 +251,7 @@ extension LuxelMenuModel {
                 LuxelRecordingLatencyTelemetry.finishStarted(latencySpan, target: request.target)
             }
         } catch {
+            await recordingFramePanelController.close()
             recordingState = .failed(errorMessage(error))
             if let latencySpan {
                 LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "recorder-start-failed")
@@ -270,6 +277,7 @@ extension LuxelMenuModel {
             }
 
             let recording = try await recordingLifecycleService.stopRecording()
+            await recordingFramePanelController.close()
             refreshRecentRecordings()
 
             switch captureKind {
@@ -316,6 +324,7 @@ extension LuxelMenuModel {
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
         recordingState = .stopping
+        await recordingFramePanelController.close()
         refreshRecentRecordings()
 
         switch recording.options.captureKind {
