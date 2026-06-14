@@ -149,6 +149,65 @@ enum LuxelShortcutScreenshotFormat: String, AppEnum {
     }
 }
 
+struct LuxelRecordingEntity: AppEntity, Identifiable {
+    struct Query: EntityStringQuery {
+        func entities(for identifiers: [LuxelRecordingEntity.ID]) async throws -> [LuxelRecordingEntity] {
+            let identifierSet = Set(identifiers)
+            return Self.recordingEntities().filter { identifierSet.contains($0.id) }
+        }
+
+        func entities(matching string: String) async throws -> [LuxelRecordingEntity] {
+            let normalizedQuery = string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            guard !normalizedQuery.isEmpty else {
+                return try await suggestedEntities()
+            }
+
+            return Self.recordingEntities().filter { entity in
+                entity.name.lowercased().contains(normalizedQuery)
+                    || entity.fileName.lowercased().contains(normalizedQuery)
+            }
+        }
+
+        func suggestedEntities() async throws -> [LuxelRecordingEntity] {
+            Self.recordingEntities()
+        }
+
+        private static func recordingEntities() -> [LuxelRecordingEntity] {
+            LuxelCompositionRoot.recordingHistoryService()
+                .getPastRecordings(matching: .recordings)
+                .map(LuxelRecordingEntity.init(recording:))
+        }
+    }
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Recording"
+    static let defaultQuery = Query()
+
+    let id: String
+    let name: String
+    let date: Date
+    let kind: String
+    let fileURL: URL
+    let fileName: String
+
+    var displayRepresentation: DisplayRepresentation {
+        DisplayRepresentation(
+            title: "\(name)",
+            subtitle: "\(fileName)"
+        )
+    }
+
+    init(recording: PastRecording) {
+        let mediaURL = recording.primaryMediaURL.standardizedFileURL
+
+        id = mediaURL.path
+        name = recording.name
+        date = recording.date
+        kind = recording.kind.rawValue
+        fileURL = mediaURL
+        fileName = mediaURL.lastPathComponent
+    }
+}
+
 struct LuxelCaptureScreenshotIntent: AppIntent {
     static let title: LocalizedStringResource = "Capture Screenshot"
     static let description = IntentDescription("Captures a screenshot with Luxel.")
