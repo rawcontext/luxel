@@ -8,6 +8,7 @@ final class LuxelMenuModel {
     var launchAtLogin: Bool
     var screenRecordingStatus: PermissionStatus = .unknown
     var microphoneStatus: PermissionStatus = .unknown
+    var cameraStatus: PermissionStatus = .unknown
     var audioLevelSample: AudioLevelSample = .silent
     var audioInputDevices: [AudioInputDeviceOption] = [.systemDefault]
     var recentRecordings: [PastRecording] = []

@@ -43,6 +43,8 @@
 	<string>Copyright © 2026 Luxel contributors. All rights reserved.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Luxel records microphone audio only when you enable microphone capture for a screen recording.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Luxel uses your camera only when you enable camera preview or camera-track recording.</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Luxel captures your screen only when you start a recording.</string>
 	<key>NSPrincipalClass</key>

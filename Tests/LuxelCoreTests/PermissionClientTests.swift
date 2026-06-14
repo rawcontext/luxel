@@ -6,6 +6,7 @@ struct PermissionClientTests {
     @Test("permissions and statuses are framework-free value models")
     func permissionsAndStatusesAreValueModels() {
         #expect(SystemPermission.screenRecording != .microphone)
+        #expect(SystemPermission.camera != .microphone)
         #expect(PermissionStatus.notDetermined != .authorized)
         #expect(PermissionStatus.denied != .restricted)
     }
@@ -32,6 +33,23 @@ struct PermissionClientTests {
         )
         let denied = PermissionGuidanceService().guidance(
             for: .microphone,
+            status: .denied
+        )
+
+        #expect(notDetermined.actionTitle == "Continue")
+        #expect(notDetermined.action == .request)
+        #expect(denied.actionTitle == "Open Settings")
+        #expect(denied.action == .openSettings)
+    }
+
+    @Test("camera guidance requests before denial and opens settings after denial")
+    func cameraGuidanceRequestsBeforeDenialAndOpensSettingsAfterDenial() {
+        let notDetermined = PermissionGuidanceService().guidance(
+            for: .camera,
+            status: .notDetermined
+        )
+        let denied = PermissionGuidanceService().guidance(
+            for: .camera,
             status: .denied
         )
 

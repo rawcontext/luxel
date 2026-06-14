@@ -5,6 +5,7 @@ extension LuxelMenuModel {
     func refreshPermissions() async {
         screenRecordingStatus = await permissionClient.status(for: .screenRecording)
         microphoneStatus = await permissionClient.status(for: .microphone)
+        cameraStatus = await permissionClient.status(for: .camera)
     }
 
     func permissionActionTitle(for permission: SystemPermission) -> String {
@@ -52,6 +53,8 @@ extension LuxelMenuModel {
             screenRecordingStatus
         case .microphone:
             microphoneStatus
+        case .camera:
+            cameraStatus
         }
     }
 }

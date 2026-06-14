@@ -31,6 +31,8 @@ public struct PermissionGuidanceService: Sendable {
             screenRecordingGuidance(status: status)
         case .microphone:
             microphoneGuidance(status: status)
+        case .camera:
+            cameraGuidance(status: status)
         }
     }
 
@@ -73,6 +75,32 @@ public struct PermissionGuidanceService: Sendable {
             PermissionGuidance(
                 title: "Microphone Enabled",
                 message: "Luxel can record microphone audio.",
+                actionTitle: "OK",
+                action: .request
+            )
+        }
+    }
+
+    private func cameraGuidance(status: PermissionStatus) -> PermissionGuidance {
+        switch status {
+        case .notDetermined:
+            PermissionGuidance(
+                title: "Camera Permission",
+                message: "Luxel needs Camera permission when camera preview or camera-track recording is enabled.",
+                actionTitle: "Continue",
+                action: .request
+            )
+        case .denied, .restricted, .unknown:
+            PermissionGuidance(
+                title: "Camera Permission",
+                message: "Luxel needs Camera permission when camera preview or camera-track recording is enabled. Open System Settings and allow Luxel to use the camera.",
+                actionTitle: "Open Settings",
+                action: .openSettings
+            )
+        case .authorized:
+            PermissionGuidance(
+                title: "Camera Enabled",
+                message: "Luxel can use the camera for preview and camera-track recording.",
                 actionTitle: "OK",
                 action: .request
             )

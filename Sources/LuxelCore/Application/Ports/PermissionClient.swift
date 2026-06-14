@@ -3,6 +3,7 @@ import Foundation
 public enum SystemPermission: Codable, Equatable, Sendable {
     case screenRecording
     case microphone
+    case camera
 }
 
 public enum PermissionStatus: Codable, Equatable, Sendable {

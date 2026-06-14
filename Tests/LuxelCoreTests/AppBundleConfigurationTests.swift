@@ -25,17 +25,22 @@ struct AppBundleConfigurationTests {
         #expect(microphonePurpose.contains("microphone"))
         #expect(microphonePurpose.contains("screen recording"))
 
+        let cameraPurpose = try #require(plist["NSCameraUsageDescription"] as? String)
+        #expect(cameraPurpose.contains("camera"))
+        #expect(cameraPurpose.contains("camera-track recording"))
+
         let screenCapturePurpose = try #require(plist["NSScreenCaptureUsageDescription"] as? String)
         #expect(screenCapturePurpose.contains("screen"))
         #expect(screenCapturePurpose.contains("recording"))
     }
 
-    @Test("Developer ID entitlements allow microphone without sandboxing")
-    func developerIDEntitlementsAllowMicrophoneWithoutSandboxing() throws {
+    @Test("Developer ID entitlements allow capture devices without sandboxing")
+    func developerIDEntitlementsAllowCaptureDevicesWithoutSandboxing() throws {
         let entitlements = try readPlist("Configuration/Luxel/Luxel.DeveloperID.entitlements")
 
         #expect(entitlements["com.apple.security.app-sandbox"] == nil)
         #expect(entitlements["com.apple.security.device.audio-input"] as? Bool == true)
+        #expect(entitlements["com.apple.security.device.camera"] as? Bool == true)
         #expect(entitlements["com.apple.security.files.user-selected.read-write"] == nil)
         #expect(entitlements["com.apple.security.get-task-allow"] == nil)
     }

@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import AVFAudio
 import CoreGraphics
 import Foundation
@@ -17,6 +18,8 @@ public struct ApplePermissionClient: PermissionClient {
             return await screenCaptureKitStatus()
         case .microphone:
             return AVAudioApplication.shared.recordPermission.permissionStatus
+        case .camera:
+            return AVCaptureDevice.authorizationStatus(for: .video).permissionStatus
         }
     }
 
@@ -30,6 +33,12 @@ public struct ApplePermissionClient: PermissionClient {
             }
 
             return await status(for: .microphone)
+        case .camera:
+            if await AVCaptureDevice.requestAccess(for: .video) {
+                return .authorized
+            }
+
+            return await status(for: .camera)
         }
     }
 
@@ -67,6 +76,23 @@ private extension AVAudioApplication.recordPermission {
     }
 }
 
+private extension AVAuthorizationStatus {
+    var permissionStatus: PermissionStatus {
+        switch self {
+        case .notDetermined:
+            .notDetermined
+        case .restricted:
+            .restricted
+        case .denied:
+            .denied
+        case .authorized:
+            .authorized
+        @unknown default:
+            .unknown
+        }
+    }
+}
+
 private extension SystemPermission {
     var systemSettingsURLString: String {
         switch self {
@@ -74,6 +100,8 @@ private extension SystemPermission {
             "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
         case .microphone:
             "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+        case .camera:
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera"
         }
     }
 }
