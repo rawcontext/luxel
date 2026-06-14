@@ -68,7 +68,11 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
             timeRange: outputCompositionTimeRange,
             outputPixelSize: outputPixelSize,
             frameRate: request.frameRate,
-            shouldCrop: request.shouldCrop
+            shouldCrop: request.shouldCrop,
+            zoomBlocks: ZoomExportTimeMapper(
+                trimRange: request.timeRange,
+                speed: request.speed
+            ).map(request.zoomBlocks)
         )
 
         guard reader.canAdd(videoOutput) else {

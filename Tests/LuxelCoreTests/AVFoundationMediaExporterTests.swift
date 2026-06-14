@@ -1,4 +1,5 @@
 import AVFoundation
+import AppKit
 import CoreMedia
 import Foundation
 import LuxelCore
@@ -113,6 +114,42 @@ struct AVFoundationMediaExporterTests {
         #expect(source.hasAudio)
 
         try? FileManager.default.removeItem(at: outputURL)
+    }
+
+    @Test("mp4 export applies zoom blocks to video composition")
+    func mp4ExportAppliesZoomBlocksToVideoComposition() async throws {
+        let inputURL = temporaryOutputURL(fileExtension: "mp4")
+        let outputURL = temporaryOutputURL(fileExtension: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: inputURL)
+            try? FileManager.default.removeItem(at: outputURL)
+        }
+
+        try await writeSplitColorMovie(to: inputURL)
+        let sourceRightPixel = try await rgbPixel(at: inputURL, time: 1, x: 48, y: 32)
+        let request = try ExportRequest(
+            inputFileURL: inputURL,
+            format: .mp4,
+            pixelSize: PixelSize(width: 64, height: 64),
+            frameRate: FrameRate(10),
+            timeRange: TimeRange(start: 0, end: 2),
+            shouldMute: true,
+            shouldCrop: true,
+            zoomBlocks: [
+                ZoomBlock(
+                    timeRange: TimeRange(start: 0, end: 2),
+                    targetRect: NormalizedRect(x: 0, y: 0.25, width: 0.5, height: 0.5),
+                    zoom: 2,
+                    transitionOverride: 0.1
+                )
+            ]
+        )
+
+        _ = try await AVFoundationMediaExporter().export(request, to: outputURL)
+        let zoomedRightPixel = try await rgbPixel(at: outputURL, time: 1, x: 48, y: 32)
+
+        #expect(sourceRightPixel.blue > sourceRightPixel.red + 80)
+        #expect(zoomedRightPixel.red > zoomedRightPixel.blue + 80)
     }
 
     @Test("h264 export uses compatibility profile metadata")
@@ -263,6 +300,126 @@ struct AVFoundationMediaExporterTests {
         return index
     }
 
+    private func writeSplitColorMovie(to outputURL: URL) async throws {
+        let width = 64
+        let height = 64
+        let frameRate: Int32 = 10
+        let frameCount = 20
+        let writer = try AVAssetWriter(outputURL: outputURL, fileType: .mp4)
+        let input = AVAssetWriterInput(
+            mediaType: .video,
+            outputSettings: [
+                AVVideoCodecKey: AVVideoCodecType.h264,
+                AVVideoWidthKey: width,
+                AVVideoHeightKey: height
+            ]
+        )
+        let adaptor = AVAssetWriterInputPixelBufferAdaptor(
+            assetWriterInput: input,
+            sourcePixelBufferAttributes: [
+                kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA),
+                kCVPixelBufferWidthKey as String: width,
+                kCVPixelBufferHeightKey as String: height
+            ]
+        )
+
+        input.expectsMediaDataInRealTime = false
+        guard writer.canAdd(input) else {
+            throw AVFoundationMediaExporterTestError.cannotAddWriterInput
+        }
+
+        writer.add(input)
+        writer.startWriting()
+        writer.startSession(atSourceTime: .zero)
+
+        for frameIndex in 0..<frameCount {
+            while !input.isReadyForMoreMediaData {
+                try await Task.sleep(nanoseconds: 1_000_000)
+            }
+
+            let pixelBuffer = try splitColorPixelBuffer(width: width, height: height)
+            let time = CMTime(value: CMTimeValue(frameIndex), timescale: frameRate)
+            guard adaptor.append(pixelBuffer, withPresentationTime: time) else {
+                throw AVFoundationMediaExporterTestError.writerAppendFailed(writer.error?.localizedDescription)
+            }
+        }
+
+        input.markAsFinished()
+        try await finishWriting(writer)
+    }
+
+    private func splitColorPixelBuffer(width: Int, height: Int) throws -> CVPixelBuffer {
+        var pixelBuffer: CVPixelBuffer?
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            width,
+            height,
+            kCVPixelFormatType_32BGRA,
+            [
+                kCVPixelBufferCGImageCompatibilityKey as String: true,
+                kCVPixelBufferCGBitmapContextCompatibilityKey as String: true
+            ] as CFDictionary,
+            &pixelBuffer
+        )
+
+        guard status == kCVReturnSuccess,
+              let pixelBuffer else {
+            throw AVFoundationMediaExporterTestError.pixelBufferCreateFailed(status)
+        }
+
+        CVPixelBufferLockBaseAddress(pixelBuffer, [])
+        defer {
+            CVPixelBufferUnlockBaseAddress(pixelBuffer, [])
+        }
+
+        let rowBytes = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let baseAddress = try #require(CVPixelBufferGetBaseAddress(pixelBuffer))
+        let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let offset = y * rowBytes + x * 4
+                if x < width / 2 {
+                    bytes[offset] = 0
+                    bytes[offset + 1] = 0
+                    bytes[offset + 2] = 255
+                } else {
+                    bytes[offset] = 255
+                    bytes[offset + 1] = 0
+                    bytes[offset + 2] = 0
+                }
+                bytes[offset + 3] = 255
+            }
+        }
+
+        return pixelBuffer
+    }
+
+    private func finishWriting(_ writer: AVAssetWriter) async throws {
+        await writer.finishWriting()
+        guard writer.status == .completed else {
+            throw AVFoundationMediaExporterTestError.writerFinishFailed(writer.error?.localizedDescription)
+        }
+    }
+
+    private func rgbPixel(at fileURL: URL, time: TimeInterval, x: Int, y: Int) async throws -> RGBPixel {
+        let asset = AVURLAsset(url: fileURL)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = .zero
+
+        let image = try await generator.image(at: CMTime(seconds: time, preferredTimescale: 600)).image
+        let bitmap = NSBitmapImageRep(cgImage: image)
+        let color = try #require(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+
+        return RGBPixel(
+            red: Int((color.redComponent * 255).rounded()),
+            green: Int((color.greenComponent * 255).rounded()),
+            blue: Int((color.blueComponent * 255).rounded())
+        )
+    }
+
     private func packageRootURL() throws -> URL {
         var url = URL(fileURLWithPath: #filePath)
         while url.lastPathComponent != "Tests" {
@@ -275,8 +432,18 @@ struct AVFoundationMediaExporterTests {
     }
 }
 
+private struct RGBPixel: Equatable {
+    let red: Int
+    let green: Int
+    let blue: Int
+}
+
 private enum AVFoundationMediaExporterTestError: Error, Equatable {
+    case cannotAddWriterInput
     case invalidMP4BoxSize
     case missingH264ParameterSet
     case missingMP4Box(String)
+    case pixelBufferCreateFailed(CVReturn)
+    case writerAppendFailed(String?)
+    case writerFinishFailed(String?)
 }

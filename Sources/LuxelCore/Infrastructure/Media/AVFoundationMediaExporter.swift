@@ -58,7 +58,11 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
             timeRange: outputCompositionTimeRange,
             outputPixelSize: plan.outputPixelSize,
             frameRate: request.frameRate,
-            shouldCrop: request.shouldCrop
+            shouldCrop: request.shouldCrop,
+            zoomBlocks: ZoomExportTimeMapper(
+                trimRange: request.timeRange,
+                speed: request.speed
+            ).map(request.zoomBlocks)
         )
         exportSession.timeRange = outputCompositionTimeRange
         exportSession.audioMix = request.speed == .normal
