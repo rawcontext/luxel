@@ -5,8 +5,11 @@ public struct SourceMedia: Codable, Equatable, Sendable {
     public let duration: TimeInterval
     public let pixelSize: PixelSize
     public let nominalFrameRate: FrameRate
-    public let hasAudio: Bool
+    public let audioTracks: [AudioTrackKind]
     public let hasAlpha: Bool
+    public var hasAudio: Bool {
+        !audioTracks.isEmpty
+    }
 
     public init(
         fileURL: URL,
@@ -14,7 +17,8 @@ public struct SourceMedia: Codable, Equatable, Sendable {
         pixelSize: PixelSize,
         nominalFrameRate: FrameRate,
         hasAudio: Bool,
-        hasAlpha: Bool = false
+        hasAlpha: Bool = false,
+        audioTracks: [AudioTrackKind]? = nil
     ) throws {
         guard duration > 0 else {
             throw EditorModelError.invalidDuration
@@ -24,7 +28,7 @@ public struct SourceMedia: Codable, Equatable, Sendable {
         self.duration = duration
         self.pixelSize = pixelSize
         self.nominalFrameRate = nominalFrameRate
-        self.hasAudio = hasAudio
+        self.audioTracks = audioTracks ?? Self.defaultAudioTracks(hasAudio: hasAudio)
         self.hasAlpha = hasAlpha
     }
 
@@ -34,20 +38,42 @@ public struct SourceMedia: Codable, Equatable, Sendable {
         case pixelSize
         case nominalFrameRate
         case hasAudio
+        case audioTracks
         case hasAlpha
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
+        let audioTracks = try container.decodeIfPresent([AudioTrackKind].self, forKey: .audioTracks)
+        let hasAudio = try container.decodeIfPresent(Bool.self, forKey: .hasAudio)
+            ?? !(audioTracks?.isEmpty ?? true)
+
         try self.init(
             fileURL: container.decode(URL.self, forKey: .fileURL),
             duration: container.decode(TimeInterval.self, forKey: .duration),
             pixelSize: container.decode(PixelSize.self, forKey: .pixelSize),
             nominalFrameRate: container.decode(FrameRate.self, forKey: .nominalFrameRate),
-            hasAudio: container.decode(Bool.self, forKey: .hasAudio),
-            hasAlpha: container.decodeIfPresent(Bool.self, forKey: .hasAlpha) ?? false
+            hasAudio: hasAudio,
+            hasAlpha: container.decodeIfPresent(Bool.self, forKey: .hasAlpha) ?? false,
+            audioTracks: audioTracks
         )
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(fileURL, forKey: .fileURL)
+        try container.encode(duration, forKey: .duration)
+        try container.encode(pixelSize, forKey: .pixelSize)
+        try container.encode(nominalFrameRate, forKey: .nominalFrameRate)
+        try container.encode(hasAudio, forKey: .hasAudio)
+        try container.encode(audioTracks, forKey: .audioTracks)
+        try container.encode(hasAlpha, forKey: .hasAlpha)
+    }
+
+    private static func defaultAudioTracks(hasAudio: Bool) -> [AudioTrackKind] {
+        hasAudio ? [.system] : []
     }
 }
 

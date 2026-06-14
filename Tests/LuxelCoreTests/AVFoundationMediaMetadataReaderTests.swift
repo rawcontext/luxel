@@ -20,6 +20,7 @@ struct AVFoundationMediaMetadataReaderTests {
         #expect(source.pixelSize == expectedPixelSize)
         #expect(source.nominalFrameRate == expectedFrameRate)
         #expect(!source.hasAudio)
+        #expect(source.audioTracks.isEmpty)
         #expect(!source.hasAlpha)
     }
 
@@ -30,6 +31,7 @@ struct AVFoundationMediaMetadataReaderTests {
         let source = try await reader.readSourceMedia(at: fixtureURL("input@2x.mp4"))
 
         #expect(source.hasAudio)
+        #expect(source.audioTracks == [.system])
         #expect(!source.hasAlpha)
     }
 

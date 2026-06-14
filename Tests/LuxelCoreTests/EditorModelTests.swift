@@ -140,6 +140,8 @@ struct EditorModelTests {
         let source = try JSONDecoder().decode(SourceMedia.self, from: data)
 
         #expect(!source.hasAlpha)
+        #expect(source.hasAudio)
+        #expect(source.audioTracks == [.system])
     }
 
     @Test("source media preserves explicit alpha flag")
@@ -150,6 +152,18 @@ struct EditorModelTests {
         let decoded = try JSONDecoder().decode(SourceMedia.self, from: data)
 
         #expect(decoded.hasAlpha)
+        #expect(decoded == source)
+    }
+
+    @Test("source media stores explicit audio tracks and derives audio flag")
+    func sourceMediaStoresExplicitAudioTracksAndDerivesAudioFlag() throws {
+        let source = try makeSource(audioTracks: [.system, .microphone])
+
+        let data = try JSONEncoder().encode(source)
+        let decoded = try JSONDecoder().decode(SourceMedia.self, from: data)
+
+        #expect(source.hasAudio)
+        #expect(source.audioTracks == [.system, .microphone])
         #expect(decoded == source)
     }
 
@@ -190,14 +204,19 @@ struct EditorModelTests {
         #expect(loop.seekTarget(for: 5.1) == 2)
     }
 
-    private func makeSource(hasAudio: Bool = true, hasAlpha: Bool = false) throws -> SourceMedia {
+    private func makeSource(
+        hasAudio: Bool = true,
+        hasAlpha: Bool = false,
+        audioTracks: [AudioTrackKind]? = nil
+    ) throws -> SourceMedia {
         try SourceMedia(
             fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
             duration: 12.5,
             pixelSize: PixelSize(width: 1280, height: 720),
             nominalFrameRate: FrameRate(30),
             hasAudio: hasAudio,
-            hasAlpha: hasAlpha
+            hasAlpha: hasAlpha,
+            audioTracks: audioTracks
         )
     }
 }

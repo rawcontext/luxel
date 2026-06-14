@@ -41,7 +41,8 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
             pixelSize: PixelSize(width: width, height: height),
             nominalFrameRate: FrameRate(roundedFrameRate),
             hasAudio: !audioTracks.isEmpty,
-            hasAlpha: hasAlpha
+            hasAlpha: hasAlpha,
+            audioTracks: audioTracks.isEmpty ? [] : [.system]
         )
     }
 
