@@ -18,10 +18,8 @@ struct LuxelMenuBarLabel: View {
                 .font(.system(size: 14, weight: .regular))
                 .imageScale(.medium)
                 .frame(width: 18, height: 18)
-                .contentTransition(.symbolEffect(.replace))
                 .scaleEffect(isRecordingAnimationActive ? recordingPulseScale : 1.0)
                 .opacity(isRecordingAnimationActive ? recordingPulseOpacity : 1.0)
-                .animation(.easeInOut(duration: 0.2), value: presentation.menuBarSystemImage)
 
             if let title {
                 Text(title)
