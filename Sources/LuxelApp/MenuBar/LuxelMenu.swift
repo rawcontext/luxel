@@ -24,6 +24,7 @@ struct LuxelMenu: View {
                     openRecording: openRecording
                 )
                 LuxelRecordingStatusMessages(model: model)
+                LuxelReplayBufferControls(model: model)
 
                 Button {
                     isImportingRecording = true
