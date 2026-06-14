@@ -5,8 +5,10 @@ struct AnimatedFrameRenderer: Sendable {
     func renderImage(
         _ image: CGImage,
         outputPixelSize: PixelSize,
-        shouldCrop: Bool
+        shouldCrop: Bool,
+        cameraTransform: CameraTransform = .identity
     ) throws -> CGImage {
+        let drawableImage = try cameraFrame(for: image, cameraTransform: cameraTransform)
         let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
         guard let context = CGContext(
             data: nil,
@@ -23,7 +25,7 @@ struct AnimatedFrameRenderer: Sendable {
         context.setFillColor(CGColor(gray: 0, alpha: 1))
         context.fill(CGRect(origin: .zero, size: outputSize))
         context.interpolationQuality = .high
-        context.draw(image, in: drawRect(for: image, outputSize: outputSize, shouldCrop: shouldCrop))
+        context.draw(drawableImage, in: drawRect(for: drawableImage, outputSize: outputSize, shouldCrop: shouldCrop))
 
         guard let renderedImage = context.makeImage() else {
             throw AnimatedFrameRendererError.cannotRenderFrame
@@ -35,8 +37,10 @@ struct AnimatedFrameRenderer: Sendable {
     func renderGIFBitmap(
         _ image: CGImage,
         outputPixelSize: PixelSize,
-        shouldCrop: Bool
+        shouldCrop: Bool,
+        cameraTransform: CameraTransform = .identity
     ) throws -> GIFFrameBitmap {
+        let drawableImage = try cameraFrame(for: image, cameraTransform: cameraTransform)
         let bytesPerPixel = 4
         let bytesPerRow = outputPixelSize.width * bytesPerPixel
         let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
@@ -64,7 +68,7 @@ struct AnimatedFrameRenderer: Sendable {
             context.setFillColor(CGColor(gray: 0, alpha: 1))
             context.fill(CGRect(origin: .zero, size: outputSize))
             context.interpolationQuality = .high
-            context.draw(image, in: drawRect(for: image, outputSize: outputSize, shouldCrop: shouldCrop))
+            context.draw(drawableImage, in: drawRect(for: drawableImage, outputSize: outputSize, shouldCrop: shouldCrop))
         }
 
         var pixels: [GIFRGBAPixel] = []
@@ -79,6 +83,35 @@ struct AnimatedFrameRenderer: Sendable {
         }
 
         return try GIFFrameBitmap(pixelSize: outputPixelSize, pixels: pixels)
+    }
+
+    private func cameraFrame(for image: CGImage, cameraTransform: CameraTransform) throws -> CGImage {
+        guard cameraTransform != .identity else {
+            return image
+        }
+
+        let cropRect = pixelCropRect(for: image, sourceRect: cameraTransform.sourceRect)
+        guard let croppedImage = image.cropping(to: cropRect) else {
+            throw AnimatedFrameRendererError.cannotCropFrame
+        }
+
+        return croppedImage
+    }
+
+    private func pixelCropRect(for image: CGImage, sourceRect: NormalizedRect) -> CGRect {
+        let imageRect = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+        let minX = (sourceRect.x * Double(image.width)).rounded(.down)
+        let minY = (sourceRect.y * Double(image.height)).rounded(.down)
+        let maxX = ((sourceRect.x + sourceRect.width) * Double(image.width)).rounded(.up)
+        let maxY = ((sourceRect.y + sourceRect.height) * Double(image.height)).rounded(.up)
+
+        return CGRect(
+            x: minX,
+            y: minY,
+            width: max(1, maxX - minX),
+            height: max(1, maxY - minY)
+        )
+        .intersection(imageRect)
     }
 
     private func drawRect(
@@ -103,5 +136,6 @@ struct AnimatedFrameRenderer: Sendable {
 
 enum AnimatedFrameRendererError: Error, Equatable {
     case cannotCreateFrameContext
+    case cannotCropFrame
     case cannotRenderFrame
 }

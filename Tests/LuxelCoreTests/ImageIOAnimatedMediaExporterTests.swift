@@ -47,6 +47,28 @@ struct ImageIOAnimatedMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
+    @Test("apng export accepts zoom blocks")
+    func apngExportAcceptsZoomBlocks() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "apng")
+        let request = try makeRequest(
+            format: .apng,
+            pixelSize: PixelSize(width: 320, height: 180),
+            zoomBlocks: [
+                zoomBlock(start: 1, end: 1.3)
+            ]
+        )
+
+        let exported = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
+        let metadata = try animatedImageMetadata(at: outputURL)
+
+        #expect(exported.format == .apng)
+        #expect(metadata.frameCount == 3)
+        #expect(metadata.width == 320)
+        #expect(metadata.height == 180)
+
+        try? FileManager.default.removeItem(at: outputURL)
+    }
+
     @Test("apng export honors loop count")
     func apngExportHonorsLoopCount() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "apng")
@@ -103,6 +125,27 @@ struct ImageIOAnimatedMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
+    @Test("gif export accepts zoom blocks")
+    func gifExportAcceptsZoomBlocks() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "gif")
+        let request = try makeRequest(
+            format: .gif,
+            pixelSize: PixelSize(width: 320, height: 180),
+            zoomBlocks: [
+                zoomBlock(start: 1, end: 1.3)
+            ]
+        )
+
+        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
+        let metadata = try animatedImageMetadata(at: outputURL)
+
+        #expect(metadata.frameCount == 3)
+        #expect(metadata.width == 320)
+        #expect(metadata.height == 180)
+
+        try? FileManager.default.removeItem(at: outputURL)
+    }
+
     @Test("gif export honors custom render options")
     func gifExportHonorsCustomRenderOptions() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "gif")
@@ -139,7 +182,8 @@ struct ImageIOAnimatedMediaExporterTests {
         format: ExportFormat,
         pixelSize: PixelSize,
         speed: PlaybackSpeed = .normal,
-        gifOptions: GIFRenderOptions? = nil
+        gifOptions: GIFRenderOptions? = nil,
+        zoomBlocks: [ZoomBlock] = []
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: fixtureURL("input.mp4"),
@@ -150,7 +194,17 @@ struct ImageIOAnimatedMediaExporterTests {
             shouldMute: false,
             shouldCrop: true,
             speed: speed,
-            gifOptions: gifOptions
+            gifOptions: gifOptions,
+            zoomBlocks: zoomBlocks
+        )
+    }
+
+    private func zoomBlock(start: TimeInterval, end: TimeInterval) throws -> ZoomBlock {
+        try ZoomBlock(
+            timeRange: TimeRange(start: start, end: end),
+            targetRect: NormalizedRect(x: 0.25, y: 0.25, width: 0.2, height: 0.2),
+            zoom: 2,
+            transitionOverride: 0.05
         )
     }
 

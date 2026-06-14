@@ -50,12 +50,25 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         try? FileManager.default.removeItem(at: outputFileURL)
 
         do {
+            var cameraPath: CameraPath?
+            var didBuildCameraPath = false
+
             for time in frameTimes {
                 let frame = try await imageGenerator.image(at: time).image
+                if !didBuildCameraPath {
+                    cameraPath = try self.cameraPath(for: request, sourceFrame: frame)
+                    didBuildCameraPath = true
+                }
+
                 let renderedFrame = try AnimatedFrameRenderer().renderImage(
                     frame,
                     outputPixelSize: outputPixelSize,
-                    shouldCrop: request.shouldCrop
+                    shouldCrop: request.shouldCrop,
+                    cameraTransform: try cameraTransform(
+                        for: time,
+                        request: request,
+                        cameraPath: cameraPath
+                    )
                 )
                 CGImageDestinationAddImage(
                     destination,
@@ -97,6 +110,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         let encoder = NativeGIFEncoder()
         let baseFrames = try await renderedBitmaps(
             for: schedule,
+            request: request,
             outputPixelSize: outputPixelSize,
             shouldCrop: request.shouldCrop,
             imageGenerator: imageGenerator
@@ -120,23 +134,73 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
 
     private func renderedBitmaps(
         for schedule: AnimatedFrameSchedule,
+        request: ExportRequest,
         outputPixelSize: PixelSize,
         shouldCrop: Bool,
         imageGenerator: AVAssetImageGenerator
     ) async throws -> [GIFFrameBitmap] {
         var frames: [GIFFrameBitmap] = []
         frames.reserveCapacity(schedule.frameTimes.count)
+        var cameraPath: CameraPath?
+        var didBuildCameraPath = false
 
         for time in schedule.frameTimes {
             let frame = try await imageGenerator.image(at: time).image
+            if !didBuildCameraPath {
+                cameraPath = try self.cameraPath(for: request, sourceFrame: frame)
+                didBuildCameraPath = true
+            }
+
             frames.append(try AnimatedFrameRenderer().renderGIFBitmap(
                 frame,
                 outputPixelSize: outputPixelSize,
-                shouldCrop: shouldCrop
+                shouldCrop: shouldCrop,
+                cameraTransform: try cameraTransform(
+                    for: time,
+                    request: request,
+                    cameraPath: cameraPath
+                )
             ))
         }
 
         return frames
+    }
+
+    private func cameraPath(
+        for request: ExportRequest,
+        sourceFrame: CGImage
+    ) throws -> CameraPath? {
+        guard !request.zoomBlocks.isEmpty else {
+            return nil
+        }
+
+        let blocks = try ZoomExportTimeMapper(
+            trimRange: request.timeRange,
+            speed: request.speed
+        )
+        .map(request.zoomBlocks)
+
+        guard !blocks.isEmpty else {
+            return nil
+        }
+
+        return try CameraPath(
+            blocks: blocks,
+            sourceSize: PixelSize(width: sourceFrame.width, height: sourceFrame.height)
+        )
+    }
+
+    private func cameraTransform(
+        for sourceTime: CMTime,
+        request: ExportRequest,
+        cameraPath: CameraPath?
+    ) throws -> CameraTransform {
+        guard let cameraPath else {
+            return .identity
+        }
+
+        let outputTime = max(0, (sourceTime.seconds - request.timeRange.start) / request.speed.value)
+        return try cameraPath.transform(at: outputTime)
     }
 
     private func animatedLoopMode(for request: ExportRequest) -> GIFLoopMode {
