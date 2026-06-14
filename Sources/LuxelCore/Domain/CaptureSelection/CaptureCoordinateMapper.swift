@@ -38,6 +38,25 @@ public enum CaptureCoordinateMapper {
         )
     }
 
+    public static func topLeftSelection(
+        fromRecordingRect rect: CaptureRect,
+        in display: DisplayBounds
+    ) throws -> CaptureRect {
+        guard rect.x >= 0,
+              rect.y >= 0,
+              rect.x + rect.width <= display.width,
+              rect.y + rect.height <= display.height else {
+            throw CaptureModelError.selectionOutsideDisplay
+        }
+
+        return try CaptureRect(
+            x: rect.x,
+            y: display.height - (rect.y + rect.height),
+            width: rect.width,
+            height: rect.height
+        )
+    }
+
     public static func localRect(
         fromGlobalRect rect: CaptureRect,
         in display: DisplayBounds

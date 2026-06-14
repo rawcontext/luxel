@@ -126,6 +126,47 @@ struct QuickRecordingModelTests {
         #expect(resolved?.pixelSize == pixelSize)
     }
 
+    @Test("last area memory restores matching display cropper selection")
+    func lastAreaMemoryRestoresMatchingDisplayCropperSelection() throws {
+        let memory = LastCaptureMemory(
+            target: .area(
+                displayID: DisplayID(3),
+                rect: try CaptureRect(x: 10, y: 20, width: 640, height: 480)
+            ),
+            pixelSize: try PixelSize(width: 640, height: 480),
+            options: RecordingOptions(frameRate: 30),
+            capturedAt: Date()
+        )
+        let display = try DisplayBounds(id: DisplayID(3), x: 0, y: 0, width: 1920, height: 1080)
+
+        let selection = memory.restoredTopLeftAreaSelection(in: display)
+
+        #expect(selection == (try CaptureRect(x: 10, y: 580, width: 640, height: 480)))
+    }
+
+    @Test("last nonmatching memory does not restore cropper selection")
+    func lastNonmatchingMemoryDoesNotRestoreCropperSelection() throws {
+        let display = try DisplayBounds(id: DisplayID(3), x: 0, y: 0, width: 1920, height: 1080)
+        let windowMemory = LastCaptureMemory(
+            target: .window(id: 42),
+            pixelSize: try PixelSize(width: 640, height: 480),
+            options: RecordingOptions(frameRate: 30),
+            capturedAt: Date()
+        )
+        let otherDisplayMemory = LastCaptureMemory(
+            target: .area(
+                displayID: DisplayID(4),
+                rect: try CaptureRect(x: 10, y: 20, width: 640, height: 480)
+            ),
+            pixelSize: try PixelSize(width: 640, height: 480),
+            options: RecordingOptions(frameRate: 30),
+            capturedAt: Date()
+        )
+
+        #expect(windowMemory.restoredTopLeftAreaSelection(in: display) == nil)
+        #expect(otherDisplayMemory.restoredTopLeftAreaSelection(in: display) == nil)
+    }
+
     @Test("missing display target falls back to supplied main display")
     func missingDisplayTargetFallsBackToSuppliedMainDisplay() throws {
         let memory = try LastCaptureMemory(

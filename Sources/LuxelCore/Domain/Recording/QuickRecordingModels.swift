@@ -32,6 +32,15 @@ public struct LastCaptureMemory: Codable, Equatable, Sendable {
         )
     }
 
+    public func restoredTopLeftAreaSelection(in display: DisplayBounds) -> CaptureRect? {
+        guard case .area(let displayID, let rect) = target,
+              displayID == display.id else {
+            return nil
+        }
+
+        return try? CaptureCoordinateMapper.topLeftSelection(fromRecordingRect: rect, in: display)
+    }
+
     public func resolvedTarget(
         availableTargets: [CaptureTargetOption],
         fallbackWindow: CaptureTargetOption? = nil,

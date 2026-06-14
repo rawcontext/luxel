@@ -39,6 +39,7 @@ final class LuxelCropperPanelController {
         selectionPresetConfiguration: CropperSelectionPresetConfiguration = CropperSelectionPresetConfiguration(
             sizePresets: CaptureSizePreset.builtInDefaults
         ),
+        restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled,
         showsNotificationReminder: Bool = false,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
@@ -65,6 +66,7 @@ final class LuxelCropperPanelController {
                     cameraConfiguration: cameraConfiguration,
                     quickRecordingConfiguration: quickRecordingConfiguration,
                     selectionPresetConfiguration: selectionPresetConfiguration,
+                    restoreSelectionConfiguration: restoreSelectionConfiguration,
                     showsNotificationReminder: showsNotificationReminder,
                     onCountdownDurationChange: onCountdownDurationChange,
                     onStopAfterDurationChange: onStopAfterDurationChange,
@@ -100,6 +102,7 @@ final class LuxelCropperPanelController {
         cameraConfiguration: CropperCameraConfiguration,
         quickRecordingConfiguration: CropperQuickRecordingConfiguration,
         selectionPresetConfiguration: CropperSelectionPresetConfiguration,
+        restoreSelectionConfiguration: CropperRestoreSelectionConfiguration,
         showsNotificationReminder: Bool,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
@@ -137,6 +140,7 @@ final class LuxelCropperPanelController {
                 countdownDuration: countdownDuration,
                 stopAfterDuration: stopAfterDuration,
                 selectionPresetConfiguration: selectionPresetConfiguration,
+                initialSelection: restoreSelectionConfiguration.selection(for: display),
                 windowSnapFrames: CaptureWindowSnapFrameResolver.windowFrames(
                     on: display,
                     from: targets

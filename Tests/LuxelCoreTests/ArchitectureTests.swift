@@ -168,6 +168,42 @@ struct ArchitectureTests {
         #expect(viewSource.contains("NSEvent.modifierFlags.contains(.command)"))
     }
 
+    @Test("cropper restores last area selection when enabled")
+    func cropperRestoresLastAreaSelectionWhenEnabled() throws {
+        let packageRoot = try packageRootURL()
+        let modelSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            encoding: .utf8
+        )
+        let controllerSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperPanelController.swift"),
+            encoding: .utf8
+        )
+        let controlsSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/LuxelRecordingControls.swift"),
+            encoding: .utf8
+        )
+        let shortcutsSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Shortcuts/LuxelShortcutInstaller.swift"),
+            encoding: .utf8
+        )
+        let presentationSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Model/LuxelMenuModel+Presentation.swift"),
+            encoding: .utf8
+        )
+
+        #expect(modelSource.contains("struct CropperRestoreSelectionConfiguration"))
+        #expect(modelSource.contains("memory?.restoredTopLeftAreaSelection(in: display)"))
+        #expect(modelSource.contains("initialSelection: CaptureRect? = nil"))
+        #expect(modelSource.contains("selection: resolvedInitialSelection"))
+        #expect(controllerSource.contains("restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled"))
+        #expect(controllerSource.contains("initialSelection: restoreSelectionConfiguration.selection(for: display)"))
+        #expect(presentationSource.contains("isEnabled: settings.restoreLastSelection"))
+        #expect(presentationSource.contains("memory: settings.lastCaptureMemory"))
+        #expect(controlsSource.contains("restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
+        #expect(shortcutsSource.contains("restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
+    }
+
     @Test("recording FPS settings accept direct numeric entry")
     func recordingFPSSettingsAcceptDirectNumericEntry() throws {
         let packageRoot = try packageRootURL()

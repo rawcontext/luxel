@@ -17,6 +17,20 @@ struct CaptureCoordinateMapperTests {
         #expect(rect == expected)
     }
 
+    @Test("top-left selection flips recording rect y inside display")
+    func topLeftSelectionFlipsRecordingRectYInsideDisplay() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 2560, height: 1440)
+        let rect = try CaptureRect(x: 40, y: 960, width: 640, height: 360)
+
+        let selection = try CaptureCoordinateMapper.topLeftSelection(
+            fromRecordingRect: rect,
+            in: display
+        )
+        let expected = try CaptureRect(x: 40, y: 120, width: 640, height: 360)
+
+        #expect(selection == expected)
+    }
+
     @Test("local rect subtracts display origin")
     func localRectSubtractsDisplayOrigin() throws {
         let display = try DisplayBounds(id: DisplayID(2), x: -1728, y: 120, width: 1728, height: 1117)
@@ -35,6 +49,16 @@ struct CaptureCoordinateMapperTests {
 
         #expect(throws: CaptureModelError.selectionOutsideDisplay) {
             _ = try CaptureCoordinateMapper.recordingRect(fromTopLeftSelection: selection, in: display)
+        }
+    }
+
+    @Test("recording rect outside display throws")
+    func recordingRectOutsideDisplayThrows() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 100, height: 100)
+        let rect = try CaptureRect(x: 20, y: 20, width: 90, height: 20)
+
+        #expect(throws: CaptureModelError.selectionOutsideDisplay) {
+            _ = try CaptureCoordinateMapper.topLeftSelection(fromRecordingRect: rect, in: display)
         }
     }
 }

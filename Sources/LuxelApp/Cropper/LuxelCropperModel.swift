@@ -29,6 +29,21 @@ struct CropperSelectionPresetConfiguration {
     }
 }
 
+struct CropperRestoreSelectionConfiguration {
+    static let disabled = CropperRestoreSelectionConfiguration(isEnabled: false, memory: nil)
+
+    let isEnabled: Bool
+    let memory: LastCaptureMemory?
+
+    func selection(for display: DisplayBounds) -> CaptureRect? {
+        guard isEnabled else {
+            return nil
+        }
+
+        return memory?.restoredTopLeftAreaSelection(in: display)
+    }
+}
+
 struct CropperCameraConfiguration {
     let selectedDeviceID: String?
     let devices: [CameraDeviceOption]
@@ -117,11 +132,15 @@ final class LuxelCropperModel {
         selectionPresetConfiguration: CropperSelectionPresetConfiguration = CropperSelectionPresetConfiguration(
             sizePresets: CaptureSizePreset.builtInDefaults
         ),
+        initialSelection: CaptureRect? = nil,
         windowSnapFrames: [CaptureRect] = [],
         onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in }
     ) {
+        let resolvedInitialSelection = Self.validInitialSelection(initialSelection, display: display)
+
         self.display = display
+        self.selection = resolvedInitialSelection
         self.mode = mode
         self.countdownDuration = countdownDuration
         self.stopAfterDuration = stopAfterDuration
@@ -131,7 +150,7 @@ final class LuxelCropperModel {
         self.onCountdownDurationChange = onCountdownDurationChange
         self.onStopAfterDurationChange = onStopAfterDurationChange
         self.selectionUndoStack = UndoStack(initialState: CropperUndoState(
-            selection: nil,
+            selection: resolvedInitialSelection,
             aspectRatioPreset: .free,
             customAspectRatio: nil,
             customAspectRatioWidthText: "3",
@@ -560,6 +579,15 @@ final class LuxelCropperModel {
 
         let minutes = Int(duration / 60)
         return "\(minutes) min"
+    }
+
+    private static func validInitialSelection(_ selection: CaptureRect?, display: DisplayBounds) -> CaptureRect? {
+        guard let selection,
+              (try? CaptureSelectionDraft(display: display, topLeftSelection: selection)) != nil else {
+            return nil
+        }
+
+        return selection
     }
 
     private static func parseCustomAspectRatioComponent(_ text: String) throws -> Int {
