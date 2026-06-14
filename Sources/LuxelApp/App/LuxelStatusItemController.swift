@@ -20,8 +20,11 @@ final class LuxelStatusItemController: NSObject {
     private var recordingFrameIndex = 0
     private var currentImageKey: String?
     private var isHandlingStatusItemStop = false
+    private var statusItemStopTask: Task<Void, Never>?
+    private var statusItemStopWatchdogTask: Task<Void, Never>?
 
     private let iconSize = NSSize(width: 18, height: 18)
+    private let statusItemStopWatchdogDelay: Duration = .seconds(8)
     private lazy var recordingFrames = makeRecordingFrames()
 
     init(
@@ -43,6 +46,7 @@ final class LuxelStatusItemController: NSObject {
         installURLHandler()
         startStatusRefresh()
         refreshStatusItem()
+        recoverInterruptedRecording()
     }
 
     private func configureStatusItem() {
@@ -73,6 +77,17 @@ final class LuxelStatusItemController: NSObject {
                 }
             )
         )
+    }
+
+    private func recoverInterruptedRecording() {
+        Task { @MainActor [weak self] in
+            guard let self,
+                  let recording = await model.recoverInterruptedRecording() else {
+                return
+            }
+
+            windowPresenter.openEditor(fileURL: recording.fileURL)
+        }
     }
 
     private func installURLHandler() {
@@ -115,7 +130,7 @@ final class LuxelStatusItemController: NSObject {
     }
 
     @objc private func handleStatusItemClick() {
-        if model.menuBarStatusPresentation().animatesMenuBarSystemImage {
+        if model.hasActiveRecording {
             stopRecordingFromStatusItem()
             return
         }
@@ -144,17 +159,36 @@ final class LuxelStatusItemController: NSObject {
         isHandlingStatusItemStop = true
         popover.performClose(nil)
 
-        Task { [weak self] in
+        statusItemStopTask?.cancel()
+        statusItemStopWatchdogTask?.cancel()
+
+        statusItemStopTask = Task { @MainActor [weak self] in
             guard let self else {
                 return
             }
 
             let stopAction = await model.stopRecording()
+            guard !Task.isCancelled else {
+                return
+            }
+
             handleStatusItemStopAction(stopAction)
+        }
+        statusItemStopWatchdogTask = Task { @MainActor [weak self, statusItemStopWatchdogDelay] in
+            do {
+                try await Task.sleep(for: statusItemStopWatchdogDelay)
+            } catch {
+                return
+            }
+
+            self?.handleStatusItemStopWatchdog()
         }
     }
 
     private func handleStatusItemStopAction(_ stopAction: RecordingStopAction?) {
+        statusItemStopWatchdogTask?.cancel()
+        statusItemStopWatchdogTask = nil
+        statusItemStopTask = nil
         isHandlingStatusItemStop = false
 
         switch stopAction {
@@ -163,6 +197,21 @@ final class LuxelStatusItemController: NSObject {
         case .quickExported, .audioRecorded, nil:
             break
         }
+    }
+
+    private func handleStatusItemStopWatchdog() {
+        guard isHandlingStatusItemStop else {
+            return
+        }
+
+        guard model.hasActiveRecording else {
+            statusItemStopWatchdogTask = nil
+            isHandlingStatusItemStop = false
+            return
+        }
+
+        statusItemStopTask?.cancel()
+        NSApplication.shared.terminate(nil)
     }
 
     @objc private func handleGetURLEvent(
