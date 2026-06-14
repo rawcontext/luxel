@@ -12,6 +12,7 @@ public struct LuxelCLI: ParsableCommand {
             LuxelToggleCommand.self,
             LuxelScreenshotCommand.self,
             LuxelClipCommand.self,
+            LuxelLatestCommand.self,
             LuxelPreferencesCommand.self
         ]
     )
@@ -248,6 +249,33 @@ public struct LuxelPreferencesCommand: ParsableCommand {
     public var invocation: AutomationInvocation {
         get throws {
             try AutomationInvocation(command: .preferences(pane?.domainValue), callbacks: callbacks.resolvedCallbacks())
+        }
+    }
+
+    public mutating func run() throws {
+        try open(invocation)
+    }
+}
+
+public struct LuxelLatestCommand: ParsableCommand {
+    public static let configuration = CommandConfiguration(
+        commandName: "latest",
+        abstract: "Open the latest Luxel recording."
+    )
+
+    @Flag(help: "Reveal the latest recording in Finder instead of opening it.")
+    public var reveal = false
+
+    @OptionGroup public var callbacks: LuxelCallbackArguments
+
+    public init() {}
+
+    public var invocation: AutomationInvocation {
+        get throws {
+            try AutomationInvocation(
+                command: .latest(reveal: reveal),
+                callbacks: callbacks.resolvedCallbacks()
+            )
         }
     }
 

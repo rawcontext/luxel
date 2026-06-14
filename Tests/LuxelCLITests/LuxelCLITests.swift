@@ -66,12 +66,21 @@ struct LuxelCLITests {
         ))))
     }
 
-    @Test("clip and preferences commands map URL-backed actions")
-    func clipAndPreferencesCommandsMapURLBackedActions() throws {
+    @Test("clip latest and preferences commands map URL-backed actions")
+    func clipLatestAndPreferencesCommandsMapURLBackedActions() throws {
         let clip = try LuxelClipCommand.parse(["--seconds", "30"])
+        let latest = try LuxelLatestCommand.parse(["--reveal", "--x-success", "luxel-callback://done"])
         let preferences = try LuxelPreferencesCommand.parse(["--pane", "presets"])
 
         #expect(try clip.invocation == AutomationInvocation(command: .clip(seconds: 30)))
+        #expect(try latest.invocation == AutomationInvocation(
+            command: .latest(reveal: true),
+            callbacks: AutomationCallbacks(success: URL(string: "luxel-callback://done"))
+        ))
+        #expect(
+            try AutomationInvocationURLBuilder.url(for: latest.invocation).absoluteString
+                == "luxel://latest?reveal=true&x-success=luxel-callback://done"
+        )
         #expect(try preferences.invocation == AutomationInvocation(command: .preferences(.presets)))
     }
 

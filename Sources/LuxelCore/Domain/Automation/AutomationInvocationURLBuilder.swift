@@ -27,6 +27,8 @@ public enum AutomationInvocationURLBuilder {
             "clip"
         case .preferences:
             "preferences"
+        case .latest:
+            "latest"
         }
     }
 
@@ -44,6 +46,8 @@ public enum AutomationInvocationURLBuilder {
             seconds.map { [URLQueryItem(name: "seconds", value: String($0))] } ?? []
         case .preferences(let pane):
             pane.map { [URLQueryItem(name: "pane", value: $0.rawValue)] } ?? []
+        case .latest(let reveal):
+            reveal ? [URLQueryItem(name: "reveal", value: "true")] : []
         }
     }
 

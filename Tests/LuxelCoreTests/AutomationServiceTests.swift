@@ -61,6 +61,11 @@ struct AutomationServiceTests {
             settings: settings,
             context: AutomationPolicyContext()
         )
+        let latestResult = try await service.execute(
+            AutomationInvocation(command: .latest(reveal: true)),
+            settings: settings,
+            context: AutomationPolicyContext()
+        )
         let toggleResult = try await service.execute(
             AutomationInvocation(command: .toggle(nil)),
             settings: settings,
@@ -69,8 +74,9 @@ struct AutomationServiceTests {
 
         #expect(stopResult == .executed(.accepted))
         #expect(preferencesResult == .executed(.accepted))
+        #expect(latestResult == .executed(.accepted))
         #expect(toggleResult == .executed(.accepted))
-        #expect(executor.calls == [.stop, .preferences(.presets), .toggle(nil)])
+        #expect(executor.calls == [.stop, .preferences(.presets), .latest(reveal: true), .toggle(nil)])
     }
 
     @Test("granted commands dispatch to matching executor methods")
@@ -167,6 +173,7 @@ private final class SpyAutomationCommandExecutor: AutomationCommandExecutor, @un
         case screenshot(AutomationScreenshotOptions)
         case clip(seconds: Int?)
         case preferences(AutomationPreferencesPane?)
+        case latest(reveal: Bool)
     }
 
     private let result: AutomationExecutionResult
@@ -203,6 +210,10 @@ private final class SpyAutomationCommandExecutor: AutomationCommandExecutor, @un
 
     func openPreferences(_ pane: AutomationPreferencesPane?) async throws -> AutomationExecutionResult {
         try execute(.preferences(pane))
+    }
+
+    func openLatestRecording(reveal: Bool) async throws -> AutomationExecutionResult {
+        try execute(.latest(reveal: reveal))
     }
 
     private func execute(_ call: Call) throws -> AutomationExecutionResult {

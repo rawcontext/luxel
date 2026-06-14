@@ -7,4 +7,5 @@ public protocol AutomationCommandExecutor: Sendable {
     func captureScreenshot(_ options: AutomationScreenshotOptions) async throws -> AutomationExecutionResult
     func clipReplayBuffer(seconds: Int?) async throws -> AutomationExecutionResult
     func openPreferences(_ pane: AutomationPreferencesPane?) async throws -> AutomationExecutionResult
+    func openLatestRecording(reveal: Bool) async throws -> AutomationExecutionResult
 }

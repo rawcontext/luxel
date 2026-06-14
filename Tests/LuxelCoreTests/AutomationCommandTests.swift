@@ -52,6 +52,10 @@ struct AutomationCommandTests {
             AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .preferences(.presets))).absoluteString
                 == "luxel://preferences?pane=presets"
         )
+        #expect(
+            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .latest(reveal: true))).absoluteString
+                == "luxel://latest?reveal=true"
+        )
     }
 
     @Test("parser reads last-area recording URL")
@@ -84,6 +88,14 @@ struct AutomationCommandTests {
             try AutomationCommandParser.parse(#require(URL(string: "luxel://preferences?pane=presets"))).command
                 == .preferences(.presets)
         )
+        #expect(
+            try AutomationCommandParser.parse(#require(URL(string: "luxel://latest?reveal=1"))).command
+                == .latest(reveal: true)
+        )
+        #expect(
+            try AutomationCommandParser.parse(#require(URL(string: "luxel://latest"))).command
+                == .latest(reveal: false)
+        )
     }
 
     @Test("parser rejects unknown actions and invalid parameters")
@@ -106,6 +118,10 @@ struct AutomationCommandTests {
 
         #expect(throws: AutomationCommandParseError.invalidParameter("countdown")) {
             _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://record?target=lastArea&countdown=61")))
+        }
+
+        #expect(throws: AutomationCommandParseError.invalidParameter("reveal")) {
+            _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://latest?reveal=maybe")))
         }
     }
 
@@ -159,6 +175,11 @@ struct AutomationCommandTests {
         ) == .allow)
         #expect(AutomationPolicy.evaluate(
             command: .stop,
+            settings: settings,
+            context: AutomationPolicyContext()
+        ) == .allow)
+        #expect(AutomationPolicy.evaluate(
+            command: .latest(reveal: false),
             settings: settings,
             context: AutomationPolicyContext()
         ) == .allow)

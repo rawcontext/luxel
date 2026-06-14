@@ -69,10 +69,11 @@ public enum AutomationCommand: Equatable, Sendable {
     case screenshot(AutomationScreenshotOptions)
     case clip(seconds: Int?)
     case preferences(AutomationPreferencesPane?)
+    case latest(reveal: Bool)
 
     public func requiresAutomationPermission(hasActiveRecording: Bool) -> Bool {
         switch self {
-        case .preferences, .stop:
+        case .preferences, .stop, .latest:
             false
         case .toggle:
             !hasActiveRecording
@@ -87,7 +88,7 @@ public enum AutomationCommand: Equatable, Sendable {
             true
         case .toggle:
             !hasActiveRecording
-        case .preferences, .stop:
+        case .preferences, .stop, .latest:
             false
         }
     }
@@ -106,6 +107,8 @@ public enum AutomationCommand: Equatable, Sendable {
             "clip the replay buffer"
         case .preferences:
             "open Luxel settings"
+        case .latest:
+            "open the latest recording"
         }
     }
 }
@@ -223,6 +226,8 @@ public enum AutomationCommandParser {
             return .clip(seconds: try optionalPositiveInteger("seconds", in: query))
         case "preferences":
             return .preferences(try preferencesPane(in: query))
+        case "latest":
+            return .latest(reveal: try optionalBoolean("reveal", in: query) ?? false)
         default:
             throw AutomationCommandParseError.unknownAction(action)
         }
@@ -344,6 +349,24 @@ public enum AutomationCommandParser {
         }
 
         return integer
+    }
+
+    private static func optionalBoolean(
+        _ name: String,
+        in query: AutomationQuery
+    ) throws -> Bool? {
+        guard let value = query.value(for: name) else {
+            return nil
+        }
+
+        switch value.lowercased() {
+        case "true", "1":
+            return true
+        case "false", "0":
+            return false
+        default:
+            throw AutomationCommandParseError.invalidParameter(name)
+        }
     }
 
     private static func callbackURL(

@@ -150,7 +150,31 @@ extension LuxelMenuModel {
         case .preferences:
             openSettings()
             return .accepted
+        case .latest(let reveal):
+            return try openLatestAutomationRecording(
+                reveal: reveal,
+                openRecording: openRecording
+            )
         }
+    }
+
+    private func openLatestAutomationRecording(
+        reveal: Bool,
+        openRecording: @escaping @MainActor (URL) -> Void
+    ) throws -> AutomationExecutionResult {
+        refreshRecentRecordings()
+
+        guard let recording = recentRecordings.first(where: { $0.kind == .recording }) else {
+            throw LuxelAutomationError.noRecentRecording
+        }
+
+        if reveal || recording.options.isAudioOnly {
+            fileWorkflowService.revealInFinder(recording.fileURL)
+        } else {
+            openRecording(recording.fileURL)
+        }
+
+        return .file(recording.primaryMediaURL)
     }
 
     private func startAutomationRecording(_ options: AutomationRecordingOptions) async throws {
@@ -321,10 +345,15 @@ private final class LuxelAutomationCommandExecutor: AutomationCommandExecutor, @
     func openPreferences(_ pane: AutomationPreferencesPane?) async throws -> AutomationExecutionResult {
         try await execute(.preferences(pane))
     }
+
+    func openLatestRecording(reveal: Bool) async throws -> AutomationExecutionResult {
+        try await execute(.latest(reveal: reveal))
+    }
 }
 
 private enum LuxelAutomationError: LocalizedError, Equatable {
     case denied
+    case noRecentRecording
     case presetUnavailable(String)
     case replayBufferUnavailable
     case targetUnavailable
@@ -334,6 +363,8 @@ private enum LuxelAutomationError: LocalizedError, Equatable {
         switch self {
         case .denied:
             "URL automation was denied"
+        case .noRecentRecording:
+            "No recent recording is available"
         case .presetUnavailable(let name):
             "No export preset named \(name)"
         case .replayBufferUnavailable:

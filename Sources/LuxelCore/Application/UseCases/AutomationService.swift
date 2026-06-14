@@ -52,6 +52,8 @@ public final class AutomationService: Sendable {
             try await executor.clipReplayBuffer(seconds: seconds)
         case .preferences(let pane):
             try await executor.openPreferences(pane)
+        case .latest(let reveal):
+            try await executor.openLatestRecording(reveal: reveal)
         }
     }
 }
