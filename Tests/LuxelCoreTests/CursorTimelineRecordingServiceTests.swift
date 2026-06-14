@@ -35,6 +35,27 @@ struct CursorTimelineRecordingServiceTests {
         #expect(timeline.cursorImages == [ibeam, arrow])
     }
 
+    @Test("recording maps global sample positions into capture-local coordinates")
+    func recordingMapsGlobalSamplePositionsIntoCaptureLocalCoordinates() async throws {
+        let arrow = try cursorImage(id: "arrow")
+        let source = StubCursorTimelineEventSource(events: [
+            .sample(wallTime: 1, position: try CursorPoint(x: 1828.5, y: 190.25), cursorImage: arrow),
+            .sample(wallTime: 2, position: try CursorPoint(x: 1700, y: 760), cursorImage: arrow)
+        ])
+        let service = CursorTimelineRecordingService(eventSource: source)
+        let request = try CursorTimelineRecordingRequest(
+            recordingDuration: 3,
+            captureFrame: CaptureRect(x: 1728, y: 90, width: 800, height: 600)
+        )
+
+        let timeline = try await service.recordTimeline(request)
+
+        #expect(timeline.samples.map(\.position) == [
+            try CursorPoint(x: 100.5, y: 100.25),
+            try CursorPoint(x: -28, y: 670)
+        ])
+    }
+
     @Test("recording deduplicates cursor images by id")
     func recordingDeduplicatesCursorImagesByID() async throws {
         let arrow = try cursorImage(id: "arrow", pngData: Data([1]))

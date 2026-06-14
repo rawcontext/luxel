@@ -3,11 +3,17 @@ import Foundation
 public struct CursorTimelineRecordingRequest: Equatable, Sendable {
     public let recordingDuration: TimeInterval
     public let pauses: [MediaPauseInterval]
+    public let captureFrame: CaptureRect?
 
-    public init(recordingDuration: TimeInterval, pauses: [MediaPauseInterval] = []) throws {
+    public init(
+        recordingDuration: TimeInterval,
+        pauses: [MediaPauseInterval] = [],
+        captureFrame: CaptureRect? = nil
+    ) throws {
         _ = try MediaTimeMapper(recordingDuration: recordingDuration, pauses: pauses)
         self.recordingDuration = recordingDuration
         self.pauses = pauses
+        self.captureFrame = captureFrame
     }
 }
 
@@ -28,7 +34,10 @@ public struct CursorTimelineRecordingService: Sendable {
             recordingDuration: request.recordingDuration,
             pauses: request.pauses
         )
-        var builder = CursorTimelineRecordingBuilder(mapper: mapper)
+        var builder = CursorTimelineRecordingBuilder(
+            mapper: mapper,
+            captureFrame: request.captureFrame
+        )
 
         for await event in eventSource.events() {
             try builder.append(event)
@@ -56,14 +65,16 @@ public enum CursorTimelineRecordingServiceError: Error, Equatable {
 
 private struct CursorTimelineRecordingBuilder {
     private let mapper: MediaTimeMapper
+    private let captureFrame: CaptureRect?
     private var samples: [CursorSample] = []
     private var clicks: [CursorClickEvent] = []
     private var spotlightToggles: [TimeInterval] = []
     private var cursorImages: [CursorImageAsset] = []
     private var cursorImageIDs: Set<String> = []
 
-    init(mapper: MediaTimeMapper) {
+    init(mapper: MediaTimeMapper, captureFrame: CaptureRect?) {
         self.mapper = mapper
+        self.captureFrame = captureFrame
     }
 
     mutating func append(_ event: CursorTimelineSourceEvent) throws {
@@ -73,10 +84,14 @@ private struct CursorTimelineRecordingBuilder {
                 return
             }
 
+            let localPosition = try captureFrame.map {
+                try CursorCoordinateMapper.localPoint(fromGlobalPoint: position, in: $0)
+            } ?? position
+
             appendCursorImageIfNeeded(cursorImage)
             samples.append(try CursorSample(
                 time: mediaTime,
-                position: position,
+                position: localPosition,
                 cursorImageID: cursorImage.id
             ))
 

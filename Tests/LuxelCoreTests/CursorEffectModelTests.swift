@@ -4,6 +4,30 @@ import Testing
 
 @Suite("Cursor effect models")
 struct CursorEffectModelTests {
+    @Test("coordinate mapper converts global points to capture-local points")
+    func coordinateMapperConvertsGlobalPointsToCaptureLocalPoints() throws {
+        let frame = try CaptureRect(x: 1728, y: 90, width: 800, height: 600)
+
+        let point = try CursorCoordinateMapper.localPoint(
+            fromGlobalPoint: CursorPoint(x: 1828.5, y: 190.25),
+            in: frame
+        )
+
+        #expect(point == (try CursorPoint(x: 100.5, y: 100.25)))
+    }
+
+    @Test("coordinate mapper preserves points outside capture frame")
+    func coordinateMapperPreservesPointsOutsideCaptureFrame() throws {
+        let frame = try CaptureRect(x: 500, y: 400, width: 300, height: 200)
+
+        let point = try CursorCoordinateMapper.localPoint(
+            fromGlobalPoint: CursorPoint(x: 450, y: 650),
+            in: frame
+        )
+
+        #expect(point == (try CursorPoint(x: -50, y: 250)))
+    }
+
     @Test("timeline stores sorted samples clicks toggles and cursor images")
     func timelineStoresSortedEventsAndImages() throws {
         let arrow = try cursorImage(id: "arrow")
