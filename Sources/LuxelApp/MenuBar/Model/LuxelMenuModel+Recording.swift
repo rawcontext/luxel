@@ -19,10 +19,15 @@ extension LuxelMenuModel {
             return
         }
 
+        let latencySpan = LuxelRecordingLatencyTelemetry.begin(
+            entryPoint: .recordMenuButton,
+            target: selectedCaptureTarget.target
+        )
         await startRecording(
             target: selectedCaptureTarget.target,
             pixelSize: selectedCaptureTarget.pixelSize,
-            captureKind: .standard
+            captureKind: .standard,
+            latencySpan: latencySpan
         )
     }
 
@@ -128,10 +133,15 @@ extension LuxelMenuModel {
             return
         }
 
+        let latencySpan = LuxelRecordingLatencyTelemetry.begin(
+            entryPoint: .quickRecordMenuButton,
+            target: selectedCaptureTarget.target
+        )
         await startRecording(
             target: selectedCaptureTarget.target,
             pixelSize: selectedCaptureTarget.pixelSize,
-            captureKind: .quick(presetID: presetID)
+            captureKind: .quick(presetID: presetID),
+            latencySpan: latencySpan
         )
     }
 
