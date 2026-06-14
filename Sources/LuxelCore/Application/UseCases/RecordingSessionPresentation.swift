@@ -3,6 +3,7 @@ import Foundation
 public enum RecordingSessionPresentationState: Equatable, Sendable {
     case idle
     case starting
+    case countingDown(remaining: TimeInterval)
     case recording(elapsed: TimeInterval, remaining: TimeInterval? = nil)
     case pausing(elapsed: TimeInterval, remaining: TimeInterval? = nil)
     case paused(elapsed: TimeInterval, remaining: TimeInterval? = nil)
@@ -63,6 +64,19 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             secondaryActionSystemImage = nil
             canUseSecondaryAction = false
             statusMessage = "Starting recording"
+        case .countingDown(let remaining):
+            let countdownText = Self.countdownText(remaining)
+            menuBarTitle = countdownText
+            menuBarSystemImage = "hourglass"
+            animatesMenuBarSystemImage = false
+            accessibilityLabel = "Luxel recording starts in \(countdownText)"
+            primaryActionTitle = "Cancel"
+            primaryActionSystemImage = "xmark.circle.fill"
+            canUsePrimaryAction = true
+            secondaryActionTitle = nil
+            secondaryActionSystemImage = nil
+            canUseSecondaryAction = false
+            statusMessage = "Recording starts in \(countdownText)"
         case .recording:
             menuBarTitle = if displaysTimerTime {
                 timerMenuText ?? "−0:00"
@@ -192,6 +206,10 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         return "\(minutes):\(twoDigits(seconds))"
     }
 
+    private static func countdownText(_ remaining: TimeInterval) -> String {
+        "\(max(0, Int(remaining.rounded(.up)))) s"
+    }
+
     private static func twoDigits(_ value: Int) -> String {
         value < 10 ? "0\(value)" : "\(value)"
     }
@@ -205,7 +223,7 @@ private extension RecordingSessionPresentationState {
              .paused(let elapsed, _),
              .resuming(let elapsed, _):
             elapsed
-        case .idle, .starting, .stopping, .exporting, .failed:
+        case .idle, .starting, .countingDown, .stopping, .exporting, .failed:
             nil
         }
     }
@@ -217,7 +235,7 @@ private extension RecordingSessionPresentationState {
              .paused(_, let remaining),
              .resuming(_, let remaining):
             remaining
-        case .idle, .starting, .stopping, .exporting, .failed:
+        case .idle, .starting, .countingDown, .stopping, .exporting, .failed:
             nil
         }
     }

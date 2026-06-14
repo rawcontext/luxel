@@ -332,11 +332,24 @@ extension LuxelMenuModel {
 
             let recordingName = request.outputFileURL.deletingPathExtension().lastPathComponent
             let outputPlan = try recordingOutputFinalizationPlan(for: request.outputFileURL)
-            let activeRecording = try await recordingLifecycleService.startRecording(
-                request,
-                name: recordingName,
-                outputPlan: outputPlan
-            )
+            if let countdown = request.schedule?.countdown, countdown > 0 {
+                recordingState = .countingDown(startedAt: Date(), duration: countdown)
+            }
+
+            let startTask = Task<ActiveRecording, any Error> {
+                try await recordingLifecycleService.startRecording(
+                    request,
+                    name: recordingName,
+                    outputPlan: outputPlan
+                )
+            }
+            recordingStartTask = startTask
+            let activeRecording = try await withTaskCancellationHandler {
+                try await startTask.value
+            } onCancel: {
+                startTask.cancel()
+            }
+            recordingStartTask = nil
             rememberLastCapture(from: request, capturedAt: activeRecording.date)
             recordingState = .recording(
                 activeRecording,
@@ -345,7 +358,16 @@ extension LuxelMenuModel {
             if let latencySpan {
                 LuxelRecordingLatencyTelemetry.finishStarted(latencySpan, target: request.target)
             }
+        } catch is CancellationError {
+            recordingStartTask = nil
+            await recordingFramePanelController.close()
+            recordingState = .idle
+            syncCameraPreviewHoverControls()
+            if let latencySpan {
+                LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "start-canceled")
+            }
         } catch {
+            recordingStartTask = nil
             await recordingFramePanelController.close()
             recordingState = .failed(errorMessage(error))
             syncCameraPreviewHoverControls()
@@ -359,12 +381,21 @@ extension LuxelMenuModel {
         switch recordingState {
         case .idle, .failed:
             true
-        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
     }
 
     func stopRecording() async -> RecordingStopAction? {
+        if case .countingDown = recordingState {
+            recordingNoticeMessage = nil
+            recordingActionErrorMessage = nil
+            quickExportStatusMessage = nil
+            recordingState = .starting
+            recordingStartTask?.cancel()
+            return nil
+        }
+
         let previousRecordingState = recordingState
         let activeRecording = previousRecordingState.activeRecording
         let captureKind = activeRecording?.options.captureKind ?? .standard
@@ -418,7 +449,7 @@ extension LuxelMenuModel {
             await pauseRecording()
         case .paused:
             await resumeRecording()
-        case .idle, .starting, .pausing, .resuming, .stopping, .exporting, .failed:
+        case .idle, .starting, .countingDown, .pausing, .resuming, .stopping, .exporting, .failed:
             return
         }
     }

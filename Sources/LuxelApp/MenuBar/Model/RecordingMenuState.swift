@@ -4,6 +4,7 @@ import LuxelCore
 enum RecordingMenuState: Equatable {
     case idle
     case starting
+    case countingDown(startedAt: Date, duration: TimeInterval)
     case recording(ActiveRecording, RecordingMenuClock)
     case pausing(ActiveRecording, RecordingMenuClock)
     case paused(ActiveRecording, RecordingMenuClock)
@@ -71,6 +72,8 @@ extension RecordingMenuState {
             .idle
         case .starting:
             .starting
+        case .countingDown(let startedAt, let duration):
+            .countingDown(remaining: max(0, duration - now.timeIntervalSince(startedAt)))
         case .recording(let recording, let clock):
             presentationState(for: recording, clock: clock, now: now, phase: .recording)
         case .pausing(let recording, let clock):
@@ -95,7 +98,7 @@ extension RecordingMenuState {
              .paused(let recording, _),
              .resuming(let recording, _):
             recording
-        case .idle, .starting, .stopping, .exporting, .failed:
+        case .idle, .starting, .countingDown, .stopping, .exporting, .failed:
             nil
         }
     }

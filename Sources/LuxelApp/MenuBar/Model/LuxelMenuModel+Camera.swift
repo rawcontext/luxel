@@ -109,7 +109,7 @@ extension LuxelMenuModel {
         switch recordingState {
         case .idle, .failed, .exporting:
             true
-        case .starting, .recording, .pausing, .paused, .resuming, .stopping:
+        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping:
             false
         }
     }

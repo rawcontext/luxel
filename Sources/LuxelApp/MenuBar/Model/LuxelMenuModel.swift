@@ -45,6 +45,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored let bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker
     @ObservationIgnored let quickExportService: QuickExportService
+    @ObservationIgnored var recordingStartTask: Task<ActiveRecording, any Error>?
     @ObservationIgnored var quickExportTask: Task<QuickExportResult, any Error>?
     @ObservationIgnored let screenshotCaptureService: ScreenshotCaptureService
     @ObservationIgnored let permissionGuidanceService: PermissionGuidanceService

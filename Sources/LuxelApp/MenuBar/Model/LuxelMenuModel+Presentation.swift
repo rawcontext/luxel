@@ -6,7 +6,7 @@ import SwiftUI
 extension LuxelMenuModel {
     var hasActiveRecording: Bool {
         switch recordingState {
-        case .recording, .pausing, .paused, .resuming, .stopping:
+        case .countingDown, .recording, .pausing, .paused, .resuming, .stopping:
             return true
         case .idle, .starting, .exporting, .failed:
             return false
@@ -50,7 +50,7 @@ extension LuxelMenuModel {
         switch recordingState {
         case .idle, .failed:
             canStartRecording && settings.quickExportPresetID != nil
-        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
     }
@@ -59,7 +59,7 @@ extension LuxelMenuModel {
         switch recordingState {
         case .idle, .failed:
             microphoneStatus == .authorized
-        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
     }
@@ -68,7 +68,7 @@ extension LuxelMenuModel {
         switch recordingState {
         case .idle, .failed:
             screenRecordingStatus == .authorized && settings.lastCaptureMemory != nil
-        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
     }
@@ -81,7 +81,7 @@ extension LuxelMenuModel {
         switch recordingState {
         case .idle, .failed:
             screenRecordingStatus == .authorized && selectedCaptureTarget != nil
-        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
     }
@@ -90,7 +90,7 @@ extension LuxelMenuModel {
         switch recordingState {
         case .idle, .failed:
             screenRecordingStatus == .authorized
-        case .starting, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
+        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
     }
@@ -176,6 +176,8 @@ extension LuxelMenuModel {
             nil
         case .starting:
             "Starting recording"
+        case .countingDown:
+            recordingPresentation().statusMessage
         case .recording(let recording, _):
             recording.name
         case .pausing(let recording, _):

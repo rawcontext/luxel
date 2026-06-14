@@ -60,6 +60,25 @@ struct RecordingSessionPresentationTests {
         #expect(presentation.accessibilityLabel == "Luxel recording, remaining 0:42")
     }
 
+    @Test("countdown exposes cancel action")
+    func countdownExposesCancelAction() {
+        let presentation = RecordingSessionPresentation(
+            state: .countingDown(remaining: 2.4),
+            canStartRecording: false
+        )
+
+        #expect(presentation.menuBarTitle == "3 s")
+        #expect(presentation.menuBarSystemImage == "hourglass")
+        #expect(!presentation.animatesMenuBarSystemImage)
+        #expect(presentation.accessibilityLabel == "Luxel recording starts in 3 s")
+        #expect(presentation.primaryActionTitle == "Cancel")
+        #expect(presentation.primaryActionSystemImage == "xmark.circle.fill")
+        #expect(presentation.canUsePrimaryAction)
+        #expect(presentation.secondaryActionTitle == nil)
+        #expect(!presentation.canUseSecondaryAction)
+        #expect(presentation.statusMessage == "Recording starts in 3 s")
+    }
+
     @Test("paused uses frozen pause glyph and resume action")
     func pausedUsesFrozenPauseGlyphAndResumeAction() {
         let presentation = RecordingSessionPresentation(
