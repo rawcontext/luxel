@@ -187,6 +187,66 @@ struct CaptureSelectionDraftTests {
         #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 80, width: 40, height: 140)))
     }
 
+    @Test("aspect ratio presets resize around selection center")
+    func aspectRatioPresetsResizeAroundSelectionCenter() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 200)
+        )
+
+        let resized = try draft.applyingAspectRatioPreset(.widescreen16x9)
+
+        #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 110, width: 320, height: 180)))
+    }
+
+    @Test("vertical aspect ratio preset clamps to display height")
+    func verticalAspectRatioPresetClampsToDisplayHeight() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 80, width: 400, height: 200)
+        )
+
+        let resized = try draft.applyingAspectRatioPreset(.vertical9x16)
+
+        #expect(resized.topLeftSelection == (try CaptureRect(x: 188, y: 0, width: 225, height: 400)))
+    }
+
+    @Test("size presets clamp oversized selections to display")
+    func sizePresetsClampOversizedSelectionsToDisplay() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 180)
+        )
+        let preset = try CaptureSizePreset(
+            name: "Huge",
+            pixelSize: PixelSize(width: 1920, height: 1080)
+        )
+
+        let resized = try draft.applyingSizePreset(preset)
+
+        #expect(resized.topLeftSelection == (try CaptureRect(x: 0, y: 0, width: 1000, height: 700)))
+    }
+
+    @Test("size presets keep requested size when it fits")
+    func sizePresetsKeepRequestedSizeWhenItFits() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 250, y: 200, width: 200, height: 100)
+        )
+        let preset = try CaptureSizePreset(
+            name: "Small",
+            pixelSize: PixelSize(width: 400, height: 300)
+        )
+
+        let resized = try draft.applyingSizePreset(preset)
+
+        #expect(resized.topLeftSelection == (try CaptureRect(x: 150, y: 100, width: 400, height: 300)))
+    }
+
     @Test("invalid resize minimums throw")
     func invalidResizeMinimumsThrow() throws {
         let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)

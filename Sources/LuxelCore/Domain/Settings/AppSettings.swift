@@ -99,6 +99,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var exportPresets: [ExportPreset]
     public var quickExportPresetID: UUID?
     public var rememberLastCapture: Bool
+    public var userSizePresets: [CaptureSizePreset]
     public var lastCaptureMemory: LastCaptureMemory?
     public var perFormatExportMemory: [ExportFormat: ExportMemory]
     public var screenshotFormat: ScreenshotFormat
@@ -169,6 +170,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         exportPresets: [ExportPreset] = ExportPreset.builtInDefaults,
         quickExportPresetID: UUID? = ExportPreset.quickGIFID,
         rememberLastCapture: Bool = true,
+        userSizePresets: [CaptureSizePreset] = CaptureSizePreset.builtInDefaults,
         lastCaptureMemory: LastCaptureMemory? = nil,
         perFormatExportMemory: [ExportFormat: ExportMemory] = [:],
         screenshotFormat: ScreenshotFormat = .png,
@@ -224,6 +226,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.exportPresets = exportPresets
         self.quickExportPresetID = quickExportPresetID
         self.rememberLastCapture = rememberLastCapture
+        self.userSizePresets = userSizePresets
         self.lastCaptureMemory = lastCaptureMemory
         self.perFormatExportMemory = perFormatExportMemory
         self.screenshotFormat = screenshotFormat
@@ -278,6 +281,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case exportPresets
         case quickExportPresetID
         case rememberLastCapture
+        case userSizePresets
         case lastCaptureMemory
         case perFormatExportMemory
         case screenshotFormat
@@ -405,6 +409,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         }
         rememberLastCapture = try container.decodeIfPresent(Bool.self, forKey: .rememberLastCapture)
             ?? true
+        userSizePresets = try container.decodeIfPresent([CaptureSizePreset].self, forKey: .userSizePresets)
+            ?? CaptureSizePreset.builtInDefaults
         lastCaptureMemory = try container.decodeIfPresent(LastCaptureMemory.self, forKey: .lastCaptureMemory)
         perFormatExportMemory = try container.decodeIfPresent(
             [ExportFormat: ExportMemory].self,

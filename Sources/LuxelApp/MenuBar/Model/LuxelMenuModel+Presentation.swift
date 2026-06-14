@@ -154,6 +154,10 @@ extension LuxelMenuModel {
         )
     }
 
+    func cropperSelectionPresetConfiguration() -> CropperSelectionPresetConfiguration {
+        CropperSelectionPresetConfiguration(sizePresets: settings.userSizePresets)
+    }
+
     var replayBufferMenuPresentation: ReplayBufferMenuPresentation {
         ReplayBufferMenuPresentation(configuration: settings.replayBufferConfiguration)
     }

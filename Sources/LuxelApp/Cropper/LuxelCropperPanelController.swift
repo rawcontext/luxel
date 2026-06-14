@@ -36,6 +36,9 @@ final class LuxelCropperPanelController {
             activePresetID: nil,
             presets: []
         ),
+        selectionPresetConfiguration: CropperSelectionPresetConfiguration = CropperSelectionPresetConfiguration(
+            sizePresets: CaptureSizePreset.builtInDefaults
+        ),
         showsNotificationReminder: Bool = false,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
@@ -59,6 +62,7 @@ final class LuxelCropperPanelController {
                     audioLevelConfiguration: audioLevelConfiguration,
                     cameraConfiguration: cameraConfiguration,
                     quickRecordingConfiguration: quickRecordingConfiguration,
+                    selectionPresetConfiguration: selectionPresetConfiguration,
                     showsNotificationReminder: showsNotificationReminder,
                     onCountdownDurationChange: onCountdownDurationChange,
                     onStopAfterDurationChange: onStopAfterDurationChange,
@@ -92,6 +96,7 @@ final class LuxelCropperPanelController {
         audioLevelConfiguration: CropperAudioLevelConfiguration?,
         cameraConfiguration: CropperCameraConfiguration,
         quickRecordingConfiguration: CropperQuickRecordingConfiguration,
+        selectionPresetConfiguration: CropperSelectionPresetConfiguration,
         showsNotificationReminder: Bool,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
@@ -128,6 +133,7 @@ final class LuxelCropperPanelController {
                 mode: initialMode,
                 countdownDuration: countdownDuration,
                 stopAfterDuration: stopAfterDuration,
+                selectionPresetConfiguration: selectionPresetConfiguration,
                 onCountdownDurationChange: onCountdownDurationChange,
                 onStopAfterDurationChange: onStopAfterDurationChange
             )

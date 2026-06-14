@@ -27,6 +27,11 @@ struct UserDefaultsSettingsStoreTests {
             destination: .folder(URL(fileURLWithPath: "/tmp/exports")),
             postAction: .revealInFinder
         )
+        let sizePreset = try CaptureSizePreset(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000402")!,
+            name: "Docs 1440p",
+            pixelSize: PixelSize(width: 2560, height: 1440)
+        )
         let lastCaptureMemory = try LastCaptureMemory(
             target: .display(DisplayID(7)),
             pixelSize: PixelSize(width: 1920, height: 1080),
@@ -112,6 +117,7 @@ struct UserDefaultsSettingsStoreTests {
             exportPresets: [preset],
             quickExportPresetID: presetID,
             rememberLastCapture: false,
+            userSizePresets: [sizePreset],
             lastCaptureMemory: lastCaptureMemory,
             perFormatExportMemory: [
                 .mp4: try ExportMemory(
@@ -210,6 +216,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)
         #expect(settings.quickExportPresetID == ExportPreset.quickGIFID)
         #expect(settings.rememberLastCapture)
+        #expect(settings.userSizePresets == CaptureSizePreset.builtInDefaults)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)
         #expect(settings.screenshotFormat == .png)

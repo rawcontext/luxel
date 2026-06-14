@@ -95,6 +95,7 @@ struct LuxelRecordingControls: View {
                 audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
                 cameraConfiguration: model.cropperCameraConfiguration(),
                 quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
+                selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
                 showsNotificationReminder: model.settings.notificationReminder,
                 onCountdownDurationChange: { duration in
                     model.settings.defaultCountdown = duration

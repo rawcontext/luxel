@@ -21,6 +21,14 @@ struct CropperQuickRecordingConfiguration {
     }
 }
 
+struct CropperSelectionPresetConfiguration {
+    let sizePresets: [CaptureSizePreset]
+
+    init(sizePresets: [CaptureSizePreset]) {
+        self.sizePresets = sizePresets.isEmpty ? CaptureSizePreset.builtInDefaults : sizePresets
+    }
+}
+
 struct CropperCameraConfiguration {
     let selectedDeviceID: String?
     let devices: [CameraDeviceOption]
@@ -74,13 +82,14 @@ final class LuxelCropperModel {
     let display: DisplayBounds
     var selection: CaptureRect?
     var mode: LuxelCropperMode
-    var locksWidescreenRatio = false
+    var aspectRatioPreset: CaptureAspectRatioPreset = .free
     var countdownDuration: TimeInterval?
     var stopAfterDuration: TimeInterval?
     var customStopAfterText: String
     var errorMessage: String?
     @ObservationIgnored private let onCountdownDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
+    @ObservationIgnored let sizePresets: [CaptureSizePreset]
     private var resizeStartSelection: CaptureRect?
 
     init(
@@ -88,6 +97,9 @@ final class LuxelCropperModel {
         mode: LuxelCropperMode = .video,
         countdownDuration: TimeInterval? = nil,
         stopAfterDuration: TimeInterval? = nil,
+        selectionPresetConfiguration: CropperSelectionPresetConfiguration = CropperSelectionPresetConfiguration(
+            sizePresets: CaptureSizePreset.builtInDefaults
+        ),
         onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in }
     ) {
@@ -96,6 +108,7 @@ final class LuxelCropperModel {
         self.countdownDuration = countdownDuration
         self.stopAfterDuration = stopAfterDuration
         self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
+        self.sizePresets = selectionPresetConfiguration.sizePresets
         self.onCountdownDurationChange = onCountdownDurationChange
         self.onStopAfterDurationChange = onStopAfterDurationChange
     }
@@ -175,7 +188,7 @@ final class LuxelCropperModel {
                 from: capturePoint(from: start, viewSize: viewSize),
                 to: capturePoint(from: current, viewSize: viewSize),
                 in: display,
-                aspectRatio: locksWidescreenRatio ? try CaptureAspectRatio(width: 16, height: 9) : nil
+                aspectRatio: aspectRatioPreset.aspectRatio
             )
             errorMessage = nil
         } catch {
@@ -204,8 +217,41 @@ final class LuxelCropperModel {
             self.selection = try draft.resized(
                 dragging: handle,
                 by: captureDelta(from: translation, viewSize: viewSize),
-                lockingAspectRatio: locksWidescreenRatio
+                lockingAspectRatio: aspectRatioPreset != .free
             ).topLeftSelection
+            errorMessage = nil
+        } catch {
+            errorMessage = errorMessage(for: error)
+        }
+    }
+
+    func setAspectRatioPreset(_ preset: CaptureAspectRatioPreset) {
+        aspectRatioPreset = preset
+
+        guard let selection else {
+            errorMessage = nil
+            return
+        }
+
+        do {
+            let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
+            self.selection = try draft.applyingAspectRatioPreset(preset).topLeftSelection
+            errorMessage = nil
+        } catch {
+            errorMessage = errorMessage(for: error)
+        }
+    }
+
+    func applySizePreset(_ preset: CaptureSizePreset) {
+        do {
+            let startingSelection: CaptureRect
+            if let selection {
+                startingSelection = selection
+            } else {
+                startingSelection = try CaptureSelectionBuilder.fullDisplaySelection(in: display)
+            }
+            let draft = try CaptureSelectionDraft(display: display, topLeftSelection: startingSelection)
+            selection = try draft.applyingSizePreset(preset).topLeftSelection
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)

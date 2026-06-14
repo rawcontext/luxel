@@ -84,11 +84,9 @@ struct LuxelCropperView: View {
                 .labelStyle(.iconOnly)
                 .help("Select Full Display")
 
-                Toggle(isOn: $model.locksWidescreenRatio) {
-                    Label("16:9", systemImage: "rectangle.ratio.16.to.9")
-                }
-                .toggleStyle(.button)
-                .help("Lock 16:9")
+                aspectRatioMenu
+
+                sizePresetMenu
 
                 if model.mode == .video {
                     cameraMenu
@@ -149,6 +147,42 @@ struct LuxelCropperView: View {
             }
         }
         .fixedSize()
+    }
+
+    private var aspectRatioMenu: some View {
+        Menu {
+            ForEach(CaptureAspectRatioPreset.allCases, id: \.self) { preset in
+                Button {
+                    model.setAspectRatioPreset(preset)
+                } label: {
+                    if model.aspectRatioPreset == preset {
+                        Label(preset.title, systemImage: "checkmark")
+                    } else {
+                        Text(preset.title)
+                    }
+                }
+            }
+        } label: {
+            Label(model.aspectRatioPreset.title, systemImage: "aspectratio")
+        }
+        .frame(width: 76)
+        .help("Aspect Ratio")
+    }
+
+    private var sizePresetMenu: some View {
+        Menu {
+            ForEach(model.sizePresets) { preset in
+                Button {
+                    model.applySizePreset(preset)
+                } label: {
+                    Text(preset.name)
+                }
+            }
+        } label: {
+            Label("Size", systemImage: "arrow.up.left.and.arrow.down.right")
+        }
+        .labelStyle(.iconOnly)
+        .help("Size Presets")
     }
 
     @ViewBuilder

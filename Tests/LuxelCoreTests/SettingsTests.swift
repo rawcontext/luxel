@@ -56,6 +56,7 @@ struct SettingsTests {
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)
         #expect(settings.quickExportPresetID == ExportPreset.quickGIFID)
         #expect(settings.rememberLastCapture)
+        #expect(settings.userSizePresets == CaptureSizePreset.builtInDefaults)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)
         #expect(settings.screenshotFormat == .png)

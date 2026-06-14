@@ -113,6 +113,45 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
         )
     }
 
+    public func applyingAspectRatioPreset(_ preset: CaptureAspectRatioPreset) throws -> CaptureSelectionDraft {
+        guard let aspectRatio = preset.aspectRatio else {
+            return self
+        }
+
+        let ratio = aspectRatio.value
+        var width = max(topLeftSelection.width, minimumWidth)
+        var height = Int((Double(width) / aspectRatio.value).rounded())
+
+        if height < minimumHeight {
+            height = minimumHeight
+            width = Int((Double(height) * ratio).rounded())
+        }
+
+        if height > display.height {
+            height = display.height
+            width = Int((Double(height) * ratio).rounded())
+        }
+
+        if width > display.width {
+            width = display.width
+            height = Int((Double(width) / ratio).rounded())
+        }
+
+        if height > display.height {
+            height = display.height
+            width = Int((Double(height) * ratio).rounded())
+        }
+
+        return try replacingSelectionCentered(width: width, height: height)
+    }
+
+    public func applyingSizePreset(_ preset: CaptureSizePreset) throws -> CaptureSelectionDraft {
+        try replacingSelectionCentered(
+            width: preset.pixelSize.width,
+            height: preset.pixelSize.height
+        )
+    }
+
     private func freeformResize(
         dragging handle: CaptureResizeHandle,
         by delta: CaptureResizeDelta
@@ -216,6 +255,25 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
 
     private func clamp(_ value: Int, minimum: Int, maximum: Int) -> Int {
         min(max(value, minimum), maximum)
+    }
+
+    private func replacingSelectionCentered(width: Int, height: Int) throws -> CaptureSelectionDraft {
+        let resolvedWidth = clamp(width, minimum: minimumWidth, maximum: display.width)
+        let resolvedHeight = clamp(height, minimum: minimumHeight, maximum: display.height)
+        let centerX = Double(topLeftSelection.x) + Double(topLeftSelection.width) / 2
+        let centerY = Double(topLeftSelection.y) + Double(topLeftSelection.height) / 2
+        let x = clamp(
+            Int((centerX - Double(resolvedWidth) / 2).rounded()),
+            minimum: 0,
+            maximum: display.width - resolvedWidth
+        )
+        let y = clamp(
+            Int((centerY - Double(resolvedHeight) / 2).rounded()),
+            minimum: 0,
+            maximum: display.height - resolvedHeight
+        )
+
+        return try replacingSelection(x: x, y: y, width: resolvedWidth, height: resolvedHeight)
     }
 }
 
