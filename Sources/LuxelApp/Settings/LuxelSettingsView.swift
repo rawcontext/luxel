@@ -434,53 +434,6 @@ private extension ScreenshotDestination {
     }
 }
 
-private extension CameraDeviceOption {
-    var settingsLabel: String {
-        "\(name) (\(kind.settingsLabel))"
-    }
-}
-
-private extension CameraDeviceKind {
-    var settingsLabel: String {
-        switch self {
-        case .builtIn:
-            "Built-In"
-        case .external:
-            "External"
-        case .continuity:
-            "Continuity"
-        case .deskView:
-            "Desk View"
-        case .unknown:
-            "Camera"
-        }
-    }
-}
-
-private extension CameraOverlayShape {
-    var settingsLabel: String {
-        switch self {
-        case .circle:
-            "Circle"
-        case .roundedRect:
-            "Rounded"
-        }
-    }
-}
-
-private extension CameraPreviewSize {
-    var settingsLabel: String {
-        switch self {
-        case .small:
-            "S"
-        case .medium:
-            "M"
-        case .large:
-            "L"
-        }
-    }
-}
-
 private extension CaptureBackdrop {
     var settingsLabel: String {
         switch self {

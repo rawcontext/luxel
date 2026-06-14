@@ -21,6 +21,20 @@ struct CropperQuickRecordingConfiguration {
     }
 }
 
+struct CropperCameraConfiguration {
+    let selectedDeviceID: String?
+    let devices: [CameraDeviceOption]
+    let previewStyle: CameraPreviewStyle
+
+    var selectedDevice: CameraDeviceOption? {
+        guard let selectedDeviceID else {
+            return nil
+        }
+
+        return devices.first { $0.id == selectedDeviceID }
+    }
+}
+
 enum LuxelCropperMode: String, CaseIterable, Identifiable {
     case video
     case photo

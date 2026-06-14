@@ -85,14 +85,26 @@ struct LuxelRecordingControls: View {
         }
 
         Button {
+            model.refreshCameraDevices()
             cropperPanelController.show(
                 stopAfterDuration: model.settings.lastStopAfter,
                 audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
+                cameraConfiguration: model.cropperCameraConfiguration(),
                 quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                 showsNotificationReminder: model.settings.notificationReminder,
                 onStopAfterDurationChange: { duration in
                     model.settings.lastStopAfter = duration
                     model.saveSettings()
+                },
+                onCameraSelectionChange: { deviceID in
+                    Task {
+                        await model.setCameraDeviceFromCropper(deviceID)
+                    }
+                },
+                onCameraPreviewStyleChange: { style in
+                    Task {
+                        await model.setCameraPreviewStyleFromCropper(style)
+                    }
                 },
                 onNotificationReminderDismiss: {
                     model.dismissNotificationReminder()

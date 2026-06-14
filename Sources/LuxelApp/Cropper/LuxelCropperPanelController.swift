@@ -26,12 +26,19 @@ final class LuxelCropperPanelController {
         initialMode: LuxelCropperMode = .video,
         stopAfterDuration: TimeInterval? = nil,
         audioLevelConfiguration: CropperAudioLevelConfiguration? = nil,
+        cameraConfiguration: CropperCameraConfiguration = CropperCameraConfiguration(
+            selectedDeviceID: nil,
+            devices: [],
+            previewStyle: CameraPreviewStyle()
+        ),
         quickRecordingConfiguration: CropperQuickRecordingConfiguration = CropperQuickRecordingConfiguration(
             activePresetID: nil,
             presets: []
         ),
         showsNotificationReminder: Bool = false,
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
+        onCameraSelectionChange: @escaping @MainActor (String?) -> Void = { _ in },
+        onCameraPreviewStyleChange: @escaping @MainActor (CameraPreviewStyle) -> Void = { _ in },
         onNotificationReminderDismiss: @escaping @MainActor () -> Void = {},
         onCaptureScreenshot: @escaping @MainActor (CaptureSelectionDraft) -> Void = { _ in },
         onQuickSelect: @escaping @MainActor (CaptureSelectionDraft, UUID) -> Void = { _, _ in },
@@ -47,9 +54,12 @@ final class LuxelCropperPanelController {
                     initialMode: initialMode,
                     stopAfterDuration: stopAfterDuration,
                     audioLevelConfiguration: audioLevelConfiguration,
+                    cameraConfiguration: cameraConfiguration,
                     quickRecordingConfiguration: quickRecordingConfiguration,
                     showsNotificationReminder: showsNotificationReminder,
                     onStopAfterDurationChange: onStopAfterDurationChange,
+                    onCameraSelectionChange: onCameraSelectionChange,
+                    onCameraPreviewStyleChange: onCameraPreviewStyleChange,
                     onNotificationReminderDismiss: onNotificationReminderDismiss,
                     onCaptureScreenshot: onCaptureScreenshot,
                     onQuickSelect: onQuickSelect,
@@ -75,9 +85,12 @@ final class LuxelCropperPanelController {
         initialMode: LuxelCropperMode,
         stopAfterDuration: TimeInterval?,
         audioLevelConfiguration: CropperAudioLevelConfiguration?,
+        cameraConfiguration: CropperCameraConfiguration,
         quickRecordingConfiguration: CropperQuickRecordingConfiguration,
         showsNotificationReminder: Bool,
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
+        onCameraSelectionChange: @escaping @MainActor (String?) -> Void,
+        onCameraPreviewStyleChange: @escaping @MainActor (CameraPreviewStyle) -> Void,
         onNotificationReminderDismiss: @escaping @MainActor () -> Void,
         onCaptureScreenshot: @escaping @MainActor (CaptureSelectionDraft) -> Void,
         onQuickSelect: @escaping @MainActor (CaptureSelectionDraft, UUID) -> Void,
@@ -126,8 +139,11 @@ final class LuxelCropperPanelController {
                 rootView: LuxelCropperView(
                     model: model,
                     audioLevelModel: sharedAudioLevelModel,
+                    cameraConfiguration: cameraConfiguration,
                     quickRecordingConfiguration: quickRecordingConfiguration,
                     showsNotificationReminder: showsNotificationReminder,
+                    onCameraSelectionChange: onCameraSelectionChange,
+                    onCameraPreviewStyleChange: onCameraPreviewStyleChange,
                     onNotificationReminderDismiss: onNotificationReminderDismiss,
                     onCancel: { [weak self] in
                         self?.close()

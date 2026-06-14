@@ -5,11 +5,15 @@ import SwiftUI
 
 struct LuxelCropperView: View {
     @Environment(\.openURL) private var openURL
+    @State private var currentCameraConfiguration: CropperCameraConfiguration?
 
     @Bindable var model: LuxelCropperModel
     let audioLevelModel: LuxelAudioLevelModel?
+    let cameraConfiguration: CropperCameraConfiguration
     let quickRecordingConfiguration: CropperQuickRecordingConfiguration
     let showsNotificationReminder: Bool
+    let onCameraSelectionChange: (String?) -> Void
+    let onCameraPreviewStyleChange: (CameraPreviewStyle) -> Void
     let onNotificationReminderDismiss: () -> Void
     let onCancel: () -> Void
     let onSelect: (CaptureSelectionDraft) -> Void
@@ -86,6 +90,8 @@ struct LuxelCropperView: View {
                 .help("Lock 16:9")
 
                 if model.mode == .video {
+                    cameraMenu
+
                     Menu {
                         stopAfterButton(title: "Off", duration: nil)
 
@@ -128,6 +134,73 @@ struct LuxelCropperView: View {
             }
         }
         .fixedSize()
+    }
+
+    @ViewBuilder
+    private var cameraMenu: some View {
+        let cameraConfiguration = effectiveCameraConfiguration
+
+        Menu {
+            cameraDeviceButton(title: "Off", deviceID: nil)
+
+            if !cameraConfiguration.devices.isEmpty {
+                Divider()
+
+                ForEach(cameraConfiguration.devices) { device in
+                    cameraDeviceButton(title: device.settingsLabel, deviceID: device.id)
+                }
+            }
+
+            if cameraConfiguration.selectedDeviceID != nil {
+                Divider()
+
+                Menu {
+                    ForEach(CameraOverlayShape.allCases, id: \.self) { shape in
+                        Button {
+                            updateCameraPreviewShape(shape)
+                        } label: {
+                            if cameraConfiguration.previewStyle.shape == shape {
+                                Label(shape.settingsLabel, systemImage: "checkmark")
+                            } else {
+                                Text(shape.settingsLabel)
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Shape", systemImage: "circle")
+                }
+
+                Menu {
+                    ForEach(CameraPreviewSize.allCases, id: \.self) { size in
+                        Button {
+                            updateCameraPreviewSize(size)
+                        } label: {
+                            if cameraConfiguration.previewStyle.size == size {
+                                Label(size.settingsLabel, systemImage: "checkmark")
+                            } else {
+                                Text(size.settingsLabel)
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Size", systemImage: "arrow.up.left.and.arrow.down.right")
+                }
+
+                Button {
+                    updateCameraPreviewMirror(!cameraConfiguration.previewStyle.isMirrored)
+                } label: {
+                    if cameraConfiguration.previewStyle.isMirrored {
+                        Label("Mirror", systemImage: "checkmark")
+                    } else {
+                        Text("Mirror")
+                    }
+                }
+            }
+        } label: {
+            Label(cameraMenuTitle, systemImage: cameraMenuSystemImage)
+        }
+        .labelStyle(.iconOnly)
+        .help("Camera")
     }
 
     private var notificationReminderPanel: some View {
@@ -301,6 +374,82 @@ struct LuxelCropperView: View {
         } set: { text in
             model.setCustomStopAfterText(text)
         }
+    }
+
+    @ViewBuilder
+    private func cameraDeviceButton(title: String, deviceID: String?) -> some View {
+        Button {
+            let cameraConfiguration = effectiveCameraConfiguration
+            currentCameraConfiguration = CropperCameraConfiguration(
+                selectedDeviceID: deviceID,
+                devices: cameraConfiguration.devices,
+                previewStyle: cameraConfiguration.previewStyle
+            )
+            onCameraSelectionChange(deviceID)
+        } label: {
+            if effectiveCameraConfiguration.selectedDeviceID == deviceID {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
+            }
+        }
+    }
+
+    private var effectiveCameraConfiguration: CropperCameraConfiguration {
+        currentCameraConfiguration ?? cameraConfiguration
+    }
+
+    private var cameraMenuTitle: String {
+        effectiveCameraConfiguration.selectedDevice?.name ?? "Camera"
+    }
+
+    private var cameraMenuSystemImage: String {
+        effectiveCameraConfiguration.selectedDeviceID == nil ? "video.slash" : "video.fill"
+    }
+
+    private func updateCameraPreviewShape(_ shape: CameraOverlayShape) {
+        let cameraConfiguration = effectiveCameraConfiguration
+        let style = cameraConfiguration.previewStyle
+        let updatedStyle = CameraPreviewStyle(
+            shape: shape,
+            size: style.size,
+            isMirrored: style.isMirrored
+        )
+        updateCameraPreviewStyle(updatedStyle, from: cameraConfiguration)
+    }
+
+    private func updateCameraPreviewSize(_ size: CameraPreviewSize) {
+        let cameraConfiguration = effectiveCameraConfiguration
+        let style = cameraConfiguration.previewStyle
+        let updatedStyle = CameraPreviewStyle(
+            shape: style.shape,
+            size: size,
+            isMirrored: style.isMirrored
+        )
+        updateCameraPreviewStyle(updatedStyle, from: cameraConfiguration)
+    }
+
+    private func updateCameraPreviewMirror(_ isMirrored: Bool) {
+        let cameraConfiguration = effectiveCameraConfiguration
+        let style = cameraConfiguration.previewStyle
+        let updatedStyle = CameraPreviewStyle(
+            shape: style.shape,
+            size: style.size,
+            isMirrored: isMirrored
+        )
+        updateCameraPreviewStyle(updatedStyle, from: cameraConfiguration)
+    }
+
+    private func updateCameraPreviewStyle(
+        _ style: CameraPreviewStyle,
+        from cameraConfiguration: CropperCameraConfiguration
+    ) {
+        currentCameraConfiguration = CropperCameraConfiguration(
+            selectedDeviceID: cameraConfiguration.selectedDeviceID,
+            devices: cameraConfiguration.devices,
+            previewStyle: style
+        )
+        onCameraPreviewStyleChange(style)
     }
 
     private func quickPresetSystemImage(for preset: ExportPreset) -> String {
