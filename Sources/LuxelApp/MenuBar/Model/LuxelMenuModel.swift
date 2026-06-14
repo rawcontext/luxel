@@ -19,6 +19,7 @@ final class LuxelMenuModel {
     var recordingNoticeMessage: String?
     var recordingActionErrorMessage: String?
     var quickExportStatusMessage: String?
+    var quickExportProgress: QuickExportProgressPresentation?
     var recoveryState: RecordingRecoveryMenuState?
     var permissionPrompt: PermissionPrompt?
     var recoveryPrompt: RecoveryPrompt?
@@ -36,6 +37,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored let bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker
     @ObservationIgnored let quickExportService: QuickExportService
+    @ObservationIgnored var quickExportTask: Task<QuickExportResult, any Error>?
     @ObservationIgnored let screenshotCaptureService: ScreenshotCaptureService
     @ObservationIgnored let permissionGuidanceService: PermissionGuidanceService
     @ObservationIgnored let lastCaptureRecordingPlanner: LastCaptureRecordingPlanner
