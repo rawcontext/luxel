@@ -48,6 +48,8 @@ struct RecordingHistoryTests {
     @Test("getPastRecordings keeps bundle root when primary media exists")
     func getPastRecordingsKeepsBundleRootWhenPrimaryMediaExists() throws {
         let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
+        let cameraURL = rootURL.appendingPathComponent("camera.mov")
+        let cursorURL = rootURL.appendingPathComponent("cursor.json")
         let manifest = try BundleManifest(sidecars: [
             BundleSidecarManifest(kind: .camera),
             BundleSidecarManifest(kind: .cursor)
@@ -60,10 +62,52 @@ struct RecordingHistoryTests {
         )
         let service = makeService(
             store: InMemoryRecordingHistoryStore(recordings: [recording]),
-            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov")]
+            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov"), cameraURL, cursorURL]
         )
 
         #expect(service.getPastRecordings() == [recording])
+    }
+
+    @Test("getPastRecordings drops missing bundle sidecars with diagnostics")
+    func getPastRecordingsDropsMissingBundleSidecarsWithDiagnostics() throws {
+        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
+        let camera = try BundleSidecarManifest(kind: .camera)
+        let cursor = try BundleSidecarManifest(kind: .cursor)
+        let manifest = try BundleManifest(sidecars: [camera, cursor])
+        let sanitizedManifest = try BundleManifest(sidecars: [camera])
+        let recording = PastRecording(
+            fileURL: rootURL,
+            name: "Bundled",
+            date: Date(timeIntervalSince1970: 2),
+            bundleManifest: manifest
+        )
+        let fileSystem = FakeFileSystem(existingFiles: [
+            rootURL,
+            rootURL.appendingPathComponent("screen.mov"),
+            rootURL.appendingPathComponent("camera.mov")
+        ])
+        let diagnosticClient = SpyRecordingDiagnosticClient()
+        let service = makeService(
+            store: InMemoryRecordingHistoryStore(recordings: [recording]),
+            fileSystem: fileSystem,
+            now: Date(timeIntervalSince1970: 10),
+            diagnosticClient: diagnosticClient
+        )
+
+        let recordings = service.getPastRecordings()
+
+        let expected = recording.replacingBundleManifest(sanitizedManifest)
+        #expect(recordings == [expected])
+        #expect(diagnosticClient.diagnostics == [
+            CorruptRecordingDiagnostic(
+                fileURL: rootURL.appendingPathComponent("cursor.json"),
+                reason: "Missing bundle sidecar",
+                recordedAt: Date(timeIntervalSince1970: 10)
+            )
+        ])
+        #expect(fileSystem.writtenData.map(\.url) == [rootURL.appendingPathComponent("bundle.json")])
+        let persistedManifest = try JSONDecoder().decode(BundleManifest.self, from: try #require(fileSystem.writtenData.first?.data))
+        #expect(persistedManifest == sanitizedManifest)
     }
 
     @Test("getPastRecordings prunes bundle roots with missing primary media")
@@ -121,6 +165,7 @@ struct RecordingHistoryTests {
     @Test("recoverActiveRecording probes bundled primary media and stores root")
     func recoverActiveRecordingProbesBundledPrimaryMediaAndStoresRoot() async throws {
         let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
+        let cameraURL = rootURL.appendingPathComponent("camera.mov")
         let manifest = try BundleManifest(sidecars: [
             BundleSidecarManifest(kind: .camera, syncOffsetMilliseconds: 12)
         ])
@@ -136,7 +181,7 @@ struct RecordingHistoryTests {
         let store = InMemoryRecordingHistoryStore(activeRecording: activeRecording)
         let service = makeService(
             store: store,
-            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov")],
+            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov"), cameraURL],
             mediaProbe: probe
         )
 
@@ -153,6 +198,51 @@ struct RecordingHistoryTests {
         #expect(result == .playable(expected))
         #expect(store.activeRecording == nil)
         #expect(store.recordings == [expected])
+    }
+
+    @Test("recoverActiveRecording drops missing bundle sidecars")
+    func recoverActiveRecordingDropsMissingBundleSidecars() async throws {
+        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
+        let manifest = try BundleManifest(sidecars: [
+            BundleSidecarManifest(kind: .captions)
+        ])
+        let sanitizedManifest = try BundleManifest()
+        let date = Date(timeIntervalSince1970: 100)
+        let activeRecording = ActiveRecording(
+            fileURL: rootURL,
+            name: "Bundled",
+            date: date,
+            options: RecordingOptions(frameRate: 30),
+            bundleManifest: manifest
+        )
+        let diagnosticClient = SpyRecordingDiagnosticClient()
+        let store = InMemoryRecordingHistoryStore(activeRecording: activeRecording)
+        let service = makeService(
+            store: store,
+            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov")],
+            now: Date(timeIntervalSince1970: 500),
+            probeResult: .playable,
+            diagnosticClient: diagnosticClient
+        )
+
+        let result = await service.recoverActiveRecording()
+
+        let expected = PastRecording(
+            fileURL: rootURL,
+            name: "Bundled",
+            date: date,
+            options: activeRecording.options,
+            bundleManifest: sanitizedManifest
+        )
+        #expect(result == .playable(expected))
+        #expect(store.recordings == [expected])
+        #expect(diagnosticClient.diagnostics == [
+            CorruptRecordingDiagnostic(
+                fileURL: rootURL.appendingPathComponent("captions.json"),
+                reason: "Missing bundle sidecar",
+                recordedAt: Date(timeIntervalSince1970: 500)
+            )
+        ])
     }
 
     @Test("recoverActiveRecording identifies known corrupt active recording without adding history")
@@ -232,6 +322,30 @@ struct RecordingHistoryTests {
             date: now,
             options: RecordingOptions(frameRate: 30)
         ))
+    }
+
+    @Test("materializeRecordingBundle creates directory and manifest file")
+    func materializeRecordingBundleCreatesDirectoryAndManifestFile() throws {
+        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
+        let fileSystem = FakeFileSystem()
+        let service = makeService(store: InMemoryRecordingHistoryStore(), fileSystem: fileSystem)
+
+        let bundle = try service.materializeRecordingBundle(
+            rootURL: rootURL,
+            sidecars: [
+                BundleSidecarManifest(kind: .camera, syncOffsetMilliseconds: 24),
+                BundleSidecarManifest(kind: .captions)
+            ]
+        )
+
+        #expect(fileSystem.createdDirectories == [rootURL])
+        #expect(fileSystem.writtenData.map(\.url) == [rootURL.appendingPathComponent("bundle.json")])
+        #expect(bundle.primaryURL == rootURL.appendingPathComponent("screen.mov"))
+        #expect(bundle.sidecarURL(for: .camera) == rootURL.appendingPathComponent("camera.mov"))
+        #expect(bundle.sidecarURL(for: .captions) == rootURL.appendingPathComponent("captions.json"))
+
+        let persistedManifest = try JSONDecoder().decode(BundleManifest.self, from: try #require(fileSystem.writtenData.first?.data))
+        #expect(persistedManifest == bundle.manifest)
     }
 
     @Test("stopCurrentRecording moves active recording to front and can rename")
@@ -494,6 +608,8 @@ private enum StubError: Error, Equatable {
 
 private final class FakeFileSystem: FileSystem, @unchecked Sendable {
     private var existingFiles: Set<URL>
+    private(set) var createdDirectories: [URL] = []
+    private(set) var writtenData: [WrittenData] = []
     private(set) var removedFiles: [URL] = []
     private(set) var trashedFiles: [URL] = []
     private let trashError: Error?
@@ -507,9 +623,17 @@ private final class FakeFileSystem: FileSystem, @unchecked Sendable {
         existingFiles.contains(url)
     }
 
-    func createDirectory(at url: URL) throws {}
+    func createDirectory(at url: URL) throws {
+        createdDirectories.append(url)
+        existingFiles.insert(url)
+    }
 
     func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
+
+    func writeData(_ data: Data, to url: URL) throws {
+        writtenData.append(WrittenData(data: data, url: url))
+        existingFiles.insert(url)
+    }
 
     func removeFile(at url: URL) {
         removedFiles.append(url)
@@ -525,6 +649,11 @@ private final class FakeFileSystem: FileSystem, @unchecked Sendable {
 
         existingFiles.remove(url)
     }
+}
+
+private struct WrittenData: Equatable {
+    let data: Data
+    let url: URL
 }
 
 private final class SpyRecordingDiagnosticClient: RecordingDiagnosticClient, @unchecked Sendable {

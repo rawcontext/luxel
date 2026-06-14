@@ -33,7 +33,9 @@ public final class RecordingHistoryService: Sendable {
                 return nil
             }
 
-            return recording.filteringExports { fileSystem.fileExists(at: $0.fileURL) }
+            return recordingByDroppingMissingSidecars(
+                recording.filteringExports { fileSystem.fileExists(at: $0.fileURL) }
+            )
         }
         store.recordings = validRecordings
         return validRecordings.filter(filter.includes)
@@ -43,10 +45,32 @@ public final class RecordingHistoryService: Sendable {
         store.activeRecording
     }
 
+    public func materializeRecordingBundle(
+        rootURL: URL,
+        primaryFileName: String = BundleManifest.defaultPrimaryFileName,
+        sidecars: [BundleSidecarManifest]
+    ) throws -> RecordingBundle {
+        let manifest = try BundleManifest(
+            primaryFileName: primaryFileName,
+            sidecars: sidecars
+        )
+        let bundle = RecordingBundle(rootURL: rootURL, manifest: manifest)
+
+        try fileSystem.createDirectory(at: rootURL)
+        try persistManifest(manifest, for: rootURL)
+        return bundle
+    }
+
     @discardableResult
     public func addRecording(_ recording: PastRecording) -> [PastRecording] {
         let recordings = [recording] + store.recordings
-        let validRecordings = recordings.filter(recordingExists)
+        let validRecordings = recordings.compactMap { recording -> PastRecording? in
+            guard recordingExists(recording) else {
+                return nil
+            }
+
+            return recordingByDroppingMissingSidecars(recording)
+        }
         store.recordings = validRecordings
         return validRecordings
     }
@@ -125,9 +149,10 @@ public final class RecordingHistoryService: Sendable {
             options: activeRecording.options,
             bundleManifest: activeRecording.bundleManifest
         )
-        addRecording(recording)
+        let sanitizedRecording = recordingByDroppingMissingSidecars(recording)
+        addRecording(sanitizedRecording)
         store.activeRecording = nil
-        return recording
+        return sanitizedRecording
     }
 
     public func clearCurrentRecording() {
@@ -168,8 +193,9 @@ public final class RecordingHistoryService: Sendable {
         let mediaURL = activeRecording.primaryMediaURL
         switch await mediaProbe.inspectRecording(at: mediaURL) {
         case .playable:
-            addRecording(activeRecording.pastRecording)
-            result = .playable(activeRecording.pastRecording)
+            let recording = recordingByDroppingMissingSidecars(activeRecording.pastRecording)
+            addRecording(recording)
+            result = .playable(recording)
         case let .corrupt(reason):
             switch corruptRecordingClassifier.recoveryKind(for: reason) {
             case .knownRepairable:
@@ -198,5 +224,52 @@ public final class RecordingHistoryService: Sendable {
         }
 
         return true
+    }
+
+    private func recordingByDroppingMissingSidecars(_ recording: PastRecording) -> PastRecording {
+        guard let bundle = recording.bundle else {
+            return recording
+        }
+
+        let existingSidecars = bundle.manifest.sidecars.filter { sidecar in
+            let sidecarURL = bundle.rootURL.appendingPathComponent(sidecar.fileName)
+            let exists = fileSystem.fileExists(at: sidecarURL)
+
+            if !exists {
+                recordMissingSidecar(at: sidecarURL)
+            }
+
+            return exists
+        }
+
+        guard existingSidecars != bundle.manifest.sidecars else {
+            return recording
+        }
+
+        do {
+            let manifest = try bundle.manifest.filteringSidecars { sidecar in
+                existingSidecars.contains(sidecar)
+            }
+            try? persistManifest(manifest, for: bundle.rootURL)
+            return recording.replacingBundleManifest(manifest)
+        } catch {
+            return recording
+        }
+    }
+
+    private func recordMissingSidecar(at fileURL: URL) {
+        diagnosticClient.recordCorruptRecording(CorruptRecordingDiagnostic(
+            fileURL: fileURL,
+            reason: "Missing bundle sidecar",
+            recordedAt: dateProvider.now()
+        ))
+    }
+
+    private func persistManifest(_ manifest: BundleManifest, for rootURL: URL) throws {
+        let bundle = RecordingBundle(rootURL: rootURL, manifest: manifest)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(manifest)
+        try fileSystem.writeData(data, to: bundle.manifestURL)
     }
 }

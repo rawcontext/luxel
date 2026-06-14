@@ -94,4 +94,20 @@ struct RecordingBundleModelTests {
 
         #expect(decoded == manifest)
     }
+
+    @Test("manifest filters sidecars while preserving primary file")
+    func manifestFiltersSidecars() throws {
+        let manifest = try BundleManifest(
+            primaryFileName: "primary.mp4",
+            sidecars: [
+                BundleSidecarManifest(kind: .camera),
+                BundleSidecarManifest(kind: .captions)
+            ]
+        )
+
+        let filtered = try manifest.filteringSidecars { $0.kind == .captions }
+
+        #expect(filtered.primaryFileName == "primary.mp4")
+        #expect(filtered.sidecars == [try BundleSidecarManifest(kind: .captions)])
+    }
 }

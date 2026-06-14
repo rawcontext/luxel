@@ -137,6 +137,8 @@ private final class SpyFileSystem: FileSystem, @unchecked Sendable {
         }
     }
 
+    func writeData(_ data: Data, to url: URL) throws {}
+
     func removeFile(at url: URL) throws {}
 
     func trashItem(at url: URL) throws {}

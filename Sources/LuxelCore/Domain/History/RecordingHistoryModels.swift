@@ -89,6 +89,18 @@ public struct PastRecording: Codable, Equatable, Sendable {
         )
     }
 
+    public func replacingBundleManifest(_ manifest: BundleManifest?) -> PastRecording {
+        PastRecording(
+            fileURL: fileURL,
+            name: name,
+            date: date,
+            kind: kind,
+            options: options,
+            exports: exports,
+            bundleManifest: manifest
+        )
+    }
+
     private enum CodingKeys: String, CodingKey {
         case fileURL
         case name

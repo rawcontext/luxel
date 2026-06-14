@@ -238,6 +238,8 @@ private final class SpyScreenshotFileSystem: ScreenshotFileWriter, FileSystem, @
 
     func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
 
+    func writeData(_ data: Data, to url: URL) throws {}
+
     func removeFile(at url: URL) throws {
         existingFiles.remove(url)
     }

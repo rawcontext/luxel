@@ -69,6 +69,16 @@ public struct BundleManifest: Codable, Equatable, Sendable {
         sidecars.first { $0.kind == kind }
     }
 
+    public func filteringSidecars(
+        _ isIncluded: (BundleSidecarManifest) -> Bool
+    ) throws -> BundleManifest {
+        try BundleManifest(
+            schemaVersion: schemaVersion,
+            primaryFileName: primaryFileName,
+            sidecars: sidecars.filter(isIncluded)
+        )
+    }
+
     static func validateBundleFileName(_ fileName: String) throws {
         guard !fileName.isEmpty,
               !fileName.contains("/"),

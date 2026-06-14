@@ -357,6 +357,8 @@ private final class SpyFileSystem: FileSystem, @unchecked Sendable {
 
     func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
 
+    func writeData(_ data: Data, to url: URL) throws {}
+
     func removeFile(at url: URL) throws {
         lock.withLock {
             capturedRemovedURLs.append(url)
