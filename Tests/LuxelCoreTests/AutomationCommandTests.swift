@@ -21,6 +21,39 @@ struct AutomationCommandTests {
         #expect(invocation.callbacks.error == nil)
     }
 
+    @Test("URL builder composes automation invocations")
+    func urlBuilderComposesAutomationInvocations() throws {
+        let invocation = AutomationInvocation(
+            command: .record(AutomationRecordingOptions(
+                target: .display(.main),
+                presetName: "Quick GIF",
+                countdownSeconds: 3
+            )),
+            callbacks: AutomationCallbacks(
+                success: URL(string: "luxel-callback://done"),
+                error: URL(string: "luxel-callback://failed")
+            )
+        )
+
+        let url = AutomationInvocationURLBuilder.url(for: invocation)
+
+        #expect(url.absoluteString == "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3&x-success=luxel-callback://done&x-error=luxel-callback://failed")
+        #expect(try AutomationCommandParser.parse(url) == invocation)
+    }
+
+    @Test("URL builder composes simple commands")
+    func urlBuilderComposesSimpleCommands() throws {
+        #expect(AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .stop)).absoluteString == "luxel://stop")
+        #expect(
+            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .clip(seconds: 30))).absoluteString
+                == "luxel://clip?seconds=30"
+        )
+        #expect(
+            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .preferences(.presets))).absoluteString
+                == "luxel://preferences?pane=presets"
+        )
+    }
+
     @Test("parser reads last-area recording URL")
     func parserReadsLastAreaRecordingURL() throws {
         let url = try #require(URL(string: "luxel://record?target=lastArea"))

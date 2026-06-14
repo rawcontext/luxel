@@ -55,6 +55,16 @@ struct AppBundleConfigurationTests {
         #expect(script.contains("ThirdPartyLicenses.md"))
     }
 
+    @Test("build script bundles CLI executable and install helper")
+    func buildScriptBundlesCLIExecutableAndInstallHelper() throws {
+        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
+        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+        #expect(script.contains("swift build --configuration \"${CONFIGURATION}\" --product luxel-cli"))
+        #expect(script.contains("Contents/MacOS/luxel-cli"))
+        #expect(script.contains("Contents/Resources/install-cli"))
+    }
+
     private func readPlist(_ relativePath: String) throws -> [String: Any] {
         let url = try packageRootURL().appending(path: relativePath)
         let data = try Data(contentsOf: url)
