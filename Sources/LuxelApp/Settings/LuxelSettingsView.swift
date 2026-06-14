@@ -65,6 +65,45 @@ struct LuxelSettingsView: View {
                 Toggle("Confirm Discard", isOn: $model.settings.confirmDiscard)
             }
 
+            Section("Screenshots") {
+                Picker("Format", selection: $model.settings.screenshotFormat) {
+                    ForEach(ScreenshotFormat.allCases, id: \.self) { format in
+                        Text(format.settingsLabel).tag(format)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                ForEach(ScreenshotDestination.allCases, id: \.self) { destination in
+                    Toggle(destination.settingsLabel, isOn: screenshotDestinationBinding(destination))
+                }
+
+                Toggle("Show Thumbnail", isOn: $model.settings.screenshotShowThumbnail)
+
+                Picker("Screenshot", selection: $model.settings.captureScreenshotShortcut) {
+                    Text("None").tag("")
+                    ForEach(AppKeyboardShortcutPresets.captureScreenshot) { shortcut in
+                        Text(shortcut.displayName).tag(shortcut.rawValue)
+                    }
+                }
+                .disabled(!model.settings.enableShortcuts)
+
+                Picker("Active Window", selection: $model.settings.screenshotActiveWindowShortcut) {
+                    Text("None").tag("")
+                    ForEach(AppKeyboardShortcutPresets.screenshotActiveWindow) { shortcut in
+                        Text(shortcut.displayName).tag(shortcut.rawValue)
+                    }
+                }
+                .disabled(!model.settings.enableShortcuts)
+
+                Picker("Fullscreen", selection: $model.settings.screenshotFullscreenShortcut) {
+                    Text("None").tag("")
+                    ForEach(AppKeyboardShortcutPresets.screenshotFullscreen) { shortcut in
+                        Text(shortcut.displayName).tag(shortcut.rawValue)
+                    }
+                }
+                .disabled(!model.settings.enableShortcuts)
+            }
+
             Section("Quick Recording") {
                 Picker("Quick Preset", selection: $model.settings.quickExportPresetID) {
                     Text("None").tag(Optional<UUID>.none)
@@ -182,6 +221,22 @@ struct LuxelSettingsView: View {
         }
     }
 
+    private func screenshotDestinationBinding(_ destination: ScreenshotDestination) -> Binding<Bool> {
+        Binding {
+            model.settings.screenshotDestinations.contains(destination)
+        } set: { isEnabled in
+            if isEnabled {
+                guard !model.settings.screenshotDestinations.contains(destination) else {
+                    return
+                }
+
+                model.settings.screenshotDestinations.append(destination)
+            } else if model.settings.screenshotDestinations.count > 1 {
+                model.settings.screenshotDestinations.removeAll { $0 == destination }
+            }
+        }
+    }
+
     private func openRecording(_ url: URL) {
         openWindow(id: LuxelEditorScene.id)
         NSApplication.shared.activate(ignoringOtherApps: true)
@@ -189,6 +244,32 @@ struct LuxelSettingsView: View {
         Task {
             model.configureEditor(editorModel)
             await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
+        }
+    }
+}
+
+private extension ScreenshotFormat {
+    var settingsLabel: String {
+        switch self {
+        case .png:
+            "PNG"
+        case .jpeg:
+            "JPEG"
+        case .heic:
+            "HEIC"
+        }
+    }
+}
+
+private extension ScreenshotDestination {
+    var settingsLabel: String {
+        switch self {
+        case .clipboard:
+            "Copy to Clipboard"
+        case .file:
+            "Save File"
+        case .preview:
+            "Open Preview"
         }
     }
 }

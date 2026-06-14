@@ -84,6 +84,18 @@ public enum AppKeyboardShortcutPresets {
     public static let quickRecordLast: [AppKeyboardShortcut] = [
         AppKeyboardShortcut(rawValue: "command+control+option+q")
     ].compactMap { $0 }
+
+    public static let captureScreenshot: [AppKeyboardShortcut] = [
+        AppKeyboardShortcut(rawValue: "command+control+option+s")
+    ].compactMap { $0 }
+
+    public static let screenshotActiveWindow: [AppKeyboardShortcut] = [
+        AppKeyboardShortcut(rawValue: "command+control+option+w")
+    ].compactMap { $0 }
+
+    public static let screenshotFullscreen: [AppKeyboardShortcut] = [
+        AppKeyboardShortcut(rawValue: "command+control+option+f")
+    ].compactMap { $0 }
 }
 
 public enum AppKeyboardShortcutError: Error, Equatable {
