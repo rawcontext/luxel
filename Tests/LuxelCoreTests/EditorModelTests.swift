@@ -22,6 +22,9 @@ struct EditorModelTests {
         #expect(request.quality == .balanced)
         #expect(request.speed == .normal)
         #expect(request.gifOptions == nil)
+        #expect(request.cursorOptions == nil)
+        #expect(request.keystrokeOptions == nil)
+        #expect(request.captionOptions == nil)
     }
 
     @Test("draft applies trim resize frame rate and mute overrides")
@@ -32,6 +35,9 @@ struct EditorModelTests {
             paletteSize: 128,
             lossyTolerance: 4
         )
+        let cursorOptions = try CursorRenderOptions(sizeMultiplier: 1.5, clickStyle: .filledPulse)
+        let keystrokeOptions = try KeystrokeRenderOptions(anchor: .topRight, size: .large, displayDuration: 2)
+        let captionOptions = CaptionRenderOptions(burnIn: true, position: .top, size: .large)
         let draft = try EditorExportDraft(
             source: makeSource(),
             format: .gif,
@@ -42,14 +48,20 @@ struct EditorModelTests {
             shouldCrop: true,
             quality: .high,
             speed: PlaybackSpeed(2),
-            gifOptions: gifOptions
+            gifOptions: gifOptions,
+            cursorOptions: cursorOptions,
+            keystrokeOptions: keystrokeOptions,
+            captionOptions: captionOptions
         )
 
+        let data = try JSONEncoder().encode(draft)
+        let decodedDraft = try JSONDecoder().decode(EditorExportDraft.self, from: data)
         let request = try draft.exportRequest
         let pixelSize = try PixelSize(width: 320, height: 200)
         let frameRate = try FrameRate(12)
         let trimRange = try TimeRange(start: 1, end: 5)
 
+        #expect(decodedDraft == draft)
         #expect(request.format == .gif)
         #expect(request.pixelSize == pixelSize)
         #expect(request.frameRate == frameRate)
@@ -59,6 +71,9 @@ struct EditorModelTests {
         #expect(request.quality == .high)
         #expect(request.speed == (try PlaybackSpeed(2)))
         #expect(request.gifOptions == gifOptions)
+        #expect(request.cursorOptions == cursorOptions)
+        #expect(request.keystrokeOptions == keystrokeOptions)
+        #expect(request.captionOptions == captionOptions)
         #expect(request.outputDuration == 2)
     }
 
@@ -82,9 +97,15 @@ struct EditorModelTests {
         #expect(draft.quality == .balanced)
         #expect(draft.speed == .normal)
         #expect(draft.gifOptions == nil)
+        #expect(draft.cursorOptions == nil)
+        #expect(draft.keystrokeOptions == nil)
+        #expect(draft.captionOptions == nil)
         #expect(try draft.exportRequest.quality == .balanced)
         #expect(try draft.exportRequest.speed == .normal)
         #expect(try draft.exportRequest.gifOptions == nil)
+        #expect(try draft.exportRequest.cursorOptions == nil)
+        #expect(try draft.exportRequest.keystrokeOptions == nil)
+        #expect(try draft.exportRequest.captionOptions == nil)
     }
 
     @Test("source media decodes missing alpha as false")

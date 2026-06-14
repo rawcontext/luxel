@@ -62,6 +62,9 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
     public let quality: ExportQuality
     public let speed: PlaybackSpeed
     public let gifOptions: GIFRenderOptions?
+    public let cursorOptions: CursorRenderOptions?
+    public let keystrokeOptions: KeystrokeRenderOptions?
+    public let captionOptions: CaptionRenderOptions?
 
     public init(
         source: SourceMedia,
@@ -73,7 +76,10 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         shouldCrop: Bool = false,
         quality: ExportQuality = .balanced,
         speed: PlaybackSpeed = .normal,
-        gifOptions: GIFRenderOptions? = nil
+        gifOptions: GIFRenderOptions? = nil,
+        cursorOptions: CursorRenderOptions? = nil,
+        keystrokeOptions: KeystrokeRenderOptions? = nil,
+        captionOptions: CaptionRenderOptions? = nil
     ) {
         self.source = source
         self.format = format
@@ -85,6 +91,9 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         self.quality = quality
         self.speed = speed
         self.gifOptions = gifOptions
+        self.cursorOptions = cursorOptions
+        self.keystrokeOptions = keystrokeOptions
+        self.captionOptions = captionOptions
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -98,6 +107,9 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         case quality
         case speed
         case gifOptions
+        case cursorOptions
+        case keystrokeOptions
+        case captionOptions
     }
 
     public init(from decoder: any Decoder) throws {
@@ -115,6 +127,9 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         speed = try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed)
             ?? .normal
         gifOptions = try container.decodeIfPresent(GIFRenderOptions.self, forKey: .gifOptions)
+        cursorOptions = try container.decodeIfPresent(CursorRenderOptions.self, forKey: .cursorOptions)
+        keystrokeOptions = try container.decodeIfPresent(KeystrokeRenderOptions.self, forKey: .keystrokeOptions)
+        captionOptions = try container.decodeIfPresent(CaptionRenderOptions.self, forKey: .captionOptions)
     }
 
     public var exportRequest: ExportRequest {
@@ -129,7 +144,10 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
                 shouldCrop: shouldCrop,
                 quality: quality,
                 speed: speed,
-                gifOptions: gifOptions
+                gifOptions: gifOptions,
+                cursorOptions: cursorOptions,
+                keystrokeOptions: keystrokeOptions,
+                captionOptions: captionOptions
             )
         }
     }

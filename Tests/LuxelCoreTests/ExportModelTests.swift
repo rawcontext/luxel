@@ -78,6 +78,9 @@ struct ExportModelTests {
         #expect(request.resolvedQuality == .balanced)
         #expect(request.speed == .normal)
         #expect(request.gifOptions == nil)
+        #expect(request.cursorOptions == nil)
+        #expect(request.keystrokeOptions == nil)
+        #expect(request.captionOptions == nil)
     }
 
     @Test("export request round trips GIF options")
@@ -95,6 +98,27 @@ struct ExportModelTests {
 
         #expect(decoded == request)
         #expect(decoded.gifOptions == gifOptions)
+    }
+
+    @Test("export request round trips sidecar render options")
+    func exportRequestRoundTripsSidecarRenderOptions() throws {
+        let cursorOptions = try CursorRenderOptions(sizeMultiplier: 2, smoothing: .medium)
+        let keystrokeOptions = try KeystrokeRenderOptions(anchor: .bottomRight, theme: .lightGlass)
+        let captionOptions = CaptionRenderOptions(burnIn: true, theme: .outlinedText)
+        let request = try makeRequest(
+            format: .mp4,
+            cursorOptions: cursorOptions,
+            keystrokeOptions: keystrokeOptions,
+            captionOptions: captionOptions
+        )
+
+        let data = try JSONEncoder().encode(request)
+        let decoded = try JSONDecoder().decode(ExportRequest.self, from: data)
+
+        #expect(decoded == request)
+        #expect(decoded.cursorOptions == cursorOptions)
+        #expect(decoded.keystrokeOptions == keystrokeOptions)
+        #expect(decoded.captionOptions == captionOptions)
     }
 
     @Test("export request falls back from unavailable quality")
@@ -269,7 +293,10 @@ struct ExportModelTests {
         shouldMute: Bool = false,
         quality: ExportQuality = .balanced,
         speed: PlaybackSpeed = .normal,
-        gifOptions: GIFRenderOptions? = nil
+        gifOptions: GIFRenderOptions? = nil,
+        cursorOptions: CursorRenderOptions? = nil,
+        keystrokeOptions: KeystrokeRenderOptions? = nil,
+        captionOptions: CaptionRenderOptions? = nil
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -281,7 +308,10 @@ struct ExportModelTests {
             shouldCrop: true,
             quality: quality,
             speed: speed,
-            gifOptions: gifOptions
+            gifOptions: gifOptions,
+            cursorOptions: cursorOptions,
+            keystrokeOptions: keystrokeOptions,
+            captionOptions: captionOptions
         )
     }
 }
