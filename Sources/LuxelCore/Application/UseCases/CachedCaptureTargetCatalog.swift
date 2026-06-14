@@ -37,9 +37,7 @@ public actor CachedCaptureTargetCatalog: CaptureTargetCatalog {
     }
 
     private func refreshSnapshot() async throws -> CaptureTargetCatalogSnapshot {
-        let displays = try await upstream.availableDisplays()
-        let targets = try await upstream.availableTargets()
-        let snapshot = CaptureTargetCatalogSnapshot(displays: displays, targets: targets)
+        let snapshot = try await upstream.snapshot()
         self.snapshot = snapshot
         return snapshot
     }

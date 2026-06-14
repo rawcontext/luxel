@@ -6,22 +6,33 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
     public init() {}
 
     public func availableDisplays() async throws -> [DisplayBounds] {
-        let content = try await SCShareableContent.current
-        return try content.displays.map { try displayBounds(for: $0) }
+        let snapshot = try await snapshot()
+        return snapshot.displays
     }
 
     public func availableTargets() async throws -> [CaptureTargetOption] {
+        let snapshot = try await snapshot()
+        return snapshot.targets
+    }
+
+    public func snapshot() async throws -> CaptureTargetCatalogSnapshot {
         let content = try await SCShareableContent.current
-        let displayTargets = try content.displays.enumerated().map { index, display in
-            try displayTarget(for: display, index: index)
+        let displayItems = try content.displays.enumerated().map { index, display -> (
+            bounds: DisplayBounds,
+            target: CaptureTargetOption
+        ) in
+            let bounds = try displayBounds(for: display)
+            return (bounds, try displayTarget(for: bounds, index: index))
         }
         let windowTargets = try content.windows.compactMap(windowTarget)
 
-        return displayTargets + windowTargets
+        return CaptureTargetCatalogSnapshot(
+            displays: displayItems.map(\.bounds),
+            targets: displayItems.map(\.target) + windowTargets
+        )
     }
 
-    private func displayTarget(for display: SCDisplay, index: Int) throws -> CaptureTargetOption {
-        let bounds = try displayBounds(for: display)
+    private func displayTarget(for bounds: DisplayBounds, index: Int) throws -> CaptureTargetOption {
         let size = try PixelSize(width: bounds.width, height: bounds.height)
         let frame = try CaptureRect(x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height)
 

@@ -56,8 +56,9 @@ struct CaptureTargetServiceTests {
 
         #expect(firstTargets == secondTargets)
         #expect(displays == [try display(id: 12)])
-        #expect(await upstream.displayCallCount == 1)
-        #expect(await upstream.targetCallCount == 1)
+        #expect(await upstream.snapshotCallCount == 1)
+        #expect(await upstream.displayCallCount == 0)
+        #expect(await upstream.targetCallCount == 0)
     }
 
     @Test("cached catalog refresh replaces snapshot")
@@ -74,8 +75,9 @@ struct CaptureTargetServiceTests {
 
         #expect(initialTargets.first?.id == "display-12")
         #expect(refreshedTargets.first?.id == "display-34")
-        #expect(await upstream.displayCallCount == 2)
-        #expect(await upstream.targetCallCount == 2)
+        #expect(await upstream.snapshotCallCount == 2)
+        #expect(await upstream.displayCallCount == 0)
+        #expect(await upstream.targetCallCount == 0)
     }
 
     private func makeSnapshot(displayID: UInt32) throws -> CaptureTargetCatalogSnapshot {
@@ -117,6 +119,7 @@ private actor SpyCaptureTargetCatalog: CaptureTargetCatalog {
     private var snapshots: [CaptureTargetCatalogSnapshot]
     private(set) var displayCallCount = 0
     private(set) var targetCallCount = 0
+    private(set) var snapshotCallCount = 0
     private(set) var refreshCallCount = 0
 
     init(snapshots: [CaptureTargetCatalogSnapshot]) {
@@ -135,6 +138,15 @@ private actor SpyCaptureTargetCatalog: CaptureTargetCatalog {
             snapshots.removeFirst()
         }
         return snapshot.targets
+    }
+
+    func snapshot() async throws -> CaptureTargetCatalogSnapshot {
+        snapshotCallCount += 1
+        let snapshot = currentSnapshot
+        if snapshots.count > 1 {
+            snapshots.removeFirst()
+        }
+        return snapshot
     }
 
     func refresh() async throws {
