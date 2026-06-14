@@ -139,6 +139,36 @@ public struct KeystrokeTimeline: Codable, Equatable, Sendable {
     }
 }
 
+public struct KeystrokeSidecarDocument: Codable, Equatable, Sendable {
+    public static let currentSchemaVersion = 1
+
+    public let schemaVersion: Int
+    public let timeline: KeystrokeTimeline
+
+    public init(
+        schemaVersion: Int = KeystrokeSidecarDocument.currentSchemaVersion,
+        timeline: KeystrokeTimeline
+    ) throws {
+        guard schemaVersion == Self.currentSchemaVersion else {
+            throw KeystrokeModelError.unsupportedSidecarSchemaVersion
+        }
+
+        self.schemaVersion = schemaVersion
+        self.timeline = timeline
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        guard schemaVersion == Self.currentSchemaVersion else {
+            throw KeystrokeModelError.unsupportedSidecarSchemaVersion
+        }
+
+        self.schemaVersion = schemaVersion
+        self.timeline = try container.decode(KeystrokeTimeline.self, forKey: .timeline)
+    }
+}
+
 public struct KeystrokeRenderOptions: Codable, Equatable, Sendable {
     public let isVisible: Bool
     public let anchor: KeystrokeOverlayAnchor
@@ -636,6 +666,7 @@ public enum KeystrokeOverlayTheme: String, Codable, CaseIterable, Equatable, Sen
 
 public enum KeystrokeModelError: Error, Equatable {
     case unsupportedSchemaVersion
+    case unsupportedSidecarSchemaVersion
     case invalidEventTime
     case invalidKeyCode
     case unsortedEvents
