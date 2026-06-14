@@ -1,13 +1,13 @@
 import Foundation
 
-public enum GIFDitheringMode: String, Codable, CaseIterable, Equatable, Sendable {
+public enum GIFDitheringMode: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
     case auto
     case none
     case ordered
     case diffusion
 }
 
-public enum GIFLoopMode: Equatable, Sendable {
+public enum GIFLoopMode: Equatable, Hashable, Sendable {
     case forever
     case none
     case count(Int)

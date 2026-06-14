@@ -85,13 +85,22 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         schedule: AnimatedFrameSchedule,
         imageGenerator: AVAssetImageGenerator
     ) async throws {
-        let options = try GIFRenderOptions(quality: request.resolvedQuality)
-        let frames = try await renderedBitmaps(
+        let options: GIFRenderOptions
+        if let gifOptions = request.gifOptions {
+            options = gifOptions
+        } else {
+            options = try GIFRenderOptions(quality: request.resolvedQuality)
+        }
+
+        let baseFrames = try await renderedBitmaps(
             for: schedule,
             outputPixelSize: outputPixelSize,
             shouldCrop: request.shouldCrop,
             imageGenerator: imageGenerator
         )
+        let frameIndexes = try GIFFrameSequencePlanner()
+            .frameIndexes(frameCount: baseFrames.count, loopMode: options.loopMode)
+        let frames = frameIndexes.map { baseFrames[$0] }
         let transparentColorIndex = UInt8(0)
         let sourcePalette = try MedianCutPaletteBuilder().palette(
             from: frames,

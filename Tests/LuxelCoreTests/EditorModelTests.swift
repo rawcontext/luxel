@@ -21,10 +21,17 @@ struct EditorModelTests {
         #expect(!request.shouldCrop)
         #expect(request.quality == .balanced)
         #expect(request.speed == .normal)
+        #expect(request.gifOptions == nil)
     }
 
     @Test("draft applies trim resize frame rate and mute overrides")
     func draftAppliesOverrides() throws {
+        let gifOptions = try GIFRenderOptions(
+            loopMode: .bounce,
+            dithering: .ordered,
+            paletteSize: 128,
+            lossyTolerance: 4
+        )
         let draft = try EditorExportDraft(
             source: makeSource(),
             format: .gif,
@@ -34,7 +41,8 @@ struct EditorModelTests {
             shouldMute: true,
             shouldCrop: true,
             quality: .high,
-            speed: PlaybackSpeed(2)
+            speed: PlaybackSpeed(2),
+            gifOptions: gifOptions
         )
 
         let request = try draft.exportRequest
@@ -50,11 +58,12 @@ struct EditorModelTests {
         #expect(request.shouldCrop)
         #expect(request.quality == .high)
         #expect(request.speed == (try PlaybackSpeed(2)))
+        #expect(request.gifOptions == gifOptions)
         #expect(request.outputDuration == 2)
     }
 
-    @Test("draft decodes missing quality and speed as defaults")
-    func draftDecodesMissingQualityAndSpeedAsDefaults() throws {
+    @Test("draft decodes missing quality speed and GIF options as defaults")
+    func draftDecodesMissingQualitySpeedAndGIFOptionsAsDefaults() throws {
         let source = try makeSource()
         let encoder = JSONEncoder()
         let sourceData = try encoder.encode(source)
@@ -72,8 +81,10 @@ struct EditorModelTests {
 
         #expect(draft.quality == .balanced)
         #expect(draft.speed == .normal)
+        #expect(draft.gifOptions == nil)
         #expect(try draft.exportRequest.quality == .balanced)
         #expect(try draft.exportRequest.speed == .normal)
+        #expect(try draft.exportRequest.gifOptions == nil)
     }
 
     @Test("source media decodes missing alpha as false")

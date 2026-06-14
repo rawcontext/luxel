@@ -148,15 +148,18 @@ public struct ExportMemory: Codable, Equatable, Sendable {
     public var sizePreset: EditorSizePreset
     public var frameRate: FrameRate
     public var quality: ExportQuality
+    public var gifOptions: GIFRenderOptions?
 
     public init(
         sizePreset: EditorSizePreset,
         frameRate: FrameRate,
-        quality: ExportQuality
+        quality: ExportQuality,
+        gifOptions: GIFRenderOptions? = nil
     ) {
         self.sizePreset = sizePreset
         self.frameRate = frameRate
         self.quality = quality
+        self.gifOptions = gifOptions
     }
 }
 
@@ -242,6 +245,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
     public let shouldCrop: Bool
     public let quality: ExportQuality
     public let speed: PlaybackSpeed
+    public let gifOptions: GIFRenderOptions?
 
     public init(
         inputFileURL: URL,
@@ -252,7 +256,8 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         shouldMute: Bool,
         shouldCrop: Bool,
         quality: ExportQuality = .balanced,
-        speed: PlaybackSpeed = .normal
+        speed: PlaybackSpeed = .normal,
+        gifOptions: GIFRenderOptions? = nil
     ) {
         self.inputFileURL = inputFileURL
         self.format = format
@@ -263,6 +268,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         self.shouldCrop = shouldCrop
         self.quality = quality
         self.speed = speed
+        self.gifOptions = gifOptions
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -275,6 +281,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         case shouldCrop
         case quality
         case speed
+        case gifOptions
     }
 
     public init(from decoder: any Decoder) throws {
@@ -291,6 +298,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
             ?? .balanced
         speed = try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed)
             ?? .normal
+        gifOptions = try container.decodeIfPresent(GIFRenderOptions.self, forKey: .gifOptions)
     }
 
     public var resolvedQuality: ExportQuality {

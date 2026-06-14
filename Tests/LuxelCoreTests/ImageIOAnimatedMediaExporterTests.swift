@@ -65,6 +65,27 @@ struct ImageIOAnimatedMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
+    @Test("gif export honors custom render options")
+    func gifExportHonorsCustomRenderOptions() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "gif")
+        let request = try makeRequest(
+            format: .gif,
+            pixelSize: PixelSize(width: 320, height: 180),
+            gifOptions: GIFRenderOptions(
+                quality: .compact,
+                loopMode: .bounce,
+                dithering: .none
+            )
+        )
+
+        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
+        let metadata = try animatedImageMetadata(at: outputURL)
+
+        #expect(metadata.frameCount == 5)
+
+        try? FileManager.default.removeItem(at: outputURL)
+    }
+
     @Test("video formats are rejected")
     func videoFormatsAreRejected() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")
@@ -79,7 +100,8 @@ struct ImageIOAnimatedMediaExporterTests {
     private func makeRequest(
         format: ExportFormat,
         pixelSize: PixelSize,
-        speed: PlaybackSpeed = .normal
+        speed: PlaybackSpeed = .normal,
+        gifOptions: GIFRenderOptions? = nil
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: fixtureURL("input.mp4"),
@@ -89,7 +111,8 @@ struct ImageIOAnimatedMediaExporterTests {
             timeRange: TimeRange(start: 1, end: 1.3),
             shouldMute: false,
             shouldCrop: true,
-            speed: speed
+            speed: speed,
+            gifOptions: gifOptions
         )
     }
 

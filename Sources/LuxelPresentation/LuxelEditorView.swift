@@ -298,6 +298,10 @@ public struct LuxelEditorView: View {
                     .pickerStyle(.segmented)
                 }
 
+                if model.showsGIFOptions {
+                    gifControls
+                }
+
                 Toggle("Include Audio", isOn: includeAudioSelection)
                     .disabled(!model.canIncludeAudio)
 
@@ -329,6 +333,33 @@ public struct LuxelEditorView: View {
         }
         .task(id: model.exportEstimateTaskID) {
             await model.refreshExportEstimate()
+        }
+    }
+
+    private var gifControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Picker("Loop", selection: gifLoopModeSelection) {
+                ForEach(EditorGIFLoopModeKind.allCases, id: \.self) { kind in
+                    Text(kind.label).tag(kind)
+                }
+            }
+            .pickerStyle(.menu)
+
+            if model.gifLoopModeKind == .count {
+                LabeledContent("Loop Count") {
+                    Stepper(value: gifLoopCountSelection, in: 1...100) {
+                        Text("\(model.gifLoopCount)x")
+                            .monospacedDigit()
+                    }
+                }
+            }
+
+            Picker("Dithering", selection: gifDitheringSelection) {
+                ForEach(GIFDitheringMode.allCases, id: \.self) { mode in
+                    Text(gifDitheringLabel(mode)).tag(mode)
+                }
+            }
+            .pickerStyle(.menu)
         }
     }
 
@@ -638,6 +669,30 @@ public struct LuxelEditorView: View {
         }
     }
 
+    private var gifLoopModeSelection: Binding<EditorGIFLoopModeKind> {
+        Binding {
+            model.gifLoopModeKind
+        } set: { kind in
+            model.setGIFLoopModeKind(kind)
+        }
+    }
+
+    private var gifLoopCountSelection: Binding<Int> {
+        Binding {
+            model.gifLoopCount
+        } set: { count in
+            model.setGIFLoopCount(count)
+        }
+    }
+
+    private var gifDitheringSelection: Binding<GIFDitheringMode> {
+        Binding {
+            model.gifDithering
+        } set: { mode in
+            model.setGIFDithering(mode)
+        }
+    }
+
     private var trimStartSelection: Binding<Double> {
         Binding {
             model.trimStart
@@ -709,6 +764,19 @@ public struct LuxelEditorView: View {
 
         return String(format: "%.2fx", speed)
             .replacingOccurrences(of: #"\.?0+x$"#, with: "x", options: .regularExpression)
+    }
+
+    private func gifDitheringLabel(_ mode: GIFDitheringMode) -> String {
+        switch mode {
+        case .auto:
+            "Auto"
+        case .none:
+            "None"
+        case .ordered:
+            "Ordered"
+        case .diffusion:
+            "Diffusion"
+        }
     }
 }
 

@@ -77,6 +77,24 @@ struct ExportModelTests {
         #expect(request.quality == .balanced)
         #expect(request.resolvedQuality == .balanced)
         #expect(request.speed == .normal)
+        #expect(request.gifOptions == nil)
+    }
+
+    @Test("export request round trips GIF options")
+    func exportRequestRoundTripsGIFOptions() throws {
+        let gifOptions = try GIFRenderOptions(
+            loopMode: .counted(2),
+            dithering: .diffusion,
+            paletteSize: 128,
+            lossyTolerance: 8
+        )
+        let request = try makeRequest(format: .gif, gifOptions: gifOptions)
+
+        let data = try JSONEncoder().encode(request)
+        let decoded = try JSONDecoder().decode(ExportRequest.self, from: data)
+
+        #expect(decoded == request)
+        #expect(decoded.gifOptions == gifOptions)
     }
 
     @Test("export request falls back from unavailable quality")
@@ -250,7 +268,8 @@ struct ExportModelTests {
         height: Int = 200,
         shouldMute: Bool = false,
         quality: ExportQuality = .balanced,
-        speed: PlaybackSpeed = .normal
+        speed: PlaybackSpeed = .normal,
+        gifOptions: GIFRenderOptions? = nil
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -261,7 +280,8 @@ struct ExportModelTests {
             shouldMute: shouldMute,
             shouldCrop: true,
             quality: quality,
-            speed: speed
+            speed: speed,
+            gifOptions: gifOptions
         )
     }
 }

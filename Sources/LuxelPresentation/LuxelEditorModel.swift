@@ -7,6 +7,26 @@ public enum LuxelEditorScene {
     public static let id = "editor"
 }
 
+enum EditorGIFLoopModeKind: String, CaseIterable, Equatable, Hashable {
+    case forever
+    case none
+    case count
+    case bounce
+
+    var label: String {
+        switch self {
+        case .forever:
+            "Forever"
+        case .none:
+            "Off"
+        case .count:
+            "Count"
+        case .bounce:
+            "Bounce"
+        }
+    }
+}
+
 @MainActor
 @Observable
 public final class LuxelEditorModel {
@@ -45,6 +65,9 @@ public final class LuxelEditorModel {
     var shouldMute = false
     var shouldCrop = true
     var quality: ExportQuality = .balanced
+    var gifLoopModeKind: EditorGIFLoopModeKind = .forever
+    var gifLoopCount = 3
+    var gifDithering: GIFDitheringMode = .auto
     var outputDirectory = LuxelEditorModel.defaultRecordingsDirectory
     let supportedFormats: [ExportFormat]
     var exportProgress: ExportProgressSnapshot?
@@ -138,6 +161,23 @@ public final class LuxelEditorModel {
 
     var canChooseQuality: Bool {
         availableQualities.count > 1
+    }
+
+    var showsGIFOptions: Bool {
+        format == .gif
+    }
+
+    var gifLoopMode: GIFLoopMode {
+        switch gifLoopModeKind {
+        case .forever:
+            .forever
+        case .none:
+            .none
+        case .count:
+            .count(gifLoopCount)
+        case .bounce:
+            .bounce
+        }
     }
 
     var selectedFormatSummary: String {
@@ -288,6 +328,9 @@ public final class LuxelEditorModel {
             frameRate: frameRate,
             playbackSpeed: playbackSpeed.value,
             quality: quality,
+            gifLoopModeKind: format == .gif ? gifLoopModeKind : nil,
+            gifLoopCount: format == .gif ? gifLoopCount : nil,
+            gifDithering: format == .gif ? gifDithering : nil,
             shouldMute: shouldMute,
             shouldCrop: shouldCrop
         )
@@ -523,6 +566,34 @@ public final class LuxelEditorModel {
 
         quality = nextQuality
         exportProgress = nil
+        recordEditorDraftChange()
+    }
+
+    func setGIFLoopModeKind(_ kind: EditorGIFLoopModeKind) {
+        guard gifLoopModeKind != kind else {
+            return
+        }
+
+        gifLoopModeKind = kind
+        recordEditorDraftChange()
+    }
+
+    func setGIFLoopCount(_ count: Int) {
+        let clampedCount = min(max(count, 1), 100)
+        guard gifLoopCount != clampedCount else {
+            return
+        }
+
+        gifLoopCount = clampedCount
+        recordEditorDraftChange(coalescingToken: "gif-loop-count")
+    }
+
+    func setGIFDithering(_ dithering: GIFDitheringMode) {
+        guard gifDithering != dithering else {
+            return
+        }
+
+        gifDithering = dithering
         recordEditorDraftChange()
     }
 
@@ -1238,6 +1309,25 @@ public final class LuxelEditorModel {
         quality = memory.quality.isAvailable(for: format)
             ? memory.quality
             : ExportQuality.defaultQuality(for: format)
+        if format == .gif, let gifOptions = memory.gifOptions {
+            applyGIFOptions(gifOptions)
+        }
+    }
+
+    private func applyGIFOptions(_ options: GIFRenderOptions) {
+        gifDithering = options.dithering
+
+        switch options.loopMode {
+        case .forever:
+            gifLoopModeKind = .forever
+        case .none:
+            gifLoopModeKind = .none
+        case .count(let count):
+            gifLoopModeKind = .count
+            gifLoopCount = min(max(count, 1), 100)
+        case .bounce:
+            gifLoopModeKind = .bounce
+        }
     }
 
     private func recordEditorDraftChange(coalescingToken: String? = nil) {
@@ -1262,7 +1352,10 @@ public final class LuxelEditorModel {
             playbackSpeed: playbackSpeed,
             shouldMute: shouldMute,
             shouldCrop: shouldCrop,
-            quality: quality
+            quality: quality,
+            gifLoopModeKind: gifLoopModeKind,
+            gifLoopCount: gifLoopCount,
+            gifDithering: gifDithering
         )
     }
 
@@ -1291,6 +1384,9 @@ public final class LuxelEditorModel {
         quality = state.quality.isAvailable(for: format)
             ? state.quality
             : ExportQuality.defaultQuality(for: format)
+        gifLoopModeKind = state.gifLoopModeKind
+        gifLoopCount = min(max(state.gifLoopCount, 1), 100)
+        gifDithering = state.gifDithering
         shouldMute = state.shouldMute
         if !canIncludeAudio {
             shouldMute = true
@@ -1304,7 +1400,8 @@ public final class LuxelEditorModel {
         ExportMemory(
             sizePreset: sizePreset ?? .original,
             frameRate: try FrameRate(frameRate),
-            quality: quality.isAvailable(for: format) ? quality : ExportQuality.defaultQuality(for: format)
+            quality: quality.isAvailable(for: format) ? quality : ExportQuality.defaultQuality(for: format),
+            gifOptions: try currentGIFOptions(for: format)
         )
     }
 
@@ -1323,7 +1420,8 @@ public final class LuxelEditorModel {
             shouldMute: shouldMute,
             shouldCrop: shouldCrop,
             quality: quality,
-            speed: playbackSpeed
+            speed: playbackSpeed,
+            gifOptions: try currentGIFOptions(for: format)
         )
     }
 
@@ -1337,7 +1435,23 @@ public final class LuxelEditorModel {
             shouldMute: shouldMute,
             shouldCrop: shouldCrop,
             quality: quality,
-            speed: playbackSpeed
+            speed: playbackSpeed,
+            gifOptions: try currentGIFOptions(for: format)
+        )
+    }
+
+    private func currentGIFOptions(for format: ExportFormat) throws -> GIFRenderOptions? {
+        guard format == .gif else {
+            return nil
+        }
+
+        let resolvedQuality = quality.isAvailable(for: format)
+            ? quality
+            : ExportQuality.defaultQuality(for: format)
+        return try GIFRenderOptions(
+            quality: resolvedQuality,
+            loopMode: gifLoopMode,
+            dithering: gifDithering
         )
     }
 
@@ -1368,7 +1482,10 @@ private struct EditorDraftState: Equatable, Sendable {
         playbackSpeed: .normal,
         shouldMute: false,
         shouldCrop: true,
-        quality: .balanced
+        quality: .balanced,
+        gifLoopModeKind: .forever,
+        gifLoopCount: 3,
+        gifDithering: .auto
     )
 
     let format: ExportFormat
@@ -1383,6 +1500,9 @@ private struct EditorDraftState: Equatable, Sendable {
     let shouldMute: Bool
     let shouldCrop: Bool
     let quality: ExportQuality
+    let gifLoopModeKind: EditorGIFLoopModeKind
+    let gifLoopCount: Int
+    let gifDithering: GIFDitheringMode
 }
 
 struct ExportEstimateTaskID: Equatable, Hashable {
@@ -1395,6 +1515,9 @@ struct ExportEstimateTaskID: Equatable, Hashable {
     let frameRate: Int
     let playbackSpeed: Double
     let quality: ExportQuality
+    let gifLoopModeKind: EditorGIFLoopModeKind?
+    let gifLoopCount: Int?
+    let gifDithering: GIFDitheringMode?
     let shouldMute: Bool
     let shouldCrop: Bool
 }

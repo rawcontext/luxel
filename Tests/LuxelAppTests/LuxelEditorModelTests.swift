@@ -268,6 +268,29 @@ struct LuxelEditorModelTests {
         #expect(captured?.outputShouldMute == true)
     }
 
+    @Test("refreshing GIF export estimate includes GIF options")
+    func refreshingGIFExportEstimateIncludesGIFOptions() async throws {
+        let estimator = SpyExportSizeEstimator()
+        let model = makeModel(exportSizeEstimator: estimator)
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormat(.gif)
+        model.setQuality(.compact)
+        model.setGIFLoopModeKind(.bounce)
+        model.setGIFDithering(.diffusion)
+        await model.refreshExportEstimate()
+
+        let captured = await estimator.request()
+        let expectedOptions = try GIFRenderOptions(
+            quality: .compact,
+            loopMode: .bounce,
+            dithering: .diffusion
+        )
+
+        #expect(captured?.format == .gif)
+        #expect(captured?.gifOptions == expectedOptions)
+    }
+
     @Test("format changes clamp unavailable quality")
     func formatChangesClampUnavailableQuality() {
         let model = makeModel()
@@ -328,6 +351,11 @@ struct LuxelEditorModelTests {
 
     @Test("export memory seeds controls when opening and changing formats")
     func exportMemorySeedsControlsWhenOpeningAndChangingFormats() async throws {
+        let gifOptions = try GIFRenderOptions(
+            quality: .compact,
+            loopMode: .counted(4),
+            dithering: .ordered
+        )
         let memory: [ExportFormat: ExportMemory] = [
             .mp4: try ExportMemory(
                 sizePreset: .percent50,
@@ -337,7 +365,8 @@ struct LuxelEditorModelTests {
             .gif: try ExportMemory(
                 sizePreset: .percent25,
                 frameRate: FrameRate(12),
-                quality: .compact
+                quality: .compact,
+                gifOptions: gifOptions
             ),
             .apng: try ExportMemory(
                 sizePreset: .percent75,
@@ -362,6 +391,10 @@ struct LuxelEditorModelTests {
         #expect(model.outputHeight == 180)
         #expect(model.frameRate == 12)
         #expect(model.quality == .compact)
+        #expect(model.gifLoopModeKind == .count)
+        #expect(model.gifLoopCount == 4)
+        #expect(model.gifDithering == .ordered)
+        #expect(model.gifLoopMode == .count(4))
 
         model.setFormat(.apng)
 
@@ -478,6 +511,44 @@ struct LuxelEditorModelTests {
         #expect(captured.first?.request.speed == (try PlaybackSpeed(2)))
     }
 
+    @Test("GIF options participate in undo and export requests")
+    func gifOptionsParticipateInUndoAndExportRequests() async throws {
+        let exporter = SpyMediaExporter()
+        let model = makeModel(exporter: exporter)
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormat(.gif)
+        model.setGIFLoopModeKind(.bounce)
+        model.setGIFDithering(.diffusion)
+
+        #expect(model.gifLoopModeKind == .bounce)
+        #expect(model.gifDithering == .diffusion)
+
+        model.undoEditorChange()
+
+        #expect(model.gifLoopModeKind == .bounce)
+        #expect(model.gifDithering == .auto)
+
+        model.redoEditorChange()
+
+        #expect(model.gifLoopModeKind == .bounce)
+        #expect(model.gifDithering == .diffusion)
+
+        model.startExport()
+        while model.isExporting {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let expectedOptions = try GIFRenderOptions(
+            quality: .balanced,
+            loopMode: .bounce,
+            dithering: .diffusion
+        )
+        let captured = await exporter.capturedExports()
+        #expect(captured.first?.request.format == .gif)
+        #expect(captured.first?.request.gifOptions == expectedOptions)
+    }
+
     @Test("trim start changes coalesce into one undo step")
     func trimStartChangesCoalesceIntoOneUndoStep() async throws {
         let model = makeModel()
@@ -528,6 +599,42 @@ struct LuxelEditorModelTests {
         #expect(captured.first?.1 == expectedMemory)
     }
 
+    @Test("successful GIF export emits GIF memory")
+    func successfulGIFExportEmitsGIFMemory() async throws {
+        var captured: [(ExportFormat, ExportMemory)] = []
+        let model = makeModel { format, memory in
+            captured.append((format, memory))
+        }
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormat(.gif)
+        model.setSizePreset(.percent50)
+        model.setFrameRate(12)
+        model.setQuality(.compact)
+        model.setGIFLoopModeKind(.count)
+        model.setGIFLoopCount(6)
+        model.setGIFDithering(.ordered)
+        model.startExport()
+
+        while model.isExporting {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let expectedMemory = try ExportMemory(
+            sizePreset: .percent50,
+            frameRate: FrameRate(12),
+            quality: .compact,
+            gifOptions: GIFRenderOptions(
+                quality: .compact,
+                loopMode: .counted(6),
+                dithering: .ordered
+            )
+        )
+        #expect(captured.count == 1)
+        #expect(captured.first?.0 == .gif)
+        #expect(captured.first?.1 == expectedMemory)
+    }
+
     @Test("batch export runs selected formats and exposes job rows")
     func batchExportRunsSelectedFormatsAndExposesJobRows() async throws {
         let exporter = SpyMediaExporter()
@@ -539,6 +646,8 @@ struct LuxelEditorModelTests {
         await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormatSelection(.hevc, isSelected: true)
         model.setFormatSelection(.gif, isSelected: true)
+        model.setGIFLoopModeKind(.bounce)
+        model.setGIFDithering(.diffusion)
         model.startExport()
 
         while model.isExporting {
@@ -546,8 +655,16 @@ struct LuxelEditorModelTests {
         }
 
         let captured = await exporter.capturedExports()
+        let expectedGIFOptions = try GIFRenderOptions(
+            quality: .balanced,
+            loopMode: .bounce,
+            dithering: .diffusion
+        )
 
         #expect(captured.map(\.request.format) == [.mp4, .hevc, .gif])
+        #expect(captured[0].request.gifOptions == nil)
+        #expect(captured[1].request.gifOptions == nil)
+        #expect(captured[2].request.gifOptions == expectedGIFOptions)
         #expect(captured.map(\.outputFileURL.path) == [
             "/tmp/source Export H264.mp4",
             "/tmp/source Export H265.mp4",
