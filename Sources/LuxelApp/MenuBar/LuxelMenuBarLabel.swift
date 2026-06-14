@@ -10,11 +10,8 @@ struct LuxelMenuBarLabel: View {
 
         Image(systemName: presentation.menuBarSystemImage)
             .frame(width: 18, height: 18)
-            .symbolEffect(
-                .pulse,
-                options: .repeat(.continuous).speed(0.72),
-                isActive: presentation.animatesMenuBarSystemImage
-            )
+            .contentTransition(.symbolEffect(.replace))
+            .animation(.easeInOut(duration: 0.25), value: presentation.menuBarSystemImage)
             .accessibilityLabel(Text(presentation.accessibilityLabel))
             .task {
                 while !Task.isCancelled {
