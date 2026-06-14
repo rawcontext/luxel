@@ -10,18 +10,22 @@ struct JSONRecordingHistoryStoreTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let storeURL = directory.appending(path: "recording-history.json")
-        let fileURL = directory.appending(path: "recording.mp4")
+        let fileURL = directory.appending(path: "Luxel Recording", directoryHint: .isDirectory)
+        let bundleManifest = try BundleManifest(sidecars: [
+            BundleSidecarManifest(kind: .camera, syncOffsetMilliseconds: 33),
+            BundleSidecarManifest(kind: .captions)
+        ])
         let active = ActiveRecording(
             fileURL: fileURL,
             name: "Luxel 2020-07-21 at 11.27.26",
             date: Date(timeIntervalSince1970: 100),
-            options: RecordingOptions(frameRate: 60, showCursor: true, highlightClicks: true)
+            options: RecordingOptions(frameRate: 60, showCursor: true, highlightClicks: true),
+            bundleManifest: bundleManifest
         )
         let past = PastRecording(
             fileURL: fileURL,
             name: "Finished",
             date: Date(timeIntervalSince1970: 200),
-            kind: .screenshot,
             exports: [
                 RecordingExport(
                     fileURL: directory.appending(path: "recording Quick GIF.gif"),
@@ -30,7 +34,8 @@ struct JSONRecordingHistoryStoreTests {
                     date: Date(timeIntervalSince1970: 300),
                     presetName: "Quick GIF"
                 )
-            ]
+            ],
+            bundleManifest: bundleManifest
         )
 
         let writer = try JSONRecordingHistoryStore(fileURL: storeURL)

@@ -45,6 +45,43 @@ struct RecordingHistoryTests {
         #expect(store.recordings == [recording, screenshot])
     }
 
+    @Test("getPastRecordings keeps bundle root when primary media exists")
+    func getPastRecordingsKeepsBundleRootWhenPrimaryMediaExists() throws {
+        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
+        let manifest = try BundleManifest(sidecars: [
+            BundleSidecarManifest(kind: .camera),
+            BundleSidecarManifest(kind: .cursor)
+        ])
+        let recording = PastRecording(
+            fileURL: rootURL,
+            name: "Bundled",
+            date: Date(timeIntervalSince1970: 2),
+            bundleManifest: manifest
+        )
+        let service = makeService(
+            store: InMemoryRecordingHistoryStore(recordings: [recording]),
+            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov")]
+        )
+
+        #expect(service.getPastRecordings() == [recording])
+    }
+
+    @Test("getPastRecordings prunes bundle roots with missing primary media")
+    func getPastRecordingsPrunesBundleRootsWithMissingPrimaryMedia() throws {
+        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
+        let recording = PastRecording(
+            fileURL: rootURL,
+            name: "Bundled",
+            date: Date(timeIntervalSince1970: 2),
+            bundleManifest: try BundleManifest()
+        )
+        let store = InMemoryRecordingHistoryStore(recordings: [recording])
+        let service = makeService(store: store, existingFiles: [rootURL])
+
+        #expect(service.getPastRecordings().isEmpty)
+        #expect(store.recordings.isEmpty)
+    }
+
     @Test("recoverActiveRecording returns none with no active recording")
     func recoverActiveRecordingWithNoActiveRecording() async {
         let store = InMemoryRecordingHistoryStore()
@@ -76,6 +113,43 @@ struct RecordingHistoryTests {
             date: date,
             options: activeRecording.options
         )
+        #expect(result == .playable(expected))
+        #expect(store.activeRecording == nil)
+        #expect(store.recordings == [expected])
+    }
+
+    @Test("recoverActiveRecording probes bundled primary media and stores root")
+    func recoverActiveRecordingProbesBundledPrimaryMediaAndStoresRoot() async throws {
+        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
+        let manifest = try BundleManifest(sidecars: [
+            BundleSidecarManifest(kind: .camera, syncOffsetMilliseconds: 12)
+        ])
+        let date = Date(timeIntervalSince1970: 100)
+        let activeRecording = ActiveRecording(
+            fileURL: rootURL,
+            name: "Bundled",
+            date: date,
+            options: RecordingOptions(frameRate: 30),
+            bundleManifest: manifest
+        )
+        let probe = SpyMediaProbe(result: .playable)
+        let store = InMemoryRecordingHistoryStore(activeRecording: activeRecording)
+        let service = makeService(
+            store: store,
+            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov")],
+            mediaProbe: probe
+        )
+
+        let result = await service.recoverActiveRecording()
+
+        let expected = PastRecording(
+            fileURL: rootURL,
+            name: "Bundled",
+            date: date,
+            options: activeRecording.options,
+            bundleManifest: manifest
+        )
+        #expect(probe.inspectedURLs == [rootURL.appendingPathComponent("screen.mov")])
         #expect(result == .playable(expected))
         #expect(store.activeRecording == nil)
         #expect(store.recordings == [expected])
@@ -367,6 +441,7 @@ struct RecordingHistoryTests {
         existingFiles: Set<URL> = [],
         now: Date = Date(timeIntervalSince1970: 0),
         probeResult: MediaProbeResult = .playable,
+        mediaProbe: (any MediaProbe)? = nil,
         diagnosticClient: any RecordingDiagnosticClient = NoopRecordingDiagnosticClient(),
         calendar: Calendar = .current
     ) -> RecordingHistoryService {
@@ -375,6 +450,7 @@ struct RecordingHistoryTests {
             fileSystem: FakeFileSystem(existingFiles: existingFiles),
             now: now,
             probeResult: probeResult,
+            mediaProbe: mediaProbe,
             diagnosticClient: diagnosticClient,
             calendar: calendar
         )
@@ -385,6 +461,7 @@ struct RecordingHistoryTests {
         fileSystem: FakeFileSystem,
         now: Date = Date(timeIntervalSince1970: 0),
         probeResult: MediaProbeResult = .playable,
+        mediaProbe: (any MediaProbe)? = nil,
         diagnosticClient: any RecordingDiagnosticClient = NoopRecordingDiagnosticClient(),
         calendar: Calendar = .current
     ) -> RecordingHistoryService {
@@ -392,7 +469,7 @@ struct RecordingHistoryTests {
             store: store,
             fileSystem: fileSystem,
             dateProvider: FixedDateProvider(now: now),
-            mediaProbe: StaticMediaProbe(result: probeResult),
+            mediaProbe: mediaProbe ?? StaticMediaProbe(result: probeResult),
             diagnosticClient: diagnosticClient,
             calendar: calendar
         )
@@ -464,5 +541,28 @@ private final class SpyRecordingDiagnosticClient: RecordingDiagnosticClient, @un
         lock.withLock {
             capturedDiagnostics.append(diagnostic)
         }
+    }
+}
+
+private final class SpyMediaProbe: MediaProbe, @unchecked Sendable {
+    private let lock = NSLock()
+    private let result: MediaProbeResult
+    private var capturedURLs: [URL] = []
+
+    init(result: MediaProbeResult) {
+        self.result = result
+    }
+
+    var inspectedURLs: [URL] {
+        lock.withLock {
+            capturedURLs
+        }
+    }
+
+    func inspectRecording(at url: URL) async -> MediaProbeResult {
+        lock.withLock {
+            capturedURLs.append(url)
+        }
+        return result
     }
 }

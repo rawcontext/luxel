@@ -29,7 +29,7 @@ public final class RecordingHistoryService: Sendable {
 
     public func getPastRecordings(matching filter: RecordingHistoryFilter = .all) -> [PastRecording] {
         let validRecordings = store.recordings.compactMap { recording -> PastRecording? in
-            guard fileSystem.fileExists(at: recording.fileURL) else {
+            guard recordingExists(recording) else {
                 return nil
             }
 
@@ -46,7 +46,7 @@ public final class RecordingHistoryService: Sendable {
     @discardableResult
     public func addRecording(_ recording: PastRecording) -> [PastRecording] {
         let recordings = [recording] + store.recordings
-        let validRecordings = recordings.filter { fileSystem.fileExists(at: $0.fileURL) }
+        let validRecordings = recordings.filter(recordingExists)
         store.recordings = validRecordings
         return validRecordings
     }
@@ -96,7 +96,8 @@ public final class RecordingHistoryService: Sendable {
     public func setCurrentRecording(
         fileURL: URL,
         name: String? = nil,
-        options: RecordingOptions
+        options: RecordingOptions,
+        bundleManifest: BundleManifest? = nil
     ) -> ActiveRecording {
         let now = dateProvider.now()
         let recordingName = name ?? RecordingName.timestamped(now: now, calendar: calendar).value
@@ -104,7 +105,8 @@ public final class RecordingHistoryService: Sendable {
             fileURL: fileURL,
             name: recordingName,
             date: now,
-            options: options
+            options: options,
+            bundleManifest: bundleManifest
         )
         store.activeRecording = recording
         return recording
@@ -120,7 +122,8 @@ public final class RecordingHistoryService: Sendable {
             fileURL: activeRecording.fileURL,
             name: recordingName ?? activeRecording.name,
             date: dateProvider.now(),
-            options: activeRecording.options
+            options: activeRecording.options,
+            bundleManifest: activeRecording.bundleManifest
         )
         addRecording(recording)
         store.activeRecording = nil
@@ -162,25 +165,38 @@ public final class RecordingHistoryService: Sendable {
         }
 
         let result: RecordingRecoveryResult
-        switch await mediaProbe.inspectRecording(at: activeRecording.fileURL) {
+        let mediaURL = activeRecording.primaryMediaURL
+        switch await mediaProbe.inspectRecording(at: mediaURL) {
         case .playable:
             addRecording(activeRecording.pastRecording)
             result = .playable(activeRecording.pastRecording)
         case let .corrupt(reason):
             switch corruptRecordingClassifier.recoveryKind(for: reason) {
             case .knownRepairable:
-                result = .knownCorrupt(fileURL: activeRecording.fileURL, reason: reason)
+                result = .knownCorrupt(fileURL: mediaURL, reason: reason)
             case .unknown:
                 diagnosticClient.recordCorruptRecording(CorruptRecordingDiagnostic(
-                    fileURL: activeRecording.fileURL,
+                    fileURL: mediaURL,
                     reason: reason,
                     recordedAt: dateProvider.now()
                 ))
-                result = .unknownCorrupt(fileURL: activeRecording.fileURL, reason: reason)
+                result = .unknownCorrupt(fileURL: mediaURL, reason: reason)
             }
         }
 
         store.activeRecording = nil
         return result
+    }
+
+    private func recordingExists(_ recording: PastRecording) -> Bool {
+        guard fileSystem.fileExists(at: recording.fileURL) else {
+            return false
+        }
+
+        if let bundle = recording.bundle {
+            return fileSystem.fileExists(at: bundle.primaryURL)
+        }
+
+        return true
     }
 }

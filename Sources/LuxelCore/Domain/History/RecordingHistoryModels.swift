@@ -29,6 +29,7 @@ public struct PastRecording: Codable, Equatable, Sendable {
     public let kind: HistoryEntryKind
     public let options: RecordingOptions
     public let exports: [RecordingExport]
+    public let bundleManifest: BundleManifest?
 
     public init(
         fileURL: URL,
@@ -36,7 +37,8 @@ public struct PastRecording: Codable, Equatable, Sendable {
         date: Date,
         kind: HistoryEntryKind = .recording,
         options: RecordingOptions = RecordingOptions(frameRate: 0),
-        exports: [RecordingExport] = []
+        exports: [RecordingExport] = [],
+        bundleManifest: BundleManifest? = nil
     ) {
         self.fileURL = fileURL
         self.name = name
@@ -44,10 +46,23 @@ public struct PastRecording: Codable, Equatable, Sendable {
         self.kind = kind
         self.options = options
         self.exports = exports
+        self.bundleManifest = bundleManifest
     }
 
     public var latestExport: RecordingExport? {
         exports.first
+    }
+
+    public var bundle: RecordingBundle? {
+        guard let bundleManifest else {
+            return nil
+        }
+
+        return RecordingBundle(rootURL: fileURL, manifest: bundleManifest)
+    }
+
+    public var primaryMediaURL: URL {
+        bundle?.primaryURL ?? fileURL
     }
 
     public func addingExport(_ export: RecordingExport) -> PastRecording {
@@ -57,7 +72,8 @@ public struct PastRecording: Codable, Equatable, Sendable {
             date: date,
             kind: kind,
             options: options,
-            exports: [export] + exports
+            exports: [export] + exports,
+            bundleManifest: bundleManifest
         )
     }
 
@@ -68,7 +84,8 @@ public struct PastRecording: Codable, Equatable, Sendable {
             date: date,
             kind: kind,
             options: options,
-            exports: exports.filter(isIncluded)
+            exports: exports.filter(isIncluded),
+            bundleManifest: bundleManifest
         )
     }
 
@@ -79,6 +96,7 @@ public struct PastRecording: Codable, Equatable, Sendable {
         case kind
         case options
         case exports
+        case bundleManifest
     }
 
     public init(from decoder: any Decoder) throws {
@@ -93,6 +111,7 @@ public struct PastRecording: Codable, Equatable, Sendable {
             ?? RecordingOptions(frameRate: 0)
         exports = try container.decodeIfPresent([RecordingExport].self, forKey: .exports)
             ?? []
+        bundleManifest = try container.decodeIfPresent(BundleManifest.self, forKey: .bundleManifest)
     }
 }
 
@@ -123,16 +142,42 @@ public struct ActiveRecording: Codable, Equatable, Sendable {
     public let name: String
     public let date: Date
     public let options: RecordingOptions
+    public let bundleManifest: BundleManifest?
 
-    public init(fileURL: URL, name: String, date: Date, options: RecordingOptions) {
+    public init(
+        fileURL: URL,
+        name: String,
+        date: Date,
+        options: RecordingOptions,
+        bundleManifest: BundleManifest? = nil
+    ) {
         self.fileURL = fileURL
         self.name = name
         self.date = date
         self.options = options
+        self.bundleManifest = bundleManifest
+    }
+
+    public var bundle: RecordingBundle? {
+        guard let bundleManifest else {
+            return nil
+        }
+
+        return RecordingBundle(rootURL: fileURL, manifest: bundleManifest)
+    }
+
+    public var primaryMediaURL: URL {
+        bundle?.primaryURL ?? fileURL
     }
 
     public var pastRecording: PastRecording {
-        PastRecording(fileURL: fileURL, name: name, date: date, options: options)
+        PastRecording(
+            fileURL: fileURL,
+            name: name,
+            date: date,
+            options: options,
+            bundleManifest: bundleManifest
+        )
     }
 }
 
