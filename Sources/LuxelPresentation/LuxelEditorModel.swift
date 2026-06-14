@@ -326,13 +326,26 @@ public final class LuxelEditorModel {
         return nil
     }
 
+    var usesAlphaPreviewBackground: Bool {
+        source?.hasAlpha == true
+    }
+
     var sourceSummary: String {
         guard let source else {
             return "No recording loaded"
         }
 
-        let audio = source.hasAudio ? "audio" : "no audio"
-        return "\(source.fileURL.lastPathComponent) | \(formatTime(source.duration)) | \(source.pixelSize.width)x\(source.pixelSize.height) | \(audio)"
+        var parts = [
+            source.fileURL.lastPathComponent,
+            formatTime(source.duration),
+            "\(source.pixelSize.width)x\(source.pixelSize.height)",
+            source.hasAudio ? "audio" : "no audio"
+        ]
+        if source.hasAlpha {
+            parts.append("alpha")
+        }
+
+        return parts.joined(separator: " | ")
     }
 
     var outputDirectorySummary: String {

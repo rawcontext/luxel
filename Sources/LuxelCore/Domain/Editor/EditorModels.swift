@@ -6,13 +6,15 @@ public struct SourceMedia: Codable, Equatable, Sendable {
     public let pixelSize: PixelSize
     public let nominalFrameRate: FrameRate
     public let hasAudio: Bool
+    public let hasAlpha: Bool
 
     public init(
         fileURL: URL,
         duration: TimeInterval,
         pixelSize: PixelSize,
         nominalFrameRate: FrameRate,
-        hasAudio: Bool
+        hasAudio: Bool,
+        hasAlpha: Bool = false
     ) throws {
         guard duration > 0 else {
             throw EditorModelError.invalidDuration
@@ -23,6 +25,29 @@ public struct SourceMedia: Codable, Equatable, Sendable {
         self.pixelSize = pixelSize
         self.nominalFrameRate = nominalFrameRate
         self.hasAudio = hasAudio
+        self.hasAlpha = hasAlpha
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case fileURL
+        case duration
+        case pixelSize
+        case nominalFrameRate
+        case hasAudio
+        case hasAlpha
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        try self.init(
+            fileURL: container.decode(URL.self, forKey: .fileURL),
+            duration: container.decode(TimeInterval.self, forKey: .duration),
+            pixelSize: container.decode(PixelSize.self, forKey: .pixelSize),
+            nominalFrameRate: container.decode(FrameRate.self, forKey: .nominalFrameRate),
+            hasAudio: container.decode(Bool.self, forKey: .hasAudio),
+            hasAlpha: container.decodeIfPresent(Bool.self, forKey: .hasAlpha) ?? false
+        )
     }
 }
 

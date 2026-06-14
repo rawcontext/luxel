@@ -40,6 +40,26 @@ struct LuxelEditorModelTests {
         #expect(model.status == .ready)
     }
 
+    @Test("opening an alpha source uses alpha preview background")
+    func openingAlphaSourceUsesAlphaPreviewBackground() async throws {
+        let model = makeModel(metadataReader: StubMetadataReader(hasAlpha: true))
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/alpha.mov"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(model.usesAlphaPreviewBackground)
+        #expect(model.sourceSummary.contains("alpha"))
+    }
+
+    @Test("opening an opaque source keeps standard preview background")
+    func openingOpaqueSourceKeepsStandardPreviewBackground() async throws {
+        let model = makeModel(metadataReader: StubMetadataReader(hasAlpha: false))
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/opaque.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(!model.usesAlphaPreviewBackground)
+        #expect(!model.sourceSummary.contains("alpha"))
+    }
+
     @Test("opening a new recording resets editor undo history")
     func openingNewRecordingResetsEditorUndoHistory() async throws {
         let model = makeModel()
@@ -542,6 +562,7 @@ struct LuxelEditorModelTests {
     }
 
     private func makeModel(
+        metadataReader: any MediaMetadataReader = StubMetadataReader(),
         exporter: any MediaExporter = StubMediaExporter(),
         exportSizeEstimator: any ExportSizeEstimator = StubExportSizeEstimator(),
         fileSystem: any FileSystem = StubFileSystem(),
@@ -553,7 +574,7 @@ struct LuxelEditorModelTests {
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
     ) -> LuxelEditorModel {
         LuxelEditorModel(
-            metadataReader: StubMetadataReader(),
+            metadataReader: metadataReader,
             exportService: ExportService(
                 exporter: exporter,
                 fileSystem: fileSystem
@@ -603,13 +624,20 @@ private enum StubError: Error {
 }
 
 private struct StubMetadataReader: MediaMetadataReader {
+    let hasAlpha: Bool
+
+    init(hasAlpha: Bool = false) {
+        self.hasAlpha = hasAlpha
+    }
+
     func readSourceMedia(at fileURL: URL) async throws -> SourceMedia {
         try SourceMedia(
             fileURL: fileURL,
             duration: 12,
             pixelSize: PixelSize(width: 1280, height: 720),
             nominalFrameRate: FrameRate(30),
-            hasAudio: true
+            hasAudio: true,
+            hasAlpha: hasAlpha
         )
     }
 }

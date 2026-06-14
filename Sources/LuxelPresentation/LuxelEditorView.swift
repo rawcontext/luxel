@@ -208,12 +208,19 @@ public struct LuxelEditorView: View {
 
     private var preview: some View {
         ZStack {
-            Rectangle()
-                .fill(.black)
+            if model.usesAlphaPreviewBackground {
+                CheckerboardBackground()
+            } else {
+                Rectangle()
+                    .fill(.black)
+            }
 
             if model.hasSource {
-                LuxelPlayerView(player: model.player)
-                    .background(.black)
+                LuxelPlayerView(
+                    player: model.player,
+                    usesAlphaBackground: model.usesAlphaPreviewBackground
+                )
+                .background(model.usesAlphaPreviewBackground ? .clear : .black)
             } else {
                 ContentUnavailableView("No Recording", systemImage: "film")
                     .foregroundStyle(.secondary)
@@ -731,12 +738,14 @@ private final class WindowReaderView: NSView {
 
 private struct LuxelPlayerView: NSViewRepresentable {
     let player: AVPlayer
+    let usesAlphaBackground: Bool
 
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
         view.controlsStyle = .floating
         view.videoGravity = .resizeAspect
         view.player = player
+        updateBackground(for: view)
         return view
     }
 
@@ -744,6 +753,39 @@ private struct LuxelPlayerView: NSViewRepresentable {
         if nsView.player !== player {
             nsView.player = player
         }
+
+        updateBackground(for: nsView)
+    }
+
+    private func updateBackground(for view: AVPlayerView) {
+        view.wantsLayer = true
+        view.layer?.backgroundColor = usesAlphaBackground
+            ? NSColor.clear.cgColor
+            : NSColor.black.cgColor
+    }
+}
+
+private struct CheckerboardBackground: View {
+    private let squareSize: CGFloat = 18
+
+    var body: some View {
+        Canvas { context, size in
+            let columns = Int((size.width / squareSize).rounded(.up))
+            let rows = Int((size.height / squareSize).rounded(.up))
+
+            for row in 0...rows {
+                for column in 0...columns where (row + column).isMultiple(of: 2) {
+                    let rect = CGRect(
+                        x: CGFloat(column) * squareSize,
+                        y: CGFloat(row) * squareSize,
+                        width: squareSize,
+                        height: squareSize
+                    )
+                    context.fill(Path(rect), with: .color(.white.opacity(0.16)))
+                }
+            }
+        }
+        .background(Color.black)
     }
 }
 

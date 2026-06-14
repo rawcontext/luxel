@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreMedia
 import Foundation
 
 public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, Sendable {
@@ -32,13 +33,15 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
         }
 
         let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+        let hasAlpha = try await hasAlphaChannel(in: videoTrack)
 
         return try SourceMedia(
             fileURL: fileURL,
             duration: durationSeconds,
             pixelSize: PixelSize(width: width, height: height),
             nominalFrameRate: FrameRate(roundedFrameRate),
-            hasAudio: !audioTracks.isEmpty
+            hasAudio: !audioTracks.isEmpty,
+            hasAlpha: hasAlpha
         )
     }
 
@@ -72,6 +75,25 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
         }
 
         return durationSeconds
+    }
+
+    private func hasAlphaChannel(in videoTrack: AVAssetTrack) async throws -> Bool {
+        let formatDescriptions = try await videoTrack.load(.formatDescriptions)
+
+        return formatDescriptions.contains { description in
+            Self.mediaSubTypeSupportsAlpha(CMFormatDescriptionGetMediaSubType(description))
+        }
+    }
+
+    static func mediaSubTypeSupportsAlpha(_ mediaSubType: CMVideoCodecType) -> Bool {
+        switch mediaSubType {
+        case kCMVideoCodecType_HEVCWithAlpha,
+             kCMVideoCodecType_AppleProRes4444,
+             kCMVideoCodecType_AppleProRes4444XQ:
+            true
+        default:
+            false
+        }
     }
 }
 

@@ -76,6 +76,39 @@ struct EditorModelTests {
         #expect(try draft.exportRequest.speed == .normal)
     }
 
+    @Test("source media decodes missing alpha as false")
+    func sourceMediaDecodesMissingAlphaAsFalse() throws {
+        let data = Data("""
+        {
+          "fileURL": "file:///tmp/source.mp4",
+          "duration": 12.5,
+          "pixelSize": {
+            "width": 1280,
+            "height": 720
+          },
+          "nominalFrameRate": {
+            "framesPerSecond": 30
+          },
+          "hasAudio": true
+        }
+        """.utf8)
+
+        let source = try JSONDecoder().decode(SourceMedia.self, from: data)
+
+        #expect(!source.hasAlpha)
+    }
+
+    @Test("source media preserves explicit alpha flag")
+    func sourceMediaPreservesExplicitAlphaFlag() throws {
+        let source = try makeSource(hasAlpha: true)
+
+        let data = try JSONEncoder().encode(source)
+        let decoded = try JSONDecoder().decode(SourceMedia.self, from: data)
+
+        #expect(decoded.hasAlpha)
+        #expect(decoded == source)
+    }
+
     @Test("source media without audio mutes export request")
     func sourceMediaWithoutAudioMutesExportRequest() throws {
         let draft = try EditorExportDraft(source: makeSource(hasAudio: false))
@@ -113,13 +146,14 @@ struct EditorModelTests {
         #expect(loop.seekTarget(for: 5.1) == 2)
     }
 
-    private func makeSource(hasAudio: Bool = true) throws -> SourceMedia {
+    private func makeSource(hasAudio: Bool = true, hasAlpha: Bool = false) throws -> SourceMedia {
         try SourceMedia(
             fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
             duration: 12.5,
             pixelSize: PixelSize(width: 1280, height: 720),
             nominalFrameRate: FrameRate(30),
-            hasAudio: hasAudio
+            hasAudio: hasAudio,
+            hasAlpha: hasAlpha
         )
     }
 }

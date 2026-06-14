@@ -1,6 +1,7 @@
 import Foundation
 import AVFAudio
-import LuxelCore
+import CoreMedia
+@testable import LuxelCore
 import Testing
 
 @Suite("AVFoundation media metadata reader")
@@ -19,6 +20,7 @@ struct AVFoundationMediaMetadataReaderTests {
         #expect(source.pixelSize == expectedPixelSize)
         #expect(source.nominalFrameRate == expectedFrameRate)
         #expect(!source.hasAudio)
+        #expect(!source.hasAlpha)
     }
 
     @Test("reader detects audio tracks")
@@ -28,6 +30,16 @@ struct AVFoundationMediaMetadataReaderTests {
         let source = try await reader.readSourceMedia(at: fixtureURL("input@2x.mp4"))
 
         #expect(source.hasAudio)
+        #expect(!source.hasAlpha)
+    }
+
+    @Test("reader classifies alpha-capable video media subtypes")
+    func readerClassifiesAlphaCapableVideoMediaSubtypes() {
+        #expect(AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_HEVCWithAlpha))
+        #expect(AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_AppleProRes4444))
+        #expect(AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_AppleProRes4444XQ))
+        #expect(!AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_H264))
+        #expect(!AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_HEVC))
     }
 
     @Test("probe treats readable incomplete recording as playable")
