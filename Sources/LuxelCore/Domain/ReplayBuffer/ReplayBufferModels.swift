@@ -42,7 +42,7 @@ public enum ReplayBufferState: Equatable, Sendable {
     case clipping
 }
 
-public enum ReplayBufferPauseReason: String, Codable, Equatable, Sendable {
+public enum ReplayBufferPauseReason: String, Codable, Equatable, Hashable, Sendable {
     case user
     case recordingActive
     case displaySleep
