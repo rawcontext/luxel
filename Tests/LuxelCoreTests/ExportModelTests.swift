@@ -116,6 +116,7 @@ struct ExportModelTests {
     @Test("v1 apple-native formats exclude deferred native codec formats")
     func v1AppleNativeFormatsExcludeDeferredNativeCodecFormats() {
         #expect(ExportFormat.appleNativeV1Formats == [.mp4, .hevc, .gif, .apng])
+        #expect(ExportFormat.externalNativeCodecFormats == [.webm, .av1])
 
         for format in ExportFormat.appleNativeV1Formats {
             #expect(format.isAppleNativeV1Format)

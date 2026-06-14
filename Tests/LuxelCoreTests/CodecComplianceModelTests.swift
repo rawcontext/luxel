@@ -3,6 +3,31 @@ import Testing
 
 @Suite("Codec compliance models")
 struct CodecComplianceModelTests {
+    @Test("codec availability defaults to Apple-native export formats")
+    func codecAvailabilityDefaultsToAppleNativeExportFormats() {
+        #expect(CodecAvailability.none.registeredExternalFormats.isEmpty)
+        #expect(CodecAvailability.none.availableExportFormats == [.mp4, .hevc, .gif, .apng])
+        #expect(CodecAvailability.none.supports(.mp4))
+        #expect(!CodecAvailability.none.supports(.webm))
+        #expect(!CodecAvailability.none.supports(.av1))
+    }
+
+    @Test("codec availability appends registered external formats in menu order")
+    func codecAvailabilityAppendsRegisteredExternalFormatsInMenuOrder() throws {
+        let availability = try CodecAvailability(registeredExternalFormats: [.av1, .webm])
+
+        #expect(availability.availableExportFormats == [.mp4, .hevc, .gif, .apng, .webm, .av1])
+        #expect(availability.supports(.webm))
+        #expect(availability.supports(.av1))
+    }
+
+    @Test("codec availability rejects Apple-native formats as external registrations")
+    func codecAvailabilityRejectsAppleNativeFormatsAsExternalRegistrations() {
+        #expect(throws: CodecAvailabilityError.unsupportedExternalFormat(.mp4)) {
+            _ = try CodecAvailability(registeredExternalFormats: [.mp4, .webm])
+        }
+    }
+
     @Test("planned native codec stack is Mac App Store allowlist clean")
     func plannedNativeCodecStackIsAllowlistClean() {
         let policy = CodecLicensePolicy()

@@ -305,6 +305,27 @@ struct LuxelEditorModelTests {
         #expect(model.format == .mp4)
     }
 
+    @Test("codec availability gates editor formats")
+    func codecAvailabilityGatesEditorFormats() async throws {
+        let defaultModel = makeModel()
+
+        #expect(defaultModel.supportedFormats == [.mp4, .hevc, .gif, .apng])
+        defaultModel.setFormat(.webm)
+        #expect(defaultModel.format == .mp4)
+        #expect(defaultModel.selectedFormats == [.mp4])
+        defaultModel.setFormatSelection(.webm, isSelected: true)
+        #expect(defaultModel.selectedFormats == [.mp4])
+
+        let codecModel = makeModel(
+            codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm])
+        )
+
+        #expect(codecModel.supportedFormats == [.mp4, .hevc, .gif, .apng, .webm])
+        codecModel.setFormatSelection(.webm, isSelected: true)
+        #expect(codecModel.format == .webm)
+        #expect(codecModel.selectedFormats == [.mp4, .webm])
+    }
+
     @Test("export memory seeds controls when opening and changing formats")
     func exportMemorySeedsControlsWhenOpeningAndChangingFormats() async throws {
         let memory: [ExportFormat: ExportMemory] = [
@@ -570,6 +591,7 @@ struct LuxelEditorModelTests {
         frameGrabber: any FrameGrabber = StubFrameGrabber(),
         screenshotFileWriter: SpyScreenshotFileWriter = SpyScreenshotFileWriter(),
         screenshotDestinationClient: SpyScreenshotDestinationClient = SpyScreenshotDestinationClient(),
+        codecAvailability: CodecAvailability = .none,
         exportMemory: [ExportFormat: ExportMemory] = [:],
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
     ) -> LuxelEditorModel {
@@ -595,6 +617,7 @@ struct LuxelEditorModelTests {
                 destinationClient: screenshotDestinationClient
             ),
             fileSystem: fileSystem,
+            codecAvailability: codecAvailability,
             exportMemory: exportMemory,
             onExportMemoryChange: onExportMemoryChange
         )

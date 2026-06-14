@@ -9,6 +9,7 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
     case av1
 
     public static let appleNativeV1Formats: [ExportFormat] = [.mp4, .hevc, .gif, .apng]
+    public static let externalNativeCodecFormats: [ExportFormat] = [.webm, .av1]
 
     public var isAppleNativeV1Format: Bool {
         Self.appleNativeV1Formats.contains(self)

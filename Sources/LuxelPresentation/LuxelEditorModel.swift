@@ -28,7 +28,6 @@ public final class LuxelEditorModel {
         case failed(String)
     }
 
-    static let supportedFormats = ExportFormat.appleNativeV1Formats
     static let sizePresets = EditorSizePreset.allCases
     static let playbackSpeedDetents: [Double] = [0.25, 0.5, 1, 1.5, 2, 3, 4]
 
@@ -47,6 +46,7 @@ public final class LuxelEditorModel {
     var shouldCrop = true
     var quality: ExportQuality = .balanced
     var outputDirectory = LuxelEditorModel.defaultRecordingsDirectory
+    let supportedFormats: [ExportFormat]
     var exportProgress: ExportProgressSnapshot?
     var exportJobs: [ExportJobSnapshot] = []
     var exportEstimate: ExportEstimate?
@@ -92,6 +92,7 @@ public final class LuxelEditorModel {
             destinationClient: AppKitScreenshotDestinationClient()
         ),
         fileSystem: any FileSystem = LocalFileSystem(),
+        codecAvailability: CodecAvailability = .none,
         exportMemory: [ExportFormat: ExportMemory] = [:],
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
     ) {
@@ -102,6 +103,7 @@ public final class LuxelEditorModel {
         self.fileWorkflowService = fileWorkflowService
         self.frameGrabService = frameGrabService
         self.fileSystem = fileSystem
+        self.supportedFormats = codecAvailability.availableExportFormats
         self.exportMemoryByFormat = exportMemory
         self.onExportMemoryChange = onExportMemoryChange
         player.actionAtItemEnd = .none
@@ -463,6 +465,10 @@ public final class LuxelEditorModel {
     }
 
     func setFormat(_ nextFormat: ExportFormat) {
+        guard supportedFormats.contains(nextFormat) else {
+            return
+        }
+
         format = nextFormat
         selectedFormats = [nextFormat]
         applyExportMemory(for: nextFormat)
@@ -476,10 +482,14 @@ public final class LuxelEditorModel {
     }
 
     func setFormatSelection(_ nextFormat: ExportFormat, isSelected: Bool) {
+        guard supportedFormats.contains(nextFormat) else {
+            return
+        }
+
         if isSelected {
             if !selectedFormats.contains(nextFormat) {
                 selectedFormats.append(nextFormat)
-                selectedFormats = Self.supportedFormats.filter(selectedFormats.contains)
+                selectedFormats = supportedFormats.filter(selectedFormats.contains)
             }
             format = nextFormat
             applyExportMemory(for: nextFormat)
@@ -1261,8 +1271,15 @@ public final class LuxelEditorModel {
     }
 
     private func applyEditorDraftState(_ state: EditorDraftState) {
-        format = state.format
-        selectedFormats = state.selectedFormats.isEmpty ? [state.format] : state.selectedFormats
+        let fallbackFormat = supportedFormats.first ?? .mp4
+        let restoredFormat = supportedFormats.contains(state.format) ? state.format : fallbackFormat
+        let restoredFormats = supportedFormats.filter(state.selectedFormats.contains)
+
+        format = restoredFormat
+        selectedFormats = restoredFormats.isEmpty ? [restoredFormat] : restoredFormats
+        if !selectedFormats.contains(format) {
+            format = selectedFormats.first ?? fallbackFormat
+        }
         trimStart = state.trimStart
         trimEnd = state.trimEnd
         sizePreset = state.sizePreset

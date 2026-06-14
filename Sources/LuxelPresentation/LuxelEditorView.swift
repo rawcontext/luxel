@@ -278,7 +278,7 @@ public struct LuxelEditorView: View {
                 SectionLabel("Export")
 
                 Menu {
-                    ForEach(LuxelEditorModel.supportedFormats, id: \.self) { format in
+                    ForEach(model.supportedFormats, id: \.self) { format in
                         Toggle(isOn: formatSelectionBinding(format)) {
                             Text(format.prettyName)
                         }
