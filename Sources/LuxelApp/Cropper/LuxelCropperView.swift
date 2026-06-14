@@ -32,6 +32,8 @@ struct LuxelCropperView: View {
                     selectionOverlay(rect: rect, viewSize: geometry.size)
                 }
 
+                snapGuidesOverlay(viewSize: geometry.size)
+
                 VStack {
                     if showsNotificationReminder, model.mode == .video {
                         notificationReminderPanel
@@ -50,7 +52,8 @@ struct LuxelCropperView: View {
                         model.updateSelection(
                             start: value.startLocation,
                             current: value.location,
-                            viewSize: geometry.size
+                            viewSize: geometry.size,
+                            isSnappingDisabled: NSEvent.modifierFlags.contains(.command)
                         )
                     }
                     .onEnded { _ in
@@ -392,6 +395,38 @@ struct LuxelCropperView: View {
             ForEach(CaptureResizeHandle.allCases, id: \.self) { handle in
                 resizeHandle(handle, rect: rect, viewSize: viewSize)
             }
+        }
+    }
+
+    private func snapGuidesOverlay(viewSize: CGSize) -> some View {
+        ZStack {
+            ForEach(Array(model.snapGuides.enumerated()), id: \.offset) { _, guide in
+                snapGuideLine(guide, viewSize: viewSize)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private func snapGuideLine(_ guide: CaptureSnapGuide, viewSize: CGSize) -> some View {
+        switch guide.axis {
+        case .vertical:
+            Rectangle()
+                .fill(.blue.opacity(0.86))
+                .frame(width: 1, height: viewSize.height)
+                .position(
+                    x: CGFloat(guide.position) / CGFloat(model.display.width) * viewSize.width,
+                    y: viewSize.height / 2
+                )
+
+        case .horizontal:
+            Rectangle()
+                .fill(.blue.opacity(0.86))
+                .frame(width: viewSize.width, height: 1)
+                .position(
+                    x: viewSize.width / 2,
+                    y: CGFloat(guide.position) / CGFloat(model.display.height) * viewSize.height
+                )
         }
     }
 

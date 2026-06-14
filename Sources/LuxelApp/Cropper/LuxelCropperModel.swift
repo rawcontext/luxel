@@ -95,6 +95,7 @@ final class LuxelCropperModel {
     var customAspectRatio: CaptureAspectRatio?
     var customAspectRatioWidthText = "3"
     var customAspectRatioHeightText = "2"
+    var snapGuides: [CaptureSnapGuide] = []
     var countdownDuration: TimeInterval?
     var stopAfterDuration: TimeInterval?
     var customStopAfterText: String
@@ -230,26 +231,40 @@ final class LuxelCropperModel {
         }
     }
 
-    func updateSelection(start: CGPoint, current: CGPoint, viewSize: CGSize) {
+    func updateSelection(
+        start: CGPoint,
+        current: CGPoint,
+        viewSize: CGSize,
+        isSnappingDisabled: Bool = false
+    ) {
         guard resizeStartSelection == nil else {
             return
         }
 
         do {
-            selection = try CaptureSelectionBuilder.selection(
+            let candidate = try CaptureSelectionBuilder.selection(
                 from: capturePoint(from: start, viewSize: viewSize),
                 to: capturePoint(from: current, viewSize: viewSize),
                 in: display,
                 aspectRatio: activeAspectRatio
             )
+            let snapResult = try SnapResolver.resolve(
+                candidate: candidate,
+                screenFrames: [try displaySnapFrame],
+                isDisabled: isSnappingDisabled
+            )
+            selection = snapResult.rect
+            snapGuides = snapResult.guides
             pushUndoState(coalescingToken: selectionDragCoalescingToken)
             errorMessage = nil
         } catch {
+            snapGuides = []
             errorMessage = errorMessage(for: error)
         }
     }
 
     func finishUpdateSelection() {
+        snapGuides = []
         selectionDragID += 1
     }
 
@@ -499,6 +514,12 @@ final class LuxelCropperModel {
 
     private var activeAspectRatio: CaptureAspectRatio? {
         customAspectRatio ?? aspectRatioPreset.aspectRatio
+    }
+
+    private var displaySnapFrame: CaptureRect {
+        get throws {
+            try CaptureRect(x: 0, y: 0, width: display.width, height: display.height)
+        }
     }
 
     private func capturePoint(from point: CGPoint, viewSize: CGSize) -> CapturePoint {

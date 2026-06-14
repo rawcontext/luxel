@@ -138,6 +138,28 @@ struct ArchitectureTests {
         #expect(viewSource.contains(".keyboardShortcut(\"z\", modifiers: [.command, .shift])"))
     }
 
+    @Test("cropper renders snap guides while drawing selections")
+    func cropperRendersSnapGuidesWhileDrawingSelections() throws {
+        let packageRoot = try packageRootURL()
+        let modelSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            encoding: .utf8
+        )
+        let viewSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(modelSource.contains("var snapGuides: [CaptureSnapGuide]"))
+        #expect(modelSource.contains("SnapResolver.resolve("))
+        #expect(modelSource.contains("screenFrames: [try displaySnapFrame]"))
+        #expect(modelSource.contains("snapGuides = snapResult.guides"))
+        #expect(modelSource.contains("snapGuides = []"))
+        #expect(viewSource.contains("snapGuidesOverlay(viewSize: geometry.size)"))
+        #expect(viewSource.contains("ForEach(Array(model.snapGuides.enumerated())"))
+        #expect(viewSource.contains("NSEvent.modifierFlags.contains(.command)"))
+    }
+
     @Test("recording FPS settings accept direct numeric entry")
     func recordingFPSSettingsAcceptDirectNumericEntry() throws {
         let packageRoot = try packageRootURL()
