@@ -42,6 +42,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let screenshotCapturePlanner: ScreenshotCapturePlanner
     @ObservationIgnored let activeWindowCatalog: any ActiveWindowCatalog
     @ObservationIgnored let activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver
+    @ObservationIgnored let screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
@@ -71,6 +72,7 @@ final class LuxelMenuModel {
         screenshotCapturePlanner: ScreenshotCapturePlanner = ScreenshotCapturePlanner(),
         activeWindowCatalog: any ActiveWindowCatalog = CoreGraphicsActiveWindowCatalog(),
         activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver = ActiveWindowCaptureTargetResolver(),
+        screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter = AppKitScreenshotThumbnailPresenter(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
         recorder: any CaptureRecorder = LuxelCompositionRoot.captureRecorder(),
         audioRecorder: any AudioRecorder = LuxelCompositionRoot.audioRecorder()
@@ -93,6 +95,7 @@ final class LuxelMenuModel {
         self.screenshotCapturePlanner = screenshotCapturePlanner
         self.activeWindowCatalog = activeWindowCatalog
         self.activeWindowCaptureTargetResolver = activeWindowCaptureTargetResolver
+        self.screenshotThumbnailPresenter = screenshotThumbnailPresenter
         self.appMetadata = appMetadata
         self.recordingLifecycleService = RecordingLifecycleService(
             recorder: recorder,

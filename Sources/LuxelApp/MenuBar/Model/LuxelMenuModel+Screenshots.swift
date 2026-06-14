@@ -69,10 +69,29 @@ extension LuxelMenuModel {
             )
             let result = try await screenshotCaptureService.capture(job)
             refreshRecentRecordings()
+            presentScreenshotThumbnailIfNeeded(result, job: job)
             quickExportStatusMessage = screenshotStatusText(for: result)
         } catch {
             recordingActionErrorMessage = errorMessage(error)
         }
+    }
+
+    private func presentScreenshotThumbnailIfNeeded(
+        _ result: ScreenshotCaptureResult,
+        job: ScreenshotCaptureJob
+    ) {
+        guard settings.screenshotShowThumbnail else {
+            return
+        }
+
+        let fileName = result.fileURL?.lastPathComponent
+            ?? job.outputFileURL?.lastPathComponent
+            ?? "\(job.historyName ?? "Luxel Screenshot").\(job.request.format.fileExtension)"
+        screenshotThumbnailPresenter.present(ScreenshotThumbnailItem(
+            imageData: result.imageData,
+            fileName: fileName,
+            fileURL: result.fileURL
+        ))
     }
 
     private func screenshotStatusText(for result: ScreenshotCaptureResult) -> String {
