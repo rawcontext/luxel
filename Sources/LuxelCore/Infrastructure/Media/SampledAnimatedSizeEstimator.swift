@@ -52,6 +52,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         let schedule = await animatedFrameSchedule(for: request, asset: asset)
         let totalFrameCount = schedule.frameTimes.count
         let gifOptions = try gifRenderOptions(for: request)
+        let loopMode = animatedLoopMode(for: request)
         let key = SampledAnimatedSizeEstimateCacheKey(
             inputFileURL: request.inputFileURL.standardizedFileURL,
             format: request.format,
@@ -63,7 +64,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             speed: request.speed.value,
             shouldCrop: request.shouldCrop,
             quality: request.resolvedQuality,
-            gifLoopMode: gifOptions?.loopMode,
+            gifLoopMode: loopMode,
             gifDithering: gifOptions?.dithering,
             gifPaletteSize: gifOptions?.paletteSize,
             gifLossyTolerance: gifOptions?.lossyTolerance,
@@ -122,6 +123,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         imageGenerator.appliesPreferredTrackTransform = true
         imageGenerator.requestedTimeToleranceBefore = .zero
         imageGenerator.requestedTimeToleranceAfter = .zero
+        let loopMode = animatedLoopMode(for: request)
 
         let sampleIndices = sampleFrameIndices(
             totalFrameCount: totalFrameCount,
@@ -143,15 +145,18 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             sampleByteCounts.append(try encodedByteCount(
                 frames: [frame],
                 format: request.format,
-                frameDelay: schedule.frameDelay
+                frameDelay: schedule.frameDelay,
+                loopMode: loopMode
             ))
         }
 
         if sampleFrames.count == totalFrameCount {
+            let frames = try sequencedFrames(sampleFrames, loopMode: loopMode)
             let bytes = try encodedByteCount(
-                frames: sampleFrames,
+                frames: frames,
                 format: request.format,
-                frameDelay: schedule.frameDelay
+                frameDelay: schedule.frameDelay,
+                loopMode: loopMode
             )
             return try ExportEstimate(bytes: Int64(bytes), confidence: .sampled)
         }
@@ -164,7 +169,10 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             imageGenerator: imageGenerator
         )
         let model = try SampledAnimatedEstimateModel(
-            totalFrameCount: totalFrameCount,
+            totalFrameCount: try outputFrameCount(
+                baseFrameCount: totalFrameCount,
+                loopMode: loopMode
+            ),
             sampleByteCounts: sampleByteCounts,
             adjacentPairs: adjacentPairs
         )
@@ -254,6 +262,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
     ) async throws -> [SampledAnimatedAdjacentPairSize] {
         let pairStartIndices = adjacentPairStartIndices(totalFrameCount: totalFrameCount)
         var pairs: [SampledAnimatedAdjacentPairSize] = []
+        let loopMode = animatedLoopMode(for: request)
 
         for startIndex in pairStartIndices {
             try Task.checkCancellation()
@@ -275,17 +284,20 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             let firstBytes = try encodedByteCount(
                 frames: [firstFrame],
                 format: request.format,
-                frameDelay: frameDelay
+                frameDelay: frameDelay,
+                loopMode: loopMode
             )
             let secondBytes = try encodedByteCount(
                 frames: [secondFrame],
                 format: request.format,
-                frameDelay: frameDelay
+                frameDelay: frameDelay,
+                loopMode: loopMode
             )
             let combinedBytes = try encodedByteCount(
                 frames: [firstFrame, secondFrame],
                 format: request.format,
-                frameDelay: frameDelay
+                frameDelay: frameDelay,
+                loopMode: loopMode
             )
             pairs.append(SampledAnimatedAdjacentPairSize(
                 firstBytes: firstBytes,
@@ -394,7 +406,8 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
     private func encodedByteCount(
         frames: [CGImage],
         format: ExportFormat,
-        frameDelay: TimeInterval
+        frameDelay: TimeInterval,
+        loopMode: GIFLoopMode = .forever
     ) throws -> Int {
         let data = NSMutableData()
         let typeIdentifier = try typeIdentifier(for: format)
@@ -409,7 +422,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
 
         CGImageDestinationSetProperties(
             destination,
-            destinationProperties(for: format) as CFDictionary
+            destinationProperties(for: format, loopMode: loopMode) as CFDictionary
         )
 
         for frame in frames {
@@ -448,6 +461,12 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             .count
     }
 
+    private func sequencedFrames<T>(_ frames: [T], loopMode: GIFLoopMode) throws -> [T] {
+        let frameIndexes = try GIFFrameSequencePlanner()
+            .frameIndexes(frameCount: frames.count, loopMode: loopMode)
+        return frameIndexes.map { frames[$0] }
+    }
+
     private func sampleFrameIndices(totalFrameCount: Int, requestedSampleCount: Int) -> [Int] {
         let sampleCount = min(max(1, requestedSampleCount), totalFrameCount)
         guard sampleCount > 1 else {
@@ -479,23 +498,34 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         }
     }
 
-    private func destinationProperties(for format: ExportFormat) -> [CFString: Any] {
+    private func destinationProperties(
+        for format: ExportFormat,
+        loopMode: GIFLoopMode = .forever
+    ) -> [CFString: Any] {
         switch format {
         case .gif:
             [
                 kCGImagePropertyGIFDictionary: [
-                    kCGImagePropertyGIFLoopCount: 0
+                    kCGImagePropertyGIFLoopCount: loopMode.imageIOLoopCount ?? 0
                 ]
             ]
         case .apng:
-            [
-                kCGImagePropertyPNGDictionary: [
-                    kCGImagePropertyAPNGLoopCount: 0
-                ]
-            ]
+            destinationPNGProperties(loopMode: loopMode)
         case .av1, .hevc, .mp4, .webm:
             [:]
         }
+    }
+
+    private func destinationPNGProperties(loopMode: GIFLoopMode) -> [CFString: Any] {
+        guard let loopCount = loopMode.imageIOLoopCount else {
+            return [:]
+        }
+
+        return [
+            kCGImagePropertyPNGDictionary: [
+                kCGImagePropertyAPNGLoopCount: loopCount
+            ]
+        ]
     }
 
     private func frameProperties(
@@ -532,6 +562,17 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         }
 
         return try GIFRenderOptions(quality: request.resolvedQuality)
+    }
+
+    private func animatedLoopMode(for request: ExportRequest) -> GIFLoopMode {
+        switch request.format {
+        case .gif:
+            request.gifOptions?.loopMode ?? .forever
+        case .apng:
+            request.gifOptions?.loopMode ?? .forever
+        case .av1, .hevc, .mp4, .webm:
+            .forever
+        }
     }
 }
 

@@ -47,6 +47,44 @@ struct ImageIOAnimatedMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
+    @Test("apng export honors loop count")
+    func apngExportHonorsLoopCount() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "apng")
+        let request = try makeRequest(
+            format: .apng,
+            pixelSize: PixelSize(width: 320, height: 180),
+            gifOptions: GIFRenderOptions(loopMode: .count(3))
+        )
+
+        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
+        let metadata = try animatedImageMetadata(at: outputURL)
+        let data = try Data(contentsOf: outputURL)
+
+        #expect(metadata.frameCount == 3)
+        #expect(try apngLoopCount(in: data) == 3)
+
+        try? FileManager.default.removeItem(at: outputURL)
+    }
+
+    @Test("apng export honors bounce loop mode")
+    func apngExportHonorsBounceLoopMode() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "apng")
+        let request = try makeRequest(
+            format: .apng,
+            pixelSize: PixelSize(width: 320, height: 180),
+            gifOptions: GIFRenderOptions(loopMode: .bounce)
+        )
+
+        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
+        let metadata = try animatedImageMetadata(at: outputURL)
+        let data = try Data(contentsOf: outputURL)
+
+        #expect(metadata.frameCount == 5)
+        #expect(try apngLoopCount(in: data) == 0)
+
+        try? FileManager.default.removeItem(at: outputURL)
+    }
+
     @Test("gif export applies playback speed to frame delay")
     func gifExportAppliesPlaybackSpeedToFrameDelay() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "gif")
@@ -137,6 +175,40 @@ struct ImageIOAnimatedMediaExporterTests {
             ?? 0
 
         return (CGImageSourceGetCount(source), width, height, frameDelay)
+    }
+
+    private func apngLoopCount(in data: Data) throws -> UInt32 {
+        let bytes = Array(data)
+        var offset = 8
+
+        while offset + 8 <= bytes.count {
+            let length = Int(readBigEndianUInt32(bytes, offset: offset))
+            let typeStart = offset + 4
+            let dataStart = offset + 8
+            let dataEnd = dataStart + length
+            let chunkEnd = dataEnd + 4
+            guard chunkEnd <= bytes.count else {
+                break
+            }
+
+            let type = String(bytes: bytes[typeStart..<(typeStart + 4)], encoding: .ascii)
+            if type == "acTL" {
+                try #require(length == 8)
+                return readBigEndianUInt32(bytes, offset: dataStart + 4)
+            }
+
+            offset = chunkEnd
+        }
+
+        Issue.record("Expected APNG acTL chunk")
+        return 0
+    }
+
+    private func readBigEndianUInt32(_ bytes: [UInt8], offset: Int) -> UInt32 {
+        (UInt32(bytes[offset]) << 24)
+            | (UInt32(bytes[offset + 1]) << 16)
+            | (UInt32(bytes[offset + 2]) << 8)
+            | UInt32(bytes[offset + 3])
     }
 
     private func fixtureURL(_ fileName: String) throws -> URL {

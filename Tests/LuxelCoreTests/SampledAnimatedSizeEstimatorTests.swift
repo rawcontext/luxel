@@ -134,6 +134,31 @@ struct SampledAnimatedSizeEstimatorTests {
         #expect(estimate.bytes > 0)
     }
 
+    @Test("apng estimate cache keys include loop options")
+    func apngEstimateCacheKeysIncludeLoopOptions() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "apng")
+        defer {
+            try? FileManager.default.removeItem(at: outputURL)
+        }
+        let estimator = SampledAnimatedSizeEstimator()
+        let baseRequest = try makeRequest(
+            format: .apng,
+            gifOptions: GIFRenderOptions(loopMode: .forever)
+        )
+        let bounceRequest = try makeRequest(
+            format: .apng,
+            gifOptions: GIFRenderOptions(loopMode: .bounce)
+        )
+
+        let baseEstimate = try await estimator.estimate(baseRequest)
+        let bounceEstimate = try await estimator.estimate(bounceRequest)
+        _ = try await ImageIOAnimatedMediaExporter().export(bounceRequest, to: outputURL)
+        let actualBounceBytes = try fileSize(at: outputURL)
+
+        #expect(bounceEstimate.bytes > baseEstimate.bytes)
+        #expect(bounceEstimate.bytes == actualBounceBytes)
+    }
+
     @Test("native estimator routes movies and rejects future codecs")
     func nativeEstimatorRoutesMoviesAndRejectsFutureCodecs() async throws {
         let mp4Request = try makeRequest(format: .mp4)

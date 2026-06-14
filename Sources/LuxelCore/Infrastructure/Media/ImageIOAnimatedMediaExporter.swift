@@ -37,18 +37,20 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
             )
         }
 
+        let loopMode = animatedLoopMode(for: request)
+        let frameTimes = try sequencedFrameTimes(schedule.frameTimes, loopMode: loopMode)
         let destination = try makeDestination(
             format: request.format,
             outputFileURL: outputFileURL,
-            frameCount: schedule.frameTimes.count
+            frameCount: frameTimes.count
         )
-        let destinationProperties = destinationProperties(for: request.format)
+        let destinationProperties = destinationProperties(for: request.format, loopMode: loopMode)
         CGImageDestinationSetProperties(destination, destinationProperties as CFDictionary)
 
         try? FileManager.default.removeItem(at: outputFileURL)
 
         do {
-            for time in schedule.frameTimes {
+            for time in frameTimes {
                 let frame = try await imageGenerator.image(at: time).image
                 let renderedFrame = try AnimatedFrameRenderer().renderImage(
                     frame,
@@ -137,6 +139,19 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         return frames
     }
 
+    private func animatedLoopMode(for request: ExportRequest) -> GIFLoopMode {
+        request.gifOptions?.loopMode ?? .forever
+    }
+
+    private func sequencedFrameTimes(
+        _ frameTimes: [CMTime],
+        loopMode: GIFLoopMode
+    ) throws -> [CMTime] {
+        let frameIndexes = try GIFFrameSequencePlanner()
+            .frameIndexes(frameCount: frameTimes.count, loopMode: loopMode)
+        return frameIndexes.map { frameTimes[$0] }
+    }
+
     private func makeDestination(
         format: ExportFormat,
         outputFileURL: URL,
@@ -164,23 +179,34 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         return destination
     }
 
-    private func destinationProperties(for format: ExportFormat) -> [CFString: Any] {
+    private func destinationProperties(
+        for format: ExportFormat,
+        loopMode: GIFLoopMode = .forever
+    ) -> [CFString: Any] {
         switch format {
         case .gif:
             [
                 kCGImagePropertyGIFDictionary: [
-                    kCGImagePropertyGIFLoopCount: 0
+                    kCGImagePropertyGIFLoopCount: loopMode.imageIOLoopCount ?? 0
                 ]
             ]
         case .apng:
-            [
-                kCGImagePropertyPNGDictionary: [
-                    kCGImagePropertyAPNGLoopCount: 0
-                ]
-            ]
+            destinationPNGProperties(loopMode: loopMode)
         case .av1, .hevc, .mp4, .webm:
             [:]
         }
+    }
+
+    private func destinationPNGProperties(loopMode: GIFLoopMode) -> [CFString: Any] {
+        guard let loopCount = loopMode.imageIOLoopCount else {
+            return [:]
+        }
+
+        return [
+            kCGImagePropertyPNGDictionary: [
+                kCGImagePropertyAPNGLoopCount: loopCount
+            ]
+        ]
     }
 
     private func frameProperties(

@@ -1309,7 +1309,7 @@ public final class LuxelEditorModel {
         quality = memory.quality.isAvailable(for: format)
             ? memory.quality
             : ExportQuality.defaultQuality(for: format)
-        if format == .gif, let gifOptions = memory.gifOptions {
+        if (format == .gif || format == .apng), let gifOptions = memory.gifOptions {
             applyGIFOptions(gifOptions)
         }
     }
@@ -1441,8 +1441,12 @@ public final class LuxelEditorModel {
     }
 
     private func currentGIFOptions(for format: ExportFormat) throws -> GIFRenderOptions? {
-        guard format == .gif else {
+        guard format == .gif || format == .apng else {
             return nil
+        }
+
+        if format == .apng {
+            return try GIFRenderOptions(loopMode: gifLoopMode)
         }
 
         let resolvedQuality = quality.isAvailable(for: format)

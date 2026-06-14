@@ -291,6 +291,23 @@ struct LuxelEditorModelTests {
         #expect(captured?.gifOptions == expectedOptions)
     }
 
+    @Test("refreshing APNG export estimate includes loop options")
+    func refreshingAPNGExportEstimateIncludesLoopOptions() async throws {
+        let estimator = SpyExportSizeEstimator()
+        let model = makeModel(exportSizeEstimator: estimator)
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormat(.apng)
+        model.setGIFLoopModeKind(.bounce)
+        await model.refreshExportEstimate()
+
+        let captured = await estimator.request()
+        let expectedOptions = try GIFRenderOptions(loopMode: .bounce)
+
+        #expect(captured?.format == .apng)
+        #expect(captured?.gifOptions == expectedOptions)
+    }
+
     @Test("format changes clamp unavailable quality")
     func formatChangesClampUnavailableQuality() {
         let model = makeModel()
@@ -371,7 +388,8 @@ struct LuxelEditorModelTests {
             .apng: try ExportMemory(
                 sizePreset: .percent75,
                 frameRate: FrameRate(120),
-                quality: .balanced
+                quality: .balanced,
+                gifOptions: GIFRenderOptions(loopMode: .none)
             )
         ]
         let model = makeModel(exportMemory: memory)
@@ -403,6 +421,8 @@ struct LuxelEditorModelTests {
         #expect(model.outputHeight == 540)
         #expect(model.frameRate == 30)
         #expect(model.quality == .lossless)
+        #expect(model.gifLoopModeKind == .none)
+        #expect(model.gifLoopMode == .none)
     }
 
     @Test("format change with memory is one undo step")
@@ -632,6 +652,35 @@ struct LuxelEditorModelTests {
         )
         #expect(captured.count == 1)
         #expect(captured.first?.0 == .gif)
+        #expect(captured.first?.1 == expectedMemory)
+    }
+
+    @Test("successful APNG export emits loop memory")
+    func successfulAPNGExportEmitsLoopMemory() async throws {
+        var captured: [(ExportFormat, ExportMemory)] = []
+        let model = makeModel { format, memory in
+            captured.append((format, memory))
+        }
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormat(.apng)
+        model.setSizePreset(.percent50)
+        model.setFrameRate(12)
+        model.setGIFLoopModeKind(.none)
+        model.startExport()
+
+        while model.isExporting {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let expectedMemory = try ExportMemory(
+            sizePreset: .percent50,
+            frameRate: FrameRate(12),
+            quality: .lossless,
+            gifOptions: GIFRenderOptions(loopMode: .none)
+        )
+        #expect(captured.count == 1)
+        #expect(captured.first?.0 == .apng)
         #expect(captured.first?.1 == expectedMemory)
     }
 
