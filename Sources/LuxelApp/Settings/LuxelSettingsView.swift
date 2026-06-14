@@ -238,6 +238,13 @@ struct LuxelSettingsView: View {
             }
 
             ExportPresetSettingsSection(settings: $model.settings)
+
+            Section("Cropper") {
+                Toggle("Always Show Loupe", isOn: $model.settings.loupeAlwaysOn)
+                Toggle("Dim Other Displays", isOn: $model.settings.dimOtherDisplays)
+                Toggle("Restore Last Selection", isOn: $model.settings.restoreLastSelection)
+            }
+
             CaptureSizePresetSettingsSection(settings: $model.settings)
 
             Section("System") {

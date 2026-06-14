@@ -117,6 +117,9 @@ struct UserDefaultsSettingsStoreTests {
             exportPresets: [preset],
             quickExportPresetID: presetID,
             rememberLastCapture: false,
+            loupeAlwaysOn: true,
+            dimOtherDisplays: true,
+            restoreLastSelection: false,
             userSizePresets: [sizePreset],
             lastCaptureMemory: lastCaptureMemory,
             perFormatExportMemory: [
@@ -217,6 +220,9 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)
         #expect(settings.quickExportPresetID == ExportPreset.quickGIFID)
         #expect(settings.rememberLastCapture)
+        #expect(!settings.loupeAlwaysOn)
+        #expect(!settings.dimOtherDisplays)
+        #expect(settings.restoreLastSelection)
         #expect(settings.userSizePresets == CaptureSizePreset.builtInDefaults)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)

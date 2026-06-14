@@ -101,6 +101,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var exportPresets: [ExportPreset]
     public var quickExportPresetID: UUID?
     public var rememberLastCapture: Bool
+    public var loupeAlwaysOn: Bool
+    public var dimOtherDisplays: Bool
+    public var restoreLastSelection: Bool
     public var userSizePresets: [CaptureSizePreset]
     public var lastCaptureMemory: LastCaptureMemory?
     public var perFormatExportMemory: [ExportFormat: ExportMemory]
@@ -173,6 +176,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         exportPresets: [ExportPreset] = ExportPreset.builtInDefaults,
         quickExportPresetID: UUID? = ExportPreset.quickGIFID,
         rememberLastCapture: Bool = true,
+        loupeAlwaysOn: Bool = false,
+        dimOtherDisplays: Bool = false,
+        restoreLastSelection: Bool = true,
         userSizePresets: [CaptureSizePreset] = CaptureSizePreset.builtInDefaults,
         lastCaptureMemory: LastCaptureMemory? = nil,
         perFormatExportMemory: [ExportFormat: ExportMemory] = [:],
@@ -233,6 +239,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.exportPresets = exportPresets
         self.quickExportPresetID = quickExportPresetID
         self.rememberLastCapture = rememberLastCapture
+        self.loupeAlwaysOn = loupeAlwaysOn
+        self.dimOtherDisplays = dimOtherDisplays
+        self.restoreLastSelection = restoreLastSelection
         self.userSizePresets = userSizePresets
         self.lastCaptureMemory = lastCaptureMemory
         self.perFormatExportMemory = perFormatExportMemory
@@ -289,6 +298,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case exportPresets
         case quickExportPresetID
         case rememberLastCapture
+        case loupeAlwaysOn
+        case dimOtherDisplays
+        case restoreLastSelection
         case userSizePresets
         case lastCaptureMemory
         case perFormatExportMemory
@@ -420,6 +432,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
             quickExportPresetID = ExportPreset.quickGIFID
         }
         rememberLastCapture = try container.decodeIfPresent(Bool.self, forKey: .rememberLastCapture)
+            ?? true
+        loupeAlwaysOn = try container.decodeIfPresent(Bool.self, forKey: .loupeAlwaysOn)
+            ?? false
+        dimOtherDisplays = try container.decodeIfPresent(Bool.self, forKey: .dimOtherDisplays)
+            ?? false
+        restoreLastSelection = try container.decodeIfPresent(Bool.self, forKey: .restoreLastSelection)
             ?? true
         userSizePresets = try container.decodeIfPresent([CaptureSizePreset].self, forKey: .userSizePresets)
             ?? CaptureSizePreset.builtInDefaults
