@@ -16,6 +16,10 @@ public final class LuxelEditorModel {
         case ready
         case exporting
         case savingOriginal
+        case copyingFrame
+        case savingFrame
+        case copiedFrame
+        case savedFrame(URL)
         case exported(URL)
         case exportedBatch([URL])
         case saved(URL)
@@ -55,10 +59,12 @@ public final class LuxelEditorModel {
     @ObservationIgnored private let exportSizeEstimationService: ExportSizeEstimationService
     @ObservationIgnored private let passthroughExportService: PassthroughExportService
     @ObservationIgnored private let fileWorkflowService: ExportedFileWorkflowService
+    @ObservationIgnored private let frameGrabService: FrameGrabService
     @ObservationIgnored private let fileSystem: any FileSystem
     @ObservationIgnored private var playbackRequested = false
     @ObservationIgnored private var playbackTimeObserver: PlaybackTimeObserver?
     @ObservationIgnored private var exportTask: Task<Void, Never>?
+    @ObservationIgnored private var frameGrabTask: Task<Void, Never>?
     @ObservationIgnored private var exportMemoryByFormat: [ExportFormat: ExportMemory]
     @ObservationIgnored private var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
     @ObservationIgnored private var onConfirmDiscardChange: (@MainActor (Bool) -> Void)?
@@ -80,6 +86,11 @@ public final class LuxelEditorModel {
         fileWorkflowService: ExportedFileWorkflowService = ExportedFileWorkflowService(
             client: AppKitExportedFileActionClient()
         ),
+        frameGrabService: FrameGrabService = FrameGrabService(
+            frameGrabber: AVFoundationFrameGrabber(),
+            fileWriter: LocalScreenshotFileWriter(),
+            destinationClient: AppKitScreenshotDestinationClient()
+        ),
         fileSystem: any FileSystem = LocalFileSystem(),
         exportMemory: [ExportFormat: ExportMemory] = [:],
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
@@ -89,6 +100,7 @@ public final class LuxelEditorModel {
         self.exportSizeEstimationService = exportSizeEstimationService
         self.passthroughExportService = passthroughExportService
         self.fileWorkflowService = fileWorkflowService
+        self.frameGrabService = frameGrabService
         self.fileSystem = fileSystem
         self.exportMemoryByFormat = exportMemory
         self.onExportMemoryChange = onExportMemoryChange
@@ -150,6 +162,10 @@ public final class LuxelEditorModel {
         status == .exporting || status == .savingOriginal
     }
 
+    var isGrabbingFrame: Bool {
+        frameGrabTask != nil || status == .copyingFrame || status == .savingFrame
+    }
+
     var canExport: Bool {
         hasSource && !isExporting
     }
@@ -160,6 +176,10 @@ public final class LuxelEditorModel {
 
     var canDiscard: Bool {
         hasSource && !isExporting
+    }
+
+    var canGrabFrame: Bool {
+        hasSource && !isExporting && !isGrabbingFrame && player.rate == 0
     }
 
     var canCancelExport: Bool {
@@ -188,6 +208,8 @@ public final class LuxelEditorModel {
             exportProgressTitle
         case .exported, .exportedBatch, .saved:
             "Export Complete"
+        case .copyingFrame, .savingFrame, .copiedFrame, .savedFrame:
+            statusMessage
         case .canceled:
             "Export Canceled"
         case .failed:
@@ -207,6 +229,8 @@ public final class LuxelEditorModel {
             "\(urls.count) files exported"
         case .savingOriginal:
             "Copying the source recording without re-encoding."
+        case .copyingFrame, .savingFrame, .copiedFrame, .savedFrame:
+            statusMessage
         case .failed(let message):
             message
         case .canceled:
@@ -221,6 +245,12 @@ public final class LuxelEditorModel {
         case .exporting, .savingOriginal:
             "arrow.triangle.2.circlepath"
         case .exported, .exportedBatch, .saved:
+            "checkmark.circle"
+        case .copyingFrame:
+            "doc.on.clipboard"
+        case .savingFrame:
+            "photo.badge.arrow.down"
+        case .copiedFrame, .savedFrame:
             "checkmark.circle"
         case .canceled:
             "xmark.circle"
@@ -322,6 +352,14 @@ public final class LuxelEditorModel {
             "Exporting \(selectedFormatSummary)"
         case .savingOriginal:
             "Saving original"
+        case .copyingFrame:
+            "Copying frame"
+        case .savingFrame:
+            "Saving frame"
+        case .copiedFrame:
+            "Copied frame"
+        case .savedFrame(let url):
+            "Saved \(url.lastPathComponent)"
         case .exported(let url):
             "Exported \(url.lastPathComponent)"
         case .exportedBatch(let urls):
@@ -346,6 +384,8 @@ public final class LuxelEditorModel {
         isEstimatingExportSize = false
         player.pause()
         playbackRequested = false
+        frameGrabTask?.cancel()
+        frameGrabTask = nil
 
         do {
             let media = try await metadataReader.readSourceMedia(at: fileURL)
@@ -702,6 +742,37 @@ public final class LuxelEditorModel {
         }
     }
 
+    func copyCurrentFrame() {
+        guard canGrabFrame else {
+            return
+        }
+
+        startFrameGrab(destinations: [.clipboard])
+    }
+
+    func saveCurrentFrameAs() {
+        guard canGrabFrame else {
+            return
+        }
+
+        do {
+            let request = try makeCurrentFrameGrabRequest()
+            guard let destinationURL = fileWorkflowService.chooseSaveDestination(
+                suggestedFileName: request.suggestedFileName
+            ) else {
+                return
+            }
+
+            startFrameGrab(
+                request: request,
+                destinations: [.file],
+                outputFileURL: destinationURL
+            )
+        } catch {
+            status = .failed(errorMessage(error))
+        }
+    }
+
     @discardableResult
     func discardRecording() -> Bool {
         guard canDiscard, let source else {
@@ -898,12 +969,105 @@ public final class LuxelEditorModel {
         status = .failed(errorMessage(error))
     }
 
+    private func startFrameGrab(destinations: [ScreenshotDestination]) {
+        do {
+            try startFrameGrab(
+                request: makeCurrentFrameGrabRequest(),
+                destinations: destinations
+            )
+        } catch {
+            status = .failed(errorMessage(error))
+        }
+    }
+
+    private func startFrameGrab(
+        request: FrameGrabRequest,
+        destinations: [ScreenshotDestination],
+        outputFileURL: URL? = nil
+    ) {
+        do {
+            let job = try FrameGrabJob(
+                request: request,
+                destinations: destinations,
+                outputFileURL: outputFileURL
+            )
+            let frameGrabService = frameGrabService
+            status = destinations.contains(.clipboard) ? .copyingFrame : .savingFrame
+
+            frameGrabTask = Task { [weak self] in
+                do {
+                    let result = try await frameGrabService.grab(job)
+                    await MainActor.run {
+                        self?.finishFrameGrab(result)
+                    }
+                } catch is CancellationError {
+                    await MainActor.run {
+                        self?.finishCanceledFrameGrab()
+                    }
+                } catch {
+                    await MainActor.run {
+                        self?.finishFailedFrameGrab(error)
+                    }
+                }
+            }
+        } catch {
+            status = .failed(errorMessage(error))
+        }
+    }
+
+    private func finishFrameGrab(_ result: FrameGrabResult) {
+        frameGrabTask = nil
+
+        if !result.failedDestinations.isEmpty {
+            status = .failed("Frame destination failed")
+            return
+        }
+
+        if let fileURL = result.fileURL {
+            status = .savedFrame(fileURL)
+        } else if result.completedDestinations.contains(.clipboard) {
+            status = .copiedFrame
+        } else {
+            status = .ready
+        }
+    }
+
+    private func finishCanceledFrameGrab() {
+        frameGrabTask = nil
+        status = .ready
+    }
+
+    private func finishFailedFrameGrab(_ error: Error) {
+        frameGrabTask = nil
+        status = .failed(errorMessage(error))
+    }
+
+    private func makeCurrentFrameGrabRequest() throws -> FrameGrabRequest {
+        guard let source else {
+            throw ScreenshotModelError.invalidFrameTime
+        }
+
+        return try FrameGrabRequest(
+            sourceFileURL: source.fileURL,
+            time: currentFrameTime,
+            format: .png
+        )
+    }
+
+    private var currentFrameTime: TimeInterval {
+        let seconds = CMTimeGetSeconds(player.currentTime())
+        let finiteSeconds = seconds.isFinite ? seconds : trimStart
+        return min(max(finiteSeconds, 0), max(duration, 0))
+    }
+
     private func clearSource() {
         source = nil
         exportProgress = nil
         exportJobs = []
         exportEstimate = nil
         isEstimatingExportSize = false
+        frameGrabTask?.cancel()
+        frameGrabTask = nil
         player.pause()
         playbackRequested = false
         player.replaceCurrentItem(with: nil)

@@ -92,6 +92,63 @@ struct LuxelEditorModelTests {
         ])
     }
 
+    @Test("copy current frame sends frame to clipboard")
+    func copyCurrentFrameSendsFrameToClipboard() async throws {
+        let imageData = try frameImageData()
+        let frameGrabber = SpyFrameGrabber(imageData: imageData)
+        let destinationClient = SpyScreenshotDestinationClient()
+        let model = makeModel(frameGrabber: frameGrabber, screenshotDestinationClient: destinationClient)
+        let sourceURL = URL(fileURLWithPath: "/tmp/source.mp4")
+
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        #expect(model.canGrabFrame)
+
+        model.copyCurrentFrame()
+
+        while model.isGrabbingFrame {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(destinationClient.copiedImages == [imageData])
+        #expect(frameGrabber.requests == [
+            try FrameGrabRequest(sourceFileURL: sourceURL, time: 0, format: .png)
+        ])
+        #expect(model.status == .copiedFrame)
+        #expect(model.statusMessage == "Copied frame")
+    }
+
+    @Test("save current frame asks for destination and writes selected file")
+    func saveCurrentFrameAsksForDestinationAndWritesSelectedFile() async throws {
+        let imageData = try frameImageData()
+        let frameGrabber = SpyFrameGrabber(imageData: imageData)
+        let fileWriter = SpyScreenshotFileWriter()
+        let destinationURL = URL(fileURLWithPath: "/tmp/source frame.png")
+        let fileActionClient = StubExportedFileActionClient(saveDestination: destinationURL)
+        let model = makeModel(
+            fileActionClient: fileActionClient,
+            frameGrabber: frameGrabber,
+            screenshotFileWriter: fileWriter
+        )
+        let sourceURL = URL(fileURLWithPath: "/tmp/source.mp4")
+
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.saveCurrentFrameAs()
+
+        while model.isGrabbingFrame {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(fileActionClient.requestedSaveNames == ["source (frame 0.00.0).png"])
+        #expect(fileWriter.writes == [
+            SpyScreenshotFileWriter.Write(imageData: imageData, fileURL: destinationURL)
+        ])
+        #expect(frameGrabber.requests == [
+            try FrameGrabRequest(sourceFileURL: sourceURL, time: 0, format: .png)
+        ])
+        #expect(model.status == .savedFrame(destinationURL))
+        #expect(model.statusMessage == "Saved source frame.png")
+    }
+
     @Test("discard recording trashes source and clears editor")
     func discardRecordingTrashesSourceAndClearsEditor() async throws {
         let fileSystem = SpyFileSystem()
@@ -488,6 +545,10 @@ struct LuxelEditorModelTests {
         exporter: any MediaExporter = StubMediaExporter(),
         exportSizeEstimator: any ExportSizeEstimator = StubExportSizeEstimator(),
         fileSystem: any FileSystem = StubFileSystem(),
+        fileActionClient: any ExportedFileActionClient = StubExportedFileActionClient(),
+        frameGrabber: any FrameGrabber = StubFrameGrabber(),
+        screenshotFileWriter: SpyScreenshotFileWriter = SpyScreenshotFileWriter(),
+        screenshotDestinationClient: SpyScreenshotDestinationClient = SpyScreenshotDestinationClient(),
         exportMemory: [ExportFormat: ExportMemory] = [:],
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
     ) -> LuxelEditorModel {
@@ -505,7 +566,12 @@ struct LuxelEditorModelTests {
                 trimmedExporter: StubPassthroughExporter()
             ),
             fileWorkflowService: ExportedFileWorkflowService(
-                client: StubExportedFileActionClient()
+                client: fileActionClient
+            ),
+            frameGrabService: FrameGrabService(
+                frameGrabber: frameGrabber,
+                fileWriter: screenshotFileWriter,
+                destinationClient: screenshotDestinationClient
             ),
             fileSystem: fileSystem,
             exportMemory: exportMemory,
@@ -519,6 +585,14 @@ struct LuxelEditorModelTests {
             format: .mp4,
             pixelSize: PixelSize(width: 1280, height: 720),
             shouldMute: false
+        )
+    }
+
+    private func frameImageData() throws -> ImageData {
+        try ImageData(
+            data: Data([0x89, 0x50, 0x4e, 0x47]),
+            format: .png,
+            pixelSize: PixelSize(width: 2, height: 2)
         )
     }
 }
@@ -582,6 +656,57 @@ private actor SpyMediaExporter: MediaExporter {
 private struct StubPassthroughExporter: PassthroughExporter {
     func export(_ request: PassthroughExportRequest) async throws -> PassthroughExportResult {
         PassthroughExportResult(fileURL: request.outputFileURL)
+    }
+}
+
+private final class SpyFrameGrabber: FrameGrabber, @unchecked Sendable {
+    private let imageData: ImageData
+    private(set) var requests: [FrameGrabRequest] = []
+
+    init(imageData: ImageData) {
+        self.imageData = imageData
+    }
+
+    func grab(_ request: FrameGrabRequest) async throws -> ImageData {
+        requests.append(request)
+        return imageData
+    }
+}
+
+private struct StubFrameGrabber: FrameGrabber {
+    func grab(_ request: FrameGrabRequest) async throws -> ImageData {
+        try ImageData(
+            data: Data([0x89, 0x50, 0x4e, 0x47]),
+            format: .png,
+            pixelSize: PixelSize(width: 1, height: 1)
+        )
+    }
+}
+
+private final class SpyScreenshotFileWriter: ScreenshotFileWriter, @unchecked Sendable {
+    struct Write: Equatable {
+        let imageData: ImageData
+        let fileURL: URL
+    }
+
+    private(set) var writes: [Write] = []
+
+    func write(_ imageData: ImageData, to fileURL: URL) throws {
+        writes.append(Write(imageData: imageData, fileURL: fileURL))
+    }
+}
+
+@MainActor
+private final class SpyScreenshotDestinationClient: ScreenshotDestinationClient {
+    private(set) var copiedImages: [ImageData] = []
+    private(set) var openedURLs: [URL] = []
+
+    func copyImageToPasteboard(_ imageData: ImageData) throws {
+        copiedImages.append(imageData)
+    }
+
+    func openWithDefaultApp(_ fileURL: URL) throws {
+        openedURLs.append(fileURL)
     }
 }
 
@@ -689,8 +814,16 @@ private struct CopiedFile: Equatable {
 
 @MainActor
 private final class StubExportedFileActionClient: ExportedFileActionClient {
+    let saveDestination: URL?
+    private(set) var requestedSaveNames: [String] = []
+
+    init(saveDestination: URL? = nil) {
+        self.saveDestination = saveDestination
+    }
+
     func chooseSaveDestination(suggestedFileName: String) -> URL? {
-        nil
+        requestedSaveNames.append(suggestedFileName)
+        return saveDestination
     }
 
     func chooseOutputDirectory(currentDirectory: URL) -> URL? {

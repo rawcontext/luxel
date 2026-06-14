@@ -21,6 +21,10 @@ public final class ExportedFileWorkflowService {
         return destinationURL
     }
 
+    public func chooseSaveDestination(suggestedFileName: String) -> URL? {
+        client.chooseSaveDestination(suggestedFileName: suggestedFileName)
+    }
+
     public func chooseOutputDirectory(currentDirectory: URL) -> URL? {
         client.chooseOutputDirectory(currentDirectory: currentDirectory)
     }

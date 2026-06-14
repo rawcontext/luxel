@@ -5,9 +5,12 @@ struct LuxelEditorCommandContext {
     let canUndo: Bool
     let canRedo: Bool
     let canDiscard: Bool
+    let canGrabFrame: Bool
     let undo: @MainActor () -> Void
     let redo: @MainActor () -> Void
     let discard: @MainActor () -> Void
+    let copyFrame: @MainActor () -> Void
+    let saveFrameAs: @MainActor () -> Void
 }
 
 extension FocusedValues {
@@ -35,6 +38,19 @@ public struct LuxelEditorCommands: Commands {
         }
 
         CommandGroup(after: .undoRedo) {
+            Divider()
+
+            Button("Copy Frame") {
+                context?.copyFrame()
+            }
+            .keyboardShortcut("c", modifiers: [.command, .shift])
+            .disabled(context?.canGrabFrame != true)
+
+            Button("Save Frame As...") {
+                context?.saveFrameAs()
+            }
+            .disabled(context?.canGrabFrame != true)
+
             Divider()
 
             Button("Discard Recording") {

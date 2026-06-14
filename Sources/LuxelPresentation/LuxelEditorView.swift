@@ -56,6 +56,23 @@ public struct LuxelEditorView: View {
                 .disabled(!model.hasSource)
 
                 Button {
+                    model.copyCurrentFrame()
+                } label: {
+                    Label("Copy Frame", systemImage: "doc.on.clipboard")
+                }
+                .disabled(!model.canGrabFrame)
+                .keyboardShortcut("c", modifiers: [.command, .shift])
+                .help("Copy Frame")
+
+                Button {
+                    model.saveCurrentFrameAs()
+                } label: {
+                    Label("Save Frame As", systemImage: "photo.badge.arrow.down")
+                }
+                .disabled(!model.canGrabFrame)
+                .help("Save Frame As")
+
+                Button {
                     model.startExport()
                 } label: {
                     Label("Export", systemImage: "square.and.arrow.down")
@@ -146,6 +163,7 @@ public struct LuxelEditorView: View {
             canUndo: model.canUndoEditorChange,
             canRedo: model.canRedoEditorChange,
             canDiscard: model.canDiscard,
+            canGrabFrame: model.canGrabFrame,
             undo: {
                 model.undoEditorChange()
             },
@@ -154,6 +172,12 @@ public struct LuxelEditorView: View {
             },
             discard: {
                 requestDiscard()
+            },
+            copyFrame: {
+                model.copyCurrentFrame()
+            },
+            saveFrameAs: {
+                model.saveCurrentFrameAs()
             }
         )
     }
@@ -201,6 +225,17 @@ public struct LuxelEditorView: View {
             }
         }
         .frame(minWidth: 560, maxWidth: .infinity, maxHeight: .infinity)
+        .contextMenu {
+            Button("Copy Frame") {
+                model.copyCurrentFrame()
+            }
+            .disabled(!model.canGrabFrame)
+
+            Button("Save Frame As...") {
+                model.saveCurrentFrameAs()
+            }
+            .disabled(!model.canGrabFrame)
+        }
     }
 
     private var controls: some View {
