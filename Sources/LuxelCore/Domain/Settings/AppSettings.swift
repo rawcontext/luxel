@@ -37,6 +37,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var enableShortcuts: Bool
     public var triggerCropperShortcut: String
     public var toggleRecordingShortcut: String
+    public var recordActiveWindowShortcut: String
+    public var recordFullscreenShortcut: String
     public var audioOnlyRecordingShortcut: String
     public var quickRecordLastShortcut: String
     public var captureScreenshotShortcut: String
@@ -70,6 +72,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         enableShortcuts: Bool = true,
         triggerCropperShortcut: String = "",
         toggleRecordingShortcut: String = "",
+        recordActiveWindowShortcut: String = "",
+        recordFullscreenShortcut: String = "",
         audioOnlyRecordingShortcut: String = "",
         quickRecordLastShortcut: String = "",
         captureScreenshotShortcut: String = "",
@@ -102,6 +106,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.enableShortcuts = enableShortcuts
         self.triggerCropperShortcut = triggerCropperShortcut
         self.toggleRecordingShortcut = toggleRecordingShortcut
+        self.recordActiveWindowShortcut = recordActiveWindowShortcut
+        self.recordFullscreenShortcut = recordFullscreenShortcut
         self.audioOnlyRecordingShortcut = audioOnlyRecordingShortcut
         self.quickRecordLastShortcut = quickRecordLastShortcut
         self.captureScreenshotShortcut = captureScreenshotShortcut
@@ -136,6 +142,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case enableShortcuts
         case triggerCropperShortcut
         case toggleRecordingShortcut
+        case recordActiveWindowShortcut
+        case recordFullscreenShortcut
         case audioOnlyRecordingShortcut
         case quickRecordLastShortcut
         case captureScreenshotShortcut
@@ -194,6 +202,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
         triggerCropperShortcut = try container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut)
             ?? ""
         toggleRecordingShortcut = try container.decodeIfPresent(String.self, forKey: .toggleRecordingShortcut)
+            ?? ""
+        recordActiveWindowShortcut = try container.decodeIfPresent(String.self, forKey: .recordActiveWindowShortcut)
+            ?? ""
+        recordFullscreenShortcut = try container.decodeIfPresent(String.self, forKey: .recordFullscreenShortcut)
             ?? ""
         audioOnlyRecordingShortcut = try container.decodeIfPresent(String.self, forKey: .audioOnlyRecordingShortcut)
             ?? ""

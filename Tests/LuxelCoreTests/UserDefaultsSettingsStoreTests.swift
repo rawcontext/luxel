@@ -54,6 +54,8 @@ struct UserDefaultsSettingsStoreTests {
             audioOnlyFormat: .alac,
             triggerCropperShortcut: "command+control+option+r",
             toggleRecordingShortcut: "command+control+option+t",
+            recordActiveWindowShortcut: "command+control+option+shift+w",
+            recordFullscreenShortcut: "command+control+option+shift+f",
             audioOnlyRecordingShortcut: "command+control+option+a",
             quickRecordLastShortcut: "command+control+option+q",
             captureScreenshotShortcut: "command+control+option+s",
@@ -133,6 +135,8 @@ struct UserDefaultsSettingsStoreTests {
         #expect(!settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "command+shift+5")
         #expect(settings.toggleRecordingShortcut == "")
+        #expect(settings.recordActiveWindowShortcut == "")
+        #expect(settings.recordFullscreenShortcut == "")
         #expect(settings.audioOnlyRecordingShortcut == "")
         #expect(settings.quickRecordLastShortcut == "")
         #expect(settings.captureScreenshotShortcut == "")

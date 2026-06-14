@@ -23,6 +23,12 @@ struct LuxelShortcutInstaller: View {
             .onChange(of: model.settings.toggleRecordingShortcut) {
                 configureShortcut()
             }
+            .onChange(of: model.settings.recordActiveWindowShortcut) {
+                configureShortcut()
+            }
+            .onChange(of: model.settings.recordFullscreenShortcut) {
+                configureShortcut()
+            }
             .onChange(of: model.settings.audioOnlyRecordingShortcut) {
                 configureShortcut()
             }
@@ -119,6 +125,25 @@ struct LuxelShortcutInstaller: View {
                         } else if model.canUseRecordAgainButton {
                             await model.startRecordingFromLastCapture()
                         }
+                    }
+                },
+                LuxelShortcutRegistration(rawShortcut: model.settings.recordActiveWindowShortcut) {
+                    guard model.canSelectArea else {
+                        return
+                    }
+
+                    Task {
+                        await model.startActiveWindowRecording()
+                    }
+                },
+                LuxelShortcutRegistration(rawShortcut: model.settings.recordFullscreenShortcut) {
+                    guard model.screenRecordingStatus == .authorized,
+                          model.selectedOrFallbackDisplayTarget != nil else {
+                        return
+                    }
+
+                    Task {
+                        await model.startFullscreenRecording()
                     }
                 },
                 LuxelShortcutRegistration(rawShortcut: model.settings.audioOnlyRecordingShortcut) {

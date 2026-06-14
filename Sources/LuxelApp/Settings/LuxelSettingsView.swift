@@ -144,6 +144,22 @@ struct LuxelSettingsView: View {
                 }
                 .disabled(!model.settings.enableShortcuts)
 
+                Picker("Record Active Window", selection: $model.settings.recordActiveWindowShortcut) {
+                    Text("None").tag("")
+                    ForEach(AppKeyboardShortcutPresets.recordActiveWindow) { shortcut in
+                        Text(shortcut.displayName).tag(shortcut.rawValue)
+                    }
+                }
+                .disabled(!model.settings.enableShortcuts)
+
+                Picker("Record Fullscreen", selection: $model.settings.recordFullscreenShortcut) {
+                    Text("None").tag("")
+                    ForEach(AppKeyboardShortcutPresets.recordFullscreen) { shortcut in
+                        Text(shortcut.displayName).tag(shortcut.rawValue)
+                    }
+                }
+                .disabled(!model.settings.enableShortcuts)
+
                 Picker("Audio Only", selection: $model.settings.audioOnlyRecordingShortcut) {
                     Text("None").tag("")
                     ForEach(AppKeyboardShortcutPresets.audioOnlyRecording) { shortcut in

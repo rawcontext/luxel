@@ -50,6 +50,12 @@ struct AppKeyboardShortcutTests {
         #expect(AppKeyboardShortcutPresets.toggleRecording.map(\.rawValue) == [
             "command+control+option+t"
         ])
+        #expect(AppKeyboardShortcutPresets.recordActiveWindow.map(\.rawValue) == [
+            "command+control+option+shift+w"
+        ])
+        #expect(AppKeyboardShortcutPresets.recordFullscreen.map(\.rawValue) == [
+            "command+control+option+shift+f"
+        ])
         #expect(AppKeyboardShortcutPresets.audioOnlyRecording.map(\.rawValue) == [
             "command+control+option+a"
         ])

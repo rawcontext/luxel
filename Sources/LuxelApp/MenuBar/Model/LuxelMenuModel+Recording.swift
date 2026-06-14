@@ -26,6 +26,42 @@ extension LuxelMenuModel {
         )
     }
 
+    func startFullscreenRecording() async {
+        guard let displayTarget = selectedOrFallbackDisplayTarget else {
+            recordingState = .failed("No display target available")
+            return
+        }
+
+        await startRecording(
+            target: displayTarget.target,
+            pixelSize: displayTarget.pixelSize,
+            captureKind: .standard
+        )
+    }
+
+    func startActiveWindowRecording() async {
+        guard canSelectArea else {
+            recordingState = .failed("No active window target available")
+            return
+        }
+
+        await refreshCaptureTargets()
+
+        guard let windowTarget = activeWindowCaptureTargetResolver.resolve(
+            from: captureTargets,
+            orderedWindowIDs: activeWindowCatalog.orderedActiveWindowIDs()
+        ) else {
+            recordingState = .failed("No active window target available")
+            return
+        }
+
+        await startRecording(
+            target: windowTarget.target,
+            pixelSize: windowTarget.pixelSize,
+            captureKind: .standard
+        )
+    }
+
     func startRecordingFromLastCapture() async {
         await startRecordingFromLastCapture(captureKind: .standard)
     }

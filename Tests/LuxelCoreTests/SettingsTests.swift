@@ -22,6 +22,8 @@ struct SettingsTests {
         #expect(settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "")
         #expect(settings.toggleRecordingShortcut == "")
+        #expect(settings.recordActiveWindowShortcut == "")
+        #expect(settings.recordFullscreenShortcut == "")
         #expect(settings.audioOnlyRecordingShortcut == "")
         #expect(settings.quickRecordLastShortcut == "")
         #expect(settings.captureScreenshotShortcut == "")

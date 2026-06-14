@@ -77,6 +77,14 @@ public enum AppKeyboardShortcutPresets {
         AppKeyboardShortcut(rawValue: "command+control+option+t")
     ].compactMap { $0 }
 
+    public static let recordActiveWindow: [AppKeyboardShortcut] = [
+        AppKeyboardShortcut(rawValue: "command+control+option+shift+w")
+    ].compactMap { $0 }
+
+    public static let recordFullscreen: [AppKeyboardShortcut] = [
+        AppKeyboardShortcut(rawValue: "command+control+option+shift+f")
+    ].compactMap { $0 }
+
     public static let audioOnlyRecording: [AppKeyboardShortcut] = [
         AppKeyboardShortcut(rawValue: "command+control+option+a")
     ].compactMap { $0 }
