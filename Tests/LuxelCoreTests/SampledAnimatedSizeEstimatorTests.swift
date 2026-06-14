@@ -98,6 +98,29 @@ struct SampledAnimatedSizeEstimatorTests {
         #expect(bounceEstimate.bytes == actualBounceBytes)
     }
 
+    @Test("gif estimate cache keys include zoom blocks")
+    func gifEstimateCacheKeysIncludeZoomBlocks() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "gif")
+        defer {
+            try? FileManager.default.removeItem(at: outputURL)
+        }
+        let estimator = SampledAnimatedSizeEstimator()
+        let baseRequest = try makeRequest(format: .gif)
+        let zoomRequest = try makeRequest(
+            format: .gif,
+            zoomBlocks: [
+                zoomBlock(start: 1, end: 1.3)
+            ]
+        )
+
+        _ = try await estimator.estimate(baseRequest)
+        let zoomEstimate = try await estimator.estimate(zoomRequest)
+        _ = try await ImageIOAnimatedMediaExporter().export(zoomRequest, to: outputURL)
+        let actualZoomBytes = try fileSize(at: outputURL)
+
+        #expect(zoomEstimate.bytes == actualZoomBytes)
+    }
+
     @Test("gif estimates preserve size and quality budgets")
     func gifEstimatesPreserveSizeAndQualityBudgets() async throws {
         let estimator = SampledAnimatedSizeEstimator()
@@ -132,6 +155,28 @@ struct SampledAnimatedSizeEstimatorTests {
 
         #expect(estimate.confidence == .sampled)
         #expect(estimate.bytes > 0)
+    }
+
+    @Test("apng estimate matches native export for zoomed fully sampled clips")
+    func apngEstimateMatchesNativeExportForZoomedFullySampledClips() async throws {
+        let outputURL = temporaryOutputURL(fileExtension: "apng")
+        defer {
+            try? FileManager.default.removeItem(at: outputURL)
+        }
+        let request = try makeRequest(
+            format: .apng,
+            pixelSize: PixelSize(width: 160, height: 90),
+            zoomBlocks: [
+                zoomBlock(start: 1, end: 1.3)
+            ]
+        )
+
+        let estimate = try await SampledAnimatedSizeEstimator().estimate(request)
+        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
+        let actualBytes = try fileSize(at: outputURL)
+
+        #expect(estimate.confidence == .sampled)
+        #expect(estimate.bytes == actualBytes)
     }
 
     @Test("apng estimate cache keys include loop options")
@@ -176,7 +221,8 @@ struct SampledAnimatedSizeEstimatorTests {
         format: ExportFormat,
         pixelSize: PixelSize? = nil,
         quality: ExportQuality = .balanced,
-        gifOptions: GIFRenderOptions? = nil
+        gifOptions: GIFRenderOptions? = nil,
+        zoomBlocks: [ZoomBlock] = []
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: fixtureURL("input.mp4"),
@@ -187,7 +233,17 @@ struct SampledAnimatedSizeEstimatorTests {
             shouldMute: false,
             shouldCrop: true,
             quality: quality,
-            gifOptions: gifOptions
+            gifOptions: gifOptions,
+            zoomBlocks: zoomBlocks
+        )
+    }
+
+    private func zoomBlock(start: TimeInterval, end: TimeInterval) throws -> ZoomBlock {
+        try ZoomBlock(
+            timeRange: TimeRange(start: start, end: end),
+            targetRect: NormalizedRect(x: 0.25, y: 0.25, width: 0.2, height: 0.2),
+            zoom: 2,
+            transitionOverride: 0.05
         )
     }
 

@@ -68,7 +68,8 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             gifDithering: gifOptions?.dithering,
             gifPaletteSize: gifOptions?.paletteSize,
             gifLossyTolerance: gifOptions?.lossyTolerance,
-            gifBackgroundMatte: gifOptions?.backgroundMatte
+            gifBackgroundMatte: gifOptions?.backgroundMatte,
+            zoomBlocks: request.zoomBlocks.map(SampledAnimatedZoomBlockCacheKey.init)
         )
 
         if let cached = await cache.estimate(for: key) {
@@ -379,10 +380,16 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         let sourceFrame = try await imageGenerator.image(
             at: schedule.frameTimes[index]
         ).image
+        let cameraPath = try cameraPath(for: request, sourceFrame: sourceFrame)
         return try AnimatedFrameRenderer().renderImage(
             sourceFrame,
             outputPixelSize: outputPixelSize,
-            shouldCrop: request.shouldCrop
+            shouldCrop: request.shouldCrop,
+            cameraTransform: try cameraTransform(
+                for: schedule.frameTimes[index],
+                request: request,
+                cameraPath: cameraPath
+            )
         )
     }
 
@@ -396,11 +403,54 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
         let sourceFrame = try await imageGenerator.image(
             at: schedule.frameTimes[index]
         ).image
+        let cameraPath = try cameraPath(for: request, sourceFrame: sourceFrame)
         return try AnimatedFrameRenderer().renderGIFBitmap(
             sourceFrame,
             outputPixelSize: outputPixelSize,
-            shouldCrop: request.shouldCrop
+            shouldCrop: request.shouldCrop,
+            cameraTransform: try cameraTransform(
+                for: schedule.frameTimes[index],
+                request: request,
+                cameraPath: cameraPath
+            )
         )
+    }
+
+    private func cameraPath(
+        for request: ExportRequest,
+        sourceFrame: CGImage
+    ) throws -> CameraPath? {
+        guard !request.zoomBlocks.isEmpty else {
+            return nil
+        }
+
+        let blocks = try ZoomExportTimeMapper(
+            trimRange: request.timeRange,
+            speed: request.speed
+        )
+        .map(request.zoomBlocks)
+
+        guard !blocks.isEmpty else {
+            return nil
+        }
+
+        return try CameraPath(
+            blocks: blocks,
+            sourceSize: PixelSize(width: sourceFrame.width, height: sourceFrame.height)
+        )
+    }
+
+    private func cameraTransform(
+        for sourceTime: CMTime,
+        request: ExportRequest,
+        cameraPath: CameraPath?
+    ) throws -> CameraTransform {
+        guard let cameraPath else {
+            return .identity
+        }
+
+        let outputTime = max(0, (sourceTime.seconds - request.timeRange.start) / request.speed.value)
+        return try cameraPath.transform(at: outputTime)
     }
 
     private func encodedByteCount(
@@ -653,6 +703,29 @@ private struct SampledAnimatedSizeEstimateCacheKey: Hashable, Sendable {
     let gifPaletteSize: Int?
     let gifLossyTolerance: Int?
     let gifBackgroundMatte: RGBColor?
+    let zoomBlocks: [SampledAnimatedZoomBlockCacheKey]
+}
+
+private struct SampledAnimatedZoomBlockCacheKey: Hashable, Sendable {
+    let start: TimeInterval
+    let end: TimeInterval
+    let x: Double
+    let y: Double
+    let width: Double
+    let height: Double
+    let zoom: Double
+    let transitionOverride: TimeInterval?
+
+    init(_ block: ZoomBlock) {
+        start = block.timeRange.start
+        end = block.timeRange.end
+        x = block.targetRect.x
+        y = block.targetRect.y
+        width = block.targetRect.width
+        height = block.targetRect.height
+        zoom = block.zoom
+        transitionOverride = block.transitionOverride
+    }
 }
 
 private actor SampledAnimatedSizeEstimateCache {
