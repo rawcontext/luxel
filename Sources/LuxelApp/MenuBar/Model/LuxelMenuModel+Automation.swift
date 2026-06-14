@@ -145,8 +145,11 @@ extension LuxelMenuModel {
         case .screenshot(let options):
             let target = try await resolveAutomationTarget(options.target).target
             return try await captureAutomationScreenshot(target: target, format: options.format)
-        case .clip:
-            throw LuxelAutomationError.replayBufferUnavailable
+        case .clip(let seconds):
+            return try await clipAutomationReplayBuffer(
+                seconds: seconds,
+                openRecording: openRecording
+            )
         case .preferences:
             openSettings()
             return .accepted
@@ -155,6 +158,38 @@ extension LuxelMenuModel {
                 reveal: reveal,
                 openRecording: openRecording
             )
+        }
+    }
+
+    private func clipAutomationReplayBuffer(
+        seconds: Int?,
+        openRecording: @escaping @MainActor (URL) -> Void
+    ) async throws -> AutomationExecutionResult {
+        guard let replayBufferClipService else {
+            throw LuxelAutomationError.replayBufferUnavailable
+        }
+
+        let recording = try await replayBufferClipService.clip(lastSeconds: seconds.map(TimeInterval.init))
+        refreshRecentRecordings()
+
+        switch settings.replayClipDestination {
+        case .editor:
+            let mediaURL = recording.primaryMediaURL
+            openRecording(mediaURL)
+            return .file(mediaURL)
+        case .quickExport:
+            guard let presetID = settings.quickExportPresetID else {
+                throw LuxelAutomationError.noQuickExportPreset
+            }
+
+            guard let stopAction = await runQuickExport(recording: recording, presetID: presetID) else {
+                throw LuxelAutomationError.quickExportFailed
+            }
+
+            switch stopAction {
+            case .openEditor(let fileURL), .quickExported(let fileURL), .audioRecorded(let fileURL):
+                return .file(fileURL)
+            }
         }
     }
 
@@ -356,7 +391,9 @@ private final class LuxelAutomationCommandExecutor: AutomationCommandExecutor, @
 private enum LuxelAutomationError: LocalizedError, Equatable {
     case denied
     case noRecentRecording
+    case noQuickExportPreset
     case presetUnavailable(String)
+    case quickExportFailed
     case replayBufferUnavailable
     case targetUnavailable
     case unavailable
@@ -367,10 +404,14 @@ private enum LuxelAutomationError: LocalizedError, Equatable {
             "URL automation was denied"
         case .noRecentRecording:
             "No recent recording is available"
+        case .noQuickExportPreset:
+            "No quick export preset is selected"
         case .presetUnavailable(let name):
             "No export preset named \(name)"
+        case .quickExportFailed:
+            "Replay buffer quick export failed"
         case .replayBufferUnavailable:
-            "Replay buffer automation is not implemented yet"
+            "Replay buffer automation is unavailable until the replay buffer engine is available"
         case .targetUnavailable:
             "No matching capture target is available"
         case .unavailable:
