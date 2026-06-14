@@ -1,0 +1,69 @@
+import AppKit
+import CoreGraphics
+import LuxelCore
+import Testing
+
+@Suite("AppKit notch display provider")
+struct AppKitNotchDisplayProviderTests {
+    @Test("descriptor maps AppKit screen geometry into notch display facts")
+    func descriptorMapsAppKitScreenGeometryIntoNotchDisplayFacts() throws {
+        let descriptor = try #require(AppKitNotchDisplayProvider.descriptor(
+            displayID: 1,
+            frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            safeAreaInsets: NSEdgeInsets(top: 34, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: CGRect(x: 0, y: 948, width: 640, height: 34),
+            auxiliaryTopRightArea: CGRect(x: 872, y: 948, width: 640, height: 34),
+            isBuiltIn: true
+        ))
+
+        #expect(descriptor.displayID == DisplayID(1))
+        #expect(descriptor.frame == (try rect(x: 0, y: 0, width: 1512, height: 982)))
+        #expect(descriptor.safeAreaInsets == (try NotchSafeAreaInsets(top: 34)))
+        #expect(descriptor.auxiliaryTopLeftArea == (try rect(x: 0, y: 948, width: 640, height: 34)))
+        #expect(descriptor.auxiliaryTopRightArea == (try rect(x: 872, y: 948, width: 640, height: 34)))
+        #expect(descriptor.isBuiltIn)
+        #expect(descriptor.isVisible)
+        #expect(NotchGeometry.resolve(from: descriptor)?.cameraHousingRect == (
+            try rect(x: 640, y: 948, width: 232, height: 34)
+        ))
+    }
+
+    @Test("descriptor rejects missing display id and invalid screen facts")
+    func descriptorRejectsMissingDisplayIDAndInvalidScreenFacts() {
+        #expect(AppKitNotchDisplayProvider.descriptor(
+            displayID: nil,
+            frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            safeAreaInsets: NSEdgeInsets(top: 34, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: nil,
+            auxiliaryTopRightArea: nil,
+            isBuiltIn: true
+        ) == nil)
+
+        #expect(AppKitNotchDisplayProvider.descriptor(
+            displayID: 1,
+            frame: CGRect(x: 0, y: 0, width: 0, height: 982),
+            safeAreaInsets: NSEdgeInsets(top: 34, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: nil,
+            auxiliaryTopRightArea: nil,
+            isBuiltIn: true
+        ) == nil)
+
+        #expect(AppKitNotchDisplayProvider.descriptor(
+            displayID: 1,
+            frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            safeAreaInsets: NSEdgeInsets(top: .nan, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: nil,
+            auxiliaryTopRightArea: nil,
+            isBuiltIn: true
+        ) == nil)
+    }
+
+    private func rect(
+        x: Double,
+        y: Double,
+        width: Double,
+        height: Double
+    ) throws -> NotchScreenRect {
+        try NotchScreenRect(x: x, y: y, width: width, height: height)
+    }
+}
