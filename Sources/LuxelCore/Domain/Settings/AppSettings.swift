@@ -54,6 +54,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var audioInputDeviceID: String?
     public var audioInputDeviceName: String?
     public var audioOnlyFormat: AudioRecordingFormat
+    public var cameraDeviceID: String?
+    public var cameraSeparateTrack: Bool
+    public var cameraPreviewStyle: CameraPreviewStyle
     public var enableShortcuts: Bool
     public var triggerCropperShortcut: String
     public var toggleRecordingShortcut: String
@@ -81,6 +84,19 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var confirmDiscard: Bool
     public var lastStopAfter: TimeInterval?
 
+    public var cameraRecordingOptions: CameraRecordingOptions? {
+        guard let cameraDeviceID else {
+            return nil
+        }
+
+        return CameraRecordingOptions(
+            deviceID: cameraDeviceID,
+            isEnabled: true,
+            recordsSeparateTrack: cameraSeparateTrack,
+            previewStyle: cameraPreviewStyle
+        )
+    }
+
     public init(
         recordingsDirectory: URL,
         recordingsDirectoryBookmark: BookmarkedDirectory? = nil,
@@ -97,6 +113,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         audioInputDeviceID: String? = AudioInputDeviceID.systemDefault,
         audioInputDeviceName: String? = AudioInputDeviceOption.systemDefault.name,
         audioOnlyFormat: AudioRecordingFormat = .aac,
+        cameraDeviceID: String? = nil,
+        cameraSeparateTrack: Bool = true,
+        cameraPreviewStyle: CameraPreviewStyle = CameraPreviewStyle(),
         enableShortcuts: Bool = true,
         triggerCropperShortcut: String = "",
         toggleRecordingShortcut: String = "",
@@ -142,6 +161,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.audioInputDeviceID = audioInputDeviceID
         self.audioInputDeviceName = audioInputDeviceName
         self.audioOnlyFormat = audioOnlyFormat
+        self.cameraDeviceID = cameraDeviceID.flatMap(Self.nonEmpty)
+        self.cameraSeparateTrack = cameraSeparateTrack
+        self.cameraPreviewStyle = cameraPreviewStyle
         self.enableShortcuts = enableShortcuts
         self.triggerCropperShortcut = triggerCropperShortcut
         self.toggleRecordingShortcut = toggleRecordingShortcut
@@ -186,6 +208,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case audioInputDeviceID
         case audioInputDeviceName
         case audioOnlyFormat
+        case cameraDeviceID
+        case cameraSeparateTrack
+        case cameraPreviewStyle
         case enableShortcuts
         case triggerCropperShortcut
         case toggleRecordingShortcut
@@ -263,6 +288,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         }
         audioOnlyFormat = try container.decodeIfPresent(AudioRecordingFormat.self, forKey: .audioOnlyFormat)
             ?? .aac
+        cameraDeviceID = try container.decodeIfPresent(String.self, forKey: .cameraDeviceID)
+            .flatMap(Self.nonEmpty)
+        cameraSeparateTrack = try container.decodeIfPresent(Bool.self, forKey: .cameraSeparateTrack)
+            ?? true
+        cameraPreviewStyle = try container.decodeIfPresent(CameraPreviewStyle.self, forKey: .cameraPreviewStyle)
+            ?? CameraPreviewStyle()
         enableShortcuts = try container.decodeIfPresent(Bool.self, forKey: .enableShortcuts)
             ?? true
         triggerCropperShortcut = try container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut)
@@ -324,6 +355,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
 
     private static func cursorMode(showCursor: Bool) -> CursorMode {
         showCursor ? .baked : .hidden
+    }
+
+    private static func nonEmpty(_ value: String) -> String? {
+        value.isEmpty ? nil : value
     }
 
     private static func cursorRenderOptions(

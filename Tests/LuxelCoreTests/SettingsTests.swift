@@ -24,6 +24,10 @@ struct SettingsTests {
         #expect(settings.audioInputDeviceID == "SYSTEM_DEFAULT")
         #expect(settings.audioInputDeviceName == "System Default")
         #expect(settings.audioOnlyFormat == .aac)
+        #expect(settings.cameraDeviceID == nil)
+        #expect(settings.cameraSeparateTrack)
+        #expect(settings.cameraPreviewStyle == CameraPreviewStyle())
+        #expect(settings.cameraRecordingOptions == nil)
         #expect(settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "")
         #expect(settings.toggleRecordingShortcut == "")
@@ -53,6 +57,29 @@ struct SettingsTests {
         #expect(settings.screenshotBackdrop == .opaque)
         #expect(settings.confirmDiscard)
         #expect(settings.lastStopAfter == nil)
+    }
+
+    @Test("camera recording options derive from camera settings")
+    func cameraRecordingOptionsDeriveFromCameraSettings() {
+        let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
+        let previewStyle = CameraPreviewStyle(shape: .roundedRect, size: .large, isMirrored: false)
+        let settings = AppSettings(
+            recordingsDirectory: directory,
+            cameraDeviceID: "camera-1",
+            cameraSeparateTrack: false,
+            cameraPreviewStyle: previewStyle
+        )
+
+        #expect(settings.cameraRecordingOptions == CameraRecordingOptions(
+            deviceID: "camera-1",
+            isEnabled: true,
+            recordsSeparateTrack: false,
+            previewStyle: previewStyle
+        ))
+
+        let emptyDeviceSettings = AppSettings(recordingsDirectory: directory, cameraDeviceID: "")
+        #expect(emptyDeviceSettings.cameraDeviceID == nil)
+        #expect(emptyDeviceSettings.cameraRecordingOptions == nil)
     }
 
     @Test("legacy cursor toggles keep cursor effect settings synchronized")

@@ -66,6 +66,9 @@ struct UserDefaultsSettingsStoreTests {
             audioInputDeviceID: "mic-1",
             audioInputDeviceName: "Studio Mic",
             audioOnlyFormat: .alac,
+            cameraDeviceID: "camera-1",
+            cameraSeparateTrack: false,
+            cameraPreviewStyle: CameraPreviewStyle(shape: .roundedRect, size: .large, isMirrored: false),
             triggerCropperShortcut: "command+control+option+r",
             toggleRecordingShortcut: "command+control+option+t",
             recordActiveWindowShortcut: "command+control+option+shift+w",
@@ -155,6 +158,10 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.audioInputDeviceID == "device-1")
         #expect(settings.audioInputDeviceName == nil)
         #expect(settings.audioOnlyFormat == .aac)
+        #expect(settings.cameraDeviceID == nil)
+        #expect(settings.cameraSeparateTrack)
+        #expect(settings.cameraPreviewStyle == CameraPreviewStyle())
+        #expect(settings.cameraRecordingOptions == nil)
         #expect(!settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "command+shift+5")
         #expect(settings.toggleRecordingShortcut == "")
