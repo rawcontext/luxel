@@ -5,6 +5,33 @@ import Testing
 
 @Suite("AppKit notch display provider")
 struct AppKitNotchDisplayProviderTests {
+    @Test("display updates yield initial and notification snapshots")
+    @MainActor
+    func displayUpdatesYieldInitialAndNotificationSnapshots() async throws {
+        let notificationCenter = NotificationCenter()
+        let notificationName = Notification.Name("AppKitNotchDisplayProviderTests.screenChanged")
+        let firstDisplay = try descriptor(displayID: 1)
+        let secondDisplay = try descriptor(displayID: 2)
+        var snapshots = [
+            [firstDisplay],
+            [secondDisplay]
+        ]
+        let stream = AppKitNotchDisplayProvider.displayUpdates(
+            notificationCenter: notificationCenter,
+            notificationName: notificationName
+        ) {
+            snapshots.removeFirst()
+        }
+        var iterator = stream.makeAsyncIterator()
+
+        let initialSnapshot = await iterator.next()
+        notificationCenter.post(name: notificationName, object: nil)
+        let changedSnapshot = await iterator.next()
+
+        #expect(initialSnapshot == [firstDisplay])
+        #expect(changedSnapshot == [secondDisplay])
+    }
+
     @Test("descriptor maps AppKit screen geometry into notch display facts")
     func descriptorMapsAppKitScreenGeometryIntoNotchDisplayFacts() throws {
         let descriptor = try #require(AppKitNotchDisplayProvider.descriptor(
@@ -65,5 +92,16 @@ struct AppKitNotchDisplayProviderTests {
         height: Double
     ) throws -> NotchScreenRect {
         try NotchScreenRect(x: x, y: y, width: width, height: height)
+    }
+
+    private func descriptor(displayID: CGDirectDisplayID) throws -> NotchDisplayDescriptor {
+        try #require(AppKitNotchDisplayProvider.descriptor(
+            displayID: displayID,
+            frame: CGRect(x: 0, y: 0, width: 1512, height: 982),
+            safeAreaInsets: NSEdgeInsets(top: 34, left: 0, bottom: 0, right: 0),
+            auxiliaryTopLeftArea: CGRect(x: 0, y: 948, width: 640, height: 34),
+            auxiliaryTopRightArea: CGRect(x: 872, y: 948, width: 640, height: 34),
+            isBuiltIn: true
+        ))
     }
 }

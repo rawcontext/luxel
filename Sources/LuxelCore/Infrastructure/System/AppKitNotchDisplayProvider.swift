@@ -5,6 +5,15 @@ import CoreGraphics
 public final class AppKitNotchDisplayProvider: NotchDisplayProvider {
     public init() {}
 
+    public var displayUpdates: AsyncStream<[NotchDisplayDescriptor]> {
+        Self.displayUpdates(
+            notificationCenter: .default,
+            notificationName: NSApplication.didChangeScreenParametersNotification
+        ) { [weak self] in
+            self?.displays() ?? []
+        }
+    }
+
     public func displays() -> [NotchDisplayDescriptor] {
         NSScreen.screens.compactMap { screen in
             Self.descriptor(
@@ -15,6 +24,32 @@ public final class AppKitNotchDisplayProvider: NotchDisplayProvider {
                 auxiliaryTopRightArea: screen.auxiliaryTopRightArea,
                 isBuiltIn: screen.displayID.map { CGDisplayIsBuiltin($0) != 0 } ?? false
             )
+        }
+    }
+
+    nonisolated public static func displayUpdates(
+        notificationCenter: NotificationCenter,
+        notificationName: Notification.Name,
+        loadDisplays: @MainActor @escaping () -> [NotchDisplayDescriptor]
+    ) -> AsyncStream<[NotchDisplayDescriptor]> {
+        AsyncStream { continuation in
+            let task = Task { @MainActor in
+                continuation.yield(loadDisplays())
+
+                for await _ in notificationCenter.notifications(named: notificationName) {
+                    guard !Task.isCancelled else {
+                        break
+                    }
+
+                    continuation.yield(loadDisplays())
+                }
+            }
+
+            continuation.onTermination = { _ in
+                Task { @MainActor in
+                    task.cancel()
+                }
+            }
         }
     }
 
