@@ -55,49 +55,14 @@ struct LuxelMenuBarLabel: View {
 private struct MenuBarStatusIcon: View {
     let systemImage: String
     let animates: Bool
-    @State private var recordingPulseIsDimmed = false
 
     var body: some View {
-        Group {
-            if showsRecordingGlyph {
-                ZStack {
-                    Image(systemName: "record.circle")
-                        .opacity(animates ? 0.22 : 1)
-                    Image(systemName: "record.circle.fill")
-                        .opacity(animates ? (recordingPulseIsDimmed ? 0.55 : 1) : 0)
-                        .scaleEffect(animates && recordingPulseIsDimmed ? 0.86 : 1)
-                }
-                .animation(.easeInOut(duration: 0.18), value: animates)
-                .animation(
-                    animates
-                        ? .easeInOut(duration: 0.95).repeatForever(autoreverses: true)
-                        : .easeInOut(duration: 0.18),
-                    value: recordingPulseIsDimmed
-                )
-            } else {
-                Image(systemName: systemImage)
-            }
-        }
+        Image(systemName: systemImage)
             .font(.system(size: 14, weight: .regular))
             .imageScale(.medium)
             .frame(width: 18, height: 18)
-            .task(id: animates) {
-                guard animates else {
-                    recordingPulseIsDimmed = false
-                    return
-                }
-
-                recordingPulseIsDimmed = false
-                try? await Task.sleep(for: .milliseconds(120))
-                guard !Task.isCancelled else {
-                    return
-                }
-
-                recordingPulseIsDimmed = true
-            }
-    }
-
-    private var showsRecordingGlyph: Bool {
-        systemImage == "record.circle" || systemImage == "record.circle.fill"
+            .contentTransition(.symbolEffect(.replace))
+            .symbolEffect(.pulse, options: .repeating, isActive: animates)
+            .animation(.easeInOut(duration: 0.2), value: systemImage)
     }
 }
