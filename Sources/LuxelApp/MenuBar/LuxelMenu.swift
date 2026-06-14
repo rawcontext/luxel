@@ -66,6 +66,15 @@ struct LuxelMenu: View {
                 await refreshMenuState()
             }
         }
+        .onOpenURL { url in
+            Task {
+                await model.handleAutomationURL(
+                    url,
+                    openSettings: openLuxelSettings,
+                    openRecording: openRecording
+                )
+            }
+        }
         .task {
             await refreshMenuState()
             if let recoveredRecording = await model.recoverInterruptedRecording() {
@@ -133,6 +142,37 @@ struct LuxelMenu: View {
         } message: { prompt in
             Text(prompt.message)
         }
+        .alert(
+            Text(model.automationPrompt?.prompt.title ?? "URL Automation"),
+            isPresented: automationPromptPresented,
+            presenting: model.automationPrompt
+        ) { _ in
+            Button("Allow Once") {
+                Task {
+                    await model.approveAutomationPrompt(
+                        alwaysAllow: false,
+                        openSettings: openLuxelSettings,
+                        openRecording: openRecording
+                    )
+                }
+            }
+
+            Button("Always Allow") {
+                Task {
+                    await model.approveAutomationPrompt(
+                        alwaysAllow: true,
+                        openSettings: openLuxelSettings,
+                        openRecording: openRecording
+                    )
+                }
+            }
+
+            Button("Deny", role: .cancel) {
+                model.denyAutomationPrompt()
+            }
+        } message: { prompt in
+            Text(prompt.prompt.message)
+        }
     }
 
     private func openRecording(_ url: URL) {
@@ -143,6 +183,11 @@ struct LuxelMenu: View {
             model.configureEditor(editorModel)
             await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
         }
+    }
+
+    private func openLuxelSettings() {
+        openSettings()
+        NSApplication.shared.activate(ignoringOtherApps: true)
     }
 
     private func refreshMenuState() async {
@@ -167,6 +212,16 @@ struct LuxelMenu: View {
         } set: { isPresented in
             if !isPresented {
                 model.recoveryPrompt = nil
+            }
+        }
+    }
+
+    private var automationPromptPresented: Binding<Bool> {
+        Binding {
+            model.automationPrompt != nil
+        } set: { isPresented in
+            if !isPresented {
+                model.denyAutomationPrompt()
             }
         }
     }

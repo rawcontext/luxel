@@ -34,6 +34,10 @@ public final class AutomationService: Sendable {
         }
     }
 
+    public func executeConfirmed(_ invocation: AutomationInvocation) async throws -> AutomationExecutionResult {
+        try await execute(invocation.command)
+    }
+
     private func execute(_ command: AutomationCommand) async throws -> AutomationExecutionResult {
         switch command {
         case .record(let options):

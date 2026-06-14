@@ -16,6 +16,10 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
         #expect(plist["LSMinimumSystemVersion"] as? String == "26.0")
         #expect(plist["LSUIElement"] as? Bool == true)
+        let urlTypes = try #require(plist["CFBundleURLTypes"] as? [[String: Any]])
+        let luxelURLType = try #require(urlTypes.first)
+        #expect(luxelURLType["CFBundleURLName"] as? String == "media.luxel.app.url")
+        #expect(luxelURLType["CFBundleURLSchemes"] as? [String] == ["luxel"])
 
         let microphonePurpose = try #require(plist["NSMicrophoneUsageDescription"] as? String)
         #expect(microphonePurpose.contains("microphone"))

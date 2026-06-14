@@ -139,6 +139,20 @@ struct AutomationServiceTests {
         }
         #expect(executor.calls == [.stop])
     }
+
+    @Test("confirmed commands bypass policy and execute")
+    func confirmedCommandsBypassPolicyAndExecute() async throws {
+        let executor = SpyAutomationCommandExecutor()
+        let service = AutomationService(executor: executor)
+        let options = AutomationRecordingOptions(target: .lastArea)
+
+        let result = try await service.executeConfirmed(
+            AutomationInvocation(command: .record(options))
+        )
+
+        #expect(result == .accepted)
+        #expect(executor.calls == [.record(options)])
+    }
 }
 
 private enum StubAutomationExecutorError: Error, Equatable {

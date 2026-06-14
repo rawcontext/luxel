@@ -23,6 +23,7 @@ final class LuxelMenuModel {
     var recoveryState: RecordingRecoveryMenuState?
     var permissionPrompt: PermissionPrompt?
     var recoveryPrompt: RecoveryPrompt?
+    var automationPrompt: AutomationURLPrompt?
     let appMetadata: AppMetadata
 
     @ObservationIgnored let settingsStore: any SettingsStore

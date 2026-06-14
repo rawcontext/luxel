@@ -7,4 +7,5 @@ enum RecordingStartEntryPoint: String {
     case recordFullscreenShortcut = "record-fullscreen-shortcut"
     case recordActiveWindowShortcut = "record-active-window-shortcut"
     case quickRecordLastShortcut = "quick-record-last-shortcut"
+    case urlAutomation = "url-automation"
 }

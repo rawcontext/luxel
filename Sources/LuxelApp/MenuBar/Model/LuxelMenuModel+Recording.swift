@@ -159,6 +159,32 @@ extension LuxelMenuModel {
         )
     }
 
+    func startAutomationRecording(
+        target: CaptureTarget,
+        pixelSize: PixelSize,
+        presetID: UUID?
+    ) async {
+        let captureKind = presetID.map(QuickCaptureKind.quick) ?? .standard
+        let latencySpan = LuxelRecordingLatencyTelemetry.begin(
+            entryPoint: .urlAutomation,
+            target: target
+        )
+        await startRecording(
+            target: target,
+            pixelSize: pixelSize,
+            captureKind: captureKind,
+            latencySpan: latencySpan
+        )
+    }
+
+    func startAutomationRecordingFromLastCapture(presetID: UUID?) async {
+        let captureKind = presetID.map(QuickCaptureKind.quick) ?? .standard
+        await startRecordingFromLastCapture(
+            captureKind: captureKind,
+            entryPoint: .urlAutomation
+        )
+    }
+
     func startAudioOnlyRecording() async {
         guard canBeginRecordingStart else {
             return

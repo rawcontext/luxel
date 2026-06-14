@@ -59,22 +59,51 @@ extension LuxelMenuModel {
         quickExportStatusMessage = nil
 
         do {
-            let job = try screenshotCapturePlanner.captureJob(
-                target: target,
-                includeCursor: settings.showCursor,
-                format: settings.screenshotFormat,
-                destinations: settings.screenshotDestinations,
-                outputDirectory: settings.recordingsDirectory,
-                now: Date(),
-                backdrop: settings.screenshotBackdrop
-            )
-            let result = try await screenshotCaptureService.capture(job)
-            refreshRecentRecordings()
-            presentScreenshotThumbnailIfNeeded(result, job: job)
-            quickExportStatusMessage = screenshotStatusText(for: result)
+            let capture = try await performScreenshotCapture(target: target, format: settings.screenshotFormat)
+            quickExportStatusMessage = screenshotStatusText(for: capture.result)
         } catch {
             recordingActionErrorMessage = errorMessage(error)
         }
+    }
+
+    func captureAutomationScreenshot(
+        target: CaptureTarget,
+        format: ScreenshotFormat?
+    ) async throws -> AutomationExecutionResult {
+        recordingNoticeMessage = nil
+        recordingActionErrorMessage = nil
+        quickExportStatusMessage = nil
+
+        let capture = try await performScreenshotCapture(
+            target: target,
+            format: format ?? settings.screenshotFormat
+        )
+        quickExportStatusMessage = screenshotStatusText(for: capture.result)
+
+        if let fileURL = capture.result.fileURL {
+            return .file(fileURL)
+        }
+
+        return .accepted
+    }
+
+    private func performScreenshotCapture(
+        target: CaptureTarget,
+        format: ScreenshotFormat
+    ) async throws -> (job: ScreenshotCaptureJob, result: ScreenshotCaptureResult) {
+        let job = try screenshotCapturePlanner.captureJob(
+            target: target,
+            includeCursor: settings.showCursor,
+            format: format,
+            destinations: settings.screenshotDestinations,
+            outputDirectory: settings.recordingsDirectory,
+            now: Date(),
+            backdrop: settings.screenshotBackdrop
+        )
+        let result = try await screenshotCaptureService.capture(job)
+        refreshRecentRecordings()
+        presentScreenshotThumbnailIfNeeded(result, job: job)
+        return (job, result)
     }
 
     private func presentScreenshotThumbnailIfNeeded(

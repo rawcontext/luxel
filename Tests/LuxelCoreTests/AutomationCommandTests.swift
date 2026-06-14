@@ -85,6 +85,32 @@ struct AutomationCommandTests {
         }
     }
 
+    @Test("callback builder appends success result details")
+    func callbackBuilderAppendsSuccessResultDetails() throws {
+        let base = try #require(URL(string: "luxel-callback://done?token=abc"))
+        let fileURL = URL(fileURLWithPath: "/tmp/Luxel Recording.mp4")
+
+        #expect(AutomationCallbackURLBuilder.successURL(for: .accepted, callback: base) == base)
+        #expect(
+            AutomationCallbackURLBuilder.successURL(for: .recording(id: "recording-1"), callback: base)?
+                .absoluteString == "luxel-callback://done?token=abc&recordingID=recording-1"
+        )
+        #expect(
+            AutomationCallbackURLBuilder.successURL(for: .file(fileURL), callback: base)?
+                .absoluteString == "luxel-callback://done?token=abc&filePath=/tmp/Luxel%20Recording.mp4"
+        )
+    }
+
+    @Test("callback builder appends error messages")
+    func callbackBuilderAppendsErrorMessages() throws {
+        let base = try #require(URL(string: "luxel-callback://error"))
+
+        #expect(
+            AutomationCallbackURLBuilder.errorURL(message: "URL automation is disabled", callback: base)?
+                .absoluteString == "luxel-callback://error?errorMessage=URL%20automation%20is%20disabled"
+        )
+    }
+
     @Test("policy allows safe commands while automation is disabled")
     func policyAllowsSafeCommandsWhileAutomationIsDisabled() {
         let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))
