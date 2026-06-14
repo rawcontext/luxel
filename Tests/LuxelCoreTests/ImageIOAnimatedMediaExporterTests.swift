@@ -12,6 +12,7 @@ struct ImageIOAnimatedMediaExporterTests {
 
         let exported = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
         let metadata = try animatedImageMetadata(at: outputURL)
+        let data = try Data(contentsOf: outputURL)
         let expectedPixelSize = try PixelSize(width: 321, height: 181)
 
         #expect(exported.format == .gif)
@@ -20,6 +21,9 @@ struct ImageIOAnimatedMediaExporterTests {
         #expect(metadata.frameCount == 3)
         #expect(metadata.width == 321)
         #expect(metadata.height == 181)
+        #expect(Array(data.prefix(6)) == Array("GIF89a".utf8))
+        #expect((data[10] & 0b1000_0000) != 0)
+        #expect(data.containsASCII("NETSCAPE2.0"))
 
         try? FileManager.default.removeItem(at: outputURL)
     }
@@ -133,5 +137,23 @@ struct ImageIOAnimatedMediaExporterTests {
         }
 
         return url.deletingLastPathComponent()
+    }
+}
+
+private extension Data {
+    func containsASCII(_ string: String) -> Bool {
+        containsSequence(Array(string.utf8))
+    }
+
+    private func containsSequence(_ sequence: [UInt8]) -> Bool {
+        guard !sequence.isEmpty, count >= sequence.count else {
+            return false
+        }
+
+        let bytes = Array(self)
+        for index in 0...(bytes.count - sequence.count) where Array(bytes[index..<(index + sequence.count)]) == sequence {
+            return true
+        }
+        return false
     }
 }

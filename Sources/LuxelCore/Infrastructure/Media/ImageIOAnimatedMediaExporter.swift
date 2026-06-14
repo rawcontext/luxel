@@ -16,6 +16,27 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         let outputPixelSize = try request.outputPixelSize
         let asset = AVURLAsset(url: request.inputFileURL)
         let schedule = await animatedFrameSchedule(for: request, asset: asset)
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        imageGenerator.appliesPreferredTrackTransform = true
+        imageGenerator.requestedTimeToleranceBefore = .zero
+        imageGenerator.requestedTimeToleranceAfter = .zero
+
+        if request.format == .gif {
+            try await exportGIF(
+                request,
+                to: outputFileURL,
+                outputPixelSize: outputPixelSize,
+                schedule: schedule,
+                imageGenerator: imageGenerator
+            )
+            return ExportedMedia(
+                fileURL: outputFileURL,
+                format: request.format,
+                pixelSize: outputPixelSize,
+                shouldMute: request.outputShouldMute
+            )
+        }
+
         let destination = try makeDestination(
             format: request.format,
             outputFileURL: outputFileURL,
@@ -23,11 +44,6 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         )
         let destinationProperties = destinationProperties(for: request.format)
         CGImageDestinationSetProperties(destination, destinationProperties as CFDictionary)
-
-        let imageGenerator = AVAssetImageGenerator(asset: asset)
-        imageGenerator.appliesPreferredTrackTransform = true
-        imageGenerator.requestedTimeToleranceBefore = .zero
-        imageGenerator.requestedTimeToleranceAfter = .zero
 
         try? FileManager.default.removeItem(at: outputFileURL)
 
@@ -59,6 +75,115 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
             format: request.format,
             pixelSize: outputPixelSize,
             shouldMute: request.outputShouldMute
+        )
+    }
+
+    private func exportGIF(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        outputPixelSize: PixelSize,
+        schedule: AnimatedFrameSchedule,
+        imageGenerator: AVAssetImageGenerator
+    ) async throws {
+        let options = try GIFRenderOptions(quality: request.resolvedQuality)
+        let frames = try await renderedBitmaps(
+            for: schedule,
+            outputPixelSize: outputPixelSize,
+            shouldCrop: request.shouldCrop,
+            imageGenerator: imageGenerator
+        )
+        let transparentColorIndex = UInt8(0)
+        let sourcePalette = try MedianCutPaletteBuilder().palette(
+            from: frames,
+            maxColorCount: min(options.paletteSize, 255)
+        )
+        let palette = try GIFColorPalette(colors: [
+            GIFPaletteColor(red: 0, green: 0, blue: 0)
+        ] + sourcePalette.colors)
+        let indexedFrames = try GIFFrameIndexer()
+            .indexedFrames(
+                from: frames,
+                palette: sourcePalette,
+                dithering: options.dithering
+            )
+            .map(shiftedIndexedFrame)
+        let deltas = try frameDeltas(
+            bitmaps: frames,
+            indexedFrames: indexedFrames,
+            transparentColorIndex: transparentColorIndex,
+            lossyTolerance: options.lossyTolerance
+        )
+        let delays = try CentisecondDelayPlanner().plan(
+            frameCount: frames.count,
+            frameDuration: schedule.frameDelay
+        )
+
+        try? FileManager.default.removeItem(at: outputFileURL)
+        do {
+            try GIFContainerWriter().write(
+                pixelSize: outputPixelSize,
+                palette: palette,
+                frames: deltas,
+                delays: delays,
+                loopMode: options.loopMode,
+                to: outputFileURL
+            )
+        } catch {
+            try? FileManager.default.removeItem(at: outputFileURL)
+            throw error
+        }
+    }
+
+    private func renderedBitmaps(
+        for schedule: AnimatedFrameSchedule,
+        outputPixelSize: PixelSize,
+        shouldCrop: Bool,
+        imageGenerator: AVAssetImageGenerator
+    ) async throws -> [GIFFrameBitmap] {
+        var frames: [GIFFrameBitmap] = []
+        frames.reserveCapacity(schedule.frameTimes.count)
+
+        for time in schedule.frameTimes {
+            let frame = try await imageGenerator.image(at: time).image
+            frames.append(try renderBitmap(
+                frame,
+                outputPixelSize: outputPixelSize,
+                shouldCrop: shouldCrop
+            ))
+        }
+
+        return frames
+    }
+
+    private func frameDeltas(
+        bitmaps: [GIFFrameBitmap],
+        indexedFrames: [GIFIndexedFrame],
+        transparentColorIndex: UInt8,
+        lossyTolerance: Int
+    ) throws -> [GIFFrameDelta] {
+        let differ = GIFFrameDiffer()
+        var previousFrame: GIFFrameBitmap?
+        var deltas: [GIFFrameDelta] = []
+        deltas.reserveCapacity(bitmaps.count)
+
+        for (bitmap, indexedFrame) in zip(bitmaps, indexedFrames) {
+            deltas.append(try differ.delta(
+                from: previousFrame,
+                to: bitmap,
+                indexedFrame: indexedFrame,
+                transparentColorIndex: transparentColorIndex,
+                lossyTolerance: lossyTolerance
+            ))
+            previousFrame = bitmap
+        }
+
+        return deltas
+    }
+
+    private func shiftedIndexedFrame(_ frame: GIFIndexedFrame) throws -> GIFIndexedFrame {
+        try GIFIndexedFrame(
+            pixelSize: frame.pixelSize,
+            colorIndexes: frame.colorIndexes.map { $0 + 1 }
         )
     }
 
@@ -160,6 +285,55 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         }
 
         return renderedImage
+    }
+
+    private func renderBitmap(
+        _ image: CGImage,
+        outputPixelSize: PixelSize,
+        shouldCrop: Bool
+    ) throws -> GIFFrameBitmap {
+        let bytesPerPixel = 4
+        let bytesPerRow = outputPixelSize.width * bytesPerPixel
+        let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+            | CGBitmapInfo.byteOrder32Big.rawValue
+        var bytes = Array(
+            repeating: UInt8(0),
+            count: outputPixelSize.height * bytesPerRow
+        )
+
+        try bytes.withUnsafeMutableBytes { pointer in
+            guard let context = CGContext(
+                data: pointer.baseAddress,
+                width: outputPixelSize.width,
+                height: outputPixelSize.height,
+                bitsPerComponent: 8,
+                bytesPerRow: bytesPerRow,
+                space: colorSpace,
+                bitmapInfo: bitmapInfo
+            ) else {
+                throw ImageIOAnimatedMediaExporterError.cannotCreateFrameContext
+            }
+
+            context.setFillColor(CGColor(gray: 0, alpha: 1))
+            context.fill(CGRect(origin: .zero, size: outputSize))
+            context.interpolationQuality = .high
+            context.draw(image, in: drawRect(for: image, outputSize: outputSize, shouldCrop: shouldCrop))
+        }
+
+        var pixels: [GIFRGBAPixel] = []
+        pixels.reserveCapacity(outputPixelSize.width * outputPixelSize.height)
+        for offset in stride(from: 0, to: bytes.count, by: bytesPerPixel) {
+            pixels.append(GIFRGBAPixel(
+                red: bytes[offset],
+                green: bytes[offset + 1],
+                blue: bytes[offset + 2],
+                alpha: bytes[offset + 3]
+            ))
+        }
+
+        return try GIFFrameBitmap(pixelSize: outputPixelSize, pixels: pixels)
     }
 
     private func drawRect(
