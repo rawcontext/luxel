@@ -107,6 +107,14 @@ extension LuxelMenuModel {
         captureTargets.first { $0.kind == .display }
     }
 
+    var selectedOrFallbackDisplayTarget: CaptureTargetOption? {
+        if selectedCaptureTarget?.kind == .display {
+            return selectedCaptureTarget
+        }
+
+        return lastCaptureFallbackDisplay
+    }
+
     var canStartRecording: Bool {
         screenRecordingStatus == .authorized && selectedCaptureTarget != nil
     }

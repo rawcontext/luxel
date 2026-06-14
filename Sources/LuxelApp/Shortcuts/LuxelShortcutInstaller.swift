@@ -32,6 +32,9 @@ struct LuxelShortcutInstaller: View {
             .onChange(of: model.settings.captureScreenshotShortcut) {
                 configureShortcut()
             }
+            .onChange(of: model.settings.screenshotFullscreenShortcut) {
+                configureShortcut()
+            }
     }
 
     private func configureShortcut() {
@@ -78,6 +81,16 @@ struct LuxelShortcutInstaller: View {
                         Task {
                             await model.startRecording(from: draft)
                         }
+                    }
+                },
+                LuxelShortcutRegistration(rawShortcut: model.settings.screenshotFullscreenShortcut) {
+                    guard model.screenRecordingStatus == .authorized,
+                          model.selectedOrFallbackDisplayTarget != nil else {
+                        return
+                    }
+
+                    Task {
+                        await model.captureFullscreenScreenshot()
                     }
                 },
                 LuxelShortcutRegistration(rawShortcut: model.settings.toggleRecordingShortcut) {
