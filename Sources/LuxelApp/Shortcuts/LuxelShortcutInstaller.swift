@@ -29,6 +29,9 @@ struct LuxelShortcutInstaller: View {
             .onChange(of: model.settings.quickRecordLastShortcut) {
                 configureShortcut()
             }
+            .onChange(of: model.settings.captureScreenshotShortcut) {
+                configureShortcut()
+            }
     }
 
     private func configureShortcut() {
@@ -46,6 +49,30 @@ struct LuxelShortcutInstaller: View {
                         onStopAfterDurationChange: { duration in
                             model.settings.lastStopAfter = duration
                             model.saveSettings()
+                        }
+                    ) { draft in
+                        Task {
+                            await model.startRecording(from: draft)
+                        }
+                    }
+                },
+                LuxelShortcutRegistration(rawShortcut: model.settings.captureScreenshotShortcut) {
+                    guard model.canSelectArea else {
+                        return
+                    }
+
+                    cropperPanelController.show(
+                        initialMode: .photo,
+                        stopAfterDuration: model.settings.lastStopAfter,
+                        audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
+                        onStopAfterDurationChange: { duration in
+                            model.settings.lastStopAfter = duration
+                            model.saveSettings()
+                        },
+                        onCaptureScreenshot: { draft in
+                            Task {
+                                await model.captureScreenshot(from: draft)
+                            }
                         }
                     ) { draft in
                         Task {
