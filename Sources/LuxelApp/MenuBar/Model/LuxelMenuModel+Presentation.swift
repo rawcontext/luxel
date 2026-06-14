@@ -139,6 +139,13 @@ extension LuxelMenuModel {
         )
     }
 
+    func cropperQuickRecordingConfiguration() -> CropperQuickRecordingConfiguration {
+        CropperQuickRecordingConfiguration(
+            activePresetID: settings.quickExportPresetID,
+            presets: settings.exportPresets
+        )
+    }
+
     var recordButtonTitle: String {
         recordingPresentation().primaryActionTitle
     }

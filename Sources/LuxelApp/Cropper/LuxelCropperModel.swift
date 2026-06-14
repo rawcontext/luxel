@@ -6,6 +6,21 @@ struct CropperAudioLevelConfiguration {
     let deviceID: String?
 }
 
+struct CropperQuickRecordingConfiguration {
+    let activePresetID: UUID?
+    let presets: [ExportPreset]
+
+    init(activePresetID: UUID?, presets: [ExportPreset]) {
+        self.presets = presets
+        self.activePresetID = if let activePresetID,
+                                 presets.contains(where: { $0.id == activePresetID }) {
+            activePresetID
+        } else {
+            nil
+        }
+    }
+}
+
 enum LuxelCropperMode: String, CaseIterable, Identifiable {
     case video
     case photo

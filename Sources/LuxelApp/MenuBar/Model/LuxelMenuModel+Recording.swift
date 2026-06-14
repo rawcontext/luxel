@@ -13,6 +13,20 @@ extension LuxelMenuModel {
         }
     }
 
+    func startQuickRecording(from draft: CaptureSelectionDraft, presetID: UUID) async {
+        do {
+            let target = try draft.captureTarget
+            let pixelSize = try draft.pixelSize
+            await startRecording(
+                target: target,
+                pixelSize: pixelSize,
+                captureKind: .quick(presetID: presetID)
+            )
+        } catch {
+            recordingState = .failed(errorMessage(error))
+        }
+    }
+
     func startRecordingFromSelectedTarget() async {
         guard let selectedCaptureTarget else {
             recordingState = .failed("No capture target selected")

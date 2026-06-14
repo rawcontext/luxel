@@ -6,8 +6,10 @@ import SwiftUI
 struct LuxelCropperView: View {
     @Bindable var model: LuxelCropperModel
     let audioLevelModel: LuxelAudioLevelModel?
+    let quickRecordingConfiguration: CropperQuickRecordingConfiguration
     let onCancel: () -> Void
     let onSelect: (CaptureSelectionDraft) -> Void
+    let onQuickSelect: (CaptureSelectionDraft, UUID) -> Void
     let onCaptureScreenshot: (CaptureSelectionDraft) -> Void
 
     var body: some View {
@@ -113,16 +115,45 @@ struct LuxelCropperView: View {
                 .labelStyle(.iconOnly)
                 .help("Cancel")
 
-                Button {
-                    commitSelection()
-                } label: {
-                    Label(model.primaryActionTitle, systemImage: model.primaryActionSystemImage)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!model.canRecordSelection)
+                primaryActionButton
             }
         }
         .fixedSize()
+    }
+
+    @ViewBuilder
+    private var primaryActionButton: some View {
+        Button {
+            commitPrimarySelection()
+        } label: {
+            Label(model.primaryActionTitle, systemImage: model.primaryActionSystemImage)
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(!model.canRecordSelection)
+        .help(model.primaryActionHelp)
+        .contextMenu {
+            if model.mode == .video {
+                Button {
+                    commitSelection()
+                } label: {
+                    Label("Record", systemImage: "record.circle")
+                }
+
+                if !quickRecordingConfiguration.presets.isEmpty {
+                    Menu {
+                        ForEach(quickRecordingConfiguration.presets) { preset in
+                            Button {
+                                commitSelection(quickPresetID: preset.id)
+                            } label: {
+                                Label(preset.name, systemImage: quickPresetSystemImage(for: preset))
+                            }
+                        }
+                    } label: {
+                        Label("Quick Record", systemImage: "bolt.circle")
+                    }
+                }
+            }
+        }
     }
 
     private func selectionOverlay(rect: CGRect, viewSize: CGSize) -> some View {
@@ -171,7 +202,18 @@ struct LuxelCropperView: View {
         )
     }
 
-    private func commitSelection() {
+    private func commitPrimarySelection() {
+        let quickPresetID: UUID? = if model.mode == .video,
+                                      NSEvent.modifierFlags.contains(.option) {
+            quickRecordingConfiguration.activePresetID
+        } else {
+            nil
+        }
+
+        commitSelection(quickPresetID: quickPresetID)
+    }
+
+    private func commitSelection(quickPresetID: UUID? = nil) {
         do {
             guard let draft = try model.draft() else {
                 return
@@ -179,7 +221,11 @@ struct LuxelCropperView: View {
 
             switch model.mode {
             case .video:
-                onSelect(draft)
+                if let quickPresetID {
+                    onQuickSelect(draft, quickPresetID)
+                } else {
+                    onSelect(draft)
+                }
             case .photo:
                 onCaptureScreenshot(draft)
             }
@@ -215,6 +261,10 @@ struct LuxelCropperView: View {
             model.setCustomStopAfterText(text)
         }
     }
+
+    private func quickPresetSystemImage(for preset: ExportPreset) -> String {
+        preset.id == quickRecordingConfiguration.activePresetID ? "bolt.circle.fill" : "bolt.circle"
+    }
 }
 
 private extension LuxelCropperMode {
@@ -244,6 +294,15 @@ private extension LuxelCropperModel {
             "record.circle"
         case .photo:
             "camera"
+        }
+    }
+
+    var primaryActionHelp: String {
+        switch mode {
+        case .video:
+            "Record"
+        case .photo:
+            "Capture"
         }
     }
 }

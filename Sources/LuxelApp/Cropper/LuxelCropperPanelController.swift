@@ -26,8 +26,13 @@ final class LuxelCropperPanelController {
         initialMode: LuxelCropperMode = .video,
         stopAfterDuration: TimeInterval? = nil,
         audioLevelConfiguration: CropperAudioLevelConfiguration? = nil,
+        quickRecordingConfiguration: CropperQuickRecordingConfiguration = CropperQuickRecordingConfiguration(
+            activePresetID: nil,
+            presets: []
+        ),
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onCaptureScreenshot: @escaping @MainActor (CaptureSelectionDraft) -> Void = { _ in },
+        onQuickSelect: @escaping @MainActor (CaptureSelectionDraft, UUID) -> Void = { _, _ in },
         onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
     ) {
         close()
@@ -40,8 +45,10 @@ final class LuxelCropperPanelController {
                     initialMode: initialMode,
                     stopAfterDuration: stopAfterDuration,
                     audioLevelConfiguration: audioLevelConfiguration,
+                    quickRecordingConfiguration: quickRecordingConfiguration,
                     onStopAfterDurationChange: onStopAfterDurationChange,
                     onCaptureScreenshot: onCaptureScreenshot,
+                    onQuickSelect: onQuickSelect,
                     onSelect: onSelect
                 )
             } catch {
@@ -64,8 +71,10 @@ final class LuxelCropperPanelController {
         initialMode: LuxelCropperMode,
         stopAfterDuration: TimeInterval?,
         audioLevelConfiguration: CropperAudioLevelConfiguration?,
+        quickRecordingConfiguration: CropperQuickRecordingConfiguration,
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
         onCaptureScreenshot: @escaping @MainActor (CaptureSelectionDraft) -> Void,
+        onQuickSelect: @escaping @MainActor (CaptureSelectionDraft, UUID) -> Void,
         onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
     ) {
         let displaysByID = Dictionary(uniqueKeysWithValues: displays.map { ($0.id, $0) })
@@ -111,12 +120,17 @@ final class LuxelCropperPanelController {
                 rootView: LuxelCropperView(
                     model: model,
                     audioLevelModel: sharedAudioLevelModel,
+                    quickRecordingConfiguration: quickRecordingConfiguration,
                     onCancel: { [weak self] in
                         self?.close()
                     },
                     onSelect: { [weak self] draft in
                         self?.close()
                         onSelect(draft)
+                    },
+                    onQuickSelect: { [weak self] draft, presetID in
+                        self?.close()
+                        onQuickSelect(draft, presetID)
                     },
                     onCaptureScreenshot: { [weak self] draft in
                         self?.close()

@@ -58,9 +58,15 @@ struct LuxelShortcutInstaller: View {
                     cropperPanelController.show(
                         stopAfterDuration: model.settings.lastStopAfter,
                         audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
+                        quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                         onStopAfterDurationChange: { duration in
                             model.settings.lastStopAfter = duration
                             model.saveSettings()
+                        },
+                        onQuickSelect: { draft, presetID in
+                            Task {
+                                await model.startQuickRecording(from: draft, presetID: presetID)
+                            }
                         }
                     ) { draft in
                         Task {
@@ -77,6 +83,7 @@ struct LuxelShortcutInstaller: View {
                         initialMode: .photo,
                         stopAfterDuration: model.settings.lastStopAfter,
                         audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
+                        quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                         onStopAfterDurationChange: { duration in
                             model.settings.lastStopAfter = duration
                             model.saveSettings()
@@ -84,6 +91,11 @@ struct LuxelShortcutInstaller: View {
                         onCaptureScreenshot: { draft in
                             Task {
                                 await model.captureScreenshot(from: draft)
+                            }
+                        },
+                        onQuickSelect: { draft, presetID in
+                            Task {
+                                await model.startQuickRecording(from: draft, presetID: presetID)
                             }
                         }
                     ) { draft in
