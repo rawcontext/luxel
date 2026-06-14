@@ -80,6 +80,8 @@ public struct CodecDependency: Codable, Equatable, Identifiable, Sendable {
             isFallbackOnly: true
         )
     ]
+
+    public static let bundledNativeCodecStack: [CodecDependency] = []
 }
 
 public enum CodecLicenseDecision: Equatable, Sendable {

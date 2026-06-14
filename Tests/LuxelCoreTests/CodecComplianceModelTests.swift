@@ -1,3 +1,4 @@
+import Foundation
 import LuxelCore
 import Testing
 
@@ -97,10 +98,93 @@ struct CodecComplianceModelTests {
 
     @Test("license gate passes when no shipped codec dependencies are bundled")
     func licenseGatePassesWhenNoShippedCodecDependenciesAreBundled() {
-        let report = CodecLicenseGate().validate(dependencies: [], ledger: CodecLicenseLedger())
+        let report = CodecLicenseGate().validate(
+            dependencies: CodecDependency.bundledNativeCodecStack,
+            ledger: CodecLicenseLedger()
+        )
 
+        #expect(CodecDependency.bundledNativeCodecStack.isEmpty)
         #expect(report.isPassing)
         #expect(report.violations.isEmpty)
+    }
+
+    @Test("third party licenses ledger file passes current release gate")
+    func thirdPartyLicensesLedgerFilePassesCurrentReleaseGate() throws {
+        let ledgerURL = try packageRootURL().appending(path: "THIRD_PARTY_LICENSES.md")
+        let markdown = try String(contentsOf: ledgerURL, encoding: .utf8)
+        let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
+
+        let report = CodecLicenseGate().validate(
+            dependencies: CodecDependency.bundledNativeCodecStack,
+            ledger: ledger
+        )
+
+        #expect(ledger.entries.isEmpty)
+        #expect(report.isPassing)
+        #expect(report.violations.isEmpty)
+    }
+
+    @Test("license ledger markdown parser reads structured dependency entries")
+    func licenseLedgerMarkdownParserReadsStructuredDependencyEntries() throws {
+        let markdown = """
+        # Third-Party Licenses
+
+        ## Dependency: libvpx
+        Name: libvpx
+        License: BSD-3-Clause
+        Copyright: Copyright 2026 The libvpx authors
+        License Text:
+        Redistribution and use in source and binary forms are permitted.
+        """
+
+        let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
+
+        #expect(ledger == CodecLicenseLedger(entries: [
+            CodecLicenseLedgerEntry(
+                dependencyID: "libvpx",
+                name: "libvpx",
+                license: .bsd3Clause,
+                copyrightNotice: "Copyright 2026 The libvpx authors",
+                licenseText: "Redistribution and use in source and binary forms are permitted."
+            )
+        ]))
+    }
+
+    @Test("license ledger markdown parser rejects unknown licenses")
+    func licenseLedgerMarkdownParserRejectsUnknownLicenses() {
+        let markdown = """
+        ## Dependency: forbidden
+        Name: Forbidden Codec
+        License: GPL-ish
+        Copyright: Copyright 2026 Example
+        License Text:
+        Example license text.
+        """
+
+        #expect(throws: CodecLicenseLedgerMarkdownParserError.unknownLicense(
+            dependencyID: "forbidden",
+            rawValue: "GPL-ish"
+        )) {
+            _ = try CodecLicenseLedgerMarkdownParser().parse(markdown)
+        }
+    }
+
+    @Test("license ledger markdown parser requires license text")
+    func licenseLedgerMarkdownParserRequiresLicenseText() {
+        let markdown = """
+        ## Dependency: libopus
+        Name: libopus
+        License: BSD-3-Clause
+        Copyright: Copyright 2026 The Opus authors
+        License Text:
+
+        """
+
+        #expect(throws: CodecLicenseLedgerMarkdownParserError.missingLicenseText(
+            dependencyID: "libopus"
+        )) {
+            _ = try CodecLicenseLedgerMarkdownParser().parse(markdown)
+        }
     }
 
     @Test("license gate requires ledger entries for planned shipped codec stack")
@@ -218,5 +302,16 @@ struct CodecComplianceModelTests {
         #expect(policy.requiresBundledLicenseText(shippedLibrary))
         #expect(!policy.requiresBundledLicenseText(publicDomainLibrary))
         #expect(!policy.requiresBundledLicenseText(tool))
+    }
+
+    private func packageRootURL() throws -> URL {
+        var url = URL(fileURLWithPath: #filePath)
+        while url.lastPathComponent != "Tests" {
+            let next = url.deletingLastPathComponent()
+            try #require(next.path != url.path)
+            url = next
+        }
+
+        return url.deletingLastPathComponent()
     }
 }
