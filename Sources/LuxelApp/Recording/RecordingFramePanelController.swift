@@ -80,26 +80,37 @@ final class RecordingFramePanelController {
 }
 
 private enum RecordingFrameStyle {
-    case fullDisplay(cornerRadius: CGFloat)
+    case fullDisplay(cornerRadii: RecordingFrameCornerRadii)
     case selection
 
     init(target: CaptureTarget, screen: NSScreen?) {
         switch target {
         case .display:
-            self = .fullDisplay(cornerRadius: Self.fullDisplayCornerRadius(screen: screen))
+            self = .fullDisplay(cornerRadii: Self.fullDisplayCornerRadii(screen: screen))
         case .area, .window:
             self = .selection
         }
     }
 
-    private static func fullDisplayCornerRadius(screen: NSScreen?) -> CGFloat {
+    private static func fullDisplayCornerRadii(screen: NSScreen?) -> RecordingFrameCornerRadii {
         guard let screen, screen.isBuiltInDisplay, screen.safeAreaInsets.top > 0 else {
-            return 0
+            return .square
         }
 
         // AppKit exposes notched built-in displays through safeAreaInsets, but not physical corner radius.
-        return min(max(screen.safeAreaInsets.top * 0.65, 18), 28)
+        let bottomRadius = min(max(screen.safeAreaInsets.top * 0.65, 18), 28)
+        return RecordingFrameCornerRadii(
+            top: min(max(screen.safeAreaInsets.top, bottomRadius), 48),
+            bottom: bottomRadius
+        )
     }
+}
+
+private struct RecordingFrameCornerRadii {
+    let top: CGFloat
+    let bottom: CGFloat
+
+    static let square = RecordingFrameCornerRadii(top: 0, bottom: 0)
 }
 
 private struct RecordingFrameView: View {
@@ -108,9 +119,15 @@ private struct RecordingFrameView: View {
     var body: some View {
         Group {
             switch style {
-            case .fullDisplay(let cornerRadius):
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(.red.opacity(0.86), lineWidth: 3)
+            case .fullDisplay(let cornerRadii):
+                UnevenRoundedRectangle(
+                    topLeadingRadius: cornerRadii.top,
+                    bottomLeadingRadius: cornerRadii.bottom,
+                    bottomTrailingRadius: cornerRadii.bottom,
+                    topTrailingRadius: cornerRadii.top,
+                    style: .continuous
+                )
+                .strokeBorder(.red.opacity(0.86), lineWidth: 3)
 
             case .selection:
                 RoundedRectangle(cornerRadius: 6, style: .continuous)

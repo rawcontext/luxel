@@ -95,9 +95,13 @@ struct ArchitectureTests {
             encoding: .utf8
         )
 
-        #expect(source.contains("case fullDisplay(cornerRadius: CGFloat)"))
+        #expect(source.contains("case fullDisplay(cornerRadii: RecordingFrameCornerRadii)"))
+        #expect(source.contains("top: min(max(screen.safeAreaInsets.top, bottomRadius), 48)"))
+        #expect(source.contains("bottom: bottomRadius"))
         #expect(source.contains("screen.safeAreaInsets.top"))
-        #expect(source.contains("RoundedRectangle(cornerRadius: cornerRadius"))
+        #expect(source.contains("UnevenRoundedRectangle("))
+        #expect(source.contains("topLeadingRadius: cornerRadii.top"))
+        #expect(source.contains("bottomLeadingRadius: cornerRadii.bottom"))
         #expect(source.contains(".ignoresSafeArea()"))
     }
 
