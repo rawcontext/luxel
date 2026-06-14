@@ -9,6 +9,26 @@ public final class NotchCoordinator: @unchecked Sendable {
         presenter.interactions
     }
 
+    @MainActor
+    @discardableResult
+    public func observeDisplayProvider(
+        _ displayProvider: any NotchDisplayProvider,
+        activities: [NotchActivity],
+        preferences: NotchSurfacePreferences = .defaults,
+        presentationState: NotchPresentationState = .collapsed,
+        motion: NotchMotion = .standard,
+        reduceMotion: Bool = false
+    ) -> NotchCoordinatorObservation {
+        observeDisplayUpdates(
+            displayProvider.displayUpdates,
+            activities: activities,
+            preferences: preferences,
+            presentationState: presentationState,
+            motion: motion,
+            reduceMotion: reduceMotion
+        )
+    }
+
     @discardableResult
     public func observeDisplayUpdates(
         _ displayUpdates: AsyncStream<[NotchDisplayDescriptor]>,

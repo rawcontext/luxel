@@ -115,6 +115,32 @@ struct NotchCoordinatorTests {
         displayUpdates.continuation.finish()
     }
 
+    @Test("display provider observation uses provider update stream")
+    @MainActor
+    func displayProviderObservationUsesProviderUpdateStream() async throws {
+        let presenter = SpyNotchPresenter()
+        let coordinator = NotchCoordinator(presenter: presenter)
+        let displayUpdates = AsyncStream<[NotchDisplayDescriptor]>.makeStream()
+        let displayProvider = StubNotchDisplayProvider(displayUpdates: displayUpdates.stream)
+
+        let observation = coordinator.observeDisplayProvider(
+            displayProvider,
+            activities: [.idleHover],
+            reduceMotion: true
+        )
+        var results = observation.results.makeAsyncIterator()
+
+        let notchedDisplay = try builtInNotchedDisplay()
+        displayUpdates.continuation.yield([notchedDisplay])
+        let result = try #require(await results.next())
+        let geometry = try #require(NotchGeometry.resolve(from: notchedDisplay))
+        #expect(result.selection == .notch(geometry))
+        #expect(result.update?.motion == .reduced)
+
+        observation.cancel()
+        displayUpdates.continuation.finish()
+    }
+
     @Test("set expanded forwards to presenter")
     func setExpandedForwardsToPresenter() async {
         let presenter = SpyNotchPresenter()
@@ -145,6 +171,19 @@ struct NotchCoordinatorTests {
         height: Double
     ) throws -> NotchScreenRect {
         try NotchScreenRect(x: x, y: y, width: width, height: height)
+    }
+}
+
+@MainActor
+private final class StubNotchDisplayProvider: NotchDisplayProvider {
+    let displayUpdates: AsyncStream<[NotchDisplayDescriptor]>
+
+    init(displayUpdates: AsyncStream<[NotchDisplayDescriptor]>) {
+        self.displayUpdates = displayUpdates
+    }
+
+    func displays() -> [NotchDisplayDescriptor] {
+        []
     }
 }
 
