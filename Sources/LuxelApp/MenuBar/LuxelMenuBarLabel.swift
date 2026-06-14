@@ -4,7 +4,8 @@ import SwiftUI
 struct LuxelMenuBarLabel: View {
     @Bindable var model: LuxelMenuModel
     @State private var now = Date()
-    @State private var isRecordingPulseActive = false
+    @State private var recordingPulseOpacity = 1.0
+    @State private var recordingPulseScale = 1.0
     @State private var quickExportProgressPanelController = QuickExportProgressPanelController()
 
     var body: some View {
@@ -14,8 +15,12 @@ struct LuxelMenuBarLabel: View {
 
         HStack(spacing: 4) {
             Image(systemName: presentation.menuBarSystemImage)
-                .scaleEffect(isRecordingAnimationActive ? (isRecordingPulseActive ? 1.1 : 0.96) : 1)
-                .opacity(isRecordingAnimationActive && !isRecordingPulseActive ? 0.86 : 1)
+                .font(.system(size: 14, weight: .regular))
+                .imageScale(.medium)
+                .frame(width: 18, height: 18)
+                .contentTransition(.symbolEffect(.replace))
+                .scaleEffect(isRecordingAnimationActive ? recordingPulseScale : 1.0)
+                .opacity(isRecordingAnimationActive ? recordingPulseOpacity : 1.0)
                 .animation(.easeInOut(duration: 0.2), value: presentation.menuBarSystemImage)
 
             if let title {
@@ -40,11 +45,8 @@ struct LuxelMenuBarLabel: View {
             .task {
                 await model.keepCaptureTargetCacheWarm()
             }
-            .onAppear {
-                updateRecordingPulse(isAnimating: presentation.animatesMenuBarSystemImage)
-            }
-            .onChange(of: presentation.animatesMenuBarSystemImage) { _, isAnimating in
-                updateRecordingPulse(isAnimating: isAnimating)
+            .task(id: isRecordingAnimationActive) {
+                await runRecordingPulse(isAnimating: isRecordingAnimationActive)
             }
     }
 
@@ -57,16 +59,36 @@ struct LuxelMenuBarLabel: View {
         }
     }
 
-    private func updateRecordingPulse(isAnimating: Bool) {
-        if isAnimating {
-            isRecordingPulseActive = false
-            withAnimation(.easeInOut(duration: 1.05).repeatForever(autoreverses: true)) {
-                isRecordingPulseActive = true
-            }
-        } else {
+    @MainActor
+    private func runRecordingPulse(isAnimating: Bool) async {
+        guard isAnimating else {
             withAnimation(.easeOut(duration: 0.18)) {
-                isRecordingPulseActive = false
+                recordingPulseOpacity = 1.0
+                recordingPulseScale = 1.0
             }
+            return
+        }
+
+        recordingPulseOpacity = 0.86
+        recordingPulseScale = 0.96
+
+        while !Task.isCancelled {
+            withAnimation(.easeInOut(duration: 0.85)) {
+                recordingPulseOpacity = 1.0
+                recordingPulseScale = 1.08
+            }
+
+            try? await Task.sleep(nanoseconds: 850_000_000)
+            guard !Task.isCancelled else {
+                break
+            }
+
+            withAnimation(.easeInOut(duration: 0.85)) {
+                recordingPulseOpacity = 0.86
+                recordingPulseScale = 0.96
+            }
+
+            try? await Task.sleep(nanoseconds: 850_000_000)
         }
     }
 }
