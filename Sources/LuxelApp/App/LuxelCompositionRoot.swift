@@ -40,6 +40,10 @@ enum LuxelCompositionRoot {
         AVFoundationAudioOnlyRecorder()
     }
 
+    static func purchaseGateService() -> PurchaseGateService {
+        PurchaseGateService(gate: AlwaysEntitledPurchaseGate())
+    }
+
     @MainActor
     static func quickExportService(fileWorkflowService: ExportedFileWorkflowService) -> QuickExportService {
         QuickExportService(

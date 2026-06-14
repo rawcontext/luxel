@@ -18,6 +18,7 @@ struct ArchitectureTests {
             "import AVKit",
             "import ImageIO",
             "import VideoToolbox",
+            "import StoreKit",
             "import ServiceManagement"
         ]
 
