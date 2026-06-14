@@ -123,12 +123,62 @@ struct ReplayBufferServiceTests {
         #expect(engine.commands().isEmpty)
     }
 
+    @Test("arming applies current system pause reasons")
+    func armingAppliesCurrentSystemPauseReasons() async throws {
+        let engine = SpyReplayBufferEngine()
+        let monitor = StubSystemActivityMonitor(
+            currentPauseReasons: [.battery],
+            stream: AsyncStream { $0.finish() }
+        )
+        let service = ReplayBufferService(engine: engine, systemActivityMonitor: monitor)
+        let configuration = try replayConfiguration(length: 60)
+
+        try await service.arm(configuration: configuration)
+
+        #expect(engine.commands() == [
+            .arm(configuration),
+            .pause(.battery)
+        ])
+    }
+
+    @Test("system activity stream pauses resumes and restarts display changes")
+    func systemActivityStreamPausesResumesAndRestartsDisplayChanges() async throws {
+        let engine = SpyReplayBufferEngine()
+        let events = AsyncStream<SystemActivityEvent>.makeStream()
+        let monitor = StubSystemActivityMonitor(currentPauseReasons: [], stream: events.stream)
+        let service = ReplayBufferService(engine: engine, systemActivityMonitor: monitor)
+        let configuration = try replayConfiguration(length: 60)
+
+        try await service.arm(configuration: configuration)
+        events.continuation.yield(.pauseReasonBecameActive(.locked))
+        events.continuation.yield(.pauseReasonBecameInactive(.locked))
+        events.continuation.yield(.displayConfigurationChanged)
+
+        let commands = await engine.waitForCommands(count: 5)
+        #expect(commands == [
+            .arm(configuration),
+            .pause(.locked),
+            .resume,
+            .pause(.displayChanged),
+            .resume
+        ])
+    }
+
     private func replayConfiguration(length: TimeInterval) throws -> ReplayBufferConfiguration {
         try ReplayBufferConfiguration(
             bufferLength: length,
             source: .displayWithCursor,
             frameRate: FrameRate(30)
         )
+    }
+}
+
+private struct StubSystemActivityMonitor: SystemActivityMonitor {
+    let currentPauseReasons: Set<ReplayBufferPauseReason>
+    let stream: AsyncStream<SystemActivityEvent>
+
+    func events() -> AsyncStream<SystemActivityEvent> {
+        stream
     }
 }
 
@@ -175,6 +225,19 @@ private final class SpyReplayBufferEngine: ReplayBufferEngine, @unchecked Sendab
         lock.withLock {
             recordedCommands
         }
+    }
+
+    func waitForCommands(count: Int) async -> [SpyReplayBufferCommand] {
+        for _ in 0..<50 {
+            let commands = commands()
+            if commands.count >= count {
+                return commands
+            }
+
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+
+        return commands()
     }
 
     private func append(_ command: SpyReplayBufferCommand) {

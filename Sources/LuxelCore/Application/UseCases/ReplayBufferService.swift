@@ -2,10 +2,27 @@ import Foundation
 
 public final class ReplayBufferService: @unchecked Sendable {
     private let engine: any ReplayBufferEngine
+    private let systemActivityMonitor: (any SystemActivityMonitor)?
     private let state = ReplayBufferServiceState()
+    private var systemActivityTask: Task<Void, Never>?
 
-    public init(engine: any ReplayBufferEngine) {
+    public init(
+        engine: any ReplayBufferEngine,
+        systemActivityMonitor: (any SystemActivityMonitor)? = nil
+    ) {
         self.engine = engine
+        self.systemActivityMonitor = systemActivityMonitor
+        if let systemActivityMonitor {
+            systemActivityTask = Task { [weak self] in
+                for await event in systemActivityMonitor.events() {
+                    await self?.handleSystemActivityEvent(event)
+                }
+            }
+        }
+    }
+
+    deinit {
+        systemActivityTask?.cancel()
     }
 
     public var replayBufferState: AsyncStream<ReplayBufferState> {
@@ -15,6 +32,7 @@ public final class ReplayBufferService: @unchecked Sendable {
     public func arm(configuration: ReplayBufferConfiguration) async throws {
         try await engine.arm(configuration: configuration)
         state.arm(configuration: configuration)
+        try await applyCurrentSystemPauseReasons()
     }
 
     public func disarm() async throws {
@@ -88,10 +106,48 @@ public final class ReplayBufferService: @unchecked Sendable {
             throw error
         }
     }
+
+    private func applyCurrentSystemPauseReasons() async throws {
+        guard let systemActivityMonitor else {
+            return
+        }
+
+        let currentReasons = systemActivityMonitor.currentPauseReasons
+        for reason in ReplayBufferPauseReason.systemActivityPriority where currentReasons.contains(reason) {
+            try await setPauseReason(reason, isActive: true)
+        }
+    }
+
+    private func handleSystemActivityEvent(_ event: SystemActivityEvent) async {
+        do {
+            switch event {
+            case .pauseReasonBecameActive(let reason):
+                try await pauseForSystemReason(reason)
+
+            case .pauseReasonBecameInactive(let reason):
+                try await resumeSystemReason(reason)
+
+            case .displayConfigurationChanged:
+                try await pauseForSystemReason(.displayChanged)
+                try await resumeSystemReason(.displayChanged)
+            }
+        } catch {
+            return
+        }
+    }
 }
 
 public enum ReplayBufferServiceError: Error, Equatable {
     case notArmed
+}
+
+private extension ReplayBufferPauseReason {
+    static let systemActivityPriority: [ReplayBufferPauseReason] = [
+        .locked,
+        .displaySleep,
+        .battery,
+        .displayChanged
+    ]
 }
 
 private struct ReplayBufferPauseTransition {
