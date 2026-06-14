@@ -5,12 +5,14 @@ import LuxelPresentation
 import SwiftUI
 
 struct LuxelSettingsView: View {
+    private static let recordingFrameRates = [24, 30, 60]
     private static let replayBufferLengths: [TimeInterval] = [30, 60, 120, 300]
     private static let replayBufferFrameRates = [24, 30]
     private static let notchAutoCollapseDurations: [TimeInterval] = [0, 3, 6, 10]
 
     @Environment(\.openWindow) private var openWindow
     @State private var isShowingAcknowledgements = false
+    @State private var recordingFrameRateMessage: String?
 
     @Bindable var model: LuxelMenuModel
     let editorModel: LuxelEditorModel
@@ -39,10 +41,8 @@ struct LuxelSettingsView: View {
                 Toggle("Show Cursor", isOn: $model.settings.showCursor)
                 Toggle("Highlight Clicks", isOn: $model.settings.highlightClicks)
                     .disabled(!model.settings.showCursor)
-                Picker("Frame Rate", selection: $model.settings.record60FPS) {
-                    Text("30 FPS").tag(false)
-                    Text("60 FPS").tag(true)
-                }
+
+                recordingFrameRateSettings
             }
 
             Section("Audio") {
@@ -438,12 +438,76 @@ struct LuxelSettingsView: View {
         )
     }
 
+    @ViewBuilder
+    private var recordingFrameRateSettings: some View {
+        LabeledContent("Frame Rate") {
+            HStack(spacing: 8) {
+                Picker("Frame Rate", selection: recordingFrameRateSelection) {
+                    ForEach(recordingFrameRateChoices, id: \.self) { frameRate in
+                        Text(verbatim: String(frameRate) + " FPS")
+                            .tag(frameRate as Int)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 112)
+
+                TextField(
+                    "FPS",
+                    value: recordingFrameRateSelection,
+                    formatter: recordingFrameRateFormatter
+                )
+                .labelsHidden()
+                .multilineTextAlignment(.trailing)
+                .frame(width: 56)
+
+                Text("FPS")
+                    .foregroundStyle(.secondary)
+            }
+        }
+
+        if let recordingFrameRateMessage {
+            Text(recordingFrameRateMessage)
+                .font(.caption)
+                .foregroundStyle(.red)
+        } else {
+            Text("Use a whole number from 1 to 60 FPS.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     private var replayBufferEnabled: Binding<Bool> {
         Binding {
             model.settings.replayBufferConfiguration != nil
         } set: { isEnabled in
             model.settings.replayBufferConfiguration = isEnabled ? ReplayBufferConfiguration.defaults : nil
         }
+    }
+
+    private var recordingFrameRateSelection: Binding<Int> {
+        Binding {
+            model.settings.recordingFrameRate.framesPerSecond
+        } set: { frameRate in
+            do {
+                try model.settings.setRecordingFrameRate(frameRate)
+                recordingFrameRateMessage = nil
+            } catch {
+                recordingFrameRateMessage = "Use a whole number from 1 to 60 FPS."
+            }
+        }
+    }
+
+    private var recordingFrameRateChoices: [Int] {
+        let current = model.settings.recordingFrameRate.framesPerSecond
+        return Array(Set(Self.recordingFrameRates + [current])).sorted()
+    }
+
+    private var recordingFrameRateFormatter: NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.allowsFloats = false
+        formatter.minimum = 1
+        formatter.maximum = 60
+        return formatter
     }
 
     private var replayBufferLengthSelection: Binding<TimeInterval> {

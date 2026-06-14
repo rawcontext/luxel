@@ -133,6 +133,27 @@ struct ArchitectureTests {
         #expect(viewSource.contains(".keyboardShortcut(\"z\", modifiers: [.command, .shift])"))
     }
 
+    @Test("recording FPS settings accept direct numeric entry")
+    func recordingFPSSettingsAcceptDirectNumericEntry() throws {
+        let packageRoot = try packageRootURL()
+        let settingsSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Settings/LuxelSettingsView.swift"),
+            encoding: .utf8
+        )
+        let requestSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Model/LuxelMenuModel+RecordingRequests.swift"),
+            encoding: .utf8
+        )
+
+        #expect(settingsSource.contains("TextField("))
+        #expect(settingsSource.contains("value: recordingFrameRateSelection"))
+        #expect(settingsSource.contains("formatter: recordingFrameRateFormatter"))
+        #expect(settingsSource.contains("try model.settings.setRecordingFrameRate(frameRate)"))
+        #expect(settingsSource.contains("Use a whole number from 1 to 60 FPS."))
+        #expect(requestSource.contains("let frameRate = settings.recordingFrameRate"))
+        #expect(!requestSource.contains("settings.record60FPS ? 60 : 30"))
+    }
+
     @Test("update settings milestone does not link Sparkle yet")
     func updateSettingsMilestoneDoesNotLinkSparkleYet() throws {
         let packageRoot = try packageRootURL()

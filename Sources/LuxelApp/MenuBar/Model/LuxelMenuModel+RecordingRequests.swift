@@ -10,7 +10,7 @@ extension LuxelMenuModel {
         countdownSeconds: Int? = nil,
         outputDirectory: URL? = nil
     ) throws -> (request: RecordingRequest, noticeMessage: String?) {
-        let frameRate = try FrameRate(settings.record60FPS ? 60 : 30)
+        let frameRate = settings.recordingFrameRate
         let outputFileURL = try nextRecordingFileURL(now: Date(), directory: outputDirectory)
         let resolvedAudio = resolveRecordingAudioMode()
         let schedule = try recordingSchedule(

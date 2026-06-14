@@ -35,6 +35,7 @@ public struct CameraPreviewPlacement: Codable, Equatable, Sendable {
 
 public enum AppSettingsError: Error, Equatable {
     case invalidCameraPreviewPlacement
+    case invalidRecordingFrameRate
 }
 
 public struct AppSettings: Codable, Equatable, Sendable {
@@ -67,6 +68,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var keystrokeRenderOptions: KeystrokeRenderOptions
     public var pauseKeystrokeCaptureShortcut: String
     public var record60FPS: Bool
+    public var recordingFrameRate: FrameRate
     public var loopExports: Bool
     public var recordAudio: Bool
     public var audioInputDeviceID: String?
@@ -138,6 +140,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         keystrokeRenderOptions: KeystrokeRenderOptions = .standard,
         pauseKeystrokeCaptureShortcut: String = "",
         record60FPS: Bool = false,
+        recordingFrameRate: FrameRate? = nil,
         loopExports: Bool = true,
         recordAudio: Bool = false,
         audioInputDeviceID: String? = AudioInputDeviceID.systemDefault,
@@ -193,7 +196,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.keystrokeOverlayEnabled = keystrokeOverlayEnabled
         self.keystrokeRenderOptions = keystrokeRenderOptions
         self.pauseKeystrokeCaptureShortcut = pauseKeystrokeCaptureShortcut
-        self.record60FPS = record60FPS
+        let resolvedRecordingFrameRate = Self.supportedRecordingFrameRate(
+            recordingFrameRate ?? Self.legacyRecordingFrameRate(record60FPS: record60FPS)
+        ) ?? Self.legacyRecordingFrameRate(record60FPS: record60FPS)
+        self.record60FPS = resolvedRecordingFrameRate.framesPerSecond == 60
+        self.recordingFrameRate = resolvedRecordingFrameRate
         self.loopExports = loopExports
         self.recordAudio = recordAudio
         self.audioInputDeviceID = audioInputDeviceID
@@ -249,6 +256,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case keystrokeRenderOptions
         case pauseKeystrokeCaptureShortcut
         case record60FPS
+        case recordingFrameRate
         case loopExports
         case recordAudio
         case audioInputDeviceID
@@ -322,8 +330,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
             String.self,
             forKey: .pauseKeystrokeCaptureShortcut
         ) ?? ""
-        record60FPS = try container.decodeIfPresent(Bool.self, forKey: .record60FPS)
+        let legacyRecord60FPS = try container.decodeIfPresent(Bool.self, forKey: .record60FPS)
             ?? false
+        recordingFrameRate = Self.supportedRecordingFrameRate(
+            try container.decodeIfPresent(FrameRate.self, forKey: .recordingFrameRate)
+        ) ?? Self.legacyRecordingFrameRate(record60FPS: legacyRecord60FPS)
+        record60FPS = recordingFrameRate.framesPerSecond == 60
         loopExports = try container.decodeIfPresent(Bool.self, forKey: .loopExports)
             ?? true
         recordAudio = try container.decodeIfPresent(Bool.self, forKey: .recordAudio)
@@ -438,6 +450,33 @@ public struct AppSettings: Codable, Equatable, Sendable {
 
     private static func nonEmpty(_ value: String) -> String? {
         value.isEmpty ? nil : value
+    }
+
+    public mutating func setRecordingFrameRate(_ framesPerSecond: Int) throws {
+        let frameRate = try Self.makeRecordingFrameRate(framesPerSecond)
+        recordingFrameRate = frameRate
+        record60FPS = frameRate.framesPerSecond == 60
+    }
+
+    public static func makeRecordingFrameRate(_ framesPerSecond: Int) throws -> FrameRate {
+        guard (1...60).contains(framesPerSecond) else {
+            throw AppSettingsError.invalidRecordingFrameRate
+        }
+
+        return try FrameRate(framesPerSecond)
+    }
+
+    private static func supportedRecordingFrameRate(_ frameRate: FrameRate?) -> FrameRate? {
+        guard let frameRate,
+              (1...60).contains(frameRate.framesPerSecond) else {
+            return nil
+        }
+
+        return frameRate
+    }
+
+    private static func legacyRecordingFrameRate(record60FPS: Bool) -> FrameRate {
+        try! FrameRate(record60FPS ? 60 : 30)
     }
 
     private static func cursorRenderOptions(

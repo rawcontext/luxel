@@ -5,7 +5,7 @@ import Testing
 @Suite("Settings")
 struct SettingsTests {
     @Test("default settings match clean-room product defaults")
-    func defaultSettings() {
+    func defaultSettings() throws {
         let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
         let settings = AppSettings.defaults(recordingsDirectory: directory)
 
@@ -19,6 +19,7 @@ struct SettingsTests {
         #expect(settings.keystrokeRenderOptions == .standard)
         #expect(settings.pauseKeystrokeCaptureShortcut == "")
         #expect(!settings.record60FPS)
+        #expect(settings.recordingFrameRate == (try FrameRate(30)))
         #expect(settings.loopExports)
         #expect(!settings.recordAudio)
         #expect(settings.audioInputDeviceID == "SYSTEM_DEFAULT")
@@ -77,6 +78,56 @@ struct SettingsTests {
         #expect(throws: AppSettingsError.invalidCameraPreviewPlacement) {
             _ = try CameraPreviewPlacement(x: 0, y: .infinity)
         }
+    }
+
+    @Test("recording frame rate setting validates whole-number capture FPS")
+    func recordingFrameRateSettingValidatesWholeNumberCaptureFPS() throws {
+        let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
+        var settings = AppSettings.defaults(recordingsDirectory: directory)
+
+        try settings.setRecordingFrameRate(24)
+
+        #expect(settings.recordingFrameRate == (try FrameRate(24)))
+        #expect(!settings.record60FPS)
+
+        try settings.setRecordingFrameRate(60)
+
+        #expect(settings.recordingFrameRate == (try FrameRate(60)))
+        #expect(settings.record60FPS)
+
+        #expect(throws: AppSettingsError.invalidRecordingFrameRate) {
+            try settings.setRecordingFrameRate(0)
+        }
+        #expect(throws: AppSettingsError.invalidRecordingFrameRate) {
+            try settings.setRecordingFrameRate(61)
+        }
+        #expect(settings.recordingFrameRate == (try FrameRate(60)))
+    }
+
+    @Test("legacy record 60 FPS setting migrates to typed frame rate")
+    func legacyRecord60FPSSettingMigratesToTypedFrameRate() throws {
+        let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
+
+        let settings = AppSettings(recordingsDirectory: directory, record60FPS: true)
+
+        #expect(settings.record60FPS)
+        #expect(settings.recordingFrameRate == (try FrameRate(60)))
+    }
+
+    @Test("typed recording frame rate wins over legacy boolean when decoding")
+    func typedRecordingFrameRateWinsOverLegacyBooleanWhenDecoding() throws {
+        let data = """
+        {
+            "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+            "record60FPS": true,
+            "recordingFrameRate": { "framesPerSecond": 24 }
+        }
+        """.data(using: .utf8)!
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(settings.recordingFrameRate == (try FrameRate(24)))
+        #expect(!settings.record60FPS)
     }
 
     @Test("notch surface settings validate auto collapse timing")

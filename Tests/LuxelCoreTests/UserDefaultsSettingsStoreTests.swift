@@ -182,6 +182,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.keystrokeRenderOptions == .standard)
         #expect(settings.pauseKeystrokeCaptureShortcut == "")
         #expect(settings.record60FPS)
+        #expect(settings.recordingFrameRate == (try FrameRate(60)))
         #expect(!settings.loopExports)
         #expect(settings.recordAudio)
         #expect(settings.audioInputDeviceID == "device-1")
