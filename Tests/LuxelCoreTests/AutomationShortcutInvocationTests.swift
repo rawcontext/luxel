@@ -51,4 +51,21 @@ struct AutomationShortcutInvocationTests {
                 == AutomationInvocation(command: .latest(reveal: true))
         )
     }
+
+    @Test("capture screenshot maps shortcut target and format")
+    func captureScreenshotMapsShortcutTargetAndFormat() {
+        let invocation = AutomationShortcutInvocationBuilder.captureScreenshot(
+            target: .activeWindow,
+            format: .heic
+        )
+
+        #expect(invocation == AutomationInvocation(command: .screenshot(AutomationScreenshotOptions(
+            target: .activeWindow,
+            format: .heic
+        ))))
+        #expect(
+            AutomationInvocationURLBuilder.url(for: invocation).absoluteString
+                == "luxel://screenshot?target=activeWindow&format=heic"
+        )
+    }
 }

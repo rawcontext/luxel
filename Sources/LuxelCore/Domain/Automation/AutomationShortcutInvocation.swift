@@ -1,6 +1,6 @@
 import Foundation
 
-public enum AutomationShortcutRecordingTarget: String, CaseIterable, Equatable, Sendable {
+public enum AutomationShortcutCaptureTarget: String, CaseIterable, Equatable, Sendable {
     case mainDisplay
     case activeWindow
     case lastArea
@@ -19,7 +19,7 @@ public enum AutomationShortcutRecordingTarget: String, CaseIterable, Equatable, 
 
 public enum AutomationShortcutInvocationBuilder {
     public static func startRecording(
-        target: AutomationShortcutRecordingTarget,
+        target: AutomationShortcutCaptureTarget,
         presetName: String? = nil,
         countdownSeconds: Int? = nil
     ) -> AutomationInvocation {
@@ -31,7 +31,7 @@ public enum AutomationShortcutInvocationBuilder {
     }
 
     public static func toggleRecording(
-        target: AutomationShortcutRecordingTarget? = nil,
+        target: AutomationShortcutCaptureTarget? = nil,
         presetName: String? = nil,
         countdownSeconds: Int? = nil
     ) -> AutomationInvocation {
@@ -50,6 +50,16 @@ public enum AutomationShortcutInvocationBuilder {
 
     public static func latestRecording(reveal: Bool = false) -> AutomationInvocation {
         AutomationInvocation(command: .latest(reveal: reveal))
+    }
+
+    public static func captureScreenshot(
+        target: AutomationShortcutCaptureTarget,
+        format: ScreenshotFormat? = nil
+    ) -> AutomationInvocation {
+        AutomationInvocation(command: .screenshot(AutomationScreenshotOptions(
+            target: target.automationTarget,
+            format: format
+        )))
     }
 
     private static func nonEmpty(_ value: String?) -> String? {

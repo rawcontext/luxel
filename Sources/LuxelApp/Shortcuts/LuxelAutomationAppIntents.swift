@@ -3,20 +3,20 @@ import AppKit
 import Foundation
 import LuxelCore
 
-enum LuxelShortcutRecordingTarget: String, AppEnum {
+enum LuxelShortcutCaptureTarget: String, AppEnum {
     case mainDisplay
     case activeWindow
     case lastArea
 
-    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Recording Target"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Capture Target"
 
-    static let caseDisplayRepresentations: [LuxelShortcutRecordingTarget: DisplayRepresentation] = [
+    static let caseDisplayRepresentations: [LuxelShortcutCaptureTarget: DisplayRepresentation] = [
         .mainDisplay: "Main Display",
         .activeWindow: "Active Window",
         .lastArea: "Last Area"
     ]
 
-    var domainValue: AutomationShortcutRecordingTarget {
+    var domainValue: AutomationShortcutCaptureTarget {
         switch self {
         case .mainDisplay:
             .mainDisplay
@@ -34,7 +34,7 @@ struct LuxelStartRecordingIntent: AppIntent {
     static let openAppWhenRun = true
 
     @Parameter(title: "Target")
-    var target: LuxelShortcutRecordingTarget
+    var target: LuxelShortcutCaptureTarget
 
     @Parameter(title: "Preset")
     var presetName: String?
@@ -49,7 +49,7 @@ struct LuxelStartRecordingIntent: AppIntent {
     }
 
     init(
-        target: LuxelShortcutRecordingTarget = .lastArea,
+        target: LuxelShortcutCaptureTarget = .lastArea,
         presetName: String? = nil,
         countdownSeconds: Int? = nil
     ) {
@@ -89,7 +89,7 @@ struct LuxelToggleRecordingIntent: AppIntent {
     static let openAppWhenRun = true
 
     @Parameter(title: "Target")
-    var target: LuxelShortcutRecordingTarget?
+    var target: LuxelShortcutCaptureTarget?
 
     @Parameter(title: "Preset")
     var presetName: String?
@@ -104,7 +104,7 @@ struct LuxelToggleRecordingIntent: AppIntent {
     }
 
     init(
-        target: LuxelShortcutRecordingTarget? = nil,
+        target: LuxelShortcutCaptureTarget? = nil,
         presetName: String? = nil,
         countdownSeconds: Int? = nil
     ) {
@@ -119,6 +119,65 @@ struct LuxelToggleRecordingIntent: AppIntent {
             target: target?.domainValue,
             presetName: presetName,
             countdownSeconds: countdownSeconds
+        ))
+        return .result()
+    }
+}
+
+enum LuxelShortcutScreenshotFormat: String, AppEnum {
+    case png
+    case jpeg
+    case heic
+
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Screenshot Format"
+
+    static let caseDisplayRepresentations: [LuxelShortcutScreenshotFormat: DisplayRepresentation] = [
+        .png: "PNG",
+        .jpeg: "JPEG",
+        .heic: "HEIC"
+    ]
+
+    var domainValue: ScreenshotFormat {
+        switch self {
+        case .png:
+            .png
+        case .jpeg:
+            .jpeg
+        case .heic:
+            .heic
+        }
+    }
+}
+
+struct LuxelCaptureScreenshotIntent: AppIntent {
+    static let title: LocalizedStringResource = "Capture Screenshot"
+    static let description = IntentDescription("Captures a screenshot with Luxel.")
+    static let openAppWhenRun = true
+
+    @Parameter(title: "Target")
+    var target: LuxelShortcutCaptureTarget
+
+    @Parameter(title: "Format")
+    var format: LuxelShortcutScreenshotFormat?
+
+    init() {
+        target = .mainDisplay
+        format = nil
+    }
+
+    init(
+        target: LuxelShortcutCaptureTarget = .mainDisplay,
+        format: LuxelShortcutScreenshotFormat? = nil
+    ) {
+        self.target = target
+        self.format = format
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        try LuxelAppIntentURLOpener.open(AutomationShortcutInvocationBuilder.captureScreenshot(
+            target: target.domainValue,
+            format: format?.domainValue
         ))
         return .result()
     }
@@ -179,6 +238,16 @@ struct LuxelAppShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Toggle Recording",
             systemImageName: "record.circle"
+        )
+
+        AppShortcut(
+            intent: LuxelCaptureScreenshotIntent(),
+            phrases: [
+                "Capture a screenshot with \(.applicationName)",
+                "Take a screenshot with \(.applicationName)"
+            ],
+            shortTitle: "Capture Screenshot",
+            systemImageName: "camera"
         )
 
         AppShortcut(
