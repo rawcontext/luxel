@@ -24,6 +24,9 @@ struct LuxelApp: App {
         WindowGroup(id: LuxelEditorScene.id) {
             LuxelEditorView(model: editorModel)
         }
+        .commands {
+            LuxelEditorCommands()
+        }
 
         Settings {
             LuxelSettingsView(

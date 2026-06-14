@@ -138,6 +138,24 @@ public struct LuxelEditorView: View {
             Text("Don't ask me again"),
             isSuppressed: suppressDiscardConfirmation
         )
+        .focusedSceneValue(\.luxelEditorCommandContext, editorCommandContext)
+    }
+
+    private var editorCommandContext: LuxelEditorCommandContext {
+        LuxelEditorCommandContext(
+            canUndo: model.canUndoEditorChange,
+            canRedo: model.canRedoEditorChange,
+            canDiscard: model.canDiscard,
+            undo: {
+                model.undoEditorChange()
+            },
+            redo: {
+                model.redoEditorChange()
+            },
+            discard: {
+                requestDiscard()
+            }
+        )
     }
 
     private func requestDiscard() {
