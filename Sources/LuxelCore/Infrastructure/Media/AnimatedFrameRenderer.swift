@@ -6,9 +6,14 @@ struct AnimatedFrameRenderer: Sendable {
         _ image: CGImage,
         outputPixelSize: PixelSize,
         shouldCrop: Bool,
+        sourceCropRect: CaptureRect? = nil,
         cameraTransform: CameraTransform = .identity
     ) throws -> CGImage {
-        let drawableImage = try cameraFrame(for: image, cameraTransform: cameraTransform)
+        let drawableImage = try drawableFrame(
+            for: image,
+            sourceCropRect: sourceCropRect,
+            cameraTransform: cameraTransform
+        )
         let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
         guard let context = CGContext(
             data: nil,
@@ -37,10 +42,15 @@ struct AnimatedFrameRenderer: Sendable {
         _ image: CGImage,
         outputPixelSize: PixelSize,
         shouldCrop: Bool,
+        sourceCropRect: CaptureRect? = nil,
         backgroundMatte: RGBColor? = nil,
         cameraTransform: CameraTransform = .identity
     ) throws -> GIFFrameBitmap {
-        let drawableImage = try cameraFrame(for: image, cameraTransform: cameraTransform)
+        let drawableImage = try drawableFrame(
+            for: image,
+            sourceCropRect: sourceCropRect,
+            cameraTransform: cameraTransform
+        )
         let bytesPerPixel = 4
         let bytesPerRow = outputPixelSize.width * bytesPerPixel
         let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
@@ -100,6 +110,38 @@ struct AnimatedFrameRenderer: Sendable {
         }
 
         return UInt8(min(255, (Int(component) * 255 + Int(alpha) / 2) / Int(alpha)))
+    }
+
+    private func drawableFrame(
+        for image: CGImage,
+        sourceCropRect: CaptureRect?,
+        cameraTransform: CameraTransform
+    ) throws -> CGImage {
+        let sourceImage = try sourceFrame(for: image, cropRect: sourceCropRect)
+        return try cameraFrame(for: sourceImage, cameraTransform: cameraTransform)
+    }
+
+    private func sourceFrame(for image: CGImage, cropRect: CaptureRect?) throws -> CGImage {
+        guard let cropRect else {
+            return image
+        }
+
+        let imageRect = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+        let requestedRect = CGRect(
+            x: cropRect.x,
+            y: cropRect.y,
+            width: cropRect.width,
+            height: cropRect.height
+        )
+        let clampedRect = requestedRect.intersection(imageRect).integral
+        guard !clampedRect.isNull,
+              clampedRect.width > 0,
+              clampedRect.height > 0,
+              let croppedImage = image.cropping(to: clampedRect) else {
+            throw AnimatedFrameRendererError.cannotCropFrame
+        }
+
+        return croppedImage
     }
 
     private func cameraFrame(for image: CGImage, cameraTransform: CameraTransform) throws -> CGImage {

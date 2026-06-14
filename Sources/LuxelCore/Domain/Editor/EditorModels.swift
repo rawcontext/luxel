@@ -86,6 +86,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
     public let shouldMute: Bool
     public let audioMix: AudioMixPlan?
     public let shouldCrop: Bool
+    public let cropRect: CaptureRect?
     public let quality: ExportQuality
     public let speed: PlaybackSpeed
     public let gifOptions: GIFRenderOptions?
@@ -104,6 +105,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         shouldMute: Bool = false,
         audioMix: AudioMixPlan? = nil,
         shouldCrop: Bool = false,
+        cropRect: CaptureRect? = nil,
         quality: ExportQuality = .balanced,
         speed: PlaybackSpeed = .normal,
         gifOptions: GIFRenderOptions? = nil,
@@ -121,6 +123,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         self.shouldMute = shouldMute
         self.audioMix = audioMix
         self.shouldCrop = shouldCrop
+        self.cropRect = cropRect
         self.quality = quality
         self.speed = speed
         self.gifOptions = gifOptions
@@ -140,6 +143,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         case shouldMute
         case audioMix
         case shouldCrop
+        case cropRect
         case quality
         case speed
         case gifOptions
@@ -161,6 +165,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
         audioMix = try container.decodeIfPresent(AudioMixPlan.self, forKey: .audioMix)
         shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
+        cropRect = try container.decodeIfPresent(CaptureRect.self, forKey: .cropRect)
         quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
             ?? .balanced
         speed = try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed)
@@ -184,6 +189,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
                 shouldMute: shouldMute || !source.hasAudio,
                 audioMix: audioMix,
                 shouldCrop: shouldCrop,
+                cropRect: cropRect,
                 quality: quality,
                 speed: speed,
                 gifOptions: gifOptions,

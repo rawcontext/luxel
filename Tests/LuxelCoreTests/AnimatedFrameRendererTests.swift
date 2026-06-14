@@ -25,6 +25,21 @@ struct AnimatedFrameRendererTests {
         })
     }
 
+    @Test("source crop rect crops before output scaling")
+    func sourceCropRectCropsBeforeOutputScaling() throws {
+        let image = try splitColorImage(width: 4, height: 2)
+        let bitmap = try AnimatedFrameRenderer().renderGIFBitmap(
+            image,
+            outputPixelSize: PixelSize(width: 2, height: 2),
+            shouldCrop: false,
+            sourceCropRect: CaptureRect(x: 2, y: 0, width: 2, height: 2)
+        )
+
+        #expect(bitmap.pixels.allSatisfy { pixel in
+            pixel.blue > pixel.red && pixel.blue > pixel.green && pixel.alpha > 0
+        })
+    }
+
     @Test("GIF bitmap rendering preserves alpha or applies matte")
     func gifBitmapRenderingPreservesAlphaOrAppliesMatte() throws {
         let image = try transparentRedImage()

@@ -59,6 +59,7 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
             outputPixelSize: plan.outputPixelSize,
             frameRate: request.frameRate,
             shouldCrop: request.shouldCrop,
+            sourceCropRect: request.cropRect,
             zoomBlocks: ZoomExportTimeMapper(
                 trimRange: request.timeRange,
                 speed: request.speed

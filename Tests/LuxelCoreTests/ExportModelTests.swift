@@ -79,6 +79,7 @@ struct ExportModelTests {
         #expect(request.speed == .normal)
         #expect(request.gifOptions == nil)
         #expect(request.audioMix == nil)
+        #expect(request.cropRect == nil)
         #expect(request.cursorOptions == nil)
         #expect(request.keystrokeOptions == nil)
         #expect(request.captionOptions == nil)
@@ -120,6 +121,18 @@ struct ExportModelTests {
         #expect(decoded == request)
         #expect(decoded.audioMix == audioMix)
         #expect(!decoded.outputShouldMute)
+    }
+
+    @Test("export request round trips source crop rect")
+    func exportRequestRoundTripsSourceCropRect() throws {
+        let cropRect = try CaptureRect(x: 12, y: 18, width: 80, height: 60)
+        let request = try makeRequest(format: .mp4, cropRect: cropRect)
+
+        let data = try JSONEncoder().encode(request)
+        let decoded = try JSONDecoder().decode(ExportRequest.self, from: data)
+
+        #expect(decoded == request)
+        #expect(decoded.cropRect == cropRect)
     }
 
     @Test("export request round trips sidecar render options")
@@ -365,6 +378,7 @@ struct ExportModelTests {
         keystrokeOptions: KeystrokeRenderOptions? = nil,
         captionOptions: CaptionRenderOptions? = nil,
         cameraOverlay: CameraOverlayPlan? = nil,
+        cropRect: CaptureRect? = nil,
         zoomBlocks: [ZoomBlock] = []
     ) throws -> ExportRequest {
         try ExportRequest(
@@ -376,6 +390,7 @@ struct ExportModelTests {
             shouldMute: shouldMute,
             audioMix: audioMix,
             shouldCrop: true,
+            cropRect: cropRect,
             quality: quality,
             speed: speed,
             gifOptions: gifOptions,

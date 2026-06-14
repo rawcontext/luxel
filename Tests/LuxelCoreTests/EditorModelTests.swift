@@ -21,6 +21,7 @@ struct EditorModelTests {
         #expect(!request.shouldMute)
         #expect(request.audioMix == nil)
         #expect(!request.shouldCrop)
+        #expect(request.cropRect == nil)
         #expect(request.quality == .balanced)
         #expect(request.speed == .normal)
         #expect(request.gifOptions == nil)
@@ -58,6 +59,7 @@ struct EditorModelTests {
             ],
             normalizePeak: true
         )
+        let cropRect = try CaptureRect(x: 12, y: 20, width: 300, height: 180)
         let draft = try EditorExportDraft(
             source: makeSource(),
             format: .gif,
@@ -67,6 +69,7 @@ struct EditorModelTests {
             shouldMute: true,
             audioMix: audioMix,
             shouldCrop: true,
+            cropRect: cropRect,
             quality: .high,
             speed: PlaybackSpeed(2),
             gifOptions: gifOptions,
@@ -92,6 +95,7 @@ struct EditorModelTests {
         #expect(request.outputShouldMute)
         #expect(request.audioMix == audioMix)
         #expect(request.shouldCrop)
+        #expect(request.cropRect == cropRect)
         #expect(request.quality == .high)
         #expect(request.speed == (try PlaybackSpeed(2)))
         #expect(request.gifOptions == gifOptions)
@@ -124,6 +128,7 @@ struct EditorModelTests {
         #expect(draft.speed == .normal)
         #expect(draft.gifOptions == nil)
         #expect(draft.audioMix == nil)
+        #expect(draft.cropRect == nil)
         #expect(draft.cursorOptions == nil)
         #expect(draft.keystrokeOptions == nil)
         #expect(draft.captionOptions == nil)

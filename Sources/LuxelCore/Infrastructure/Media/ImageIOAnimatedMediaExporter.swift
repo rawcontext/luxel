@@ -64,6 +64,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
                     frame,
                     outputPixelSize: outputPixelSize,
                     shouldCrop: request.shouldCrop,
+                    sourceCropRect: request.cropRect,
                     cameraTransform: try cameraTransform(
                         for: time,
                         request: request,
@@ -157,6 +158,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
                 frame,
                 outputPixelSize: outputPixelSize,
                 shouldCrop: shouldCrop,
+                sourceCropRect: request.cropRect,
                 backgroundMatte: backgroundMatte,
                 cameraTransform: try cameraTransform(
                     for: time,

@@ -11,15 +11,21 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         outputPixelSize: PixelSize,
         frameRate: FrameRate,
         shouldCrop: Bool,
+        sourceCropRect: CaptureRect? = nil,
         zoomBlocks: [ZoomBlock] = []
     ) async throws -> AVVideoComposition {
         let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
         let geometry = try await compositionGeometry(sourceVideoTrack: sourceVideoTrack)
+        let spatialCropRect = try spatialPresentationCropRect(
+            sourceCropRect,
+            presentationSize: geometry.presentationSize
+        )
         let layerInstruction = try layerInstruction(
             trackID: compositionVideoTrack.trackID,
             geometry: geometry,
             outputSize: outputSize,
             shouldCrop: shouldCrop,
+            spatialCropRect: spatialCropRect,
             timeRange: timeRange,
             frameRate: frameRate,
             zoomBlocks: zoomBlocks
@@ -68,6 +74,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         geometry: VideoCompositionGeometry,
         outputSize: CGSize,
         shouldCrop: Bool,
+        spatialCropRect: CGRect?,
         timeRange: CMTimeRange,
         frameRate: FrameRate,
         zoomBlocks: [ZoomBlock]
@@ -80,6 +87,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
                     geometry: geometry,
                     outputSize: outputSize,
                     shouldCrop: shouldCrop,
+                    spatialCropRect: spatialCropRect,
                     cameraTransform: .identity
                 ),
                 at: .zero
@@ -97,6 +105,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
             geometry: geometry,
             outputSize: outputSize,
             shouldCrop: shouldCrop,
+            spatialCropRect: spatialCropRect,
             timeRange: timeRange,
             frameRate: frameRate
         )
@@ -110,6 +119,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         geometry: VideoCompositionGeometry,
         outputSize: CGSize,
         shouldCrop: Bool,
+        spatialCropRect: CGRect?,
         timeRange: CMTimeRange,
         frameRate: FrameRate
     ) throws {
@@ -128,8 +138,8 @@ struct AVFoundationVideoCompositionFactory: Sendable {
 
             layerConfiguration.addCropRectangleRamp(AVVideoCompositionLayerInstruction.CropRectangleRamp(
                 timeRange: rampTimeRange,
-                start: sourceCropRect(for: startTransform, geometry: geometry),
-                end: sourceCropRect(for: endTransform, geometry: geometry)
+                start: sourceCropRect(for: startTransform, geometry: geometry, spatialCropRect: spatialCropRect),
+                end: sourceCropRect(for: endTransform, geometry: geometry, spatialCropRect: spatialCropRect)
             ))
             layerConfiguration.addTransformRamp(AVVideoCompositionLayerInstruction.TransformRamp(
                 timeRange: rampTimeRange,
@@ -137,12 +147,14 @@ struct AVFoundationVideoCompositionFactory: Sendable {
                     geometry: geometry,
                     outputSize: outputSize,
                     shouldCrop: shouldCrop,
+                    spatialCropRect: spatialCropRect,
                     cameraTransform: startTransform
                 ),
                 end: renderTransform(
                     geometry: geometry,
                     outputSize: outputSize,
                     shouldCrop: shouldCrop,
+                    spatialCropRect: spatialCropRect,
                     cameraTransform: endTransform
                 )
             ))
@@ -155,11 +167,13 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         geometry: VideoCompositionGeometry,
         outputSize: CGSize,
         shouldCrop: Bool,
+        spatialCropRect: CGRect?,
         cameraTransform: CameraTransform
     ) -> CGAffineTransform {
         let cropRect = presentationCropRect(
             for: cameraTransform.sourceRect,
-            presentationSize: geometry.presentationSize
+            presentationSize: geometry.presentationSize,
+            spatialCropRect: spatialCropRect
         )
         let widthScale = outputSize.width / cropRect.width
         let heightScale = outputSize.height / cropRect.height
@@ -186,11 +200,13 @@ struct AVFoundationVideoCompositionFactory: Sendable {
 
     private func sourceCropRect(
         for cameraTransform: CameraTransform,
-        geometry: VideoCompositionGeometry
+        geometry: VideoCompositionGeometry,
+        spatialCropRect: CGRect?
     ) -> CGRect {
         let presentationCrop = presentationCropRect(
             for: cameraTransform.sourceRect,
-            presentationSize: geometry.presentationSize
+            presentationSize: geometry.presentationSize,
+            spatialCropRect: spatialCropRect
         )
         let sourceCrop = presentationCrop
             .applying(geometry.sourceToPresentationTransform.inverted())
@@ -201,14 +217,41 @@ struct AVFoundationVideoCompositionFactory: Sendable {
 
     private func presentationCropRect(
         for sourceRect: NormalizedRect,
-        presentationSize: CGSize
+        presentationSize: CGSize,
+        spatialCropRect: CGRect?
     ) -> CGRect {
-        CGRect(
-            x: sourceRect.x * presentationSize.width,
-            y: sourceRect.y * presentationSize.height,
-            width: sourceRect.width * presentationSize.width,
-            height: sourceRect.height * presentationSize.height
+        let baseRect = spatialCropRect ?? CGRect(origin: .zero, size: presentationSize)
+        return CGRect(
+            x: baseRect.minX + sourceRect.x * baseRect.width,
+            y: baseRect.minY + sourceRect.y * baseRect.height,
+            width: sourceRect.width * baseRect.width,
+            height: sourceRect.height * baseRect.height
         )
+    }
+
+    private func spatialPresentationCropRect(
+        _ cropRect: CaptureRect?,
+        presentationSize: CGSize
+    ) throws -> CGRect? {
+        guard let cropRect else {
+            return nil
+        }
+
+        let presentationBounds = CGRect(origin: .zero, size: presentationSize)
+        let requestedRect = CGRect(
+            x: cropRect.x,
+            y: cropRect.y,
+            width: cropRect.width,
+            height: cropRect.height
+        )
+        let clampedRect = requestedRect.intersection(presentationBounds)
+        guard !clampedRect.isNull,
+              clampedRect.width > 0,
+              clampedRect.height > 0 else {
+            throw AVFoundationVideoCompositionFactoryError.invalidCropRect
+        }
+
+        return clampedRect
     }
 
     private func outputSeconds(_ time: CMTime, in timeRange: CMTimeRange) -> TimeInterval {
@@ -218,6 +261,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
 
 enum AVFoundationVideoCompositionFactoryError: Error, Equatable {
     case invalidVideoDimensions
+    case invalidCropRect
 }
 
 private struct VideoCompositionGeometry {

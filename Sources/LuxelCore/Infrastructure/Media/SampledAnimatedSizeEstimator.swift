@@ -388,6 +388,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             sourceFrame,
             outputPixelSize: outputPixelSize,
             shouldCrop: request.shouldCrop,
+            sourceCropRect: request.cropRect,
             cameraTransform: try cameraTransform(
                 for: schedule.frameTimes[index],
                 request: request,
@@ -412,6 +413,7 @@ public struct SampledAnimatedSizeEstimator: ExportSizeEstimator, Sendable {
             sourceFrame,
             outputPixelSize: outputPixelSize,
             shouldCrop: request.shouldCrop,
+            sourceCropRect: request.cropRect,
             backgroundMatte: backgroundMatte,
             cameraTransform: try cameraTransform(
                 for: schedule.frameTimes[index],
