@@ -19,6 +19,24 @@ public struct AudioInputDeviceOption: Codable, Equatable, Identifiable, Sendable
     )
 }
 
+public struct CameraPreviewPlacement: Codable, Equatable, Sendable {
+    public let x: Double
+    public let y: Double
+
+    public init(x: Double, y: Double) throws {
+        guard x.isFinite, y.isFinite else {
+            throw AppSettingsError.invalidCameraPreviewPlacement
+        }
+
+        self.x = x
+        self.y = y
+    }
+}
+
+public enum AppSettingsError: Error, Equatable {
+    case invalidCameraPreviewPlacement
+}
+
 public struct AppSettings: Codable, Equatable, Sendable {
     public static func defaults(recordingsDirectory: URL) -> AppSettings {
         AppSettings(recordingsDirectory: recordingsDirectory)
@@ -57,6 +75,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var cameraDeviceID: String?
     public var cameraSeparateTrack: Bool
     public var cameraPreviewStyle: CameraPreviewStyle
+    public var cameraPreviewPlacements: [DisplayID: CameraPreviewPlacement]
     public var enableShortcuts: Bool
     public var triggerCropperShortcut: String
     public var toggleRecordingShortcut: String
@@ -116,6 +135,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         cameraDeviceID: String? = nil,
         cameraSeparateTrack: Bool = true,
         cameraPreviewStyle: CameraPreviewStyle = CameraPreviewStyle(),
+        cameraPreviewPlacements: [DisplayID: CameraPreviewPlacement] = [:],
         enableShortcuts: Bool = true,
         triggerCropperShortcut: String = "",
         toggleRecordingShortcut: String = "",
@@ -164,6 +184,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.cameraDeviceID = cameraDeviceID.flatMap(Self.nonEmpty)
         self.cameraSeparateTrack = cameraSeparateTrack
         self.cameraPreviewStyle = cameraPreviewStyle
+        self.cameraPreviewPlacements = cameraPreviewPlacements
         self.enableShortcuts = enableShortcuts
         self.triggerCropperShortcut = triggerCropperShortcut
         self.toggleRecordingShortcut = toggleRecordingShortcut
@@ -211,6 +232,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case cameraDeviceID
         case cameraSeparateTrack
         case cameraPreviewStyle
+        case cameraPreviewPlacements
         case enableShortcuts
         case triggerCropperShortcut
         case toggleRecordingShortcut
@@ -294,6 +316,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
             ?? true
         cameraPreviewStyle = try container.decodeIfPresent(CameraPreviewStyle.self, forKey: .cameraPreviewStyle)
             ?? CameraPreviewStyle()
+        cameraPreviewPlacements = try container.decodeIfPresent(
+            [DisplayID: CameraPreviewPlacement].self,
+            forKey: .cameraPreviewPlacements
+        ) ?? [:]
         enableShortcuts = try container.decodeIfPresent(Bool.self, forKey: .enableShortcuts)
             ?? true
         triggerCropperShortcut = try container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut)

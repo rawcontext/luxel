@@ -8,15 +8,20 @@ final class CameraPreviewPanelController {
     private var panel: NSPanel?
     private var session: AVCaptureSession?
     private var panelOriginsByDisplayID: [DisplayID: NSPoint] = [:]
+    private var onPlacementChange: (@MainActor (DisplayID, CameraPreviewPlacement) -> Void)?
 
     func present(
         deviceID: String,
         style: CameraPreviewStyle,
+        placements: [DisplayID: CameraPreviewPlacement] = [:],
         showsHoverControls: Bool = true,
+        onPlacementChange: @escaping @MainActor (DisplayID, CameraPreviewPlacement) -> Void = { _, _ in },
         onClose: @escaping @MainActor () -> Void = {}
     ) {
         let preferredDisplayID = panel.flatMap { Self.screen(containing: $0.frame)?.displayID }
         close()
+        panelOriginsByDisplayID = placements.mapValues(\.point)
+        self.onPlacementChange = onPlacementChange
 
         guard let device = Self.captureDevice(deviceID: deviceID) else {
             NSSound.beep()
@@ -55,6 +60,7 @@ final class CameraPreviewPanelController {
         rememberPanelOrigin()
         panel?.close()
         panel = nil
+        onPlacementChange = nil
 
         guard let session else {
             return
@@ -159,6 +165,9 @@ final class CameraPreviewPanelController {
         }
 
         panelOriginsByDisplayID[displayID] = frame.origin
+        if let placement = try? CameraPreviewPlacement(point: frame.origin) {
+            onPlacementChange?(displayID, placement)
+        }
     }
 
     private static func captureDevice(deviceID: String) -> AVCaptureDevice? {
@@ -395,6 +404,16 @@ private final class CameraPreviewPanelView: NSView {
 private extension NSPoint {
     func distance(to other: NSPoint) -> CGFloat {
         hypot(x - other.x, y - other.y)
+    }
+}
+
+private extension CameraPreviewPlacement {
+    init(point: NSPoint) throws {
+        try self.init(x: Double(point.x), y: Double(point.y))
+    }
+
+    var point: NSPoint {
+        NSPoint(x: x, y: y)
     }
 }
 

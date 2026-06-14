@@ -62,7 +62,11 @@ extension LuxelMenuModel {
         cameraPreviewPanelController.present(
             deviceID: cameraDeviceID,
             style: settings.cameraPreviewStyle,
+            placements: settings.cameraPreviewPlacements,
             showsHoverControls: canShowCameraPreviewHoverControls,
+            onPlacementChange: { [weak self] displayID, placement in
+                self?.saveCameraPreviewPlacement(displayID: displayID, placement: placement)
+            },
             onClose: { [weak self] in
                 self?.disableCameraPreviewFromPanel()
             }
@@ -81,6 +85,18 @@ extension LuxelMenuModel {
         settings.cameraDeviceID = nil
         saveSettings()
         cameraPreviewPanelController.close()
+    }
+
+    private func saveCameraPreviewPlacement(
+        displayID: DisplayID,
+        placement: CameraPreviewPlacement
+    ) {
+        guard settings.cameraPreviewPlacements[displayID] != placement else {
+            return
+        }
+
+        settings.cameraPreviewPlacements[displayID] = placement
+        saveSettings()
     }
 
     private var canShowCameraPreviewHoverControls: Bool {

@@ -27,6 +27,7 @@ struct SettingsTests {
         #expect(settings.cameraDeviceID == nil)
         #expect(settings.cameraSeparateTrack)
         #expect(settings.cameraPreviewStyle == CameraPreviewStyle())
+        #expect(settings.cameraPreviewPlacements.isEmpty)
         #expect(settings.cameraRecordingOptions == nil)
         #expect(settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "")
@@ -57,6 +58,17 @@ struct SettingsTests {
         #expect(settings.screenshotBackdrop == .opaque)
         #expect(settings.confirmDiscard)
         #expect(settings.lastStopAfter == nil)
+    }
+
+    @Test("camera preview placement rejects non-finite origins")
+    func cameraPreviewPlacementRejectsNonFiniteOrigins() {
+        #expect(throws: AppSettingsError.invalidCameraPreviewPlacement) {
+            _ = try CameraPreviewPlacement(x: .nan, y: 0)
+        }
+
+        #expect(throws: AppSettingsError.invalidCameraPreviewPlacement) {
+            _ = try CameraPreviewPlacement(x: 0, y: .infinity)
+        }
     }
 
     @Test("camera recording options derive from camera settings")
