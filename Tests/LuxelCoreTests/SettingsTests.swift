@@ -10,6 +10,7 @@ struct SettingsTests {
         let settings = AppSettings.defaults(recordingsDirectory: directory)
 
         #expect(settings.recordingsDirectory == directory)
+        #expect(settings.recordingsDirectoryBookmark == nil)
         #expect(settings.showCursor)
         #expect(!settings.highlightClicks)
         #expect(!settings.record60FPS)

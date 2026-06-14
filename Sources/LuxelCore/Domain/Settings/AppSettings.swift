@@ -25,6 +25,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     }
 
     public var recordingsDirectory: URL
+    public var recordingsDirectoryBookmark: BookmarkedDirectory?
     public var showCursor: Bool
     public var highlightClicks: Bool
     public var record60FPS: Bool
@@ -56,6 +57,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
 
     public init(
         recordingsDirectory: URL,
+        recordingsDirectoryBookmark: BookmarkedDirectory? = nil,
         showCursor: Bool = true,
         highlightClicks: Bool = false,
         record60FPS: Bool = false,
@@ -86,6 +88,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         lastStopAfter: TimeInterval? = nil
     ) {
         self.recordingsDirectory = recordingsDirectory
+        self.recordingsDirectoryBookmark = recordingsDirectoryBookmark
         self.showCursor = showCursor
         self.highlightClicks = highlightClicks
         self.record60FPS = record60FPS
@@ -118,6 +121,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case recordingsDirectory
+        case recordingsDirectoryBookmark
         case showCursor
         case highlightClicks
         case record60FPS
@@ -153,6 +157,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
         let defaultUpdatePreferences = UpdatePreferences.defaults
 
         recordingsDirectory = try container.decode(URL.self, forKey: .recordingsDirectory)
+        recordingsDirectoryBookmark = try container.decodeIfPresent(
+            BookmarkedDirectory.self,
+            forKey: .recordingsDirectoryBookmark
+        )
         showCursor = try container.decodeIfPresent(Bool.self, forKey: .showCursor)
             ?? true
         highlightClicks = try container.decodeIfPresent(Bool.self, forKey: .highlightClicks)

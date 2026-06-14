@@ -40,6 +40,11 @@ struct UserDefaultsSettingsStoreTests {
         )
         let settings = AppSettings(
             recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"),
+            recordingsDirectoryBookmark: BookmarkedDirectory(
+                url: URL(fileURLWithPath: "/tmp/luxel"),
+                bookmarkData: Data([0x4c, 0x58, 0x4c]),
+                accessState: .resolved
+            ),
             showCursor: false,
             highlightClicks: true,
             record60FPS: true,
@@ -115,6 +120,7 @@ struct UserDefaultsSettingsStoreTests {
         let settings = try store.load()
 
         #expect(settings.recordingsDirectory == URL(fileURLWithPath: "/tmp/luxel/"))
+        #expect(settings.recordingsDirectoryBookmark == nil)
         #expect(!settings.showCursor)
         #expect(settings.highlightClicks)
         #expect(settings.record60FPS)
