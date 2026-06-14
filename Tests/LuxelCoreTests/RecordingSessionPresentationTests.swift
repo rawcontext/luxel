@@ -26,8 +26,8 @@ struct RecordingSessionPresentationTests {
             canStartRecording: false
         )
 
-        #expect(presentation.menuBarTitle == "● 1:42")
-        #expect(presentation.menuBarSystemImage == "record.circle.fill")
+        #expect(presentation.menuBarTitle == "1:42")
+        #expect(presentation.menuBarSystemImage == "record.circle")
         #expect(presentation.alternateMenuBarSystemImage == nil)
         #expect(presentation.animatesMenuBarSystemImage)
         #expect(presentation.accessibilityLabel == "Luxel recording, elapsed 1:42")
@@ -47,7 +47,7 @@ struct RecordingSessionPresentationTests {
             showElapsedTimeInMenuBar: false
         )
 
-        #expect(presentation.menuBarTitle == "●")
+        #expect(presentation.menuBarTitle == "")
         #expect(presentation.accessibilityLabel == "Luxel recording")
     }
 
@@ -58,7 +58,7 @@ struct RecordingSessionPresentationTests {
             canStartRecording: false
         )
 
-        #expect(presentation.menuBarTitle == "● −0:42")
+        #expect(presentation.menuBarTitle == "−0:42")
         #expect(presentation.accessibilityLabel == "Luxel recording, remaining 0:42")
     }
 
@@ -69,7 +69,7 @@ struct RecordingSessionPresentationTests {
             canStartRecording: false
         )
 
-        #expect(presentation.menuBarTitle == "‖ 1:02:03")
+        #expect(presentation.menuBarTitle == "1:02:03")
         #expect(presentation.menuBarSystemImage == "pause.circle.fill")
         #expect(!presentation.animatesMenuBarSystemImage)
         #expect(presentation.primaryActionTitle == "Stop")
@@ -86,7 +86,7 @@ struct RecordingSessionPresentationTests {
             canStartRecording: false
         )
 
-        #expect(presentation.menuBarTitle == "‖ −0:18")
+        #expect(presentation.menuBarTitle == "−0:18")
         #expect(presentation.accessibilityLabel == "Luxel recording paused, remaining 0:18")
     }
 

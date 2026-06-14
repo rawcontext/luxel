@@ -9,11 +9,12 @@ struct LuxelMenuBarLabel: View {
     var body: some View {
         let presentation = model.recordingPresentation(now: now)
         let title = menuBarTitle(for: presentation)
+        let pulseValue = presentation.animatesMenuBarSystemImage ? Int(now.timeIntervalSinceReferenceDate) : 0
 
         HStack(spacing: 4) {
             Image(systemName: presentation.menuBarSystemImage)
                 .contentTransition(.symbolEffect(.replace))
-                .symbolEffect(.pulse, options: .repeating, value: presentation.animatesMenuBarSystemImage)
+                .symbolEffect(.pulse, value: pulseValue)
                 .animation(.easeInOut(duration: 0.24), value: presentation.menuBarSystemImage)
 
             if let title {
@@ -42,7 +43,7 @@ struct LuxelMenuBarLabel: View {
 
     private func menuBarTitle(for presentation: RecordingSessionPresentation) -> String? {
         switch presentation.menuBarTitle {
-        case "Luxel", "●", "‖":
+        case "", "Luxel":
             nil
         default:
             presentation.menuBarTitle

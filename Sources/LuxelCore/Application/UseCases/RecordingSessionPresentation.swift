@@ -68,11 +68,11 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             statusMessage = "Starting recording"
         case .recording:
             menuBarTitle = if displaysTimerTime {
-                "● \(timerMenuText ?? "−0:00")"
+                timerMenuText ?? "−0:00"
             } else {
-                displaysElapsedTime ? "● \(elapsedText ?? "0:00")" : "●"
+                displaysElapsedTime ? (elapsedText ?? "0:00") : ""
             }
-            menuBarSystemImage = "record.circle.fill"
+            menuBarSystemImage = "record.circle"
             alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = true
             accessibilityLabel = if displaysTimerTime {
@@ -108,9 +108,9 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             statusMessage = "Pausing recording"
         case .paused:
             menuBarTitle = if displaysTimerTime {
-                "‖ \(timerMenuText ?? "−0:00")"
+                timerMenuText ?? "−0:00"
             } else {
-                displaysElapsedTime ? "‖ \(elapsedText ?? "0:00")" : "‖"
+                displaysElapsedTime ? (elapsedText ?? "0:00") : ""
             }
             menuBarSystemImage = "pause.circle.fill"
             alternateMenuBarSystemImage = nil
