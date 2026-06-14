@@ -7,6 +7,7 @@ import SwiftUI
 struct LuxelSettingsView: View {
     private static let replayBufferLengths: [TimeInterval] = [30, 60, 120, 300]
     private static let replayBufferFrameRates = [24, 30]
+    private static let notchAutoCollapseDurations: [TimeInterval] = [0, 3, 6, 10]
 
     @Environment(\.openWindow) private var openWindow
     @State private var isShowingAcknowledgements = false
@@ -191,6 +192,27 @@ struct LuxelSettingsView: View {
                 Text("Replay buffer capture is not active until the engine lands.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            Section("Notch") {
+                Toggle("Enable Notch Surface", isOn: notchSurfaceEnabled)
+                Toggle("Idle Quick Actions", isOn: notchIdleHoverActionsEnabled)
+                    .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+                Toggle("Recording Waveform", isOn: notchWaveformEnabled)
+                    .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+
+                Picker("Auto Collapse", selection: notchAutoCollapseSecondsSelection) {
+                    ForEach(Self.notchAutoCollapseDurations, id: \.self) { seconds in
+                        Text(notchAutoCollapseLabel(seconds)).tag(seconds)
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+
+                Toggle("Recent Shelf", isOn: notchRecentShelfEnabled)
+                    .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+                Toggle("Floating HUD Fallback", isOn: notchFloatingHUDFallbackEnabled)
+                    .disabled(!model.settings.notchSurfaceSettings.isEnabled)
             }
 
             ExportPresetSettingsSection(settings: $model.settings)
@@ -424,6 +446,69 @@ struct LuxelSettingsView: View {
         }
     }
 
+    private var notchSurfaceEnabled: Binding<Bool> {
+        notchSurfaceSettingsBinding(\.isEnabled) { settings, isEnabled in
+            try settings.replacing(isEnabled: isEnabled)
+        }
+    }
+
+    private var notchIdleHoverActionsEnabled: Binding<Bool> {
+        notchSurfaceSettingsBinding(\.idleHoverActionsEnabled) { settings, isEnabled in
+            try settings.replacing(idleHoverActionsEnabled: isEnabled)
+        }
+    }
+
+    private var notchWaveformEnabled: Binding<Bool> {
+        notchSurfaceSettingsBinding(\.showsWaveform) { settings, isEnabled in
+            try settings.replacing(showsWaveform: isEnabled)
+        }
+    }
+
+    private var notchAutoCollapseSecondsSelection: Binding<TimeInterval> {
+        Binding {
+            model.settings.notchSurfaceSettings.autoCollapseSeconds
+        } set: { seconds in
+            updateNotchSurfaceSettings { settings in
+                try settings.replacing(autoCollapseSeconds: seconds)
+            }
+        }
+    }
+
+    private var notchRecentShelfEnabled: Binding<Bool> {
+        notchSurfaceSettingsBinding(\.showsRecentShelf) { settings, isEnabled in
+            try settings.replacing(showsRecentShelf: isEnabled)
+        }
+    }
+
+    private var notchFloatingHUDFallbackEnabled: Binding<Bool> {
+        notchSurfaceSettingsBinding(\.fallbackToFloatingHUDWhenUnavailable) { settings, isEnabled in
+            try settings.replacing(fallbackToFloatingHUDWhenUnavailable: isEnabled)
+        }
+    }
+
+    private func notchSurfaceSettingsBinding(
+        _ keyPath: KeyPath<NotchSurfaceSettings, Bool>,
+        update: @escaping (NotchSurfaceSettings, Bool) throws -> NotchSurfaceSettings
+    ) -> Binding<Bool> {
+        Binding {
+            model.settings.notchSurfaceSettings[keyPath: keyPath]
+        } set: { value in
+            updateNotchSurfaceSettings { settings in
+                try update(settings, value)
+            }
+        }
+    }
+
+    private func updateNotchSurfaceSettings(
+        _ update: (NotchSurfaceSettings) throws -> NotchSurfaceSettings
+    ) {
+        guard let settings = try? update(model.settings.notchSurfaceSettings) else {
+            return
+        }
+
+        model.settings.notchSurfaceSettings = settings
+    }
+
     private var audioInputDeviceSelection: Binding<String> {
         Binding {
             model.settings.audioInputDeviceID ?? AudioInputDeviceID.systemDefault
@@ -504,6 +589,21 @@ struct LuxelSettingsView: View {
             "2 Minutes"
         case 300:
             "5 Minutes"
+        default:
+            "\(Int(seconds)) Seconds"
+        }
+    }
+
+    private func notchAutoCollapseLabel(_ seconds: TimeInterval) -> String {
+        switch Int(seconds) {
+        case 0:
+            "Immediately"
+        case 3:
+            "3 Seconds"
+        case 6:
+            "6 Seconds"
+        case 10:
+            "10 Seconds"
         default:
             "\(Int(seconds)) Seconds"
         }

@@ -37,6 +37,25 @@ public struct NotchSurfaceSettings: Codable, Equatable, Sendable {
         self.fallbackToFloatingHUDWhenUnavailable = fallbackToFloatingHUDWhenUnavailable
     }
 
+    public func replacing(
+        isEnabled: Bool? = nil,
+        idleHoverActionsEnabled: Bool? = nil,
+        showsWaveform: Bool? = nil,
+        autoCollapseSeconds: TimeInterval? = nil,
+        showsRecentShelf: Bool? = nil,
+        fallbackToFloatingHUDWhenUnavailable: Bool? = nil
+    ) throws -> NotchSurfaceSettings {
+        try NotchSurfaceSettings(
+            isEnabled: isEnabled ?? self.isEnabled,
+            idleHoverActionsEnabled: idleHoverActionsEnabled ?? self.idleHoverActionsEnabled,
+            showsWaveform: showsWaveform ?? self.showsWaveform,
+            autoCollapseSeconds: autoCollapseSeconds ?? self.autoCollapseSeconds,
+            showsRecentShelf: showsRecentShelf ?? self.showsRecentShelf,
+            fallbackToFloatingHUDWhenUnavailable: fallbackToFloatingHUDWhenUnavailable
+                ?? self.fallbackToFloatingHUDWhenUnavailable
+        )
+    }
+
     private enum CodingKeys: String, CodingKey {
         case isEnabled
         case idleHoverActionsEnabled

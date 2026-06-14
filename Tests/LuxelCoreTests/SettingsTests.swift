@@ -100,6 +100,33 @@ struct SettingsTests {
         ))
     }
 
+    @Test("notch surface settings replacement preserves untouched values")
+    func notchSurfaceSettingsReplacementPreservesUntouchedValues() throws {
+        let settings = try NotchSurfaceSettings(
+            isEnabled: true,
+            idleHoverActionsEnabled: false,
+            showsWaveform: true,
+            autoCollapseSeconds: 6,
+            showsRecentShelf: true,
+            fallbackToFloatingHUDWhenUnavailable: true
+        )
+
+        let updated = try settings.replacing(
+            showsWaveform: false,
+            autoCollapseSeconds: 10
+        )
+
+        #expect(updated.isEnabled)
+        #expect(!updated.idleHoverActionsEnabled)
+        #expect(!updated.showsWaveform)
+        #expect(updated.autoCollapseSeconds == 10)
+        #expect(updated.showsRecentShelf)
+        #expect(updated.fallbackToFloatingHUDWhenUnavailable)
+        #expect(throws: NotchSurfaceSettingsError.invalidAutoCollapseSeconds) {
+            _ = try settings.replacing(autoCollapseSeconds: .infinity)
+        }
+    }
+
     @Test("camera recording options derive from camera settings")
     func cameraRecordingOptionsDeriveFromCameraSettings() {
         let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
