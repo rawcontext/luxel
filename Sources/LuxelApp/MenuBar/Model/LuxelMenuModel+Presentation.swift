@@ -115,6 +115,14 @@ extension LuxelMenuModel {
         return lastCaptureFallbackDisplay
     }
 
+    var fullscreenCaptureTarget: CaptureTargetOption? {
+        fullscreenCaptureTargetResolver.resolve(
+            from: captureTargets,
+            pointerDisplayID: pointerDisplayProvider.displayIDContainingPointer(),
+            selectedTargetID: selectedCaptureTargetID
+        )
+    }
+
     var canStartRecording: Bool {
         screenRecordingStatus == .authorized && selectedCaptureTarget != nil
     }

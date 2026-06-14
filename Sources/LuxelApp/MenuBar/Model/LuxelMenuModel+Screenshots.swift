@@ -26,7 +26,7 @@ extension LuxelMenuModel {
     }
 
     func captureFullscreenScreenshot() async {
-        guard let displayTarget = selectedOrFallbackDisplayTarget else {
+        guard let displayTarget = fullscreenCaptureTarget else {
             recordingActionErrorMessage = "No display target available"
             return
         }

@@ -103,7 +103,7 @@ struct LuxelShortcutInstaller: View {
                 },
                 LuxelShortcutRegistration(rawShortcut: model.settings.screenshotFullscreenShortcut) {
                     guard model.screenRecordingStatus == .authorized,
-                          model.selectedOrFallbackDisplayTarget != nil else {
+                          model.fullscreenCaptureTarget != nil else {
                         return
                     }
 
@@ -138,7 +138,7 @@ struct LuxelShortcutInstaller: View {
                 },
                 LuxelShortcutRegistration(rawShortcut: model.settings.recordFullscreenShortcut) {
                     guard model.screenRecordingStatus == .authorized,
-                          model.selectedOrFallbackDisplayTarget != nil else {
+                          model.fullscreenCaptureTarget != nil else {
                         return
                     }
 
