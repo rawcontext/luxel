@@ -40,6 +40,14 @@ enum LuxelCompositionRoot {
         AVFoundationAudioOnlyRecorder()
     }
 
+    static func captureTargetCatalog() -> any CaptureTargetCatalog {
+        CachedCaptureTargetCatalog(upstream: ScreenCaptureKitCaptureTargetCatalog())
+    }
+
+    static func captureTargetService(catalog: any CaptureTargetCatalog) -> CaptureTargetService {
+        CaptureTargetService(catalog: catalog)
+    }
+
     static func purchaseGateService() -> PurchaseGateService {
         PurchaseGateService(gate: AlwaysEntitledPurchaseGate())
     }

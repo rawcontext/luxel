@@ -41,6 +41,23 @@ extension LuxelMenuModel {
         }
     }
 
+    func keepCaptureTargetCacheWarm() async {
+        await refreshCaptureTargetCacheIfAuthorized()
+
+        while !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: 30_000_000_000)
+            await refreshCaptureTargetCacheIfAuthorized()
+        }
+    }
+
+    private func refreshCaptureTargetCacheIfAuthorized() async {
+        guard await permissionClient.status(for: .screenRecording) == .authorized else {
+            return
+        }
+
+        try? await captureTargetService.refresh()
+    }
+
     func recoverInterruptedRecording() async -> PastRecording? {
         guard !hasActiveRecording else {
             return nil

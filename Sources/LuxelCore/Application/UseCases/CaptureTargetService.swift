@@ -12,4 +12,8 @@ public struct CaptureTargetService: Sendable {
     public func availableTargets() async throws -> [CaptureTargetOption] {
         try await catalog.availableTargets()
     }
+
+    public func refresh() async throws {
+        try await catalog.refresh()
+    }
 }
