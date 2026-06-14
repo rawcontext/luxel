@@ -14,7 +14,6 @@ struct LuxelMenuBarLabel: View {
         HStack(spacing: 4) {
             MenuBarStatusIcon(
                 systemImage: presentation.menuBarSystemImage,
-                alternateSystemImage: presentation.alternateMenuBarSystemImage,
                 animates: presentation.animatesMenuBarSystemImage
             )
 
@@ -55,41 +54,14 @@ struct LuxelMenuBarLabel: View {
 
 private struct MenuBarStatusIcon: View {
     let systemImage: String
-    let alternateSystemImage: String?
     let animates: Bool
 
-    @ViewBuilder
     var body: some View {
-        if animates, let alternateSystemImage {
-            TimelineView(.periodic(from: .now, by: 1.1)) { timeline in
-                let showsAlternateImage = showsAlternateImage(at: timeline.date)
-
-                ZStack {
-                    icon(systemImage)
-                        .opacity(showsAlternateImage ? 0.18 : 1)
-                        .scaleEffect(showsAlternateImage ? 0.86 : 1)
-
-                    icon(alternateSystemImage)
-                        .opacity(showsAlternateImage ? 1 : 0)
-                        .scaleEffect(showsAlternateImage ? 1 : 0.86)
-                }
-                .animation(.easeInOut(duration: 0.55), value: showsAlternateImage)
-            }
-            .frame(width: 18, height: 18)
-        } else {
-            icon(systemImage)
-                .frame(width: 18, height: 18)
-        }
-    }
-
-    private func icon(_ systemImage: String) -> some View {
         Image(systemName: systemImage)
             .font(.system(size: 14, weight: .regular))
             .imageScale(.medium)
-    }
-
-    private func showsAlternateImage(at date: Date) -> Bool {
-        let cycle = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2)
-        return cycle >= 1.1
+            .contentTransition(.symbolEffect(.replace))
+            .symbolEffect(.pulse, options: .repeating, isActive: animates)
+            .frame(width: 18, height: 18)
     }
 }
