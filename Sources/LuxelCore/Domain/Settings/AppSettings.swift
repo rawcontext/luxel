@@ -47,6 +47,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var updatePreferences: UpdatePreferences
     public var showTimeInMenuBar: Bool
     public var notificationReminder: Bool
+    public var allowURLAutomation: Bool
+    public var urlAutomationGrants: [String]
     public var exportPresets: [ExportPreset]
     public var quickExportPresetID: UUID?
     public var rememberLastCapture: Bool
@@ -83,6 +85,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         updatePreferences: UpdatePreferences = .defaults,
         showTimeInMenuBar: Bool = true,
         notificationReminder: Bool = true,
+        allowURLAutomation: Bool = false,
+        urlAutomationGrants: [String] = [],
         exportPresets: [ExportPreset] = ExportPreset.builtInDefaults,
         quickExportPresetID: UUID? = ExportPreset.quickGIFID,
         rememberLastCapture: Bool = true,
@@ -118,6 +122,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.updatePreferences = updatePreferences
         self.showTimeInMenuBar = showTimeInMenuBar
         self.notificationReminder = notificationReminder
+        self.allowURLAutomation = allowURLAutomation
+        self.urlAutomationGrants = urlAutomationGrants
         self.exportPresets = exportPresets
         self.quickExportPresetID = quickExportPresetID
         self.rememberLastCapture = rememberLastCapture
@@ -155,6 +161,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case updatePreferences
         case showTimeInMenuBar
         case notificationReminder
+        case allowURLAutomation
+        case urlAutomationGrants
         case exportPresets
         case quickExportPresetID
         case rememberLastCapture
@@ -227,6 +235,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
             ?? true
         notificationReminder = try container.decodeIfPresent(Bool.self, forKey: .notificationReminder)
             ?? true
+        allowURLAutomation = try container.decodeIfPresent(Bool.self, forKey: .allowURLAutomation)
+            ?? false
+        urlAutomationGrants = try container.decodeIfPresent([String].self, forKey: .urlAutomationGrants)
+            ?? []
         exportPresets = try container.decodeIfPresent([ExportPreset].self, forKey: .exportPresets)
             ?? ExportPreset.builtInDefaults
         if container.contains(.quickExportPresetID) {
