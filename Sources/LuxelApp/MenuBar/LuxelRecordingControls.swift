@@ -20,8 +20,9 @@ struct LuxelRecordingControls: View {
                         }
                     }
                 } else {
-                    dismissMenuBarWindow()
-                    await model.startRecordingFromSelectedTarget()
+                    startAfterDismissingMenu {
+                        await model.startRecordingFromSelectedTarget()
+                    }
                 }
             }
         } label: {
@@ -132,7 +133,13 @@ struct LuxelRecordingControls: View {
         .disabled(!model.canSelectArea)
     }
 
-    private func dismissMenuBarWindow() {
-        NSApplication.shared.keyWindow?.close()
+    private func startAfterDismissingMenu(_ action: @escaping @MainActor () async -> Void) {
+        Task { @MainActor in
+            let menuWindow = NSApplication.shared.keyWindow
+            await Task.yield()
+            menuWindow?.orderOut(nil)
+            await Task.yield()
+            await action()
+        }
     }
 }
