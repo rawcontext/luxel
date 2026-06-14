@@ -45,6 +45,16 @@ enum LuxelCompositionRoot {
         AVFoundationAudioOnlyRecorder()
     }
 
+    static func recordingOutputFinalizer() -> any RecordingOutputFinalizer {
+        FileSystemRecordingOutputFinalizer(
+            fileSystem: LocalFileSystem(),
+            directoryAccessService: BookmarkedDirectoryAccessService(
+                resolver: FoundationBookmarkedDirectoryResolver(),
+                access: URLSecurityScopedResourceAccess()
+            )
+        )
+    }
+
     static func captureTargetCatalog() -> any CaptureTargetCatalog {
         CachedCaptureTargetCatalog(upstream: ScreenCaptureKitCaptureTargetCatalog())
     }
@@ -105,6 +115,12 @@ enum LuxelCompositionRoot {
             ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Movies")
 
         return moviesDirectory.appending(path: "Luxel")
+    }
+
+    static var recordingStagingDirectory: URL {
+        FileManager.default.temporaryDirectory
+            .appending(path: "Luxel", directoryHint: .isDirectory)
+            .appending(path: "Recordings", directoryHint: .isDirectory)
     }
 
     private static var recordingHistoryFileURL: URL {

@@ -208,9 +208,13 @@ extension LuxelMenuModel {
             let recordingName = preparedRequest.request.outputFileURL
                 .deletingPathExtension()
                 .lastPathComponent
+            let outputPlan = try recordingOutputFinalizationPlan(
+                for: preparedRequest.request.outputFileURL
+            )
             let activeRecording = try await audioRecordingLifecycleService.startRecording(
                 preparedRequest.request,
-                name: recordingName
+                name: recordingName,
+                outputPlan: outputPlan
             )
             recordingState = .recording(
                 activeRecording,
@@ -283,9 +287,11 @@ extension LuxelMenuModel {
             )
 
             let recordingName = request.outputFileURL.deletingPathExtension().lastPathComponent
+            let outputPlan = try recordingOutputFinalizationPlan(for: request.outputFileURL)
             let activeRecording = try await recordingLifecycleService.startRecording(
                 request,
-                name: recordingName
+                name: recordingName,
+                outputPlan: outputPlan
             )
             rememberLastCapture(from: request, capturedAt: activeRecording.date)
             recordingState = .recording(

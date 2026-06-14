@@ -34,6 +34,95 @@ struct RecordingLifecycleServiceTests {
         #expect(store.activeRecording == nil)
     }
 
+    @Test("start records to staging while returning final recording URL")
+    func startRecordsToStagingWhileReturningFinalRecordingURL() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let recorder = SpyCaptureRecorder()
+        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
+        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
+        let fileSystem = RecordingOutputFileSystem(existingFiles: [stagingURL])
+        let service = RecordingLifecycleService(
+            recorder: recorder,
+            history: makeHistory(store: store, fileSystem: fileSystem),
+            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
+        )
+        let request = try makeRequest(outputFileURL: finalURL)
+
+        let activeRecording = try await service.startRecording(
+            request,
+            outputPlan: RecordingOutputFinalizationPlan(
+                stagingFileURL: stagingURL,
+                finalFileURL: finalURL
+            )
+        )
+
+        #expect(activeRecording.fileURL == finalURL)
+        #expect(store.activeRecording?.fileURL == stagingURL)
+        #expect(recorder.startedRequests.map(\.outputFileURL) == [stagingURL])
+    }
+
+    @Test("stop finalizes staged recording to final URL")
+    func stopFinalizesStagedRecordingToFinalURL() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let recorder = SpyCaptureRecorder()
+        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
+        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
+        let fileSystem = RecordingOutputFileSystem(existingFiles: [stagingURL])
+        let service = RecordingLifecycleService(
+            recorder: recorder,
+            history: makeHistory(store: store, fileSystem: fileSystem),
+            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
+        )
+        let request = try makeRequest(outputFileURL: finalURL)
+
+        _ = try await service.startRecording(
+            request,
+            outputPlan: RecordingOutputFinalizationPlan(
+                stagingFileURL: stagingURL,
+                finalFileURL: finalURL
+            )
+        )
+        let recording = try await service.stopRecording(recordingName: "Finished")
+
+        #expect(recording.fileURL == finalURL)
+        #expect(store.activeRecording == nil)
+        #expect(store.recordings == [recording])
+        #expect(fileSystem.movedFiles == [
+            RecordingOutputMove(sourceURL: stagingURL, destinationURL: finalURL)
+        ])
+    }
+
+    @Test("stop keeps staged recording when final move fails")
+    func stopKeepsStagedRecordingWhenFinalMoveFails() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let recorder = SpyCaptureRecorder()
+        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
+        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
+        let fileSystem = RecordingOutputFileSystem(
+            existingFiles: [stagingURL],
+            moveError: StubRecordingOutputError.moveFailed
+        )
+        let service = RecordingLifecycleService(
+            recorder: recorder,
+            history: makeHistory(store: store, fileSystem: fileSystem),
+            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
+        )
+        let request = try makeRequest(outputFileURL: finalURL)
+
+        _ = try await service.startRecording(
+            request,
+            outputPlan: RecordingOutputFinalizationPlan(
+                stagingFileURL: stagingURL,
+                finalFileURL: finalURL
+            )
+        )
+        let recording = try await service.stopRecording()
+
+        #expect(recording.fileURL == stagingURL)
+        #expect(store.recordings == [recording])
+        #expect(fileSystem.movedFiles.isEmpty)
+    }
+
     @Test("stop moves active recording into history after recorder stops")
     func stopMovesActiveRecordingIntoHistoryAfterRecorderStops() async throws {
         let store = InMemoryRecordingHistoryStore()
@@ -344,7 +433,7 @@ struct RecordingLifecycleServiceTests {
 
     private func makeHistory(
         store: InMemoryRecordingHistoryStore,
-        fileSystem: StubFileSystem = StubFileSystem(existingFiles: [URL(fileURLWithPath: "/tmp/luxel.mp4")]),
+        fileSystem: any FileSystem = StubFileSystem(existingFiles: [URL(fileURLWithPath: "/tmp/luxel.mp4")]),
         dateProvider: any DateProvider = FixedDateProvider(date: Date(timeIntervalSince1970: 1_595_348_846))
     ) -> RecordingHistoryService {
         RecordingHistoryService(
@@ -356,10 +445,13 @@ struct RecordingLifecycleServiceTests {
         )
     }
 
-    private func makeRequest(schedule: RecordingSchedule? = nil) throws -> RecordingRequest {
+    private func makeRequest(
+        outputFileURL: URL = URL(fileURLWithPath: "/tmp/luxel.mp4"),
+        schedule: RecordingSchedule? = nil
+    ) throws -> RecordingRequest {
         try RecordingRequest(
             target: .display(DisplayID(9)),
-            outputFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
+            outputFileURL: outputFileURL,
             pixelSize: PixelSize(width: 640, height: 480),
             frameRate: FrameRate(30),
             schedule: schedule
@@ -377,6 +469,7 @@ private final class SpyCaptureRecorder: CaptureRecorder, @unchecked Sendable {
     private(set) var pauseCount = 0
     private(set) var resumeCount = 0
     private(set) var stopCount = 0
+    private(set) var startedRequests: [RecordingRequest] = []
 
     init(
         startError: (any Error)? = nil,
@@ -394,6 +487,7 @@ private final class SpyCaptureRecorder: CaptureRecorder, @unchecked Sendable {
 
     func startRecording(_ request: RecordingRequest) async throws {
         startCount += 1
+        startedRequests.append(request)
         onStart()
 
         if let startError {
@@ -431,6 +525,55 @@ private enum StubCaptureRecorderError: Error, Equatable {
     case pauseFailed
     case resumeFailed
     case stopFailed
+}
+
+private enum StubRecordingOutputError: Error, Equatable {
+    case moveFailed
+}
+
+private struct RecordingOutputMove: Equatable {
+    let sourceURL: URL
+    let destinationURL: URL
+}
+
+private final class RecordingOutputFileSystem: FileSystem, @unchecked Sendable {
+    private var existingFiles: Set<URL>
+    private let moveError: (any Error)?
+    private(set) var movedFiles: [RecordingOutputMove] = []
+
+    init(existingFiles: Set<URL>, moveError: (any Error)? = nil) {
+        self.existingFiles = existingFiles
+        self.moveError = moveError
+    }
+
+    func fileExists(at url: URL) -> Bool {
+        existingFiles.contains(url)
+    }
+
+    func createDirectory(at url: URL) throws {}
+
+    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
+
+    func moveFile(from sourceURL: URL, to destinationURL: URL) throws {
+        if let moveError {
+            throw moveError
+        }
+
+        existingFiles.remove(sourceURL)
+        existingFiles.insert(destinationURL)
+        movedFiles.append(RecordingOutputMove(
+            sourceURL: sourceURL,
+            destinationURL: destinationURL
+        ))
+    }
+
+    func writeData(_ data: Data, to url: URL) throws {}
+
+    func removeFile(at url: URL) throws {
+        existingFiles.remove(url)
+    }
+
+    func trashItem(at url: URL) throws {}
 }
 
 private struct FixedDateProvider: DateProvider {

@@ -96,6 +96,24 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         )
     }
 
+    public func replacingOutputFileURL(_ outputFileURL: URL) -> RecordingRequest {
+        RecordingRequest(
+            target: target,
+            outputFileURL: outputFileURL,
+            pixelSize: pixelSize,
+            frameRate: frameRate,
+            showCursor: showCursor,
+            highlightClicks: highlightClicks,
+            captureKeystrokes: captureKeystrokes,
+            camera: camera,
+            audio: audio,
+            videoCodec: videoCodec,
+            captureKind: captureKind,
+            schedule: schedule,
+            timelapse: timelapse
+        )
+    }
+
     private enum CodingKeys: String, CodingKey {
         case target
         case outputFileURL

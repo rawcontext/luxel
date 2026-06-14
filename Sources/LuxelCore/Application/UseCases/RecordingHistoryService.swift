@@ -137,13 +137,16 @@ public final class RecordingHistoryService: Sendable {
     }
 
     @discardableResult
-    public func stopCurrentRecording(recordingName: String? = nil) -> PastRecording? {
+    public func stopCurrentRecording(
+        finalFileURL: URL? = nil,
+        recordingName: String? = nil
+    ) -> PastRecording? {
         guard let activeRecording = store.activeRecording else {
             return nil
         }
 
         let recording = PastRecording(
-            fileURL: activeRecording.fileURL,
+            fileURL: finalFileURL ?? activeRecording.fileURL,
             name: recordingName ?? activeRecording.name,
             date: dateProvider.now(),
             options: activeRecording.options,

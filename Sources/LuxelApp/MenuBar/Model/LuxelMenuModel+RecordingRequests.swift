@@ -71,23 +71,30 @@ extension LuxelMenuModel {
     }
 
     func nextRecordingFileURL(now: Date) throws -> URL {
-        try FileManager.default.createDirectory(
-            at: settings.recordingsDirectory,
-            withIntermediateDirectories: true
-        )
-
         let recordingName = RecordingName.timestamped(now: now).value
         return settings.recordingsDirectory
             .appending(path: recordingName)
             .appendingPathExtension("mp4")
     }
 
-    private func nextAudioRecordingFileURL(now: Date, format: AudioRecordingFormat) throws -> URL {
+    func recordingOutputFinalizationPlan(
+        for finalFileURL: URL
+    ) throws -> RecordingOutputFinalizationPlan {
+        let stagingDirectory = LuxelCompositionRoot.recordingStagingDirectory
+            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
         try FileManager.default.createDirectory(
-            at: settings.recordingsDirectory,
+            at: stagingDirectory,
             withIntermediateDirectories: true
         )
 
+        return RecordingOutputFinalizationPlan(
+            stagingFileURL: stagingDirectory.appending(path: finalFileURL.lastPathComponent),
+            finalFileURL: finalFileURL,
+            finalDirectoryBookmark: settings.recordingsDirectoryBookmark
+        )
+    }
+
+    private func nextAudioRecordingFileURL(now: Date, format: AudioRecordingFormat) throws -> URL {
         let recordingName = RecordingName.timestamped(now: now).value
         return settings.recordingsDirectory
             .appending(path: recordingName)

@@ -191,6 +191,16 @@ public struct ActiveRecording: Codable, Equatable, Sendable {
             bundleManifest: bundleManifest
         )
     }
+
+    public func replacingFileURL(_ fileURL: URL) -> ActiveRecording {
+        ActiveRecording(
+            fileURL: fileURL,
+            name: name,
+            date: date,
+            options: options,
+            bundleManifest: bundleManifest
+        )
+    }
 }
 
 public struct RecordingOptions: Codable, Equatable, Sendable {

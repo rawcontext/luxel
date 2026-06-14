@@ -6,21 +6,25 @@ public final class RecordingLifecycleService: Sendable {
     private let dateProvider: any DateProvider
     private let autoStopScheduler: any RecordingAutoStopScheduler
     private let userNotifier: (any UserNotifier)?
+    private let outputFinalizer: any RecordingOutputFinalizer
     private let autoStopState = RecordingLifecycleAutoStopState()
     private let autoStopEvents = RecordingLifecycleAutoStopEvents()
+    private let outputState = RecordingLifecycleOutputState()
 
     public init(
         recorder: any CaptureRecorder,
         history: RecordingHistoryService,
         dateProvider: any DateProvider = SystemDateProvider(),
         autoStopScheduler: any RecordingAutoStopScheduler = TaskRecordingAutoStopScheduler(),
-        userNotifier: (any UserNotifier)? = nil
+        userNotifier: (any UserNotifier)? = nil,
+        outputFinalizer: any RecordingOutputFinalizer = PassthroughRecordingOutputFinalizer()
     ) {
         self.recorder = recorder
         self.history = history
         self.dateProvider = dateProvider
         self.autoStopScheduler = autoStopScheduler
         self.userNotifier = userNotifier
+        self.outputFinalizer = outputFinalizer
     }
 
     public var autoStoppedRecordings: AsyncStream<PastRecording> {
@@ -30,22 +34,28 @@ public final class RecordingLifecycleService: Sendable {
     @discardableResult
     public func startRecording(
         _ request: RecordingRequest,
-        name: String? = nil
+        name: String? = nil,
+        outputPlan: RecordingOutputFinalizationPlan? = nil
     ) async throws -> ActiveRecording {
+        let outputPlan = outputPlan ?? .direct(request.outputFileURL)
+        await outputState.set(outputPlan)
+
         let activeRecording = history.setCurrentRecording(
-            fileURL: request.outputFileURL,
+            fileURL: outputPlan.stagingFileURL,
             name: name,
             options: request.recordingOptions
         )
+        let recorderRequest = request.replacingOutputFileURL(outputPlan.stagingFileURL)
 
         do {
             try await runRecorderOperation { recorder in
-                try await recorder.startRecording(request)
+                try await recorder.startRecording(recorderRequest)
             }
             await startAutoStopIfNeeded(schedule: request.schedule, startedAt: activeRecording.date)
-            return activeRecording
+            return activeRecording.replacingFileURL(outputPlan.finalFileURL)
         } catch {
             await autoStopState.clear()
+            await outputState.clear()
             history.clearCurrentRecording()
             throw error
         }
@@ -83,13 +93,18 @@ public final class RecordingLifecycleService: Sendable {
             try await runRecorderOperation { recorder in
                 try await recorder.stopRecording()
             }
+            let finalizationResult = try await finalizeCurrentOutput()
 
-            guard let recording = history.stopCurrentRecording(recordingName: recordingName) else {
+            guard let recording = history.stopCurrentRecording(
+                finalFileURL: finalizationResult?.fileURL,
+                recordingName: recordingName
+            ) else {
                 await finishStop(succeeded: false)
                 throw RecordingLifecycleError.noActiveRecording
             }
 
             await autoStopState.clear()
+            await outputState.clear()
             return recording
         } catch {
             await finishStop(succeeded: false)
@@ -140,6 +155,16 @@ public final class RecordingLifecycleService: Sendable {
         let recorder = recorder
         try await Task.detached(priority: .userInitiated) {
             try await operation(recorder)
+        }.value
+    }
+
+    private func finalizeCurrentOutput() async throws -> RecordingOutputFinalizationResult? {
+        guard let outputPlan = await outputState.plan else {
+            return nil
+        }
+
+        return try await Task.detached(priority: .userInitiated) { [outputFinalizer] in
+            try outputFinalizer.finalize(outputPlan)
         }.value
     }
 }
@@ -287,5 +312,17 @@ private actor RecordingLifecycleAutoStopState {
         task = nil
         schedule = nil
         clock = nil
+    }
+}
+
+private actor RecordingLifecycleOutputState {
+    private(set) var plan: RecordingOutputFinalizationPlan?
+
+    func set(_ plan: RecordingOutputFinalizationPlan) {
+        self.plan = plan
+    }
+
+    func clear() {
+        plan = nil
     }
 }

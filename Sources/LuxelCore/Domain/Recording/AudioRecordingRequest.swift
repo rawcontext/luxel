@@ -44,6 +44,14 @@ public struct AudioRecordingRequest: Codable, Equatable, Sendable {
             isAudioOnly: true
         )
     }
+
+    public func replacingOutputFileURL(_ outputFileURL: URL) throws -> AudioRecordingRequest {
+        try AudioRecordingRequest(
+            outputFileURL: outputFileURL,
+            audio: audio,
+            format: format
+        )
+    }
 }
 
 public enum AudioRecordingRequestError: Error, Equatable {

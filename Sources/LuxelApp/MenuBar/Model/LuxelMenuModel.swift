@@ -122,16 +122,19 @@ final class LuxelMenuModel {
         self.fullscreenCaptureTargetResolver = fullscreenCaptureTargetResolver
         self.screenshotThumbnailPresenter = screenshotThumbnailPresenter
         self.appMetadata = appMetadata
+        let recordingOutputFinalizer = LuxelCompositionRoot.recordingOutputFinalizer()
         self.recordingLifecycleService = RecordingLifecycleService(
             recorder: recorder ?? LuxelCompositionRoot.captureRecorder(
                 exclusionRegistry: captureExclusionRegistry
             ),
             history: recordingHistoryService,
-            userNotifier: UserNotificationsNotifier()
+            userNotifier: UserNotificationsNotifier(),
+            outputFinalizer: recordingOutputFinalizer
         )
         self.audioRecordingLifecycleService = AudioRecordingLifecycleService(
             recorder: audioRecorder,
-            history: recordingHistoryService
+            history: recordingHistoryService,
+            outputFinalizer: recordingOutputFinalizer
         )
         self.settings = (try? settingsStore.load()) ?? LuxelCompositionRoot.defaultSettings
         self.launchAtLogin = launchAtLoginService.isEnabled()
