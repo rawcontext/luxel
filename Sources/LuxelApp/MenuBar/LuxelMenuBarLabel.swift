@@ -6,13 +6,15 @@ import SwiftUI
 struct LuxelMenuBarLabel: View {
     @Bindable var model: LuxelMenuModel
     @State private var now = Date()
+    @State private var iconAnimationState = LuxelMenuBarIconAnimationState()
 
     var body: some View {
         let presentation = model.recordingPresentation(now: now)
 
         LuxelMenuBarIconView(
             systemImageName: presentation.menuBarSystemImage,
-            isAnimating: presentation.animatesMenuBarSystemImage
+            isAnimating: presentation.animatesMenuBarSystemImage,
+            animationState: iconAnimationState
         )
             .accessibilityLabel(Text(presentation.accessibilityLabel))
             .task {
@@ -27,16 +29,30 @@ struct LuxelMenuBarLabel: View {
 private struct LuxelMenuBarIconView: NSViewRepresentable {
     let systemImageName: String
     let isAnimating: Bool
+    let animationState: LuxelMenuBarIconAnimationState
 
     func makeNSView(context: Context) -> LuxelMenuBarIconNSView {
         let view = LuxelMenuBarIconNSView()
-        view.update(systemImageName: systemImageName, isAnimating: isAnimating)
+        view.update(
+            systemImageName: systemImageName,
+            isAnimating: isAnimating,
+            animationState: animationState
+        )
         return view
     }
 
     func updateNSView(_ nsView: LuxelMenuBarIconNSView, context: Context) {
-        nsView.update(systemImageName: systemImageName, isAnimating: isAnimating)
+        nsView.update(
+            systemImageName: systemImageName,
+            isAnimating: isAnimating,
+            animationState: animationState
+        )
     }
+}
+
+@MainActor
+private final class LuxelMenuBarIconAnimationState {
+    var systemImageName: String?
 }
 
 @MainActor
@@ -45,7 +61,7 @@ private final class LuxelMenuBarIconNSView: NSView {
     private let currentImageView = NSImageView()
     private var currentSystemImageName: String?
     private var isAnimating = false
-    private let pulseAnimationKey = "media.luxel.menu-bar-recording-pulse"
+    private let recordingAnimationKey = "media.luxel.menu-bar-recording-opacity"
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -67,12 +83,17 @@ private final class LuxelMenuBarIconNSView: NSView {
         currentImageView.frame = bounds
     }
 
-    func update(systemImageName: String, isAnimating: Bool) {
+    func update(
+        systemImageName: String,
+        isAnimating: Bool,
+        animationState: LuxelMenuBarIconAnimationState
+    ) {
         if currentSystemImageName != systemImageName {
-            transition(to: systemImageName)
+            transition(to: systemImageName, from: animationState.systemImageName)
         }
 
-        updatePulse(isAnimating)
+        animationState.systemImageName = systemImageName
+        updateRecordingAnimation(isAnimating)
     }
 
     private func setup() {
@@ -87,13 +108,24 @@ private final class LuxelMenuBarIconNSView: NSView {
         }
     }
 
-    private func transition(to systemImageName: String) {
+    private func transition(to systemImageName: String, from rememberedSystemImageName: String?) {
         let image = symbolImage(named: systemImageName)
         defer {
             currentSystemImageName = systemImageName
         }
 
         guard currentSystemImageName != nil else {
+            if let rememberedSystemImageName,
+               rememberedSystemImageName != systemImageName,
+               let rememberedImage = symbolImage(named: rememberedSystemImageName) {
+                previousImageView.image = rememberedImage
+                previousImageView.alphaValue = 1
+                currentImageView.image = image
+                currentImageView.alphaValue = 0
+                animateImageTransition()
+                return
+            }
+
             currentImageView.image = image
             currentImageView.alphaValue = 1
             return
@@ -103,7 +135,10 @@ private final class LuxelMenuBarIconNSView: NSView {
         previousImageView.alphaValue = 1
         currentImageView.image = image
         currentImageView.alphaValue = 0
+        animateImageTransition()
+    }
 
+    private func animateImageTransition() {
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.22
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
@@ -117,7 +152,7 @@ private final class LuxelMenuBarIconNSView: NSView {
         }
     }
 
-    private func updatePulse(_ isAnimating: Bool) {
+    private func updateRecordingAnimation(_ isAnimating: Bool) {
         guard self.isAnimating != isAnimating else {
             return
         }
@@ -125,17 +160,19 @@ private final class LuxelMenuBarIconNSView: NSView {
         self.isAnimating = isAnimating
 
         if isAnimating {
-            let animation = CABasicAnimation(keyPath: "transform.scale")
-            animation.fromValue = 0.93
-            animation.toValue = 1.08
-            animation.duration = 0.9
+            let animation = CABasicAnimation(keyPath: "opacity")
+            animation.fromValue = 0.72
+            animation.toValue = 1.0
+            animation.duration = 1.1
             animation.autoreverses = true
             animation.repeatCount = .infinity
             animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             animation.isRemovedOnCompletion = false
-            currentImageView.layer?.add(animation, forKey: pulseAnimationKey)
+            currentImageView.layer?.opacity = 1
+            currentImageView.layer?.add(animation, forKey: recordingAnimationKey)
         } else {
-            currentImageView.layer?.removeAnimation(forKey: pulseAnimationKey)
+            currentImageView.layer?.removeAnimation(forKey: recordingAnimationKey)
+            currentImageView.layer?.opacity = 1
         }
     }
 
