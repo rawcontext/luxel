@@ -46,7 +46,13 @@ public enum LuxelCLIError: LocalizedError, Equatable {
     case invalidCountdown
     case invalidClipDuration
     case invalidCallbackURL(String)
+    case callbackConflict
+    case callbackListenFailed
+    case invalidCallbackTimeout
+    case callbackTimedOut
+    case invalidCallbackRequest
     case openFailed(Int32)
+    case remoteFailure(String)
 
     public var errorDescription: String? {
         switch self {
@@ -60,8 +66,20 @@ public enum LuxelCLIError: LocalizedError, Equatable {
             "Clip duration must be greater than zero seconds."
         case .invalidCallbackURL(let name):
             "\(name) must be a non-file URL."
+        case .callbackConflict:
+            "--wait and --json cannot be combined with explicit x-callback URLs."
+        case .callbackListenFailed:
+            "Failed to start the local callback listener."
+        case .invalidCallbackTimeout:
+            "Callback timeout must be greater than zero seconds."
+        case .callbackTimedOut:
+            "Timed out waiting for Luxel to call back."
+        case .invalidCallbackRequest:
+            "Received an invalid callback request."
         case .openFailed(let status):
             "Failed to open Luxel URL (exit status \(status))."
+        case .remoteFailure(let message):
+            message
         }
     }
 }
@@ -81,6 +99,8 @@ public struct LuxelRecordCommand: ParsableCommand {
     public var countdown: Int?
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
+
+    @OptionGroup public var execution: LuxelCommandExecutionArguments
 
     public init() {}
 
@@ -102,7 +122,7 @@ public struct LuxelRecordCommand: ParsableCommand {
     }
 
     public mutating func run() throws {
-        try open(invocation)
+        try runLuxelCommand(invocation, execution: execution)
     }
 }
 
@@ -114,6 +134,8 @@ public struct LuxelStopCommand: ParsableCommand {
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
 
+    @OptionGroup public var execution: LuxelCommandExecutionArguments
+
     public init() {}
 
     public var invocation: AutomationInvocation {
@@ -123,7 +145,7 @@ public struct LuxelStopCommand: ParsableCommand {
     }
 
     public mutating func run() throws {
-        try open(invocation)
+        try runLuxelCommand(invocation, execution: execution)
     }
 }
 
@@ -142,6 +164,8 @@ public struct LuxelToggleCommand: ParsableCommand {
     public var countdown: Int?
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
+
+    @OptionGroup public var execution: LuxelCommandExecutionArguments
 
     public init() {}
 
@@ -165,7 +189,7 @@ public struct LuxelToggleCommand: ParsableCommand {
     }
 
     public mutating func run() throws {
-        try open(invocation)
+        try runLuxelCommand(invocation, execution: execution)
     }
 }
 
@@ -181,6 +205,8 @@ public struct LuxelScreenshotCommand: ParsableCommand {
     public var format: LuxelScreenshotFormat?
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
+
+    @OptionGroup public var execution: LuxelCommandExecutionArguments
 
     public init() {}
 
@@ -201,7 +227,7 @@ public struct LuxelScreenshotCommand: ParsableCommand {
     }
 
     public mutating func run() throws {
-        try open(invocation)
+        try runLuxelCommand(invocation, execution: execution)
     }
 }
 
@@ -216,6 +242,8 @@ public struct LuxelClipCommand: ParsableCommand {
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
 
+    @OptionGroup public var execution: LuxelCommandExecutionArguments
+
     public init() {}
 
     public var invocation: AutomationInvocation {
@@ -229,7 +257,7 @@ public struct LuxelClipCommand: ParsableCommand {
     }
 
     public mutating func run() throws {
-        try open(invocation)
+        try runLuxelCommand(invocation, execution: execution)
     }
 }
 
@@ -244,6 +272,8 @@ public struct LuxelPreferencesCommand: ParsableCommand {
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
 
+    @OptionGroup public var execution: LuxelCommandExecutionArguments
+
     public init() {}
 
     public var invocation: AutomationInvocation {
@@ -253,7 +283,7 @@ public struct LuxelPreferencesCommand: ParsableCommand {
     }
 
     public mutating func run() throws {
-        try open(invocation)
+        try runLuxelCommand(invocation, execution: execution)
     }
 }
 
@@ -268,6 +298,8 @@ public struct LuxelLatestCommand: ParsableCommand {
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
 
+    @OptionGroup public var execution: LuxelCommandExecutionArguments
+
     public init() {}
 
     public var invocation: AutomationInvocation {
@@ -280,7 +312,7 @@ public struct LuxelLatestCommand: ParsableCommand {
     }
 
     public mutating func run() throws {
-        try open(invocation)
+        try runLuxelCommand(invocation, execution: execution)
     }
 }
 
@@ -415,8 +447,4 @@ private func validatedCountdown(_ countdown: Int?) throws -> Int? {
     }
 
     return countdown
-}
-
-private func open(_ invocation: AutomationInvocation) throws {
-    try SystemLuxelURLOpener().open(AutomationInvocationURLBuilder.url(for: invocation))
 }
