@@ -36,6 +36,16 @@ struct AppBundleConfigurationTests {
         #expect(entitlements["com.apple.security.get-task-allow"] == nil)
     }
 
+    @Test("build script bundles third-party license ledger as app resource")
+    func buildScriptBundlesThirdPartyLicenseLedgerAsAppResource() throws {
+        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
+        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+        #expect(script.contains("THIRD_PARTY_LICENSES"))
+        #expect(script.contains("Contents/Resources"))
+        #expect(script.contains("ThirdPartyLicenses.md"))
+    }
+
     private func readPlist(_ relativePath: String) throws -> [String: Any] {
         let url = try packageRootURL().appending(path: relativePath)
         let data = try Data(contentsOf: url)
