@@ -93,6 +93,10 @@ public enum AppKeyboardShortcutPresets {
         AppKeyboardShortcut(rawValue: "command+control+option+q")
     ].compactMap { $0 }
 
+    public static let clipReplayBuffer: [AppKeyboardShortcut] = [
+        AppKeyboardShortcut(rawValue: "command+control+option+c")
+    ].compactMap { $0 }
+
     public static let captureScreenshot: [AppKeyboardShortcut] = [
         AppKeyboardShortcut(rawValue: "command+control+option+s")
     ].compactMap { $0 }

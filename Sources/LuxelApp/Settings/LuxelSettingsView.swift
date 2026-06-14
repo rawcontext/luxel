@@ -5,6 +5,9 @@ import LuxelPresentation
 import SwiftUI
 
 struct LuxelSettingsView: View {
+    private static let replayBufferLengths: [TimeInterval] = [30, 60, 120, 300]
+    private static let replayBufferFrameRates = [24, 30]
+
     @Environment(\.openWindow) private var openWindow
     @State private var isShowingAcknowledgements = false
 
@@ -139,6 +142,55 @@ struct LuxelSettingsView: View {
                     selection: $model.settings.screenshotFullscreenShortcut,
                     presets: AppKeyboardShortcutPresets.screenshotFullscreen
                 )
+            }
+
+            Section("Replay Buffer") {
+                let isConfigured = model.settings.replayBufferConfiguration != nil
+
+                LabeledContent("Status", value: "Engine Coming Soon")
+                Toggle("Enable Replay Buffer", isOn: replayBufferEnabled)
+
+                Picker("Length", selection: replayBufferLengthSelection) {
+                    ForEach(Self.replayBufferLengths, id: \.self) { seconds in
+                        Text(replayBufferLengthLabel(seconds)).tag(seconds)
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(!isConfigured)
+
+                LabeledContent("Source", value: "Display with Cursor")
+
+                Picker("Frame Rate", selection: replayBufferFrameRateSelection) {
+                    ForEach(Self.replayBufferFrameRates, id: \.self) { frameRate in
+                        Text("\(frameRate) FPS").tag(frameRate)
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(!isConfigured)
+
+                Toggle("Include System Audio", isOn: replayBufferSystemAudioSelection)
+                    .disabled(!isConfigured)
+
+                Toggle("Resume on Launch", isOn: $model.settings.replayBufferResumeOnLaunch)
+                    .disabled(!isConfigured)
+
+                Picker("Clip Opens In", selection: $model.settings.replayClipDestination) {
+                    ForEach(ReplayClipDestination.allCases) { destination in
+                        Text(destination.label).tag(destination)
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(!isConfigured)
+
+                shortcutPicker(
+                    "Clip Shortcut",
+                    selection: $model.settings.clipReplayBufferShortcut,
+                    presets: AppKeyboardShortcutPresets.clipReplayBuffer
+                )
+
+                Text("Replay buffer capture is not active until the engine lands.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             ExportPresetSettingsSection(settings: $model.settings)
@@ -337,6 +389,41 @@ struct LuxelSettingsView: View {
         )
     }
 
+    private var replayBufferEnabled: Binding<Bool> {
+        Binding {
+            model.settings.replayBufferConfiguration != nil
+        } set: { isEnabled in
+            model.settings.replayBufferConfiguration = isEnabled ? ReplayBufferConfiguration.defaults : nil
+        }
+    }
+
+    private var replayBufferLengthSelection: Binding<TimeInterval> {
+        Binding {
+            model.settings.replayBufferConfiguration?.bufferLength
+                ?? ReplayBufferConfiguration.defaults.bufferLength
+        } set: { bufferLength in
+            updateReplayBufferConfiguration(bufferLength: bufferLength)
+        }
+    }
+
+    private var replayBufferFrameRateSelection: Binding<Int> {
+        Binding {
+            model.settings.replayBufferConfiguration?.frameRate.framesPerSecond
+                ?? ReplayBufferConfiguration.defaults.frameRate.framesPerSecond
+        } set: { frameRate in
+            updateReplayBufferConfiguration(frameRate: frameRate)
+        }
+    }
+
+    private var replayBufferSystemAudioSelection: Binding<Bool> {
+        Binding {
+            model.settings.replayBufferConfiguration?.includeSystemAudio
+                ?? ReplayBufferConfiguration.defaults.includeSystemAudio
+        } set: { includeSystemAudio in
+            updateReplayBufferConfiguration(includeSystemAudio: includeSystemAudio)
+        }
+    }
+
     private var audioInputDeviceSelection: Binding<String> {
         Binding {
             model.settings.audioInputDeviceID ?? AudioInputDeviceID.systemDefault
@@ -384,6 +471,41 @@ struct LuxelSettingsView: View {
                 size: style.size,
                 isMirrored: isMirrored
             )
+        }
+    }
+
+    private func updateReplayBufferConfiguration(
+        bufferLength: TimeInterval? = nil,
+        frameRate: Int? = nil,
+        includeSystemAudio: Bool? = nil
+    ) {
+        let configuration = model.settings.replayBufferConfiguration ?? ReplayBufferConfiguration.defaults
+        guard let updatedFrameRate = try? FrameRate(frameRate ?? configuration.frameRate.framesPerSecond),
+              let updatedConfiguration = try? ReplayBufferConfiguration(
+                bufferLength: bufferLength ?? configuration.bufferLength,
+                source: configuration.source,
+                frameRate: updatedFrameRate,
+                includeSystemAudio: includeSystemAudio ?? configuration.includeSystemAudio,
+                quality: configuration.quality
+              ) else {
+            return
+        }
+
+        model.settings.replayBufferConfiguration = updatedConfiguration
+    }
+
+    private func replayBufferLengthLabel(_ seconds: TimeInterval) -> String {
+        switch Int(seconds) {
+        case 30:
+            "30 Seconds"
+        case 60:
+            "1 Minute"
+        case 120:
+            "2 Minutes"
+        case 300:
+            "5 Minutes"
+        default:
+            "\(Int(seconds)) Seconds"
         }
     }
 

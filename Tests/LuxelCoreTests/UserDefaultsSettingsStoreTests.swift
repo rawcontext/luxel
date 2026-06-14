@@ -73,12 +73,22 @@ struct UserDefaultsSettingsStoreTests {
                 DisplayID(1): try CameraPreviewPlacement(x: 1440.5, y: 92.25),
                 DisplayID(7): try CameraPreviewPlacement(x: -320, y: 48)
             ],
+            replayBufferConfiguration: try ReplayBufferConfiguration(
+                bufferLength: 120,
+                source: .displayWithCursor,
+                frameRate: FrameRate(24),
+                includeSystemAudio: true,
+                quality: .high
+            ),
+            replayBufferResumeOnLaunch: true,
+            replayClipDestination: .quickExport,
             triggerCropperShortcut: "command+control+option+r",
             toggleRecordingShortcut: "command+control+option+t",
             recordActiveWindowShortcut: "command+control+option+shift+w",
             recordFullscreenShortcut: "command+control+option+shift+f",
             audioOnlyRecordingShortcut: "command+control+option+a",
             quickRecordLastShortcut: "command+control+option+q",
+            clipReplayBufferShortcut: "command+control+option+c",
             captureScreenshotShortcut: "command+control+option+s",
             screenshotActiveWindowShortcut: "command+control+option+w",
             screenshotFullscreenShortcut: "command+control+option+f",
@@ -168,6 +178,9 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.cameraPreviewStyle == CameraPreviewStyle())
         #expect(settings.cameraPreviewPlacements.isEmpty)
         #expect(settings.cameraRecordingOptions == nil)
+        #expect(settings.replayBufferConfiguration == nil)
+        #expect(!settings.replayBufferResumeOnLaunch)
+        #expect(settings.replayClipDestination == .editor)
         #expect(!settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "command+shift+5")
         #expect(settings.toggleRecordingShortcut == "")
@@ -175,6 +188,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.recordFullscreenShortcut == "")
         #expect(settings.audioOnlyRecordingShortcut == "")
         #expect(settings.quickRecordLastShortcut == "")
+        #expect(settings.clipReplayBufferShortcut == "")
         #expect(settings.captureScreenshotShortcut == "")
         #expect(settings.screenshotActiveWindowShortcut == "")
         #expect(settings.screenshotFullscreenShortcut == "")

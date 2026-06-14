@@ -4,6 +4,17 @@ import Testing
 
 @Suite("Replay buffer models")
 struct ReplayBufferModelTests {
+    @Test("default configuration matches settings plan")
+    func defaultConfigurationMatchesSettingsPlan() {
+        let configuration = ReplayBufferConfiguration.defaults
+
+        #expect(configuration.bufferLength == 60)
+        #expect(configuration.source == .displayWithCursor)
+        #expect(configuration.frameRate.framesPerSecond == 30)
+        #expect(!configuration.includeSystemAudio)
+        #expect(configuration.quality == .balanced)
+    }
+
     @Test("configuration validates buffer length and quality")
     func configurationValidatesBufferLengthAndQuality() throws {
         let frameRate = try FrameRate(30)
@@ -50,6 +61,12 @@ struct ReplayBufferModelTests {
                 quality: .lossless
             )
         }
+    }
+
+    @Test("clip destinations expose settings labels")
+    func clipDestinationsExposeSettingsLabels() {
+        #expect(ReplayClipDestination.editor.label == "Editor")
+        #expect(ReplayClipDestination.quickExport.label == "Quick Export")
     }
 
     @Test("segments validate start and duration")

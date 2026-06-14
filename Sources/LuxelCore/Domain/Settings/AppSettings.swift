@@ -76,6 +76,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var cameraSeparateTrack: Bool
     public var cameraPreviewStyle: CameraPreviewStyle
     public var cameraPreviewPlacements: [DisplayID: CameraPreviewPlacement]
+    public var replayBufferConfiguration: ReplayBufferConfiguration?
+    public var replayBufferResumeOnLaunch: Bool
+    public var replayClipDestination: ReplayClipDestination
     public var enableShortcuts: Bool
     public var triggerCropperShortcut: String
     public var toggleRecordingShortcut: String
@@ -83,6 +86,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var recordFullscreenShortcut: String
     public var audioOnlyRecordingShortcut: String
     public var quickRecordLastShortcut: String
+    public var clipReplayBufferShortcut: String
     public var captureScreenshotShortcut: String
     public var screenshotActiveWindowShortcut: String
     public var screenshotFullscreenShortcut: String
@@ -137,6 +141,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         cameraSeparateTrack: Bool = true,
         cameraPreviewStyle: CameraPreviewStyle = CameraPreviewStyle(),
         cameraPreviewPlacements: [DisplayID: CameraPreviewPlacement] = [:],
+        replayBufferConfiguration: ReplayBufferConfiguration? = nil,
+        replayBufferResumeOnLaunch: Bool = false,
+        replayClipDestination: ReplayClipDestination = .editor,
         enableShortcuts: Bool = true,
         triggerCropperShortcut: String = "",
         toggleRecordingShortcut: String = "",
@@ -144,6 +151,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         recordFullscreenShortcut: String = "",
         audioOnlyRecordingShortcut: String = "",
         quickRecordLastShortcut: String = "",
+        clipReplayBufferShortcut: String = "",
         captureScreenshotShortcut: String = "",
         screenshotActiveWindowShortcut: String = "",
         screenshotFullscreenShortcut: String = "",
@@ -187,6 +195,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.cameraSeparateTrack = cameraSeparateTrack
         self.cameraPreviewStyle = cameraPreviewStyle
         self.cameraPreviewPlacements = cameraPreviewPlacements
+        self.replayBufferConfiguration = replayBufferConfiguration
+        self.replayBufferResumeOnLaunch = replayBufferResumeOnLaunch
+        self.replayClipDestination = replayClipDestination
         self.enableShortcuts = enableShortcuts
         self.triggerCropperShortcut = triggerCropperShortcut
         self.toggleRecordingShortcut = toggleRecordingShortcut
@@ -194,6 +205,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.recordFullscreenShortcut = recordFullscreenShortcut
         self.audioOnlyRecordingShortcut = audioOnlyRecordingShortcut
         self.quickRecordLastShortcut = quickRecordLastShortcut
+        self.clipReplayBufferShortcut = clipReplayBufferShortcut
         self.captureScreenshotShortcut = captureScreenshotShortcut
         self.screenshotActiveWindowShortcut = screenshotActiveWindowShortcut
         self.screenshotFullscreenShortcut = screenshotFullscreenShortcut
@@ -236,6 +248,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case cameraSeparateTrack
         case cameraPreviewStyle
         case cameraPreviewPlacements
+        case replayBufferConfiguration
+        case replayBufferResumeOnLaunch
+        case replayClipDestination
         case enableShortcuts
         case triggerCropperShortcut
         case toggleRecordingShortcut
@@ -243,6 +258,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case recordFullscreenShortcut
         case audioOnlyRecordingShortcut
         case quickRecordLastShortcut
+        case clipReplayBufferShortcut
         case captureScreenshotShortcut
         case screenshotActiveWindowShortcut
         case screenshotFullscreenShortcut
@@ -324,6 +340,18 @@ public struct AppSettings: Codable, Equatable, Sendable {
             [DisplayID: CameraPreviewPlacement].self,
             forKey: .cameraPreviewPlacements
         ) ?? [:]
+        replayBufferConfiguration = try container.decodeIfPresent(
+            ReplayBufferConfiguration.self,
+            forKey: .replayBufferConfiguration
+        )
+        replayBufferResumeOnLaunch = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .replayBufferResumeOnLaunch
+        ) ?? false
+        replayClipDestination = try container.decodeIfPresent(
+            ReplayClipDestination.self,
+            forKey: .replayClipDestination
+        ) ?? .editor
         enableShortcuts = try container.decodeIfPresent(Bool.self, forKey: .enableShortcuts)
             ?? true
         triggerCropperShortcut = try container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut)
@@ -337,6 +365,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         audioOnlyRecordingShortcut = try container.decodeIfPresent(String.self, forKey: .audioOnlyRecordingShortcut)
             ?? ""
         quickRecordLastShortcut = try container.decodeIfPresent(String.self, forKey: .quickRecordLastShortcut)
+            ?? ""
+        clipReplayBufferShortcut = try container.decodeIfPresent(String.self, forKey: .clipReplayBufferShortcut)
             ?? ""
         captureScreenshotShortcut = try container.decodeIfPresent(String.self, forKey: .captureScreenshotShortcut)
             ?? ""

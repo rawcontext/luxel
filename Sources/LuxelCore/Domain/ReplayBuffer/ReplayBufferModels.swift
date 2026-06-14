@@ -1,6 +1,12 @@
 import Foundation
 
 public struct ReplayBufferConfiguration: Codable, Equatable, Sendable {
+    public static let defaults = try! ReplayBufferConfiguration(
+        bufferLength: 60,
+        source: .displayWithCursor,
+        frameRate: try! FrameRate(30)
+    )
+
     public let bufferLength: TimeInterval
     public let source: ReplayBufferSource
     public let frameRate: FrameRate
@@ -33,6 +39,24 @@ public struct ReplayBufferConfiguration: Codable, Equatable, Sendable {
 public enum ReplayBufferSource: Codable, Equatable, Sendable {
     case display(DisplayID)
     case displayWithCursor
+}
+
+public enum ReplayClipDestination: String, Codable, CaseIterable, Equatable, Identifiable, Sendable {
+    case editor
+    case quickExport
+
+    public var id: String {
+        rawValue
+    }
+
+    public var label: String {
+        switch self {
+        case .editor:
+            "Editor"
+        case .quickExport:
+            "Quick Export"
+        }
+    }
 }
 
 public enum ReplayBufferState: Equatable, Sendable {

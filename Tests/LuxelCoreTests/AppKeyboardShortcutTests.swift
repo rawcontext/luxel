@@ -62,6 +62,9 @@ struct AppKeyboardShortcutTests {
         #expect(AppKeyboardShortcutPresets.quickRecordLast.map(\.rawValue) == [
             "command+control+option+q"
         ])
+        #expect(AppKeyboardShortcutPresets.clipReplayBuffer.map(\.rawValue) == [
+            "command+control+option+c"
+        ])
         #expect(AppKeyboardShortcutPresets.captureScreenshot.map(\.rawValue) == [
             "command+control+option+s"
         ])
