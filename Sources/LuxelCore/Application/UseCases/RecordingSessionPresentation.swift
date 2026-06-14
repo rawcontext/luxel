@@ -72,7 +72,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             } else {
                 displaysElapsedTime ? (elapsedText ?? "0:00") : ""
             }
-            menuBarSystemImage = "record.circle.fill"
+            menuBarSystemImage = "record.circle"
             alternateMenuBarSystemImage = nil
             animatesMenuBarSystemImage = true
             accessibilityLabel = if displaysTimerTime {

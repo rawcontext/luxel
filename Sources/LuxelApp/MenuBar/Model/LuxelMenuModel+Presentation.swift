@@ -139,6 +139,14 @@ extension LuxelMenuModel {
         )
     }
 
+    func menuBarStatusPresentation(now: Date = Date()) -> RecordingSessionPresentation {
+        RecordingSessionPresentation(
+            state: recordingState.presentationState(now: now),
+            canStartRecording: canStartRecording,
+            showElapsedTimeInMenuBar: false
+        )
+    }
+
     func cropperQuickRecordingConfiguration() -> CropperQuickRecordingConfiguration {
         CropperQuickRecordingConfiguration(
             activePresetID: settings.quickExportPresetID,
