@@ -123,7 +123,7 @@ struct LuxelShortcutInstaller: View {
                                 }
                             }
                         } else if model.canUseRecordAgainButton {
-                            await model.startRecordingFromLastCapture()
+                            await model.startRecordingFromLastCapture(entryPoint: .toggleRecordingShortcut)
                         }
                     }
                 },
@@ -161,7 +161,7 @@ struct LuxelShortcutInstaller: View {
                     }
 
                     Task {
-                        await model.startQuickRecordingFromLastCapture()
+                        await model.startQuickRecordingFromLastCapture(entryPoint: .quickRecordLastShortcut)
                     }
                 }
             ]

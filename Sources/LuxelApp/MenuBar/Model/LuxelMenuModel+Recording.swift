@@ -26,25 +26,31 @@ extension LuxelMenuModel {
         )
     }
 
-    func startFullscreenRecording() async {
+    func startFullscreenRecording(entryPoint: RecordingStartEntryPoint = .recordFullscreenShortcut) async {
         guard let displayTarget = fullscreenCaptureTarget else {
             recordingState = .failed("No display target available")
             return
         }
 
+        let latencySpan = LuxelRecordingLatencyTelemetry.begin(
+            entryPoint: entryPoint,
+            target: displayTarget.target
+        )
         await startRecording(
             target: displayTarget.target,
             pixelSize: displayTarget.pixelSize,
-            captureKind: .standard
+            captureKind: .standard,
+            latencySpan: latencySpan
         )
     }
 
-    func startActiveWindowRecording() async {
+    func startActiveWindowRecording(entryPoint: RecordingStartEntryPoint = .recordActiveWindowShortcut) async {
         guard canSelectArea else {
             recordingState = .failed("No active window target available")
             return
         }
 
+        let latencySpan = LuxelRecordingLatencyTelemetry.begin(entryPoint: entryPoint)
         await refreshCaptureTargets()
 
         guard let windowTarget = activeWindowCaptureTargetResolver.resolve(
@@ -52,33 +58,49 @@ extension LuxelMenuModel {
             orderedWindowIDs: activeWindowCatalog.orderedActiveWindowIDs()
         ) else {
             recordingState = .failed("No active window target available")
+            LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "no-active-window-target")
             return
         }
 
         await startRecording(
             target: windowTarget.target,
             pixelSize: windowTarget.pixelSize,
-            captureKind: .standard
+            captureKind: .standard,
+            latencySpan: latencySpan
         )
     }
 
-    func startRecordingFromLastCapture() async {
-        await startRecordingFromLastCapture(captureKind: .standard)
+    func startRecordingFromLastCapture(
+        entryPoint: RecordingStartEntryPoint = .recordAgainButton
+    ) async {
+        await startRecordingFromLastCapture(
+            captureKind: .standard,
+            entryPoint: entryPoint
+        )
     }
 
-    func startQuickRecordingFromLastCapture() async {
+    func startQuickRecordingFromLastCapture(
+        entryPoint: RecordingStartEntryPoint = .quickRecordLastButton
+    ) async {
         guard let presetID = settings.quickExportPresetID else {
             recordingState = .failed("No quick export preset selected")
             return
         }
 
-        await startRecordingFromLastCapture(captureKind: .quick(presetID: presetID))
+        await startRecordingFromLastCapture(
+            captureKind: .quick(presetID: presetID),
+            entryPoint: entryPoint
+        )
     }
 
-    private func startRecordingFromLastCapture(captureKind: QuickCaptureKind) async {
+    private func startRecordingFromLastCapture(
+        captureKind: QuickCaptureKind,
+        entryPoint: RecordingStartEntryPoint
+    ) async {
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
+        let latencySpan = LuxelRecordingLatencyTelemetry.begin(entryPoint: entryPoint)
 
         do {
             let request = try lastCaptureRecordingPlanner.recordingRequest(
@@ -88,9 +110,10 @@ extension LuxelMenuModel {
                 outputFileURL: try nextRecordingFileURL(now: Date()),
                 captureKind: captureKind
             )
-            await startRecording(request)
+            await startRecording(request, latencySpan: latencySpan)
         } catch {
             recordingState = .failed(errorMessage(error))
+            LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "request-build-failed")
         }
     }
 
@@ -147,7 +170,8 @@ extension LuxelMenuModel {
     private func startRecording(
         target: CaptureTarget,
         pixelSize: PixelSize,
-        captureKind: QuickCaptureKind
+        captureKind: QuickCaptureKind,
+        latencySpan: RecordingStartLatencySpan? = nil
     ) async {
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
@@ -161,14 +185,22 @@ extension LuxelMenuModel {
             )
             await startRecording(
                 preparedRequest.request,
-                noticeMessage: preparedRequest.noticeMessage
+                noticeMessage: preparedRequest.noticeMessage,
+                latencySpan: latencySpan
             )
         } catch {
             recordingState = .failed(errorMessage(error))
+            if let latencySpan {
+                LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "request-build-failed")
+            }
         }
     }
 
-    private func startRecording(_ request: RecordingRequest, noticeMessage: String? = nil) async {
+    private func startRecording(
+        _ request: RecordingRequest,
+        noticeMessage: String? = nil,
+        latencySpan: RecordingStartLatencySpan? = nil
+    ) async {
         recordingNoticeMessage = noticeMessage
         recordingActionErrorMessage = nil
         quickExportStatusMessage = nil
@@ -185,8 +217,14 @@ extension LuxelMenuModel {
                 activeRecording,
                 RecordingMenuClock(startedAt: activeRecording.date)
             )
+            if let latencySpan {
+                LuxelRecordingLatencyTelemetry.finishStarted(latencySpan, target: request.target)
+            }
         } catch {
             recordingState = .failed(errorMessage(error))
+            if let latencySpan {
+                LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "recorder-start-failed")
+            }
         }
     }
 
