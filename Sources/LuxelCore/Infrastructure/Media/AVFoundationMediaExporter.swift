@@ -65,9 +65,10 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
             ).map(request.zoomBlocks)
         )
         exportSession.timeRange = outputCompositionTimeRange
-        exportSession.audioMix = request.speed == .normal
-            ? nil
-            : makeAudioMix(for: compositionAudioTracks)
+        exportSession.audioMix = try await makeAudioMix(
+            for: compositionAudioTracks,
+            request: request
+        )
         exportSession.shouldOptimizeForNetworkUse = true
 
         try? FileManager.default.removeItem(at: plan.outputFileURL)
@@ -133,8 +134,24 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         return audioTracks
     }
 
-    private func makeAudioMix(for audioTracks: [AVMutableCompositionTrack]) -> AVAudioMix? {
+    private func makeAudioMix(
+        for audioTracks: [AVMutableCompositionTrack],
+        request: ExportRequest
+    ) async throws -> AVAudioMix? {
         guard !audioTracks.isEmpty else {
+            return nil
+        }
+
+        let sourceAudioTracks: [AudioTrackKind] = [.system]
+        let mixPlan = request.audioMix ?? AudioMixPlan(
+            tracks: sourceAudioTracks.map { AudioTrackMix(kind: $0) }
+        )
+        let systemGain = try await resolvedSystemGain(
+            for: mixPlan,
+            request: request,
+            sourceAudioTracks: sourceAudioTracks
+        )
+        guard request.speed != .normal || systemGain != 1 else {
             return nil
         }
 
@@ -142,9 +159,40 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         audioMix.inputParameters = audioTracks.map { audioTrack in
             let parameters = AVMutableAudioMixInputParameters(track: audioTrack)
             parameters.audioTimePitchAlgorithm = .timeDomain
+            parameters.setVolume(Float(systemGain), at: .zero)
             return parameters
         }
         return audioMix
+    }
+
+    private func resolvedSystemGain(
+        for mixPlan: AudioMixPlan,
+        request: ExportRequest,
+        sourceAudioTracks: [AudioTrackKind]
+    ) async throws -> Double {
+        guard mixPlan.normalizePeak else {
+            return mixPlan.mix(for: .system).gain
+        }
+
+        let sourceAudioTracks = Set(sourceAudioTracks)
+        let audibleTracks = mixPlan.tracks.compactMap { track -> AudioTrackKind? in
+            guard track.gain > 0, sourceAudioTracks.contains(track.kind) else {
+                return nil
+            }
+
+            return track.kind
+        }
+        guard !audibleTracks.isEmpty else {
+            return mixPlan.mix(for: .system).gain
+        }
+
+        let measuredPeaks = try await AVAssetReaderAudioPeakAnalyzer().measurePeaks(AudioPeakAnalysisRequest(
+            inputFileURL: request.inputFileURL,
+            timeRange: request.timeRange,
+            audioTracks: audibleTracks
+        ))
+        return mixPlan.resolvedGains(measuredPeaks: measuredPeaks)[.system]
+            ?? mixPlan.mix(for: .system).gain
     }
 
     private func makeExportSession(

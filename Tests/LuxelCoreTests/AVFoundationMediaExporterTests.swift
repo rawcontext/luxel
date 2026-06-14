@@ -116,6 +116,48 @@ struct AVFoundationMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
+    @Test("mp4 export applies audio mix volume")
+    func mp4ExportAppliesAudioMixVolume() async throws {
+        let baselineURL = temporaryOutputURL(fileExtension: "mp4")
+        let quietURL = temporaryOutputURL(fileExtension: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: baselineURL)
+            try? FileManager.default.removeItem(at: quietURL)
+        }
+        let inputURL = try fixtureURL("input@2x.mp4")
+        let timeRange = try TimeRange(start: 1, end: 1.8)
+        let baselineRequest = try ExportRequest(
+            inputFileURL: inputURL,
+            format: .mp4,
+            pixelSize: PixelSize(width: 320, height: 180),
+            frameRate: FrameRate(30),
+            timeRange: timeRange,
+            shouldMute: false,
+            shouldCrop: false
+        )
+        let quietRequest = try ExportRequest(
+            inputFileURL: inputURL,
+            format: .mp4,
+            pixelSize: PixelSize(width: 320, height: 180),
+            frameRate: FrameRate(30),
+            timeRange: timeRange,
+            shouldMute: false,
+            audioMix: AudioMixPlan(tracks: [
+                AudioTrackMix(kind: .system, volume: 0.2)
+            ]),
+            shouldCrop: false
+        )
+
+        _ = try await AVFoundationMediaExporter().export(baselineRequest, to: baselineURL)
+        _ = try await AVFoundationMediaExporter().export(quietRequest, to: quietURL)
+
+        let baselinePeak = try await audioPeak(at: baselineURL, duration: baselineRequest.outputDuration)
+        let quietPeak = try await audioPeak(at: quietURL, duration: quietRequest.outputDuration)
+
+        #expect(baselinePeak > 0.01)
+        #expect(quietPeak < baselinePeak * 0.4)
+    }
+
     @Test("mp4 export applies zoom blocks to video composition")
     func mp4ExportAppliesZoomBlocksToVideoComposition() async throws {
         let inputURL = temporaryOutputURL(fileExtension: "mp4")
@@ -418,6 +460,16 @@ struct AVFoundationMediaExporterTests {
             green: Int((color.greenComponent * 255).rounded()),
             blue: Int((color.blueComponent * 255).rounded())
         )
+    }
+
+    private func audioPeak(at fileURL: URL, duration: TimeInterval) async throws -> Double {
+        let peaks = try await AVAssetReaderAudioPeakAnalyzer().measurePeaks(AudioPeakAnalysisRequest(
+            inputFileURL: fileURL,
+            timeRange: TimeRange(start: 0, end: duration),
+            audioTracks: [.system]
+        ))
+
+        return try #require(peaks[.system])
     }
 
     private func packageRootURL() throws -> URL {
