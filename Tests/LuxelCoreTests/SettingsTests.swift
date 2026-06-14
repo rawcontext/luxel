@@ -52,4 +52,107 @@ struct SettingsTests {
         #expect(UpdateChannel.stable.label == "Stable")
         #expect(UpdateChannel.beta.label == "Beta")
     }
+
+    @Test("adding an export preset creates a unique editable default")
+    func addingExportPresetCreatesUniqueEditableDefault() throws {
+        let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
+        let existingPreset = try ExportPreset(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000501")!,
+            name: "New Preset",
+            format: .gif,
+            sizeRule: .maxWidth(960),
+            frameRate: FrameRate(30),
+            destination: .clipboard,
+            postAction: .copyToClipboard
+        )
+        let newPresetID = UUID(uuidString: "00000000-0000-0000-0000-000000000502")!
+        var settings = AppSettings(
+            recordingsDirectory: directory,
+            exportPresets: [existingPreset],
+            quickExportPresetID: nil
+        )
+
+        let preset = try settings.addExportPreset(id: newPresetID)
+
+        #expect(preset.id == newPresetID)
+        #expect(preset.name == "New Preset 2")
+        #expect(preset.format == .mp4)
+        #expect(preset.sizeRule == .original)
+        #expect(preset.frameRate == nil)
+        #expect(preset.destination == .recordingsDirectory)
+        #expect(preset.postAction == .revealInFinder)
+        #expect(settings.exportPresets.map(\.id) == [existingPreset.id, newPresetID])
+        #expect(settings.quickExportPresetID == newPresetID)
+    }
+
+    @Test("duplicating an export preset copies fields with a unique name")
+    func duplicatingExportPresetCopiesFieldsWithUniqueName() throws {
+        let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
+        let presetID = UUID(uuidString: "00000000-0000-0000-0000-000000000503")!
+        let copyID = UUID(uuidString: "00000000-0000-0000-0000-000000000504")!
+        let preset = try ExportPreset(
+            id: presetID,
+            name: "Quick GIF",
+            format: .gif,
+            sizeRule: .maxWidth(960),
+            frameRate: FrameRate(30),
+            destination: .clipboard,
+            postAction: .copyToClipboard
+        )
+        let existingCopy = try ExportPreset(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000505")!,
+            name: "Quick GIF Copy",
+            format: .mp4,
+            sizeRule: .original,
+            frameRate: nil,
+            destination: .recordingsDirectory,
+            postAction: .revealInFinder
+        )
+        var settings = AppSettings(
+            recordingsDirectory: directory,
+            exportPresets: [preset, existingCopy],
+            quickExportPresetID: preset.id
+        )
+
+        let copy = try settings.duplicateExportPreset(id: presetID, newID: copyID)
+
+        #expect(copy.id == copyID)
+        #expect(copy.name == "Quick GIF Copy 2")
+        #expect(copy.format == preset.format)
+        #expect(copy.sizeRule == preset.sizeRule)
+        #expect(copy.frameRate == preset.frameRate)
+        #expect(copy.destination == preset.destination)
+        #expect(copy.postAction == preset.postAction)
+        #expect(settings.quickExportPresetID == presetID)
+    }
+
+    @Test("deleting the quick export preset falls back to the first remaining preset")
+    func deletingQuickExportPresetFallsBackToFirstRemainingPreset() throws {
+        let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
+        var settings = AppSettings(
+            recordingsDirectory: directory,
+            exportPresets: ExportPreset.builtInDefaults,
+            quickExportPresetID: ExportPreset.quickGIFID
+        )
+
+        settings.deleteExportPreset(id: ExportPreset.quickGIFID)
+
+        #expect(settings.exportPresets.map(\.id) == [ExportPreset.quickMP4ID])
+        #expect(settings.quickExportPresetID == ExportPreset.quickMP4ID)
+
+        settings.deleteExportPreset(id: ExportPreset.quickMP4ID)
+
+        #expect(settings.exportPresets.isEmpty)
+        #expect(settings.quickExportPresetID == nil)
+    }
+
+    @Test("duplicating a missing export preset throws")
+    func duplicatingMissingExportPresetThrows() {
+        let missingID = UUID(uuidString: "00000000-0000-0000-0000-000000000506")!
+        var settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/Users/example/Movies/Luxel"))
+
+        #expect(throws: ExportPresetSettingsError.presetNotFound(missingID)) {
+            _ = try settings.duplicateExportPreset(id: missingID)
+        }
+    }
 }

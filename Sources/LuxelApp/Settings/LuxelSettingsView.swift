@@ -108,17 +108,7 @@ struct LuxelSettingsView: View {
                 )
             }
 
-            Section("Quick Recording") {
-                Picker("Quick Preset", selection: $model.settings.quickExportPresetID) {
-                    Text("None").tag(Optional<UUID>.none)
-                    ForEach(model.settings.exportPresets) { preset in
-                        Text(preset.name).tag(Optional(preset.id))
-                    }
-                }
-                .pickerStyle(.menu)
-
-                Toggle("Remember Last Capture", isOn: $model.settings.rememberLastCapture)
-            }
+            ExportPresetSettingsSection(settings: $model.settings)
 
             Section("System") {
                 Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
