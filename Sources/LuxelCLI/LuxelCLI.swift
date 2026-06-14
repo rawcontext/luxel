@@ -46,6 +46,7 @@ public enum LuxelCLIError: LocalizedError, Equatable {
     case invalidCountdown
     case invalidClipDuration
     case invalidCallbackURL(String)
+    case invalidOutputDirectory
     case callbackConflict
     case callbackListenFailed
     case invalidCallbackTimeout
@@ -66,6 +67,8 @@ public enum LuxelCLIError: LocalizedError, Equatable {
             "Clip duration must be greater than zero seconds."
         case .invalidCallbackURL(let name):
             "\(name) must be a non-file URL."
+        case .invalidOutputDirectory:
+            "--save-to must be a non-empty file-system path."
         case .callbackConflict:
             "--wait and --json cannot be combined with explicit x-callback URLs."
         case .callbackListenFailed:
@@ -98,6 +101,9 @@ public struct LuxelRecordCommand: ParsableCommand {
     @Option(help: "Seconds to wait before capture starts, from 0 to 60.")
     public var countdown: Int?
 
+    @Option(name: .customLong("save-to"), help: "Directory to save the recording to.")
+    public var saveTo: String?
+
     @OptionGroup public var callbacks: LuxelCallbackArguments
 
     @OptionGroup public var execution: LuxelCommandExecutionArguments
@@ -114,7 +120,8 @@ public struct LuxelRecordCommand: ParsableCommand {
                 command: .record(AutomationRecordingOptions(
                     target: resolvedTarget,
                     presetName: preset,
-                    countdownSeconds: validatedCountdown(countdown)
+                    countdownSeconds: validatedCountdown(countdown),
+                    outputDirectory: try resolvedOutputDirectory(saveTo)
                 )),
                 callbacks: callbacks.resolvedCallbacks()
             )
@@ -163,6 +170,9 @@ public struct LuxelToggleCommand: ParsableCommand {
     @Option(help: "Seconds to wait before capture starts, from 0 to 60.")
     public var countdown: Int?
 
+    @Option(name: .customLong("save-to"), help: "Directory to save a started recording to.")
+    public var saveTo: String?
+
     @OptionGroup public var callbacks: LuxelCallbackArguments
 
     @OptionGroup public var execution: LuxelCommandExecutionArguments
@@ -172,7 +182,7 @@ public struct LuxelToggleCommand: ParsableCommand {
     public var invocation: AutomationInvocation {
         get throws {
             let resolvedTarget = try target.resolvedTarget(required: false)
-            guard resolvedTarget != nil || (preset == nil && countdown == nil) else {
+            guard resolvedTarget != nil || (preset == nil && countdown == nil && saveTo == nil) else {
                 throw LuxelCLIError.missingTarget
             }
 
@@ -180,7 +190,8 @@ public struct LuxelToggleCommand: ParsableCommand {
                 AutomationRecordingOptions(
                     target: $0,
                     presetName: preset,
-                    countdownSeconds: try validatedCountdown(countdown)
+                    countdownSeconds: try validatedCountdown(countdown),
+                    outputDirectory: try resolvedOutputDirectory(saveTo)
                 )
             }
 
@@ -447,4 +458,26 @@ private func validatedCountdown(_ countdown: Int?) throws -> Int? {
     }
 
     return countdown
+}
+
+private func resolvedOutputDirectory(_ path: String?) throws -> URL? {
+    guard let path else {
+        return nil
+    }
+
+    if let url = URL(string: path),
+       url.scheme != nil {
+        guard url.isFileURL, !url.path.isEmpty else {
+            throw LuxelCLIError.invalidOutputDirectory
+        }
+
+        return url.standardizedFileURL
+    }
+
+    let expandedPath = (path as NSString).expandingTildeInPath
+    guard !expandedPath.isEmpty else {
+        throw LuxelCLIError.invalidOutputDirectory
+    }
+
+    return URL(fileURLWithPath: expandedPath).standardizedFileURL
 }

@@ -117,15 +117,18 @@ public struct AutomationRecordingOptions: Equatable, Sendable {
     public let target: AutomationCaptureTarget
     public let presetName: String?
     public let countdownSeconds: Int?
+    public let outputDirectory: URL?
 
     public init(
         target: AutomationCaptureTarget,
         presetName: String? = nil,
-        countdownSeconds: Int? = nil
+        countdownSeconds: Int? = nil,
+        outputDirectory: URL? = nil
     ) {
         self.target = target
         self.presetName = presetName
         self.countdownSeconds = countdownSeconds
+        self.outputDirectory = outputDirectory
     }
 }
 
@@ -244,7 +247,8 @@ public enum AutomationCommandParser {
         return AutomationRecordingOptions(
             target: target,
             presetName: nonEmpty(query.value(for: "preset")),
-            countdownSeconds: try optionalCountdownInteger(in: query)
+            countdownSeconds: try optionalCountdownInteger(in: query),
+            outputDirectory: try optionalOutputDirectory(in: query)
         )
     }
 
@@ -367,6 +371,25 @@ public enum AutomationCommandParser {
         default:
             throw AutomationCommandParseError.invalidParameter(name)
         }
+    }
+
+    private static func optionalOutputDirectory(in query: AutomationQuery) throws -> URL? {
+        guard let value = nonEmpty(query.value(for: "saveTo")) else {
+            return nil
+        }
+
+        if let url = URL(string: value),
+           url.isFileURL,
+           !url.path.isEmpty {
+            return url.standardizedFileURL
+        }
+
+        let expandedPath = (value as NSString).expandingTildeInPath
+        guard expandedPath.hasPrefix("/") else {
+            throw AutomationCommandParseError.invalidParameter("saveTo")
+        }
+
+        return URL(fileURLWithPath: expandedPath).standardizedFileURL
     }
 
     private static func callbackURL(

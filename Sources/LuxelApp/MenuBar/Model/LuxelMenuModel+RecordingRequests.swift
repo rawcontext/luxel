@@ -7,10 +7,11 @@ extension LuxelMenuModel {
         target: CaptureTarget,
         pixelSize: PixelSize,
         captureKind: QuickCaptureKind,
-        countdownSeconds: Int? = nil
+        countdownSeconds: Int? = nil,
+        outputDirectory: URL? = nil
     ) throws -> (request: RecordingRequest, noticeMessage: String?) {
         let frameRate = try FrameRate(settings.record60FPS ? 60 : 30)
-        let outputFileURL = try nextRecordingFileURL(now: Date())
+        let outputFileURL = try nextRecordingFileURL(now: Date(), directory: outputDirectory)
         let resolvedAudio = resolveRecordingAudioMode()
         let schedule = try recordingSchedule(
             countdownSeconds: countdownSeconds,
@@ -90,9 +91,9 @@ extension LuxelMenuModel {
         )
     }
 
-    func nextRecordingFileURL(now: Date) throws -> URL {
+    func nextRecordingFileURL(now: Date, directory: URL? = nil) throws -> URL {
         let recordingName = RecordingName.timestamped(now: now).value
-        return settings.recordingsDirectory
+        return (directory ?? settings.recordingsDirectory)
             .appending(path: recordingName)
             .appendingPathExtension("mp4")
     }
@@ -110,8 +111,16 @@ extension LuxelMenuModel {
         return RecordingOutputFinalizationPlan(
             stagingFileURL: stagingDirectory.appending(path: finalFileURL.lastPathComponent),
             finalFileURL: finalFileURL,
-            finalDirectoryBookmark: settings.recordingsDirectoryBookmark
+            finalDirectoryBookmark: finalDirectoryBookmark(for: finalFileURL)
         )
+    }
+
+    private func finalDirectoryBookmark(for finalFileURL: URL) -> BookmarkedDirectory? {
+        guard finalFileURL.deletingLastPathComponent().standardizedFileURL == settings.recordingsDirectory.standardizedFileURL else {
+            return nil
+        }
+
+        return settings.recordingsDirectoryBookmark
     }
 
     private func nextAudioRecordingFileURL(now: Date, format: AudioRecordingFormat) throws -> URL {

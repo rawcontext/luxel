@@ -27,7 +27,8 @@ struct AutomationCommandTests {
             command: .record(AutomationRecordingOptions(
                 target: .display(.main),
                 presetName: "Quick GIF",
-                countdownSeconds: 3
+                countdownSeconds: 3,
+                outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
             )),
             callbacks: AutomationCallbacks(
                 success: URL(string: "luxel-callback://done"),
@@ -37,7 +38,7 @@ struct AutomationCommandTests {
 
         let url = AutomationInvocationURLBuilder.url(for: invocation)
 
-        #expect(url.absoluteString == "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3&x-success=luxel-callback://done&x-error=luxel-callback://failed")
+        #expect(url.absoluteString == "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3&saveTo=/tmp/Luxel%20Exports&x-success=luxel-callback://done&x-error=luxel-callback://failed")
         #expect(try AutomationCommandParser.parse(url) == invocation)
     }
 
@@ -60,11 +61,14 @@ struct AutomationCommandTests {
 
     @Test("parser reads last-area recording URL")
     func parserReadsLastAreaRecordingURL() throws {
-        let url = try #require(URL(string: "luxel://record?target=lastArea"))
+        let url = try #require(URL(string: "luxel://record?target=lastArea&saveTo=file:///tmp/Luxel%20Exports"))
 
         let invocation = try AutomationCommandParser.parse(url)
 
-        #expect(invocation.command == .record(AutomationRecordingOptions(target: .lastArea)))
+        #expect(invocation.command == .record(AutomationRecordingOptions(
+            target: .lastArea,
+            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
+        )))
     }
 
     @Test("parser reads screenshot URL with active window and format")
@@ -122,6 +126,10 @@ struct AutomationCommandTests {
 
         #expect(throws: AutomationCommandParseError.invalidParameter("reveal")) {
             _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://latest?reveal=maybe")))
+        }
+
+        #expect(throws: AutomationCommandParseError.invalidParameter("saveTo")) {
+            _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://record?target=lastArea&saveTo=relative")))
         }
     }
 

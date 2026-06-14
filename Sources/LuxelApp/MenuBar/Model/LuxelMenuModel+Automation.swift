@@ -183,7 +183,8 @@ extension LuxelMenuModel {
         if options.target == .lastArea {
             await startAutomationRecordingFromLastCapture(
                 presetID: presetID,
-                countdownSeconds: options.countdownSeconds
+                countdownSeconds: options.countdownSeconds,
+                outputDirectory: options.outputDirectory
             )
             return
         }
@@ -193,7 +194,8 @@ extension LuxelMenuModel {
             target: target.target,
             pixelSize: target.pixelSize,
             presetID: presetID,
-            countdownSeconds: options.countdownSeconds
+            countdownSeconds: options.countdownSeconds,
+            outputDirectory: options.outputDirectory
         )
     }
 

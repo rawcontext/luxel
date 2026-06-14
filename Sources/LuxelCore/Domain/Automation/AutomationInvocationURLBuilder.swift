@@ -59,6 +59,9 @@ public enum AutomationInvocationURLBuilder {
         if let countdownSeconds = options.countdownSeconds {
             items.append(URLQueryItem(name: "countdown", value: String(countdownSeconds)))
         }
+        if let outputDirectory = options.outputDirectory {
+            items.append(URLQueryItem(name: "saveTo", value: outputDirectory.path))
+        }
         return items
     }
 

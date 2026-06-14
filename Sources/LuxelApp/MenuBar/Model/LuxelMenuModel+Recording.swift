@@ -115,7 +115,8 @@ extension LuxelMenuModel {
     private func startRecordingFromLastCapture(
         captureKind: QuickCaptureKind,
         entryPoint: RecordingStartEntryPoint,
-        countdownSeconds: Int? = nil
+        countdownSeconds: Int? = nil,
+        outputDirectory: URL? = nil
     ) async {
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
@@ -127,7 +128,7 @@ extension LuxelMenuModel {
                 from: settings.lastCaptureMemory,
                 availableTargets: captureTargets,
                 fallbackDisplay: lastCaptureFallbackDisplay,
-                outputFileURL: try nextRecordingFileURL(now: Date()),
+                outputFileURL: try nextRecordingFileURL(now: Date(), directory: outputDirectory),
                 captureKind: captureKind
             )
             let scheduledRequest = try requestByApplyingAutomationCountdown(
@@ -168,7 +169,8 @@ extension LuxelMenuModel {
         target: CaptureTarget,
         pixelSize: PixelSize,
         presetID: UUID?,
-        countdownSeconds: Int? = nil
+        countdownSeconds: Int? = nil,
+        outputDirectory: URL? = nil
     ) async {
         let captureKind = presetID.map(QuickCaptureKind.quick) ?? .standard
         let latencySpan = LuxelRecordingLatencyTelemetry.begin(
@@ -180,16 +182,22 @@ extension LuxelMenuModel {
             pixelSize: pixelSize,
             captureKind: captureKind,
             countdownSeconds: countdownSeconds,
+            outputDirectory: outputDirectory,
             latencySpan: latencySpan
         )
     }
 
-    func startAutomationRecordingFromLastCapture(presetID: UUID?, countdownSeconds: Int? = nil) async {
+    func startAutomationRecordingFromLastCapture(
+        presetID: UUID?,
+        countdownSeconds: Int? = nil,
+        outputDirectory: URL? = nil
+    ) async {
         let captureKind = presetID.map(QuickCaptureKind.quick) ?? .standard
         await startRecordingFromLastCapture(
             captureKind: captureKind,
             entryPoint: .urlAutomation,
-            countdownSeconds: countdownSeconds
+            countdownSeconds: countdownSeconds,
+            outputDirectory: outputDirectory
         )
     }
 
@@ -238,6 +246,7 @@ extension LuxelMenuModel {
         pixelSize: PixelSize,
         captureKind: QuickCaptureKind,
         countdownSeconds: Int? = nil,
+        outputDirectory: URL? = nil,
         latencySpan: RecordingStartLatencySpan? = nil
     ) async {
         guard canBeginRecordingStart else {
@@ -256,7 +265,8 @@ extension LuxelMenuModel {
                 target: target,
                 pixelSize: pixelSize,
                 captureKind: captureKind,
-                countdownSeconds: countdownSeconds
+                countdownSeconds: countdownSeconds,
+                outputDirectory: outputDirectory
             )
             await startRecording(
                 preparedRequest.request,
