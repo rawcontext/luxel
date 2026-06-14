@@ -58,6 +58,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
     public let pixelSize: PixelSize?
     public let frameRate: FrameRate?
     public let shouldMute: Bool
+    public let audioMix: AudioMixPlan?
     public let shouldCrop: Bool
     public let quality: ExportQuality
     public let speed: PlaybackSpeed
@@ -73,6 +74,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         pixelSize: PixelSize? = nil,
         frameRate: FrameRate? = nil,
         shouldMute: Bool = false,
+        audioMix: AudioMixPlan? = nil,
         shouldCrop: Bool = false,
         quality: ExportQuality = .balanced,
         speed: PlaybackSpeed = .normal,
@@ -87,6 +89,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         self.pixelSize = pixelSize
         self.frameRate = frameRate
         self.shouldMute = shouldMute
+        self.audioMix = audioMix
         self.shouldCrop = shouldCrop
         self.quality = quality
         self.speed = speed
@@ -103,6 +106,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         case pixelSize
         case frameRate
         case shouldMute
+        case audioMix
         case shouldCrop
         case quality
         case speed
@@ -121,6 +125,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         pixelSize = try container.decodeIfPresent(PixelSize.self, forKey: .pixelSize)
         frameRate = try container.decodeIfPresent(FrameRate.self, forKey: .frameRate)
         shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
+        audioMix = try container.decodeIfPresent(AudioMixPlan.self, forKey: .audioMix)
         shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
         quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
             ?? .balanced
@@ -141,6 +146,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
                 frameRate: frameRate ?? source.nominalFrameRate,
                 timeRange: trimRange ?? TimeRange(start: 0, end: source.duration),
                 shouldMute: shouldMute || !source.hasAudio,
+                audioMix: audioMix,
                 shouldCrop: shouldCrop,
                 quality: quality,
                 speed: speed,

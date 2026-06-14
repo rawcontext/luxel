@@ -18,6 +18,7 @@ struct EditorModelTests {
         #expect(request.frameRate == source.nominalFrameRate)
         #expect(request.timeRange == fullRange)
         #expect(!request.shouldMute)
+        #expect(request.audioMix == nil)
         #expect(!request.shouldCrop)
         #expect(request.quality == .balanced)
         #expect(request.speed == .normal)
@@ -38,6 +39,13 @@ struct EditorModelTests {
         let cursorOptions = try CursorRenderOptions(sizeMultiplier: 1.5, clickStyle: .filledPulse)
         let keystrokeOptions = try KeystrokeRenderOptions(anchor: .topRight, size: .large, displayDuration: 2)
         let captionOptions = CaptionRenderOptions(burnIn: true, position: .top, size: .large)
+        let audioMix = AudioMixPlan(
+            tracks: [
+                AudioTrackMix(kind: .system, volume: 0.75),
+                AudioTrackMix(kind: .microphone, volume: 0.5, isMuted: true)
+            ],
+            normalizePeak: true
+        )
         let draft = try EditorExportDraft(
             source: makeSource(),
             format: .gif,
@@ -45,6 +53,7 @@ struct EditorModelTests {
             pixelSize: PixelSize(width: 320, height: 200),
             frameRate: FrameRate(12),
             shouldMute: true,
+            audioMix: audioMix,
             shouldCrop: true,
             quality: .high,
             speed: PlaybackSpeed(2),
@@ -67,6 +76,7 @@ struct EditorModelTests {
         #expect(request.frameRate == frameRate)
         #expect(request.timeRange == trimRange)
         #expect(request.outputShouldMute)
+        #expect(request.audioMix == audioMix)
         #expect(request.shouldCrop)
         #expect(request.quality == .high)
         #expect(request.speed == (try PlaybackSpeed(2)))
@@ -97,12 +107,14 @@ struct EditorModelTests {
         #expect(draft.quality == .balanced)
         #expect(draft.speed == .normal)
         #expect(draft.gifOptions == nil)
+        #expect(draft.audioMix == nil)
         #expect(draft.cursorOptions == nil)
         #expect(draft.keystrokeOptions == nil)
         #expect(draft.captionOptions == nil)
         #expect(try draft.exportRequest.quality == .balanced)
         #expect(try draft.exportRequest.speed == .normal)
         #expect(try draft.exportRequest.gifOptions == nil)
+        #expect(try draft.exportRequest.audioMix == nil)
         #expect(try draft.exportRequest.cursorOptions == nil)
         #expect(try draft.exportRequest.keystrokeOptions == nil)
         #expect(try draft.exportRequest.captionOptions == nil)

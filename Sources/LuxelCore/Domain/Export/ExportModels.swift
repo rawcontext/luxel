@@ -242,6 +242,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
     public let frameRate: FrameRate
     public let timeRange: TimeRange
     public let shouldMute: Bool
+    public let audioMix: AudioMixPlan?
     public let shouldCrop: Bool
     public let quality: ExportQuality
     public let speed: PlaybackSpeed
@@ -257,6 +258,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         frameRate: FrameRate,
         timeRange: TimeRange,
         shouldMute: Bool,
+        audioMix: AudioMixPlan? = nil,
         shouldCrop: Bool,
         quality: ExportQuality = .balanced,
         speed: PlaybackSpeed = .normal,
@@ -271,6 +273,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         self.frameRate = frameRate
         self.timeRange = timeRange
         self.shouldMute = shouldMute
+        self.audioMix = audioMix
         self.shouldCrop = shouldCrop
         self.quality = quality
         self.speed = speed
@@ -287,6 +290,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         case frameRate
         case timeRange
         case shouldMute
+        case audioMix
         case shouldCrop
         case quality
         case speed
@@ -305,6 +309,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         frameRate = try container.decode(FrameRate.self, forKey: .frameRate)
         timeRange = try container.decode(TimeRange.self, forKey: .timeRange)
         shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
+        audioMix = try container.decodeIfPresent(AudioMixPlan.self, forKey: .audioMix)
         shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
         quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
             ?? .balanced
@@ -331,7 +336,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
     }
 
     public var outputShouldMute: Bool {
-        shouldMute || format.dropsAudio
+        shouldMute || audioMix?.isMuted == true || format.dropsAudio
     }
 
     public var outputDuration: TimeInterval {

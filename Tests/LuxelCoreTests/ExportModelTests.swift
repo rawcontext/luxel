@@ -78,6 +78,7 @@ struct ExportModelTests {
         #expect(request.resolvedQuality == .balanced)
         #expect(request.speed == .normal)
         #expect(request.gifOptions == nil)
+        #expect(request.audioMix == nil)
         #expect(request.cursorOptions == nil)
         #expect(request.keystrokeOptions == nil)
         #expect(request.captionOptions == nil)
@@ -98,6 +99,25 @@ struct ExportModelTests {
 
         #expect(decoded == request)
         #expect(decoded.gifOptions == gifOptions)
+    }
+
+    @Test("export request round trips audio mix")
+    func exportRequestRoundTripsAudioMix() throws {
+        let audioMix = AudioMixPlan(
+            tracks: [
+                AudioTrackMix(kind: .system, volume: 0.4),
+                AudioTrackMix(kind: .microphone, volume: 1.3)
+            ],
+            normalizePeak: true
+        )
+        let request = try makeRequest(format: .mp4, audioMix: audioMix)
+
+        let data = try JSONEncoder().encode(request)
+        let decoded = try JSONDecoder().decode(ExportRequest.self, from: data)
+
+        #expect(decoded == request)
+        #expect(decoded.audioMix == audioMix)
+        #expect(!decoded.outputShouldMute)
     }
 
     @Test("export request round trips sidecar render options")
@@ -200,6 +220,18 @@ struct ExportModelTests {
         #expect(!mp4Request.outputShouldMute)
     }
 
+    @Test("all muted audio mix mutes output")
+    func allMutedAudioMixMutesOutput() throws {
+        let audioMix = AudioMixPlan(tracks: [
+            AudioTrackMix(kind: .system, volume: 0),
+            AudioTrackMix(kind: .microphone, isMuted: true)
+        ])
+        let request = try makeRequest(format: .mp4, shouldMute: false, audioMix: audioMix)
+
+        #expect(!request.shouldMute)
+        #expect(request.outputShouldMute)
+    }
+
     @Test("time range exposes trim duration")
     func timeRangeDuration() throws {
         let range = try TimeRange(start: 11.5, end: 27)
@@ -291,6 +323,7 @@ struct ExportModelTests {
         width: Int = 100,
         height: Int = 200,
         shouldMute: Bool = false,
+        audioMix: AudioMixPlan? = nil,
         quality: ExportQuality = .balanced,
         speed: PlaybackSpeed = .normal,
         gifOptions: GIFRenderOptions? = nil,
@@ -305,6 +338,7 @@ struct ExportModelTests {
             frameRate: FrameRate(30),
             timeRange: TimeRange(start: 0, end: 10),
             shouldMute: shouldMute,
+            audioMix: audioMix,
             shouldCrop: true,
             quality: quality,
             speed: speed,
