@@ -31,6 +31,7 @@ public struct LastCaptureRecordingPlanner: Sendable {
             showCursor: resolution.options.showCursor,
             highlightClicks: resolution.options.highlightClicks,
             captureKeystrokes: resolution.options.captureKeystrokes,
+            camera: resolution.options.camera,
             audio: resolution.options.audio,
             videoCodec: resolution.options.videoCodec,
             captureKind: captureKind

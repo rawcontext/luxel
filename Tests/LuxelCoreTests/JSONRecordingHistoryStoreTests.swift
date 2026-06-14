@@ -23,7 +23,12 @@ struct JSONRecordingHistoryStoreTests {
                 frameRate: 60,
                 showCursor: true,
                 highlightClicks: true,
-                captureKeystrokes: true
+                captureKeystrokes: true,
+                camera: CameraRecordingOptions(
+                    deviceID: "camera-1",
+                    isEnabled: true,
+                    previewStyle: CameraPreviewStyle(shape: .roundedRect, size: .large, isMirrored: false)
+                )
             ),
             bundleManifest: bundleManifest
         )

@@ -31,6 +31,7 @@ struct QuickRecordingModelTests {
             frameRate: FrameRate(60),
             showCursor: false,
             highlightClicks: true,
+            camera: CameraRecordingOptions(deviceID: "camera-1", isEnabled: true),
             audio: .system
         )
         let capturedAt = Date(timeIntervalSince1970: 1_800_000_000)
@@ -55,6 +56,7 @@ struct QuickRecordingModelTests {
 
         #expect(options.captureKind == .standard)
         #expect(!options.captureKeystrokes)
+        #expect(options.camera == nil)
     }
 
     @Test("last capture memory resolves exact window target")

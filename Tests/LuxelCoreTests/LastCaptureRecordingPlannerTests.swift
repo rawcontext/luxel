@@ -38,6 +38,12 @@ struct LastCaptureRecordingPlannerTests {
         let displayID = DisplayID(3)
         let rect = try CaptureRect(x: 10, y: 20, width: 640, height: 480)
         let outputFileURL = URL(fileURLWithPath: "/tmp/repeat.mp4")
+        let camera = CameraRecordingOptions(
+            deviceID: "camera-1",
+            isEnabled: true,
+            recordsSeparateTrack: false,
+            previewStyle: CameraPreviewStyle(shape: .roundedRect, size: .small, isMirrored: false)
+        )
         let memory = LastCaptureMemory(
             target: .area(displayID: displayID, rect: rect),
             pixelSize: try PixelSize(width: 640, height: 480),
@@ -47,6 +53,7 @@ struct LastCaptureRecordingPlannerTests {
                 showCursor: false,
                 highlightClicks: true,
                 captureKeystrokes: true,
+                camera: camera,
                 displayID: displayID,
                 audio: .systemAndMicrophone(deviceID: "mic-1"),
                 videoCodec: .hevc
@@ -67,6 +74,7 @@ struct LastCaptureRecordingPlannerTests {
         #expect(!request.showCursor)
         #expect(request.highlightClicks)
         #expect(request.captureKeystrokes)
+        #expect(request.camera == camera)
         #expect(request.audio == .systemAndMicrophone(deviceID: "mic-1"))
         #expect(request.videoCodec == .hevc)
         #expect(request.captureKind == .standard)

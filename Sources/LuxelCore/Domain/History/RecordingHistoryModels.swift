@@ -199,6 +199,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
     public let showCursor: Bool
     public let highlightClicks: Bool
     public let captureKeystrokes: Bool
+    public let camera: CameraRecordingOptions?
     public let displayID: DisplayID?
     public let audio: RecordingAudioMode
     public let videoCodec: RecordingCodec
@@ -213,6 +214,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         showCursor: Bool = true,
         highlightClicks: Bool = false,
         captureKeystrokes: Bool = false,
+        camera: CameraRecordingOptions? = nil,
         displayID: DisplayID? = nil,
         audio: RecordingAudioMode = .none,
         videoCodec: RecordingCodec = .h264,
@@ -226,6 +228,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         self.showCursor = showCursor
         self.highlightClicks = highlightClicks
         self.captureKeystrokes = captureKeystrokes
+        self.camera = camera
         self.displayID = displayID
         self.audio = audio
         self.videoCodec = videoCodec
@@ -241,6 +244,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         case showCursor
         case highlightClicks
         case captureKeystrokes
+        case camera
         case displayID
         case audio
         case videoCodec
@@ -261,6 +265,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
             ?? false
         captureKeystrokes = try container.decodeIfPresent(Bool.self, forKey: .captureKeystrokes)
             ?? false
+        camera = try container.decodeIfPresent(CameraRecordingOptions.self, forKey: .camera)
         displayID = try container.decodeIfPresent(DisplayID.self, forKey: .displayID)
         audio = try container.decodeIfPresent(RecordingAudioMode.self, forKey: .audio)
             ?? .none
