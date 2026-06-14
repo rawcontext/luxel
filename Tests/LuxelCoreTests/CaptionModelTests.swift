@@ -106,12 +106,28 @@ struct CaptionModelTests {
         """)
     }
 
+    @Test("plain text serializer emits cue text only")
+    func plainTextSerializerEmitsCueTextOnly() throws {
+        let track = try sampleTrack()
+
+        let text = PlainTextCaptionSerializer.serialize(track)
+
+        #expect(text == """
+        Hello
+        world
+
+        Done
+
+        """)
+    }
+
     @Test("serializers handle empty tracks")
     func serializersHandleEmptyTracks() throws {
         let track = try CaptionTrack(cues: [], language: Locale.LanguageCode("en"))
 
         #expect(SRTCaptionSerializer.serialize(track) == "")
         #expect(VTTCaptionSerializer.serialize(track) == "WEBVTT\n")
+        #expect(PlainTextCaptionSerializer.serialize(track) == "")
     }
 
     @Test("cue builder segments sentences and wraps caption lines")

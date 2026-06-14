@@ -380,6 +380,16 @@ public enum VTTCaptionSerializer {
     }
 }
 
+public enum PlainTextCaptionSerializer {
+    public static func serialize(_ track: CaptionTrack) -> String {
+        guard !track.cues.isEmpty else {
+            return ""
+        }
+
+        return track.cues.map(\.text).joined(separator: "\n\n") + "\n"
+    }
+}
+
 private enum CaptionTimestampFormatter {
     static func timestamp(_ time: TimeInterval, millisecondSeparator: String) -> String {
         let totalMilliseconds = max(0, Int((time * 1_000).rounded()))
