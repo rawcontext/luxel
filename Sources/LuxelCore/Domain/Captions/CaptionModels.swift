@@ -343,6 +343,34 @@ public enum CaptionTheme: String, Codable, CaseIterable, Equatable, Sendable {
     case highContrast
 }
 
+public enum CaptionFileFormat: String, Codable, CaseIterable, Equatable, Sendable {
+    case srt
+    case vtt
+    case plainText
+
+    public var fileExtension: String {
+        switch self {
+        case .srt:
+            "srt"
+        case .vtt:
+            "vtt"
+        case .plainText:
+            "txt"
+        }
+    }
+
+    public func serialize(_ track: CaptionTrack) -> String {
+        switch self {
+        case .srt:
+            SRTCaptionSerializer.serialize(track)
+        case .vtt:
+            VTTCaptionSerializer.serialize(track)
+        case .plainText:
+            PlainTextCaptionSerializer.serialize(track)
+        }
+    }
+}
+
 public enum SRTCaptionSerializer {
     public static func serialize(_ track: CaptionTrack) -> String {
         guard !track.cues.isEmpty else {
