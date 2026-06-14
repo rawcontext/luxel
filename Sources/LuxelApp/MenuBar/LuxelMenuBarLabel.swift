@@ -29,9 +29,6 @@ struct LuxelMenuBarLabel: View {
                     now = Date()
                 }
             }
-            .task {
-                await model.keepCaptureTargetCacheWarm()
-            }
     }
 }
 
