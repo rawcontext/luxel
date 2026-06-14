@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import LuxelCore
 import Testing
@@ -566,6 +567,57 @@ struct LuxelEditorModelTests {
         #expect(captured.first?.request.audioMix == expectedAudioMix)
     }
 
+    @Test("audio mix controls apply to preview playback")
+    func audioMixControlsApplyToPreviewPlayback() async throws {
+        let model = makeModel()
+
+        await model.open(fileURL: try fixtureURL("input@2x.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(!model.player.isMuted)
+        #expect(model.player.currentItem?.audioMix == nil)
+
+        model.setAudioVolume(0.25)
+
+        let audioMix = try await waitForPreviewAudioMix(model)
+        let inputParameters = try #require(audioMix.inputParameters.first)
+        let audioVolumeRamp = try #require(previewAudioVolumeRamp(for: inputParameters))
+
+        #expect(isApproximately(Double(audioVolumeRamp.start), 0.25))
+        #expect(isApproximately(Double(audioVolumeRamp.end), 0.25))
+
+        model.setIncludesAudio(false)
+
+        #expect(model.player.isMuted)
+        #expect(model.player.currentItem?.audioMix == nil)
+    }
+
+    @Test("normalize audio applies analyzed gain to preview playback")
+    func normalizeAudioAppliesAnalyzedGainToPreviewPlayback() async throws {
+        let analyzer = SpyAudioPeakAnalyzer(peaks: [.system: 0.5])
+        let model = makeModel(audioPeakAnalyzer: analyzer)
+        let sourceURL = try fixtureURL("input@2x.mp4")
+
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setTrimStart(1)
+        model.setTrimEnd(4)
+        model.setNormalizeAudio(true)
+
+        let audioMix = try await waitForPreviewAudioMix(model)
+        let inputParameters = try #require(audioMix.inputParameters.first)
+        let audioVolumeRamp = try #require(previewAudioVolumeRamp(for: inputParameters))
+        let expectedGain = AudioMixPlan.normalizationTargetPeak / 0.5
+
+        #expect(isApproximately(Double(audioVolumeRamp.start), expectedGain))
+        #expect(isApproximately(Double(audioVolumeRamp.end), expectedGain))
+        #expect(await analyzer.requests() == [
+            AudioPeakAnalysisRequest(
+                inputFileURL: sourceURL,
+                timeRange: try TimeRange(start: 1, end: 4),
+                audioTracks: [.system]
+            )
+        ])
+    }
+
     @Test("GIF options participate in undo and export requests")
     func gifOptionsParticipateInUndoAndExportRequests() async throws {
         let exporter = SpyMediaExporter()
@@ -792,6 +844,7 @@ struct LuxelEditorModelTests {
         frameGrabber: any FrameGrabber = StubFrameGrabber(),
         screenshotFileWriter: SpyScreenshotFileWriter = SpyScreenshotFileWriter(),
         screenshotDestinationClient: SpyScreenshotDestinationClient = SpyScreenshotDestinationClient(),
+        audioPeakAnalyzer: any AudioPeakAnalyzer = SpyAudioPeakAnalyzer(),
         codecAvailability: CodecAvailability = .none,
         exportMemory: [ExportFormat: ExportMemory] = [:],
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
@@ -817,6 +870,7 @@ struct LuxelEditorModelTests {
                 fileWriter: screenshotFileWriter,
                 destinationClient: screenshotDestinationClient
             ),
+            audioPeakAnalyzer: audioPeakAnalyzer,
             fileSystem: fileSystem,
             codecAvailability: codecAvailability,
             exportMemory: exportMemory,
@@ -839,6 +893,61 @@ struct LuxelEditorModelTests {
             format: .png,
             pixelSize: PixelSize(width: 2, height: 2)
         )
+    }
+
+    private func waitForPreviewAudioMix(_ model: LuxelEditorModel) async throws -> AVAudioMix {
+        for _ in 0..<100 {
+            if let audioMix = model.player.currentItem?.audioMix {
+                return audioMix
+            }
+
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        return try #require(model.player.currentItem?.audioMix)
+    }
+
+    private func previewAudioVolumeRamp(for inputParameters: AVAudioMixInputParameters) -> (start: Float, end: Float)? {
+        var startVolume: Float = 0
+        var endVolume: Float = 0
+        var timeRange = CMTimeRange.invalid
+        let foundRamp = inputParameters.getVolumeRamp(
+            for: .zero,
+            startVolume: &startVolume,
+            endVolume: &endVolume,
+            timeRange: &timeRange
+        )
+
+        guard foundRamp else {
+            return nil
+        }
+
+        return (startVolume, endVolume)
+    }
+
+    private func fixtureURL(_ fileName: String) throws -> URL {
+        try packageRootURL()
+            .appending(path: "docs/Luxel/test/fixtures")
+            .appending(path: fileName)
+    }
+
+    private func packageRootURL() throws -> URL {
+        var url = URL(fileURLWithPath: #filePath)
+        while url.lastPathComponent != "Tests" {
+            let next = url.deletingLastPathComponent()
+            try #require(next.path != url.path)
+            url = next
+        }
+
+        return url.deletingLastPathComponent()
+    }
+
+    private func isApproximately(
+        _ lhs: Double,
+        _ rhs: Double,
+        tolerance: Double = 0.000_001
+    ) -> Bool {
+        abs(lhs - rhs) <= tolerance
     }
 }
 
@@ -971,6 +1080,24 @@ private struct StubExportSizeEstimator: ExportSizeEstimator {
 private struct StubFailingExportSizeEstimator: ExportSizeEstimator {
     func estimate(_ request: ExportRequest) async throws -> ExportEstimate {
         throw StubError.importFailed
+    }
+}
+
+private actor SpyAudioPeakAnalyzer: AudioPeakAnalyzer {
+    private var capturedRequests: [AudioPeakAnalysisRequest] = []
+    private let peaks: [AudioTrackKind: Double]
+
+    init(peaks: [AudioTrackKind: Double] = [:]) {
+        self.peaks = peaks
+    }
+
+    func measurePeaks(_ request: AudioPeakAnalysisRequest) async throws -> [AudioTrackKind: Double] {
+        capturedRequests.append(request)
+        return peaks
+    }
+
+    func requests() -> [AudioPeakAnalysisRequest] {
+        capturedRequests
     }
 }
 

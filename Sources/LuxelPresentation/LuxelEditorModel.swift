@@ -85,11 +85,13 @@ public final class LuxelEditorModel {
     @ObservationIgnored private let passthroughExportService: PassthroughExportService
     @ObservationIgnored private let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored private let frameGrabService: FrameGrabService
+    @ObservationIgnored private let audioMixResolutionService: AudioMixResolutionService
     @ObservationIgnored private let fileSystem: any FileSystem
     @ObservationIgnored private var playbackRequested = false
     @ObservationIgnored private var playbackTimeObserver: PlaybackTimeObserver?
     @ObservationIgnored private var exportTask: Task<Void, Never>?
     @ObservationIgnored private var frameGrabTask: Task<Void, Never>?
+    @ObservationIgnored private var previewAudioMixTask: Task<Void, Never>?
     @ObservationIgnored private var exportMemoryByFormat: [ExportFormat: ExportMemory]
     @ObservationIgnored private var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
     @ObservationIgnored private var onConfirmDiscardChange: (@MainActor (Bool) -> Void)?
@@ -116,6 +118,7 @@ public final class LuxelEditorModel {
             fileWriter: LocalScreenshotFileWriter(),
             destinationClient: AppKitScreenshotDestinationClient()
         ),
+        audioPeakAnalyzer: any AudioPeakAnalyzer = AVAssetReaderAudioPeakAnalyzer(),
         fileSystem: any FileSystem = LocalFileSystem(),
         codecAvailability: CodecAvailability = .none,
         exportMemory: [ExportFormat: ExportMemory] = [:],
@@ -127,6 +130,7 @@ public final class LuxelEditorModel {
         self.passthroughExportService = passthroughExportService
         self.fileWorkflowService = fileWorkflowService
         self.frameGrabService = frameGrabService
+        self.audioMixResolutionService = AudioMixResolutionService(analyzer: audioPeakAnalyzer)
         self.fileSystem = fileSystem
         self.supportedFormats = codecAvailability.availableExportFormats
         self.exportMemoryByFormat = exportMemory
@@ -454,6 +458,8 @@ public final class LuxelEditorModel {
         playbackRequested = false
         frameGrabTask?.cancel()
         frameGrabTask = nil
+        previewAudioMixTask?.cancel()
+        previewAudioMixTask = nil
 
         do {
             let media = try await metadataReader.readSourceMedia(at: fileURL)
@@ -468,10 +474,13 @@ public final class LuxelEditorModel {
             let item = AVPlayerItem(url: fileURL)
             item.audioTimePitchAlgorithm = .timeDomain
             player.replaceCurrentItem(with: item)
+            schedulePreviewAudioMixUpdate()
             status = .ready
             resetEditorUndoStack()
         } catch {
             source = nil
+            previewAudioMixTask?.cancel()
+            previewAudioMixTask = nil
             player.replaceCurrentItem(with: nil)
             status = .failed(errorMessage(error))
             resetEditorUndoStack()
@@ -512,6 +521,8 @@ public final class LuxelEditorModel {
         exportProgress = nil
         exportEstimate = nil
         isEstimatingExportSize = false
+        previewAudioMixTask?.cancel()
+        previewAudioMixTask = nil
         player.replaceCurrentItem(with: nil)
         status = .failed(errorMessage(error))
         resetEditorUndoStack()
@@ -531,6 +542,7 @@ public final class LuxelEditorModel {
         }
 
         exportProgress = nil
+        schedulePreviewAudioMixUpdate()
         recordEditorDraftChange()
     }
 
@@ -563,6 +575,7 @@ public final class LuxelEditorModel {
         }
 
         exportProgress = nil
+        schedulePreviewAudioMixUpdate()
         recordEditorDraftChange()
     }
 
@@ -609,6 +622,7 @@ public final class LuxelEditorModel {
 
     func setIncludesAudio(_ includesAudio: Bool) {
         shouldMute = !includesAudio
+        schedulePreviewAudioMixUpdate()
         recordEditorDraftChange()
     }
 
@@ -619,6 +633,7 @@ public final class LuxelEditorModel {
         }
 
         audioVolume = clampedVolume
+        schedulePreviewAudioMixUpdate()
         recordEditorDraftChange(coalescingToken: "audio-volume")
     }
 
@@ -628,6 +643,7 @@ public final class LuxelEditorModel {
         }
 
         normalizeAudio = normalize
+        schedulePreviewAudioMixUpdate()
         recordEditorDraftChange()
     }
 
@@ -668,6 +684,7 @@ public final class LuxelEditorModel {
         let maxStart = max(0, min(duration - minimumTrimDuration, trimEnd - minimumTrimDuration))
         trimStart = min(max(value, 0), maxStart)
         seekPlaybackIntoTrimRangeIfNeeded()
+        schedulePreviewAudioMixUpdate()
         recordEditorDraftChange(coalescingToken: "trim-start")
     }
 
@@ -675,6 +692,7 @@ public final class LuxelEditorModel {
         let minEnd = min(duration, trimStart + minimumTrimDuration)
         trimEnd = min(max(value, minEnd), duration)
         seekPlaybackIntoTrimRangeIfNeeded()
+        schedulePreviewAudioMixUpdate()
         recordEditorDraftChange(coalescingToken: "trim-end")
     }
 
@@ -1191,6 +1209,8 @@ public final class LuxelEditorModel {
         isEstimatingExportSize = false
         frameGrabTask?.cancel()
         frameGrabTask = nil
+        previewAudioMixTask?.cancel()
+        previewAudioMixTask = nil
         player.pause()
         playbackRequested = false
         player.replaceCurrentItem(with: nil)
@@ -1426,6 +1446,7 @@ public final class LuxelEditorModel {
         normalizeAudio = state.normalizeAudio
         shouldCrop = state.shouldCrop
         exportProgress = nil
+        schedulePreviewAudioMixUpdate()
         seekPlaybackIntoTrimRangeIfNeeded()
     }
 
@@ -1487,6 +1508,105 @@ public final class LuxelEditorModel {
         return AudioMixPlan(
             tracks: [AudioTrackMix(kind: .system, volume: audioVolume)],
             normalizePeak: normalizeAudio
+        )
+    }
+
+    private func schedulePreviewAudioMixUpdate() {
+        previewAudioMixTask?.cancel()
+        previewAudioMixTask = nil
+
+        guard let source,
+              let playerItem = player.currentItem else {
+            player.isMuted = true
+            player.currentItem?.audioMix = nil
+            return
+        }
+
+        player.isMuted = !includesAudio
+        guard includesAudio else {
+            playerItem.audioMix = nil
+            return
+        }
+
+        guard audioVolume != 1 || normalizeAudio else {
+            playerItem.audioMix = nil
+            return
+        }
+
+        let taskID = currentPreviewAudioMixTaskID(source: source)
+        let request: ExportRequest
+        do {
+            request = try makeExportRequest(source: source, format: format)
+        } catch {
+            playerItem.audioMix = nil
+            return
+        }
+        let sourceAudioTracks = source.audioTracks
+
+        previewAudioMixTask = Task { [weak self] in
+            do {
+                guard let self else {
+                    return
+                }
+
+                let gains = try await self.audioMixResolutionService.resolvedGains(
+                    for: request,
+                    sourceAudioTracks: sourceAudioTracks
+                )
+                let audioMix = try await self.makePreviewAudioMix(
+                    for: playerItem,
+                    gain: gains[.system] ?? 1
+                )
+
+                guard !Task.isCancelled,
+                      self.currentPreviewAudioMixTaskID(source: source) == taskID,
+                      self.player.currentItem === playerItem else {
+                    return
+                }
+
+                playerItem.audioMix = audioMix
+                self.previewAudioMixTask = nil
+            } catch is CancellationError {
+            } catch {
+                guard !Task.isCancelled,
+                      self?.player.currentItem === playerItem else {
+                    return
+                }
+
+                playerItem.audioMix = nil
+                self?.previewAudioMixTask = nil
+            }
+        }
+    }
+
+    private func makePreviewAudioMix(
+        for playerItem: AVPlayerItem,
+        gain: Double
+    ) async throws -> AVAudioMix? {
+        let audioTracks = try await playerItem.asset.loadTracks(withMediaType: .audio)
+        guard !audioTracks.isEmpty else {
+            return nil
+        }
+
+        let audioMix = AVMutableAudioMix()
+        audioMix.inputParameters = audioTracks.map { audioTrack in
+            let parameters = AVMutableAudioMixInputParameters(track: audioTrack)
+            parameters.audioTimePitchAlgorithm = .timeDomain
+            parameters.setVolume(Float(gain), at: .zero)
+            return parameters
+        }
+        return audioMix
+    }
+
+    private func currentPreviewAudioMixTaskID(source: SourceMedia) -> PreviewAudioMixTaskID {
+        PreviewAudioMixTaskID(
+            sourceFileURL: source.fileURL,
+            format: format,
+            trimStart: trimStart,
+            trimEnd: trimEnd,
+            shouldMute: shouldMute,
+            audioVolume: audioVolume,
+            normalizeAudio: normalizeAudio
         )
     }
 
@@ -1578,6 +1698,16 @@ struct ExportEstimateTaskID: Equatable, Hashable {
     let gifDithering: GIFDitheringMode?
     let shouldMute: Bool
     let shouldCrop: Bool
+}
+
+private struct PreviewAudioMixTaskID: Equatable, Sendable {
+    let sourceFileURL: URL
+    let format: ExportFormat
+    let trimStart: TimeInterval
+    let trimEnd: TimeInterval
+    let shouldMute: Bool
+    let audioVolume: Double
+    let normalizeAudio: Bool
 }
 
 struct ExportJobSnapshot: Identifiable, Equatable {
