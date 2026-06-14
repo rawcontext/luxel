@@ -28,7 +28,7 @@ struct RecordingSessionPresentationTests {
 
         #expect(presentation.menuBarTitle == "1:42")
         #expect(presentation.menuBarSystemImage == "record.circle")
-        #expect(presentation.alternateMenuBarSystemImage == nil)
+        #expect(presentation.alternateMenuBarSystemImage == "record.circle.fill")
         #expect(presentation.animatesMenuBarSystemImage)
         #expect(presentation.accessibilityLabel == "Luxel recording, elapsed 1:42")
         #expect(presentation.primaryActionTitle == "Stop")
