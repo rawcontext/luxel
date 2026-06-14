@@ -59,6 +59,18 @@ public struct ZoomBlock: Codable, Equatable, Sendable {
         self.zoom = zoom
         self.transitionOverride = transitionOverride
     }
+
+    public static func validateTimeline(_ blocks: [ZoomBlock]) throws {
+        for pair in zip(blocks, blocks.dropFirst()) {
+            if pair.1.timeRange.start < pair.0.timeRange.start {
+                throw ZoomPanModelError.unsortedBlocks
+            }
+
+            if pair.1.timeRange.start < pair.0.timeRange.end {
+                throw ZoomPanModelError.overlappingBlocks
+            }
+        }
+    }
 }
 
 public struct CameraTransform: Codable, Equatable, Sendable {
@@ -90,7 +102,7 @@ public struct CameraPath: Equatable, Sendable {
     public let sourceSize: PixelSize
 
     public init(blocks: [ZoomBlock], sourceSize: PixelSize) throws {
-        try Self.validate(blocks)
+        try ZoomBlock.validateTimeline(blocks)
 
         self.blocks = blocks
         self.sourceSize = sourceSize
@@ -148,18 +160,6 @@ public struct CameraPath: Equatable, Sendable {
         }
 
         return target
-    }
-
-    private static func validate(_ blocks: [ZoomBlock]) throws {
-        for pair in zip(blocks, blocks.dropFirst()) {
-            if pair.1.timeRange.start < pair.0.timeRange.start {
-                throw ZoomPanModelError.unsortedBlocks
-            }
-
-            if pair.1.timeRange.start < pair.0.timeRange.end {
-                throw ZoomPanModelError.overlappingBlocks
-            }
-        }
     }
 
     private func blockIndex(at time: TimeInterval) -> Int? {
@@ -367,6 +367,146 @@ public struct ZoomExportTimeMapper: Equatable, Sendable {
             zoom: block.zoom,
             transitionOverride: block.transitionOverride.map { $0 / speed.value }
         )
+    }
+}
+
+public struct ZoomBlockDraftID: Codable, Equatable, Hashable, Sendable {
+    public let value: String
+
+    public init(_ value: String) throws {
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else {
+            throw ZoomPanModelError.invalidDraftID
+        }
+
+        self.value = value
+    }
+}
+
+public enum ZoomBlockDraftOrigin: String, Codable, Equatable, Sendable {
+    case manual
+    case proposal
+}
+
+public enum ZoomBlockDraftState: String, Codable, Equatable, Sendable {
+    case proposed
+    case accepted
+    case edited
+    case deleted
+}
+
+public struct ZoomBlockDraft: Codable, Equatable, Sendable {
+    public let id: ZoomBlockDraftID
+    public let block: ZoomBlock
+    public let origin: ZoomBlockDraftOrigin
+    public let state: ZoomBlockDraftState
+
+    public init(
+        id: ZoomBlockDraftID,
+        block: ZoomBlock,
+        origin: ZoomBlockDraftOrigin,
+        state: ZoomBlockDraftState
+    ) throws {
+        guard origin == .proposal || state != .proposed else {
+            throw ZoomPanModelError.invalidDraftState
+        }
+
+        self.id = id
+        self.block = block
+        self.origin = origin
+        self.state = state
+    }
+
+    public static func proposal(id: ZoomBlockDraftID, block: ZoomBlock) -> ZoomBlockDraft {
+        try! ZoomBlockDraft(id: id, block: block, origin: .proposal, state: .proposed)
+    }
+
+    public static func manual(id: ZoomBlockDraftID, block: ZoomBlock) -> ZoomBlockDraft {
+        try! ZoomBlockDraft(id: id, block: block, origin: .manual, state: .accepted)
+    }
+
+    public func accepting() throws -> ZoomBlockDraft {
+        guard state != .deleted else {
+            return self
+        }
+
+        return try ZoomBlockDraft(
+            id: id,
+            block: block,
+            origin: origin,
+            state: origin == .proposal ? .accepted : state
+        )
+    }
+
+    public func replacingBlock(_ block: ZoomBlock) throws -> ZoomBlockDraft {
+        guard state != .deleted else {
+            return self
+        }
+
+        return try ZoomBlockDraft(
+            id: id,
+            block: block,
+            origin: origin,
+            state: .edited
+        )
+    }
+
+    public func deleting() throws -> ZoomBlockDraft {
+        try ZoomBlockDraft(
+            id: id,
+            block: block,
+            origin: origin,
+            state: .deleted
+        )
+    }
+}
+
+public struct ZoomBlockDraftCollection: Codable, Equatable, Sendable {
+    public let drafts: [ZoomBlockDraft]
+
+    public init(_ drafts: [ZoomBlockDraft]) throws {
+        var ids: Set<ZoomBlockDraftID> = []
+        for draft in drafts {
+            guard ids.insert(draft.id).inserted else {
+                throw ZoomPanModelError.duplicateDraftID
+            }
+        }
+
+        try ZoomBlock.validateTimeline(drafts.activeBlocks)
+        self.drafts = drafts
+    }
+
+    public var activeBlocks: [ZoomBlock] {
+        drafts.activeBlocks
+    }
+
+    public func acceptingAllProposals() throws -> ZoomBlockDraftCollection {
+        try ZoomBlockDraftCollection(drafts.map { try $0.accepting() })
+    }
+
+    public func replacingBlock(id: ZoomBlockDraftID, with block: ZoomBlock) throws -> ZoomBlockDraftCollection {
+        try replacingDraft(id: id) { draft in
+            try draft.replacingBlock(block)
+        }
+    }
+
+    public func deleting(id: ZoomBlockDraftID) throws -> ZoomBlockDraftCollection {
+        try replacingDraft(id: id) { draft in
+            try draft.deleting()
+        }
+    }
+
+    private func replacingDraft(
+        id: ZoomBlockDraftID,
+        update: (ZoomBlockDraft) throws -> ZoomBlockDraft
+    ) throws -> ZoomBlockDraftCollection {
+        guard let index = drafts.firstIndex(where: { $0.id == id }) else {
+            throw ZoomPanModelError.unknownDraftID
+        }
+
+        var updatedDrafts = drafts
+        updatedDrafts[index] = try update(updatedDrafts[index])
+        return try ZoomBlockDraftCollection(updatedDrafts)
     }
 }
 
@@ -752,6 +892,18 @@ public enum ZoomPanModelError: Error, Equatable {
     case overlappingBlocks
     case invalidTime
     case invalidProposalTuning
+    case invalidDraftID
+    case duplicateDraftID
+    case invalidDraftState
+    case unknownDraftID
+}
+
+private extension [ZoomBlockDraft] {
+    var activeBlocks: [ZoomBlock] {
+        compactMap { draft in
+            draft.state == .deleted ? nil : draft.block
+        }
+    }
 }
 
 private extension Double {

@@ -387,6 +387,75 @@ struct ZoomPanModelTests {
         }
     }
 
+    @Test("zoom block drafts track proposal acceptance edits and deletes")
+    func zoomBlockDraftsTrackProposalAcceptanceEditsAndDeletes() throws {
+        let id = try ZoomBlockDraftID("proposal-1")
+        let original = try zoomBlock(start: 1, end: 3)
+        let edited = try zoomBlock(
+            start: 1,
+            end: 3,
+            rect: NormalizedRect(x: 0.4, y: 0.4, width: 0.2, height: 0.2),
+            zoom: 2
+        )
+        let draft = ZoomBlockDraft.proposal(id: id, block: original)
+        let collection = try ZoomBlockDraftCollection([draft])
+
+        #expect(collection.drafts.first?.state == .proposed)
+        #expect(collection.drafts.first?.origin == .proposal)
+        #expect(collection.activeBlocks == [original])
+
+        let accepted = try collection.acceptingAllProposals()
+        #expect(accepted.drafts.first?.state == .accepted)
+        #expect(accepted.activeBlocks == [original])
+
+        let replaced = try accepted.replacingBlock(id: id, with: edited)
+        #expect(replaced.drafts.first?.state == .edited)
+        #expect(replaced.drafts.first?.block == edited)
+        #expect(replaced.activeBlocks == [edited])
+
+        let deleted = try replaced.deleting(id: id)
+        #expect(deleted.drafts.first?.state == .deleted)
+        #expect(deleted.drafts.first?.block == edited)
+        #expect(deleted.activeBlocks.isEmpty)
+    }
+
+    @Test("zoom block draft collection validates ids states and active timeline")
+    func zoomBlockDraftCollectionValidatesIDsStatesAndActiveTimeline() throws {
+        let id = try ZoomBlockDraftID("draft-1")
+        let otherID = try ZoomBlockDraftID("draft-2")
+        let first = try zoomBlock(start: 0, end: 2)
+        let overlapping = try zoomBlock(start: 1.5, end: 3)
+
+        #expect(throws: ZoomPanModelError.invalidDraftID) {
+            _ = try ZoomBlockDraftID("   ")
+        }
+        #expect(throws: ZoomPanModelError.invalidDraftState) {
+            _ = try ZoomBlockDraft(
+                id: id,
+                block: first,
+                origin: .manual,
+                state: .proposed
+            )
+        }
+        #expect(throws: ZoomPanModelError.duplicateDraftID) {
+            _ = try ZoomBlockDraftCollection([
+                .manual(id: id, block: first),
+                .proposal(id: id, block: try zoomBlock(start: 2, end: 4))
+            ])
+        }
+        #expect(throws: ZoomPanModelError.overlappingBlocks) {
+            _ = try ZoomBlockDraftCollection([
+                .manual(id: id, block: first),
+                .proposal(id: otherID, block: overlapping)
+            ])
+        }
+        #expect(throws: ZoomPanModelError.unknownDraftID) {
+            _ = try ZoomBlockDraftCollection([
+                .manual(id: id, block: first)
+            ]).deleting(id: otherID)
+        }
+    }
+
     private func zoomBlock(
         start: TimeInterval,
         end: TimeInterval,
