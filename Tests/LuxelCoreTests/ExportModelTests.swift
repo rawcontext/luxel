@@ -83,6 +83,7 @@ struct ExportModelTests {
         #expect(request.keystrokeOptions == nil)
         #expect(request.captionOptions == nil)
         #expect(request.cameraOverlay == nil)
+        #expect(request.zoomBlocks.isEmpty)
     }
 
     @Test("export request round trips GIF options")
@@ -157,6 +158,21 @@ struct ExportModelTests {
 
         #expect(decoded == request)
         #expect(decoded.cameraOverlay == cameraOverlay)
+    }
+
+    @Test("export request round trips zoom blocks")
+    func exportRequestRoundTripsZoomBlocks() throws {
+        let zoomBlocks = [
+            try zoomBlock(start: 1, end: 3),
+            try zoomBlock(start: 5, end: 8, zoom: 2.2)
+        ]
+        let request = try makeRequest(format: .mp4, zoomBlocks: zoomBlocks)
+
+        let data = try JSONEncoder().encode(request)
+        let decoded = try JSONDecoder().decode(ExportRequest.self, from: data)
+
+        #expect(decoded == request)
+        #expect(decoded.zoomBlocks == zoomBlocks)
     }
 
     @Test("export request falls back from unavailable quality")
@@ -348,7 +364,8 @@ struct ExportModelTests {
         cursorOptions: CursorRenderOptions? = nil,
         keystrokeOptions: KeystrokeRenderOptions? = nil,
         captionOptions: CaptionRenderOptions? = nil,
-        cameraOverlay: CameraOverlayPlan? = nil
+        cameraOverlay: CameraOverlayPlan? = nil,
+        zoomBlocks: [ZoomBlock] = []
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -365,7 +382,21 @@ struct ExportModelTests {
             cursorOptions: cursorOptions,
             keystrokeOptions: keystrokeOptions,
             captionOptions: captionOptions,
-            cameraOverlay: cameraOverlay
+            cameraOverlay: cameraOverlay,
+            zoomBlocks: zoomBlocks
+        )
+    }
+
+    private func zoomBlock(
+        start: TimeInterval,
+        end: TimeInterval,
+        zoom: Double = 1.6
+    ) throws -> ZoomBlock {
+        try ZoomBlock(
+            timeRange: TimeRange(start: start, end: end),
+            targetRect: NormalizedRect(x: 0.2, y: 0.3, width: 0.25, height: 0.25),
+            zoom: zoom,
+            transitionOverride: 0.5
         )
     }
 }

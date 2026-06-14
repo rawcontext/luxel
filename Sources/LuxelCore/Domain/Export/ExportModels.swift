@@ -251,6 +251,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
     public let keystrokeOptions: KeystrokeRenderOptions?
     public let captionOptions: CaptionRenderOptions?
     public let cameraOverlay: CameraOverlayPlan?
+    public let zoomBlocks: [ZoomBlock]
 
     public init(
         inputFileURL: URL,
@@ -267,7 +268,8 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         cursorOptions: CursorRenderOptions? = nil,
         keystrokeOptions: KeystrokeRenderOptions? = nil,
         captionOptions: CaptionRenderOptions? = nil,
-        cameraOverlay: CameraOverlayPlan? = nil
+        cameraOverlay: CameraOverlayPlan? = nil,
+        zoomBlocks: [ZoomBlock] = []
     ) {
         self.inputFileURL = inputFileURL
         self.format = format
@@ -284,6 +286,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         self.keystrokeOptions = keystrokeOptions
         self.captionOptions = captionOptions
         self.cameraOverlay = cameraOverlay
+        self.zoomBlocks = zoomBlocks
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -302,6 +305,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         case keystrokeOptions
         case captionOptions
         case cameraOverlay
+        case zoomBlocks
     }
 
     public init(from decoder: any Decoder) throws {
@@ -324,6 +328,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         keystrokeOptions = try container.decodeIfPresent(KeystrokeRenderOptions.self, forKey: .keystrokeOptions)
         captionOptions = try container.decodeIfPresent(CaptionRenderOptions.self, forKey: .captionOptions)
         cameraOverlay = try container.decodeIfPresent(CameraOverlayPlan.self, forKey: .cameraOverlay)
+        zoomBlocks = try container.decodeIfPresent([ZoomBlock].self, forKey: .zoomBlocks) ?? []
     }
 
     public var resolvedQuality: ExportQuality {

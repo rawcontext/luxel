@@ -12,6 +12,7 @@ struct EditorModelTests {
         let request = try draft.exportRequest
         let fullRange = try TimeRange(start: 0, end: 12.5)
 
+        #expect(draft.zoomBlocks.isEmpty)
         #expect(request.inputFileURL == source.fileURL)
         #expect(request.format == .mp4)
         #expect(request.pixelSize == source.pixelSize)
@@ -27,6 +28,7 @@ struct EditorModelTests {
         #expect(request.keystrokeOptions == nil)
         #expect(request.captionOptions == nil)
         #expect(request.cameraOverlay == nil)
+        #expect(request.zoomBlocks.isEmpty)
     }
 
     @Test("draft applies trim resize frame rate and mute overrides")
@@ -46,6 +48,9 @@ struct EditorModelTests {
             shape: .roundedRect,
             showsBorder: false
         )
+        let zoomBlocks = [
+            try zoomBlock(start: 1.5, end: 3.5)
+        ]
         let audioMix = AudioMixPlan(
             tracks: [
                 AudioTrackMix(kind: .system, volume: 0.75),
@@ -68,7 +73,8 @@ struct EditorModelTests {
             cursorOptions: cursorOptions,
             keystrokeOptions: keystrokeOptions,
             captionOptions: captionOptions,
-            cameraOverlay: cameraOverlay
+            cameraOverlay: cameraOverlay,
+            zoomBlocks: zoomBlocks
         )
 
         let data = try JSONEncoder().encode(draft)
@@ -93,6 +99,7 @@ struct EditorModelTests {
         #expect(request.keystrokeOptions == keystrokeOptions)
         #expect(request.captionOptions == captionOptions)
         #expect(request.cameraOverlay == cameraOverlay)
+        #expect(request.zoomBlocks == zoomBlocks)
         #expect(request.outputDuration == 2)
     }
 
@@ -121,6 +128,7 @@ struct EditorModelTests {
         #expect(draft.keystrokeOptions == nil)
         #expect(draft.captionOptions == nil)
         #expect(draft.cameraOverlay == nil)
+        #expect(draft.zoomBlocks.isEmpty)
         #expect(try draft.exportRequest.quality == .balanced)
         #expect(try draft.exportRequest.speed == .normal)
         #expect(try draft.exportRequest.gifOptions == nil)
@@ -129,6 +137,7 @@ struct EditorModelTests {
         #expect(try draft.exportRequest.keystrokeOptions == nil)
         #expect(try draft.exportRequest.captionOptions == nil)
         #expect(try draft.exportRequest.cameraOverlay == nil)
+        #expect(try draft.exportRequest.zoomBlocks.isEmpty)
     }
 
     @Test("source media decodes missing alpha as false")
@@ -228,6 +237,15 @@ struct EditorModelTests {
             hasAudio: hasAudio,
             hasAlpha: hasAlpha,
             audioTracks: audioTracks
+        )
+    }
+
+    private func zoomBlock(start: TimeInterval, end: TimeInterval) throws -> ZoomBlock {
+        try ZoomBlock(
+            timeRange: TimeRange(start: start, end: end),
+            targetRect: NormalizedRect(x: 0.25, y: 0.25, width: 0.25, height: 0.25),
+            zoom: 1.6,
+            transitionOverride: 0.4
         )
     }
 }
