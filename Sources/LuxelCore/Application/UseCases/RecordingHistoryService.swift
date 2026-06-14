@@ -91,6 +91,25 @@ public final class RecordingHistoryService: Sendable {
     }
 
     @discardableResult
+    public func addReplayClip(fileURL: URL, name: String? = nil) -> PastRecording? {
+        let now = dateProvider.now()
+        let replayName = name ?? RecordingName.timestamped(
+            title: "Luxel Replay",
+            now: now,
+            calendar: calendar
+        ).value
+        let recording = PastRecording(
+            fileURL: fileURL,
+            name: replayName,
+            date: now,
+            kind: .recording
+        )
+
+        let recordings = addRecording(recording)
+        return recordings.first == recording ? recording : nil
+    }
+
+    @discardableResult
     public func recordExport(
         _ exportedMedia: ExportedMedia,
         presetName: String? = nil,

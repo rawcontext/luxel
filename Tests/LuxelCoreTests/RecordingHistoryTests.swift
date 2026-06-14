@@ -478,6 +478,44 @@ struct RecordingHistoryTests {
         #expect(store.recordings.isEmpty)
     }
 
+    @Test("addReplayClip stores timestamped recording history entry")
+    func addReplayClipStoresTimestampedRecordingHistoryEntry() throws {
+        let fileURL = URL(fileURLWithPath: "/tmp/replay.mp4")
+        let now = try #require(ISO8601DateFormatter().date(from: "2020-07-21T15:27:26Z"))
+        let store = InMemoryRecordingHistoryStore()
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: -4 * 60 * 60))
+        let service = makeService(
+            store: store,
+            existingFiles: [fileURL],
+            now: now,
+            calendar: calendar
+        )
+
+        let recording = service.addReplayClip(fileURL: fileURL)
+
+        let expected = PastRecording(
+            fileURL: fileURL,
+            name: "Luxel Replay 2020-07-21 at 11.27.26",
+            date: now,
+            kind: .recording
+        )
+        #expect(recording == expected)
+        #expect(store.recordings == [expected])
+    }
+
+    @Test("addReplayClip skips missing files")
+    func addReplayClipSkipsMissingFiles() {
+        let fileURL = URL(fileURLWithPath: "/tmp/missing-replay.mp4")
+        let store = InMemoryRecordingHistoryStore()
+        let service = makeService(store: store)
+
+        let recording = service.addReplayClip(fileURL: fileURL, name: "Missing")
+
+        #expect(recording == nil)
+        #expect(store.recordings.isEmpty)
+    }
+
     @Test("recordExport stores exported file metadata on matching history entry")
     func recordExportStoresMetadata() throws {
         let recordingURL = URL(fileURLWithPath: "/tmp/new.mp4")
