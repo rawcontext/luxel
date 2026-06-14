@@ -96,8 +96,8 @@ struct ArchitectureTests {
         )
 
         #expect(source.contains("case fullDisplay(cornerRadii: RecordingFrameCornerRadii)"))
-        #expect(source.contains("top: min(max(screen.safeAreaInsets.top, bottomRadius), 48)"))
-        #expect(source.contains("bottom: bottomRadius"))
+        #expect(source.contains("let cornerRadius = min(max(screen.safeAreaInsets.top * 0.65, 18), 28)"))
+        #expect(source.contains("RecordingFrameCornerRadii(top: cornerRadius, bottom: cornerRadius)"))
         #expect(source.contains("screen.safeAreaInsets.top"))
         #expect(source.contains("UnevenRoundedRectangle("))
         #expect(source.contains("topLeadingRadius: cornerRadii.top"))

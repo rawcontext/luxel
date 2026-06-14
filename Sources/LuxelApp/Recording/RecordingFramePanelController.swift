@@ -98,11 +98,8 @@ private enum RecordingFrameStyle {
         }
 
         // AppKit exposes notched built-in displays through safeAreaInsets, but not physical corner radius.
-        let bottomRadius = min(max(screen.safeAreaInsets.top * 0.65, 18), 28)
-        return RecordingFrameCornerRadii(
-            top: min(max(screen.safeAreaInsets.top, bottomRadius), 48),
-            bottom: bottomRadius
-        )
+        let cornerRadius = min(max(screen.safeAreaInsets.top * 0.65, 18), 28)
+        return RecordingFrameCornerRadii(top: cornerRadius, bottom: cornerRadius)
     }
 }
 
