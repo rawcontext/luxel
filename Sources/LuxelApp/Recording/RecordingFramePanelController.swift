@@ -24,7 +24,12 @@ final class RecordingFramePanelController {
         }
 
         self.exclusionRegistry = exclusionRegistry
-        panels = frames.map(makePanel(frame:))
+        panels = frames.map { frame in
+            makePanel(
+                frame: frame,
+                style: RecordingFrameStyle(target: request.target, screen: screen(containing: frame))
+            )
+        }
         panels.forEach { $0.orderFrontRegardless() }
 
         let windowIDs = panels.compactMap { panel -> UInt32? in
@@ -48,7 +53,7 @@ final class RecordingFramePanelController {
         self.exclusionRegistry = nil
     }
 
-    private func makePanel(frame: NSRect) -> NSPanel {
+    private func makePanel(frame: NSRect, style: RecordingFrameStyle) -> NSPanel {
         let panel = NSPanel(
             contentRect: frame,
             styleMask: [.borderless, .nonactivatingPanel],
@@ -62,18 +67,58 @@ final class RecordingFramePanelController {
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.ignoresMouseEvents = true
-        panel.contentView = NSHostingView(rootView: RecordingFrameView())
+        panel.contentView = NSHostingView(rootView: RecordingFrameView(style: style))
         return panel
+    }
+
+    private func screen(containing frame: NSRect) -> NSScreen? {
+        let midpoint = NSPoint(x: frame.midX, y: frame.midY)
+        return NSScreen.screens.first { $0.frame.contains(midpoint) }
     }
 
 }
 
+private enum RecordingFrameStyle {
+    case fullDisplay(cornerRadius: CGFloat)
+    case selection
+
+    init(target: CaptureTarget, screen: NSScreen?) {
+        switch target {
+        case .display:
+            self = .fullDisplay(cornerRadius: Self.fullDisplayCornerRadius(screen: screen))
+        case .area, .window:
+            self = .selection
+        }
+    }
+
+    private static func fullDisplayCornerRadius(screen: NSScreen?) -> CGFloat {
+        guard let screen, screen.safeAreaInsets.top > 0 else {
+            return 0
+        }
+
+        // AppKit exposes notched built-in displays through safeAreaInsets, but not physical corner radius.
+        return min(max(screen.safeAreaInsets.top * 0.4, 10), 14)
+    }
+}
+
 private struct RecordingFrameView: View {
+    let style: RecordingFrameStyle
+
     var body: some View {
-        RoundedRectangle(cornerRadius: 6, style: .continuous)
-            .strokeBorder(.red.opacity(0.86), lineWidth: 3)
-            .background(Color.clear)
-            .padding(2)
-            .allowsHitTesting(false)
+        Group {
+            switch style {
+            case .fullDisplay(let cornerRadius):
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(.red.opacity(0.86), lineWidth: 3)
+
+            case .selection:
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(.red.opacity(0.86), lineWidth: 3)
+                    .padding(2)
+            }
+        }
+        .background(Color.clear)
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
 }

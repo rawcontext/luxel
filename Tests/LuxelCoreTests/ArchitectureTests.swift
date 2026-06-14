@@ -88,6 +88,19 @@ struct ArchitectureTests {
         #expect(source.contains("windowPresenter.openEditor(fileURL: fileURL)"))
     }
 
+    @Test("full display recording frame follows screen edge corners")
+    func fullDisplayRecordingFrameFollowsScreenEdgeCorners() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/Recording/RecordingFramePanelController.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("case fullDisplay(cornerRadius: CGFloat)"))
+        #expect(source.contains("screen.safeAreaInsets.top"))
+        #expect(source.contains("RoundedRectangle(cornerRadius: cornerRadius"))
+        #expect(source.contains(".ignoresSafeArea()"))
+    }
+
     @Test("update settings milestone does not link Sparkle yet")
     func updateSettingsMilestoneDoesNotLinkSparkleYet() throws {
         let packageRoot = try packageRootURL()
