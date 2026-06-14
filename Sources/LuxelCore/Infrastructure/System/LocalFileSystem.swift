@@ -15,6 +15,10 @@ public struct LocalFileSystem: FileSystem {
         try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
     }
 
+    public func readData(at url: URL) throws -> Data {
+        try Data(contentsOf: url)
+    }
+
     public func writeData(_ data: Data, to url: URL) throws {
         let directory = url.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

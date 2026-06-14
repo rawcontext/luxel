@@ -50,6 +50,36 @@ public struct CaptionTrack: Codable, Equatable, Sendable {
     }
 }
 
+public struct CaptionSidecarDocument: Codable, Equatable, Sendable {
+    public static let currentSchemaVersion = 1
+
+    public let schemaVersion: Int
+    public let track: CaptionTrack
+
+    public init(
+        schemaVersion: Int = CaptionSidecarDocument.currentSchemaVersion,
+        track: CaptionTrack
+    ) throws {
+        guard schemaVersion == Self.currentSchemaVersion else {
+            throw CaptionModelError.unsupportedSidecarSchemaVersion
+        }
+
+        self.schemaVersion = schemaVersion
+        self.track = track
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        guard schemaVersion == Self.currentSchemaVersion else {
+            throw CaptionModelError.unsupportedSidecarSchemaVersion
+        }
+
+        self.schemaVersion = schemaVersion
+        self.track = try container.decode(CaptionTrack.self, forKey: .track)
+    }
+}
+
 public struct CaptionRenderOptions: Codable, Equatable, Sendable {
     public let burnIn: Bool
     public let position: CaptionPosition
@@ -458,4 +488,5 @@ public enum CaptionModelError: Error, Equatable {
     case invalidConfidence
     case invalidCueBuilderConfiguration
     case unsortedRecognizedWords
+    case unsupportedSidecarSchemaVersion
 }
