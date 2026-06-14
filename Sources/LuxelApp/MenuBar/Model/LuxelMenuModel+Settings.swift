@@ -24,14 +24,20 @@ extension LuxelMenuModel {
     }
 
     func chooseRecordingsDirectory() {
-        guard let directory = fileWorkflowService.chooseOutputDirectory(
-            currentDirectory: settings.recordingsDirectory
-        ) else {
-            return
-        }
+        do {
+            guard let directory = try bookmarkedDirectoryPicker.chooseDirectory(
+                currentDirectory: settings.recordingsDirectory
+            ) else {
+                return
+            }
 
-        settings.recordingsDirectory = directory
-        saveSettings()
+            recordingActionErrorMessage = nil
+            settings.recordingsDirectory = directory.url
+            settings.recordingsDirectoryBookmark = directory
+            saveSettings()
+        } catch {
+            recordingActionErrorMessage = errorMessage(error)
+        }
     }
     private func rememberExportMemory(_ memory: ExportMemory, for format: ExportFormat) {
         settings.perFormatExportMemory[format] = memory

@@ -33,6 +33,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let audioInputDeviceService: AudioInputDeviceService
     @ObservationIgnored let audioLevelMonitorFactory: () -> any AudioLevelMonitor
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
+    @ObservationIgnored let bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker
     @ObservationIgnored let quickExportService: QuickExportService
     @ObservationIgnored let permissionGuidanceService: PermissionGuidanceService
     @ObservationIgnored let lastCaptureRecordingPlanner: LastCaptureRecordingPlanner
@@ -57,6 +58,7 @@ final class LuxelMenuModel {
         fileWorkflowService: ExportedFileWorkflowService = ExportedFileWorkflowService(
             client: AppKitExportedFileActionClient()
         ),
+        bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker = AppKitBookmarkedDirectoryPicker(),
         quickExportService: QuickExportService? = nil,
         permissionGuidanceService: PermissionGuidanceService = PermissionGuidanceService(),
         lastCaptureRecordingPlanner: LastCaptureRecordingPlanner = LastCaptureRecordingPlanner(),
@@ -72,6 +74,7 @@ final class LuxelMenuModel {
         self.audioInputDeviceService = audioInputDeviceService
         self.audioLevelMonitorFactory = audioLevelMonitorFactory
         self.fileWorkflowService = fileWorkflowService
+        self.bookmarkedDirectoryPicker = bookmarkedDirectoryPicker
         self.quickExportService = quickExportService
             ?? LuxelCompositionRoot.quickExportService(fileWorkflowService: fileWorkflowService)
         self.permissionGuidanceService = permissionGuidanceService
