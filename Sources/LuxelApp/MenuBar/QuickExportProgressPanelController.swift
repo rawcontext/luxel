@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class QuickExportProgressPanelController {
     private var panel: NSPanel?
+    private var displayedProgress: QuickExportProgressPresentation?
     private let panelSize = NSSize(width: 286, height: 78)
 
     func update(
@@ -16,20 +17,32 @@ final class QuickExportProgressPanelController {
         }
 
         let panel = panel ?? makePanel()
-        panel.setFrame(frame(for: panel.screen ?? NSScreen.main), display: false)
+        if self.panel == nil {
+            panel.setFrame(frame(for: NSScreen.main), display: false)
+            self.panel = panel
+        } else if displayedProgress == progress {
+            return
+        }
+
+        displayedProgress = progress
         panel.contentView = NSHostingView(
             rootView: QuickExportProgressPill(
                 presentation: progress,
-                onCancel: onCancel
+                onCancel: { [weak self] in
+                    self?.close()
+                    onCancel()
+                }
             )
         )
-        panel.orderFrontRegardless()
-        self.panel = panel
+        if !panel.isVisible {
+            panel.orderFrontRegardless()
+        }
     }
 
     func close() {
         panel?.close()
         panel = nil
+        displayedProgress = nil
     }
 
     private func makePanel() -> NSPanel {

@@ -14,6 +14,10 @@ extension LuxelMenuModel {
                 presets: settings.exportPresets,
                 recordingsDirectory: settings.recordingsDirectory
             ) { [weak self] snapshot in
+                guard !Task.isCancelled else {
+                    return
+                }
+
                 await MainActor.run {
                     self?.recordingState = .exporting(snapshot)
                     self?.quickExportProgress = QuickExportProgressPresentation(
@@ -56,6 +60,8 @@ extension LuxelMenuModel {
 
     func cancelQuickExport() {
         quickExportTask?.cancel()
+        quickExportProgress = nil
+        recordingState = .idle
     }
 
     private func quickExportStatusText(for exportedMedia: ExportedMedia) -> String {
