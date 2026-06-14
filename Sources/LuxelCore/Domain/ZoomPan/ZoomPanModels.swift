@@ -332,6 +332,44 @@ public struct CameraPath: Equatable, Sendable {
     }
 }
 
+public struct ZoomExportTimeMapper: Equatable, Sendable {
+    public let trimRange: TimeRange
+    public let speed: PlaybackSpeed
+
+    public init(
+        trimRange: TimeRange,
+        speed: PlaybackSpeed = .normal
+    ) {
+        self.trimRange = trimRange
+        self.speed = speed
+    }
+
+    public func map(_ blocks: [ZoomBlock]) throws -> [ZoomBlock] {
+        try blocks.compactMap { block in
+            try map(block)
+        }
+    }
+
+    private func map(_ block: ZoomBlock) throws -> ZoomBlock? {
+        let start = max(block.timeRange.start, trimRange.start)
+        let end = min(block.timeRange.end, trimRange.end)
+
+        guard end > start else {
+            return nil
+        }
+
+        return try ZoomBlock(
+            timeRange: TimeRange(
+                start: (start - trimRange.start) / speed.value,
+                end: (end - trimRange.start) / speed.value
+            ),
+            targetRect: block.targetRect,
+            zoom: block.zoom,
+            transitionOverride: block.transitionOverride.map { $0 / speed.value }
+        )
+    }
+}
+
 public struct ZoomProposalTuning: Codable, Equatable, Sendable {
     public static let standard = ZoomProposalTuning(
         uncheckedClusterTimeGap: 2.5,

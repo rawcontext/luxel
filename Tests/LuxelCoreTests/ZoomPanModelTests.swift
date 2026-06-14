@@ -201,6 +201,53 @@ struct ZoomPanModelTests {
         }
     }
 
+    @Test("export time mapper trims scales and preserves block settings")
+    func exportTimeMapperTrimsScalesAndPreservesBlockSettings() throws {
+        let firstRect = try NormalizedRect(x: 0.1, y: 0.2, width: 0.2, height: 0.2)
+        let secondRect = try NormalizedRect(x: 0.6, y: 0.5, width: 0.2, height: 0.2)
+        let blocks = [
+            try zoomBlock(start: 0.5, end: 1.5),
+            try zoomBlock(
+                start: 1.5,
+                end: 2.5,
+                rect: firstRect,
+                zoom: 1.4,
+                transitionOverride: 0.6
+            ),
+            try zoomBlock(
+                start: 3,
+                end: 6.5,
+                rect: secondRect,
+                zoom: 2.2,
+                transitionOverride: 1
+            ),
+            try zoomBlock(start: 6.5, end: 7)
+        ]
+        let mapper = try ZoomExportTimeMapper(
+            trimRange: TimeRange(start: 2, end: 6),
+            speed: PlaybackSpeed(2)
+        )
+
+        let mapped = try mapper.map(blocks)
+
+        #expect(mapped == [
+            try zoomBlock(
+                start: 0,
+                end: 0.25,
+                rect: firstRect,
+                zoom: 1.4,
+                transitionOverride: 0.3
+            ),
+            try zoomBlock(
+                start: 0.5,
+                end: 2,
+                rect: secondRect,
+                zoom: 2.2,
+                transitionOverride: 0.5
+            )
+        ])
+    }
+
     @Test("proposal engine clusters nearby clicks into zoom blocks")
     func proposalEngineClustersNearbyClicksIntoZoomBlocks() throws {
         let timeline = try CursorTimeline(
