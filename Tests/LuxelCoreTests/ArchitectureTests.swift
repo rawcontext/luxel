@@ -145,16 +145,24 @@ struct ArchitectureTests {
             contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
             encoding: .utf8
         )
+        let controllerSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperPanelController.swift"),
+            encoding: .utf8
+        )
         let viewSource = try String(
             contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperView.swift"),
             encoding: .utf8
         )
 
         #expect(modelSource.contains("var snapGuides: [CaptureSnapGuide]"))
+        #expect(modelSource.contains("let windowSnapFrames: [CaptureRect]"))
         #expect(modelSource.contains("SnapResolver.resolve("))
+        #expect(modelSource.contains("windowFrames: windowSnapFrames"))
         #expect(modelSource.contains("screenFrames: [try displaySnapFrame]"))
         #expect(modelSource.contains("snapGuides = snapResult.guides"))
         #expect(modelSource.contains("snapGuides = []"))
+        #expect(controllerSource.contains("let targets = try await targetService.availableTargets()"))
+        #expect(controllerSource.contains("CaptureWindowSnapFrameResolver.windowFrames("))
         #expect(viewSource.contains("snapGuidesOverlay(viewSize: geometry.size)"))
         #expect(viewSource.contains("ForEach(Array(model.snapGuides.enumerated())"))
         #expect(viewSource.contains("NSEvent.modifierFlags.contains(.command)"))

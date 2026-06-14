@@ -103,6 +103,7 @@ final class LuxelCropperModel {
     @ObservationIgnored private let onCountdownDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored let sizePresets: [CaptureSizePreset]
+    @ObservationIgnored let windowSnapFrames: [CaptureRect]
     @ObservationIgnored private var selectionUndoStack: UndoStack<CropperUndoState>
     @ObservationIgnored private var resizeStartSelection: CaptureRect?
     @ObservationIgnored private var selectionDragID = 0
@@ -116,6 +117,7 @@ final class LuxelCropperModel {
         selectionPresetConfiguration: CropperSelectionPresetConfiguration = CropperSelectionPresetConfiguration(
             sizePresets: CaptureSizePreset.builtInDefaults
         ),
+        windowSnapFrames: [CaptureRect] = [],
         onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in }
     ) {
@@ -125,6 +127,7 @@ final class LuxelCropperModel {
         self.stopAfterDuration = stopAfterDuration
         self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
         self.sizePresets = selectionPresetConfiguration.sizePresets
+        self.windowSnapFrames = windowSnapFrames
         self.onCountdownDurationChange = onCountdownDurationChange
         self.onStopAfterDurationChange = onStopAfterDurationChange
         self.selectionUndoStack = UndoStack(initialState: CropperUndoState(
@@ -250,6 +253,7 @@ final class LuxelCropperModel {
             )
             let snapResult = try SnapResolver.resolve(
                 candidate: candidate,
+                windowFrames: windowSnapFrames,
                 screenFrames: [try displaySnapFrame],
                 isDisabled: isSnappingDisabled
             )

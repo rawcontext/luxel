@@ -12,7 +12,7 @@ final class LuxelCropperPanelController {
 
     init(
         targetService: CaptureTargetService = CaptureTargetService(
-            catalog: ScreenCaptureKitCaptureTargetCatalog()
+            catalog: CachedCaptureTargetCatalog(upstream: ScreenCaptureKitCaptureTargetCatalog())
         ),
         audioLevelMonitorFactory: @escaping () -> any AudioLevelMonitor = {
             AVCaptureAudioLevelMonitor()
@@ -54,8 +54,10 @@ final class LuxelCropperPanelController {
         Task { @MainActor in
             do {
                 let displays = try await targetService.availableDisplays()
+                let targets = try await targetService.availableTargets()
                 present(
                     displays: displays,
+                    targets: targets,
                     initialMode: initialMode,
                     countdownDuration: countdownDuration,
                     stopAfterDuration: stopAfterDuration,
@@ -90,6 +92,7 @@ final class LuxelCropperPanelController {
 
     private func present(
         displays: [DisplayBounds],
+        targets: [CaptureTargetOption],
         initialMode: LuxelCropperMode,
         countdownDuration: TimeInterval?,
         stopAfterDuration: TimeInterval?,
@@ -134,6 +137,10 @@ final class LuxelCropperPanelController {
                 countdownDuration: countdownDuration,
                 stopAfterDuration: stopAfterDuration,
                 selectionPresetConfiguration: selectionPresetConfiguration,
+                windowSnapFrames: CaptureWindowSnapFrameResolver.windowFrames(
+                    on: display,
+                    from: targets
+                ),
                 onCountdownDurationChange: onCountdownDurationChange,
                 onStopAfterDurationChange: onStopAfterDurationChange
             )
