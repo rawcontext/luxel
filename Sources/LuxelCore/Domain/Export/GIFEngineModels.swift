@@ -813,6 +813,115 @@ public struct FloydSteinbergDitherer: Sendable {
     }
 }
 
+public struct GIFDitheringHeuristic: Sendable {
+    public static let flatContentMeanErrorThreshold = 12.0
+
+    public init() {}
+
+    public func resolvedMode(
+        for frames: [GIFFrameBitmap],
+        palette: GIFColorPalette
+    ) throws -> GIFDitheringMode {
+        let error = try meanQuantizationError(for: frames, palette: palette)
+        return error <= Self.flatContentMeanErrorThreshold ? .none : .diffusion
+    }
+
+    public func meanQuantizationError(
+        for frames: [GIFFrameBitmap],
+        palette: GIFColorPalette
+    ) throws -> Double {
+        guard !frames.isEmpty else {
+            throw GIFEngineModelError.invalidFrameCount
+        }
+
+        var errorTotal = 0.0
+        var channelCount = 0
+
+        for frame in frames {
+            for pixel in frame.pixels {
+                let colorIndex = palette.nearestColorIndex(for: pixel)
+                let color = palette.colors[Int(colorIndex)]
+                errorTotal += abs(Double(pixel.red) - Double(color.red))
+                errorTotal += abs(Double(pixel.green) - Double(color.green))
+                errorTotal += abs(Double(pixel.blue) - Double(color.blue))
+                channelCount += 3
+            }
+        }
+
+        return errorTotal / Double(max(1, channelCount))
+    }
+}
+
+public struct GIFFrameIndexer: Sendable {
+    private let heuristic: GIFDitheringHeuristic
+
+    public init(heuristic: GIFDitheringHeuristic = GIFDitheringHeuristic()) {
+        self.heuristic = heuristic
+    }
+
+    public func resolvedDitheringMode(
+        for frames: [GIFFrameBitmap],
+        palette: GIFColorPalette,
+        requestedMode: GIFDitheringMode
+    ) throws -> GIFDitheringMode {
+        switch requestedMode {
+        case .auto:
+            try heuristic.resolvedMode(for: frames, palette: palette)
+        case .none, .ordered, .diffusion:
+            requestedMode
+        }
+    }
+
+    public func indexedFrame(
+        from frame: GIFFrameBitmap,
+        palette: GIFColorPalette,
+        dithering: GIFDitheringMode
+    ) throws -> GIFIndexedFrame {
+        let resolvedMode = try resolvedDitheringMode(
+            for: [frame],
+            palette: palette,
+            requestedMode: dithering
+        )
+
+        return try indexedFrame(from: frame, palette: palette, resolvedMode: resolvedMode)
+    }
+
+    public func indexedFrames(
+        from frames: [GIFFrameBitmap],
+        palette: GIFColorPalette,
+        dithering: GIFDitheringMode
+    ) throws -> [GIFIndexedFrame] {
+        guard !frames.isEmpty else {
+            throw GIFEngineModelError.invalidFrameCount
+        }
+
+        let resolvedMode = try resolvedDitheringMode(
+            for: frames,
+            palette: palette,
+            requestedMode: dithering
+        )
+
+        return try frames.map { frame in
+            try indexedFrame(from: frame, palette: palette, resolvedMode: resolvedMode)
+        }
+    }
+
+    private func indexedFrame(
+        from frame: GIFFrameBitmap,
+        palette: GIFColorPalette,
+        resolvedMode: GIFDitheringMode
+    ) throws -> GIFIndexedFrame {
+        switch resolvedMode {
+        case .auto, .none:
+            return try GIFNearestColorQuantizer().indexedFrame(from: frame, palette: palette)
+        case .ordered:
+            return try OrderedDitherer().indexedFrame(from: frame, palette: palette)
+        case .diffusion:
+            return try FloydSteinbergDitherer().indexedFrame(from: frame, palette: palette)
+        }
+    }
+}
+
 private struct DitherError: Sendable {
     let red: Double
     let green: Double

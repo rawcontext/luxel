@@ -280,6 +280,67 @@ struct GIFEngineModelTests {
         #expect(indexed.colorIndexes == [0, 1, 0])
     }
 
+    @Test("auto dithering chooses none for low error and diffusion for high error")
+    func autoDitheringChoosesNoneForLowErrorAndDiffusionForHighError() throws {
+        let palette = try blackWhitePalette()
+        let exactFrame = try GIFFrameBitmap(
+            pixelSize: PixelSize(width: 2, height: 1),
+            pixels: [
+                GIFRGBAPixel(red: 0, green: 0, blue: 0),
+                GIFRGBAPixel(red: 255, green: 255, blue: 255)
+            ]
+        )
+        let highErrorFrame = try solidBitmap(width: 2, height: 1, color: GIFRGBAPixel(red: 96, green: 96, blue: 96))
+        let heuristic = GIFDitheringHeuristic()
+
+        #expect(try heuristic.meanQuantizationError(for: [exactFrame], palette: palette) == 0)
+        #expect(try heuristic.resolvedMode(for: [exactFrame], palette: palette) == .none)
+        #expect(try heuristic.resolvedMode(for: [highErrorFrame], palette: palette) == .diffusion)
+        #expect(throws: GIFEngineModelError.invalidFrameCount) {
+            _ = try heuristic.meanQuantizationError(for: [], palette: palette)
+        }
+    }
+
+    @Test("frame indexer routes explicit and auto dithering modes")
+    func frameIndexerRoutesExplicitAndAutoDitheringModes() throws {
+        let palette = try blackWhitePalette()
+        let exactFrame = try GIFFrameBitmap(
+            pixelSize: PixelSize(width: 2, height: 1),
+            pixels: [
+                GIFRGBAPixel(red: 0, green: 0, blue: 0),
+                GIFRGBAPixel(red: 255, green: 255, blue: 255)
+            ]
+        )
+        let highErrorFrame = try GIFFrameBitmap(
+            pixelSize: PixelSize(width: 3, height: 1),
+            pixels: [
+                GIFRGBAPixel(red: 96, green: 96, blue: 96),
+                GIFRGBAPixel(red: 96, green: 96, blue: 96),
+                GIFRGBAPixel(red: 96, green: 96, blue: 96)
+            ]
+        )
+        let indexer = GIFFrameIndexer()
+
+        let exactAuto = try indexer.indexedFrame(from: exactFrame, palette: palette, dithering: .auto)
+        let highErrorAuto = try indexer.indexedFrame(from: highErrorFrame, palette: palette, dithering: .auto)
+        let highErrorNone = try indexer.indexedFrame(from: highErrorFrame, palette: palette, dithering: .none)
+        let highErrorDiffusion = try indexer.indexedFrame(from: highErrorFrame, palette: palette, dithering: .diffusion)
+        let sharedAuto = try indexer.indexedFrames(
+            from: [exactFrame, highErrorFrame],
+            palette: palette,
+            dithering: .auto
+        )
+
+        #expect(exactAuto.colorIndexes == [0, 1])
+        #expect(highErrorNone.colorIndexes == [0, 0, 0])
+        #expect(highErrorDiffusion.colorIndexes == [0, 1, 0])
+        #expect(highErrorAuto == highErrorDiffusion)
+        #expect(sharedAuto.map(\.colorIndexes) == [[0, 1], [0, 1, 0]])
+        #expect(throws: GIFEngineModelError.invalidFrameCount) {
+            _ = try indexer.indexedFrames(from: [], palette: palette, dithering: .none)
+        }
+    }
+
     @Test("frame differ emits full first frame and transparent static deltas")
     func frameDifferEmitsFullFirstFrameAndTransparentStaticDeltas() throws {
         let bitmap = try solidBitmap(width: 3, height: 2, color: GIFRGBAPixel(red: 10, green: 20, blue: 30))
