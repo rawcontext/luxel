@@ -63,6 +63,8 @@ public final class LuxelEditorModel {
     var frameRate = 30
     var playbackSpeed: PlaybackSpeed = .normal
     var shouldMute = false
+    var audioVolume = 1.0
+    var normalizeAudio = false
     var shouldCrop = true
     var quality: ExportQuality = .balanced
     var gifLoopModeKind: EditorGIFLoopModeKind = .forever
@@ -190,6 +192,14 @@ public final class LuxelEditorModel {
 
     var includesAudio: Bool {
         canIncludeAudio && !shouldMute
+    }
+
+    var canAdjustAudioMix: Bool {
+        includesAudio
+    }
+
+    var audioVolumePercentSummary: String {
+        "\(Int((audioVolume * 100).rounded()))%"
     }
 
     var playbackSpeedValue: Double {
@@ -599,6 +609,25 @@ public final class LuxelEditorModel {
 
     func setIncludesAudio(_ includesAudio: Bool) {
         shouldMute = !includesAudio
+        recordEditorDraftChange()
+    }
+
+    func setAudioVolume(_ volume: Double) {
+        let clampedVolume = min(max(volume, 0), 2)
+        guard audioVolume != clampedVolume else {
+            return
+        }
+
+        audioVolume = clampedVolume
+        recordEditorDraftChange(coalescingToken: "audio-volume")
+    }
+
+    func setNormalizeAudio(_ normalize: Bool) {
+        guard normalizeAudio != normalize else {
+            return
+        }
+
+        normalizeAudio = normalize
         recordEditorDraftChange()
     }
 
@@ -1351,6 +1380,8 @@ public final class LuxelEditorModel {
             frameRate: frameRate,
             playbackSpeed: playbackSpeed,
             shouldMute: shouldMute,
+            audioVolume: audioVolume,
+            normalizeAudio: normalizeAudio,
             shouldCrop: shouldCrop,
             quality: quality,
             gifLoopModeKind: gifLoopModeKind,
@@ -1391,6 +1422,8 @@ public final class LuxelEditorModel {
         if !canIncludeAudio {
             shouldMute = true
         }
+        audioVolume = min(max(state.audioVolume, 0), 2)
+        normalizeAudio = state.normalizeAudio
         shouldCrop = state.shouldCrop
         exportProgress = nil
         seekPlaybackIntoTrimRangeIfNeeded()
@@ -1418,6 +1451,7 @@ public final class LuxelEditorModel {
             pixelSize: PixelSize(width: outputWidth, height: outputHeight),
             frameRate: FrameRate(frameRate),
             shouldMute: shouldMute,
+            audioMix: currentAudioMixPlan(),
             shouldCrop: shouldCrop,
             quality: quality,
             speed: playbackSpeed,
@@ -1433,10 +1467,26 @@ public final class LuxelEditorModel {
             frameRate: FrameRate(frameRate),
             timeRange: TimeRange(start: trimStart, end: trimEnd),
             shouldMute: shouldMute,
+            audioMix: currentAudioMixPlan(),
             shouldCrop: shouldCrop,
             quality: quality,
             speed: playbackSpeed,
             gifOptions: try currentGIFOptions(for: format)
+        )
+    }
+
+    private func currentAudioMixPlan() -> AudioMixPlan? {
+        guard includesAudio else {
+            return nil
+        }
+
+        guard audioVolume != 1 || normalizeAudio else {
+            return nil
+        }
+
+        return AudioMixPlan(
+            tracks: [AudioTrackMix(kind: .system, volume: audioVolume)],
+            normalizePeak: normalizeAudio
         )
     }
 
@@ -1485,6 +1535,8 @@ private struct EditorDraftState: Equatable, Sendable {
         frameRate: 30,
         playbackSpeed: .normal,
         shouldMute: false,
+        audioVolume: 1,
+        normalizeAudio: false,
         shouldCrop: true,
         quality: .balanced,
         gifLoopModeKind: .forever,
@@ -1502,6 +1554,8 @@ private struct EditorDraftState: Equatable, Sendable {
     let frameRate: Int
     let playbackSpeed: PlaybackSpeed
     let shouldMute: Bool
+    let audioVolume: Double
+    let normalizeAudio: Bool
     let shouldCrop: Bool
     let quality: ExportQuality
     let gifLoopModeKind: EditorGIFLoopModeKind

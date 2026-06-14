@@ -305,6 +305,23 @@ public struct LuxelEditorView: View {
                 Toggle("Include Audio", isOn: includeAudioSelection)
                     .disabled(!model.canIncludeAudio)
 
+                if model.canIncludeAudio {
+                    VStack(alignment: .leading, spacing: 8) {
+                        LabeledContent("Audio Level", value: model.audioVolumePercentSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        Slider(
+                            value: audioVolumeSelection,
+                            in: 0...2
+                        )
+                        .disabled(!model.canAdjustAudioMix)
+
+                        Toggle("Normalize Audio", isOn: normalizeAudioSelection)
+                            .disabled(!model.canAdjustAudioMix)
+                    }
+                }
+
                 Toggle("Crop to Fill", isOn: shouldCropSelection)
 
                 if let exportEstimateSummary = model.exportEstimateSummary {
@@ -658,6 +675,22 @@ public struct LuxelEditorView: View {
             model.includesAudio
         } set: { includesAudio in
             model.setIncludesAudio(includesAudio)
+        }
+    }
+
+    private var audioVolumeSelection: Binding<Double> {
+        Binding {
+            model.audioVolume
+        } set: { volume in
+            model.setAudioVolume(volume)
+        }
+    }
+
+    private var normalizeAudioSelection: Binding<Bool> {
+        Binding {
+            model.normalizeAudio
+        } set: { normalizeAudio in
+            model.setNormalizeAudio(normalizeAudio)
         }
     }
 

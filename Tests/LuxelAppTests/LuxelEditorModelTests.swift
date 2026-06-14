@@ -531,6 +531,41 @@ struct LuxelEditorModelTests {
         #expect(captured.first?.request.speed == (try PlaybackSpeed(2)))
     }
 
+    @Test("audio mix participates in undo and export requests")
+    func audioMixParticipatesInUndoAndExportRequests() async throws {
+        let exporter = SpyMediaExporter()
+        let model = makeModel(exporter: exporter)
+
+        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setAudioVolume(0.35)
+        model.setNormalizeAudio(true)
+
+        #expect(model.audioVolume == 0.35)
+        #expect(model.audioVolumePercentSummary == "35%")
+        #expect(model.normalizeAudio)
+
+        model.undoEditorChange()
+
+        #expect(!model.normalizeAudio)
+        #expect(model.audioVolume == 0.35)
+
+        model.redoEditorChange()
+
+        #expect(model.normalizeAudio)
+
+        model.startExport()
+        while model.isExporting {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let expectedAudioMix = AudioMixPlan(
+            tracks: [AudioTrackMix(kind: .system, volume: 0.35)],
+            normalizePeak: true
+        )
+        let captured = await exporter.capturedExports()
+        #expect(captured.first?.request.audioMix == expectedAudioMix)
+    }
+
     @Test("GIF options participate in undo and export requests")
     func gifOptionsParticipateInUndoAndExportRequests() async throws {
         let exporter = SpyMediaExporter()
