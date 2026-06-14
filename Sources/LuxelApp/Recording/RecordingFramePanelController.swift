@@ -1,7 +1,6 @@
 import AppKit
 import CoreGraphics
 import LuxelCore
-import SwiftUI
 
 @MainActor
 final class RecordingFramePanelController {
@@ -28,7 +27,11 @@ final class RecordingFramePanelController {
         panels = frames.map { frame in
             makePanel(
                 frame: frame,
-                style: RecordingFrameStyle(target: request.target, screen: screen(containing: frame))
+                style: RecordingFrameStyle(
+                    target: request.target,
+                    frame: frame,
+                    screen: screen(containing: frame)
+                )
             )
         }
         panels.forEach { $0.orderFrontRegardless() }
@@ -68,7 +71,9 @@ final class RecordingFramePanelController {
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.ignoresMouseEvents = true
-        panel.contentView = NSHostingView(rootView: RecordingFrameView(style: style))
+        let contentView = RecordingFrameDrawingView(style: style)
+        contentView.frame = NSRect(origin: .zero, size: frame.size)
+        panel.contentView = contentView
         return panel
     }
 
@@ -83,9 +88,11 @@ private enum RecordingFrameStyle {
     case fullDisplay(cornerRadii: RecordingFrameCornerRadii)
     case selection
 
-    init(target: CaptureTarget, screen: NSScreen?) {
+    init(target: CaptureTarget, frame: NSRect, screen: NSScreen?) {
         switch target {
         case .display:
+            self = .fullDisplay(cornerRadii: Self.fullDisplayCornerRadii(screen: screen))
+        case .area where screen.map({ frame.matches($0.frame) }) == true:
             self = .fullDisplay(cornerRadii: Self.fullDisplayCornerRadii(screen: screen))
         case .area, .window:
             self = .selection
@@ -110,31 +117,67 @@ private struct RecordingFrameCornerRadii {
     static let square = RecordingFrameCornerRadii(top: 0, bottom: 0)
 }
 
-private struct RecordingFrameView: View {
-    let style: RecordingFrameStyle
+private final class RecordingFrameDrawingView: NSView {
+    private let style: RecordingFrameStyle
 
-    var body: some View {
-        Group {
-            switch style {
-            case .fullDisplay(let cornerRadii):
-                UnevenRoundedRectangle(
-                    topLeadingRadius: cornerRadii.top,
-                    bottomLeadingRadius: cornerRadii.bottom,
-                    bottomTrailingRadius: cornerRadii.bottom,
-                    topTrailingRadius: cornerRadii.top,
-                    style: .continuous
-                )
-                .strokeBorder(.red.opacity(0.86), lineWidth: 3)
+    init(style: RecordingFrameStyle) {
+        self.style = style
+        super.init(frame: .zero)
+        autoresizingMask = [.width, .height]
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.clear.cgColor
+    }
 
-            case .selection:
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(.red.opacity(0.86), lineWidth: 3)
-                    .padding(2)
-            }
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override var isOpaque: Bool {
+        false
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let strokeWidth: CGFloat = 3
+        let path: NSBezierPath
+
+        switch style {
+        case .fullDisplay(let cornerRadii):
+            path = roundedRectanglePath(
+                in: bounds.insetBy(dx: strokeWidth / 2, dy: strokeWidth / 2),
+                cornerRadii: cornerRadii
+            )
+        case .selection:
+            path = roundedRectanglePath(
+                in: bounds.insetBy(dx: strokeWidth / 2 + 2, dy: strokeWidth / 2 + 2),
+                cornerRadii: RecordingFrameCornerRadii(top: 6, bottom: 6)
+            )
         }
-        .background(Color.clear)
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
+
+        path.lineWidth = strokeWidth
+        NSColor.red.withAlphaComponent(0.86).setStroke()
+        path.stroke()
+    }
+
+    private func roundedRectanglePath(
+        in rect: NSRect,
+        cornerRadii: RecordingFrameCornerRadii
+    ) -> NSBezierPath {
+        let radius = clampedRadius(max(cornerRadii.top, cornerRadii.bottom), in: rect)
+        return NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
+    }
+
+    private func clampedRadius(_ radius: CGFloat, in rect: NSRect) -> CGFloat {
+        min(max(radius, 0), rect.width / 2, rect.height / 2)
+    }
+}
+
+private extension NSRect {
+    func matches(_ other: NSRect, tolerance: CGFloat = 0.5) -> Bool {
+        abs(minX - other.minX) <= tolerance
+            && abs(minY - other.minY) <= tolerance
+            && abs(width - other.width) <= tolerance
+            && abs(height - other.height) <= tolerance
     }
 }
 
