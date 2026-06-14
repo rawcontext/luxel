@@ -79,6 +79,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var replayBufferConfiguration: ReplayBufferConfiguration?
     public var replayBufferResumeOnLaunch: Bool
     public var replayClipDestination: ReplayClipDestination
+    public var notchSurfaceSettings: NotchSurfaceSettings
     public var enableShortcuts: Bool
     public var triggerCropperShortcut: String
     public var toggleRecordingShortcut: String
@@ -121,6 +122,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
         )
     }
 
+    public var notchSurfacePreferences: NotchSurfacePreferences {
+        notchSurfaceSettings.surfacePreferences
+    }
+
     public init(
         recordingsDirectory: URL,
         recordingsDirectoryBookmark: BookmarkedDirectory? = nil,
@@ -144,6 +149,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         replayBufferConfiguration: ReplayBufferConfiguration? = nil,
         replayBufferResumeOnLaunch: Bool = false,
         replayClipDestination: ReplayClipDestination = .editor,
+        notchSurfaceSettings: NotchSurfaceSettings = .defaults,
         enableShortcuts: Bool = true,
         triggerCropperShortcut: String = "",
         toggleRecordingShortcut: String = "",
@@ -198,6 +204,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         self.replayBufferConfiguration = replayBufferConfiguration
         self.replayBufferResumeOnLaunch = replayBufferResumeOnLaunch
         self.replayClipDestination = replayClipDestination
+        self.notchSurfaceSettings = notchSurfaceSettings
         self.enableShortcuts = enableShortcuts
         self.triggerCropperShortcut = triggerCropperShortcut
         self.toggleRecordingShortcut = toggleRecordingShortcut
@@ -251,6 +258,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         case replayBufferConfiguration
         case replayBufferResumeOnLaunch
         case replayClipDestination
+        case notchSurfaceSettings
         case enableShortcuts
         case triggerCropperShortcut
         case toggleRecordingShortcut
@@ -352,6 +360,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
             ReplayClipDestination.self,
             forKey: .replayClipDestination
         ) ?? .editor
+        notchSurfaceSettings = try container.decodeIfPresent(
+            NotchSurfaceSettings.self,
+            forKey: .notchSurfaceSettings
+        ) ?? .defaults
         enableShortcuts = try container.decodeIfPresent(Bool.self, forKey: .enableShortcuts)
             ?? true
         triggerCropperShortcut = try container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut)

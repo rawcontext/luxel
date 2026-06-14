@@ -82,6 +82,14 @@ struct UserDefaultsSettingsStoreTests {
             ),
             replayBufferResumeOnLaunch: true,
             replayClipDestination: .quickExport,
+            notchSurfaceSettings: try NotchSurfaceSettings(
+                isEnabled: false,
+                idleHoverActionsEnabled: false,
+                showsWaveform: false,
+                autoCollapseSeconds: 4.5,
+                showsRecentShelf: false,
+                fallbackToFloatingHUDWhenUnavailable: false
+            ),
             triggerCropperShortcut: "command+control+option+r",
             toggleRecordingShortcut: "command+control+option+t",
             recordActiveWindowShortcut: "command+control+option+shift+w",
@@ -181,6 +189,8 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.replayBufferConfiguration == nil)
         #expect(!settings.replayBufferResumeOnLaunch)
         #expect(settings.replayClipDestination == .editor)
+        #expect(settings.notchSurfaceSettings == .defaults)
+        #expect(settings.notchSurfacePreferences == .defaults)
         #expect(!settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "command+shift+5")
         #expect(settings.toggleRecordingShortcut == "")

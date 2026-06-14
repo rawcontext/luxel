@@ -32,6 +32,8 @@ struct SettingsTests {
         #expect(settings.replayBufferConfiguration == nil)
         #expect(!settings.replayBufferResumeOnLaunch)
         #expect(settings.replayClipDestination == .editor)
+        #expect(settings.notchSurfaceSettings == .defaults)
+        #expect(settings.notchSurfacePreferences == .defaults)
         #expect(settings.enableShortcuts)
         #expect(settings.triggerCropperShortcut == "")
         #expect(settings.toggleRecordingShortcut == "")
@@ -74,6 +76,28 @@ struct SettingsTests {
         #expect(throws: AppSettingsError.invalidCameraPreviewPlacement) {
             _ = try CameraPreviewPlacement(x: 0, y: .infinity)
         }
+    }
+
+    @Test("notch surface settings validate auto collapse timing")
+    func notchSurfaceSettingsValidateAutoCollapseTiming() throws {
+        #expect(throws: NotchSurfaceSettingsError.invalidAutoCollapseSeconds) {
+            _ = try NotchSurfaceSettings(autoCollapseSeconds: .nan)
+        }
+        #expect(throws: NotchSurfaceSettingsError.invalidAutoCollapseSeconds) {
+            _ = try NotchSurfaceSettings(autoCollapseSeconds: -1)
+        }
+
+        let settings = try NotchSurfaceSettings(
+            isEnabled: false,
+            autoCollapseSeconds: 0,
+            fallbackToFloatingHUDWhenUnavailable: false
+        )
+
+        #expect(settings.autoCollapseSeconds == 0)
+        #expect(settings.surfacePreferences == NotchSurfacePreferences(
+            isEnabled: false,
+            fallbackToFloatingHUDWhenUnavailable: false
+        ))
     }
 
     @Test("camera recording options derive from camera settings")
