@@ -1,4 +1,5 @@
 import AppKit
+import CoreGraphics
 import LuxelCore
 import SwiftUI
 
@@ -92,12 +93,12 @@ private enum RecordingFrameStyle {
     }
 
     private static func fullDisplayCornerRadius(screen: NSScreen?) -> CGFloat {
-        guard let screen, screen.safeAreaInsets.top > 0 else {
+        guard let screen, screen.isBuiltInDisplay, screen.safeAreaInsets.top > 0 else {
             return 0
         }
 
         // AppKit exposes notched built-in displays through safeAreaInsets, but not physical corner radius.
-        return min(max(screen.safeAreaInsets.top * 0.4, 10), 14)
+        return min(max(screen.safeAreaInsets.top * 0.65, 18), 28)
     }
 }
 
@@ -120,5 +121,15 @@ private struct RecordingFrameView: View {
         .background(Color.clear)
         .ignoresSafeArea()
         .allowsHitTesting(false)
+    }
+}
+
+private extension NSScreen {
+    var isBuiltInDisplay: Bool {
+        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+            return false
+        }
+
+        return CGDisplayIsBuiltin(screenNumber.uint32Value) != 0
     }
 }
