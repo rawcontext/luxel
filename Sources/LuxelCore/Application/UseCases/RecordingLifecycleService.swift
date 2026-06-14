@@ -39,7 +39,9 @@ public final class RecordingLifecycleService: Sendable {
         )
 
         do {
-            try await recorder.startRecording(request)
+            try await runRecorderOperation { recorder in
+                try await recorder.startRecording(request)
+            }
             await startAutoStopIfNeeded(schedule: request.schedule, startedAt: activeRecording.date)
             return activeRecording
         } catch {
@@ -54,7 +56,9 @@ public final class RecordingLifecycleService: Sendable {
             throw RecordingLifecycleError.noActiveRecording
         }
 
-        try await recorder.pauseRecording()
+        try await runRecorderOperation { recorder in
+            try await recorder.pauseRecording()
+        }
         await autoStopState.pause(at: dateProvider.now())
     }
 
@@ -63,7 +67,9 @@ public final class RecordingLifecycleService: Sendable {
             throw RecordingLifecycleError.noActiveRecording
         }
 
-        try await recorder.resumeRecording()
+        try await runRecorderOperation { recorder in
+            try await recorder.resumeRecording()
+        }
         await rescheduleAutoStopIfNeeded(await autoStopState.resume(at: dateProvider.now()))
     }
 
@@ -74,7 +80,9 @@ public final class RecordingLifecycleService: Sendable {
         }
 
         do {
-            try await recorder.stopRecording()
+            try await runRecorderOperation { recorder in
+                try await recorder.stopRecording()
+            }
 
             guard let recording = history.stopCurrentRecording(recordingName: recordingName) else {
                 await finishStop(succeeded: false)
@@ -124,6 +132,15 @@ public final class RecordingLifecycleService: Sendable {
             try? await self.userNotifier?.notifyRecordingAutoStopped(duration: timing.maxRecordedDuration)
         }
         await autoStopState.setTask(task)
+    }
+
+    private func runRecorderOperation(
+        _ operation: @escaping @Sendable (any CaptureRecorder) async throws -> Void
+    ) async throws {
+        let recorder = recorder
+        try await Task.detached(priority: .userInitiated) {
+            try await operation(recorder)
+        }.value
     }
 }
 

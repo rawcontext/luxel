@@ -33,7 +33,7 @@ struct ScreenCaptureKitRecordingConfigurationFactoryTests {
         #expect(configuration.captureMicrophone)
         #expect(configuration.microphoneCaptureDeviceID == "mic-1")
         #expect(configuration.excludesCurrentProcessAudio)
-        #expect(configuration.presenterOverlayPrivacyAlertSetting == .never)
+        #expect(configuration.presenterOverlayPrivacyAlertSetting == .system)
         #expect(configuration.queueDepth == 8)
         #expect(configuration.sourceRect == CGRect(x: 42, y: 24, width: 641, height: 839))
     }

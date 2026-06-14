@@ -21,7 +21,6 @@ public struct ScreenCaptureKitRecordingConfigurationFactory: Sendable {
         configuration.captureMicrophone = request.audio.capturesMicrophone
         configuration.microphoneCaptureDeviceID = request.audio.microphoneDeviceID
         configuration.excludesCurrentProcessAudio = request.audio.capturesSystemAudio
-        configuration.presenterOverlayPrivacyAlertSetting = .never
         configuration.queueDepth = 8
 
         if case .area(_, let rect) = request.target {
