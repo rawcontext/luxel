@@ -4,7 +4,7 @@ import SwiftUI
 @main
 struct LuxelApp: App {
     @State private var model: LuxelMenuModel
-    @State private var editorModel = LuxelEditorModel()
+    @State private var editorModel: LuxelEditorModel
     @State private var cropperPanelController: LuxelCropperPanelController
     @State private var shortcutController = LuxelShortcutController()
 
@@ -13,6 +13,7 @@ struct LuxelApp: App {
         let captureTargetService = LuxelCompositionRoot.captureTargetService(catalog: captureTargetCatalog)
 
         _model = State(initialValue: LuxelMenuModel(captureTargetService: captureTargetService))
+        _editorModel = State(initialValue: LuxelCompositionRoot.editorModel())
         _cropperPanelController = State(initialValue: LuxelCropperPanelController(
             targetService: captureTargetService
         ))

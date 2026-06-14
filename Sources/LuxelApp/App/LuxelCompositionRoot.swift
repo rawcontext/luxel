@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelPresentation
 
 enum LuxelCompositionRoot {
     static var appMetadata: AppMetadata {
@@ -56,12 +57,32 @@ enum LuxelCompositionRoot {
         PurchaseGateService(gate: AlwaysEntitledPurchaseGate())
     }
 
+    static func codecAdapterRegistry() -> CodecAdapterRegistry {
+        .empty
+    }
+
+    @MainActor
+    static func editorModel(codecAdapterRegistry: CodecAdapterRegistry = codecAdapterRegistry()) -> LuxelEditorModel {
+        LuxelEditorModel(
+            exportService: ExportService(
+                exporter: codecAdapterRegistry.mediaExporter(nativeExporter: NativeMediaExporter()),
+                fileSystem: LocalFileSystem()
+            ),
+            exportSizeEstimationService: ExportSizeEstimationService(
+                estimator: codecAdapterRegistry.exportSizeEstimator(nativeEstimator: NativeExportSizeEstimator())
+            ),
+            codecAvailability: codecAdapterRegistry.availability
+        )
+    }
+
     @MainActor
     static func quickExportService(fileWorkflowService: ExportedFileWorkflowService) -> QuickExportService {
-        QuickExportService(
+        let codecAdapterRegistry = codecAdapterRegistry()
+
+        return QuickExportService(
             metadataReader: AVFoundationMediaMetadataReader(),
             exportService: ExportService(
-                exporter: NativeMediaExporter(),
+                exporter: codecAdapterRegistry.mediaExporter(nativeExporter: NativeMediaExporter()),
                 fileSystem: LocalFileSystem()
             ),
             fileWorkflowService: fileWorkflowService,
