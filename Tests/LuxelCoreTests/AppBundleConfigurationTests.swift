@@ -65,6 +65,15 @@ struct AppBundleConfigurationTests {
         #expect(script.contains("Contents/Resources/install-cli"))
     }
 
+    @Test("distribution split check covers default and Mac App Store builds")
+    func distributionSplitCheckCoversDefaultAndMacAppStoreBuilds() throws {
+        let scriptURL = try packageRootURL().appending(path: "Scripts/check-app-distribution-build-split.sh")
+        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+        #expect(script.contains("swift test --filter AppDistributionTests"))
+        #expect(script.contains("-DLUXEL_MAC_APP_STORE"))
+    }
+
     private func readPlist(_ relativePath: String) throws -> [String: Any] {
         let url = try packageRootURL().appending(path: relativePath)
         let data = try Data(contentsOf: url)
