@@ -6,6 +6,7 @@ import SwiftUI
 
 struct LuxelSettingsView: View {
     @Environment(\.openWindow) private var openWindow
+    @State private var isShowingAcknowledgements = false
 
     @Bindable var model: LuxelMenuModel
     let editorModel: LuxelEditorModel
@@ -177,6 +178,12 @@ struct LuxelSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                Button {
+                    isShowingAcknowledgements = true
+                } label: {
+                    Label("Acknowledgements", systemImage: "doc.text")
+                }
             }
         }
         .formStyle(.grouped)
@@ -213,6 +220,9 @@ struct LuxelSettingsView: View {
         }
         .onChange(of: model.launchAtLogin) {
             model.setLaunchAtLogin(model.launchAtLogin)
+        }
+        .sheet(isPresented: $isShowingAcknowledgements) {
+            CodecAcknowledgementsView(text: CodecAcknowledgementsResource.bundledText())
         }
     }
 
