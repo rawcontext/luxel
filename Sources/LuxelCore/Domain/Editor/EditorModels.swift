@@ -92,6 +92,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
     public let cursorOptions: CursorRenderOptions?
     public let keystrokeOptions: KeystrokeRenderOptions?
     public let captionOptions: CaptionRenderOptions?
+    public let cameraOverlay: CameraOverlayPlan?
 
     public init(
         source: SourceMedia,
@@ -107,7 +108,8 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         gifOptions: GIFRenderOptions? = nil,
         cursorOptions: CursorRenderOptions? = nil,
         keystrokeOptions: KeystrokeRenderOptions? = nil,
-        captionOptions: CaptionRenderOptions? = nil
+        captionOptions: CaptionRenderOptions? = nil,
+        cameraOverlay: CameraOverlayPlan? = nil
     ) {
         self.source = source
         self.format = format
@@ -123,6 +125,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         self.cursorOptions = cursorOptions
         self.keystrokeOptions = keystrokeOptions
         self.captionOptions = captionOptions
+        self.cameraOverlay = cameraOverlay
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -140,6 +143,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         case cursorOptions
         case keystrokeOptions
         case captionOptions
+        case cameraOverlay
     }
 
     public init(from decoder: any Decoder) throws {
@@ -161,6 +165,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         cursorOptions = try container.decodeIfPresent(CursorRenderOptions.self, forKey: .cursorOptions)
         keystrokeOptions = try container.decodeIfPresent(KeystrokeRenderOptions.self, forKey: .keystrokeOptions)
         captionOptions = try container.decodeIfPresent(CaptionRenderOptions.self, forKey: .captionOptions)
+        cameraOverlay = try container.decodeIfPresent(CameraOverlayPlan.self, forKey: .cameraOverlay)
     }
 
     public var exportRequest: ExportRequest {
@@ -179,7 +184,8 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
                 gifOptions: gifOptions,
                 cursorOptions: cursorOptions,
                 keystrokeOptions: keystrokeOptions,
-                captionOptions: captionOptions
+                captionOptions: captionOptions,
+                cameraOverlay: cameraOverlay
             )
         }
     }

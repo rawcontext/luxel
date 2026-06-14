@@ -82,6 +82,7 @@ struct ExportModelTests {
         #expect(request.cursorOptions == nil)
         #expect(request.keystrokeOptions == nil)
         #expect(request.captionOptions == nil)
+        #expect(request.cameraOverlay == nil)
     }
 
     @Test("export request round trips GIF options")
@@ -139,6 +140,23 @@ struct ExportModelTests {
         #expect(decoded.cursorOptions == cursorOptions)
         #expect(decoded.keystrokeOptions == keystrokeOptions)
         #expect(decoded.captionOptions == captionOptions)
+    }
+
+    @Test("export request round trips camera overlay")
+    func exportRequestRoundTripsCameraOverlay() throws {
+        let cameraOverlay = try CameraOverlayPlan(
+            placement: .anchor(.topLeft),
+            widthFraction: 0.35,
+            shape: .roundedRect,
+            showsBorder: false
+        )
+        let request = try makeRequest(format: .mp4, cameraOverlay: cameraOverlay)
+
+        let data = try JSONEncoder().encode(request)
+        let decoded = try JSONDecoder().decode(ExportRequest.self, from: data)
+
+        #expect(decoded == request)
+        #expect(decoded.cameraOverlay == cameraOverlay)
     }
 
     @Test("export request falls back from unavailable quality")
@@ -329,7 +347,8 @@ struct ExportModelTests {
         gifOptions: GIFRenderOptions? = nil,
         cursorOptions: CursorRenderOptions? = nil,
         keystrokeOptions: KeystrokeRenderOptions? = nil,
-        captionOptions: CaptionRenderOptions? = nil
+        captionOptions: CaptionRenderOptions? = nil,
+        cameraOverlay: CameraOverlayPlan? = nil
     ) throws -> ExportRequest {
         try ExportRequest(
             inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -345,7 +364,8 @@ struct ExportModelTests {
             gifOptions: gifOptions,
             cursorOptions: cursorOptions,
             keystrokeOptions: keystrokeOptions,
-            captionOptions: captionOptions
+            captionOptions: captionOptions,
+            cameraOverlay: cameraOverlay
         )
     }
 }

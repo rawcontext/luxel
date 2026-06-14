@@ -250,6 +250,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
     public let cursorOptions: CursorRenderOptions?
     public let keystrokeOptions: KeystrokeRenderOptions?
     public let captionOptions: CaptionRenderOptions?
+    public let cameraOverlay: CameraOverlayPlan?
 
     public init(
         inputFileURL: URL,
@@ -265,7 +266,8 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         gifOptions: GIFRenderOptions? = nil,
         cursorOptions: CursorRenderOptions? = nil,
         keystrokeOptions: KeystrokeRenderOptions? = nil,
-        captionOptions: CaptionRenderOptions? = nil
+        captionOptions: CaptionRenderOptions? = nil,
+        cameraOverlay: CameraOverlayPlan? = nil
     ) {
         self.inputFileURL = inputFileURL
         self.format = format
@@ -281,6 +283,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         self.cursorOptions = cursorOptions
         self.keystrokeOptions = keystrokeOptions
         self.captionOptions = captionOptions
+        self.cameraOverlay = cameraOverlay
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -298,6 +301,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         case cursorOptions
         case keystrokeOptions
         case captionOptions
+        case cameraOverlay
     }
 
     public init(from decoder: any Decoder) throws {
@@ -319,6 +323,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         cursorOptions = try container.decodeIfPresent(CursorRenderOptions.self, forKey: .cursorOptions)
         keystrokeOptions = try container.decodeIfPresent(KeystrokeRenderOptions.self, forKey: .keystrokeOptions)
         captionOptions = try container.decodeIfPresent(CaptionRenderOptions.self, forKey: .captionOptions)
+        cameraOverlay = try container.decodeIfPresent(CameraOverlayPlan.self, forKey: .cameraOverlay)
     }
 
     public var resolvedQuality: ExportQuality {
