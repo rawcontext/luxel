@@ -6,6 +6,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
     private let configurationFactory: ScreenCaptureKitRecordingConfigurationFactory
     private let segmentComposer: AVFoundationRecordingSegmentComposer
     private let fileManager: FileManager
+    private let streamStartTimeout: Duration = .seconds(10)
     private let recordingOutputFinishTimeout: Duration = .seconds(2)
     private let streamStopTimeout: Duration = .seconds(5)
     private var stream: SCStream?
@@ -56,8 +57,11 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
 
         do {
             try stream.addRecordingOutput(recordingOutput)
-            try await stream.startCapture()
+            try await startStreamCapture(stream)
             isStreamCapturing = true
+        } catch let error as ScreenCaptureKitRecorderError {
+            clearRecordingState(removeTemporarySegments: true, preserving: request.outputFileURL)
+            throw error
         } catch {
             clearRecordingState(removeTemporarySegments: true, preserving: request.outputFileURL)
             throw ScreenCaptureKitRecorderError.startFailed(String(describing: error))
@@ -174,23 +178,26 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         return segmentFileURL
     }
 
-    private func stopStreamCapture(_ stream: SCStream) async throws {
-        let timeout = streamStopTimeout
+    private func startStreamCapture(_ stream: SCStream) async throws {
+        let timeout = streamStartTimeout
 
         try await withCheckedThrowingContinuation { continuation in
-            let completion = ScreenCaptureKitRecorderStopCompletion(continuation)
-            stream.stopCapture { error in
+            let streamHandle = ScreenCaptureKitStreamHandle(stream)
+            let completion = ScreenCaptureKitRecorderCompletion(continuation)
+            stream.startCapture { error in
                 if let error {
-                    completion.resume(with: .failure(error))
-                } else {
-                    completion.resume(with: .success(()))
+                    _ = completion.resume(with: .failure(error))
+                } else if !completion.resume(with: .success(())) {
+                    streamHandle.stopCaptureIgnoringResult()
                 }
             }
 
             Task {
                 do {
                     try await Task.sleep(for: timeout)
-                    completion.resume(with: .success(()))
+                    if completion.resume(with: .failure(ScreenCaptureKitRecorderError.startFailed("Timed out starting capture"))) {
+                        streamHandle.stopCaptureIgnoringResult()
+                    }
                 } catch is CancellationError {
                     return
                 } catch {
@@ -200,7 +207,45 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         }
     }
 
-    private final class ScreenCaptureKitRecorderStopCompletion: @unchecked Sendable {
+    private func stopStreamCapture(_ stream: SCStream) async throws {
+        let timeout = streamStopTimeout
+
+        try await withCheckedThrowingContinuation { continuation in
+            let completion = ScreenCaptureKitRecorderCompletion(continuation)
+            stream.stopCapture { error in
+                if let error {
+                    _ = completion.resume(with: .failure(error))
+                } else {
+                    _ = completion.resume(with: .success(()))
+                }
+            }
+
+            Task {
+                do {
+                    try await Task.sleep(for: timeout)
+                    _ = completion.resume(with: .success(()))
+                } catch is CancellationError {
+                    return
+                } catch {
+                    return
+                }
+            }
+        }
+    }
+
+    private struct ScreenCaptureKitStreamHandle: @unchecked Sendable {
+        private let stream: SCStream
+
+        init(_ stream: SCStream) {
+            self.stream = stream
+        }
+
+        func stopCaptureIgnoringResult() {
+            stream.stopCapture { _ in }
+        }
+    }
+
+    private final class ScreenCaptureKitRecorderCompletion: @unchecked Sendable {
         private let lock = NSLock()
         private var continuation: CheckedContinuation<Void, any Error>?
 
@@ -208,14 +253,19 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
             self.continuation = continuation
         }
 
-        func resume(with result: Result<Void, any Error>) {
+        func resume(with result: Result<Void, any Error>) -> Bool {
             let continuation = lock.withLock {
                 let continuation = self.continuation
                 self.continuation = nil
                 return continuation
             }
 
-            continuation?.resume(with: result)
+            guard let continuation else {
+                return false
+            }
+
+            continuation.resume(with: result)
+            return true
         }
     }
 
