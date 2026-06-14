@@ -213,6 +213,19 @@ struct CaptureSelectionDraftTests {
         #expect(resized.topLeftSelection == (try CaptureRect(x: 188, y: 0, width: 225, height: 400)))
     }
 
+    @Test("custom aspect ratio resizes around selection center")
+    func customAspectRatioResizesAroundSelectionCenter() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 200)
+        )
+
+        let resized = try draft.applyingAspectRatio(CaptureAspectRatio(width: 3, height: 2))
+
+        #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 94, width: 320, height: 213)))
+    }
+
     @Test("size presets clamp oversized selections to display")
     func sizePresetsClampOversizedSelectionsToDisplay() throws {
         let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)

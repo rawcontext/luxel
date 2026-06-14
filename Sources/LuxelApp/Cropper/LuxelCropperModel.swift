@@ -53,6 +53,9 @@ enum LuxelCropperMode: String, CaseIterable, Identifiable, Sendable {
 private struct CropperUndoState: Equatable, Sendable {
     let selection: CaptureRect?
     let aspectRatioPreset: CaptureAspectRatioPreset
+    let customAspectRatio: CaptureAspectRatio?
+    let customAspectRatioWidthText: String
+    let customAspectRatioHeightText: String
     let mode: LuxelCropperMode
 }
 
@@ -89,6 +92,9 @@ final class LuxelCropperModel {
     var selection: CaptureRect?
     var mode: LuxelCropperMode
     var aspectRatioPreset: CaptureAspectRatioPreset = .free
+    var customAspectRatio: CaptureAspectRatio?
+    var customAspectRatioWidthText = "3"
+    var customAspectRatioHeightText = "2"
     var countdownDuration: TimeInterval?
     var stopAfterDuration: TimeInterval?
     var customStopAfterText: String
@@ -123,6 +129,9 @@ final class LuxelCropperModel {
         self.selectionUndoStack = UndoStack(initialState: CropperUndoState(
             selection: nil,
             aspectRatioPreset: .free,
+            customAspectRatio: nil,
+            customAspectRatioWidthText: "3",
+            customAspectRatioHeightText: "2",
             mode: mode
         ))
     }
@@ -133,6 +142,10 @@ final class LuxelCropperModel {
         }
 
         return "\(selection.width)x\(selection.height)"
+    }
+
+    var aspectRatioSummary: String {
+        customAspectRatio.map { "\($0.width):\($0.height)" } ?? aspectRatioPreset.title
     }
 
     var canRecordSelection: Bool {
@@ -188,6 +201,14 @@ final class LuxelCropperModel {
         customStopAfterText = text
     }
 
+    func setCustomAspectRatioWidthText(_ text: String) {
+        customAspectRatioWidthText = text
+    }
+
+    func setCustomAspectRatioHeightText(_ text: String) {
+        customAspectRatioHeightText = text
+    }
+
     func setMode(_ mode: LuxelCropperMode) {
         guard self.mode != mode else {
             return
@@ -219,7 +240,7 @@ final class LuxelCropperModel {
                 from: capturePoint(from: start, viewSize: viewSize),
                 to: capturePoint(from: current, viewSize: viewSize),
                 in: display,
-                aspectRatio: aspectRatioPreset.aspectRatio
+                aspectRatio: activeAspectRatio
             )
             pushUndoState(coalescingToken: selectionDragCoalescingToken)
             errorMessage = nil
@@ -253,7 +274,7 @@ final class LuxelCropperModel {
             self.selection = try draft.resized(
                 dragging: handle,
                 by: captureDelta(from: translation, viewSize: viewSize),
-                lockingAspectRatio: aspectRatioPreset != .free
+                lockingAspectRatio: activeAspectRatio != nil
             ).topLeftSelection
             pushUndoState(coalescingToken: resizeDragCoalescingToken)
             errorMessage = nil
@@ -263,12 +284,31 @@ final class LuxelCropperModel {
     }
 
     func setAspectRatioPreset(_ preset: CaptureAspectRatioPreset) {
-        guard aspectRatioPreset != preset else {
+        guard aspectRatioPreset != preset || customAspectRatio != nil else {
             return
         }
 
         aspectRatioPreset = preset
+        customAspectRatio = nil
 
+        applyActiveAspectRatioToSelection()
+    }
+
+    func applyCustomAspectRatio() -> Bool {
+        do {
+            let width = try Self.parseCustomAspectRatioComponent(customAspectRatioWidthText)
+            let height = try Self.parseCustomAspectRatioComponent(customAspectRatioHeightText)
+            aspectRatioPreset = .free
+            customAspectRatio = try CaptureAspectRatio(width: width, height: height)
+            applyActiveAspectRatioToSelection()
+            return true
+        } catch {
+            errorMessage = "Use whole-number ratio values greater than 0"
+            return false
+        }
+    }
+
+    private func applyActiveAspectRatioToSelection() {
         guard let selection else {
             pushUndoState()
             errorMessage = nil
@@ -277,7 +317,7 @@ final class LuxelCropperModel {
 
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
-            self.selection = try draft.applyingAspectRatioPreset(preset).topLeftSelection
+            self.selection = try draft.applyingAspectRatio(activeAspectRatio).topLeftSelection
             pushUndoState()
             errorMessage = nil
         } catch {
@@ -436,6 +476,9 @@ final class LuxelCropperModel {
         CropperUndoState(
             selection: selection,
             aspectRatioPreset: aspectRatioPreset,
+            customAspectRatio: customAspectRatio,
+            customAspectRatioWidthText: customAspectRatioWidthText,
+            customAspectRatioHeightText: customAspectRatioHeightText,
             mode: mode
         )
     }
@@ -447,8 +490,15 @@ final class LuxelCropperModel {
     private func applyUndoState(_ state: CropperUndoState) {
         selection = state.selection
         aspectRatioPreset = state.aspectRatioPreset
+        customAspectRatio = state.customAspectRatio
+        customAspectRatioWidthText = state.customAspectRatioWidthText
+        customAspectRatioHeightText = state.customAspectRatioHeightText
         mode = state.mode
         errorMessage = nil
+    }
+
+    private var activeAspectRatio: CaptureAspectRatio? {
+        customAspectRatio ?? aspectRatioPreset.aspectRatio
     }
 
     private func capturePoint(from point: CGPoint, viewSize: CGSize) -> CapturePoint {
@@ -485,5 +535,14 @@ final class LuxelCropperModel {
 
         let minutes = Int(duration / 60)
         return "\(minutes) min"
+    }
+
+    private static func parseCustomAspectRatioComponent(_ text: String) throws -> Int {
+        guard let value = Int(text.trimmingCharacters(in: .whitespacesAndNewlines)),
+              value > 0 else {
+            throw CaptureModelError.invalidDimensions
+        }
+
+        return value
     }
 }

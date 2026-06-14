@@ -178,15 +178,32 @@ struct LuxelCropperView: View {
                 Button {
                     model.setAspectRatioPreset(preset)
                 } label: {
-                    if model.aspectRatioPreset == preset {
+                    if model.customAspectRatio == nil, model.aspectRatioPreset == preset {
                         Label(preset.title, systemImage: "checkmark")
                     } else {
                         Text(preset.title)
                     }
                 }
             }
+
+            Divider()
+
+            TextField("Custom W", text: customAspectRatioWidthText)
+                .frame(width: 76)
+            TextField("Custom H", text: customAspectRatioHeightText)
+                .frame(width: 76)
+
+            Button {
+                applyCustomAspectRatio()
+            } label: {
+                if let customAspectRatio = model.customAspectRatio {
+                    Label("\(customAspectRatio.width):\(customAspectRatio.height)", systemImage: "checkmark")
+                } else {
+                    Label("Apply Custom", systemImage: "aspectratio")
+                }
+            }
         } label: {
-            Label(model.aspectRatioPreset.title, systemImage: "aspectratio")
+            Label(model.aspectRatioSummary, systemImage: "aspectratio")
         }
         .frame(width: 76)
         .help("Aspect Ratio")
@@ -498,11 +515,34 @@ struct LuxelCropperView: View {
         }
     }
 
+    private func applyCustomAspectRatio() {
+        guard model.applyCustomAspectRatio() else {
+            NSSound.beep()
+            return
+        }
+    }
+
     private var customStopAfterText: Binding<String> {
         Binding {
             model.customStopAfterText
         } set: { text in
             model.setCustomStopAfterText(text)
+        }
+    }
+
+    private var customAspectRatioWidthText: Binding<String> {
+        Binding {
+            model.customAspectRatioWidthText
+        } set: { text in
+            model.setCustomAspectRatioWidthText(text)
+        }
+    }
+
+    private var customAspectRatioHeightText: Binding<String> {
+        Binding {
+            model.customAspectRatioHeightText
+        } set: { text in
+            model.setCustomAspectRatioHeightText(text)
         }
     }
 
