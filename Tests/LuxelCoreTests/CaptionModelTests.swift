@@ -48,6 +48,84 @@ struct CaptionModelTests {
         }
     }
 
+    @Test("track editor mutates cues while preserving track metadata")
+    func trackEditorMutatesCuesWhilePreservingMetadata() throws {
+        let track = try CaptionTrack(
+            cues: [
+                cue(start: 0, end: 2, text: "First"),
+                cue(start: 3, end: 4, text: "Second")
+            ],
+            language: Locale.LanguageCode("en"),
+            sourceTrack: .microphone
+        )
+        let editor = CaptionTrackEditor(track: track)
+
+        let replaced = try editor.replacingCue(
+            at: 1,
+            with: cue(start: 3.1, end: 4.2, text: "Updated")
+        )
+        #expect(replaced.cues.map(\.text) == ["First", "Updated"])
+        #expect(replaced.language == track.language)
+        #expect(replaced.sourceTrack == track.sourceTrack)
+
+        let split = try editor.splittingCue(
+            at: 0,
+            splitTime: 1,
+            firstText: "First half",
+            secondText: "Second half"
+        )
+        let expectedSplitCues = [
+            try cue(start: 0, end: 1, text: "First half"),
+            try cue(start: 1, end: 2, text: "Second half"),
+            try cue(start: 3, end: 4, text: "Second")
+        ]
+        #expect(split.cues == expectedSplitCues)
+
+        let merged = try CaptionTrackEditor(track: split).mergingCue(at: 0)
+        let expectedMergedCues = [
+            try cue(start: 0, end: 2, text: "First half\nSecond half"),
+            try cue(start: 3, end: 4, text: "Second")
+        ]
+        #expect(merged.cues == expectedMergedCues)
+
+        let deleted = try editor.deletingCue(at: 0)
+        let expectedDeletedCues = [try cue(start: 3, end: 4, text: "Second")]
+        #expect(deleted.cues == expectedDeletedCues)
+    }
+
+    @Test("track editor rejects invalid cue mutations")
+    func trackEditorRejectsInvalidCueMutations() throws {
+        let track = try CaptionTrack(
+            cues: [
+                cue(start: 0, end: 1, text: "First"),
+                cue(start: 2, end: 3, text: "Second")
+            ],
+            language: Locale.LanguageCode("en")
+        )
+        let editor = CaptionTrackEditor(track: track)
+
+        #expect(throws: CaptionModelError.invalidCueIndex) {
+            _ = try editor.deletingCue(at: 2)
+        }
+        #expect(throws: CaptionModelError.invalidCueSplitTime) {
+            _ = try editor.splittingCue(
+                at: 0,
+                splitTime: 1,
+                firstText: "First",
+                secondText: "Second"
+            )
+        }
+        #expect(throws: CaptionModelError.overlappingCues) {
+            _ = try editor.replacingCue(
+                at: 1,
+                with: cue(start: 0.5, end: 2.5, text: "Overlap")
+            )
+        }
+        #expect(throws: CaptionModelError.invalidCueIndex) {
+            _ = try editor.mergingCue(at: 1)
+        }
+    }
+
     @Test("render options expose caption defaults")
     func renderOptionsExposeCaptionDefaults() {
         let defaults = CaptionRenderOptions()

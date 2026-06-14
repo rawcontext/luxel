@@ -50,6 +50,85 @@ public struct CaptionTrack: Codable, Equatable, Sendable {
     }
 }
 
+public struct CaptionTrackEditor: Equatable, Sendable {
+    public let track: CaptionTrack
+
+    public init(track: CaptionTrack) {
+        self.track = track
+    }
+
+    public func replacingCue(at index: Int, with replacement: CaptionCue) throws -> CaptionTrack {
+        _ = try cue(at: index)
+
+        var cues = track.cues
+        cues[index] = replacement
+        return try makeTrack(cues: cues)
+    }
+
+    public func deletingCue(at index: Int) throws -> CaptionTrack {
+        _ = try cue(at: index)
+
+        var cues = track.cues
+        cues.remove(at: index)
+        return try makeTrack(cues: cues)
+    }
+
+    public func splittingCue(
+        at index: Int,
+        splitTime: TimeInterval,
+        firstText: String,
+        secondText: String
+    ) throws -> CaptionTrack {
+        let cue = try cue(at: index)
+        guard splitTime > cue.timeRange.start, splitTime < cue.timeRange.end else {
+            throw CaptionModelError.invalidCueSplitTime
+        }
+
+        var cues = track.cues
+        cues.replaceSubrange(index...index, with: [
+            try CaptionCue(
+                timeRange: TimeRange(start: cue.timeRange.start, end: splitTime),
+                text: firstText
+            ),
+            try CaptionCue(
+                timeRange: TimeRange(start: splitTime, end: cue.timeRange.end),
+                text: secondText
+            )
+        ])
+        return try makeTrack(cues: cues)
+    }
+
+    public func mergingCue(at index: Int) throws -> CaptionTrack {
+        let first = try cue(at: index)
+        let second = try cue(at: index + 1)
+
+        var cues = track.cues
+        cues.replaceSubrange(index...(index + 1), with: [
+            try CaptionCue(
+                timeRange: TimeRange(start: first.timeRange.start, end: second.timeRange.end),
+                text: [first.text, second.text].joined(separator: "\n")
+            )
+        ])
+        return try makeTrack(cues: cues)
+    }
+
+    private func cue(at index: Int) throws -> CaptionCue {
+        guard track.cues.indices.contains(index) else {
+            throw CaptionModelError.invalidCueIndex
+        }
+
+        return track.cues[index]
+    }
+
+    private func makeTrack(cues: [CaptionCue]) throws -> CaptionTrack {
+        try CaptionTrack(
+            cues: cues,
+            language: track.language,
+            sourceTrack: track.sourceTrack
+        )
+    }
+}
+
 public struct CaptionSidecarDocument: Codable, Equatable, Sendable {
     public static let currentSchemaVersion = 1
 
@@ -529,4 +608,6 @@ public enum CaptionModelError: Error, Equatable {
     case invalidCueBuilderConfiguration
     case unsortedRecognizedWords
     case unsupportedSidecarSchemaVersion
+    case invalidCueIndex
+    case invalidCueSplitTime
 }
