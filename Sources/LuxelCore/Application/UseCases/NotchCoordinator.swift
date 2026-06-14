@@ -1,0 +1,59 @@
+public final class NotchCoordinator: @unchecked Sendable {
+    private let presenter: any NotchPresenter
+
+    public init(presenter: any NotchPresenter) {
+        self.presenter = presenter
+    }
+
+    public var interactions: AsyncStream<NotchInteraction> {
+        presenter.interactions
+    }
+
+    @discardableResult
+    public func present(
+        activities: [NotchActivity],
+        displays: [NotchDisplayDescriptor],
+        preferences: NotchSurfacePreferences = .defaults,
+        presentationState: NotchPresentationState = .collapsed,
+        motion: NotchMotion = .standard,
+        reduceMotion: Bool = false
+    ) async -> NotchCoordinatorResult {
+        let selection = RecordingSurfaceSelector.select(
+            from: displays,
+            preferences: preferences
+        )
+        guard case .notch(let geometry) = selection else {
+            await presenter.release()
+            return NotchCoordinatorResult(selection: selection, update: nil)
+        }
+
+        let activity = NotchActivityResolver.resolve(activities)
+        let viewModel = NotchActivityPresentation.viewModel(for: activity)
+        let update = NotchPresentationUpdate(
+            geometry: geometry,
+            activity: activity,
+            presentationState: presentationState,
+            viewModel: viewModel,
+            motion: motion.variant(reduceMotion: reduceMotion)
+        )
+
+        await presenter.acquire(on: geometry)
+        await presenter.present(update)
+
+        return NotchCoordinatorResult(selection: selection, update: update)
+    }
+
+    public func setExpanded(_ isExpanded: Bool) async {
+        await presenter.setExpanded(isExpanded)
+    }
+}
+
+public struct NotchCoordinatorResult: Equatable, Sendable {
+    public let selection: RecordingSurfaceSelection
+    public let update: NotchPresentationUpdate?
+
+    public init(selection: RecordingSurfaceSelection, update: NotchPresentationUpdate?) {
+        self.selection = selection
+        self.update = update
+    }
+}

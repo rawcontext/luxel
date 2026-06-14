@@ -1,0 +1,160 @@
+import Foundation
+import LuxelCore
+import Testing
+
+@Suite("Notch coordinator")
+struct NotchCoordinatorTests {
+    @Test("present acquires notch surface and sends resolved activity update")
+    func presentAcquiresNotchSurfaceAndSendsResolvedActivityUpdate() async throws {
+        let presenter = SpyNotchPresenter()
+        let coordinator = NotchCoordinator(presenter: presenter)
+        let display = try builtInNotchedDisplay()
+        let coverage = try NotchReplayBufferCoverage(coveredDuration: 30, requestedDuration: 60)
+        let recording = NotchActivity.recording(elapsed: 42, audioLevel: .silent, muted: false)
+
+        let result = await coordinator.present(
+            activities: [
+                .replayBuffering(coverage: coverage),
+                recording
+            ],
+            displays: [display],
+            presentationState: .expanded
+        )
+
+        let update = try #require(result.update)
+        let geometry = try #require(NotchGeometry.resolve(from: display))
+        #expect(result.selection == .notch(geometry))
+        #expect(update.geometry == geometry)
+        #expect(update.activity == recording)
+        #expect(update.presentationState == .expanded)
+        #expect(update.viewModel == NotchActivityPresentation.viewModel(for: recording))
+        #expect(update.motion == .standard)
+        #expect(await presenter.commands() == [
+            .acquire(geometry),
+            .present(update)
+        ])
+    }
+
+    @Test("present uses reduced motion when requested")
+    func presentUsesReducedMotionWhenRequested() async throws {
+        let presenter = SpyNotchPresenter()
+        let coordinator = NotchCoordinator(presenter: presenter)
+
+        let result = await coordinator.present(
+            activities: [.idleHover],
+            displays: [try builtInNotchedDisplay()],
+            reduceMotion: true
+        )
+
+        #expect(result.update?.motion == .reduced)
+    }
+
+    @Test("present releases presenter when notch is unavailable")
+    func presentReleasesPresenterWhenNotchIsUnavailable() async throws {
+        let presenter = SpyNotchPresenter()
+        let coordinator = NotchCoordinator(presenter: presenter)
+
+        let result = await coordinator.present(
+            activities: [.idleHover],
+            displays: []
+        )
+
+        #expect(result.selection == .floatingHUD(.noNotchedDisplay))
+        #expect(result.update == nil)
+        #expect(await presenter.commands() == [.release])
+    }
+
+    @Test("present releases presenter when notch is disabled")
+    func presentReleasesPresenterWhenNotchIsDisabled() async throws {
+        let presenter = SpyNotchPresenter()
+        let coordinator = NotchCoordinator(presenter: presenter)
+
+        let result = await coordinator.present(
+            activities: [.idleHover],
+            displays: [try builtInNotchedDisplay()],
+            preferences: NotchSurfacePreferences(isEnabled: false)
+        )
+
+        #expect(result.selection == .floatingHUD(.notchDisabled))
+        #expect(result.update == nil)
+        #expect(await presenter.commands() == [.release])
+    }
+
+    @Test("set expanded forwards to presenter")
+    func setExpandedForwardsToPresenter() async {
+        let presenter = SpyNotchPresenter()
+        let coordinator = NotchCoordinator(presenter: presenter)
+
+        await coordinator.setExpanded(true)
+
+        #expect(await presenter.commands() == [.setExpanded(true)])
+    }
+
+    private func builtInNotchedDisplay(
+        displayID: DisplayID = DisplayID(1)
+    ) throws -> NotchDisplayDescriptor {
+        try NotchDisplayDescriptor(
+            displayID: displayID,
+            frame: rect(x: 0, y: 0, width: 1512, height: 982),
+            safeAreaInsets: NotchSafeAreaInsets(top: 34),
+            auxiliaryTopLeftArea: rect(x: 0, y: 948, width: 640, height: 34),
+            auxiliaryTopRightArea: rect(x: 872, y: 948, width: 640, height: 34),
+            isBuiltIn: true
+        )
+    }
+
+    private func rect(
+        x: Double,
+        y: Double,
+        width: Double,
+        height: Double
+    ) throws -> NotchScreenRect {
+        try NotchScreenRect(x: x, y: y, width: width, height: height)
+    }
+}
+
+private enum SpyNotchPresenterCommand: Equatable {
+    case acquire(NotchGeometry)
+    case present(NotchPresentationUpdate)
+    case setExpanded(Bool)
+    case release
+}
+
+private final class SpyNotchPresenter: NotchPresenter, @unchecked Sendable {
+    private let lock = NSLock()
+    private var recordedCommands: [SpyNotchPresenterCommand] = []
+
+    var interactions: AsyncStream<NotchInteraction> {
+        AsyncStream { continuation in
+            continuation.finish()
+        }
+    }
+
+    func acquire(on geometry: NotchGeometry) async {
+        append(.acquire(geometry))
+    }
+
+    func present(_ update: NotchPresentationUpdate) async {
+        append(.present(update))
+    }
+
+    func setExpanded(_ isExpanded: Bool) async {
+        append(.setExpanded(isExpanded))
+    }
+
+    func release() async {
+        append(.release)
+    }
+
+    func commands() async -> [SpyNotchPresenterCommand] {
+        lock.withLock {
+            recordedCommands
+        }
+    }
+
+    private func append(_ command: SpyNotchPresenterCommand) {
+        lock.withLock {
+            recordedCommands.append(command)
+        }
+    }
+}
