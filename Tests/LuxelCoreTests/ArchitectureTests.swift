@@ -91,7 +91,7 @@ struct ArchitectureTests {
     @Test("full display recording frame follows screen edge corners")
     func fullDisplayRecordingFrameFollowsScreenEdgeCorners() throws {
         let source = try String(
-            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/Recording/RecordingFramePanelController.swift"),
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/Recording/Panels/RecordingFramePanelController.swift"),
             encoding: .utf8
         )
 
@@ -113,13 +113,10 @@ struct ArchitectureTests {
     func cropperSupportsLocalSelectionUndoAndRedo() throws {
         let packageRoot = try packageRootURL()
         let modelSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
             encoding: .utf8
         )
-        let viewSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperView.swift"),
-            encoding: .utf8
-        )
+        let viewSource = try sourceContents(under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
 
         #expect(modelSource.contains("UndoStack<CropperUndoState>"))
         #expect(modelSource.contains("selection: CaptureRect?"))
@@ -146,17 +143,14 @@ struct ArchitectureTests {
     func cropperRendersSnapGuidesWhileDrawingSelections() throws {
         let packageRoot = try packageRootURL()
         let modelSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
             encoding: .utf8
         )
         let controllerSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperPanelController.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
             encoding: .utf8
         )
-        let viewSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperView.swift"),
-            encoding: .utf8
-        )
+        let viewSource = try sourceContents(under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
 
         #expect(modelSource.contains("var snapGuides: [CaptureSnapGuide]"))
         #expect(modelSource.contains("let windowSnapFrames: [CaptureRect]"))
@@ -177,15 +171,15 @@ struct ArchitectureTests {
     func cropperRestoresLastAreaSelectionWhenEnabled() throws {
         let packageRoot = try packageRootURL()
         let modelSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
             encoding: .utf8
         )
         let controllerSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperPanelController.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
             encoding: .utf8
         )
         let controlsSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/LuxelRecordingControls.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelRecordingControls.swift"),
             encoding: .utf8
         )
         let shortcutsSource = try String(
@@ -193,7 +187,7 @@ struct ArchitectureTests {
             encoding: .utf8
         )
         let presentationSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Model/LuxelMenuModel+Presentation.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Presentation.swift"),
             encoding: .utf8
         )
 
@@ -213,19 +207,16 @@ struct ArchitectureTests {
     func cropperDimsInactiveDisplaysWhenConfigured() throws {
         let packageRoot = try packageRootURL()
         let modelSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
             encoding: .utf8
         )
         let controllerSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperPanelController.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
             encoding: .utf8
         )
-        let viewSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperView.swift"),
-            encoding: .utf8
-        )
+        let viewSource = try sourceContents(under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
         let controlsSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/LuxelRecordingControls.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelRecordingControls.swift"),
             encoding: .utf8
         )
         let shortcutsSource = try String(
@@ -250,19 +241,16 @@ struct ArchitectureTests {
     func cropperShowsLoupeDuringPrecisionSelection() throws {
         let packageRoot = try packageRootURL()
         let modelSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
             encoding: .utf8
         )
         let controllerSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperPanelController.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
             encoding: .utf8
         )
-        let viewSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperView.swift"),
-            encoding: .utf8
-        )
+        let viewSource = try sourceContents(under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
         let controlsSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/LuxelRecordingControls.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelRecordingControls.swift"),
             encoding: .utf8
         )
         let shortcutsSource = try String(
@@ -276,8 +264,8 @@ struct ArchitectureTests {
         #expect(modelSource.contains("loupeSample = nil"))
         #expect(controllerSource.contains("loupeAlwaysOn: Bool = false"))
         #expect(controllerSource.contains("loupeAlwaysOn: loupeAlwaysOn"))
-        #expect(viewSource.contains("private struct CropperLoupeView"))
-        #expect(viewSource.contains("private struct CropperLoupeGrid"))
+        #expect(viewSource.contains("struct CropperLoupeView"))
+        #expect(viewSource.contains("struct CropperLoupeGrid"))
         #expect(viewSource.contains("let isLoupeRequested = flags.contains(.option)"))
         #expect(viewSource.contains("isSnappingDisabled: flags.contains(.command) || isLoupeActive"))
         #expect(controlsSource.contains("loupeAlwaysOn: model.settings.loupeAlwaysOn"))
@@ -288,11 +276,11 @@ struct ArchitectureTests {
     func recordingFPSSettingsAcceptDirectNumericEntry() throws {
         let packageRoot = try packageRootURL()
         let settingsSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Settings/LuxelSettingsView.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Settings/Views/LuxelSettingsView.swift"),
             encoding: .utf8
         )
         let requestSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Model/LuxelMenuModel+RecordingRequests.swift"),
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+RecordingRequests.swift"),
             encoding: .utf8
         )
 
@@ -342,6 +330,12 @@ struct ArchitectureTests {
 
             return url
         }
+    }
+
+    private func sourceContents(under directory: URL) throws -> String {
+        try swiftFiles(under: directory)
+            .map { try String(contentsOf: $0, encoding: .utf8) }
+            .joined(separator: "\n")
     }
 
     private func packageRootURL() throws -> URL {
