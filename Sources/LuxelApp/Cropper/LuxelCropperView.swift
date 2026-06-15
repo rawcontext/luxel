@@ -4,6 +4,8 @@ import LuxelPresentation
 import SwiftUI
 
 struct LuxelCropperView: View {
+    private static let loupeSize = CGSize(width: 164, height: 122)
+
     @Environment(\.openURL) private var openURL
     @State private var currentCameraConfiguration: CropperCameraConfiguration?
 
@@ -36,6 +38,14 @@ struct LuxelCropperView: View {
                     snapGuidesOverlay(viewSize: geometry.size)
                 }
 
+                if let loupeSample = model.loupeSample, !model.isDimmedByOtherDisplay {
+                    CropperLoupeView(sample: loupeSample)
+                        .frame(width: Self.loupeSize.width, height: Self.loupeSize.height)
+                        .position(loupePosition(for: loupeSample, viewSize: geometry.size))
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                }
+
                 if !model.isDimmedByOtherDisplay {
                     VStack {
                         if showsNotificationReminder, model.mode == .video {
@@ -53,11 +63,16 @@ struct LuxelCropperView: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        let flags = NSEvent.modifierFlags
+                        let isLoupeRequested = flags.contains(.option)
+                        let isLoupeActive = model.loupeAlwaysOn || isLoupeRequested
                         model.updateSelection(
                             start: value.startLocation,
                             current: value.location,
                             viewSize: geometry.size,
-                            isSnappingDisabled: NSEvent.modifierFlags.contains(.command)
+                            isSnappingDisabled: flags.contains(.command) || isLoupeActive,
+                            isLoupeRequested: isLoupeRequested,
+                            loupeOverlaySize: Self.loupeSize
                         )
                     }
                     .onEnded { _ in
@@ -434,6 +449,15 @@ struct LuxelCropperView: View {
         }
     }
 
+    private func loupePosition(for sample: CaptureLoupeSample, viewSize: CGSize) -> CGPoint {
+        CGPoint(
+            x: CGFloat(sample.overlayOrigin.x) / CGFloat(model.display.width) * viewSize.width
+                + Self.loupeSize.width / 2,
+            y: CGFloat(sample.overlayOrigin.y) / CGFloat(model.display.height) * viewSize.height
+                + Self.loupeSize.height / 2
+        )
+    }
+
     private func resizeHandle(
         _ handle: CaptureResizeHandle,
         rect: CGRect,
@@ -450,10 +474,13 @@ struct LuxelCropperView: View {
         .highPriorityGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { value in
+                    let isLoupeRequested = NSEvent.modifierFlags.contains(.option)
                     model.resizeSelection(
                         handle: handle,
                         translation: value.translation,
-                        viewSize: viewSize
+                        viewSize: viewSize,
+                        isLoupeRequested: isLoupeRequested,
+                        loupeOverlaySize: Self.loupeSize
                     )
                 }
                 .onEnded { _ in
@@ -815,6 +842,94 @@ private struct SelectionNumberField: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
+    }
+}
+
+private struct CropperLoupeView: View {
+    let sample: CaptureLoupeSample
+
+    var body: some View {
+        GlassPanel {
+            VStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(.black.opacity(0.46))
+
+                    CropperLoupeGrid(sample: sample)
+                        .padding(6)
+
+                    Rectangle()
+                        .fill(.white.opacity(0.78))
+                        .frame(width: 1)
+
+                    Rectangle()
+                        .fill(.white.opacity(0.78))
+                        .frame(height: 1)
+                }
+                .frame(width: 136, height: 74)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+
+                HStack(spacing: 8) {
+                    Text("x \(sample.readout.cursor.x) y \(sample.readout.cursor.y)")
+                    Spacer(minLength: 8)
+                    Text(selectionSummary)
+                }
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.primary)
+            }
+        }
+        .accessibilityLabel("Selection loupe")
+        .accessibilityValue("\(sample.readout.cursor.x), \(sample.readout.cursor.y), \(selectionSummary)")
+    }
+
+    private var selectionSummary: String {
+        guard let selection = sample.readout.selection else {
+            return "No selection"
+        }
+
+        return "\(selection.width)x\(selection.height)"
+    }
+}
+
+private struct CropperLoupeGrid: View {
+    let sample: CaptureLoupeSample
+
+    var body: some View {
+        Canvas { context, size in
+            let columns = min(max(sample.sourceRect.width, 1), 24)
+            let rows = min(max(sample.sourceRect.height, 1), 24)
+            let cellWidth = size.width / CGFloat(columns)
+            let cellHeight = size.height / CGFloat(rows)
+
+            for row in 0..<rows {
+                for column in 0..<columns {
+                    let intensity = ((row + column).isMultiple(of: 2) ? 0.18 : 0.28)
+                    let rect = CGRect(
+                        x: CGFloat(column) * cellWidth,
+                        y: CGFloat(row) * cellHeight,
+                        width: cellWidth,
+                        height: cellHeight
+                    )
+                    context.fill(
+                        Path(rect),
+                        with: .color(.white.opacity(intensity))
+                    )
+                }
+            }
+
+            var gridPath = Path()
+            for column in 0...columns {
+                let x = CGFloat(column) * cellWidth
+                gridPath.move(to: CGPoint(x: x, y: 0))
+                gridPath.addLine(to: CGPoint(x: x, y: size.height))
+            }
+            for row in 0...rows {
+                let y = CGFloat(row) * cellHeight
+                gridPath.move(to: CGPoint(x: 0, y: y))
+                gridPath.addLine(to: CGPoint(x: size.width, y: y))
+            }
+            context.stroke(gridPath, with: .color(.white.opacity(0.20)), lineWidth: 0.5)
+        }
     }
 }
 

@@ -62,6 +62,7 @@ struct LuxelShortcutInstaller: View {
                         quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                         selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
                         restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
+                        loupeAlwaysOn: model.settings.loupeAlwaysOn,
                         dimOtherDisplays: model.settings.dimOtherDisplays,
                         showsNotificationReminder: model.settings.notificationReminder,
                         onCountdownDurationChange: { duration in
@@ -99,6 +100,7 @@ struct LuxelShortcutInstaller: View {
                         quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                         selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
                         restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
+                        loupeAlwaysOn: model.settings.loupeAlwaysOn,
                         dimOtherDisplays: model.settings.dimOtherDisplays,
                         showsNotificationReminder: model.settings.notificationReminder,
                         onCountdownDurationChange: { duration in

@@ -169,7 +169,8 @@ struct ArchitectureTests {
         #expect(controllerSource.contains("CaptureWindowSnapFrameResolver.windowFrames("))
         #expect(viewSource.contains("snapGuidesOverlay(viewSize: geometry.size)"))
         #expect(viewSource.contains("ForEach(Array(model.snapGuides.enumerated())"))
-        #expect(viewSource.contains("NSEvent.modifierFlags.contains(.command)"))
+        #expect(viewSource.contains("let flags = NSEvent.modifierFlags"))
+        #expect(viewSource.contains("flags.contains(.command)"))
     }
 
     @Test("cropper restores last area selection when enabled")
@@ -243,6 +244,44 @@ struct ArchitectureTests {
         #expect(viewSource.contains("if let selection = model.selection, !model.isDimmedByOtherDisplay"))
         #expect(controlsSource.contains("dimOtherDisplays: model.settings.dimOtherDisplays"))
         #expect(shortcutsSource.contains("dimOtherDisplays: model.settings.dimOtherDisplays"))
+    }
+
+    @Test("cropper shows loupe during precision selection")
+    func cropperShowsLoupeDuringPrecisionSelection() throws {
+        let packageRoot = try packageRootURL()
+        let modelSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperModel.swift"),
+            encoding: .utf8
+        )
+        let controllerSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperPanelController.swift"),
+            encoding: .utf8
+        )
+        let viewSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/LuxelCropperView.swift"),
+            encoding: .utf8
+        )
+        let controlsSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/LuxelRecordingControls.swift"),
+            encoding: .utf8
+        )
+        let shortcutsSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Shortcuts/LuxelShortcutInstaller.swift"),
+            encoding: .utf8
+        )
+
+        #expect(modelSource.contains("var loupeSample: CaptureLoupeSample?"))
+        #expect(modelSource.contains("let loupeAlwaysOn: Bool"))
+        #expect(modelSource.contains("CaptureLoupeSampleResolver.sample("))
+        #expect(modelSource.contains("loupeSample = nil"))
+        #expect(controllerSource.contains("loupeAlwaysOn: Bool = false"))
+        #expect(controllerSource.contains("loupeAlwaysOn: loupeAlwaysOn"))
+        #expect(viewSource.contains("private struct CropperLoupeView"))
+        #expect(viewSource.contains("private struct CropperLoupeGrid"))
+        #expect(viewSource.contains("let isLoupeRequested = flags.contains(.option)"))
+        #expect(viewSource.contains("isSnappingDisabled: flags.contains(.command) || isLoupeActive"))
+        #expect(controlsSource.contains("loupeAlwaysOn: model.settings.loupeAlwaysOn"))
+        #expect(shortcutsSource.contains("loupeAlwaysOn: model.settings.loupeAlwaysOn"))
     }
 
     @Test("recording FPS settings accept direct numeric entry")

@@ -40,6 +40,7 @@ final class LuxelCropperPanelController {
             sizePresets: CaptureSizePreset.builtInDefaults
         ),
         restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled,
+        loupeAlwaysOn: Bool = false,
         dimOtherDisplays: Bool = false,
         showsNotificationReminder: Bool = false,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
@@ -68,6 +69,7 @@ final class LuxelCropperPanelController {
                     quickRecordingConfiguration: quickRecordingConfiguration,
                     selectionPresetConfiguration: selectionPresetConfiguration,
                     restoreSelectionConfiguration: restoreSelectionConfiguration,
+                    loupeAlwaysOn: loupeAlwaysOn,
                     dimOtherDisplays: dimOtherDisplays,
                     showsNotificationReminder: showsNotificationReminder,
                     onCountdownDurationChange: onCountdownDurationChange,
@@ -105,6 +107,7 @@ final class LuxelCropperPanelController {
         quickRecordingConfiguration: CropperQuickRecordingConfiguration,
         selectionPresetConfiguration: CropperSelectionPresetConfiguration,
         restoreSelectionConfiguration: CropperRestoreSelectionConfiguration,
+        loupeAlwaysOn: Bool,
         dimOtherDisplays: Bool,
         showsNotificationReminder: Bool,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
@@ -150,6 +153,7 @@ final class LuxelCropperPanelController {
                     on: display,
                     from: targets
                 ),
+                loupeAlwaysOn: loupeAlwaysOn,
                 dimOtherDisplays: dimOtherDisplays,
                 displayFocus: displayFocus,
                 onCountdownDurationChange: onCountdownDurationChange,

@@ -131,6 +131,7 @@ final class LuxelCropperModel {
     var customAspectRatioWidthText = "3"
     var customAspectRatioHeightText = "2"
     var snapGuides: [CaptureSnapGuide] = []
+    var loupeSample: CaptureLoupeSample?
     var countdownDuration: TimeInterval?
     var stopAfterDuration: TimeInterval?
     var customStopAfterText: String
@@ -139,6 +140,7 @@ final class LuxelCropperModel {
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored let sizePresets: [CaptureSizePreset]
     @ObservationIgnored let windowSnapFrames: [CaptureRect]
+    let loupeAlwaysOn: Bool
     let dimOtherDisplays: Bool
     let displayFocus: CropperDisplayFocus
     @ObservationIgnored private var selectionUndoStack: UndoStack<CropperUndoState>
@@ -156,6 +158,7 @@ final class LuxelCropperModel {
         ),
         initialSelection: CaptureRect? = nil,
         windowSnapFrames: [CaptureRect] = [],
+        loupeAlwaysOn: Bool = false,
         dimOtherDisplays: Bool = false,
         displayFocus: CropperDisplayFocus = CropperDisplayFocus(),
         onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
@@ -171,6 +174,7 @@ final class LuxelCropperModel {
         self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
         self.sizePresets = selectionPresetConfiguration.sizePresets
         self.windowSnapFrames = windowSnapFrames
+        self.loupeAlwaysOn = loupeAlwaysOn
         self.dimOtherDisplays = dimOtherDisplays
         self.displayFocus = displayFocus
         self.onCountdownDurationChange = onCountdownDurationChange
@@ -290,7 +294,9 @@ final class LuxelCropperModel {
         start: CGPoint,
         current: CGPoint,
         viewSize: CGSize,
-        isSnappingDisabled: Bool = false
+        isSnappingDisabled: Bool = false,
+        isLoupeRequested: Bool = false,
+        loupeOverlaySize: CGSize = CGSize(width: 164, height: 122)
     ) {
         guard resizeStartSelection == nil else {
             return
@@ -312,20 +318,34 @@ final class LuxelCropperModel {
             activateDisplay()
             selection = snapResult.rect
             snapGuides = snapResult.guides
+            updateLoupe(
+                cursor: capturePoint(from: current, viewSize: viewSize),
+                viewSize: viewSize,
+                overlaySize: loupeOverlaySize,
+                isRequested: isLoupeRequested
+            )
             pushUndoState(coalescingToken: selectionDragCoalescingToken)
             errorMessage = nil
         } catch {
             snapGuides = []
+            loupeSample = nil
             errorMessage = errorMessage(for: error)
         }
     }
 
     func finishUpdateSelection() {
         snapGuides = []
+        loupeSample = nil
         selectionDragID += 1
     }
 
-    func resizeSelection(handle: CaptureResizeHandle, translation: CGSize, viewSize: CGSize) {
+    func resizeSelection(
+        handle: CaptureResizeHandle,
+        translation: CGSize,
+        viewSize: CGSize,
+        isLoupeRequested: Bool = false,
+        loupeOverlaySize: CGSize = CGSize(width: 164, height: 122)
+    ) {
         guard let selection else {
             return
         }
@@ -349,9 +369,16 @@ final class LuxelCropperModel {
                 lockingAspectRatio: activeAspectRatio != nil
             ).topLeftSelection
             activateDisplay()
+            updateLoupe(
+                cursor: handle.cursorPoint(in: self.selection),
+                viewSize: viewSize,
+                overlaySize: loupeOverlaySize,
+                isRequested: isLoupeRequested
+            )
             pushUndoState(coalescingToken: resizeDragCoalescingToken)
             errorMessage = nil
         } catch {
+            loupeSample = nil
             errorMessage = errorMessage(for: error)
         }
     }
@@ -466,6 +493,7 @@ final class LuxelCropperModel {
 
     func finishResizeSelection() {
         resizeStartSelection = nil
+        loupeSample = nil
         resizeDragID += 1
     }
 
@@ -588,6 +616,44 @@ final class LuxelCropperModel {
         }
     }
 
+    private func updateLoupe(
+        cursor: CapturePoint,
+        viewSize: CGSize,
+        overlaySize: CGSize,
+        isRequested: Bool
+    ) {
+        guard shouldShowLoupe(isRequested: isRequested),
+              let overlayPixelSize = loupeOverlayPixelSize(viewSize: viewSize, overlaySize: overlaySize) else {
+            loupeSample = nil
+            return
+        }
+
+        loupeSample = try? CaptureLoupeSampleResolver.sample(
+            cursor: cursor,
+            display: display,
+            selection: selection,
+            overlaySize: overlayPixelSize
+        )
+    }
+
+    private func shouldShowLoupe(isRequested: Bool) -> Bool {
+        loupeAlwaysOn || isRequested
+    }
+
+    private func loupeOverlayPixelSize(viewSize: CGSize, overlaySize: CGSize) -> PixelSize? {
+        guard viewSize.width > 0,
+              viewSize.height > 0,
+              overlaySize.width > 0,
+              overlaySize.height > 0 else {
+            return nil
+        }
+
+        return try? PixelSize(
+            width: max(1, Int((overlaySize.width / viewSize.width * Double(display.width)).rounded(.up))),
+            height: max(1, Int((overlaySize.height / viewSize.height * Double(display.height)).rounded(.up)))
+        )
+    }
+
     private var activeAspectRatio: CaptureAspectRatio? {
         customAspectRatio ?? aspectRatioPreset.aspectRatio
     }
@@ -650,5 +716,37 @@ final class LuxelCropperModel {
         }
 
         return value
+    }
+}
+
+private extension CaptureResizeHandle {
+    func cursorPoint(in selection: CaptureRect?) -> CapturePoint {
+        guard let selection else {
+            return CapturePoint(x: 0, y: 0)
+        }
+
+        let midX = selection.x + selection.width / 2
+        let midY = selection.y + selection.height / 2
+        let maxX = selection.x + selection.width
+        let maxY = selection.y + selection.height
+
+        return switch self {
+        case .topLeft:
+            CapturePoint(x: selection.x, y: selection.y)
+        case .top:
+            CapturePoint(x: midX, y: selection.y)
+        case .topRight:
+            CapturePoint(x: maxX, y: selection.y)
+        case .left:
+            CapturePoint(x: selection.x, y: midY)
+        case .right:
+            CapturePoint(x: maxX, y: midY)
+        case .bottomLeft:
+            CapturePoint(x: selection.x, y: maxY)
+        case .bottom:
+            CapturePoint(x: midX, y: maxY)
+        case .bottomRight:
+            CapturePoint(x: maxX, y: maxY)
+        }
     }
 }
