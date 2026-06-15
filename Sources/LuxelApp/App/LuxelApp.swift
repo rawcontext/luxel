@@ -1,3 +1,5 @@
+import AppKit
+import Darwin
 import LuxelPresentation
 import SwiftUI
 
@@ -11,6 +13,8 @@ struct LuxelApp: App {
     @State private var statusItemController: LuxelStatusItemController
 
     init() {
+        LuxelSingleInstanceGuard.exitDuplicateInstanceIfNeeded()
+
         let errorReporter = LuxelCompositionRoot.errorReporter()
         let captureTargetCatalog = LuxelCompositionRoot.captureTargetCatalog()
         let captureTargetService = LuxelCompositionRoot.captureTargetService(catalog: captureTargetCatalog)
@@ -62,5 +66,32 @@ struct LuxelApp: App {
                 }
             )
         }
+    }
+}
+
+private enum LuxelSingleInstanceGuard {
+    static func exitDuplicateInstanceIfNeeded() {
+        guard let existingInstance = existingInstance() else {
+            return
+        }
+
+        _ = existingInstance.activate()
+        Darwin.exit(0)
+    }
+
+    private static func existingInstance() -> NSRunningApplication? {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
+            return nil
+        }
+
+        let currentProcessIdentifier = NSRunningApplication.current.processIdentifier
+        return NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
+            .filter { application in
+                application.processIdentifier != currentProcessIdentifier && !application.isTerminated
+            }
+            .sorted { lhs, rhs in
+                (lhs.launchDate ?? .distantPast) < (rhs.launchDate ?? .distantPast)
+            }
+            .first
     }
 }

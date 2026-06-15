@@ -73,6 +73,19 @@ struct ArchitectureTests {
         #expect(statusItemOccurrences == 1)
     }
 
+    @Test("app startup exits duplicate menu bar instances")
+    func appStartupExitsDuplicateMenuBarInstances() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/App/LuxelApp.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("LuxelSingleInstanceGuard.exitDuplicateInstanceIfNeeded()"))
+        #expect(source.contains("NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)"))
+        #expect(source.contains("application.processIdentifier != currentProcessIdentifier"))
+        #expect(source.contains("Darwin.exit(0)"))
+    }
+
     @Test("menu bar status click stops active recording before opening popover")
     func menuBarStatusClickStopsActiveRecordingBeforeOpeningPopover() throws {
         let source = try String(
