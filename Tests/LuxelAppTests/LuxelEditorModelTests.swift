@@ -95,6 +95,18 @@ extension LuxelEditorModelTests {
         #expect(!model.hasSource)
     }
 
+    @Test("import failure records non-fatal error")
+    func importFailureRecordsNonFatalError() {
+        let reporter = SpyErrorReporter()
+        let model = makeModel(errorReporter: reporter)
+
+        model.reportImportFailure(StubError.importFailed)
+
+        #expect(reporter.records == [
+            SpyErrorReporter.Record(context: "editor", description: "importFailed")
+        ])
+    }
+
     @Test("save original copies source without exporting")
     func saveOriginalCopiesSourceWithoutExporting() async throws {
         let fileSystem = SpyFileSystem()

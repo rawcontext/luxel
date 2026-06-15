@@ -72,6 +72,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
     @ObservationIgnored var onConfirmDiscardChange: (@MainActor (Bool) -> Void)?
     @ObservationIgnored var onDiscardRecording: (@MainActor (URL) -> Void)?
+    @ObservationIgnored let errorReporter: any ErrorReporter
 
     public init(
         metadataReader: any MediaMetadataReader = AVFoundationMediaMetadataReader(),
@@ -98,7 +99,8 @@ public final class LuxelEditorModel {
         fileSystem: any FileSystem = LocalFileSystem(),
         codecAvailability: CodecAvailability = .none,
         exportMemory: [ExportFormat: ExportMemory] = [:],
-        onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
+        onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil,
+        errorReporter: any ErrorReporter = NoopErrorReporter()
     ) {
         self.metadataReader = metadataReader
         self.exportService = exportService
@@ -111,6 +113,7 @@ public final class LuxelEditorModel {
         self.supportedFormats = codecAvailability.availableExportFormats
         self.exportMemoryByFormat = exportMemory
         self.onExportMemoryChange = onExportMemoryChange
+        self.errorReporter = errorReporter
         player.actionAtItemEnd = .none
         installPlaybackLoopObserver()
     }

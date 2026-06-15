@@ -11,10 +11,14 @@ struct LuxelApp: App {
     @State private var statusItemController: LuxelStatusItemController
 
     init() {
+        let errorReporter = LuxelCompositionRoot.errorReporter()
         let captureTargetCatalog = LuxelCompositionRoot.captureTargetCatalog()
         let captureTargetService = LuxelCompositionRoot.captureTargetService(catalog: captureTargetCatalog)
-        let model = LuxelMenuModel(captureTargetService: captureTargetService)
-        let editorModel = LuxelCompositionRoot.editorModel()
+        let model = LuxelMenuModel(
+            captureTargetService: captureTargetService,
+            errorReporter: errorReporter
+        )
+        let editorModel = LuxelCompositionRoot.editorModel(errorReporter: errorReporter)
         let cropperPanelController = LuxelCropperPanelController(targetService: captureTargetService)
         let shortcutController = LuxelShortcutController()
         let windowPresenter = LuxelWindowPresenter(

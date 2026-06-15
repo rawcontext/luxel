@@ -60,6 +60,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver
     @ObservationIgnored let screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter
     @ObservationIgnored let commandLineToolInstallService: CommandLineToolInstallService
+    @ObservationIgnored let errorReporter: any ErrorReporter
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
@@ -102,6 +103,7 @@ final class LuxelMenuModel {
         screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter = AppKitScreenshotThumbnailPresenter(),
         commandLineToolInstallService: CommandLineToolInstallService = LuxelCompositionRoot
             .commandLineToolInstallService(),
+        errorReporter: any ErrorReporter = NoopErrorReporter(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
         recorder: (any CaptureRecorder)? = nil,
         audioRecorder: any AudioRecorder = LuxelCompositionRoot.audioRecorder()
@@ -134,6 +136,7 @@ final class LuxelMenuModel {
         self.fullscreenCaptureTargetResolver = fullscreenCaptureTargetResolver
         self.screenshotThumbnailPresenter = screenshotThumbnailPresenter
         self.commandLineToolInstallService = commandLineToolInstallService
+        self.errorReporter = errorReporter
         self.appMetadata = appMetadata
         let recordingOutputFinalizer = LuxelCompositionRoot.recordingOutputFinalizer()
         self.recordingLifecycleService = RecordingLifecycleService(

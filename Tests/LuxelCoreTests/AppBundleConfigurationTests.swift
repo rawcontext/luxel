@@ -55,6 +55,28 @@ struct AppBundleConfigurationTests {
         #expect(script.contains("ThirdPartyLicenses.md"))
     }
 
+    @Test("build script bundles Firebase app config when present")
+    func buildScriptBundlesFirebaseAppConfigWhenPresent() throws {
+        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
+        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+        #expect(script.contains("GOOGLE_SERVICE_INFO_PLIST"))
+        #expect(script.contains("GoogleService-Info.plist"))
+        #expect(script.contains("Contents/Resources/GoogleService-Info.plist"))
+    }
+
+    @Test("build script can upload Crashlytics dSYMs for release builds")
+    func buildScriptCanUploadCrashlyticsDSYMsForReleaseBuilds() throws {
+        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
+        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+        #expect(script.contains("UPLOAD_CRASHLYTICS_SYMBOLS"))
+        #expect(script.contains("Crashlytics/upload-symbols"))
+        #expect(script.contains("--google-service-plist"))
+        #expect(script.contains("--platform mac"))
+        #expect(script.contains("${APP_NAME}.dSYM"))
+    }
+
     @Test("build script bundles CLI executable and install helper")
     func buildScriptBundlesCLIExecutableAndInstallHelper() throws {
         let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")

@@ -910,6 +910,7 @@ extension LuxelEditorModel {
     }
 
     func errorMessage(_ error: Error) -> String {
+        errorReporter.record(error, context: "editor")
         let description = (error as NSError).localizedDescription
         return description.isEmpty ? String(describing: error) : description
     }

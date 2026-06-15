@@ -8,15 +8,13 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
     private let fileManager: FileManager
     private let contentFilterTimeout: Duration = .seconds(10)
     private let streamStartTimeout: Duration = .seconds(10)
-    private let recordingOutputFinishTimeout: Duration = .seconds(2)
     private let streamStopTimeout: Duration = .seconds(5)
     private var stream: SCStream?
     private var isStreamCapturing = false
     private var request: RecordingRequest?
-    private var recordingOutput: SCRecordingOutput?
+    private var outputWriter: ScreenCaptureKitRecordingWriter?
     private var currentSegmentFileURL: URL?
     private var segmentFileURLs: [URL] = []
-    private var delegate: RecorderDelegate?
 
     public init(
         contentFilterProvider: any ScreenCaptureKitContentFilterProvider = ShareableContentFilterProvider(),
@@ -37,33 +35,30 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         }
 
         let contentFilter = try await prepareContentFilter(for: request.target)
-        let delegate = RecorderDelegate()
         let stream = SCStream(
             filter: contentFilter,
             configuration: configurationFactory.makeStreamConfiguration(for: request),
-            delegate: delegate
+            delegate: nil
         )
-        let recordingOutput = makeRecordingOutput(
-            for: request,
-            outputFileURL: request.outputFileURL,
-            delegate: delegate
-        )
+        let outputWriter = ScreenCaptureKitRecordingWriter(fileManager: fileManager)
 
         self.stream = stream
         self.request = request
-        self.recordingOutput = recordingOutput
+        self.outputWriter = outputWriter
         self.currentSegmentFileURL = request.outputFileURL
         self.segmentFileURLs = []
-        self.delegate = delegate
 
         do {
-            try stream.addRecordingOutput(recordingOutput)
+            try await outputWriter.startSegment(for: request, outputFileURL: request.outputFileURL)
+            try addStreamOutputs(to: stream, writer: outputWriter, for: request)
             try await startStreamCapture(stream)
             isStreamCapturing = true
         } catch let error as ScreenCaptureKitRecorderError {
+            await outputWriter.cancelCurrentSegment()
             clearRecordingState(removeTemporarySegments: true, preserving: request.outputFileURL)
             throw error
         } catch {
+            await outputWriter.cancelCurrentSegment()
             clearRecordingState(removeTemporarySegments: true, preserving: request.outputFileURL)
             throw ScreenCaptureKitRecorderError.startFailed(String(describing: error))
         }
@@ -74,7 +69,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
             throw ScreenCaptureKitRecorderError.notRecording
         }
 
-        guard recordingOutput != nil else {
+        guard currentSegmentFileURL != nil else {
             throw ScreenCaptureKitRecorderError.alreadyPaused
         }
 
@@ -88,27 +83,19 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
     }
 
     public func resumeRecording() async throws {
-        guard let stream, let request, let delegate else {
+        guard let outputWriter, let request else {
             throw ScreenCaptureKitRecorderError.notRecording
         }
 
-        guard recordingOutput == nil else {
+        guard currentSegmentFileURL == nil else {
             throw ScreenCaptureKitRecorderError.notPaused
         }
 
         do {
             let segmentFileURL = try nextSegmentFileURL()
-            let recordingOutput = makeRecordingOutput(
-                for: request,
-                outputFileURL: segmentFileURL,
-                delegate: delegate
-            )
-
-            self.recordingOutput = recordingOutput
+            try await outputWriter.startSegment(for: request, outputFileURL: segmentFileURL)
             self.currentSegmentFileURL = segmentFileURL
-            try stream.addRecordingOutput(recordingOutput)
         } catch {
-            recordingOutput = nil
             currentSegmentFileURL = nil
             throw ScreenCaptureKitRecorderError.resumeFailed(String(describing: error))
         }
@@ -178,41 +165,38 @@ private extension ScreenCaptureKitRecorder {
         let filter: SCContentFilter
     }
 
-    private func makeRecordingOutput(
-        for request: RecordingRequest,
-        outputFileURL: URL,
-        delegate: RecorderDelegate
-    ) -> SCRecordingOutput {
-        SCRecordingOutput(
-            configuration: configurationFactory.makeRecordingOutputConfiguration(
-                for: request,
-                outputFileURL: outputFileURL
-            ),
-            delegate: delegate
-        )
+    private func addStreamOutputs(
+        to stream: SCStream,
+        writer: ScreenCaptureKitRecordingWriter,
+        for request: RecordingRequest
+    ) throws {
+        try stream.addStreamOutput(writer, type: .screen, sampleHandlerQueue: writer.sampleHandlerQueue)
+
+        if request.audio.capturesSystemAudio {
+            try stream.addStreamOutput(writer, type: .audio, sampleHandlerQueue: writer.sampleHandlerQueue)
+        }
+
+        if request.audio.capturesMicrophone {
+            try stream.addStreamOutput(writer, type: .microphone, sampleHandlerQueue: writer.sampleHandlerQueue)
+        }
     }
 
     private func finishCurrentSegment() async throws -> URL? {
-        guard let stream, let recordingOutput, let delegate else {
+        guard let outputWriter, currentSegmentFileURL != nil else {
             return nil
         }
 
-        let segmentFileURL = currentSegmentFileURL
-        try stream.removeRecordingOutput(recordingOutput)
-        try await delegate.waitUntilFinished(recordingOutput, timeout: recordingOutputFinishTimeout)
-        self.recordingOutput = nil
+        let segmentFileURL = try await outputWriter.finishSegment()
         currentSegmentFileURL = nil
         return segmentFileURL
     }
 
     private func finishStoppedCurrentSegment() async throws -> URL? {
-        guard let recordingOutput, let delegate else {
+        guard let outputWriter, currentSegmentFileURL != nil else {
             return nil
         }
 
-        let segmentFileURL = currentSegmentFileURL
-        try await delegate.waitUntilFinished(recordingOutput, timeout: recordingOutputFinishTimeout)
-        self.recordingOutput = nil
+        let segmentFileURL = try await outputWriter.finishSegment()
         currentSegmentFileURL = nil
         return segmentFileURL
     }
@@ -386,9 +370,8 @@ private extension ScreenCaptureKitRecorder {
         stream = nil
         isStreamCapturing = false
         request = nil
-        recordingOutput = nil
+        outputWriter = nil
         currentSegmentFileURL = nil
         segmentFileURLs = []
-        delegate = nil
     }
 }

@@ -17,7 +17,8 @@ extension LuxelEditorModelTests {
         audioPeakAnalyzer: any AudioPeakAnalyzer = SpyAudioPeakAnalyzer(),
         codecAvailability: CodecAvailability = .none,
         exportMemory: [ExportFormat: ExportMemory] = [:],
-        onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil
+        onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil,
+        errorReporter: any ErrorReporter = NoopErrorReporter()
     ) -> LuxelEditorModel {
         LuxelEditorModel(
             metadataReader: metadataReader,
@@ -44,7 +45,8 @@ extension LuxelEditorModelTests {
             fileSystem: fileSystem,
             codecAvailability: codecAvailability,
             exportMemory: exportMemory,
-            onExportMemoryChange: onExportMemoryChange
+            onExportMemoryChange: onExportMemoryChange,
+            errorReporter: errorReporter
         )
     }
 
@@ -124,6 +126,22 @@ extension LuxelEditorModelTests {
 enum StubError: Error {
     case importFailed
     case trashFailed
+}
+
+final class SpyErrorReporter: ErrorReporter {
+    struct Record: Equatable {
+        let context: String
+        let description: String
+    }
+
+    private(set) var records: [Record] = []
+
+    func record(_ error: any Error, context: String) {
+        records.append(Record(
+            context: context,
+            description: String(describing: error)
+        ))
+    }
 }
 
 struct StubMetadataReader: MediaMetadataReader {

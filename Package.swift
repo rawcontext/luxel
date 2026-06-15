@@ -13,10 +13,19 @@ let package = Package(
         .executable(name: "luxel-cli", targets: ["LuxelCLIExecutable"])
     ],
     dependencies: [
+        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "12.14.0")),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.8.2")
     ],
     targets: [
-        .executableTarget(name: "LuxelApp", dependencies: ["LuxelCore", "LuxelPresentation"]),
+        .executableTarget(
+            name: "LuxelApp",
+            dependencies: [
+                "LuxelCore",
+                "LuxelPresentation",
+                .product(name: "FirebaseCore", package: "firebase-ios-sdk"),
+                .product(name: "FirebaseCrashlytics", package: "firebase-ios-sdk")
+            ]
+        ),
         .executableTarget(name: "LuxelCLIExecutable", dependencies: ["LuxelCLI"]),
         .target(
             name: "LuxelCLI",

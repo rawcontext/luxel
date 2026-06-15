@@ -3,6 +3,13 @@ import LuxelCore
 import LuxelPresentation
 
 enum LuxelCompositionRoot {
+    @MainActor
+    static func errorReporter() -> any ErrorReporter {
+        let reporter = LuxelCrashReporter.shared
+        reporter.configure(appMetadata: appMetadata)
+        return reporter
+    }
+
     static var appMetadata: AppMetadata {
         BundleAppMetadataReader().read()
     }
@@ -79,7 +86,10 @@ enum LuxelCompositionRoot {
     }
 
     @MainActor
-    static func editorModel(codecAdapterRegistry: CodecAdapterRegistry = codecAdapterRegistry()) -> LuxelEditorModel {
+    static func editorModel(
+        codecAdapterRegistry: CodecAdapterRegistry = codecAdapterRegistry(),
+        errorReporter: any ErrorReporter = NoopErrorReporter()
+    ) -> LuxelEditorModel {
         LuxelEditorModel(
             exportService: ExportService(
                 exporter: codecAdapterRegistry.mediaExporter(nativeExporter: NativeMediaExporter()),
@@ -88,7 +98,8 @@ enum LuxelCompositionRoot {
             exportSizeEstimationService: ExportSizeEstimationService(
                 estimator: codecAdapterRegistry.exportSizeEstimator(nativeEstimator: NativeExportSizeEstimator())
             ),
-            codecAvailability: codecAdapterRegistry.availability
+            codecAvailability: codecAdapterRegistry.availability,
+            errorReporter: errorReporter
         )
     }
 

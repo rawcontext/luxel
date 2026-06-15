@@ -54,6 +54,8 @@ final class LuxelStatusItemController: NSObject {
     }
 
     private func configureStatusItem() {
+        statusItem.autosaveName = NSStatusItem.AutosaveName("media.luxel.app.statusItem")
+
         guard let button = statusItem.button else {
             return
         }
@@ -63,6 +65,7 @@ final class LuxelStatusItemController: NSObject {
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
         button.setButtonType(.momentaryChange)
+        button.sendAction(on: [.leftMouseDown])
     }
 
     private func configurePopover() {
@@ -122,7 +125,7 @@ final class LuxelStatusItemController: NSObject {
         statusItem.button?.setAccessibilityLabel(presentation.accessibilityLabel)
 
         if presentation.animatesMenuBarSystemImage {
-            setStatusItemLength(NSStatusItem.variableLength)
+            setStatusItemLength(activeStatusItemWidth(elapsedText: presentation.menuBarTitle))
             startRecordingAnimation()
         } else {
             setStatusItemLength(NSStatusItem.squareLength)
@@ -366,6 +369,24 @@ final class LuxelStatusItemController: NSObject {
         elapsedText: String,
         audioLevel: AudioLevelSample
     ) -> NSImage {
+        let width = activeStatusItemWidth(elapsedText: elapsedText)
+        let size = NSSize(width: width, height: activeIconHeight)
+        let image = NSImage(size: size)
+        image.lockFocus()
+
+        drawActiveRecordingFrame(
+            in: NSRect(origin: .zero, size: size),
+            pulse: pulse,
+            elapsedText: elapsedText,
+            audioLevel: audioLevel
+        )
+
+        image.unlockFocus()
+        image.isTemplate = false
+        return image
+    }
+
+    private func activeStatusItemWidth(elapsedText: String) -> CGFloat {
         let font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)
         let text = NSAttributedString(
             string: elapsedText,
@@ -377,10 +398,25 @@ final class LuxelStatusItemController: NSObject {
         let textWidth = elapsedText.isEmpty ? 0 : ceil(text.size().width)
         let waveformWidth: CGFloat = 46
         let contentWidth = 12 + 11 + 12 + waveformWidth + 12 + textWidth + 14 + 11 + 12
-        let width = max(activeIconMinWidth, contentWidth)
-        let size = NSSize(width: width, height: activeIconHeight)
-        let image = NSImage(size: size)
-        image.lockFocus()
+        return max(activeIconMinWidth, contentWidth)
+    }
+
+    private func drawActiveRecordingFrame(
+        in rect: NSRect,
+        pulse: Double,
+        elapsedText: String,
+        audioLevel: AudioLevelSample
+    ) {
+        let width = rect.width
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)
+        let text = NSAttributedString(
+            string: elapsedText,
+            attributes: [
+                .font: font,
+                .foregroundColor: NSColor.white.withAlphaComponent(0.9),
+            ]
+        )
+        let waveformWidth: CGFloat = 46
 
         NSColor.black.withAlphaComponent(0.82).setFill()
         NSBezierPath(
@@ -417,10 +453,6 @@ final class LuxelStatusItemController: NSObject {
             xRadius: 2,
             yRadius: 2
         ).fill()
-
-        image.unlockFocus()
-        image.isTemplate = false
-        return image
     }
 
     private func drawWaveform(

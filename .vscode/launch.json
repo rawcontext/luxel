@@ -19,6 +19,26 @@
       "target": "Luxel",
       "configuration": "release",
       "preLaunchTask": "swift: Build Release Luxel"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "name": "Debug luxel-cli",
+      "target": "luxel-cli",
+      "configuration": "debug",
+      "preLaunchTask": "swift: Build Debug luxel-cli"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "name": "Release luxel-cli",
+      "target": "luxel-cli",
+      "configuration": "release",
+      "preLaunchTask": "swift: Build Release luxel-cli"
     }
   ]
 }

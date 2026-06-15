@@ -1,4 +1,3 @@
-import AVFoundation
 import CoreGraphics
 import CoreMedia
 import Foundation
@@ -21,6 +20,8 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         configuration.captureMicrophone = request.audio.capturesMicrophone
         configuration.microphoneCaptureDeviceID = request.audio.microphoneDeviceID
         configuration.excludesCurrentProcessAudio = request.audio.capturesSystemAudio
+        configuration.sampleRate = 48_000
+        configuration.channelCount = 2
         configuration.queueDepth = 8
 
         if case .area(_, let rect) = request.target {
@@ -33,31 +34,5 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         }
 
         return configuration
-    }
-
-    public func makeRecordingOutputConfiguration(
-        for request: RecordingRequest,
-        outputFileURL: URL? = nil
-    ) -> SCRecordingOutputConfiguration {
-        let configuration = SCRecordingOutputConfiguration()
-        configuration.outputURL = outputFileURL ?? request.outputFileURL
-        configuration.outputFileType = .mp4
-        configuration.videoCodecType = request.videoCodec.avVideoCodecType
-        return configuration
-    }
-}
-
-private extension RecordingCodec {
-    var avVideoCodecType: AVVideoCodecType {
-        switch self {
-        case .h264:
-            .h264
-        case .hevc:
-            .hevc
-        case .proRes422:
-            .proRes422
-        case .proRes4444:
-            .proRes4444
-        }
     }
 }

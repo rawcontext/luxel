@@ -1,4 +1,3 @@
-import AVFoundation
 import CoreGraphics
 import CoreMedia
 import LuxelCore
@@ -33,27 +32,10 @@ struct ScreenRecordingConfigurationFactoryTests {
         #expect(configuration.captureMicrophone)
         #expect(configuration.microphoneCaptureDeviceID == "mic-1")
         #expect(configuration.excludesCurrentProcessAudio)
+        #expect(configuration.sampleRate == 48_000)
+        #expect(configuration.channelCount == 2)
         #expect(configuration.presenterOverlayPrivacyAlertSetting == .system)
         #expect(configuration.queueDepth == 8)
         #expect(configuration.sourceRect == CGRect(x: 42, y: 24, width: 641, height: 839))
-    }
-
-    @Test("recording output configuration maps file and codec settings")
-    func recordingOutputConfigurationMapsFileAndCodecSettings() throws {
-        let outputURL = URL(fileURLWithPath: "/tmp/luxel.mp4")
-        let request = try RecordingRequest(
-            target: .display(DisplayID(12)),
-            outputFileURL: outputURL,
-            pixelSize: PixelSize(width: 1280, height: 720),
-            frameRate: FrameRate(30),
-            videoCodec: .hevc
-        )
-
-        let configuration = ScreenRecordingConfigurationFactory()
-            .makeRecordingOutputConfiguration(for: request)
-
-        #expect(configuration.outputURL == outputURL)
-        #expect(configuration.outputFileType == .mp4)
-        #expect(configuration.videoCodecType == .hevc)
     }
 }

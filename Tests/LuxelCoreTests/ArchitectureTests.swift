@@ -81,9 +81,13 @@ struct ArchitectureTests {
         )
 
         #expect(source.contains("button.action = #selector(handleStatusItemClick)"))
+        #expect(source.contains("button.sendAction(on: [.leftMouseDown])"))
+        #expect(source.contains("statusItem.autosaveName"))
+        #expect(source.contains("media.luxel.app.statusItem"))
         #expect(source.contains("if model.hasActiveRecording"))
         #expect(source.contains("stopRecordingFromStatusItem()"))
-        #expect(source.contains("NSStatusItem.variableLength"))
+        #expect(source.contains("setStatusItemLength(activeStatusItemWidth"))
+        #expect(source.contains("private func activeStatusItemWidth"))
         #expect(source.contains("makeActiveRecordingFrame"))
         #expect(source.contains("watchAudioLevels(onlyWhenRecording: true)"))
         #expect(source.contains("handleStatusItemStopWatchdog()"))
@@ -102,6 +106,18 @@ struct ArchitectureTests {
         #expect(!source.contains("RecordingFrameDrawingView"))
         #expect(!source.contains("NSColor.red"))
         #expect(!source.contains("path.stroke()"))
+    }
+
+    @Test("screen recorder avoids system recording output status item")
+    func screenRecorderAvoidsSystemRecordingOutputStatusItem() throws {
+        let source = try sourceContents(
+            under: packageRootURL().appending(path: "Sources/LuxelCore/Infrastructure/Capture")
+        )
+
+        #expect(!source.contains("SCRecordingOutput"))
+        #expect(!source.contains("addRecordingOutput"))
+        #expect(source.contains("addStreamOutput"))
+        #expect(source.contains("AVAssetWriter"))
     }
 
     @Test("cropper supports local selection undo and redo")
