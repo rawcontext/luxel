@@ -19,13 +19,17 @@ final class LuxelStatusItemController: NSObject {
     private var recordingAnimationTimer: Timer?
     private var recordingFrameIndex = 0
     private var currentImageKey: String?
+    private var currentStatusItemLength = NSStatusItem.squareLength
     private var isHandlingStatusItemStop = false
     private var statusItemStopTask: Task<Void, Never>?
     private var statusItemStopWatchdogTask: Task<Void, Never>?
+    private var recordingAudioLevelTask: Task<Void, Never>?
+    private var recordingAudioLevelTaskID: String?
 
     private let iconSize = NSSize(width: 18, height: 18)
+    private let activeIconHeight: CGFloat = 24
+    private let activeIconMinWidth: CGFloat = 118
     private let statusItemStopWatchdogDelay: Duration = .seconds(8)
-    private lazy var recordingFrames = makeRecordingFrames()
 
     init(
         model: LuxelMenuModel,
@@ -57,6 +61,7 @@ final class LuxelStatusItemController: NSObject {
         button.target = self
         button.action = #selector(handleStatusItemClick)
         button.imagePosition = .imageOnly
+        button.imageScaling = .scaleProportionallyDown
         button.setButtonType(.momentaryChange)
     }
 
@@ -110,16 +115,23 @@ final class LuxelStatusItemController: NSObject {
     }
 
     private func refreshStatusItem() {
-        let presentation = model.menuBarStatusPresentation()
+        refreshRecordingAudioLevelMonitoring()
+
+        let presentation = model.recordingPresentation()
         statusItem.button?.toolTip = presentation.accessibilityLabel
         statusItem.button?.setAccessibilityLabel(presentation.accessibilityLabel)
 
         if presentation.animatesMenuBarSystemImage {
+            setStatusItemLength(NSStatusItem.variableLength)
             startRecordingAnimation()
         } else {
+            setStatusItemLength(NSStatusItem.squareLength)
             stopRecordingAnimation()
             setButtonImage(
-                symbolImage(named: presentation.menuBarSystemImage, accessibilityLabel: presentation.accessibilityLabel),
+                symbolImage(
+                    named: presentation.menuBarSystemImage,
+                    accessibilityLabel: presentation.accessibilityLabel
+                ),
                 key: presentation.menuBarSystemImage
             )
         }
@@ -127,6 +139,50 @@ final class LuxelStatusItemController: NSObject {
         quickExportProgressPanelController.update(progress: model.quickExportProgress) { [weak model] in
             model?.cancelQuickExport()
         }
+    }
+
+    private func setStatusItemLength(_ length: CGFloat) {
+        guard currentStatusItemLength != length else {
+            return
+        }
+
+        statusItem.length = length
+        currentStatusItemLength = length
+        currentImageKey = nil
+    }
+
+    private func refreshRecordingAudioLevelMonitoring() {
+        guard let activeRecording = model.recordingState.activeRecording,
+              activeRecording.options.audio.capturesMicrophone else {
+            stopRecordingAudioLevelMonitoring()
+            return
+        }
+
+        let taskID = [
+            model.recordingAudioLevelMonitorTaskID,
+            activeRecording.fileURL.path,
+            activeRecording.options.audio.microphoneDeviceID ?? AudioInputDeviceID.systemDefault,
+        ].joined(separator: ":")
+        guard recordingAudioLevelTaskID != taskID else {
+            return
+        }
+
+        stopRecordingAudioLevelMonitoring()
+        recordingAudioLevelTaskID = taskID
+        recordingAudioLevelTask = Task { @MainActor [weak model] in
+            await model?.watchAudioLevels(onlyWhenRecording: true)
+        }
+    }
+
+    private func stopRecordingAudioLevelMonitoring() {
+        guard recordingAudioLevelTask != nil || recordingAudioLevelTaskID != nil else {
+            return
+        }
+
+        recordingAudioLevelTask?.cancel()
+        recordingAudioLevelTask = nil
+        recordingAudioLevelTaskID = nil
+        model.audioLevelSample = .silent
     }
 
     @objc private func handleStatusItemClick() {
@@ -262,12 +318,21 @@ final class LuxelStatusItemController: NSObject {
     }
 
     private func advanceRecordingFrame() {
-        recordingFrameIndex = (recordingFrameIndex + 1) % recordingFrames.count
+        recordingFrameIndex = (recordingFrameIndex + 1) % 18
         setRecordingFrame()
     }
 
     private func setRecordingFrame() {
-        setButtonImage(recordingFrames[recordingFrameIndex], key: "recording-\(recordingFrameIndex)")
+        let presentation = model.recordingPresentation()
+        let frame = makeActiveRecordingFrame(
+            pulse: recordingPulse(for: recordingFrameIndex),
+            elapsedText: presentation.menuBarTitle,
+            audioLevel: model.audioLevelSample
+        )
+        setButtonImage(
+            frame,
+            key: "recording-\(recordingFrameIndex)-\(presentation.menuBarTitle)-\(model.audioLevelSample)"
+        )
     }
 
     private func setButtonImage(_ image: NSImage?, key: String) {
@@ -291,47 +356,103 @@ final class LuxelStatusItemController: NSObject {
         return image
     }
 
-    private func makeRecordingFrames() -> [NSImage] {
-        let frameCount = 18
-
-        return (0..<frameCount).compactMap { frame in
-            let phase = Double(frame) / Double(frameCount)
-            let pulse = 0.5 - (cos(phase * 2.0 * .pi) * 0.5)
-            return makeRecordingFrame(pulse: pulse)
-        }
+    private func recordingPulse(for frame: Int) -> Double {
+        let phase = Double(frame) / 18.0
+        return 0.5 - (cos(phase * 2.0 * .pi) * 0.5)
     }
 
-    private func makeRecordingFrame(pulse: Double) -> NSImage? {
-        guard
-            let baseImage = symbolImage(named: "record.circle", accessibilityLabel: "Luxel recording"),
-            let fillImage = symbolImage(named: "record.circle.fill", accessibilityLabel: "Luxel recording")
-        else {
-            return symbolImage(named: "record.circle", accessibilityLabel: "Luxel recording")
-        }
-
-        let image = NSImage(size: iconSize)
+    private func makeActiveRecordingFrame(
+        pulse: Double,
+        elapsedText: String,
+        audioLevel: AudioLevelSample
+    ) -> NSImage {
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)
+        let text = NSAttributedString(
+            string: elapsedText,
+            attributes: [
+                .font: font,
+                .foregroundColor: NSColor.white.withAlphaComponent(0.9),
+            ]
+        )
+        let textWidth = elapsedText.isEmpty ? 0 : ceil(text.size().width)
+        let waveformWidth: CGFloat = 46
+        let contentWidth = 12 + 11 + 12 + waveformWidth + 12 + textWidth + 14 + 11 + 12
+        let width = max(activeIconMinWidth, contentWidth)
+        let size = NSSize(width: width, height: activeIconHeight)
+        let image = NSImage(size: size)
         image.lockFocus()
 
-        let bounds = NSRect(origin: .zero, size: iconSize)
-        baseImage.draw(in: bounds, from: .zero, operation: .sourceOver, fraction: 1)
+        NSColor.black.withAlphaComponent(0.82).setFill()
+        NSBezierPath(
+            roundedRect: NSRect(x: 1, y: 1, width: width - 2, height: activeIconHeight - 2),
+            xRadius: activeIconHeight / 2,
+            yRadius: activeIconHeight / 2
+        ).fill()
 
-        let scale = 0.92 + (pulse * 0.16)
-        let side = iconSize.width * scale
-        let overlayRect = NSRect(
-            x: (iconSize.width - side) / 2,
-            y: (iconSize.height - side) / 2,
-            width: side,
-            height: side
+        NSColor.white.withAlphaComponent(0.18).setStroke()
+        let strokePath = NSBezierPath(
+            roundedRect: NSRect(x: 1.5, y: 1.5, width: width - 3, height: activeIconHeight - 3),
+            xRadius: (activeIconHeight - 3) / 2,
+            yRadius: (activeIconHeight - 3) / 2
         )
-        fillImage.draw(
-            in: overlayRect,
-            from: .zero,
-            operation: .sourceOver,
-            fraction: 0.18 + (pulse * 0.54)
+        strokePath.lineWidth = 1
+        strokePath.stroke()
+
+        NSColor.systemRed.setFill()
+        NSBezierPath(ovalIn: NSRect(x: 12, y: 6.5, width: 11, height: 11)).fill()
+
+        drawWaveform(
+            in: NSRect(x: 35, y: 4, width: waveformWidth, height: 16),
+            pulse: pulse,
+            audioLevel: audioLevel
         )
+
+        if !elapsedText.isEmpty {
+            text.draw(at: NSPoint(x: 93, y: 4.5))
+        }
+
+        NSColor.white.withAlphaComponent(0.86).setFill()
+        NSBezierPath(
+            roundedRect: NSRect(x: width - 23, y: 7, width: 10, height: 10),
+            xRadius: 2,
+            yRadius: 2
+        ).fill()
 
         image.unlockFocus()
-        image.isTemplate = true
+        image.isTemplate = false
         return image
+    }
+
+    private func drawWaveform(
+        in rect: NSRect,
+        pulse: Double,
+        audioLevel: AudioLevelSample
+    ) {
+        let bars: [CGFloat] = [
+            0.30, 0.72, 0.42, 0.88, 0.56, 0.78, 0.34,
+            0.64, 0.92, 0.50, 0.76, 0.44, 0.70, 0.36,
+        ]
+        let level = max(0.18, CGFloat(audioLevel.peak))
+        let animatedLevel = min(1, level + (CGFloat(pulse) * 0.18))
+        let barWidth: CGFloat = 2
+        let step = rect.width / CGFloat(bars.count)
+
+        for (index, bar) in bars.enumerated() {
+            let height = max(3, rect.height * min(1, bar * (0.55 + animatedLevel)))
+            let x = rect.minX + (CGFloat(index) * step) + ((step - barWidth) / 2)
+            let y = rect.midY - (height / 2)
+
+            if index < 6 {
+                NSColor.systemRed.withAlphaComponent(0.95).setFill()
+            } else {
+                NSColor.white.withAlphaComponent(0.76).setFill()
+            }
+
+            NSBezierPath(
+                roundedRect: NSRect(x: x, y: y, width: barWidth, height: height),
+                xRadius: 1,
+                yRadius: 1
+            ).fill()
+        }
     }
 }

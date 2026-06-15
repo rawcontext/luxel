@@ -4,6 +4,9 @@ import Testing
 
 @Suite("Zoom pan models")
 struct ZoomPanModelTests {
+}
+
+extension ZoomPanModelTests {
     @Test("zoom blocks validate normalized rect zoom and transition duration")
     func zoomBlocksValidateNormalizedRectZoomAndTransitionDuration() throws {
         let rect = try NormalizedRect(x: 0.2, y: 0.3, width: 0.4, height: 0.5)
@@ -111,8 +114,8 @@ struct ZoomPanModelTests {
         #expect(start == .identity)
         #expect(mid.scale > 1)
         #expect(mid.scale < 2)
-        #expect(mid.sourceRect.x > 0)
-        #expect(mid.sourceRect.x < 0.25)
+        #expect(mid.sourceRect.originX > 0)
+        #expect(mid.sourceRect.originX < 0.25)
         #expect(settled.scale == 2)
         #expect(settled.sourceRect == (try NormalizedRect(x: 0.25, y: 0.25, width: 0.5, height: 0.5)))
     }
@@ -143,10 +146,10 @@ struct ZoomPanModelTests {
         let atBoundary = try path.transform(at: 2)
 
         #expect(beforeBoundary.scale == 2)
-        #expect(beforeBoundary.sourceRect.x > 0)
-        #expect(beforeBoundary.sourceRect.x < 0.5)
+        #expect(beforeBoundary.sourceRect.originX > 0)
+        #expect(beforeBoundary.sourceRect.originX < 0.5)
         #expect(atBoundary.scale == 2)
-        #expect(atBoundary.sourceRect.x == 0.5)
+        #expect(atBoundary.sourceRect.originX == 0.5)
     }
 
     @Test("dead zone follow leaves centered cursor stable and shifts for edge drift")
@@ -180,8 +183,8 @@ struct ZoomPanModelTests {
         let followed = try path.transform(at: 2, cursorTimeline: edgeCursor)
 
         #expect(centered.sourceRect == (try NormalizedRect(x: 0.25, y: 0.25, width: 0.5, height: 0.5)))
-        #expect(abs(followed.sourceRect.x - 0.4) < 0.000_001)
-        #expect(followed.sourceRect.y == 0.25)
+        #expect(abs(followed.sourceRect.originX - 0.4) < 0.000_001)
+        #expect(followed.sourceRect.originY == 0.25)
         #expect(followed.sourceRect.width == 0.5)
         #expect(followed.sourceRect.height == 0.5)
     }
@@ -273,8 +276,8 @@ struct ZoomPanModelTests {
         #expect(proposals.count == 1)
         #expect(abs(block.timeRange.start - 0.45) < 0.000_001)
         #expect(abs(block.timeRange.end - 1.95) < 0.000_001)
-        #expect(abs(block.targetRect.x - 0.12) < 0.000_001)
-        #expect(abs(block.targetRect.y - 0.22) < 0.000_001)
+        #expect(abs(block.targetRect.originX - 0.12) < 0.000_001)
+        #expect(abs(block.targetRect.originY - 0.22) < 0.000_001)
         #expect(abs(block.targetRect.width - 0.21) < 0.000_001)
         #expect(block.targetRect.width == block.targetRect.height)
         #expect(block.zoom == 3)
@@ -327,8 +330,8 @@ struct ZoomPanModelTests {
         #expect(proposals.count == 1)
         #expect(abs(block.timeRange.start - 0.9) < 0.000_001)
         #expect(abs(block.timeRange.end - 2.4) < 0.000_001)
-        #expect(abs(block.targetRect.x - 0.42) < 0.000_001)
-        #expect(abs(block.targetRect.y - 0.32) < 0.000_001)
+        #expect(abs(block.targetRect.originX - 0.42) < 0.000_001)
+        #expect(abs(block.targetRect.originY - 0.32) < 0.000_001)
         #expect(block.zoom == 3)
     }
 
@@ -352,8 +355,8 @@ struct ZoomPanModelTests {
 
         #expect(proposals.count == 1)
         #expect(block.timeRange == (try TimeRange(start: 0.25, end: 1.75)))
-        #expect(abs(block.targetRect.x - 0.52) < 0.000_001)
-        #expect(abs(block.targetRect.y - 0.32) < 0.000_001)
+        #expect(abs(block.targetRect.originX - 0.52) < 0.000_001)
+        #expect(abs(block.targetRect.originY - 0.32) < 0.000_001)
     }
 
     @Test("proposal tuning validates bounds")
@@ -459,13 +462,13 @@ struct ZoomPanModelTests {
     private func zoomBlock(
         start: TimeInterval,
         end: TimeInterval,
-        rect: NormalizedRect = try! NormalizedRect(x: 0.25, y: 0.25, width: 0.2, height: 0.2),
+        rect: NormalizedRect? = nil,
         zoom: Double = 1.6,
         transitionOverride: TimeInterval? = nil
     ) throws -> ZoomBlock {
         try ZoomBlock(
             timeRange: TimeRange(start: start, end: end),
-            targetRect: rect,
+            targetRect: rect ?? NormalizedRect(x: 0.25, y: 0.25, width: 0.2, height: 0.2),
             zoom: zoom,
             transitionOverride: transitionOverride
         )
@@ -480,10 +483,10 @@ struct ZoomPanModelTests {
         )
     }
 
-    private func cursorSample(time: TimeInterval, x: Double, y: Double) throws -> CursorSample {
+    private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws -> CursorSample {
         try CursorSample(
             time: time,
-            position: CursorPoint(x: x, y: y),
+            position: CursorPoint(x: xCoordinate, y: yCoordinate),
             cursorImageID: "arrow"
         )
     }

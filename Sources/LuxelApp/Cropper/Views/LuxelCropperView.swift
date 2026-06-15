@@ -21,7 +21,9 @@ struct LuxelCropperView: View {
     let onSelect: (CaptureSelectionDraft) -> Void
     let onQuickSelect: (CaptureSelectionDraft, UUID) -> Void
     let onCaptureScreenshot: (CaptureSelectionDraft) -> Void
+}
 
+extension LuxelCropperView {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -451,9 +453,9 @@ struct LuxelCropperView: View {
 
     private func loupePosition(for sample: CaptureLoupeSample, viewSize: CGSize) -> CGPoint {
         CGPoint(
-            x: CGFloat(sample.overlayOrigin.x) / CGFloat(model.display.width) * viewSize.width
+            x: CGFloat(sample.overlayOrigin.xCoordinate) / CGFloat(model.display.width) * viewSize.width
                 + Self.loupeSize.width / 2,
-            y: CGFloat(sample.overlayOrigin.y) / CGFloat(model.display.height) * viewSize.height
+            y: CGFloat(sample.overlayOrigin.yCoordinate) / CGFloat(model.display.height) * viewSize.height
                 + Self.loupeSize.height / 2
         )
     }
@@ -542,9 +544,9 @@ struct LuxelCropperView: View {
         }
 
         if flags.contains(.option) {
-            model.resizeSelectionBy(width: delta.x, height: delta.y)
+            model.resizeSelectionBy(width: delta.deltaX, height: delta.deltaY)
         } else {
-            model.nudgeSelection(x: delta.x, y: delta.y)
+            model.nudgeSelection(x: delta.deltaX, y: delta.deltaY)
         }
     }
 
@@ -622,7 +624,7 @@ struct LuxelCropperView: View {
 
     private var selectionX: Binding<Int> {
         Binding {
-            model.selection?.x ?? 0
+            model.selection?.originX ?? 0
         } set: { value in
             model.setSelectionX(value)
         }
@@ -630,7 +632,7 @@ struct LuxelCropperView: View {
 
     private var selectionY: Binding<Int> {
         Binding {
-            model.selection?.y ?? 0
+            model.selection?.originY ?? 0
         } set: { value in
             model.setSelectionY(value)
         }

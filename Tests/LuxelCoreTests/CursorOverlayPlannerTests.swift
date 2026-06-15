@@ -44,8 +44,8 @@ struct CursorOverlayPlannerTests {
             ],
             clicks: [
                 try CursorClickEvent(time: 0.2, button: .left, phase: .down),
-                try CursorClickEvent(time: 0.3, button: .left, phase: .up),
-                try CursorClickEvent(time: 0.4, button: .right, phase: .up)
+                try CursorClickEvent(time: 0.3, button: .left, phase: .released),
+                try CursorClickEvent(time: 0.4, button: .right, phase: .released)
             ],
             cursorImages: [try cursorImage()]
         )
@@ -195,7 +195,7 @@ struct CursorOverlayPlannerTests {
     func plannerRejectsDuplicateImageIDsFromDecodedSidecars() throws {
         let timeline = try JSONDecoder().decode(
             CursorTimeline.self,
-            from: try #require("""
+            from: Data("""
             {
               "schemaVersion": 1,
               "samples": [
@@ -222,7 +222,7 @@ struct CursorOverlayPlannerTests {
                 }
               ]
             }
-            """.data(using: .utf8))
+            """.utf8)
         )
 
         #expect(throws: CursorEffectModelError.duplicateCursorImageID) {
@@ -238,20 +238,20 @@ struct CursorOverlayPlannerTests {
 
     private func cursorImage(
         id: String = "arrow",
-        hotspot: CursorPoint = try! CursorPoint(x: 1, y: 1)
+        hotspot: CursorPoint? = nil
     ) throws -> CursorImageAsset {
         try CursorImageAsset(
             id: id,
             pngData: Data([0x89, 0x50, 0x4E, 0x47]),
-            hotspot: hotspot,
+            hotspot: hotspot ?? CursorPoint(x: 1, y: 1),
             scale: 2
         )
     }
 
-    private func cursorSample(time: TimeInterval, x: Double, y: Double) throws -> CursorSample {
+    private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws -> CursorSample {
         try CursorSample(
             time: time,
-            position: CursorPoint(x: x, y: y),
+            position: CursorPoint(x: xCoordinate, y: yCoordinate),
             cursorImageID: "arrow"
         )
     }

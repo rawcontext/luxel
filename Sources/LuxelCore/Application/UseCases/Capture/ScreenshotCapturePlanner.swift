@@ -24,8 +24,8 @@ public struct ScreenshotCapturePlanner: Sendable {
         let outputName = RecordingName.timestamped(now: now, calendar: calendar).value
         let outputFileURL = destinations.contains(where: \.requiresFileURL)
             ? outputDirectory
-                .appending(path: outputName)
-                .appendingPathExtension(format.fileExtension)
+            .appending(path: outputName)
+            .appendingPathExtension(format.fileExtension)
             : nil
 
         return try ScreenshotCaptureJob(

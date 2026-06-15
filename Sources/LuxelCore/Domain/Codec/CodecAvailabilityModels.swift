@@ -4,7 +4,9 @@ public struct CodecAvailability: Codable, Equatable, Sendable {
     public init(registeredExternalFormats: Set<ExportFormat> = []) throws {
         let unsupportedFormats = registeredExternalFormats.filter { !$0.requiresExternalNativeCodec }
         guard unsupportedFormats.isEmpty else {
-            throw CodecAvailabilityError.unsupportedExternalFormat(unsupportedFormats.sortedForExportMenu().first ?? .mp4)
+            throw CodecAvailabilityError.unsupportedExternalFormat(
+                unsupportedFormats.sortedForExportMenu().first ?? .mp4
+            )
         }
 
         self.registeredExternalFormats = registeredExternalFormats

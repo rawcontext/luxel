@@ -4,6 +4,9 @@ import Testing
 
 @Suite("Recording history")
 struct RecordingHistoryTests {
+}
+
+extension RecordingHistoryTests {
     @Test("getPastRecordings filters missing files and persists the filtered list")
     func getPastRecordingsFiltersMissingFiles() {
         let existingURL = URL(fileURLWithPath: "/tmp/existing.mp4")

@@ -53,7 +53,16 @@ enum LuxelRecordingLatencyTelemetry {
         let elapsedMilliseconds = span.startedAt.duration(to: clock.now).wholeMilliseconds
         let metBudget = elapsedMilliseconds <= budgetMilliseconds
 
-        logger.info("Recording start completed entry_point=\(span.entryPoint.rawValue, privacy: .public) result=\(result, privacy: .public) target_kind=\(target?.latencyTargetKind ?? "unknown", privacy: .public) elapsed_ms=\(elapsedMilliseconds, privacy: .public) budget_ms=\(budgetMilliseconds, privacy: .public) met_budget=\(metBudget, privacy: .public)")
+        logger.info(
+            """
+            Recording start completed entry_point=\(span.entryPoint.rawValue, privacy: .public) \
+            result=\(result, privacy: .public) \
+            target_kind=\(target?.latencyTargetKind ?? "unknown", privacy: .public) \
+            elapsed_ms=\(elapsedMilliseconds, privacy: .public) \
+            budget_ms=\(budgetMilliseconds, privacy: .public) \
+            met_budget=\(metBudget, privacy: .public)
+            """
+        )
         signposter.endInterval("Recording start", span.intervalState)
     }
 }

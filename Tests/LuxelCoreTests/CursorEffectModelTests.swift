@@ -147,7 +147,7 @@ struct CursorEffectModelTests {
             ],
             clicks: [
                 try CursorClickEvent(time: 0.25, button: .left, phase: .down),
-                try CursorClickEvent(time: 0.35, button: .left, phase: .up)
+                try CursorClickEvent(time: 0.35, button: .left, phase: .released)
             ],
             spotlightToggles: [1, 3],
             cursorImages: [arrow]
@@ -155,7 +155,7 @@ struct CursorEffectModelTests {
 
         #expect(timeline.schemaVersion == CursorTimeline.currentSchemaVersion)
         #expect(timeline.samples.count == 2)
-        #expect(timeline.clicks.map(\.phase) == [.down, .up])
+        #expect(timeline.clicks.map(\.phase) == [.down, .released])
         #expect(timeline.spotlightToggles == [1, 3])
         #expect(timeline.cursorImages == [arrow])
     }
@@ -313,10 +313,10 @@ struct CursorEffectModelTests {
         )
     }
 
-    private func cursorSample(time: TimeInterval, x: Double, y: Double) throws -> CursorSample {
+    private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws -> CursorSample {
         try CursorSample(
             time: time,
-            position: CursorPoint(x: x, y: y),
+            position: CursorPoint(x: xCoordinate, y: yCoordinate),
             cursorImageID: "arrow"
         )
     }

@@ -467,7 +467,7 @@ private extension CameraPreviewPlacement {
     }
 
     var point: NSPoint {
-        NSPoint(x: x, y: y)
+        NSPoint(x: xPosition, y: yPosition)
     }
 }
 

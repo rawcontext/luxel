@@ -7,6 +7,9 @@ import Testing
 
 @Suite("AVFoundation media exporter")
 struct AVFoundationMediaExporterTests {
+}
+
+extension AVFoundationMediaExporterTests {
     @Test("mp4 export trims resizes changes frame rate and keeps audio")
     func mp4ExportTrimsResizesChangesFrameRateAndKeepsAudio() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")
@@ -302,7 +305,7 @@ struct AVFoundationMediaExporterTests {
         while offset + 8 <= data.count {
             let boxSize32 = data[offset..<offset + 4].reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
             let boxTypeData = data[offset + 4..<offset + 8]
-            let boxType = String(decoding: boxTypeData, as: UTF8.self)
+            let boxType = String(bytes: boxTypeData, encoding: .utf8) ?? ""
             boxTypes.append(boxType)
 
             if boxSize32 == 0 {
@@ -418,10 +421,10 @@ struct AVFoundationMediaExporterTests {
         let baseAddress = try #require(CVPixelBufferGetBaseAddress(pixelBuffer))
         let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
 
-        for y in 0..<height {
-            for x in 0..<width {
-                let offset = y * rowBytes + x * 4
-                if x < width / 2 {
+        for row in 0..<height {
+            for column in 0..<width {
+                let offset = row * rowBytes + column * 4
+                if column < width / 2 {
                     bytes[offset] = 0
                     bytes[offset + 1] = 0
                     bytes[offset + 2] = 255
@@ -444,7 +447,12 @@ struct AVFoundationMediaExporterTests {
         }
     }
 
-    private func rgbPixel(at fileURL: URL, time: TimeInterval, x: Int, y: Int) async throws -> RGBPixel {
+    private func rgbPixel(
+        at fileURL: URL,
+        time: TimeInterval,
+        x column: Int,
+        y row: Int
+    ) async throws -> RGBPixel {
         let asset = AVURLAsset(url: fileURL)
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
@@ -453,7 +461,7 @@ struct AVFoundationMediaExporterTests {
 
         let image = try await generator.image(at: CMTime(seconds: time, preferredTimescale: 600)).image
         let bitmap = NSBitmapImageRep(cgImage: image)
-        let color = try #require(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+        let color = try #require(bitmap.colorAt(x: column, y: row)?.usingColorSpace(.deviceRGB))
 
         return RGBPixel(
             red: Int((color.redComponent * 255).rounded()),

@@ -74,8 +74,6 @@ struct LuxelStopRecordingIntent: AppIntent {
     static let description = IntentDescription("Stops the active Luxel recording.")
     static let openAppWhenRun = true
 
-    init() {}
-
     @MainActor
     func perform() async throws -> some IntentResult {
         try LuxelAppIntentURLOpener.open(AutomationShortcutInvocationBuilder.stopRecording())

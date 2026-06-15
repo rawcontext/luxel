@@ -58,7 +58,7 @@ struct ScreenshotRequestTests {
     @Test("transparent screenshots require alpha capable format")
     func transparentScreenshotsRequireAlphaCapableFormat() {
         for backdrop in [CaptureBackdrop.transparent, .transparentWithShadow] {
-            #expect(throws: ScreenshotModelError.transparentBackdropRequiresAlphaCapableFormat) {
+            #expect(throws: ScreenshotModelError.transparentBackdropRequiresAlphaFormat) {
                 try ScreenshotRequest(
                     target: .window(id: 42),
                     includeCursor: false,

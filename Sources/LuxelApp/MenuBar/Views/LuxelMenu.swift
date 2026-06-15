@@ -81,9 +81,6 @@ struct LuxelMenu: View {
                 openRecording(recoveredRecording.fileURL)
             }
         }
-        .task(id: model.recordingAudioLevelMonitorTaskID) {
-            await model.watchAudioLevels(onlyWhenRecording: true)
-        }
         .task {
             await model.watchRecordingAutoStops(openRecording: openRecording)
         }

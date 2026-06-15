@@ -103,8 +103,8 @@ public struct CameraOverlayPlan: Codable, Equatable, Sendable {
                 outputSize: outputSize
             )
         case .normalizedPoint(let point):
-            let centerX = point.x * Double(outputSize.width)
-            let centerY = point.y * Double(outputSize.height)
+            let centerX = point.xCoordinate * Double(outputSize.width)
+            let centerY = point.yCoordinate * Double(outputSize.height)
             let originX = Int((centerX - Double(overlayWidth) / 2).rounded())
             let originY = Int((centerY - Double(overlayHeight) / 2).rounded())
             guard originX >= 0,
@@ -141,24 +141,24 @@ public enum CameraOverlayAnchor: String, Codable, CaseIterable, Equatable, Senda
         outputSize: PixelSize
     ) throws -> CaptureRect {
         let margin = max(16, Int((Double(outputSize.width) * 0.03).rounded()))
-        let x = switch self {
+        let originX = switch self {
         case .topLeft, .bottomLeft:
             margin
         case .topRight, .bottomRight:
             outputSize.width - overlayWidth - margin
         }
-        let y = switch self {
+        let originY = switch self {
         case .topLeft, .topRight:
             margin
         case .bottomLeft, .bottomRight:
             outputSize.height - overlayHeight - margin
         }
 
-        guard x >= 0, y >= 0 else {
+        guard originX >= 0, originY >= 0 else {
             throw WebcamOverlayModelError.overlayOutsideFrame
         }
 
-        return try CaptureRect(x: x, y: y, width: overlayWidth, height: overlayHeight)
+        return try CaptureRect(x: originX, y: originY, width: overlayWidth, height: overlayHeight)
     }
 }
 
@@ -168,19 +168,24 @@ public enum CameraOverlayShape: String, Codable, CaseIterable, Equatable, Sendab
 }
 
 public struct NormalizedPoint: Codable, Equatable, Sendable {
-    public let x: Double
-    public let y: Double
+    public let xCoordinate: Double
+    public let yCoordinate: Double
 
-    public init(x: Double, y: Double) throws {
-        guard x.isFinite,
-              y.isFinite,
-              (0...1).contains(x),
-              (0...1).contains(y) else {
+    public init(x xCoordinate: Double, y yCoordinate: Double) throws {
+        guard xCoordinate.isFinite,
+              yCoordinate.isFinite,
+              (0...1).contains(xCoordinate),
+              (0...1).contains(yCoordinate) else {
             throw WebcamOverlayModelError.invalidNormalizedPoint
         }
 
-        self.x = x
-        self.y = y
+        self.xCoordinate = xCoordinate
+        self.yCoordinate = yCoordinate
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case xCoordinate = "x"
+        case yCoordinate = "y"
     }
 }
 

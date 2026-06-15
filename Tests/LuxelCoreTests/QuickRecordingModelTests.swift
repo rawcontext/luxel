@@ -46,11 +46,11 @@ struct QuickRecordingModelTests {
 
     @Test("recording options decode missing capture kind as standard")
     func recordingOptionsDecodeMissingCaptureKindAsStandard() throws {
-        let payload = """
+        let payload = Data("""
         {
             "frameRate": 30
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let options = try JSONDecoder().decode(RecordingOptions.self, from: payload)
 

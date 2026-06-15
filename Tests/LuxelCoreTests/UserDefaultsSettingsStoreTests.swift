@@ -17,33 +17,25 @@ struct UserDefaultsSettingsStoreTests {
     func savePersistsSettings() throws {
         let defaults = makeUserDefaults()
         let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
+        let settings = try persistedSettings()
+        let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
+
+        try store.save(settings)
+
+        let reloadedStore = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
+        #expect(try reloadedStore.load() == settings)
+    }
+
+    private func persistedSettings() throws -> AppSettings {
         let presetID = UUID(uuidString: "00000000-0000-0000-0000-000000000401")!
-        let preset = try ExportPreset(
-            id: presetID,
-            name: "Docs MP4",
-            format: .mp4,
-            sizeRule: .preset(.percent75),
-            frameRate: FrameRate(24),
-            destination: .folder(URL(fileURLWithPath: "/tmp/exports")),
-            postAction: .revealInFinder
-        )
+        let preset = try persistedExportPreset(id: presetID)
         let sizePreset = try CaptureSizePreset(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000402")!,
             name: "Docs 1440p",
             pixelSize: PixelSize(width: 2560, height: 1440)
         )
-        let lastCaptureMemory = try LastCaptureMemory(
-            target: .display(DisplayID(7)),
-            pixelSize: PixelSize(width: 1920, height: 1080),
-            options: RecordingOptions(
-                frameRate: 24,
-                showCursor: false,
-                audio: .system,
-                captureKind: .quick(presetID: presetID)
-            ),
-            capturedAt: Date(timeIntervalSince1970: 1_800_000_000)
-        )
-        let settings = AppSettings(
+
+        return AppSettings(
             recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"),
             recordingsDirectoryBookmark: BookmarkedDirectory(
                 url: URL(fileURLWithPath: "/tmp/luxel"),
@@ -53,18 +45,9 @@ struct UserDefaultsSettingsStoreTests {
             showCursor: false,
             highlightClicks: true,
             cursorMode: .editable,
-            cursorRenderOptions: try CursorRenderOptions(
-                sizeMultiplier: 1.5,
-                smoothing: .light,
-                clickStyle: .ringRipple
-            ),
+            cursorRenderOptions: try persistedCursorOptions(),
             keystrokeOverlayEnabled: true,
-            keystrokeRenderOptions: try KeystrokeRenderOptions(
-                anchor: .topRight,
-                size: .large,
-                theme: .highContrast,
-                displayDuration: 2.25
-            ),
+            keystrokeRenderOptions: try persistedKeystrokeOptions(),
             pauseKeystrokeCaptureShortcut: "command+control+option+k",
             record60FPS: true,
             recordAudio: true,
@@ -74,27 +57,11 @@ struct UserDefaultsSettingsStoreTests {
             cameraDeviceID: "camera-1",
             cameraSeparateTrack: false,
             cameraPreviewStyle: CameraPreviewStyle(shape: .roundedRect, size: .large, isMirrored: false),
-            cameraPreviewPlacements: [
-                DisplayID(1): try CameraPreviewPlacement(x: 1440.5, y: 92.25),
-                DisplayID(7): try CameraPreviewPlacement(x: -320, y: 48)
-            ],
-            replayBufferConfiguration: try ReplayBufferConfiguration(
-                bufferLength: 120,
-                source: .displayWithCursor,
-                frameRate: FrameRate(24),
-                includeSystemAudio: true,
-                quality: .high
-            ),
+            cameraPreviewPlacements: try persistedCameraPreviewPlacements(),
+            replayBufferConfiguration: try persistedReplayBufferConfiguration(),
             replayBufferResumeOnLaunch: true,
             replayClipDestination: .quickExport,
-            notchSurfaceSettings: try NotchSurfaceSettings(
-                isEnabled: false,
-                idleHoverActionsEnabled: false,
-                showsWaveform: false,
-                autoCollapseSeconds: 4.5,
-                showsRecentShelf: false,
-                fallbackToFloatingHUDWhenUnavailable: false
-            ),
+            notchSurfaceSettings: try persistedNotchSurfaceSettings(),
             triggerCropperShortcut: "command+control+option+r",
             toggleRecordingShortcut: "command+control+option+t",
             recordActiveWindowShortcut: "command+control+option+shift+w",
@@ -121,19 +88,8 @@ struct UserDefaultsSettingsStoreTests {
             dimOtherDisplays: true,
             restoreLastSelection: false,
             userSizePresets: [sizePreset],
-            lastCaptureMemory: lastCaptureMemory,
-            perFormatExportMemory: [
-                .mp4: try ExportMemory(
-                    sizePreset: .percent50,
-                    frameRate: FrameRate(24),
-                    quality: .high
-                ),
-                .apng: try ExportMemory(
-                    sizePreset: .percent75,
-                    frameRate: FrameRate(12),
-                    quality: .lossless
-                )
-            ],
+            lastCaptureMemory: try persistedLastCaptureMemory(presetID: presetID),
+            perFormatExportMemory: try persistedExportMemory(),
             screenshotFormat: .heic,
             screenshotDestinations: [.file, .preview],
             screenshotShowThumbnail: false,
@@ -142,19 +98,99 @@ struct UserDefaultsSettingsStoreTests {
             defaultCountdown: 5,
             lastStopAfter: 60
         )
-        let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
+    }
 
-        try store.save(settings)
+    private func persistedExportPreset(id presetID: UUID) throws -> ExportPreset {
+        try ExportPreset(
+            id: presetID,
+            name: "Docs MP4",
+            format: .mp4,
+            sizeRule: .preset(.percent75),
+            frameRate: FrameRate(24),
+            destination: .folder(URL(fileURLWithPath: "/tmp/exports")),
+            postAction: .revealInFinder
+        )
+    }
 
-        let reloadedStore = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
-        #expect(try reloadedStore.load() == settings)
+    private func persistedCursorOptions() throws -> CursorRenderOptions {
+        try CursorRenderOptions(
+            sizeMultiplier: 1.5,
+            smoothing: .light,
+            clickStyle: .ringRipple
+        )
+    }
+
+    private func persistedKeystrokeOptions() throws -> KeystrokeRenderOptions {
+        try KeystrokeRenderOptions(
+            anchor: .topRight,
+            size: .large,
+            theme: .highContrast,
+            displayDuration: 2.25
+        )
+    }
+
+    private func persistedCameraPreviewPlacements() throws -> [DisplayID: CameraPreviewPlacement] {
+        [
+            DisplayID(1): try CameraPreviewPlacement(x: 1440.5, y: 92.25),
+            DisplayID(7): try CameraPreviewPlacement(x: -320, y: 48)
+        ]
+    }
+
+    private func persistedReplayBufferConfiguration() throws -> ReplayBufferConfiguration {
+        try ReplayBufferConfiguration(
+            bufferLength: 120,
+            source: .displayWithCursor,
+            frameRate: FrameRate(24),
+            includeSystemAudio: true,
+            quality: .high
+        )
+    }
+
+    private func persistedNotchSurfaceSettings() throws -> NotchSurfaceSettings {
+        try NotchSurfaceSettings(
+            isEnabled: false,
+            idleHoverActionsEnabled: false,
+            showsWaveform: false,
+            autoCollapseSeconds: 4.5,
+            showsRecentShelf: false,
+            fallbackToFloatingHUDWhenUnavailable: false
+        )
+    }
+
+    private func persistedLastCaptureMemory(presetID: UUID) throws -> LastCaptureMemory {
+        try LastCaptureMemory(
+            target: .display(DisplayID(7)),
+            pixelSize: PixelSize(width: 1920, height: 1080),
+            options: RecordingOptions(
+                frameRate: 24,
+                showCursor: false,
+                audio: .system,
+                captureKind: .quick(presetID: presetID)
+            ),
+            capturedAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+    }
+
+    private func persistedExportMemory() throws -> [ExportFormat: ExportMemory] {
+        [
+            .mp4: try ExportMemory(
+                sizePreset: .percent50,
+                frameRate: FrameRate(24),
+                quality: .high
+            ),
+            .apng: try ExportMemory(
+                sizePreset: .percent75,
+                frameRate: FrameRate(12),
+                quality: .lossless
+            )
+        ]
     }
 
     @Test("load ignores removed clean-room settings keys")
     func loadIgnoresRemovedCleanRoomSettingsKeys() throws {
         let defaults = makeUserDefaults()
         let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
-        let oldPayload = """
+        let oldPayload = Data("""
         {
             "recordingsDirectory": "file:///tmp/luxel/",
             "allowAnalytics": true,
@@ -168,7 +204,7 @@ struct UserDefaultsSettingsStoreTests {
             "enableShortcuts": false,
             "triggerCropperShortcut": "command+shift+5"
         }
-        """.data(using: .utf8)!
+        """.utf8)
         defaults.set(oldPayload, forKey: "settings")
 
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
@@ -239,12 +275,12 @@ struct UserDefaultsSettingsStoreTests {
     func loadPreservesExplicitNilQuickPreset() throws {
         let defaults = makeUserDefaults()
         let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
-        let payload = """
+        let payload = Data("""
         {
             "recordingsDirectory": "file:///tmp/luxel/",
             "quickExportPresetID": null
         }
-        """.data(using: .utf8)!
+        """.utf8)
         defaults.set(payload, forKey: "settings")
 
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)

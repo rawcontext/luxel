@@ -12,7 +12,9 @@ public struct LuxelEditorView: View {
     public init(model: LuxelEditorModel) {
         self.model = model
     }
+}
 
+extension LuxelEditorView {
     public var body: some View {
         HStack(spacing: 0) {
             preview
@@ -464,7 +466,10 @@ public struct LuxelEditorView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     LabeledContent("End", value: model.formatTime(model.trimEnd))
-                    Slider(value: trimEndSelection, in: model.minimumTrimDuration...max(model.duration, model.minimumTrimDuration))
+                    Slider(
+                        value: trimEndSelection,
+                        in: model.minimumTrimDuration...max(model.duration, model.minimumTrimDuration)
+                    )
                 }
 
                 LabeledContent("Output Duration", value: model.outputDurationSummary)

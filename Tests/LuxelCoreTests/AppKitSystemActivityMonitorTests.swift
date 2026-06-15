@@ -37,7 +37,7 @@ struct AppKitSystemActivityMonitorTests {
             screensDidWakeNotification: screensDidWake,
             sessionDidResignActiveNotification: sessionDidResign,
             sessionDidBecomeActiveNotification: sessionDidBecome,
-            displayConfigurationDidChangeNotification: displayChanged,
+            displayChangeNotification: displayChanged,
             isOnBatteryPower: { false },
             startPowerSourceObserver: powerProbe.start
         )

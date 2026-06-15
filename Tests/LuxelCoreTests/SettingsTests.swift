@@ -4,6 +4,9 @@ import Testing
 
 @Suite("Settings")
 struct SettingsTests {
+}
+
+extension SettingsTests {
     @Test("default settings match clean-room product defaults")
     func defaultSettings() throws {
         let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
@@ -119,13 +122,13 @@ struct SettingsTests {
 
     @Test("typed recording frame rate wins over legacy boolean when decoding")
     func typedRecordingFrameRateWinsOverLegacyBooleanWhenDecoding() throws {
-        let data = """
+        let data = Data("""
         {
             "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
             "record60FPS": true,
             "recordingFrameRate": { "framesPerSecond": 24 }
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 

@@ -208,12 +208,7 @@ struct ImageIOAnimatedMediaExporterTests {
         )
     }
 
-    private func animatedImageMetadata(at fileURL: URL) throws -> (
-        frameCount: Int,
-        width: Int,
-        height: Int,
-        frameDelay: TimeInterval
-    ) {
+    private func animatedImageMetadata(at fileURL: URL) throws -> AnimatedImageMetadata {
         let source = try #require(CGImageSourceCreateWithURL(fileURL as CFURL, nil))
         let properties = try #require(
             CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
@@ -228,7 +223,12 @@ struct ImageIOAnimatedMediaExporterTests {
             ?? pngProperties?[kCGImagePropertyAPNGDelayTime] as? TimeInterval
             ?? 0
 
-        return (CGImageSourceGetCount(source), width, height, frameDelay)
+        return AnimatedImageMetadata(
+            frameCount: CGImageSourceGetCount(source),
+            width: width,
+            height: height,
+            frameDelay: frameDelay
+        )
     }
 
     private func apngLoopCount(in data: Data) throws -> UInt32 {
@@ -289,6 +289,13 @@ struct ImageIOAnimatedMediaExporterTests {
     }
 }
 
+private struct AnimatedImageMetadata {
+    let frameCount: Int
+    let width: Int
+    let height: Int
+    let frameDelay: TimeInterval
+}
+
 private extension Data {
     func containsASCII(_ string: String) -> Bool {
         containsSequence(Array(string.utf8))
@@ -300,7 +307,8 @@ private extension Data {
         }
 
         let bytes = Array(self)
-        for index in 0...(bytes.count - sequence.count) where Array(bytes[index..<(index + sequence.count)]) == sequence {
+        for index in 0...(bytes.count - sequence.count)
+        where Array(bytes[index..<(index + sequence.count)]) == sequence {
             return true
         }
         return false

@@ -58,9 +58,7 @@ final class LuxelCropperPanelController {
             do {
                 let displays = try await targetService.availableDisplays()
                 let targets = try await targetService.availableTargets()
-                present(
-                    displays: displays,
-                    targets: targets,
+                let presentation = CropperPanelPresentation(
                     initialMode: initialMode,
                     countdownDuration: countdownDuration,
                     stopAfterDuration: stopAfterDuration,
@@ -81,6 +79,11 @@ final class LuxelCropperPanelController {
                     onQuickSelect: onQuickSelect,
                     onSelect: onSelect
                 )
+                present(
+                    displays: displays,
+                    targets: targets,
+                    presentation: presentation
+                )
             } catch {
                 NSSound.beep()
             }
@@ -99,28 +102,10 @@ final class LuxelCropperPanelController {
     private func present(
         displays: [DisplayBounds],
         targets: [CaptureTargetOption],
-        initialMode: LuxelCropperMode,
-        countdownDuration: TimeInterval?,
-        stopAfterDuration: TimeInterval?,
-        audioLevelConfiguration: CropperAudioLevelConfiguration?,
-        cameraConfiguration: CropperCameraConfiguration,
-        quickRecordingConfiguration: CropperQuickRecordingConfiguration,
-        selectionPresetConfiguration: CropperSelectionPresetConfiguration,
-        restoreSelectionConfiguration: CropperRestoreSelectionConfiguration,
-        loupeAlwaysOn: Bool,
-        dimOtherDisplays: Bool,
-        showsNotificationReminder: Bool,
-        onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
-        onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void,
-        onCameraSelectionChange: @escaping @MainActor (String?) -> Void,
-        onCameraPreviewStyleChange: @escaping @MainActor (CameraPreviewStyle) -> Void,
-        onNotificationReminderDismiss: @escaping @MainActor () -> Void,
-        onCaptureScreenshot: @escaping @MainActor (CaptureSelectionDraft) -> Void,
-        onQuickSelect: @escaping @MainActor (CaptureSelectionDraft, UUID) -> Void,
-        onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
+        presentation: CropperPanelPresentation
     ) {
         let displaysByID = Dictionary(uniqueKeysWithValues: displays.map { ($0.id, $0) })
-        let sharedAudioLevelModel = audioLevelConfiguration.map {
+        let sharedAudioLevelModel = presentation.audioLevelConfiguration.map {
             LuxelAudioLevelModel(
                 deviceID: $0.deviceID,
                 monitor: audioLevelMonitorFactory()
@@ -144,20 +129,20 @@ final class LuxelCropperPanelController {
 
             let model = LuxelCropperModel(
                 display: display,
-                mode: initialMode,
-                countdownDuration: countdownDuration,
-                stopAfterDuration: stopAfterDuration,
-                selectionPresetConfiguration: selectionPresetConfiguration,
-                initialSelection: restoreSelectionConfiguration.selection(for: display, targets: targets),
+                mode: presentation.initialMode,
+                countdownDuration: presentation.countdownDuration,
+                stopAfterDuration: presentation.stopAfterDuration,
+                selectionPresetConfiguration: presentation.selectionPresetConfiguration,
+                initialSelection: presentation.restoreSelectionConfiguration.selection(for: display, targets: targets),
                 windowSnapFrames: CaptureWindowSnapFrameResolver.windowFrames(
                     on: display,
                     from: targets
                 ),
-                loupeAlwaysOn: loupeAlwaysOn,
-                dimOtherDisplays: dimOtherDisplays,
+                loupeAlwaysOn: presentation.loupeAlwaysOn,
+                dimOtherDisplays: presentation.dimOtherDisplays,
                 displayFocus: displayFocus,
-                onCountdownDurationChange: onCountdownDurationChange,
-                onStopAfterDurationChange: onStopAfterDurationChange
+                onCountdownDurationChange: presentation.onCountdownDurationChange,
+                onStopAfterDurationChange: presentation.onStopAfterDurationChange
             )
             let panel = NSPanel(
                 contentRect: screen.frame,
@@ -175,26 +160,26 @@ final class LuxelCropperPanelController {
                 rootView: LuxelCropperView(
                     model: model,
                     audioLevelModel: sharedAudioLevelModel,
-                    cameraConfiguration: cameraConfiguration,
-                    quickRecordingConfiguration: quickRecordingConfiguration,
-                    showsNotificationReminder: showsNotificationReminder,
-                    onCameraSelectionChange: onCameraSelectionChange,
-                    onCameraPreviewStyleChange: onCameraPreviewStyleChange,
-                    onNotificationReminderDismiss: onNotificationReminderDismiss,
+                    cameraConfiguration: presentation.cameraConfiguration,
+                    quickRecordingConfiguration: presentation.quickRecordingConfiguration,
+                    showsNotificationReminder: presentation.showsNotificationReminder,
+                    onCameraSelectionChange: presentation.onCameraSelectionChange,
+                    onCameraPreviewStyleChange: presentation.onCameraPreviewStyleChange,
+                    onNotificationReminderDismiss: presentation.onNotificationReminderDismiss,
                     onCancel: { [weak self] in
                         self?.close()
                     },
                     onSelect: { [weak self] draft in
                         self?.close()
-                        onSelect(draft)
+                        presentation.onSelect(draft)
                     },
                     onQuickSelect: { [weak self] draft, presetID in
                         self?.close()
-                        onQuickSelect(draft, presetID)
+                        presentation.onQuickSelect(draft, presetID)
                     },
                     onCaptureScreenshot: { [weak self] draft in
                         self?.close()
-                        onCaptureScreenshot(draft)
+                        presentation.onCaptureScreenshot(draft)
                     }
                 )
             )
@@ -208,6 +193,28 @@ final class LuxelCropperPanelController {
             NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }
+}
+
+private struct CropperPanelPresentation {
+    let initialMode: LuxelCropperMode
+    let countdownDuration: TimeInterval?
+    let stopAfterDuration: TimeInterval?
+    let audioLevelConfiguration: CropperAudioLevelConfiguration?
+    let cameraConfiguration: CropperCameraConfiguration
+    let quickRecordingConfiguration: CropperQuickRecordingConfiguration
+    let selectionPresetConfiguration: CropperSelectionPresetConfiguration
+    let restoreSelectionConfiguration: CropperRestoreSelectionConfiguration
+    let loupeAlwaysOn: Bool
+    let dimOtherDisplays: Bool
+    let showsNotificationReminder: Bool
+    let onCountdownDurationChange: @MainActor (TimeInterval?) -> Void
+    let onStopAfterDurationChange: @MainActor (TimeInterval?) -> Void
+    let onCameraSelectionChange: @MainActor (String?) -> Void
+    let onCameraPreviewStyleChange: @MainActor (CameraPreviewStyle) -> Void
+    let onNotificationReminderDismiss: @MainActor () -> Void
+    let onCaptureScreenshot: @MainActor (CaptureSelectionDraft) -> Void
+    let onQuickSelect: @MainActor (CaptureSelectionDraft, UUID) -> Void
+    let onSelect: @MainActor (CaptureSelectionDraft) -> Void
 }
 
 private extension NSScreen {

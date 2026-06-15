@@ -38,7 +38,13 @@ struct AutomationCommandTests {
 
         let url = AutomationInvocationURLBuilder.url(for: invocation)
 
-        #expect(url.absoluteString == "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3&saveTo=/tmp/Luxel%20Exports&x-success=luxel-callback://done&x-error=luxel-callback://failed")
+        #expect(url.absoluteString == [
+            "luxel://record?target=display&display=main&preset=Quick%20GIF",
+            "countdown=3",
+            "saveTo=/tmp/Luxel%20Exports",
+            "x-success=luxel-callback://done",
+            "x-error=luxel-callback://failed"
+        ].joined(separator: "&"))
         #expect(try AutomationCommandParser.parse(url) == invocation)
     }
 

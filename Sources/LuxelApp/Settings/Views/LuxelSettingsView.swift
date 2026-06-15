@@ -34,7 +34,9 @@ struct LuxelSettingsView: View {
         self.shortcutController = shortcutController
         openEditorWindowOverride = openEditorWindow
     }
+}
 
+extension LuxelSettingsView {
     var body: some View {
         Form {
             Section("Capture") {
@@ -317,7 +319,10 @@ struct LuxelSettingsView: View {
                 if updatePresentation.showsDeveloperIDUpdateControls {
                     Toggle("Check Automatically", isOn: $model.settings.updatePreferences.automaticallyCheckForUpdates)
 
-                    Toggle("Install Automatically", isOn: $model.settings.updatePreferences.automaticallyDownloadAndInstall)
+                    Toggle(
+                        "Install Automatically",
+                        isOn: $model.settings.updatePreferences.automaticallyDownloadAndInstall
+                    )
                         .disabled(!updatePresentation.automaticInstallToggleEnabled)
 
                     Picker("Channel", selection: $model.settings.updatePreferences.channel) {

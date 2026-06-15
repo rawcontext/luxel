@@ -122,10 +122,10 @@ struct I420ConverterTests {
         let baseAddress = try #require(CVPixelBufferGetBaseAddress(pixelBuffer))
             .assumingMemoryBound(to: UInt8.self)
 
-        for y in 0..<height {
-            let row = baseAddress.advanced(by: y * rowBytes)
-            for x in 0..<width {
-                let pixel = row.advanced(by: x * 4)
+        for rowIndex in 0..<height {
+            let row = baseAddress.advanced(by: rowIndex * rowBytes)
+            for column in 0..<width {
+                let pixel = row.advanced(by: column * 4)
                 pixel[0] = bgraPixel[0]
                 pixel[1] = bgraPixel[1]
                 pixel[2] = bgraPixel[2]

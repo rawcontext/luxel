@@ -113,7 +113,11 @@ public enum LuxelCommandResultFormatter {
             withJSONObject: object,
             options: [.sortedKeys]
         )
-        return String(decoding: data, as: UTF8.self)
+        guard let json = String(data: data, encoding: .utf8) else {
+            throw LuxelCLIError.invalidCallbackRequest
+        }
+
+        return json
     }
 }
 

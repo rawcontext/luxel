@@ -29,14 +29,14 @@ struct CropperLoupeGrid: View {
 
             var gridPath = Path()
             for column in 0...columns {
-                let x = CGFloat(column) * cellWidth
-                gridPath.move(to: CGPoint(x: x, y: 0))
-                gridPath.addLine(to: CGPoint(x: x, y: size.height))
+                let gridX = CGFloat(column) * cellWidth
+                gridPath.move(to: CGPoint(x: gridX, y: 0))
+                gridPath.addLine(to: CGPoint(x: gridX, y: size.height))
             }
             for row in 0...rows {
-                let y = CGFloat(row) * cellHeight
-                gridPath.move(to: CGPoint(x: 0, y: y))
-                gridPath.addLine(to: CGPoint(x: size.width, y: y))
+                let gridY = CGFloat(row) * cellHeight
+                gridPath.move(to: CGPoint(x: 0, y: gridY))
+                gridPath.addLine(to: CGPoint(x: size.width, y: gridY))
             }
             context.stroke(gridPath, with: .color(.white.opacity(0.20)), lineWidth: 0.5)
         }

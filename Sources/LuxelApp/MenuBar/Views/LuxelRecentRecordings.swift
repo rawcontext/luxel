@@ -94,7 +94,8 @@ struct LuxelRecentRecordings: View {
         }
 
         if let fileSizeBytes = export.fileSizeBytes {
-            return "\(export.format.prettyName) - \(ByteCountFormatter.string(fromByteCount: fileSizeBytes, countStyle: .file))"
+            let fileSize = ByteCountFormatter.string(fromByteCount: fileSizeBytes, countStyle: .file)
+            return "\(export.format.prettyName) - \(fileSize)"
         }
 
         return export.format.prettyName

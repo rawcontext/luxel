@@ -3,7 +3,7 @@ import LuxelCore
 import Testing
 
 @Suite("AVFoundation recording segment composer")
-struct AVFoundationRecordingSegmentComposerTests {
+struct RecordingSegmentComposerTests {
     @Test("composer stitches multiple mp4 segments into one output")
     func composerStitchesMultipleMP4SegmentsIntoOneOutput() async throws {
         let segmentFileURL = try fixtureURL("input.mp4")

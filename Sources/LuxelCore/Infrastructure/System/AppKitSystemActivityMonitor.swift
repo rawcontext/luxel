@@ -10,7 +10,7 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
     private let screensDidWakeNotification: Notification.Name
     private let sessionDidResignActiveNotification: Notification.Name
     private let sessionDidBecomeActiveNotification: Notification.Name
-    private let displayConfigurationDidChangeNotification: Notification.Name
+    private let displayChangeNotification: Notification.Name
     private let isOnBatteryPower: @Sendable () -> Bool
     private let startPowerSourceObserver: PowerSourceObserverFactory
 
@@ -28,7 +28,7 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
         screensDidWakeNotification: Notification.Name = NSWorkspace.screensDidWakeNotification,
         sessionDidResignActiveNotification: Notification.Name = NSWorkspace.sessionDidResignActiveNotification,
         sessionDidBecomeActiveNotification: Notification.Name = NSWorkspace.sessionDidBecomeActiveNotification,
-        displayConfigurationDidChangeNotification: Notification.Name = NSApplication
+        displayChangeNotification: Notification.Name = NSApplication
             .didChangeScreenParametersNotification,
         isOnBatteryPower: @escaping @Sendable () -> Bool = AppKitSystemActivityMonitor.isOnBatteryPower,
         startPowerSourceObserver: @escaping PowerSourceObserverFactory = AppKitSystemActivityMonitor
@@ -40,7 +40,7 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
         self.screensDidWakeNotification = screensDidWakeNotification
         self.sessionDidResignActiveNotification = sessionDidResignActiveNotification
         self.sessionDidBecomeActiveNotification = sessionDidBecomeActiveNotification
-        self.displayConfigurationDidChangeNotification = displayConfigurationDidChangeNotification
+        self.displayChangeNotification = displayChangeNotification
         self.isOnBatteryPower = isOnBatteryPower
         self.startPowerSourceObserver = startPowerSourceObserver
     }
@@ -78,7 +78,7 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
                 ),
                 observe(
                     center: applicationNotificationCenter,
-                    name: displayConfigurationDidChangeNotification,
+                    name: displayChangeNotification,
                     continuation: continuation,
                     event: .displayConfigurationChanged
                 )
@@ -86,8 +86,8 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
             let cancelPowerSourceObserver = startPowerSourceObserver { [isOnBatteryPower] in
                 continuation.yield(
                     isOnBatteryPower()
-                    ? .pauseReasonBecameActive(.battery)
-                    : .pauseReasonBecameInactive(.battery)
+                        ? .pauseReasonBecameActive(.battery)
+                        : .pauseReasonBecameInactive(.battery)
                 )
             }
 

@@ -4,6 +4,9 @@ import Testing
 
 @Suite("GIF engine models")
 struct GIFEngineModelTests {
+}
+
+extension GIFEngineModelTests {
     @Test("loop modes validate codable storage and ImageIO loop counts")
     func loopModesValidateCodableStorageAndImageIOLoopCounts() throws {
         let counted = try GIFLoopMode.counted(3)
@@ -23,7 +26,7 @@ struct GIFEngineModelTests {
         let decoded = try JSONDecoder().decode(GIFLoopMode.self, from: data)
         #expect(decoded == counted)
 
-        let invalidData = #"{"kind":"count","count":0}"#.data(using: .utf8) ?? Data()
+        let invalidData = Data(#"{"kind":"count","count":0}"#.utf8)
         #expect(throws: GIFEngineModelError.invalidLoopCount) {
             _ = try JSONDecoder().decode(GIFLoopMode.self, from: invalidData)
         }
@@ -387,10 +390,10 @@ struct GIFEngineModelTests {
             width: 4,
             height: 3,
             changedPixels: [
-                (x: 1, y: 1, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0)),
-                (x: 2, y: 1, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0)),
-                (x: 1, y: 2, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0)),
-                (x: 2, y: 2, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0))
+                ChangedPixel(x: 1, y: 1, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0)),
+                ChangedPixel(x: 2, y: 1, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0)),
+                ChangedPixel(x: 1, y: 2, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0)),
+                ChangedPixel(x: 2, y: 2, pixel: GIFRGBAPixel(red: 255, green: 0, blue: 0))
             ]
         )
         let indexed = try indexedFrame(width: 4, height: 3, indexes: Array(0...11))
@@ -414,7 +417,7 @@ struct GIFEngineModelTests {
             height: 1,
             baseColor: GIFRGBAPixel(red: 10, green: 10, blue: 10),
             changedPixels: [
-                (x: 0, y: 0, pixel: GIFRGBAPixel(red: 14, green: 10, blue: 10))
+                ChangedPixel(x: 0, y: 0, pixel: GIFRGBAPixel(red: 14, green: 10, blue: 10))
             ]
         )
         let indexed = try indexedFrame(width: 2, height: 1, indexes: [7, 8])
@@ -473,7 +476,7 @@ struct GIFEngineModelTests {
         width: Int,
         height: Int,
         baseColor: GIFRGBAPixel = GIFRGBAPixel(red: 0, green: 0, blue: 0),
-        changedPixels: [(x: Int, y: Int, pixel: GIFRGBAPixel)]
+        changedPixels: [ChangedPixel]
     ) throws -> GIFFrameBitmap {
         var pixels = Array(
             repeating: baseColor,
@@ -481,7 +484,7 @@ struct GIFEngineModelTests {
         )
 
         for changedPixel in changedPixels {
-            pixels[changedPixel.y * width + changedPixel.x] = changedPixel.pixel
+            pixels[changedPixel.row * width + changedPixel.column] = changedPixel.pixel
         }
 
         return try GIFFrameBitmap(
@@ -502,5 +505,17 @@ struct GIFEngineModelTests {
             GIFPaletteColor(red: 0, green: 0, blue: 0),
             GIFPaletteColor(red: 255, green: 255, blue: 255)
         ])
+    }
+}
+
+private struct ChangedPixel {
+    let column: Int
+    let row: Int
+    let pixel: GIFRGBAPixel
+
+    init(x column: Int, y row: Int, pixel: GIFRGBAPixel) {
+        self.column = column
+        self.row = row
+        self.pixel = pixel
     }
 }

@@ -1,10 +1,10 @@
 import Foundation
 
 public struct NotchMotion: Codable, Equatable, Sendable {
-    public static let standard = try! NotchMotion(
-        reducesMotion: false,
-        morphSpring: NotchSpringTiming(response: 0.34, dampingRatio: 1),
-        successSpring: NotchSpringTiming(response: 0.42, dampingRatio: 0.78),
+    public static let standard = NotchMotion(
+        uncheckedReducesMotion: false,
+        morphSpring: NotchSpringTiming(uncheckedResponse: 0.34, dampingRatio: 1),
+        successSpring: NotchSpringTiming(uncheckedResponse: 0.42, dampingRatio: 0.78),
         geometryMorphDuration: 0.34,
         contentFadeDuration: 0.14,
         hoverGraceDuration: 0.22,
@@ -13,10 +13,10 @@ public struct NotchMotion: Codable, Equatable, Sendable {
         waveformFrameRate: 30
     )
 
-    public static let reduced = try! NotchMotion(
-        reducesMotion: true,
-        morphSpring: NotchSpringTiming(response: 0.01, dampingRatio: 1),
-        successSpring: NotchSpringTiming(response: 0.01, dampingRatio: 1),
+    public static let reduced = NotchMotion(
+        uncheckedReducesMotion: true,
+        morphSpring: NotchSpringTiming(uncheckedResponse: 0.01, dampingRatio: 1),
+        successSpring: NotchSpringTiming(uncheckedResponse: 0.01, dampingRatio: 1),
         geometryMorphDuration: 0,
         contentFadeDuration: 0.12,
         hoverGraceDuration: 0,
@@ -34,6 +34,28 @@ public struct NotchMotion: Codable, Equatable, Sendable {
     public let completionDwellDuration: TimeInterval
     public let recordingPulseFrequency: Double
     public let waveformFrameRate: Double
+
+    private init(
+        uncheckedReducesMotion reducesMotion: Bool,
+        morphSpring: NotchSpringTiming,
+        successSpring: NotchSpringTiming,
+        geometryMorphDuration: TimeInterval,
+        contentFadeDuration: TimeInterval,
+        hoverGraceDuration: TimeInterval,
+        completionDwellDuration: TimeInterval,
+        recordingPulseFrequency: Double,
+        waveformFrameRate: Double
+    ) {
+        self.reducesMotion = reducesMotion
+        self.morphSpring = morphSpring
+        self.successSpring = successSpring
+        self.geometryMorphDuration = geometryMorphDuration
+        self.contentFadeDuration = contentFadeDuration
+        self.hoverGraceDuration = hoverGraceDuration
+        self.completionDwellDuration = completionDwellDuration
+        self.recordingPulseFrequency = recordingPulseFrequency
+        self.waveformFrameRate = waveformFrameRate
+    }
 
     public init(
         reducesMotion: Bool,
@@ -80,6 +102,11 @@ public struct NotchSpringTiming: Codable, Equatable, Sendable {
             throw NotchMotionError.invalidSpring
         }
 
+        self.response = response
+        self.dampingRatio = dampingRatio
+    }
+
+    fileprivate init(uncheckedResponse response: TimeInterval, dampingRatio: Double) {
         self.response = response
         self.dampingRatio = dampingRatio
     }

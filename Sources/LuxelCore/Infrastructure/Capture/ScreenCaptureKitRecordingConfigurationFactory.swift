@@ -4,7 +4,7 @@ import CoreMedia
 import Foundation
 import ScreenCaptureKit
 
-public struct ScreenCaptureKitRecordingConfigurationFactory: Sendable {
+public struct ScreenRecordingConfigurationFactory: Sendable {
     public init() {}
 
     public func makeStreamConfiguration(for request: RecordingRequest) -> SCStreamConfiguration {
@@ -25,8 +25,8 @@ public struct ScreenCaptureKitRecordingConfigurationFactory: Sendable {
 
         if case .area(_, let rect) = request.target {
             configuration.sourceRect = CGRect(
-                x: rect.x,
-                y: rect.y,
+                x: rect.originX,
+                y: rect.originY,
                 width: rect.width,
                 height: rect.height
             )

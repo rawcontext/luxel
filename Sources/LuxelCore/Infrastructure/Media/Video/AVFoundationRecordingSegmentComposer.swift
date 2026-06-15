@@ -11,7 +11,7 @@ public struct AVFoundationRecordingSegmentComposer {
 
     public func compose(_ segmentFileURLs: [URL], to outputFileURL: URL) async throws {
         guard !segmentFileURLs.isEmpty else {
-            throw AVFoundationRecordingSegmentComposerError.missingSegments
+            throw RecordingSegmentComposerError.missingSegments
         }
 
         if segmentFileURLs.count == 1 {
@@ -35,22 +35,22 @@ public struct AVFoundationRecordingSegmentComposer {
                 of: asset,
                 at: insertionTime
             )
-            insertionTime = insertionTime + duration
+            insertionTime = CMTimeAdd(insertionTime, duration)
         }
 
         guard insertionTime > .zero else {
-            throw AVFoundationRecordingSegmentComposerError.emptyComposition
+            throw RecordingSegmentComposerError.emptyComposition
         }
 
         guard let exportSession = AVAssetExportSession(
             asset: composition,
             presetName: AVAssetExportPresetHighestQuality
         ) else {
-            throw AVFoundationRecordingSegmentComposerError.unsupportedPreset(AVAssetExportPresetHighestQuality)
+            throw RecordingSegmentComposerError.unsupportedPreset(AVAssetExportPresetHighestQuality)
         }
 
         guard exportSession.supportedFileTypes.contains(.mp4) else {
-            throw AVFoundationRecordingSegmentComposerError.unsupportedOutputFileType(AVFileType.mp4.rawValue)
+            throw RecordingSegmentComposerError.unsupportedOutputFileType(AVFileType.mp4.rawValue)
         }
 
         let replacementFileURL = outputFileURL
@@ -79,7 +79,7 @@ public struct AVFoundationRecordingSegmentComposer {
     }
 }
 
-public enum AVFoundationRecordingSegmentComposerError: Error, Equatable {
+public enum RecordingSegmentComposerError: Error, Equatable {
     case missingSegments
     case emptyComposition
     case unsupportedPreset(String)

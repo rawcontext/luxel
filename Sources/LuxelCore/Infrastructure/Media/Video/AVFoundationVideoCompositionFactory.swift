@@ -222,8 +222,8 @@ struct AVFoundationVideoCompositionFactory: Sendable {
     ) -> CGRect {
         let baseRect = spatialCropRect ?? CGRect(origin: .zero, size: presentationSize)
         return CGRect(
-            x: baseRect.minX + sourceRect.x * baseRect.width,
-            y: baseRect.minY + sourceRect.y * baseRect.height,
+            x: baseRect.minX + sourceRect.originX * baseRect.width,
+            y: baseRect.minY + sourceRect.originY * baseRect.height,
             width: sourceRect.width * baseRect.width,
             height: sourceRect.height * baseRect.height
         )
@@ -239,8 +239,8 @@ struct AVFoundationVideoCompositionFactory: Sendable {
 
         let presentationBounds = CGRect(origin: .zero, size: presentationSize)
         let requestedRect = CGRect(
-            x: cropRect.x,
-            y: cropRect.y,
+            x: cropRect.originX,
+            y: cropRect.originY,
             width: cropRect.width,
             height: cropRect.height
         )

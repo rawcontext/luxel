@@ -83,30 +83,25 @@ struct ArchitectureTests {
         #expect(source.contains("button.action = #selector(handleStatusItemClick)"))
         #expect(source.contains("if model.hasActiveRecording"))
         #expect(source.contains("stopRecordingFromStatusItem()"))
+        #expect(source.contains("NSStatusItem.variableLength"))
+        #expect(source.contains("makeActiveRecordingFrame"))
+        #expect(source.contains("watchAudioLevels(onlyWhenRecording: true)"))
         #expect(source.contains("handleStatusItemStopWatchdog()"))
         #expect(source.contains("recoverInterruptedRecording()"))
         #expect(source.contains("windowPresenter.openEditor(fileURL: fileURL)"))
     }
 
-    @Test("full display recording frame follows screen edge corners")
-    func fullDisplayRecordingFrameFollowsScreenEdgeCorners() throws {
+    @Test("recording does not draw a screen border overlay")
+    func recordingDoesNotDrawScreenBorderOverlay() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/Recording/Panels/RecordingFramePanelController.swift"),
             encoding: .utf8
         )
 
-        #expect(source.contains("case fullDisplay(cornerRadii: RecordingFrameCornerRadii)"))
-        #expect(source.contains("case .area where screen.map({ frame.matches($0.frame) }) == true"))
-        #expect(source.contains("fullDisplayTopCornerRadius(screen: screen)"))
-        #expect(source.contains("screen.auxiliaryTopLeftArea?.height"))
-        #expect(source.contains("screen.auxiliaryTopRightArea?.height"))
-        #expect(source.contains("RecordingFrameCornerRadii(top: topCornerRadius, bottom: bottomCornerRadius)"))
-        #expect(source.contains("screen.safeAreaInsets.top"))
-        #expect(source.contains("RecordingFrameDrawingView(style: style)"))
-        #expect(source.contains("bounds.insetBy(dx: strokeWidth / 2, dy: strokeWidth / 2)"))
-        #expect(source.contains("let topRadius = clampedRadius(cornerRadii.top, in: rect)"))
-        #expect(source.contains("let bottomRadius = clampedRadius(cornerRadii.bottom, in: rect)"))
-        #expect(source.contains("path.appendArc("))
+        #expect(!source.contains("NSPanel"))
+        #expect(!source.contains("RecordingFrameDrawingView"))
+        #expect(!source.contains("NSColor.red"))
+        #expect(!source.contains("path.stroke()"))
     }
 
     @Test("cropper supports local selection undo and redo")
@@ -196,7 +191,11 @@ struct ArchitectureTests {
         #expect(modelSource.contains("initialSelection: CaptureRect? = nil"))
         #expect(modelSource.contains("selection: resolvedInitialSelection"))
         #expect(controllerSource.contains("restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled"))
-        #expect(controllerSource.contains("initialSelection: restoreSelectionConfiguration.selection(for: display, targets: targets)"))
+        #expect(
+            controllerSource.contains(
+                "initialSelection: presentation.restoreSelectionConfiguration.selection(for: display, targets: targets)"
+            )
+        )
         #expect(presentationSource.contains("isEnabled: settings.restoreLastSelection"))
         #expect(presentationSource.contains("memory: settings.lastCaptureMemory"))
         #expect(controlsSource.contains("restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))

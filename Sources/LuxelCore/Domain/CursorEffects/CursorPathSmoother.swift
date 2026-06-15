@@ -137,10 +137,10 @@ public enum CursorPathSmoother {
             return true
         }
 
-        return sample.position.x >= 0
-            && sample.position.y >= 0
-            && sample.position.x < Double(frameSize.width)
-            && sample.position.y < Double(frameSize.height)
+        return sample.position.xCoordinate >= 0
+            && sample.position.yCoordinate >= 0
+            && sample.position.xCoordinate < Double(frameSize.width)
+            && sample.position.yCoordinate < Double(frameSize.height)
     }
 
     private static func interpolatedPoint(
@@ -148,35 +148,35 @@ public enum CursorPathSmoother {
         to end: CursorPoint,
         progress: Double
     ) throws -> CursorPoint {
-        try CursorPoint(
-            x: start.x + (end.x - start.x) * progress,
-            y: start.y + (end.y - start.y) * progress
+        return try CursorPoint(
+            x: start.xCoordinate + (end.xCoordinate - start.xCoordinate) * progress,
+            y: start.yCoordinate + (end.yCoordinate - start.yCoordinate) * progress
         )
     }
 
     private static func catmullRomPoint(
-        _ p0: CursorPoint,
-        _ p1: CursorPoint,
-        _ p2: CursorPoint,
-        _ p3: CursorPoint,
+        _ previousPoint: CursorPoint,
+        _ startPoint: CursorPoint,
+        _ endPoint: CursorPoint,
+        _ nextPoint: CursorPoint,
         progress: Double,
         tension: Double
     ) throws -> CursorPoint {
-        let t2 = progress * progress
-        let t3 = t2 * progress
+        let squaredProgress = progress * progress
+        let cubedProgress = squaredProgress * progress
         let tangentScale = (1 - tension) / 2
-        let m1x = (p2.x - p0.x) * tangentScale
-        let m1y = (p2.y - p0.y) * tangentScale
-        let m2x = (p3.x - p1.x) * tangentScale
-        let m2y = (p3.y - p1.y) * tangentScale
-        let h00 = 2 * t3 - 3 * t2 + 1
-        let h10 = t3 - 2 * t2 + progress
-        let h01 = -2 * t3 + 3 * t2
-        let h11 = t3 - t2
+        let m1x = (endPoint.xCoordinate - previousPoint.xCoordinate) * tangentScale
+        let m1y = (endPoint.yCoordinate - previousPoint.yCoordinate) * tangentScale
+        let m2x = (nextPoint.xCoordinate - startPoint.xCoordinate) * tangentScale
+        let m2y = (nextPoint.yCoordinate - startPoint.yCoordinate) * tangentScale
+        let h00 = 2 * cubedProgress - 3 * squaredProgress + 1
+        let h10 = cubedProgress - 2 * squaredProgress + progress
+        let h01 = -2 * cubedProgress + 3 * squaredProgress
+        let h11 = cubedProgress - squaredProgress
 
         return try CursorPoint(
-            x: h00 * p1.x + h10 * m1x + h01 * p2.x + h11 * m2x,
-            y: h00 * p1.y + h10 * m1y + h01 * p2.y + h11 * m2y
+            x: h00 * startPoint.xCoordinate + h10 * m1x + h01 * endPoint.xCoordinate + h11 * m2x,
+            y: h00 * startPoint.yCoordinate + h10 * m1y + h01 * endPoint.yCoordinate + h11 * m2y
         )
     }
 
@@ -185,9 +185,11 @@ public enum CursorPathSmoother {
         between start: CursorPoint,
         and end: CursorPoint
     ) throws -> CursorPoint {
-        try CursorPoint(
-            x: point.x.clamped(to: min(start.x, end.x)...max(start.x, end.x)),
-            y: point.y.clamped(to: min(start.y, end.y)...max(start.y, end.y))
+        let xRange = min(start.xCoordinate, end.xCoordinate)...max(start.xCoordinate, end.xCoordinate)
+        let yRange = min(start.yCoordinate, end.yCoordinate)...max(start.yCoordinate, end.yCoordinate)
+        return try CursorPoint(
+            x: point.xCoordinate.clamped(to: xRange),
+            y: point.yCoordinate.clamped(to: yRange)
         )
     }
 }

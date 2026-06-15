@@ -10,7 +10,7 @@ public struct CameraDeviceService: Sendable {
         var devices: [CameraDeviceOption] = []
 
         for device in catalog.availableCameraDevices()
-            where device.kind != .deskView && !seenIDs.contains(device.id) {
+        where device.kind != .deskView && !seenIDs.contains(device.id) {
             devices.append(device)
             seenIDs.insert(device.id)
         }

@@ -33,8 +33,8 @@ public enum SnapResolver {
             magnetismRadius: magnetismRadius
         )
         let rect = try CaptureRect(
-            x: candidate.x + (horizontalSnap?.delta ?? 0),
-            y: candidate.y + (verticalSnap?.delta ?? 0),
+            x: candidate.originX + (horizontalSnap?.delta ?? 0),
+            y: candidate.originY + (verticalSnap?.delta ?? 0),
             width: candidate.width,
             height: candidate.height
         )
@@ -163,17 +163,17 @@ private struct CaptureSnap {
 private extension CaptureRect {
     var verticalAnchors: [CaptureSnapAnchorValue] {
         [
-            CaptureSnapAnchorValue(anchor: .leading, position: x, targetKind: .screen),
-            CaptureSnapAnchorValue(anchor: .trailing, position: x + width, targetKind: .screen),
-            CaptureSnapAnchorValue(anchor: .center, position: x + width / 2, targetKind: .screen)
+            CaptureSnapAnchorValue(anchor: .leading, position: originX, targetKind: .screen),
+            CaptureSnapAnchorValue(anchor: .trailing, position: originX + width, targetKind: .screen),
+            CaptureSnapAnchorValue(anchor: .center, position: originX + width / 2, targetKind: .screen)
         ]
     }
 
     var horizontalAnchors: [CaptureSnapAnchorValue] {
         [
-            CaptureSnapAnchorValue(anchor: .top, position: y, targetKind: .screen),
-            CaptureSnapAnchorValue(anchor: .bottom, position: y + height, targetKind: .screen),
-            CaptureSnapAnchorValue(anchor: .middle, position: y + height / 2, targetKind: .screen)
+            CaptureSnapAnchorValue(anchor: .top, position: originY, targetKind: .screen),
+            CaptureSnapAnchorValue(anchor: .bottom, position: originY + height, targetKind: .screen),
+            CaptureSnapAnchorValue(anchor: .middle, position: originY + height / 2, targetKind: .screen)
         ]
     }
 }

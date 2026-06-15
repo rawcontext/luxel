@@ -1,6 +1,6 @@
 import Foundation
 
-public struct FoundationBookmarkedDirectoryBookmarkCreator: BookmarkedDirectoryBookmarkCreator {
+public struct FoundationBookmarkCreator: BookmarkedDirectoryBookmarkCreator {
     public init() {}
 
     public func bookmarkDirectory(at url: URL) throws -> BookmarkedDirectory {

@@ -6,7 +6,7 @@ import ScreenCaptureKit
 import Testing
 
 @Suite("ScreenCaptureKit recording configuration")
-struct ScreenCaptureKitRecordingConfigurationFactoryTests {
+struct ScreenRecordingConfigurationFactoryTests {
     @Test("stream configuration maps domain capture settings")
     func streamConfigurationMapsDomainCaptureSettings() throws {
         let rect = try CaptureRect(x: 42, y: 24, width: 641, height: 839)
@@ -21,7 +21,7 @@ struct ScreenCaptureKitRecordingConfigurationFactoryTests {
             videoCodec: .hevc
         )
 
-        let configuration = ScreenCaptureKitRecordingConfigurationFactory()
+        let configuration = ScreenRecordingConfigurationFactory()
             .makeStreamConfiguration(for: request)
 
         #expect(configuration.width == 641)
@@ -49,7 +49,7 @@ struct ScreenCaptureKitRecordingConfigurationFactoryTests {
             videoCodec: .hevc
         )
 
-        let configuration = ScreenCaptureKitRecordingConfigurationFactory()
+        let configuration = ScreenRecordingConfigurationFactory()
             .makeRecordingOutputConfiguration(for: request)
 
         #expect(configuration.outputURL == outputURL)

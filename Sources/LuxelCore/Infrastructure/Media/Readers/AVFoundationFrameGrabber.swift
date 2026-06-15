@@ -35,7 +35,12 @@ public struct AVFoundationFrameGrabber: FrameGrabber, Sendable {
             return image
         }
 
-        let rect = CGRect(x: cropRect.x, y: cropRect.y, width: cropRect.width, height: cropRect.height)
+        let rect = CGRect(
+            x: cropRect.originX,
+            y: cropRect.originY,
+            width: cropRect.width,
+            height: cropRect.height
+        )
         guard rect.minX >= 0,
               rect.minY >= 0,
               rect.maxX <= CGFloat(image.width),

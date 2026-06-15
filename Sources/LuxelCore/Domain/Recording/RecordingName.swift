@@ -12,6 +12,10 @@ public struct RecordingName: Equatable, Sendable {
         self.value = trimmed
     }
 
+    private init(uncheckedValue value: String) {
+        self.value = value
+    }
+
     public static func timestamped(
         title: String = "Luxel",
         extension fileExtension: String = "",
@@ -31,7 +35,7 @@ public struct RecordingName: Equatable, Sendable {
             fileExtension
         )
 
-        return try! RecordingName(value)
+        return RecordingName(uncheckedValue: value)
     }
 }
 

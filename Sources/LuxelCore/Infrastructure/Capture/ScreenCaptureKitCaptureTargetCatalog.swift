@@ -34,7 +34,12 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
 
     private func displayTarget(for bounds: DisplayBounds, index: Int) throws -> CaptureTargetOption {
         let size = try PixelSize(width: bounds.width, height: bounds.height)
-        let frame = try CaptureRect(x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height)
+        let frame = try CaptureRect(
+            x: bounds.originX,
+            y: bounds.originY,
+            width: bounds.width,
+            height: bounds.height
+        )
 
         return CaptureTargetOption(
             id: "display-\(bounds.id.rawValue)",
@@ -70,7 +75,12 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
             subtitle: nonEmpty(appName),
             target: .window(id: window.windowID),
             pixelSize: PixelSize(width: frame.width, height: frame.height),
-            frame: CaptureRect(x: frame.x, y: frame.y, width: frame.width, height: frame.height)
+            frame: CaptureRect(
+                x: frame.originX,
+                y: frame.originY,
+                width: frame.width,
+                height: frame.height
+            )
         )
     }
 
@@ -79,17 +89,17 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
 
         return try DisplayBounds(
             id: DisplayID(display.displayID),
-            x: frame.x,
-            y: frame.y,
+            x: frame.originX,
+            y: frame.originY,
             width: display.width,
             height: display.height
         )
     }
 
-    private func roundedRect(_ rect: CGRect) -> (x: Int, y: Int, width: Int, height: Int) {
-        (
-            x: Int(rect.origin.x.rounded()),
-            y: Int(rect.origin.y.rounded()),
+    private func roundedRect(_ rect: CGRect) -> RoundedCaptureRect {
+        RoundedCaptureRect(
+            originX: Int(rect.origin.x.rounded()),
+            originY: Int(rect.origin.y.rounded()),
             width: Int(rect.width.rounded()),
             height: Int(rect.height.rounded())
         )
@@ -101,5 +111,12 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
         }
 
         return value
+    }
+
+    private struct RoundedCaptureRect {
+        let originX: Int
+        let originY: Int
+        let width: Int
+        let height: Int
     }
 }

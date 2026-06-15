@@ -1,34 +1,59 @@
 import Foundation
 
 public struct NormalizedRect: Codable, Equatable, Sendable {
-    public static let fullFrame = try! NormalizedRect(x: 0, y: 0, width: 1, height: 1)
+    public static let fullFrame = NormalizedRect(
+        uncheckedX: 0,
+        y: 0,
+        width: 1,
+        height: 1
+    )
 
-    public let x: Double
-    public let y: Double
+    public let originX: Double
+    public let originY: Double
     public let width: Double
     public let height: Double
 
-    public init(x: Double, y: Double, width: Double, height: Double) throws {
-        guard [x, y, width, height].allSatisfy(\.isFinite),
-              x >= 0,
-              y >= 0,
+    public init(x originX: Double, y originY: Double, width: Double, height: Double) throws {
+        guard [originX, originY, width, height].allSatisfy(\.isFinite),
+              originX >= 0,
+              originY >= 0,
               width > 0,
               height > 0,
-              x + width <= 1,
-              y + height <= 1 else {
+              originX + width <= 1,
+              originY + height <= 1 else {
             throw ZoomPanModelError.invalidNormalizedRect
         }
 
-        self.x = x
-        self.y = y
+        self.originX = originX
+        self.originY = originY
+        self.width = width
+        self.height = height
+    }
+
+    private init(uncheckedX xCoordinate: Double, y yCoordinate: Double, width: Double, height: Double) {
+        self.originX = xCoordinate
+        self.originY = yCoordinate
         self.width = width
         self.height = height
     }
 
     public var center: NormalizedPoint {
         get throws {
-            try NormalizedPoint(x: x + width / 2, y: y + height / 2)
+            try NormalizedPoint(x: originX + width / 2, y: originY + height / 2)
         }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case originX = "x"
+        case originY = "y"
+        case width
+        case height
+    }
+}
+
+private extension Double {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }
 
@@ -74,7 +99,7 @@ public struct ZoomBlock: Codable, Equatable, Sendable {
 }
 
 public struct CameraTransform: Codable, Equatable, Sendable {
-    public static let identity = try! CameraTransform(scale: 1, sourceRect: .fullFrame)
+    public static let identity = CameraTransform(uncheckedScale: 1, sourceRect: .fullFrame)
 
     public let scale: Double
     public let sourceRect: NormalizedRect
@@ -88,12 +113,17 @@ public struct CameraTransform: Codable, Equatable, Sendable {
         self.sourceRect = sourceRect
     }
 
+    private init(uncheckedScale scale: Double, sourceRect: NormalizedRect) {
+        self.scale = scale
+        self.sourceRect = sourceRect
+    }
+
     public var offsetX: Double {
-        sourceRect.x
+        sourceRect.originX
     }
 
     public var offsetY: Double {
-        sourceRect.y
+        sourceRect.originY
     }
 }
 
@@ -128,8 +158,8 @@ public struct CameraPath: Equatable, Sendable {
             cursorTimeline: cursorTimeline,
             cursorSmoothing: cursorSmoothing
         )
-        let previous = adjacentPreviousTransform(before: blockIndex)
-        let next = adjacentNextTransform(after: blockIndex)
+        let previous = try adjacentPreviousTransform(before: blockIndex)
+        let next = try adjacentNextTransform(after: blockIndex)
         let entryDuration = activeTransitionDuration(
             from: previous ?? .identity,
             to: target,
@@ -168,7 +198,7 @@ public struct CameraPath: Equatable, Sendable {
         }
     }
 
-    private func adjacentPreviousTransform(before index: Int) -> CameraTransform? {
+    private func adjacentPreviousTransform(before index: Int) throws -> CameraTransform? {
         guard index > blocks.startIndex else {
             return nil
         }
@@ -178,10 +208,10 @@ public struct CameraPath: Equatable, Sendable {
             return nil
         }
 
-        return transform(for: previous)
+        return try transform(for: previous)
     }
 
-    private func adjacentNextTransform(after index: Int) -> CameraTransform? {
+    private func adjacentNextTransform(after index: Int) throws -> CameraTransform? {
         let nextIndex = blocks.index(after: index)
         guard nextIndex < blocks.endIndex else {
             return nil
@@ -192,7 +222,7 @@ public struct CameraPath: Equatable, Sendable {
             return nil
         }
 
-        return transform(for: next)
+        return try transform(for: next)
     }
 
     private func targetTransform(
@@ -201,7 +231,7 @@ public struct CameraPath: Equatable, Sendable {
         cursorTimeline: CursorTimeline?,
         cursorSmoothing: CursorSmoothingLevel
     ) throws -> CameraTransform {
-        var transform = transform(for: block)
+        var transform = try transform(for: block)
         guard let cursorTimeline,
               let sample = try CursorPathSmoother.sample(
                 at: time,
@@ -216,9 +246,9 @@ public struct CameraPath: Equatable, Sendable {
         return transform
     }
 
-    private func transform(for block: ZoomBlock) -> CameraTransform {
-        let center = try! block.targetRect.center
-        return try! transform(scale: block.zoom, centeredAt: center)
+    private func transform(for block: ZoomBlock) throws -> CameraTransform {
+        let center = try block.targetRect.center
+        return try transform(scale: block.zoom, centeredAt: center)
     }
 
     private func followedTransform(
@@ -226,26 +256,26 @@ public struct CameraPath: Equatable, Sendable {
         cursor: CursorPoint
     ) throws -> CameraTransform {
         let normalizedCursor = try NormalizedPoint(
-            x: cursor.x / Double(sourceSize.width),
-            y: cursor.y / Double(sourceSize.height)
+            x: cursor.xCoordinate / Double(sourceSize.width),
+            y: cursor.yCoordinate / Double(sourceSize.height)
         )
         let deadZoneWidth = cameraTransform.sourceRect.width * 0.6
         let deadZoneHeight = cameraTransform.sourceRect.height * 0.6
-        let deadZoneX = cameraTransform.sourceRect.x + (cameraTransform.sourceRect.width - deadZoneWidth) / 2
-        let deadZoneY = cameraTransform.sourceRect.y + (cameraTransform.sourceRect.height - deadZoneHeight) / 2
-        var originX = cameraTransform.sourceRect.x
-        var originY = cameraTransform.sourceRect.y
+        let deadZoneX = cameraTransform.sourceRect.originX + (cameraTransform.sourceRect.width - deadZoneWidth) / 2
+        let deadZoneY = cameraTransform.sourceRect.originY + (cameraTransform.sourceRect.height - deadZoneHeight) / 2
+        var originX = cameraTransform.sourceRect.originX
+        var originY = cameraTransform.sourceRect.originY
 
-        if normalizedCursor.x < deadZoneX {
-            originX -= deadZoneX - normalizedCursor.x
-        } else if normalizedCursor.x > deadZoneX + deadZoneWidth {
-            originX += normalizedCursor.x - (deadZoneX + deadZoneWidth)
+        if normalizedCursor.xCoordinate < deadZoneX {
+            originX -= deadZoneX - normalizedCursor.xCoordinate
+        } else if normalizedCursor.xCoordinate > deadZoneX + deadZoneWidth {
+            originX += normalizedCursor.xCoordinate - (deadZoneX + deadZoneWidth)
         }
 
-        if normalizedCursor.y < deadZoneY {
-            originY -= deadZoneY - normalizedCursor.y
-        } else if normalizedCursor.y > deadZoneY + deadZoneHeight {
-            originY += normalizedCursor.y - (deadZoneY + deadZoneHeight)
+        if normalizedCursor.yCoordinate < deadZoneY {
+            originY -= deadZoneY - normalizedCursor.yCoordinate
+        } else if normalizedCursor.yCoordinate > deadZoneY + deadZoneHeight {
+            originY += normalizedCursor.yCoordinate - (deadZoneY + deadZoneHeight)
         }
 
         return try transform(scale: cameraTransform.scale, originX: originX, originY: originY)
@@ -269,10 +299,10 @@ public struct CameraPath: Equatable, Sendable {
             return override
         }
 
-        let dx = end.sourceRect.x - start.sourceRect.x
-        let dy = end.sourceRect.y - start.sourceRect.y
+        let deltaX = end.sourceRect.originX - start.sourceRect.originX
+        let deltaY = end.sourceRect.originY - start.sourceRect.originY
         let scaleDistance = abs(end.scale - start.scale) / 2
-        let distance = min(1, sqrt(dx * dx + dy * dy) + scaleDistance)
+        let distance = min(1, sqrt(deltaX * deltaX + deltaY * deltaY) + scaleDistance)
 
         return 0.3 + 0.4 * distance
     }
@@ -284,8 +314,8 @@ public struct CameraPath: Equatable, Sendable {
     ) throws -> CameraTransform {
         let progress = criticallyDampedProgress(progress)
         let scale = start.scale + (end.scale - start.scale) * progress
-        let originX = start.sourceRect.x + (end.sourceRect.x - start.sourceRect.x) * progress
-        let originY = start.sourceRect.y + (end.sourceRect.y - start.sourceRect.y) * progress
+        let originX = start.sourceRect.originX + (end.sourceRect.originX - start.sourceRect.originX) * progress
+        let originY = start.sourceRect.originY + (end.sourceRect.originY - start.sourceRect.originY) * progress
 
         return try transform(scale: scale, originX: originX, originY: originY)
     }
@@ -310,8 +340,8 @@ public struct CameraPath: Equatable, Sendable {
         let size = 1 / scale
         return try transform(
             scale: scale,
-            originX: center.x - size / 2,
-            originY: center.y - size / 2
+            originX: center.xCoordinate - size / 2,
+            originY: center.yCoordinate - size / 2
         )
     }
 
@@ -329,585 +359,5 @@ public struct CameraPath: Equatable, Sendable {
                 height: size
             )
         )
-    }
-}
-
-public struct ZoomExportTimeMapper: Equatable, Sendable {
-    public let trimRange: TimeRange
-    public let speed: PlaybackSpeed
-
-    public init(
-        trimRange: TimeRange,
-        speed: PlaybackSpeed = .normal
-    ) {
-        self.trimRange = trimRange
-        self.speed = speed
-    }
-
-    public func map(_ blocks: [ZoomBlock]) throws -> [ZoomBlock] {
-        try blocks.compactMap { block in
-            try map(block)
-        }
-    }
-
-    private func map(_ block: ZoomBlock) throws -> ZoomBlock? {
-        let start = max(block.timeRange.start, trimRange.start)
-        let end = min(block.timeRange.end, trimRange.end)
-
-        guard end > start else {
-            return nil
-        }
-
-        return try ZoomBlock(
-            timeRange: TimeRange(
-                start: (start - trimRange.start) / speed.value,
-                end: (end - trimRange.start) / speed.value
-            ),
-            targetRect: block.targetRect,
-            zoom: block.zoom,
-            transitionOverride: block.transitionOverride.map { $0 / speed.value }
-        )
-    }
-}
-
-public struct ZoomBlockDraftID: Codable, Equatable, Hashable, Sendable {
-    public let value: String
-
-    public init(_ value: String) throws {
-        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !value.isEmpty else {
-            throw ZoomPanModelError.invalidDraftID
-        }
-
-        self.value = value
-    }
-}
-
-public enum ZoomBlockDraftOrigin: String, Codable, Equatable, Sendable {
-    case manual
-    case proposal
-}
-
-public enum ZoomBlockDraftState: String, Codable, Equatable, Sendable {
-    case proposed
-    case accepted
-    case edited
-    case deleted
-}
-
-public struct ZoomBlockDraft: Codable, Equatable, Sendable {
-    public let id: ZoomBlockDraftID
-    public let block: ZoomBlock
-    public let origin: ZoomBlockDraftOrigin
-    public let state: ZoomBlockDraftState
-
-    public init(
-        id: ZoomBlockDraftID,
-        block: ZoomBlock,
-        origin: ZoomBlockDraftOrigin,
-        state: ZoomBlockDraftState
-    ) throws {
-        guard origin == .proposal || state != .proposed else {
-            throw ZoomPanModelError.invalidDraftState
-        }
-
-        self.id = id
-        self.block = block
-        self.origin = origin
-        self.state = state
-    }
-
-    public static func proposal(id: ZoomBlockDraftID, block: ZoomBlock) -> ZoomBlockDraft {
-        try! ZoomBlockDraft(id: id, block: block, origin: .proposal, state: .proposed)
-    }
-
-    public static func manual(id: ZoomBlockDraftID, block: ZoomBlock) -> ZoomBlockDraft {
-        try! ZoomBlockDraft(id: id, block: block, origin: .manual, state: .accepted)
-    }
-
-    public func accepting() throws -> ZoomBlockDraft {
-        guard state != .deleted else {
-            return self
-        }
-
-        return try ZoomBlockDraft(
-            id: id,
-            block: block,
-            origin: origin,
-            state: origin == .proposal ? .accepted : state
-        )
-    }
-
-    public func replacingBlock(_ block: ZoomBlock) throws -> ZoomBlockDraft {
-        guard state != .deleted else {
-            return self
-        }
-
-        return try ZoomBlockDraft(
-            id: id,
-            block: block,
-            origin: origin,
-            state: .edited
-        )
-    }
-
-    public func deleting() throws -> ZoomBlockDraft {
-        try ZoomBlockDraft(
-            id: id,
-            block: block,
-            origin: origin,
-            state: .deleted
-        )
-    }
-}
-
-public struct ZoomBlockDraftCollection: Codable, Equatable, Sendable {
-    public let drafts: [ZoomBlockDraft]
-
-    public init(_ drafts: [ZoomBlockDraft]) throws {
-        var ids: Set<ZoomBlockDraftID> = []
-        for draft in drafts {
-            guard ids.insert(draft.id).inserted else {
-                throw ZoomPanModelError.duplicateDraftID
-            }
-        }
-
-        try ZoomBlock.validateTimeline(drafts.activeBlocks)
-        self.drafts = drafts
-    }
-
-    public var activeBlocks: [ZoomBlock] {
-        drafts.activeBlocks
-    }
-
-    public func acceptingAllProposals() throws -> ZoomBlockDraftCollection {
-        try ZoomBlockDraftCollection(drafts.map { try $0.accepting() })
-    }
-
-    public func replacingBlock(id: ZoomBlockDraftID, with block: ZoomBlock) throws -> ZoomBlockDraftCollection {
-        try replacingDraft(id: id) { draft in
-            try draft.replacingBlock(block)
-        }
-    }
-
-    public func deleting(id: ZoomBlockDraftID) throws -> ZoomBlockDraftCollection {
-        try replacingDraft(id: id) { draft in
-            try draft.deleting()
-        }
-    }
-
-    private func replacingDraft(
-        id: ZoomBlockDraftID,
-        update: (ZoomBlockDraft) throws -> ZoomBlockDraft
-    ) throws -> ZoomBlockDraftCollection {
-        guard let index = drafts.firstIndex(where: { $0.id == id }) else {
-            throw ZoomPanModelError.unknownDraftID
-        }
-
-        var updatedDrafts = drafts
-        updatedDrafts[index] = try update(updatedDrafts[index])
-        return try ZoomBlockDraftCollection(updatedDrafts)
-    }
-}
-
-public struct ZoomProposalTuning: Codable, Equatable, Sendable {
-    public static let standard = ZoomProposalTuning(
-        uncheckedClusterTimeGap: 2.5,
-        minimumClusterWeight: 1.5,
-        minimumBlockDuration: 1.5,
-        temporalPadding: 0.25,
-        targetPadding: 0.08,
-        minimumZoom: 1.2,
-        maximumZoom: 3,
-        dwellDurationThreshold: 1.5,
-        dwellMovementTolerance: 0.03,
-        maxProposals: 40
-    )
-
-    public let clusterTimeGap: TimeInterval
-    public let minimumClusterWeight: Double
-    public let minimumBlockDuration: TimeInterval
-    public let temporalPadding: TimeInterval
-    public let targetPadding: Double
-    public let minimumZoom: Double
-    public let maximumZoom: Double
-    public let dwellDurationThreshold: TimeInterval
-    public let dwellMovementTolerance: Double
-    public let maxProposals: Int
-
-    public init(
-        clusterTimeGap: TimeInterval = 2.5,
-        minimumClusterWeight: Double = 1.5,
-        minimumBlockDuration: TimeInterval = 1.5,
-        temporalPadding: TimeInterval = 0.25,
-        targetPadding: Double = 0.08,
-        minimumZoom: Double = 1.2,
-        maximumZoom: Double = 3,
-        dwellDurationThreshold: TimeInterval = 1.5,
-        dwellMovementTolerance: Double = 0.03,
-        maxProposals: Int = 40
-    ) throws {
-        guard clusterTimeGap.isFinite,
-              clusterTimeGap > 0,
-              minimumClusterWeight.isFinite,
-              minimumClusterWeight > 0,
-              minimumBlockDuration.isFinite,
-              minimumBlockDuration > 0,
-              temporalPadding.isFinite,
-              temporalPadding >= 0,
-              targetPadding.isFinite,
-              targetPadding >= 0,
-              minimumZoom.isFinite,
-              maximumZoom.isFinite,
-              minimumZoom >= 1,
-              maximumZoom <= 3,
-              minimumZoom <= maximumZoom,
-              dwellDurationThreshold.isFinite,
-              dwellDurationThreshold > 0,
-              dwellMovementTolerance.isFinite,
-              dwellMovementTolerance >= 0,
-              maxProposals > 0 else {
-            throw ZoomPanModelError.invalidProposalTuning
-        }
-
-        self.init(
-            uncheckedClusterTimeGap: clusterTimeGap,
-            minimumClusterWeight: minimumClusterWeight,
-            minimumBlockDuration: minimumBlockDuration,
-            temporalPadding: temporalPadding,
-            targetPadding: targetPadding,
-            minimumZoom: minimumZoom,
-            maximumZoom: maximumZoom,
-            dwellDurationThreshold: dwellDurationThreshold,
-            dwellMovementTolerance: dwellMovementTolerance,
-            maxProposals: maxProposals
-        )
-    }
-
-    private init(
-        uncheckedClusterTimeGap clusterTimeGap: TimeInterval,
-        minimumClusterWeight: Double,
-        minimumBlockDuration: TimeInterval,
-        temporalPadding: TimeInterval,
-        targetPadding: Double,
-        minimumZoom: Double,
-        maximumZoom: Double,
-        dwellDurationThreshold: TimeInterval,
-        dwellMovementTolerance: Double,
-        maxProposals: Int
-    ) {
-        self.clusterTimeGap = clusterTimeGap
-        self.minimumClusterWeight = minimumClusterWeight
-        self.minimumBlockDuration = minimumBlockDuration
-        self.temporalPadding = temporalPadding
-        self.targetPadding = targetPadding
-        self.minimumZoom = minimumZoom
-        self.maximumZoom = maximumZoom
-        self.dwellDurationThreshold = dwellDurationThreshold
-        self.dwellMovementTolerance = dwellMovementTolerance
-        self.maxProposals = maxProposals
-    }
-}
-
-public enum ZoomProposalEngine {
-    public static func proposals(
-        cursorTimeline: CursorTimeline,
-        keystrokeTimeline: KeystrokeTimeline? = nil,
-        sourceSize: PixelSize,
-        tuning: ZoomProposalTuning = .standard
-    ) throws -> [ZoomBlock] {
-        var interestPoints = try clickInterestPoints(
-            from: cursorTimeline,
-            sourceSize: sourceSize
-        )
-        interestPoints += try keystrokeInterestPoints(
-            from: keystrokeTimeline,
-            cursorTimeline: cursorTimeline,
-            sourceSize: sourceSize
-        )
-
-        if interestPoints.isEmpty {
-            interestPoints = try dwellInterestPoints(
-                from: cursorTimeline,
-                sourceSize: sourceSize,
-                tuning: tuning
-            )
-        }
-
-        return try proposedBlocks(
-            from: interestPoints.sorted { $0.time < $1.time },
-            mediaDuration: mediaDuration(cursorTimeline: cursorTimeline, keystrokeTimeline: keystrokeTimeline),
-            tuning: tuning
-        )
-    }
-
-    private static func clickInterestPoints(
-        from timeline: CursorTimeline,
-        sourceSize: PixelSize
-    ) throws -> [ZoomInterestPoint] {
-        try timeline.clicks.compactMap { click in
-            guard click.phase == .down else {
-                return nil
-            }
-
-            guard let sample = try CursorPathSmoother.sample(
-                at: click.time,
-                from: timeline.samples,
-                level: .light,
-                frameSize: sourceSize
-            ) else {
-                return nil
-            }
-
-            return try ZoomInterestPoint(time: click.time, position: sample.position, sourceSize: sourceSize, weight: 1)
-        }
-    }
-
-    private static func keystrokeInterestPoints(
-        from keystrokeTimeline: KeystrokeTimeline?,
-        cursorTimeline: CursorTimeline,
-        sourceSize: PixelSize
-    ) throws -> [ZoomInterestPoint] {
-        guard let keystrokeTimeline else {
-            return []
-        }
-
-        return try keystrokeTimeline.eventsOutsidePauses().compactMap { event in
-            guard event.kind == .keyDown else {
-                return nil
-            }
-
-            guard let sample = try CursorPathSmoother.sample(
-                at: event.time,
-                from: cursorTimeline.samples,
-                level: .light,
-                frameSize: sourceSize
-            ) else {
-                return nil
-            }
-
-            return try ZoomInterestPoint(time: event.time, position: sample.position, sourceSize: sourceSize, weight: 0.5)
-        }
-    }
-
-    private static func dwellInterestPoints(
-        from timeline: CursorTimeline,
-        sourceSize: PixelSize,
-        tuning: ZoomProposalTuning
-    ) throws -> [ZoomInterestPoint] {
-        guard let first = timeline.samples.first else {
-            return []
-        }
-
-        var dwellStart = first
-        var last = first
-        var points: [ZoomInterestPoint] = []
-
-        for sample in timeline.samples.dropFirst() {
-            if normalizedDistance(from: dwellStart.position, to: sample.position, sourceSize: sourceSize)
-                > tuning.dwellMovementTolerance {
-                if last.time - dwellStart.time >= tuning.dwellDurationThreshold {
-                    points.append(try ZoomInterestPoint(
-                        time: (dwellStart.time + last.time) / 2,
-                        position: dwellStart.position,
-                        sourceSize: sourceSize,
-                        weight: tuning.minimumClusterWeight
-                    ))
-                }
-
-                dwellStart = sample
-            }
-
-            last = sample
-        }
-
-        if last.time - dwellStart.time >= tuning.dwellDurationThreshold {
-            points.append(try ZoomInterestPoint(
-                time: (dwellStart.time + last.time) / 2,
-                position: dwellStart.position,
-                sourceSize: sourceSize,
-                weight: tuning.minimumClusterWeight
-            ))
-        }
-
-        return points
-    }
-
-    private static func proposedBlocks(
-        from points: [ZoomInterestPoint],
-        mediaDuration: TimeInterval,
-        tuning: ZoomProposalTuning
-    ) throws -> [ZoomBlock] {
-        guard !points.isEmpty else {
-            return []
-        }
-
-        var clusters: [[ZoomInterestPoint]] = []
-        var currentCluster: [ZoomInterestPoint] = []
-
-        for point in points {
-            if let last = currentCluster.last,
-               point.time - last.time > tuning.clusterTimeGap {
-                clusters.append(currentCluster)
-                currentCluster = []
-            }
-
-            currentCluster.append(point)
-        }
-
-        if !currentCluster.isEmpty {
-            clusters.append(currentCluster)
-        }
-
-        return try clusters.compactMap { cluster in
-            guard cluster.reduce(0, { $0 + $1.weight }) >= tuning.minimumClusterWeight else {
-                return nil
-            }
-
-            return try proposedBlock(from: cluster, mediaDuration: mediaDuration, tuning: tuning)
-        }
-        .prefix(tuning.maxProposals)
-        .map { $0 }
-    }
-
-    private static func proposedBlock(
-        from cluster: [ZoomInterestPoint],
-        mediaDuration: TimeInterval,
-        tuning: ZoomProposalTuning
-    ) throws -> ZoomBlock {
-        let start = cluster.map(\.time).min() ?? 0
-        let end = cluster.map(\.time).max() ?? start
-        let timeRange = try proposedTimeRange(
-            start: start,
-            end: end,
-            mediaDuration: mediaDuration,
-            tuning: tuning
-        )
-        let targetRect = try proposedTargetRect(from: cluster, padding: tuning.targetPadding)
-        let side = max(targetRect.width, targetRect.height)
-        let zoom = (1 / side).clamped(to: tuning.minimumZoom...tuning.maximumZoom)
-
-        return try ZoomBlock(
-            timeRange: timeRange,
-            targetRect: targetRect,
-            zoom: zoom
-        )
-    }
-
-    private static func proposedTimeRange(
-        start: TimeInterval,
-        end: TimeInterval,
-        mediaDuration: TimeInterval,
-        tuning: ZoomProposalTuning
-    ) throws -> TimeRange {
-        let paddedStart = max(0, start - tuning.temporalPadding)
-        let paddedEnd = end + tuning.temporalPadding
-        let center = (paddedStart + paddedEnd) / 2
-        let duration = max(tuning.minimumBlockDuration, paddedEnd - paddedStart)
-        var rangeStart = max(0, center - duration / 2)
-        var rangeEnd = center + duration / 2
-
-        if mediaDuration > 0, rangeEnd > mediaDuration {
-            let shift = rangeEnd - mediaDuration
-            rangeStart = max(0, rangeStart - shift)
-            rangeEnd = mediaDuration
-        }
-
-        if rangeEnd <= rangeStart {
-            rangeEnd = rangeStart + duration
-        }
-
-        return try TimeRange(start: rangeStart, end: rangeEnd)
-    }
-
-    private static func proposedTargetRect(
-        from cluster: [ZoomInterestPoint],
-        padding: Double
-    ) throws -> NormalizedRect {
-        let minX = cluster.map(\.x).min() ?? 0.5
-        let maxX = cluster.map(\.x).max() ?? 0.5
-        let minY = cluster.map(\.y).min() ?? 0.5
-        let maxY = cluster.map(\.y).max() ?? 0.5
-        let centerX = (minX + maxX) / 2
-        let centerY = (minY + maxY) / 2
-        let side = min(1, max(maxX - minX, maxY - minY) + padding * 2)
-        let originX = (centerX - side / 2).clamped(to: 0...(1 - side))
-        let originY = (centerY - side / 2).clamped(to: 0...(1 - side))
-
-        return try NormalizedRect(x: originX, y: originY, width: side, height: side)
-    }
-
-    private static func mediaDuration(
-        cursorTimeline: CursorTimeline,
-        keystrokeTimeline: KeystrokeTimeline?
-    ) -> TimeInterval {
-        let cursorDuration = [
-            cursorTimeline.samples.last?.time,
-            cursorTimeline.clicks.last?.time,
-            cursorTimeline.spotlightToggles.last
-        ].compactMap { $0 }.max() ?? 0
-        let keystrokeDuration = keystrokeTimeline?.events.last?.time ?? 0
-
-        return max(cursorDuration, keystrokeDuration)
-    }
-
-    private static func normalizedDistance(
-        from start: CursorPoint,
-        to end: CursorPoint,
-        sourceSize: PixelSize
-    ) -> Double {
-        let dx = (end.x - start.x) / Double(sourceSize.width)
-        let dy = (end.y - start.y) / Double(sourceSize.height)
-
-        return sqrt(dx * dx + dy * dy)
-    }
-}
-
-private struct ZoomInterestPoint: Equatable, Sendable {
-    let time: TimeInterval
-    let x: Double
-    let y: Double
-    let weight: Double
-
-    init(time: TimeInterval, position: CursorPoint, sourceSize: PixelSize, weight: Double) throws {
-        guard time.isFinite,
-              time >= 0,
-              weight.isFinite,
-              weight > 0 else {
-            throw ZoomPanModelError.invalidProposalTuning
-        }
-
-        self.time = time
-        x = (position.x / Double(sourceSize.width)).clamped(to: 0...1)
-        y = (position.y / Double(sourceSize.height)).clamped(to: 0...1)
-        self.weight = weight
-    }
-}
-
-public enum ZoomPanModelError: Error, Equatable {
-    case invalidNormalizedRect
-    case invalidZoom
-    case invalidTransitionDuration
-    case unsortedBlocks
-    case overlappingBlocks
-    case invalidTime
-    case invalidProposalTuning
-    case invalidDraftID
-    case duplicateDraftID
-    case invalidDraftState
-    case unknownDraftID
-}
-
-private extension [ZoomBlockDraft] {
-    var activeBlocks: [ZoomBlock] {
-        compactMap { draft in
-            draft.state == .deleted ? nil : draft.block
-        }
-    }
-}
-
-private extension Double {
-    func clamped(to range: ClosedRange<Self>) -> Self {
-        min(max(self, range.lowerBound), range.upperBound)
     }
 }

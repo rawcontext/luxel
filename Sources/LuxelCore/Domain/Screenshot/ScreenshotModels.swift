@@ -74,7 +74,7 @@ public struct ScreenshotRequest: Codable, Equatable, Sendable {
             }
 
             guard format.supportsAlpha else {
-                throw ScreenshotModelError.transparentBackdropRequiresAlphaCapableFormat
+                throw ScreenshotModelError.transparentBackdropRequiresAlphaFormat
             }
         }
 
@@ -141,7 +141,7 @@ public struct FrameGrabRequest: Codable, Equatable, Sendable {
 
 public enum ScreenshotModelError: Error, Equatable {
     case transparentBackdropRequiresWindowTarget
-    case transparentBackdropRequiresAlphaCapableFormat
+    case transparentBackdropRequiresAlphaFormat
     case emptyImageData
     case emptyScreenshotDestinations
     case fileDestinationRequiresOutputURL

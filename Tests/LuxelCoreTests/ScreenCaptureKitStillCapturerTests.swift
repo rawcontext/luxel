@@ -16,7 +16,7 @@ struct ScreenCaptureKitStillCapturerTests {
             format: .png
         )
 
-        let configuration = try ScreenCaptureKitStillConfigurationFactory()
+        let configuration = try ScreenStillConfigurationFactory()
             .makeConfiguration(
                 for: request,
                 contentRect: CGRect(x: 0, y: 0, width: 1440, height: 900),
@@ -38,7 +38,7 @@ struct ScreenCaptureKitStillCapturerTests {
             format: .png
         )
 
-        let configuration = try ScreenCaptureKitStillConfigurationFactory()
+        let configuration = try ScreenStillConfigurationFactory()
             .makeConfiguration(
                 for: request,
                 contentRect: CGRect(x: 0, y: 0, width: 1440, height: 900),
@@ -60,7 +60,7 @@ struct ScreenCaptureKitStillCapturerTests {
             backdrop: .transparent
         )
 
-        let configuration = try ScreenCaptureKitStillConfigurationFactory()
+        let configuration = try ScreenStillConfigurationFactory()
             .makeConfiguration(
                 for: request,
                 contentRect: CGRect(x: 0, y: 0, width: 640, height: 360),
@@ -82,7 +82,7 @@ struct ScreenCaptureKitStillCapturerTests {
             backdrop: .transparentWithShadow
         )
 
-        let configuration = try ScreenCaptureKitStillConfigurationFactory()
+        let configuration = try ScreenStillConfigurationFactory()
             .makeConfiguration(
                 for: request,
                 contentRect: CGRect(x: 0, y: 0, width: 640, height: 360),
@@ -128,17 +128,17 @@ struct ScreenCaptureKitStillCapturerTests {
         guard let provider,
               let colorSpace = CGColorSpace(name: CGColorSpace.sRGB),
               let image = CGImage(
-                  width: width,
-                  height: height,
-                  bitsPerComponent: 8,
-                  bitsPerPixel: 32,
-                  bytesPerRow: bytesPerRow,
-                  space: colorSpace,
-                  bitmapInfo: bitmapInfo,
-                  provider: provider,
-                  decode: nil,
-                  shouldInterpolate: false,
-                  intent: .defaultIntent
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bitsPerPixel: 32,
+                bytesPerRow: bytesPerRow,
+                space: colorSpace,
+                bitmapInfo: bitmapInfo,
+                provider: provider,
+                decode: nil,
+                shouldInterpolate: false,
+                intent: .defaultIntent
               ) else {
             throw ScreenCaptureKitStillCapturerError.encodingFailed(.png)
         }

@@ -4,8 +4,8 @@ public enum CursorCoordinateMapper {
         in captureFrame: CaptureRect
     ) throws -> CursorPoint {
         try CursorPoint(
-            x: point.x - Double(captureFrame.x),
-            y: point.y - Double(captureFrame.y)
+            x: point.xCoordinate - Double(captureFrame.originX),
+            y: point.yCoordinate - Double(captureFrame.originY)
         )
     }
 }

@@ -6,7 +6,7 @@ public final class AppKitBookmarkedDirectoryPicker: BookmarkedDirectoryPicker {
     private let bookmarkCreator: any BookmarkedDirectoryBookmarkCreator
 
     public init(
-        bookmarkCreator: any BookmarkedDirectoryBookmarkCreator = FoundationBookmarkedDirectoryBookmarkCreator()
+        bookmarkCreator: any BookmarkedDirectoryBookmarkCreator = FoundationBookmarkCreator()
     ) {
         self.bookmarkCreator = bookmarkCreator
     }

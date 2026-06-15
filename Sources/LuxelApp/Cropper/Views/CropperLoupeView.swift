@@ -27,7 +27,7 @@ struct CropperLoupeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
 
                 HStack(spacing: 8) {
-                    Text("x \(sample.readout.cursor.x) y \(sample.readout.cursor.y)")
+                    Text("x \(sample.readout.cursor.xCoordinate) y \(sample.readout.cursor.yCoordinate)")
                     Spacer(minLength: 8)
                     Text(selectionSummary)
                 }
@@ -36,7 +36,9 @@ struct CropperLoupeView: View {
             }
         }
         .accessibilityLabel("Selection loupe")
-        .accessibilityValue("\(sample.readout.cursor.x), \(sample.readout.cursor.y), \(selectionSummary)")
+        .accessibilityValue(
+            "\(sample.readout.cursor.xCoordinate), \(sample.readout.cursor.yCoordinate), \(selectionSummary)"
+        )
     }
 
     private var selectionSummary: String {

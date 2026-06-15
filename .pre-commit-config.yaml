@@ -1,0 +1,7 @@
+repos:
+  - repo: https://github.com/realm/SwiftLint
+    rev: 0.63.3
+    hooks:
+      - id: swiftlint
+        entry: Scripts/swiftlint-precommit.sh
+        require_serial: true

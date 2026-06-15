@@ -31,169 +31,185 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         canStartRecording: Bool,
         showElapsedTimeInMenuBar: Bool = true
     ) {
-        let elapsed = state.elapsed
-        let elapsedText = elapsed.map(Self.elapsedTimeText)
-        let remaining = state.remaining
-        let remainingText = remaining.map(Self.elapsedTimeText)
-        let displaysTimerTime = showElapsedTimeInMenuBar && remainingText != nil
-        let displaysElapsedTime = showElapsedTimeInMenuBar && elapsedText != nil && !displaysTimerTime
-        let timerMenuText = remainingText.map { "−\($0)" }
+        let content = Self.content(
+            state: state,
+            canStartRecording: canStartRecording,
+            timing: RecordingSessionTiming(state: state, showsMenuBarTime: showElapsedTimeInMenuBar)
+        )
 
+        menuBarTitle = content.menuBarTitle
+        menuBarSystemImage = content.menuBarSystemImage
+        animatesMenuBarSystemImage = content.animatesMenuBarSystemImage
+        accessibilityLabel = content.accessibilityLabel
+        primaryActionTitle = content.primaryActionTitle
+        primaryActionSystemImage = content.primaryActionSystemImage
+        canUsePrimaryAction = content.canUsePrimaryAction
+        secondaryActionTitle = content.secondaryActionTitle
+        secondaryActionSystemImage = content.secondaryActionSystemImage
+        canUseSecondaryAction = content.canUseSecondaryAction
+        statusMessage = content.statusMessage
+    }
+
+    private static func content(
+        state: RecordingSessionPresentationState,
+        canStartRecording: Bool,
+        timing: RecordingSessionTiming
+    ) -> RecordingSessionPresentationContent {
         switch state {
         case .idle:
-            menuBarTitle = "Luxel"
-            menuBarSystemImage = "record.circle"
-            animatesMenuBarSystemImage = false
-            accessibilityLabel = "Luxel"
-            primaryActionTitle = "Record"
-            primaryActionSystemImage = "record.circle.fill"
-            canUsePrimaryAction = canStartRecording
-            secondaryActionTitle = nil
-            secondaryActionSystemImage = nil
-            canUseSecondaryAction = false
-            statusMessage = nil
+            return idleContent(canStartRecording: canStartRecording)
         case .starting:
-            menuBarTitle = "Starting"
-            menuBarSystemImage = "record.circle"
-            animatesMenuBarSystemImage = false
-            accessibilityLabel = "Luxel starting recording"
-            primaryActionTitle = "Starting"
-            primaryActionSystemImage = "record.circle.fill"
-            canUsePrimaryAction = false
-            secondaryActionTitle = nil
-            secondaryActionSystemImage = nil
-            canUseSecondaryAction = false
-            statusMessage = "Starting recording"
+            return startingContent()
         case .countingDown(let remaining):
-            let countdownText = Self.countdownText(remaining)
-            menuBarTitle = countdownText
-            menuBarSystemImage = "hourglass"
-            animatesMenuBarSystemImage = false
-            accessibilityLabel = "Luxel recording starts in \(countdownText)"
-            primaryActionTitle = "Cancel"
-            primaryActionSystemImage = "xmark.circle.fill"
-            canUsePrimaryAction = true
-            secondaryActionTitle = nil
-            secondaryActionSystemImage = nil
-            canUseSecondaryAction = false
-            statusMessage = "Recording starts in \(countdownText)"
+            return countingDownContent(remaining: remaining)
         case .recording:
-            menuBarTitle = if displaysTimerTime {
-                timerMenuText ?? "−0:00"
-            } else {
-                displaysElapsedTime ? (elapsedText ?? "0:00") : ""
-            }
-            menuBarSystemImage = "record.circle"
-            animatesMenuBarSystemImage = true
-            accessibilityLabel = if displaysTimerTime {
-                "Luxel recording, remaining \(remainingText ?? "0:00")"
-            } else if displaysElapsedTime {
-                "Luxel recording, elapsed \(elapsedText ?? "0:00")"
-            } else {
-                "Luxel recording"
-            }
-            primaryActionTitle = "Stop"
-            primaryActionSystemImage = "stop.circle.fill"
-            canUsePrimaryAction = true
-            secondaryActionTitle = "Pause"
-            secondaryActionSystemImage = "pause.circle"
-            canUseSecondaryAction = true
-            statusMessage = "Recording"
+            return recordingContent(timing: timing)
         case .pausing:
-            menuBarTitle = if displaysTimerTime {
-                "● \(timerMenuText ?? "−0:00")"
-            } else {
-                displaysElapsedTime ? "● \(elapsedText ?? "0:00")" : "●"
-            }
-            menuBarSystemImage = "pause.circle"
-            animatesMenuBarSystemImage = false
-            accessibilityLabel = "Luxel pausing recording"
-            primaryActionTitle = "Stop"
-            primaryActionSystemImage = "stop.circle.fill"
-            canUsePrimaryAction = false
-            secondaryActionTitle = "Pausing"
-            secondaryActionSystemImage = "pause.circle"
-            canUseSecondaryAction = false
-            statusMessage = "Pausing recording"
+            return pausingContent(timing: timing)
         case .paused:
-            menuBarTitle = if displaysTimerTime {
-                timerMenuText ?? "−0:00"
-            } else {
-                displaysElapsedTime ? (elapsedText ?? "0:00") : ""
-            }
-            menuBarSystemImage = "pause.circle.fill"
-            animatesMenuBarSystemImage = false
-            accessibilityLabel = if displaysTimerTime {
-                "Luxel recording paused, remaining \(remainingText ?? "0:00")"
-            } else if displaysElapsedTime {
-                "Luxel recording paused at \(elapsedText ?? "0:00")"
-            } else {
-                "Luxel recording paused"
-            }
-            primaryActionTitle = "Stop"
-            primaryActionSystemImage = "stop.circle.fill"
-            canUsePrimaryAction = true
-            secondaryActionTitle = "Resume"
-            secondaryActionSystemImage = "play.circle"
-            canUseSecondaryAction = true
-            statusMessage = "Paused"
+            return pausedContent(timing: timing)
         case .resuming:
-            menuBarTitle = if displaysTimerTime {
-                "‖ \(timerMenuText ?? "−0:00")"
-            } else {
-                displaysElapsedTime ? "‖ \(elapsedText ?? "0:00")" : "‖"
-            }
-            menuBarSystemImage = "play.circle"
-            animatesMenuBarSystemImage = false
-            accessibilityLabel = "Luxel resuming recording"
-            primaryActionTitle = "Stop"
-            primaryActionSystemImage = "stop.circle.fill"
-            canUsePrimaryAction = false
-            secondaryActionTitle = "Resuming"
-            secondaryActionSystemImage = "play.circle"
-            canUseSecondaryAction = false
-            statusMessage = "Resuming recording"
+            return resumingContent(timing: timing)
         case .stopping:
-            menuBarTitle = "Stopping"
-            menuBarSystemImage = "stop.circle.fill"
-            animatesMenuBarSystemImage = false
-            accessibilityLabel = "Luxel stopping recording"
-            primaryActionTitle = "Stopping"
-            primaryActionSystemImage = "stop.circle.fill"
-            canUsePrimaryAction = false
-            secondaryActionTitle = nil
-            secondaryActionSystemImage = nil
-            canUseSecondaryAction = false
-            statusMessage = "Finishing recording"
+            return stoppingContent()
         case .exporting(let snapshot):
-            let progress = Int((snapshot.progress * 100).rounded())
-            menuBarTitle = "\(progress)%"
-            menuBarSystemImage = "square.and.arrow.up"
-            animatesMenuBarSystemImage = false
-            accessibilityLabel = "Luxel exporting, \(progress)% complete"
-            primaryActionTitle = "Exporting"
-            primaryActionSystemImage = "square.and.arrow.up"
-            canUsePrimaryAction = false
-            secondaryActionTitle = nil
-            secondaryActionSystemImage = nil
-            canUseSecondaryAction = false
-            statusMessage = snapshot.actionTitle
+            return exportingContent(snapshot: snapshot)
         case .failed(let message):
-            menuBarTitle = "Luxel"
-            menuBarSystemImage = "exclamationmark.triangle.fill"
-            animatesMenuBarSystemImage = false
-            accessibilityLabel = "Luxel recording failed"
-            primaryActionTitle = "Record"
-            primaryActionSystemImage = "record.circle.fill"
-            canUsePrimaryAction = canStartRecording
-            secondaryActionTitle = nil
-            secondaryActionSystemImage = nil
-            canUseSecondaryAction = false
-            statusMessage = message
+            return failedContent(message: message, canStartRecording: canStartRecording)
         }
     }
 
-    private static func elapsedTimeText(_ elapsed: TimeInterval) -> String {
+    private static func idleContent(canStartRecording: Bool) -> RecordingSessionPresentationContent {
+        RecordingSessionPresentationContent(
+            menuBarTitle: "Luxel",
+            menuBarSystemImage: "record.circle",
+            accessibilityLabel: "Luxel",
+            primaryActionTitle: "Record",
+            primaryActionSystemImage: "record.circle.fill",
+            canUsePrimaryAction: canStartRecording
+        )
+    }
+
+    private static func startingContent() -> RecordingSessionPresentationContent {
+        RecordingSessionPresentationContent(
+            menuBarTitle: "Starting",
+            menuBarSystemImage: "record.circle",
+            accessibilityLabel: "Luxel starting recording",
+            primaryActionTitle: "Starting",
+            primaryActionSystemImage: "record.circle.fill",
+            statusMessage: "Starting recording"
+        )
+    }
+
+    private static func countingDownContent(remaining: TimeInterval) -> RecordingSessionPresentationContent {
+        let countdownText = Self.countdownText(remaining)
+        return RecordingSessionPresentationContent(
+            menuBarTitle: countdownText,
+            menuBarSystemImage: "hourglass",
+            accessibilityLabel: "Luxel recording starts in \(countdownText)",
+            primaryActionTitle: "Cancel",
+            primaryActionSystemImage: "xmark.circle.fill",
+            canUsePrimaryAction: true,
+            statusMessage: "Recording starts in \(countdownText)"
+        )
+    }
+
+    private static func recordingContent(timing: RecordingSessionTiming) -> RecordingSessionPresentationContent {
+        RecordingSessionPresentationContent(
+            menuBarTitle: timing.menuBarTitle(prefix: ""),
+            menuBarSystemImage: "record.circle",
+            animatesMenuBarSystemImage: true,
+            accessibilityLabel: timing.accessibilityLabel(prefix: "Luxel recording"),
+            primaryActionTitle: "Stop",
+            primaryActionSystemImage: "stop.circle.fill",
+            canUsePrimaryAction: true,
+            secondaryActionTitle: "Pause",
+            secondaryActionSystemImage: "pause.circle",
+            canUseSecondaryAction: true,
+            statusMessage: "Recording"
+        )
+    }
+
+    private static func pausingContent(timing: RecordingSessionTiming) -> RecordingSessionPresentationContent {
+        RecordingSessionPresentationContent(
+            menuBarTitle: timing.menuBarTitle(prefix: "●"),
+            menuBarSystemImage: "pause.circle",
+            accessibilityLabel: "Luxel pausing recording",
+            primaryActionTitle: "Stop",
+            primaryActionSystemImage: "stop.circle.fill",
+            secondaryActionTitle: "Pausing",
+            secondaryActionSystemImage: "pause.circle",
+            statusMessage: "Pausing recording"
+        )
+    }
+
+    private static func pausedContent(timing: RecordingSessionTiming) -> RecordingSessionPresentationContent {
+        RecordingSessionPresentationContent(
+            menuBarTitle: timing.menuBarTitle(prefix: ""),
+            menuBarSystemImage: "pause.circle.fill",
+            accessibilityLabel: timing.pausedAccessibilityLabel,
+            primaryActionTitle: "Stop",
+            primaryActionSystemImage: "stop.circle.fill",
+            canUsePrimaryAction: true,
+            secondaryActionTitle: "Resume",
+            secondaryActionSystemImage: "play.circle",
+            canUseSecondaryAction: true,
+            statusMessage: "Paused"
+        )
+    }
+
+    private static func resumingContent(timing: RecordingSessionTiming) -> RecordingSessionPresentationContent {
+        RecordingSessionPresentationContent(
+            menuBarTitle: timing.menuBarTitle(prefix: "‖"),
+            menuBarSystemImage: "play.circle",
+            accessibilityLabel: "Luxel resuming recording",
+            primaryActionTitle: "Stop",
+            primaryActionSystemImage: "stop.circle.fill",
+            secondaryActionTitle: "Resuming",
+            secondaryActionSystemImage: "play.circle",
+            statusMessage: "Resuming recording"
+        )
+    }
+
+    private static func stoppingContent() -> RecordingSessionPresentationContent {
+        RecordingSessionPresentationContent(
+            menuBarTitle: "Stopping",
+            menuBarSystemImage: "stop.circle.fill",
+            accessibilityLabel: "Luxel stopping recording",
+            primaryActionTitle: "Stopping",
+            primaryActionSystemImage: "stop.circle.fill",
+            statusMessage: "Finishing recording"
+        )
+    }
+
+    private static func exportingContent(snapshot: ExportProgressSnapshot) -> RecordingSessionPresentationContent {
+        let progress = Int((snapshot.progress * 100).rounded())
+        return RecordingSessionPresentationContent(
+            menuBarTitle: "\(progress)%",
+            menuBarSystemImage: "square.and.arrow.up",
+            accessibilityLabel: "Luxel exporting, \(progress)% complete",
+            primaryActionTitle: "Exporting",
+            primaryActionSystemImage: "square.and.arrow.up",
+            statusMessage: snapshot.actionTitle
+        )
+    }
+
+    private static func failedContent(
+        message: String,
+        canStartRecording: Bool
+    ) -> RecordingSessionPresentationContent {
+        RecordingSessionPresentationContent(
+            menuBarTitle: "Luxel",
+            menuBarSystemImage: "exclamationmark.triangle.fill",
+            accessibilityLabel: "Luxel recording failed",
+            primaryActionTitle: "Record",
+            primaryActionSystemImage: "record.circle.fill",
+            canUsePrimaryAction: canStartRecording,
+            statusMessage: message
+        )
+    }
+
+    fileprivate static func elapsedTimeText(_ elapsed: TimeInterval) -> String {
         let totalSeconds = max(0, Int(elapsed.rounded(.down)))
         let hours = totalSeconds / 3600
         let minutes = (totalSeconds % 3600) / 60
@@ -212,6 +228,68 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
 
     private static func twoDigits(_ value: Int) -> String {
         value < 10 ? "0\(value)" : "\(value)"
+    }
+}
+
+private struct RecordingSessionPresentationContent {
+    let menuBarTitle: String
+    let menuBarSystemImage: String
+    var animatesMenuBarSystemImage = false
+    let accessibilityLabel: String
+    let primaryActionTitle: String
+    let primaryActionSystemImage: String
+    var canUsePrimaryAction = false
+    var secondaryActionTitle: String?
+    var secondaryActionSystemImage: String?
+    var canUseSecondaryAction = false
+    var statusMessage: String?
+}
+
+private struct RecordingSessionTiming {
+    let elapsedText: String?
+    let remainingText: String?
+    let displaysTimerTime: Bool
+    let displaysElapsedTime: Bool
+
+    init(state: RecordingSessionPresentationState, showsMenuBarTime: Bool) {
+        elapsedText = state.elapsed.map(RecordingSessionPresentation.elapsedTimeText)
+        remainingText = state.remaining.map(RecordingSessionPresentation.elapsedTimeText)
+        displaysTimerTime = showsMenuBarTime && remainingText != nil
+        displaysElapsedTime = showsMenuBarTime && elapsedText != nil && !displaysTimerTime
+    }
+
+    func menuBarTitle(prefix: String) -> String {
+        let text = if displaysTimerTime {
+            remainingText.map { "−\($0)" } ?? "−0:00"
+        } else {
+            displaysElapsedTime ? (elapsedText ?? "0:00") : ""
+        }
+
+        guard !prefix.isEmpty else {
+            return text
+        }
+
+        return text.isEmpty ? prefix : "\(prefix) \(text)"
+    }
+
+    func accessibilityLabel(prefix: String) -> String {
+        if displaysTimerTime {
+            "\(prefix), remaining \(remainingText ?? "0:00")"
+        } else if displaysElapsedTime {
+            "\(prefix), elapsed \(elapsedText ?? "0:00")"
+        } else {
+            prefix
+        }
+    }
+
+    var pausedAccessibilityLabel: String {
+        if displaysTimerTime {
+            "Luxel recording paused, remaining \(remainingText ?? "0:00")"
+        } else if displaysElapsedTime {
+            "Luxel recording paused at \(elapsedText ?? "0:00")"
+        } else {
+            "Luxel recording paused"
+        }
     }
 }
 

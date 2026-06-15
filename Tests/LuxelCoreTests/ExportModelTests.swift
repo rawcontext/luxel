@@ -4,6 +4,9 @@ import Testing
 
 @Suite("Export model")
 struct ExportModelTests {
+}
+
+extension ExportModelTests {
     @Test("video formats map to expected extensions and display names")
     func formatMetadata() {
         #expect(ExportFormat.mp4.fileExtension == "mp4")

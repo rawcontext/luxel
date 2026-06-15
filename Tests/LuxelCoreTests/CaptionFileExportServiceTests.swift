@@ -189,7 +189,7 @@ private final class SpyFileSystem: FileSystem, @unchecked Sendable {
     func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
 
     func writeData(_ data: Data, to url: URL) throws {
-        writes.append(WrittenData(text: String(decoding: data, as: UTF8.self), fileURL: url))
+        writes.append(WrittenData(text: String(bytes: data, encoding: .utf8) ?? "", fileURL: url))
     }
 
     func removeFile(at url: URL) throws {}

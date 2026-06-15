@@ -145,12 +145,12 @@ public enum CursorOverlayPlanner {
         }
 
         let hotspotOffset = try CursorPoint(
-            x: image.hotspot.x * options.sizeMultiplier,
-            y: image.hotspot.y * options.sizeMultiplier
+            x: image.hotspot.xCoordinate * options.sizeMultiplier,
+            y: image.hotspot.yCoordinate * options.sizeMultiplier
         )
         let origin = try CursorPoint(
-            x: sample.position.x - hotspotOffset.x,
-            y: sample.position.y - hotspotOffset.y
+            x: sample.position.xCoordinate - hotspotOffset.xCoordinate,
+            y: sample.position.yCoordinate - hotspotOffset.yCoordinate
         )
 
         return CursorOverlayCursorPlan(

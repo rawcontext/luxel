@@ -191,7 +191,9 @@ final class LuxelCropperModel {
             mode: mode
         ))
     }
+}
 
+extension LuxelCropperModel {
     var selectionSummary: String {
         guard let selection else {
             return "Select Area"
@@ -443,12 +445,12 @@ final class LuxelCropperModel {
         }
     }
 
-    func setSelectionX(_ x: Int) {
-        replaceSelection(x: x)
+    func setSelectionX(_ originX: Int) {
+        replaceSelection(x: originX)
     }
 
-    func setSelectionY(_ y: Int) {
-        replaceSelection(y: y)
+    func setSelectionY(_ originY: Int) {
+        replaceSelection(y: originY)
     }
 
     func setSelectionWidth(_ width: Int) {
@@ -459,14 +461,14 @@ final class LuxelCropperModel {
         replaceSelection(height: height)
     }
 
-    func nudgeSelection(x: Int, y: Int) {
+    func nudgeSelection(x deltaX: Int, y deltaY: Int) {
         guard let selection else {
             return
         }
 
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
-            self.selection = try draft.moved(by: CaptureResizeDelta(x: x, y: y)).topLeftSelection
+            self.selection = try draft.moved(by: CaptureResizeDelta(x: deltaX, y: deltaY)).topLeftSelection
             activateDisplay()
             pushUndoState()
             errorMessage = nil
@@ -529,8 +531,8 @@ final class LuxelCropperModel {
         let scaleY = viewSize.height / Double(display.height)
 
         return CGRect(
-            x: Double(selection.x) * scaleX,
-            y: Double(selection.y) * scaleY,
+            x: Double(selection.originX) * scaleX,
+            y: Double(selection.originY) * scaleY,
             width: Double(selection.width) * scaleX,
             height: Double(selection.height) * scaleY
         )
@@ -545,8 +547,8 @@ final class LuxelCropperModel {
     }
 
     private func replaceSelection(
-        x: Int? = nil,
-        y: Int? = nil,
+        x originX: Int? = nil,
+        y originY: Int? = nil,
         width: Int? = nil,
         height: Int? = nil
     ) {
@@ -557,8 +559,8 @@ final class LuxelCropperModel {
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
             self.selection = try draft.replacingSelection(
-                x: x,
-                y: y,
+                x: originX,
+                y: originY,
                 width: width,
                 height: height
             ).topLeftSelection
@@ -725,24 +727,24 @@ private extension CaptureResizeHandle {
             return CapturePoint(x: 0, y: 0)
         }
 
-        let midX = selection.x + selection.width / 2
-        let midY = selection.y + selection.height / 2
-        let maxX = selection.x + selection.width
-        let maxY = selection.y + selection.height
+        let midX = selection.originX + selection.width / 2
+        let midY = selection.originY + selection.height / 2
+        let maxX = selection.originX + selection.width
+        let maxY = selection.originY + selection.height
 
         return switch self {
         case .topLeft:
-            CapturePoint(x: selection.x, y: selection.y)
+            CapturePoint(x: selection.originX, y: selection.originY)
         case .top:
-            CapturePoint(x: midX, y: selection.y)
+            CapturePoint(x: midX, y: selection.originY)
         case .topRight:
-            CapturePoint(x: maxX, y: selection.y)
+            CapturePoint(x: maxX, y: selection.originY)
         case .left:
-            CapturePoint(x: selection.x, y: midY)
+            CapturePoint(x: selection.originX, y: midY)
         case .right:
             CapturePoint(x: maxX, y: midY)
         case .bottomLeft:
-            CapturePoint(x: selection.x, y: maxY)
+            CapturePoint(x: selection.originX, y: maxY)
         case .bottom:
             CapturePoint(x: midX, y: maxY)
         case .bottomRight:

@@ -78,7 +78,10 @@ struct AnimatedFrameRenderer: Sendable {
             context.setFillColor(Self.backgroundFillColor(backgroundMatte))
             context.fill(CGRect(origin: .zero, size: outputSize))
             context.interpolationQuality = .high
-            context.draw(drawableImage, in: drawRect(for: drawableImage, outputSize: outputSize, shouldCrop: shouldCrop))
+            context.draw(
+                drawableImage,
+                in: drawRect(for: drawableImage, outputSize: outputSize, shouldCrop: shouldCrop)
+            )
         }
 
         var pixels: [GIFRGBAPixel] = []
@@ -128,8 +131,8 @@ struct AnimatedFrameRenderer: Sendable {
 
         let imageRect = CGRect(x: 0, y: 0, width: image.width, height: image.height)
         let requestedRect = CGRect(
-            x: cropRect.x,
-            y: cropRect.y,
+            x: cropRect.originX,
+            y: cropRect.originY,
             width: cropRect.width,
             height: cropRect.height
         )
@@ -159,10 +162,10 @@ struct AnimatedFrameRenderer: Sendable {
 
     private func pixelCropRect(for image: CGImage, sourceRect: NormalizedRect) -> CGRect {
         let imageRect = CGRect(x: 0, y: 0, width: image.width, height: image.height)
-        let minX = (sourceRect.x * Double(image.width)).rounded(.down)
-        let minY = (sourceRect.y * Double(image.height)).rounded(.down)
-        let maxX = ((sourceRect.x + sourceRect.width) * Double(image.width)).rounded(.up)
-        let maxY = ((sourceRect.y + sourceRect.height) * Double(image.height)).rounded(.up)
+        let minX = (sourceRect.originX * Double(image.width)).rounded(.down)
+        let minY = (sourceRect.originY * Double(image.height)).rounded(.down)
+        let maxX = ((sourceRect.originX + sourceRect.width) * Double(image.width)).rounded(.up)
+        let maxY = ((sourceRect.originY + sourceRect.height) * Double(image.height)).rounded(.up)
 
         return CGRect(
             x: minX,

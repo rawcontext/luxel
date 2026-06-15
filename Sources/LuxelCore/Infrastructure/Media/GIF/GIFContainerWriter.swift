@@ -68,8 +68,8 @@ public struct GIFContainerWriter: Sendable {
         paletteSize: Int
     ) throws {
         for frame in frames {
-            guard frame.rect.x + frame.rect.width <= pixelSize.width,
-                  frame.rect.y + frame.rect.height <= pixelSize.height else {
+            guard frame.rect.originX + frame.rect.width <= pixelSize.width,
+                  frame.rect.originY + frame.rect.height <= pixelSize.height else {
                 throw GIFContainerWriterError.frameRectOutOfBounds
             }
 
@@ -139,8 +139,8 @@ public struct GIFContainerWriter: Sendable {
 
     private func appendImageDescriptor(to output: inout Data, frame: GIFFrameDelta) throws {
         output.appendByte(0x2C)
-        try output.appendUInt16LittleEndian(frame.rect.x)
-        try output.appendUInt16LittleEndian(frame.rect.y)
+        try output.appendUInt16LittleEndian(frame.rect.originX)
+        try output.appendUInt16LittleEndian(frame.rect.originY)
         try output.appendUInt16LittleEndian(frame.rect.width)
         try output.appendUInt16LittleEndian(frame.rect.height)
         output.appendByte(0x00)

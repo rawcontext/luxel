@@ -1,26 +1,38 @@
 import Foundation
 
 public struct NotchScreenRect: Codable, Equatable, Sendable {
-    public let x: Double
-    public let y: Double
+    public let originX: Double
+    public let originY: Double
     public let width: Double
     public let height: Double
 
-    public init(x: Double, y: Double, width: Double, height: Double) throws {
-        guard x.isFinite, y.isFinite, width.isFinite, height.isFinite, width > 0, height > 0 else {
+    public init(x originX: Double, y originY: Double, width: Double, height: Double) throws {
+        guard originX.isFinite,
+              originY.isFinite,
+              width.isFinite,
+              height.isFinite,
+              width > 0,
+              height > 0 else {
             throw NotchGeometryError.invalidRect
         }
 
-        self.x = x
-        self.y = y
+        self.originX = originX
+        self.originY = originY
         self.width = width
         self.height = height
     }
 
-    public var minX: Double { x }
-    public var maxX: Double { x + width }
-    public var minY: Double { y }
-    public var maxY: Double { y + height }
+    public var minX: Double { originX }
+    public var maxX: Double { originX + width }
+    public var minY: Double { originY }
+    public var maxY: Double { originY + height }
+
+    private enum CodingKeys: String, CodingKey {
+        case originX = "x"
+        case originY = "y"
+        case width
+        case height
+    }
 
     public func contains(_ rect: NotchScreenRect) -> Bool {
         rect.minX >= minX &&

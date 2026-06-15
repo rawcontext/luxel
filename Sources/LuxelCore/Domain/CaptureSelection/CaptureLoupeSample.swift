@@ -40,18 +40,18 @@ public enum CaptureLoupeSampleResolver {
     ) throws -> CaptureRect {
         let width = min(sampleSize, display.width)
         let height = min(sampleSize, display.height)
-        let x = clamp(
-            cursor.x - width / 2,
+        let originX = clamp(
+            cursor.xCoordinate - width / 2,
             minimum: 0,
             maximum: display.width - width
         )
-        let y = clamp(
-            cursor.y - height / 2,
+        let originY = clamp(
+            cursor.yCoordinate - height / 2,
             minimum: 0,
             maximum: display.height - height
         )
 
-        return try CaptureRect(x: x, y: y, width: width, height: height)
+        return try CaptureRect(x: originX, y: originY, width: width, height: height)
     }
 
     private static func overlayPlacement(
@@ -60,17 +60,17 @@ public enum CaptureLoupeSampleResolver {
         overlaySize: PixelSize,
         cursorOffset: Int
     ) -> (origin: CapturePoint, quadrant: CaptureLoupeQuadrant) {
-        let fitsRight = cursor.x + cursorOffset + overlaySize.width <= display.width
-        let fitsBelow = cursor.y + cursorOffset + overlaySize.height <= display.height
-        let x = fitsRight
-            ? cursor.x + cursorOffset
-            : cursor.x - cursorOffset - overlaySize.width
-        let y = fitsBelow
-            ? cursor.y + cursorOffset
-            : cursor.y - cursorOffset - overlaySize.height
+        let fitsRight = cursor.xCoordinate + cursorOffset + overlaySize.width <= display.width
+        let fitsBelow = cursor.yCoordinate + cursorOffset + overlaySize.height <= display.height
+        let originX = fitsRight
+            ? cursor.xCoordinate + cursorOffset
+            : cursor.xCoordinate - cursorOffset - overlaySize.width
+        let originY = fitsBelow
+            ? cursor.yCoordinate + cursorOffset
+            : cursor.yCoordinate - cursorOffset - overlaySize.height
         let origin = CapturePoint(
-            x: clamp(x, minimum: 0, maximum: max(0, display.width - overlaySize.width)),
-            y: clamp(y, minimum: 0, maximum: max(0, display.height - overlaySize.height))
+            x: clamp(originX, minimum: 0, maximum: max(0, display.width - overlaySize.width)),
+            y: clamp(originY, minimum: 0, maximum: max(0, display.height - overlaySize.height))
         )
         let quadrant = CaptureLoupeQuadrant(
             horizontal: fitsRight ? .right : .left,
@@ -150,8 +150,8 @@ private enum VerticalPlacement {
 private extension CapturePoint {
     func clamped(to display: DisplayBounds) -> CapturePoint {
         CapturePoint(
-            x: min(max(x, 0), display.width),
-            y: min(max(y, 0), display.height)
+            x: min(max(xCoordinate, 0), display.width),
+            y: min(max(yCoordinate, 0), display.height)
         )
     }
 }

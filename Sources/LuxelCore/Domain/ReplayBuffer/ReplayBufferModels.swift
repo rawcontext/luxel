@@ -1,10 +1,12 @@
 import Foundation
 
 public struct ReplayBufferConfiguration: Codable, Equatable, Sendable {
-    public static let defaults = try! ReplayBufferConfiguration(
-        bufferLength: 60,
+    public static let defaults = ReplayBufferConfiguration(
+        uncheckedBufferLength: 60,
         source: .displayWithCursor,
-        frameRate: try! FrameRate(30)
+        frameRate: .fps30,
+        includeSystemAudio: false,
+        quality: .balanced
     )
 
     public let bufferLength: TimeInterval
@@ -28,6 +30,20 @@ public struct ReplayBufferConfiguration: Codable, Equatable, Sendable {
             throw ReplayBufferModelError.invalidQuality
         }
 
+        self.bufferLength = bufferLength
+        self.source = source
+        self.frameRate = frameRate
+        self.includeSystemAudio = includeSystemAudio
+        self.quality = quality
+    }
+
+    private init(
+        uncheckedBufferLength bufferLength: TimeInterval,
+        source: ReplayBufferSource,
+        frameRate: FrameRate,
+        includeSystemAudio: Bool,
+        quality: ExportQuality
+    ) {
         self.bufferLength = bufferLength
         self.source = source
         self.frameRate = frameRate

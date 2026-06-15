@@ -131,9 +131,9 @@ struct GIFContainerWriterTests {
                 } else if label == 0xFF {
                     let blockSize = Int(bytes[offset + 2])
                     let application = String(
-                        decoding: bytes[(offset + 3)..<(offset + 3 + blockSize)],
-                        as: UTF8.self
-                    )
+                        bytes: bytes[(offset + 3)..<(offset + 3 + blockSize)],
+                        encoding: .utf8
+                    ) ?? ""
                     offset += 3 + blockSize
                     if application == "NETSCAPE2.0",
                        bytes[offset] == 3,
@@ -213,8 +213,15 @@ private struct GIFGraphicControl {
 }
 
 private struct GIFImageDescriptor: Equatable {
-    let x: Int
-    let y: Int
+    let originX: Int
+    let originY: Int
     let width: Int
     let height: Int
+
+    init(x originX: Int, y originY: Int, width: Int, height: Int) {
+        self.originX = originX
+        self.originY = originY
+        self.width = width
+        self.height = height
+    }
 }

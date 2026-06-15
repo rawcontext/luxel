@@ -18,7 +18,7 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
         switch target {
         case .display(let displayID), .area(let displayID, _):
             guard let display = content.displays.first(where: { $0.displayID == displayID.rawValue }) else {
-                throw ScreenCaptureKitContentFilterProviderError.displayUnavailable(displayID)
+                throw SCKContentFilterProviderError.displayUnavailable(displayID)
             }
 
             return SCContentFilter(
@@ -28,7 +28,7 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
 
         case .window(let id):
             guard let window = content.windows.first(where: { $0.windowID == id }) else {
-                throw ScreenCaptureKitContentFilterProviderError.windowUnavailable(id)
+                throw SCKContentFilterProviderError.windowUnavailable(id)
             }
 
             return SCContentFilter(desktopIndependentWindow: window)
@@ -45,7 +45,7 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
     }
 }
 
-public enum ScreenCaptureKitContentFilterProviderError: Error, Equatable {
+public enum SCKContentFilterProviderError: Error, Equatable {
     case displayUnavailable(DisplayID)
     case windowUnavailable(UInt32)
 }

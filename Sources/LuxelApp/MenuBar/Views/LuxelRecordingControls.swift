@@ -130,12 +130,13 @@ struct LuxelRecordingControls: View {
                     Task {
                         await model.startQuickRecording(from: draft, presetID: presetID)
                     }
-                }
-            ) { draft in
+                },
+                onSelect: { draft in
                 Task {
                     await model.startRecording(from: draft)
                 }
-            }
+                }
+            )
         } label: {
             Label("Select Area", systemImage: "crop")
         }

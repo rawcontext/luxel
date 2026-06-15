@@ -51,7 +51,7 @@ private final class AudioOnlyCaptureSession: @unchecked Sendable {
     private let session = AVCaptureSession()
     private let output = AVCaptureAudioDataOutput()
     private let queue = DispatchQueue(label: "media.luxel.audio-only-recorder")
-    private let writerDelegate: AudioOnlyWriterDelegate
+    private let writerDelegate: AudioWriterDelegate
 
     init(request: AudioRecordingRequest) throws {
         let writer = try AVAssetWriter(outputURL: request.outputFileURL, fileType: .m4a)
@@ -65,7 +65,7 @@ private final class AudioOnlyCaptureSession: @unchecked Sendable {
             throw AVFoundationAudioOnlyRecorderError.writerSetupFailed("Cannot add audio input")
         }
         writer.add(writerInput)
-        writerDelegate = AudioOnlyWriterDelegate(writer: writer, writerInput: writerInput)
+        writerDelegate = AudioWriterDelegate(writer: writer, writerInput: writerInput)
 
         guard let device = Self.captureDevice(deviceID: request.audio.microphoneDeviceID) else {
             throw AVFoundationAudioOnlyRecorderError.unsupportedAudioSource
@@ -140,7 +140,7 @@ private final class AudioOnlyCaptureSession: @unchecked Sendable {
     }
 }
 
-private final class AudioOnlyWriterDelegate: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate, @unchecked Sendable {
+private final class AudioWriterDelegate: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate, @unchecked Sendable {
     private let lock = NSLock()
     private let writer: AVAssetWriter
     private let writerInput: AVAssetWriterInput

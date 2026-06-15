@@ -48,7 +48,8 @@ public struct PermissionGuidanceService: Sendable {
         case .notDetermined, .denied, .restricted, .unknown:
             PermissionGuidance(
                 title: "Screen Recording Permission",
-                message: "Luxel needs Screen Recording permission to capture displays, windows, and selected areas. Continue, enable Luxel in System Settings if prompted, then quit and reopen Luxel.",
+                message: "Luxel needs Screen Recording permission to capture displays, windows, and selected areas. "
+                    + "Continue, enable Luxel in System Settings if prompted, then quit and reopen Luxel.",
                 actionTitle: "Continue",
                 action: .request
             )
@@ -67,7 +68,8 @@ public struct PermissionGuidanceService: Sendable {
         case .denied, .restricted, .unknown:
             PermissionGuidance(
                 title: "Microphone Permission",
-                message: "Luxel needs Microphone permission when audio recording is enabled. Open System Settings and allow Luxel to use the microphone.",
+                message: "Luxel needs Microphone permission when audio recording is enabled. "
+                    + "Open System Settings and allow Luxel to use the microphone.",
                 actionTitle: "Open Settings",
                 action: .openSettings
             )
@@ -93,7 +95,8 @@ public struct PermissionGuidanceService: Sendable {
         case .denied, .restricted, .unknown:
             PermissionGuidance(
                 title: "Camera Permission",
-                message: "Luxel needs Camera permission when camera preview or camera-track recording is enabled. Open System Settings and allow Luxel to use the camera.",
+                message: "Luxel needs Camera permission when camera preview or camera-track recording is enabled. "
+                    + "Open System Settings and allow Luxel to use the camera.",
                 actionTitle: "Open Settings",
                 action: .openSettings
             )

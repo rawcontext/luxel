@@ -3,13 +3,13 @@ import LuxelCore
 import Testing
 
 @Suite("Foundation bookmarked directory adapters")
-struct FoundationBookmarkedDirectoryAdaptersTests {
+struct BookmarkedDirectoryAdaptersTests {
     @Test("creator stores a security scoped bookmark for the selected directory")
     func creatorStoresSecurityScopedBookmark() throws {
         let directoryURL = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directoryURL) }
 
-        let directory = try FoundationBookmarkedDirectoryBookmarkCreator()
+        let directory = try FoundationBookmarkCreator()
             .bookmarkDirectory(at: directoryURL)
 
         #expect(directory.url == directoryURL)
@@ -22,7 +22,7 @@ struct FoundationBookmarkedDirectoryAdaptersTests {
         let directoryURL = try temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directoryURL) }
 
-        let directory = try FoundationBookmarkedDirectoryBookmarkCreator()
+        let directory = try FoundationBookmarkCreator()
             .bookmarkDirectory(at: directoryURL)
 
         let resolution = try FoundationBookmarkedDirectoryResolver()

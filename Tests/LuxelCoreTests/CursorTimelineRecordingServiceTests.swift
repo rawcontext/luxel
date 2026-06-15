@@ -14,7 +14,7 @@ struct CursorTimelineRecordingServiceTests {
             .sample(wallTime: 1, position: try CursorPoint(x: 10, y: 20), cursorImage: arrow),
             .sample(wallTime: 6, position: try CursorPoint(x: 60, y: 70), cursorImage: arrow),
             .spotlightToggle(wallTime: 9.5),
-            .click(wallTime: 9.75, button: .left, phase: .up)
+            .click(wallTime: 9.75, button: .left, phase: .released)
         ])
         let service = CursorTimelineRecordingService(eventSource: source)
         let request = try CursorTimelineRecordingRequest(
@@ -29,7 +29,7 @@ struct CursorTimelineRecordingServiceTests {
             try CursorSample(time: 7, position: CursorPoint(x: 90, y: 100), cursorImageID: "ibeam")
         ])
         #expect(timeline.clicks == [
-            try CursorClickEvent(time: 7.75, button: .left, phase: .up)
+            try CursorClickEvent(time: 7.75, button: .left, phase: .released)
         ])
         #expect(timeline.spotlightToggles == [7.5])
         #expect(timeline.cursorImages == [ibeam, arrow])

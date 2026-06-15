@@ -116,7 +116,8 @@ extension LuxelMenuModel {
     }
 
     private func finalDirectoryBookmark(for finalFileURL: URL) -> BookmarkedDirectory? {
-        guard finalFileURL.deletingLastPathComponent().standardizedFileURL == settings.recordingsDirectory.standardizedFileURL else {
+        let outputDirectory = finalFileURL.deletingLastPathComponent().standardizedFileURL
+        guard outputDirectory == settings.recordingsDirectory.standardizedFileURL else {
             return nil
         }
 

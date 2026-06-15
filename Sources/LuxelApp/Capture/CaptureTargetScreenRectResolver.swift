@@ -56,8 +56,8 @@ enum CaptureTargetScreenRectResolver {
         containing rect: CaptureRect,
         availableTargets: [CaptureTargetOption]
     ) -> CaptureTargetDisplayScreenFrame? {
-        let centerX = rect.x + rect.width / 2
-        let centerY = rect.y + rect.height / 2
+        let centerX = rect.originX + rect.width / 2
+        let centerY = rect.originY + rect.height / 2
 
         guard let displayTarget = availableTargets.first(where: { target in
             guard case .display(let displayID) = target.target,
@@ -65,13 +65,13 @@ enum CaptureTargetScreenRectResolver {
                 return false
             }
 
-            return centerX >= frame.x
-                && centerX <= frame.x + frame.width
-                && centerY >= frame.y
-                && centerY <= frame.y + frame.height
+            return centerX >= frame.originX
+                && centerX <= frame.originX + frame.width
+                && centerY >= frame.originY
+                && centerY <= frame.originY + frame.height
                 && NSScreen.screens.contains(where: { $0.displayID == displayID })
         }),
-            case .display(let displayID) = displayTarget.target else {
+        case .display(let displayID) = displayTarget.target else {
             return nil
         }
 
@@ -83,8 +83,8 @@ enum CaptureTargetScreenRectResolver {
         in display: CaptureTargetDisplayScreenFrame
     ) -> NSRect {
         NSRect(
-            x: display.screenFrame.minX + CGFloat(rect.x) * display.xScale,
-            y: display.screenFrame.minY + CGFloat(rect.y) * display.yScale,
+            x: display.screenFrame.minX + CGFloat(rect.originX) * display.xScale,
+            y: display.screenFrame.minY + CGFloat(rect.originY) * display.yScale,
             width: CGFloat(rect.width) * display.xScale,
             height: CGFloat(rect.height) * display.yScale
         )
@@ -98,8 +98,8 @@ enum CaptureTargetScreenRectResolver {
             return .zero
         }
 
-        let localX = rect.x - globalFrame.x
-        let localY = rect.y - globalFrame.y
+        let localX = rect.originX - globalFrame.originX
+        let localY = rect.originY - globalFrame.originY
         return NSRect(
             x: display.screenFrame.minX + CGFloat(localX) * display.xScale,
             y: display.screenFrame.maxY - CGFloat(localY + rect.height) * display.yScale,

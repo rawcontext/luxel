@@ -7,9 +7,11 @@ struct LuxelShortcutRegistration {
 }
 
 final class LuxelShortcutController: @unchecked Sendable {
+    private typealias ShortcutAction = (shortcut: AppKeyboardShortcut, action: @MainActor () -> Void)
+
     private let lock = NSLock()
     private var monitors: [Any] = []
-    private var registrations: [(shortcut: AppKeyboardShortcut, action: @MainActor () -> Void)] = []
+    private var registrations: [ShortcutAction] = []
 
     @MainActor
     func configure(
@@ -19,7 +21,7 @@ final class LuxelShortcutController: @unchecked Sendable {
         removeMonitors()
 
         let nextRegistrations = enabled
-            ? nextRegistrations.compactMap { registration -> (shortcut: AppKeyboardShortcut, action: @MainActor () -> Void)? in
+            ? nextRegistrations.compactMap { registration -> ShortcutAction? in
                 guard let shortcut = AppKeyboardShortcut(rawValue: registration.rawShortcut) else {
                     return nil
                 }

@@ -86,12 +86,12 @@ struct AppKitNotchDisplayProviderTests {
     }
 
     private func rect(
-        x: Double,
-        y: Double,
+        x originX: Double,
+        y originY: Double,
         width: Double,
         height: Double
     ) throws -> NotchScreenRect {
-        try NotchScreenRect(x: x, y: y, width: width, height: height)
+        try NotchScreenRect(x: originX, y: originY, width: width, height: height)
     }
 
     private func descriptor(displayID: CGDirectDisplayID) throws -> NotchDisplayDescriptor {

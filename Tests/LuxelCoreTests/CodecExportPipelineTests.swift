@@ -368,7 +368,8 @@ private actor StubContainerMuxer: CodecContainerMuxer {
     }
 
     func write(_ packet: EncodedPacket, to track: CodecTrack) async throws {
-        await events.append("muxer.write:\(track.rawValue):\(String(decoding: packet.data, as: UTF8.self))")
+        let packetText = String(bytes: packet.data, encoding: .utf8) ?? ""
+        await events.append("muxer.write:\(track.rawValue):\(packetText)")
     }
 
     func finalize() async throws {

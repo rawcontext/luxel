@@ -7,12 +7,12 @@ import UniformTypeIdentifiers
 
 public final class ScreenCaptureKitStillCapturer: StillCapturer, @unchecked Sendable {
     private let contentFilterProvider: any ScreenCaptureKitContentFilterProvider
-    private let configurationFactory: ScreenCaptureKitStillConfigurationFactory
+    private let configurationFactory: ScreenStillConfigurationFactory
     private let imageEncoder: ImageIOStillImageEncoder
 
     public init(
         contentFilterProvider: any ScreenCaptureKitContentFilterProvider = ShareableContentFilterProvider(),
-        configurationFactory: ScreenCaptureKitStillConfigurationFactory = ScreenCaptureKitStillConfigurationFactory(),
+        configurationFactory: ScreenStillConfigurationFactory = ScreenStillConfigurationFactory(),
         imageEncoder: ImageIOStillImageEncoder = ImageIOStillImageEncoder()
     ) {
         self.contentFilterProvider = contentFilterProvider
@@ -41,7 +41,7 @@ public final class ScreenCaptureKitStillCapturer: StillCapturer, @unchecked Send
     }
 }
 
-public struct ScreenCaptureKitStillConfigurationFactory: Sendable {
+public struct ScreenStillConfigurationFactory: Sendable {
     private static let opaqueBackgroundColor = CGColor(gray: 0, alpha: 1)
     private static let transparentBackgroundColor = CGColor(gray: 0, alpha: 0)
 
@@ -62,7 +62,12 @@ public struct ScreenCaptureKitStillConfigurationFactory: Sendable {
         }
 
         if case .area(_, let rect) = request.target {
-            configuration.sourceRect = CGRect(x: rect.x, y: rect.y, width: rect.width, height: rect.height)
+            configuration.sourceRect = CGRect(
+                x: rect.originX,
+                y: rect.originY,
+                width: rect.width,
+                height: rect.height
+            )
         }
 
         let pointSize = pointSize(for: request.target, contentRect: contentRect)

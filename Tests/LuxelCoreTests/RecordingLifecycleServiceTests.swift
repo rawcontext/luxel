@@ -4,6 +4,9 @@ import Testing
 
 @Suite("Recording lifecycle service")
 struct RecordingLifecycleServiceTests {
+}
+
+extension RecordingLifecycleServiceTests {
     @Test("start persists active recording before recorder starts")
     func startPersistsActiveRecordingBeforeRecorderStarts() async throws {
         let store = InMemoryRecordingHistoryStore()

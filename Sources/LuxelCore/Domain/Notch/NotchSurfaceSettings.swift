@@ -1,7 +1,14 @@
 import Foundation
 
 public struct NotchSurfaceSettings: Codable, Equatable, Sendable {
-    public static let defaults = try! NotchSurfaceSettings()
+    public static let defaults = NotchSurfaceSettings(
+        uncheckedIsEnabled: true,
+        idleHoverActionsEnabled: true,
+        showsWaveform: true,
+        autoCollapseSeconds: 6,
+        showsRecentShelf: true,
+        fallbackToFloatingHUDWhenUnavailable: true
+    )
 
     public let isEnabled: Bool
     public let idleHoverActionsEnabled: Bool
@@ -29,6 +36,22 @@ public struct NotchSurfaceSettings: Codable, Equatable, Sendable {
             throw NotchSurfaceSettingsError.invalidAutoCollapseSeconds
         }
 
+        self.isEnabled = isEnabled
+        self.idleHoverActionsEnabled = idleHoverActionsEnabled
+        self.showsWaveform = showsWaveform
+        self.autoCollapseSeconds = autoCollapseSeconds
+        self.showsRecentShelf = showsRecentShelf
+        self.fallbackToFloatingHUDWhenUnavailable = fallbackToFloatingHUDWhenUnavailable
+    }
+
+    private init(
+        uncheckedIsEnabled isEnabled: Bool,
+        idleHoverActionsEnabled: Bool,
+        showsWaveform: Bool,
+        autoCollapseSeconds: TimeInterval,
+        showsRecentShelf: Bool,
+        fallbackToFloatingHUDWhenUnavailable: Bool
+    ) {
         self.isEnabled = isEnabled
         self.idleHoverActionsEnabled = idleHoverActionsEnabled
         self.showsWaveform = showsWaveform
