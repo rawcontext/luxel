@@ -1,0 +1,171 @@
+# frozen_string_literal: true
+
+require "base64"
+require "fileutils"
+require "securerandom"
+require "shellwords"
+
+default_platform(:mac)
+
+APP_IDENTIFIER = "media.luxel.app"
+APPLE_ACCOUNT = ENV["FASTLANE_USER"]
+REPO_ROOT = File.expand_path("..", __dir__)
+PACKAGE_PATH = File.join(REPO_ROOT, ".build/mas/Luxel.pkg")
+
+platform :mac do
+  desc "Build a Mac App Store package for Luxel"
+  lane :build_testflight_pkg do |options|
+    signing_assets = prepare_signing_assets
+    build_testflight_package(options, signing_assets)
+  end
+
+  desc "Build Luxel and upload the signed macOS package to TestFlight"
+  lane :release_testflight do |options|
+    api_key = app_store_connect_api_key_from_env
+    signing_assets = prepare_signing_assets
+    pkg_path = build_testflight_package(options, signing_assets)
+
+    upload_to_testflight(
+      api_key: api_key,
+      username: APPLE_ACCOUNT,
+      app_identifier: APP_IDENTIFIER,
+      app_platform: "osx",
+      pkg: pkg_path,
+      skip_waiting_for_build_processing: true,
+      uses_non_exempt_encryption: false,
+      changelog: testflight_changelog(options)
+    )
+  end
+end
+
+def app_store_connect_api_key_from_env
+  api_key_path = File.join(fastlane_work_dir, "AuthKey.p8")
+  write_base64_env_file("APP_STORE_CONNECT_API_KEY_BASE64", api_key_path)
+
+  issuer_id = ENV["APP_STORE_CONNECT_API_ISSUER_ID"].to_s.strip
+  api_key_options = {
+    key_id: required_env("APP_STORE_CONNECT_API_KEY_ID"),
+    key_filepath: api_key_path,
+    duration: 1200,
+    in_house: false
+  }
+  api_key_options[:issuer_id] = issuer_id unless issuer_id == ""
+
+  app_store_connect_api_key(**api_key_options)
+end
+
+def prepare_signing_assets
+  profile_path = ENV["MAC_APP_STORE_PROVISIONING_PROFILE_PATH"]
+  profile_path = File.expand_path(profile_path, REPO_ROOT) if profile_path.to_s.strip != ""
+  if ENV["MAC_APP_STORE_PROVISIONING_PROFILE_BASE64"].to_s.strip != ""
+    profile_path = File.join(fastlane_work_dir, "Luxel_AppStore.mobileprovision")
+    write_base64_env_file("MAC_APP_STORE_PROVISIONING_PROFILE_BASE64", profile_path)
+  end
+
+  UI.user_error!("Missing MAC_APP_STORE_PROVISIONING_PROFILE_BASE64 or MAC_APP_STORE_PROVISIONING_PROFILE_PATH") if profile_path.to_s.strip == ""
+
+  if ENV["MAC_APP_DISTRIBUTION_CERTIFICATE_BASE64"].to_s.strip != "" ||
+     ENV["MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_BASE64"].to_s.strip != ""
+    import_signing_certificates
+  end
+
+  {
+    profile_path: profile_path,
+    app_identity: ENV["APP_STORE_SIGN_IDENTITY"],
+    installer_identity: ENV["INSTALLER_SIGN_IDENTITY"]
+  }
+end
+
+def import_signing_certificates
+  keychain_name = "luxel-ci-#{SecureRandom.hex(6)}"
+  keychain_password = ENV["CI_KEYCHAIN_PASSWORD"].to_s.strip
+  keychain_password = SecureRandom.hex(24) if keychain_password == ""
+
+  create_keychain(
+    name: keychain_name,
+    password: keychain_password,
+    default_keychain: true,
+    unlock: true,
+    timeout: 3600,
+    lock_when_sleeps: true
+  )
+
+  app_cert_path = File.join(fastlane_work_dir, "mac_app_distribution.p12")
+  installer_cert_path = File.join(fastlane_work_dir, "mac_installer_distribution.p12")
+
+  write_base64_env_file("MAC_APP_DISTRIBUTION_CERTIFICATE_BASE64", app_cert_path)
+  write_base64_env_file("MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_BASE64", installer_cert_path)
+
+  import_certificate(
+    certificate_path: app_cert_path,
+    certificate_password: ENV.fetch("MAC_APP_DISTRIBUTION_CERTIFICATE_PASSWORD", ""),
+    certificate_format: "pkcs12",
+    keychain_name: keychain_name,
+    keychain_password: keychain_password
+  )
+  import_certificate(
+    certificate_path: installer_cert_path,
+    certificate_password: ENV.fetch("MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_PASSWORD", ""),
+    certificate_format: "pkcs12",
+    keychain_name: keychain_name,
+    keychain_password: keychain_password
+  )
+
+  unless system("security", "set-key-partition-list", "-S", "apple-tool:,apple:,codesign:", "-s", "-k", keychain_password, keychain_name)
+    UI.user_error!("Failed to unlock imported signing identities for codesign/productbuild")
+  end
+end
+
+def build_testflight_package(options, signing_assets)
+  env = {
+    "BUILD_NUMBER" => build_number(options),
+    "PROVISIONING_PROFILE" => signing_assets.fetch(:profile_path)
+  }
+
+  marketing_version = options[:marketing_version] || ENV["MARKETING_VERSION"]
+  env["MARKETING_VERSION"] = marketing_version if marketing_version.to_s.strip != ""
+  env["APP_STORE_SIGN_IDENTITY"] = signing_assets.fetch(:app_identity) if signing_assets.fetch(:app_identity).to_s.strip != ""
+  env["INSTALLER_SIGN_IDENTITY"] = signing_assets.fetch(:installer_identity) if signing_assets.fetch(:installer_identity).to_s.strip != ""
+
+  script_path = File.join(REPO_ROOT, "Scripts/build-luxel-mas-pkg.sh")
+  command = env.map { |key, value| "#{key}=#{Shellwords.escape(value.to_s)}" }.join(" ")
+  sh("#{command} #{Shellwords.escape(script_path)}")
+
+  pkg_path = ENV.fetch("PKG_PATH", PACKAGE_PATH)
+  UI.user_error!("Expected package at #{pkg_path}") unless File.file?(pkg_path)
+
+  pkg_path
+end
+
+def build_number(options)
+  explicit_build_number = options[:build_number] || ENV["BUILD_NUMBER"] || ENV["GITHUB_RUN_NUMBER"]
+  return explicit_build_number.to_s if explicit_build_number.to_s.strip != ""
+
+  Time.now.utc.strftime("%Y%m%d%H%M")
+end
+
+def testflight_changelog(options)
+  changelog = options[:changelog] || ENV["TESTFLIGHT_CHANGELOG"]
+  return nil if changelog.to_s.strip == ""
+
+  changelog
+end
+
+def fastlane_work_dir
+  path = File.join(REPO_ROOT, ".build/fastlane")
+  FileUtils.mkdir_p(path)
+  path
+end
+
+def write_base64_env_file(env_name, path)
+  value = required_env(env_name)
+  File.binwrite(path, Base64.decode64(value))
+  path
+end
+
+def required_env(env_name)
+  value = ENV[env_name].to_s
+  UI.user_error!("Missing required environment variable #{env_name}") if value.strip == ""
+
+  value
+end

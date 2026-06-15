@@ -1,0 +1,60 @@
+name: TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      marketing_version:
+        description: "Optional CFBundleShortVersionString override"
+        required: false
+        type: string
+      build_number:
+        description: "Optional CFBundleVersion override"
+        required: false
+        type: string
+      changelog:
+        description: "Optional TestFlight 'What to Test' text"
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  testflight:
+    name: Build and Upload to TestFlight
+    runs-on: macos-26
+    permissions:
+      contents: read
+    env:
+      FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+      APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+      MAC_APP_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.MAC_APP_DISTRIBUTION_CERTIFICATE_BASE64 }}
+      MAC_APP_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.MAC_APP_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+      MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_BASE64 }}
+      MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+      MAC_APP_STORE_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAC_APP_STORE_PROVISIONING_PROFILE_BASE64 }}
+      MARKETING_VERSION: ${{ github.event.inputs.marketing_version }}
+      BUILD_NUMBER: ${{ github.event.inputs.build_number }}
+      TESTFLIGHT_CHANGELOG: ${{ github.event.inputs.changelog }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Verify Xcode
+        run: xcodebuild -version
+
+      - name: Upload to TestFlight
+        run: bundle exec fastlane mac release_testflight
