@@ -159,6 +159,23 @@ struct QuickRecordingModelTests {
         #expect(selection == (try CaptureRect(x: 0, y: 0, width: 1920, height: 1080)))
     }
 
+    @Test("last window memory restores matching window cropper selection")
+    func lastWindowMemoryRestoresMatchingWindowCropperSelection() throws {
+        let windowFrame = try CaptureRect(x: -1600, y: 220, width: 640, height: 480)
+        let window = try makeWindowOption(id: 42, frame: windowFrame)
+        let memory = LastCaptureMemory(
+            target: window.target,
+            pixelSize: window.pixelSize,
+            options: RecordingOptions(frameRate: 30),
+            capturedAt: Date()
+        )
+        let display = try DisplayBounds(id: DisplayID(3), x: -1728, y: 120, width: 1728, height: 1117)
+
+        let selection = memory.restoredTopLeftSelection(in: display, availableTargets: [window])
+
+        #expect(selection == (try CaptureRect(x: 128, y: 100, width: 640, height: 480)))
+    }
+
     @Test("last nonmatching memory does not restore cropper selection")
     func lastNonmatchingMemoryDoesNotRestoreCropperSelection() throws {
         let display = try DisplayBounds(id: DisplayID(3), x: 0, y: 0, width: 1920, height: 1080)
@@ -213,14 +230,21 @@ struct QuickRecordingModelTests {
         #expect(memory.resolvedTarget(availableTargets: []) == nil)
     }
 
-    private func makeWindowOption(id: UInt32) throws -> CaptureTargetOption {
-        try CaptureTargetOption(
+    private func makeWindowOption(id: UInt32, frame: CaptureRect? = nil) throws -> CaptureTargetOption {
+        let resolvedFrame: CaptureRect
+        if let frame {
+            resolvedFrame = frame
+        } else {
+            resolvedFrame = try CaptureRect(x: 0, y: 0, width: 800, height: 600)
+        }
+
+        return try CaptureTargetOption(
             id: "window-\(id)",
             kind: .window,
             title: "Window \(id)",
             target: .window(id: id),
-            pixelSize: PixelSize(width: 800, height: 600),
-            frame: CaptureRect(x: 0, y: 0, width: 800, height: 600)
+            pixelSize: PixelSize(width: resolvedFrame.width, height: resolvedFrame.height),
+            frame: resolvedFrame
         )
     }
 

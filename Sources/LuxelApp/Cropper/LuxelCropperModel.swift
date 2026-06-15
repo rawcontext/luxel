@@ -35,12 +35,12 @@ struct CropperRestoreSelectionConfiguration {
     let isEnabled: Bool
     let memory: LastCaptureMemory?
 
-    func selection(for display: DisplayBounds) -> CaptureRect? {
+    func selection(for display: DisplayBounds, targets: [CaptureTargetOption] = []) -> CaptureRect? {
         guard isEnabled else {
             return nil
         }
 
-        return memory?.restoredTopLeftSelection(in: display)
+        return memory?.restoredTopLeftSelection(in: display, availableTargets: targets)
     }
 }
 

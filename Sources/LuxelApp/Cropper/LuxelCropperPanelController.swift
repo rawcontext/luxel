@@ -148,7 +148,7 @@ final class LuxelCropperPanelController {
                 countdownDuration: countdownDuration,
                 stopAfterDuration: stopAfterDuration,
                 selectionPresetConfiguration: selectionPresetConfiguration,
-                initialSelection: restoreSelectionConfiguration.selection(for: display),
+                initialSelection: restoreSelectionConfiguration.selection(for: display, targets: targets),
                 windowSnapFrames: CaptureWindowSnapFrameResolver.windowFrames(
                     on: display,
                     from: targets
