@@ -21,6 +21,10 @@ final class ScreenCaptureKitRecordingWriter: NSObject, SCStreamOutput, @unchecke
                         throw ScreenCaptureKitRecorderError.resumeFailed("A recording segment is already active")
                     }
 
+                    try fileManager.createDirectory(
+                        at: outputFileURL.deletingLastPathComponent(),
+                        withIntermediateDirectories: true
+                    )
                     try? fileManager.removeItem(at: outputFileURL)
                     segment = try RecordingWriterSegment(
                         request: request,

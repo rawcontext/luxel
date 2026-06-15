@@ -54,6 +54,10 @@ private final class AudioOnlyCaptureSession: @unchecked Sendable {
     private let writerDelegate: AudioWriterDelegate
 
     init(request: AudioRecordingRequest) throws {
+        try FileManager.default.createDirectory(
+            at: request.outputFileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
         let writer = try AVAssetWriter(outputURL: request.outputFileURL, fileType: .m4a)
         let writerInput = AVAssetWriterInput(
             mediaType: .audio,

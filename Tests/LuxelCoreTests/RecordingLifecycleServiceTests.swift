@@ -168,6 +168,39 @@ extension RecordingLifecycleServiceTests {
         #expect(fileSystem.movedFiles.isEmpty)
     }
 
+    @Test("stop clears active recording when output finalization has no file")
+    func stopClearsActiveRecordingWhenOutputFinalizationHasNoFile() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let recorder = SpyCaptureRecorder()
+        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
+        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
+        let fileSystem = RecordingOutputFileSystem(existingFiles: [])
+        let service = RecordingLifecycleService(
+            recorder: recorder,
+            history: makeHistory(store: store, fileSystem: fileSystem),
+            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
+        )
+        let request = try makeRequest(outputFileURL: finalURL)
+
+        _ = try await service.startRecording(
+            request,
+            outputPlan: RecordingOutputFinalizationPlan(
+                stagingFileURL: stagingURL,
+                finalFileURL: finalURL
+            )
+        )
+
+        await #expect(throws: RecordingLifecycleError.outputFinalizationFailed(
+            "No recording output was produced. Try recording again."
+        )) {
+            try await service.stopRecording()
+        }
+        #expect(store.activeRecording == nil)
+        #expect(store.recordings.isEmpty)
+        #expect(recorder.stopCount == 1)
+        #expect(fileSystem.movedFiles.isEmpty)
+    }
+
     @Test("stop moves active recording into history after recorder stops")
     func stopMovesActiveRecordingIntoHistoryAfterRecorderStops() async throws {
         let store = InMemoryRecordingHistoryStore()
@@ -602,6 +635,7 @@ private final class SpyCountdownSleeper: RecordingCountdownSleeper, @unchecked S
 
 private enum StubRecordingOutputError: Error, Equatable {
     case moveFailed
+    case missingSource
 }
 
 private struct RecordingOutputMove: Equatable {
@@ -630,6 +664,10 @@ private final class RecordingOutputFileSystem: FileSystem, @unchecked Sendable {
     func moveFile(from sourceURL: URL, to destinationURL: URL) throws {
         if let moveError {
             throw moveError
+        }
+
+        guard existingFiles.contains(sourceURL) else {
+            throw StubRecordingOutputError.missingSource
         }
 
         existingFiles.remove(sourceURL)

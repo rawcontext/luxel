@@ -20,6 +20,19 @@ enum RecordingStopAction {
     case audioRecorded(URL)
 }
 
+extension RecordingStopAction {
+    var loggingDescription: String {
+        switch self {
+        case .openEditor:
+            "openEditor"
+        case .quickExported:
+            "quickExported"
+        case .audioRecorded:
+            "audioRecorded"
+        }
+    }
+}
+
 struct RecordingMenuClock: Equatable {
     let startedAt: Date
     var pausedAt: Date?
@@ -66,6 +79,31 @@ struct RecordingMenuClock: Equatable {
 }
 
 extension RecordingMenuState {
+    var loggingDescription: String {
+        switch self {
+        case .idle:
+            "idle"
+        case .starting:
+            "starting"
+        case .countingDown:
+            "countingDown"
+        case .recording:
+            "recording"
+        case .pausing:
+            "pausing"
+        case .paused:
+            "paused"
+        case .resuming:
+            "resuming"
+        case .stopping:
+            "stopping"
+        case .exporting:
+            "exporting"
+        case .failed:
+            "failed"
+        }
+    }
+
     func presentationState(now: Date) -> RecordingSessionPresentationState {
         switch self {
         case .idle:

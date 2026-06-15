@@ -1,5 +1,11 @@
 import Foundation
 import LuxelCore
+import OSLog
+
+private let luxelRecordingLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "media.luxel.app",
+    category: "Recording"
+)
 
 @MainActor
 extension LuxelMenuModel {
@@ -387,12 +393,20 @@ extension LuxelMenuModel {
     }
 
     func stopRecording() async -> RecordingStopAction? {
+        luxelRecordingLogger.info(
+            """
+            Stop recording requested recording_state=\(self.recordingState.loggingDescription, privacy: .public) \
+            has_active_recording=\(self.hasActiveRecording, privacy: .public)
+            """
+        )
+
         if case .countingDown = recordingState {
             recordingNoticeMessage = nil
             recordingActionErrorMessage = nil
             quickExportStatusMessage = nil
             recordingState = .starting
             recordingStartTask?.cancel()
+            luxelRecordingLogger.info("Stop recording cancelled countdown")
             return nil
         }
 
@@ -403,6 +417,13 @@ extension LuxelMenuModel {
         recordingActionErrorMessage = nil
         recordingState = .stopping
         setCameraPreviewHoverControlsEnabled(false)
+        luxelRecordingLogger.info(
+            """
+            Stop recording transitioned to stopping previous_state=\(previousRecordingState.loggingDescription, privacy: .public) \
+            active_recording=\(activeRecording?.name ?? "none", privacy: .private) \
+            capture_kind=\(captureKind.loggingDescription, privacy: .public)
+            """
+        )
 
         do {
             if activeRecording?.options.isAudioOnly == true {
@@ -411,6 +432,9 @@ extension LuxelMenuModel {
                 recordingState = .idle
                 syncCameraPreviewHoverControls()
                 quickExportStatusMessage = "Recorded \(recording.fileURL.lastPathComponent)"
+                luxelRecordingLogger.info(
+                    "Audio recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private)"
+                )
                 return .audioRecorded(recording.fileURL)
             }
 
@@ -418,21 +442,47 @@ extension LuxelMenuModel {
             await recordingFramePanelController.close()
             setCameraPreviewHoverControlsEnabled(true)
             refreshRecentRecordings()
+            luxelRecordingLogger.info(
+                """
+                Screen recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private) \
+                capture_kind=\(captureKind.loggingDescription, privacy: .public)
+                """
+            )
 
             switch captureKind {
             case .standard:
                 recordingState = .idle
                 syncCameraPreviewHoverControls()
+                luxelRecordingLogger.info("Stop recording completed action=openEditor")
                 return .openEditor(recording.fileURL)
             case .quick(let presetID):
                 let stopAction = await runQuickExport(recording: recording, presetID: presetID)
                 syncCameraPreviewHoverControls()
+                luxelRecordingLogger.info(
+                    "Stop recording completed action=\(stopAction?.loggingDescription ?? "none", privacy: .public)"
+                )
                 return stopAction
             }
         } catch {
-            recordingActionErrorMessage = errorMessage(error)
-            recordingState = previousRecordingState
+            let message = errorMessage(error)
+            let nsError = error as NSError
+            recordingActionErrorMessage = message
+            if error.isTerminalRecordingStopFailure {
+                recordingState = .idle
+                refreshRecentRecordings()
+            } else {
+                recordingState = previousRecordingState
+            }
             syncCameraPreviewHoverControls()
+            luxelRecordingLogger.error(
+                """
+                Stop recording failed previous_state=\(previousRecordingState.loggingDescription, privacy: .public) \
+                restored_state=\(self.recordingState.loggingDescription, privacy: .public) \
+                error_domain=\(nsError.domain, privacy: .public) \
+                error_code=\(nsError.code, privacy: .public) \
+                message=\(message, privacy: .public)
+                """
+            )
             return nil
         }
     }
@@ -513,6 +563,31 @@ extension LuxelMenuModel {
         } catch {
             recordingActionErrorMessage = errorMessage(error)
             recordingState = .paused(activeRecording, clock)
+        }
+    }
+}
+
+private extension Error {
+    var isTerminalRecordingStopFailure: Bool {
+        guard let lifecycleError = self as? RecordingLifecycleError else {
+            return false
+        }
+
+        if case .outputFinalizationFailed = lifecycleError {
+            return true
+        }
+
+        return false
+    }
+}
+
+private extension QuickCaptureKind {
+    var loggingDescription: String {
+        switch self {
+        case .standard:
+            "standard"
+        case .quick:
+            "quick"
         }
     }
 }

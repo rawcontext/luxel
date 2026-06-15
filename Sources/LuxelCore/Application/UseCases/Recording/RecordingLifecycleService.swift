@@ -103,23 +103,30 @@ public final class RecordingLifecycleService: Sendable {
             try await runRecorderOperation { recorder in
                 try await recorder.stopRecording()
             }
-            let finalizationResult = try await finalizeCurrentOutput()
-
-            guard let recording = history.stopCurrentRecording(
-                finalFileURL: finalizationResult?.fileURL,
-                recordingName: recordingName
-            ) else {
-                await finishStop(succeeded: false)
-                throw RecordingLifecycleError.noActiveRecording
-            }
-
-            await autoStopState.clear()
-            await outputState.clear()
-            return recording
         } catch {
             await finishStop(succeeded: false)
             throw error
         }
+
+        let finalizationResult: RecordingOutputFinalizationResult?
+        do {
+            finalizationResult = try await finalizeCurrentOutput()
+        } catch {
+            await clearStoppedRecordingState()
+            throw RecordingLifecycleError.outputFinalizationFailed(error.recordingLifecycleDescription)
+        }
+
+        guard let recording = history.stopCurrentRecording(
+            finalFileURL: finalizationResult?.fileURL,
+            recordingName: recordingName
+        ) else {
+            await clearStoppedRecordingState()
+            throw RecordingLifecycleError.noActiveRecording
+        }
+
+        await autoStopState.clear()
+        await outputState.clear()
+        return recording
     }
 
     private func startAutoStopIfNeeded(schedule: RecordingSchedule?, startedAt: Date) async {
@@ -186,11 +193,42 @@ public final class RecordingLifecycleService: Sendable {
             try outputFinalizer.finalize(outputPlan)
         }.value
     }
+
+    private func clearStoppedRecordingState() async {
+        history.clearCurrentRecording()
+        await autoStopState.clear()
+        await outputState.clear()
+    }
 }
 
-public enum RecordingLifecycleError: Error, Equatable {
+public enum RecordingLifecycleError: Error, Equatable, Sendable {
     case noActiveRecording
     case stopAlreadyInProgress
+    case outputFinalizationFailed(String)
+}
+
+extension RecordingLifecycleError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .noActiveRecording:
+            "No active recording"
+        case .stopAlreadyInProgress:
+            "Recording stop is already in progress"
+        case .outputFinalizationFailed(let message):
+            message
+        }
+    }
+}
+
+private extension Error {
+    var recordingLifecycleDescription: String {
+        if let errorDescription = (self as? LocalizedError)?.errorDescription, !errorDescription.isEmpty {
+            return errorDescription
+        }
+
+        let localizedDescription = (self as NSError).localizedDescription
+        return localizedDescription.isEmpty ? String(describing: self) : localizedDescription
+    }
 }
 
 private struct RecordingLifecycleAutoStopTiming: Sendable {

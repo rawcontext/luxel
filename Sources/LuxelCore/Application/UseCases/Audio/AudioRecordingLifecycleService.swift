@@ -45,12 +45,20 @@ public final class AudioRecordingLifecycleService: Sendable {
     @discardableResult
     public func stopRecording(recordingName: String? = nil) async throws -> PastRecording {
         try await recorder.stopRecording()
-        let finalizationResult = try await finalizeCurrentOutput()
+        let finalizationResult: RecordingOutputFinalizationResult?
+        do {
+            finalizationResult = try await finalizeCurrentOutput()
+        } catch {
+            history.clearCurrentRecording()
+            await outputState.clear()
+            throw RecordingLifecycleError.outputFinalizationFailed(error.recordingLifecycleDescription)
+        }
 
         guard let recording = history.stopCurrentRecording(
             finalFileURL: finalizationResult?.fileURL,
             recordingName: recordingName
         ) else {
+            await outputState.clear()
             throw RecordingLifecycleError.noActiveRecording
         }
 
@@ -66,6 +74,17 @@ public final class AudioRecordingLifecycleService: Sendable {
         return try await Task.detached(priority: .userInitiated) { [outputFinalizer] in
             try outputFinalizer.finalize(outputPlan)
         }.value
+    }
+}
+
+private extension Error {
+    var recordingLifecycleDescription: String {
+        if let errorDescription = (self as? LocalizedError)?.errorDescription, !errorDescription.isEmpty {
+            return errorDescription
+        }
+
+        let localizedDescription = (self as NSError).localizedDescription
+        return localizedDescription.isEmpty ? String(describing: self) : localizedDescription
     }
 }
 

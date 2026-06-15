@@ -95,11 +95,13 @@ struct ArchitectureTests {
 
         #expect(source.contains("button.action = #selector(handleStatusItemClick)"))
         #expect(source.contains("button.sendAction(on: [.leftMouseDown])"))
+        #expect(source.contains("configureStatusItemButton(button)"))
         #expect(source.contains("statusItem.autosaveName"))
         #expect(source.contains("media.luxel.app.statusItem"))
         #expect(source.contains("if model.hasActiveRecording"))
         #expect(source.contains("stopRecordingFromStatusItem()"))
         #expect(source.contains("setStatusItemLength(activeStatusItemWidth"))
+        #expect(source.contains("if let button = statusItem.button {\n            configureStatusItemButton(button)"))
         #expect(source.contains("private func activeStatusItemWidth"))
         #expect(source.contains("makeActiveRecordingFrame"))
         #expect(source.contains("watchAudioLevels(onlyWhenRecording: true)"))

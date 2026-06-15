@@ -73,6 +73,39 @@ struct AudioRecordingLifecycleServiceTests {
         ])
     }
 
+    @Test("stop clears active audio recording when output finalization has no file")
+    func stopClearsActiveAudioRecordingWhenOutputFinalizationHasNoFile() async throws {
+        let finalURL = URL(fileURLWithPath: "/tmp/final/audio.m4a")
+        let stagingURL = URL(fileURLWithPath: "/tmp/staging/audio.m4a")
+        let store = InMemoryRecordingHistoryStore()
+        let recorder = SpyAudioRecorder()
+        let fileSystem = AudioRecordingOutputFileSystem(existingFiles: [])
+        let service = AudioRecordingLifecycleService(
+            recorder: recorder,
+            history: makeHistory(store: store, fileSystem: fileSystem),
+            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
+        )
+        let request = try makeRequest(outputFileURL: finalURL)
+
+        _ = try await service.startRecording(
+            request,
+            outputPlan: RecordingOutputFinalizationPlan(
+                stagingFileURL: stagingURL,
+                finalFileURL: finalURL
+            )
+        )
+
+        await #expect(throws: RecordingLifecycleError.outputFinalizationFailed(
+            "No recording output was produced. Try recording again."
+        )) {
+            try await service.stopRecording()
+        }
+        #expect(store.activeRecording == nil)
+        #expect(store.recordings.isEmpty)
+        #expect(recorder.stopCallCount == 1)
+        #expect(fileSystem.movedFiles.isEmpty)
+    }
+
     @Test("stop moves active audio recording into history")
     func stopMovesActiveAudioRecordingIntoHistory() async throws {
         let store = InMemoryRecordingHistoryStore()

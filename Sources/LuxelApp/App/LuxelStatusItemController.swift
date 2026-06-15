@@ -2,10 +2,16 @@ import AppKit
 import Carbon
 import LuxelCore
 import LuxelPresentation
+import OSLog
 import SwiftUI
 
 @MainActor
 final class LuxelStatusItemController: NSObject {
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "media.luxel.app",
+        category: "StatusItem"
+    )
+
     private let model: LuxelMenuModel
     private let editorModel: LuxelEditorModel
     private let cropperPanelController: LuxelCropperPanelController
@@ -60,12 +66,17 @@ final class LuxelStatusItemController: NSObject {
             return
         }
 
+        configureStatusItemButton(button)
+    }
+
+    private func configureStatusItemButton(_ button: NSStatusBarButton) {
         button.target = self
         button.action = #selector(handleStatusItemClick)
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
         button.setButtonType(.momentaryChange)
         button.sendAction(on: [.leftMouseDown])
+        Self.logger.debug("Status item button configured")
     }
 
     private func configurePopover() {
@@ -152,6 +163,9 @@ final class LuxelStatusItemController: NSObject {
         statusItem.length = length
         currentStatusItemLength = length
         currentImageKey = nil
+        if let button = statusItem.button {
+            configureStatusItemButton(button)
+        }
     }
 
     private func refreshRecordingAudioLevelMonitoring() {
@@ -189,12 +203,30 @@ final class LuxelStatusItemController: NSObject {
     }
 
     @objc private func handleStatusItemClick() {
+        Self.logger.info(
+            """
+            Status item clicked has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
+            recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+            is_handling_stop=\(self.isHandlingStatusItemStop, privacy: .public) \
+            button_configured=\(self.isStatusItemButtonConfigured, privacy: .public) \
+            popover_shown=\(self.popover.isShown, privacy: .public)
+            """
+        )
+
         if model.hasActiveRecording {
             stopRecordingFromStatusItem()
             return
         }
 
         togglePopover()
+    }
+
+    private var isStatusItemButtonConfigured: Bool {
+        guard let button = statusItem.button else {
+            return false
+        }
+
+        return button.target === self && button.action == #selector(handleStatusItemClick)
     }
 
     private func togglePopover() {
@@ -212,11 +244,23 @@ final class LuxelStatusItemController: NSObject {
 
     private func stopRecordingFromStatusItem() {
         guard !isHandlingStatusItemStop else {
+            Self.logger.info(
+                """
+                Status item stop ignored reason=stop-already-handling \
+                recording_state=\(self.model.recordingState.loggingDescription, privacy: .public)
+                """
+            )
             return
         }
 
         isHandlingStatusItemStop = true
         popover.performClose(nil)
+        Self.logger.info(
+            """
+            Status item stop began recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+            active_recording=\(self.model.recordingState.activeRecording?.name ?? "none", privacy: .private)
+            """
+        )
 
         statusItemStopTask?.cancel()
         statusItemStopWatchdogTask?.cancel()
@@ -226,11 +270,23 @@ final class LuxelStatusItemController: NSObject {
                 return
             }
 
+            Self.logger.info(
+                "Status item stop task started recording_state=\(self.model.recordingState.loggingDescription, privacy: .public)"
+            )
             let stopAction = await model.stopRecording()
             guard !Task.isCancelled else {
+                Self.logger.info("Status item stop task cancelled after stop returned")
                 return
             }
 
+            Self.logger.info(
+                """
+                Status item stop task completed action=\(stopAction?.loggingDescription ?? "none", privacy: .public) \
+                recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+                has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
+                error_message=\(self.model.recordingActionErrorMessage ?? "none", privacy: .public)
+                """
+            )
             handleStatusItemStopAction(stopAction)
         }
         statusItemStopWatchdogTask = Task { @MainActor [weak self, statusItemStopWatchdogDelay] in
@@ -249,6 +305,9 @@ final class LuxelStatusItemController: NSObject {
         statusItemStopWatchdogTask = nil
         statusItemStopTask = nil
         isHandlingStatusItemStop = false
+        Self.logger.info(
+            "Status item stop action handled action=\(stopAction?.loggingDescription ?? "none", privacy: .public)"
+        )
 
         switch stopAction {
         case .openEditor(let fileURL):
@@ -264,12 +323,19 @@ final class LuxelStatusItemController: NSObject {
         }
 
         guard model.hasActiveRecording else {
+            Self.logger.info("Status item stop watchdog cleared because recording is no longer active")
             statusItemStopWatchdogTask = nil
             isHandlingStatusItemStop = false
             return
         }
 
         statusItemStopTask?.cancel()
+        Self.logger.fault(
+            """
+            Status item stop watchdog terminating app recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+            active_recording=\(self.model.recordingState.activeRecording?.name ?? "none", privacy: .private)
+            """
+        )
         NSApplication.shared.terminate(nil)
     }
 

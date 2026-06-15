@@ -94,6 +94,10 @@ public struct FileSystemRecordingOutputFinalizer: RecordingOutputFinalizer {
     private func finalizeWithoutBookmark(
         _ plan: RecordingOutputFinalizationPlan
     ) throws -> RecordingOutputFinalizationResult {
+        guard fileSystem.fileExists(at: plan.stagingFileURL) else {
+            throw RecordingOutputFinalizationError.missingStagingFile(plan.stagingFileURL)
+        }
+
         do {
             return try moveStagingFile(plan)
         } catch {
@@ -114,5 +118,18 @@ public struct FileSystemRecordingOutputFinalizer: RecordingOutputFinalizer {
         try fileSystem.createDirectory(at: plan.finalFileURL.deletingLastPathComponent())
         try fileSystem.moveFile(from: plan.stagingFileURL, to: plan.finalFileURL)
         return RecordingOutputFinalizationResult(fileURL: plan.finalFileURL)
+    }
+}
+
+public enum RecordingOutputFinalizationError: Error, Equatable, Sendable {
+    case missingStagingFile(URL)
+}
+
+extension RecordingOutputFinalizationError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .missingStagingFile:
+            "No recording output was produced. Try recording again."
+        }
     }
 }
