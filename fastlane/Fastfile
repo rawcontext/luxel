@@ -27,7 +27,6 @@ platform :mac do
 
     upload_to_testflight(
       api_key: api_key,
-      username: APPLE_ACCOUNT,
       app_identifier: APP_IDENTIFIER,
       app_platform: "osx",
       pkg: pkg_path,
