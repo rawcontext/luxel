@@ -344,6 +344,47 @@ struct ArchitectureTests {
         #expect(!requestSource.contains("settings.record60FPS ? 60 : 30"))
     }
 
+    @Test("settings pane does not activate capture resources")
+    func settingsPaneDoesNotActivateCaptureResources() throws {
+        let packageRoot = try packageRootURL()
+        let settingsSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Settings/Views/LuxelSettingsView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(!settingsSource.contains("watchAudioLevels("))
+        #expect(!settingsSource.contains("AudioLevelMeterView("))
+        #expect(!settingsSource.contains("syncCameraPreviewPanelWithSettings("))
+    }
+
+    @Test("recording lifecycle owns camera preview activation")
+    func recordingLifecycleOwnsCameraPreviewActivation() throws {
+        let packageRoot = try packageRootURL()
+        let recordingSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Recording.swift"),
+            encoding: .utf8
+        )
+        let cameraSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Camera.swift"),
+            encoding: .utf8
+        )
+
+        let recorderStartRange = try #require(recordingSource.range(of: "recordingLifecycleService.startRecording("))
+        let cameraStartRange = try #require(recordingSource.range(of: "await presentCameraPreviewForRecording(request)"))
+        let recordingCameraHelperRange = try #require(
+            cameraSource.range(of: "func presentCameraPreviewForRecording(_ request: RecordingRequest) async")
+        )
+        let recordingCameraHelperSource = String(cameraSource[recordingCameraHelperRange.lowerBound...])
+
+        #expect(recorderStartRange.lowerBound < cameraStartRange.lowerBound)
+        #expect(recordingSource.contains("closeCameraPreviewForFinishedRecording()"))
+        #expect(cameraSource.contains("func presentCameraPreviewForRecording(_ request: RecordingRequest) async"))
+        #expect(recordingCameraHelperSource.contains("guard let camera = request.camera"))
+        #expect(recordingCameraHelperSource.contains("permissionClient.request(.camera)"))
+        #expect(recordingCameraHelperSource.contains("showsHoverControls: false"))
+        #expect(cameraSource.contains("func closeCameraPreviewForFinishedRecording()"))
+    }
+
     @Test("update settings milestone does not link Sparkle yet")
     func updateSettingsMilestoneDoesNotLinkSparkleYet() throws {
         let packageRoot = try packageRootURL()

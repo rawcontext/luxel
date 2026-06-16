@@ -75,6 +75,48 @@ extension LuxelMenuModel {
         )
     }
 
+    func presentCameraPreviewForRecording(_ request: RecordingRequest) async {
+        guard let camera = request.camera,
+              camera.isEnabled,
+              let cameraDeviceID = camera.deviceID else {
+            cameraPreviewPanelController.close()
+            return
+        }
+
+        if cameraStatus == .unknown {
+            await refreshPermissions()
+        }
+
+        if cameraStatus == .notDetermined {
+            _ = await permissionClient.request(.camera)
+            await refreshPermissions()
+        }
+
+        guard cameraStatus == .authorized else {
+            cameraPreviewPanelController.close()
+            presentPermissionPrompt(for: .camera)
+            return
+        }
+
+        cameraPreviewPanelController.present(
+            deviceID: cameraDeviceID,
+            style: camera.previewStyle,
+            placements: settings.cameraPreviewPlacements,
+            snapRect: cameraPreviewSnapRect(for: request.target),
+            showsHoverControls: false,
+            onPlacementChange: { [weak self] displayID, placement in
+                self?.saveCameraPreviewPlacement(displayID: displayID, placement: placement)
+            },
+            onClose: { [weak self] in
+                self?.disableCameraPreviewFromPanel()
+            }
+        )
+    }
+
+    func closeCameraPreviewForFinishedRecording() {
+        cameraPreviewPanelController.close()
+    }
+
     func syncCameraPreviewHoverControls() {
         setCameraPreviewHoverControlsEnabled(canShowCameraPreviewHoverControls)
     }
@@ -119,8 +161,12 @@ extension LuxelMenuModel {
             return nil
         }
 
+        return cameraPreviewSnapRect(for: selectedCaptureTarget.target)
+    }
+
+    private func cameraPreviewSnapRect(for target: CaptureTarget) -> NSRect? {
         return CaptureTargetScreenRectResolver.rect(
-            for: selectedCaptureTarget.target,
+            for: target,
             availableTargets: captureTargets
         )
     }

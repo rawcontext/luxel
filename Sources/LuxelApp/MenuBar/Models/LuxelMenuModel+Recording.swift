@@ -357,6 +357,7 @@ extension LuxelMenuModel {
                 activeRecording,
                 RecordingMenuClock(startedAt: activeRecording.date)
             )
+            await presentCameraPreviewForRecording(request)
             if let latencySpan {
                 LuxelRecordingLatencyTelemetry.finishStarted(latencySpan, target: request.target)
             }
@@ -434,7 +435,7 @@ extension LuxelMenuModel {
 
             let recording = try await recordingLifecycleService.stopRecording()
             await recordingFramePanelController.close()
-            setCameraPreviewHoverControlsEnabled(true)
+            closeCameraPreviewForFinishedRecording()
             refreshRecentRecordings()
             luxelRecordingLogger.info(
                 """
@@ -462,6 +463,7 @@ extension LuxelMenuModel {
             let nsError = error as NSError
             recordingActionErrorMessage = message
             if error.isTerminalRecordingStopFailure {
+                closeCameraPreviewForFinishedRecording()
                 recordingState = .idle
                 refreshRecentRecordings()
             } else {
@@ -511,7 +513,7 @@ extension LuxelMenuModel {
         recordingActionErrorMessage = nil
         recordingState = .stopping
         await recordingFramePanelController.close()
-        setCameraPreviewHoverControlsEnabled(true)
+        closeCameraPreviewForFinishedRecording()
         refreshRecentRecordings()
 
         switch recording.options.captureKind {

@@ -5,7 +5,6 @@ import LuxelPresentation
 import SwiftUI
 
 struct LuxelSettingsView: View {
-    private static let recordingFrameRates = [24, 30, 60]
     private static let replayBufferLengths: [TimeInterval] = [30, 60, 120, 300]
     private static let replayBufferFrameRates = [24, 30]
     private static let notchAutoCollapseDurations: [TimeInterval] = [0, 3, 6, 10]
@@ -13,6 +12,7 @@ struct LuxelSettingsView: View {
     @Environment(\.openWindow) private var openWindow
     @State private var isShowingAcknowledgements = false
     @State private var recordingFrameRateMessage: String?
+    @State private var selectedPane: LuxelSettingsPane = .recording
 
     @Bindable var model: LuxelMenuModel
     let editorModel: LuxelEditorModel
@@ -36,334 +36,164 @@ struct LuxelSettingsView: View {
     }
 }
 
+private enum LuxelSettingsPane: CaseIterable, Identifiable {
+    case recording
+    case output
+    case screenshots
+    case presets
+    case shortcuts
+    case experimental
+    case system
+
+    var id: Self {
+        self
+    }
+
+    var title: String {
+        switch self {
+        case .recording:
+            "Recording"
+        case .output:
+            "Output"
+        case .screenshots:
+            "Screenshots"
+        case .presets:
+            "Presets"
+        case .shortcuts:
+            "Shortcuts"
+        case .experimental:
+            "Experimental"
+        case .system:
+            "System"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .recording:
+            "Capture, audio, and camera controls for new recordings."
+        case .output:
+            "Where recordings go and how exports behave."
+        case .screenshots:
+            "Screenshot format, destinations, thumbnail behavior, and shortcuts."
+        case .presets:
+            "Reusable export presets and cropper size presets."
+        case .shortcuts:
+            "Keyboard shortcuts and URL automation."
+        case .experimental:
+            "Preview features that are still being built out."
+        case .system:
+            "App startup, updates, menu bar behavior, and acknowledgements."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .recording:
+            "record.circle"
+        case .output:
+            "tray.and.arrow.down"
+        case .screenshots:
+            "camera.viewfinder"
+        case .presets:
+            "slider.horizontal.3"
+        case .shortcuts:
+            "keyboard"
+        case .experimental:
+            "sparkles"
+        case .system:
+            "gearshape"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .recording:
+            .blue
+        case .output:
+            .green
+        case .screenshots:
+            .cyan
+        case .presets:
+            .purple
+        case .shortcuts:
+            .indigo
+        case .experimental:
+            .orange
+        case .system:
+            .gray
+        }
+    }
+}
+
+private struct ExperimentalBadge: View {
+    var body: some View {
+        Text("Experimental")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(.orange)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(.orange.opacity(0.14), in: Capsule())
+    }
+}
+
+private struct SettingsSidebarSelectionBackground: View {
+    let isSelected: Bool
+    let tint: Color
+
+    var body: some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(tint.opacity(0.18))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(tint.opacity(0.14), lineWidth: 1)
+                }
+        } else {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.clear)
+        }
+    }
+}
+
+private struct SettingsGlassCard<Content: View>: View {
+    let cornerRadius: CGFloat
+    let padding: CGFloat
+    let tint: Color
+    let content: Content
+
+    init(
+        cornerRadius: CGFloat,
+        padding: CGFloat,
+        tint: Color = .clear,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.cornerRadius = cornerRadius
+        self.padding = padding
+        self.tint = tint
+        self.content = content()
+    }
+
+    var body: some View {
+        if #available(macOS 26.0, *) {
+            content
+                .padding(padding)
+                .glassEffect(.regular.tint(tint), in: .rect(cornerRadius: cornerRadius))
+        } else {
+            content
+                .padding(padding)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(.white.opacity(0.12), lineWidth: 1)
+                }
+        }
+    }
+}
+
 extension LuxelSettingsView {
     var body: some View {
-        Form {
-            Section("Capture") {
-                Toggle("Show Cursor", isOn: $model.settings.showCursor)
-                Toggle("Highlight Clicks", isOn: $model.settings.highlightClicks)
-                    .disabled(!model.settings.showCursor)
-
-                recordingFrameRateSettings
-            }
-
-            Section("Audio") {
-                Toggle("Record Audio", isOn: $model.settings.recordAudio)
-                Picker("Microphone", selection: audioInputDeviceSelection) {
-                    ForEach(model.audioInputDevices) { device in
-                        Text(device.name).tag(device.id)
-                    }
-                }
-                .disabled(!model.settings.recordAudio)
-
-                Picker("Audio-Only Format", selection: $model.settings.audioOnlyFormat) {
-                    ForEach(AudioRecordingFormat.allCases, id: \.self) { format in
-                        Text(format.label).tag(format)
-                    }
-                }
-                .pickerStyle(.menu)
-
-                if model.settings.recordAudio, model.microphoneStatus == .authorized {
-                    AudioLevelMeterView(sample: model.audioLevelSample)
-                }
-            }
-
-            Section("Camera") {
-                Picker("Camera", selection: $model.settings.cameraDeviceID) {
-                    Text("Off").tag(String?.none)
-                    if let unavailableCameraDeviceID {
-                        Text("Unavailable Camera").tag(Optional(unavailableCameraDeviceID))
-                    }
-                    ForEach(model.cameraDevices) { device in
-                        Text(device.settingsLabel).tag(Optional(device.id))
-                    }
-                }
-                .pickerStyle(.menu)
-
-                Picker("Shape", selection: cameraPreviewShapeSelection) {
-                    ForEach(CameraOverlayShape.allCases, id: \.self) { shape in
-                        Text(shape.settingsLabel).tag(shape)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .disabled(model.settings.cameraDeviceID == nil)
-
-                Picker("Size", selection: cameraPreviewSizeSelection) {
-                    ForEach(CameraPreviewSize.allCases, id: \.self) { size in
-                        Text(size.settingsLabel).tag(size)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .disabled(model.settings.cameraDeviceID == nil)
-
-                Toggle("Mirror Preview", isOn: cameraPreviewMirroredSelection)
-                    .disabled(model.settings.cameraDeviceID == nil)
-            }
-
-            Section("Output") {
-                LabeledContent("Folder") {
-                    Button {
-                        model.chooseRecordingsDirectory()
-                    } label: {
-                        Label {
-                            Text(model.recordingsDirectorySummary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        } icon: {
-                            Image(systemName: "folder")
-                        }
-                    }
-                    .help(model.settings.recordingsDirectory.path)
-                }
-
-                Toggle("Loop Exports", isOn: $model.settings.loopExports)
-                Toggle("Confirm Discard", isOn: $model.settings.confirmDiscard)
-            }
-
-            Section("Screenshots") {
-                Picker("Format", selection: $model.settings.screenshotFormat) {
-                    ForEach(ScreenshotFormat.allCases, id: \.self) { format in
-                        Text(format.settingsLabel).tag(format)
-                    }
-                }
-                .pickerStyle(.menu)
-
-                Picker("Window Backdrop", selection: $model.settings.screenshotBackdrop) {
-                    ForEach(CaptureBackdrop.allCases, id: \.self) { backdrop in
-                        Text(backdrop.settingsLabel)
-                            .tag(backdrop)
-                            .disabled(backdrop.usesAlpha && !model.settings.screenshotFormat.supportsAlpha)
-                    }
-                }
-                .pickerStyle(.menu)
-
-                ForEach(ScreenshotDestination.allCases, id: \.self) { destination in
-                    Toggle(destination.settingsLabel, isOn: screenshotDestinationBinding(destination))
-                }
-
-                Toggle("Show Thumbnail", isOn: $model.settings.screenshotShowThumbnail)
-
-                shortcutPicker(
-                    "Screenshot",
-                    selection: $model.settings.captureScreenshotShortcut,
-                    presets: AppKeyboardShortcutPresets.captureScreenshot
-                )
-
-                shortcutPicker(
-                    "Active Window",
-                    selection: $model.settings.screenshotActiveWindowShortcut,
-                    presets: AppKeyboardShortcutPresets.screenshotActiveWindow
-                )
-
-                shortcutPicker(
-                    "Fullscreen",
-                    selection: $model.settings.screenshotFullscreenShortcut,
-                    presets: AppKeyboardShortcutPresets.screenshotFullscreen
-                )
-            }
-
-            Section("Replay Buffer") {
-                let isConfigured = model.settings.replayBufferConfiguration != nil
-
-                LabeledContent("Status", value: "Engine Coming Soon")
-                Toggle("Enable Replay Buffer", isOn: replayBufferEnabled)
-
-                Picker("Length", selection: replayBufferLengthSelection) {
-                    ForEach(Self.replayBufferLengths, id: \.self) { seconds in
-                        Text(replayBufferLengthLabel(seconds)).tag(seconds)
-                    }
-                }
-                .pickerStyle(.menu)
-                .disabled(!isConfigured)
-
-                LabeledContent("Source", value: "Display with Cursor")
-
-                Picker("Frame Rate", selection: replayBufferFrameRateSelection) {
-                    ForEach(Self.replayBufferFrameRates, id: \.self) { frameRate in
-                        Text("\(frameRate) FPS").tag(frameRate)
-                    }
-                }
-                .pickerStyle(.menu)
-                .disabled(!isConfigured)
-
-                Toggle("Include System Audio", isOn: replayBufferSystemAudioSelection)
-                    .disabled(!isConfigured)
-
-                Toggle("Resume on Launch", isOn: $model.settings.replayBufferResumeOnLaunch)
-                    .disabled(!isConfigured)
-
-                Picker("Clip Opens In", selection: $model.settings.replayClipDestination) {
-                    ForEach(ReplayClipDestination.allCases) { destination in
-                        Text(destination.label).tag(destination)
-                    }
-                }
-                .pickerStyle(.menu)
-                .disabled(!isConfigured)
-
-                shortcutPicker(
-                    "Clip Shortcut",
-                    selection: $model.settings.clipReplayBufferShortcut,
-                    presets: AppKeyboardShortcutPresets.clipReplayBuffer
-                )
-
-                Text("Replay buffer capture is not active until the engine lands.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Notch") {
-                let notchStatus = model.notchSurfaceStatusPresentation
-
-                LabeledContent("Status", value: notchStatus.statusText)
-                Text(notchStatus.detailText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Toggle("Enable Notch Surface", isOn: notchSurfaceEnabled)
-                Toggle("Idle Quick Actions", isOn: notchIdleHoverActionsEnabled)
-                    .disabled(!model.settings.notchSurfaceSettings.isEnabled)
-                Toggle("Recording Waveform", isOn: notchWaveformEnabled)
-                    .disabled(!model.settings.notchSurfaceSettings.isEnabled)
-
-                Picker("Auto Collapse", selection: notchAutoCollapseSecondsSelection) {
-                    ForEach(Self.notchAutoCollapseDurations, id: \.self) { seconds in
-                        Text(notchAutoCollapseLabel(seconds)).tag(seconds)
-                    }
-                }
-                .pickerStyle(.menu)
-                .disabled(!model.settings.notchSurfaceSettings.isEnabled)
-
-                Toggle("Recent Shelf", isOn: notchRecentShelfEnabled)
-                    .disabled(!model.settings.notchSurfaceSettings.isEnabled)
-                Toggle("Floating HUD Fallback", isOn: notchFloatingHUDFallbackEnabled)
-                    .disabled(!model.settings.notchSurfaceSettings.isEnabled)
-            }
-
-            ExportPresetSettingsSection(settings: $model.settings)
-
-            Section("Cropper") {
-                Toggle("Always Show Loupe", isOn: $model.settings.loupeAlwaysOn)
-                Toggle("Dim Other Displays", isOn: $model.settings.dimOtherDisplays)
-                Toggle("Restore Last Selection", isOn: $model.settings.restoreLastSelection)
-            }
-
-            CaptureSizePresetSettingsSection(settings: $model.settings)
-
-            Section("System") {
-                Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
-                Toggle("Remind About Notifications", isOn: $model.settings.notificationReminder)
-                Toggle("Allow URL Automation", isOn: $model.settings.allowURLAutomation)
-                if AppDistribution.current.capabilities.allowsCommandLineToolInstaller {
-                    LabeledContent("Command Line Tool") {
-                        Button {
-                            model.installCommandLineTool()
-                        } label: {
-                            Label("Install luxel", systemImage: "terminal")
-                        }
-                        .help("Install to \(model.commandLineToolInstallService.defaultDestination.path)")
-                    }
-
-                    if let installStatus = model.commandLineToolInstallStatus {
-                        Label(installStatus.message, systemImage: installStatus.systemImage)
-                            .font(.caption)
-                            .foregroundStyle(installStatus.tint)
-                    }
-                }
-
-                Toggle("Keyboard Shortcuts", isOn: $model.settings.enableShortcuts)
-                shortcutPicker(
-                    "Select Area",
-                    selection: $model.settings.triggerCropperShortcut,
-                    presets: AppKeyboardShortcutPresets.capture
-                )
-
-                shortcutPicker(
-                    "Toggle Recording",
-                    selection: $model.settings.toggleRecordingShortcut,
-                    presets: AppKeyboardShortcutPresets.toggleRecording
-                )
-
-                shortcutPicker(
-                    "Record Active Window",
-                    selection: $model.settings.recordActiveWindowShortcut,
-                    presets: AppKeyboardShortcutPresets.recordActiveWindow
-                )
-
-                shortcutPicker(
-                    "Record Fullscreen",
-                    selection: $model.settings.recordFullscreenShortcut,
-                    presets: AppKeyboardShortcutPresets.recordFullscreen
-                )
-
-                shortcutPicker(
-                    "Audio Only",
-                    selection: $model.settings.audioOnlyRecordingShortcut,
-                    presets: AppKeyboardShortcutPresets.audioOnlyRecording
-                )
-
-                shortcutPicker(
-                    "Quick Record Last",
-                    selection: $model.settings.quickRecordLastShortcut,
-                    presets: AppKeyboardShortcutPresets.quickRecordLast
-                )
-
-                Toggle("Launch at Login", isOn: $model.launchAtLogin)
-            }
-
-            Section("Updates") {
-                let updatePresentation = updateSettingsPresentation
-
-                LabeledContent("Current Version", value: model.appMetadata.versionSummary)
-                LabeledContent("Status", value: updatePresentation.statusText)
-
-                if updatePresentation.showsDeveloperIDUpdateControls {
-                    Toggle("Check Automatically", isOn: $model.settings.updatePreferences.automaticallyCheckForUpdates)
-
-                    Toggle(
-                        "Install Automatically",
-                        isOn: $model.settings.updatePreferences.automaticallyDownloadAndInstall
-                    )
-                        .disabled(!updatePresentation.automaticInstallToggleEnabled)
-
-                    Picker("Channel", selection: $model.settings.updatePreferences.channel) {
-                        ForEach(UpdateChannel.allCases) { channel in
-                            Text(channel.label).tag(channel)
-                        }
-                    }
-                    .pickerStyle(.menu)
-
-                    Button {} label: {
-                        Label("Check Now", systemImage: "arrow.clockwise")
-                    }
-                    .disabled(!updatePresentation.canCheckNow)
-                    .help(updatePresentation.checkNowHelp)
-                }
-
-                Text(updatePresentation.networkPolicyText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("About") {
-                LabeledContent("App", value: model.appMetadata.displayName)
-                LabeledContent("Version", value: model.appMetadata.versionSummary)
-
-                if !model.appMetadata.copyright.isEmpty {
-                    Text(model.appMetadata.copyright)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Button {
-                    isShowingAcknowledgements = true
-                } label: {
-                    Label("Acknowledgements", systemImage: "doc.text")
-                }
-            }
-        }
-        .formStyle(.grouped)
-        .padding(24)
-        .frame(width: 460)
+        settingsShell
         .background {
             LuxelShortcutInstaller(
                 model: model,
@@ -377,15 +207,11 @@ extension LuxelSettingsView {
             await model.refreshPermissions()
             model.refreshAudioInputDevices()
             model.refreshCameraDevices()
-            await model.syncCameraPreviewPanelWithSettings()
             await model.watchAudioInputDeviceUpdates()
         }
         .task {
             model.refreshNotchDisplays()
             await model.watchNotchDisplayUpdates()
-        }
-        .task(id: model.audioLevelMonitorTaskID) {
-            await model.watchAudioLevels()
         }
         .onAppear {
             NSApplication.shared.activate(ignoringOtherApps: true)
@@ -397,16 +223,6 @@ extension LuxelSettingsView {
             if model.settings.screenshotBackdrop.usesAlpha,
                !model.settings.screenshotFormat.supportsAlpha {
                 model.settings.screenshotBackdrop = .opaque
-            }
-        }
-        .onChange(of: model.settings.cameraDeviceID) {
-            Task {
-                await model.syncCameraPreviewPanelWithSettings()
-            }
-        }
-        .onChange(of: model.settings.cameraPreviewStyle) {
-            Task {
-                await model.syncCameraPreviewPanelWithSettings()
             }
         }
         .onChange(of: model.launchAtLogin) {
@@ -434,6 +250,538 @@ extension LuxelSettingsView {
         }
     }
 
+    @ViewBuilder
+    private var settingsShell: some View {
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer(spacing: 16) {
+                settingsChrome
+            }
+        } else {
+            settingsChrome
+        }
+    }
+
+    private var settingsChrome: some View {
+        HStack(spacing: 0) {
+            settingsSidebar
+
+            Divider()
+
+            settingsDetail
+        }
+        .frame(minWidth: 840, minHeight: 660)
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private var settingsSidebar: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            settingsSidebarHeader
+
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(LuxelSettingsPane.allCases) { pane in
+                    settingsSidebarButton(pane)
+                }
+            }
+
+            Spacer(minLength: 24)
+
+            SettingsGlassCard(cornerRadius: 14, padding: 12, tint: .blue.opacity(0.08)) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(model.appMetadata.displayName)
+                        .font(.caption.weight(.semibold))
+                    Text(model.appMetadata.versionSummary)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 22)
+        .padding(.bottom, 16)
+        .frame(width: 232)
+        .background(.regularMaterial)
+    }
+
+    private var settingsSidebarHeader: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.blue.opacity(0.18))
+                Image(systemName: "sparkles.rectangle.stack")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.blue)
+            }
+            .frame(width: 40, height: 40)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Luxel")
+                    .font(.headline.weight(.semibold))
+                Text("Settings")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.bottom, 2)
+    }
+
+    private func settingsSidebarButton(_ pane: LuxelSettingsPane) -> some View {
+        let isSelected = selectedPane == pane
+
+        return Button {
+            withAnimation(.easeInOut(duration: 0.16)) {
+                selectedPane = pane
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: pane.systemImage)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(isSelected ? pane.tint : .secondary)
+                    .frame(width: 22)
+
+                Text(pane.title)
+                    .font(.callout.weight(isSelected ? .semibold : .medium))
+                    .foregroundStyle(.primary)
+
+                Spacer(minLength: 8)
+
+                if pane == .experimental {
+                    Text("Beta")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(.orange.opacity(0.14), in: Capsule())
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background {
+                SettingsSidebarSelectionBackground(isSelected: isSelected, tint: pane.tint)
+            }
+        }
+        .buttonStyle(.plain)
+        .help(pane.subtitle)
+    }
+
+    private var settingsDetail: some View {
+        Form {
+            selectedPaneForm
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .padding(.horizontal, 16)
+        .padding(.top, 20)
+        .padding(.bottom, 16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(nsColor: .controlBackgroundColor).opacity(0.72))
+    }
+
+    @ViewBuilder
+    private var selectedPaneForm: some View {
+        switch selectedPane {
+        case .recording:
+            recordingSettingsForm
+        case .output:
+            outputSettingsForm
+        case .screenshots:
+            screenshotSettingsForm
+        case .presets:
+            presetSettingsForm
+        case .shortcuts:
+            shortcutSettingsForm
+        case .experimental:
+            experimentalSettingsForm
+        case .system:
+            systemSettingsForm
+        }
+    }
+
+    @ViewBuilder
+    private var recordingSettingsForm: some View {
+        Section {
+            Toggle("Show Cursor", isOn: $model.settings.showCursor)
+            Toggle("Highlight Clicks", isOn: $model.settings.highlightClicks)
+                .disabled(!model.settings.showCursor)
+
+            recordingFrameRateSettings
+        } header: {
+            Text("Capture")
+        } footer: {
+            Text("Cursor and frame rate apply to new recordings.")
+        }
+
+        Section {
+            Toggle("Record Audio", isOn: $model.settings.recordAudio)
+            Picker("Microphone", selection: audioInputDeviceSelection) {
+                ForEach(model.audioInputDevices) { device in
+                    Text(device.name).tag(device.id)
+                }
+            }
+            .disabled(!model.settings.recordAudio)
+
+            Picker("Audio-Only Format", selection: $model.settings.audioOnlyFormat) {
+                ForEach(AudioRecordingFormat.allCases, id: \.self) { format in
+                    Text(format.label).tag(format)
+                }
+            }
+            .pickerStyle(.menu)
+        } header: {
+            Text("Audio")
+        }
+
+        Section {
+            Picker("Camera", selection: $model.settings.cameraDeviceID) {
+                Text("Off").tag(String?.none)
+                if let unavailableCameraDeviceID {
+                    Text("Unavailable Camera").tag(Optional(unavailableCameraDeviceID))
+                }
+                ForEach(model.cameraDevices) { device in
+                    Text(device.settingsLabel).tag(Optional(device.id))
+                }
+            }
+            .pickerStyle(.menu)
+
+            Picker("Shape", selection: cameraPreviewShapeSelection) {
+                ForEach(CameraOverlayShape.allCases, id: \.self) { shape in
+                    Text(shape.settingsLabel).tag(shape)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(model.settings.cameraDeviceID == nil)
+
+            Picker("Size", selection: cameraPreviewSizeSelection) {
+                ForEach(CameraPreviewSize.allCases, id: \.self) { size in
+                    Text(size.settingsLabel).tag(size)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(model.settings.cameraDeviceID == nil)
+
+            Toggle("Mirror Preview", isOn: cameraPreviewMirroredSelection)
+                .disabled(model.settings.cameraDeviceID == nil)
+        } header: {
+            Text("Camera")
+        } footer: {
+            Text("Camera controls are available after you choose a camera.")
+        }
+    }
+
+    @ViewBuilder
+    private var outputSettingsForm: some View {
+        Section {
+            LabeledContent("Folder") {
+                Button {
+                    model.chooseRecordingsDirectory()
+                } label: {
+                    Label {
+                        Text(model.recordingsDirectorySummary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    } icon: {
+                        Image(systemName: "folder")
+                    }
+                }
+                .help(model.settings.recordingsDirectory.path)
+            }
+
+            Toggle("Loop Exports", isOn: $model.settings.loopExports)
+            Toggle("Confirm Discard", isOn: $model.settings.confirmDiscard)
+        } header: {
+            Text("Recordings")
+        } footer: {
+            Text("Choose where Luxel saves recordings and how the editor behaves after export.")
+        }
+    }
+
+    @ViewBuilder
+    private var screenshotSettingsForm: some View {
+        Section {
+            Picker("Format", selection: $model.settings.screenshotFormat) {
+                ForEach(ScreenshotFormat.allCases, id: \.self) { format in
+                    Text(format.settingsLabel).tag(format)
+                }
+            }
+            .pickerStyle(.menu)
+
+            Picker("Window Backdrop", selection: $model.settings.screenshotBackdrop) {
+                ForEach(CaptureBackdrop.allCases, id: \.self) { backdrop in
+                    Text(backdrop.settingsLabel)
+                        .tag(backdrop)
+                        .disabled(backdrop.usesAlpha && !model.settings.screenshotFormat.supportsAlpha)
+                }
+            }
+            .pickerStyle(.menu)
+
+            ForEach(ScreenshotDestination.allCases, id: \.self) { destination in
+                Toggle(destination.settingsLabel, isOn: screenshotDestinationBinding(destination))
+            }
+
+            Toggle("Show Thumbnail", isOn: $model.settings.screenshotShowThumbnail)
+        } header: {
+            Text("Capture")
+        } footer: {
+            Text("At least one screenshot destination stays enabled.")
+        }
+
+        Section("Shortcuts") {
+            shortcutPicker(
+                "Screenshot",
+                selection: $model.settings.captureScreenshotShortcut,
+                presets: AppKeyboardShortcutPresets.captureScreenshot
+            )
+
+            shortcutPicker(
+                "Active Window",
+                selection: $model.settings.screenshotActiveWindowShortcut,
+                presets: AppKeyboardShortcutPresets.screenshotActiveWindow
+            )
+
+            shortcutPicker(
+                "Fullscreen",
+                selection: $model.settings.screenshotFullscreenShortcut,
+                presets: AppKeyboardShortcutPresets.screenshotFullscreen
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var presetSettingsForm: some View {
+        ExportPresetSettingsSection(settings: $model.settings)
+
+        Section("Cropper") {
+            Toggle("Always Show Loupe", isOn: $model.settings.loupeAlwaysOn)
+            Toggle("Dim Other Displays", isOn: $model.settings.dimOtherDisplays)
+            Toggle("Restore Last Selection", isOn: $model.settings.restoreLastSelection)
+        }
+
+        CaptureSizePresetSettingsSection(settings: $model.settings)
+    }
+
+    @ViewBuilder
+    private var shortcutSettingsForm: some View {
+        Section {
+            Toggle("Keyboard Shortcuts", isOn: $model.settings.enableShortcuts)
+
+            shortcutPicker(
+                "Select Area",
+                selection: $model.settings.triggerCropperShortcut,
+                presets: AppKeyboardShortcutPresets.capture
+            )
+
+            shortcutPicker(
+                "Toggle Recording",
+                selection: $model.settings.toggleRecordingShortcut,
+                presets: AppKeyboardShortcutPresets.toggleRecording
+            )
+
+            shortcutPicker(
+                "Record Active Window",
+                selection: $model.settings.recordActiveWindowShortcut,
+                presets: AppKeyboardShortcutPresets.recordActiveWindow
+            )
+
+            shortcutPicker(
+                "Record Fullscreen",
+                selection: $model.settings.recordFullscreenShortcut,
+                presets: AppKeyboardShortcutPresets.recordFullscreen
+            )
+
+            shortcutPicker(
+                "Audio Only",
+                selection: $model.settings.audioOnlyRecordingShortcut,
+                presets: AppKeyboardShortcutPresets.audioOnlyRecording
+            )
+
+            shortcutPicker(
+                "Quick Record Last",
+                selection: $model.settings.quickRecordLastShortcut,
+                presets: AppKeyboardShortcutPresets.quickRecordLast
+            )
+        } header: {
+            Text("Recording Shortcuts")
+        } footer: {
+            Text("Shortcut conflicts are shown inline when a system shortcut uses the same keys.")
+        }
+
+        Section("Automation") {
+            Toggle("Allow URL Automation", isOn: $model.settings.allowURLAutomation)
+        }
+    }
+
+    @ViewBuilder
+    private var experimentalSettingsForm: some View {
+        Section {
+            let isConfigured = model.settings.replayBufferConfiguration != nil
+
+            LabeledContent("Status", value: "Engine Coming Soon")
+            Toggle("Enable Replay Buffer", isOn: replayBufferEnabled)
+
+            Picker("Length", selection: replayBufferLengthSelection) {
+                ForEach(Self.replayBufferLengths, id: \.self) { seconds in
+                    Text(replayBufferLengthLabel(seconds)).tag(seconds)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(!isConfigured)
+
+            LabeledContent("Source", value: "Display with Cursor")
+
+            Picker("Frame Rate", selection: replayBufferFrameRateSelection) {
+                ForEach(Self.replayBufferFrameRates, id: \.self) { frameRate in
+                    Text("\(frameRate) FPS").tag(frameRate)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(!isConfigured)
+
+            Toggle("Include System Audio", isOn: replayBufferSystemAudioSelection)
+                .disabled(!isConfigured)
+
+            Toggle("Resume on Launch", isOn: $model.settings.replayBufferResumeOnLaunch)
+                .disabled(!isConfigured)
+
+            Picker("Clip Opens In", selection: $model.settings.replayClipDestination) {
+                ForEach(ReplayClipDestination.allCases) { destination in
+                    Text(destination.label).tag(destination)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(!isConfigured)
+
+            shortcutPicker(
+                "Clip Shortcut",
+                selection: $model.settings.clipReplayBufferShortcut,
+                presets: AppKeyboardShortcutPresets.clipReplayBuffer
+            )
+        } header: {
+            HStack(spacing: 6) {
+                Text("Replay Buffer")
+                ExperimentalBadge()
+            }
+        } footer: {
+            Text("Replay buffer capture is not active until the engine lands.")
+        }
+
+        Section {
+            let notchStatus = model.notchSurfaceStatusPresentation
+
+            LabeledContent("Status", value: notchStatus.statusText)
+            Text(notchStatus.detailText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Toggle("Enable Notch Surface", isOn: notchSurfaceEnabled)
+            Toggle("Idle Quick Actions", isOn: notchIdleHoverActionsEnabled)
+                .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+            Toggle("Recording Waveform", isOn: notchWaveformEnabled)
+                .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+
+            Picker("Auto Collapse", selection: notchAutoCollapseSecondsSelection) {
+                ForEach(Self.notchAutoCollapseDurations, id: \.self) { seconds in
+                    Text(notchAutoCollapseLabel(seconds)).tag(seconds)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+
+            Toggle("Recent Shelf", isOn: notchRecentShelfEnabled)
+                .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+            Toggle("Floating HUD Fallback", isOn: notchFloatingHUDFallbackEnabled)
+                .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+        } header: {
+            HStack(spacing: 6) {
+                Text("Notch Surface")
+                ExperimentalBadge()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var systemSettingsForm: some View {
+        Section("Menu Bar") {
+            Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
+            Toggle("Remind About Notifications", isOn: $model.settings.notificationReminder)
+        }
+
+        Section("Startup") {
+            Toggle("Launch at Login", isOn: $model.launchAtLogin)
+        }
+
+        if AppDistribution.current.capabilities.allowsCommandLineToolInstaller {
+            Section("Command Line Tool") {
+                LabeledContent("Install Location") {
+                    Button {
+                        model.installCommandLineTool()
+                    } label: {
+                        Label("Install luxel", systemImage: "terminal")
+                    }
+                    .help("Install to \(model.commandLineToolInstallService.defaultDestination.path)")
+                }
+
+                if let installStatus = model.commandLineToolInstallStatus {
+                    Label(installStatus.message, systemImage: installStatus.systemImage)
+                        .font(.caption)
+                        .foregroundStyle(installStatus.tint)
+                }
+            }
+        }
+
+        Section("Updates") {
+            let updatePresentation = updateSettingsPresentation
+
+            LabeledContent("Current Version", value: model.appMetadata.versionSummary)
+            LabeledContent("Status", value: updatePresentation.statusText)
+
+            if updatePresentation.showsDeveloperIDUpdateControls {
+                Toggle("Check Automatically", isOn: $model.settings.updatePreferences.automaticallyCheckForUpdates)
+
+                Toggle(
+                    "Install Automatically",
+                    isOn: $model.settings.updatePreferences.automaticallyDownloadAndInstall
+                )
+                    .disabled(!updatePresentation.automaticInstallToggleEnabled)
+
+                Picker("Channel", selection: $model.settings.updatePreferences.channel) {
+                    ForEach(UpdateChannel.allCases) { channel in
+                        Text(channel.label).tag(channel)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                Button {} label: {
+                    Label("Check Now", systemImage: "arrow.clockwise")
+                }
+                .disabled(!updatePresentation.canCheckNow)
+                .help(updatePresentation.checkNowHelp)
+            }
+
+            Text(updatePresentation.networkPolicyText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+
+        Section("About") {
+            LabeledContent("App", value: model.appMetadata.displayName)
+            LabeledContent("Version", value: model.appMetadata.versionSummary)
+
+            if !model.appMetadata.copyright.isEmpty {
+                Text(model.appMetadata.copyright)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Button {
+                isShowingAcknowledgements = true
+            } label: {
+                Label("Acknowledgements", systemImage: "doc.text")
+            }
+        }
+    }
+
     private var unavailableCameraDeviceID: String? {
         guard let cameraDeviceID = model.settings.cameraDeviceID,
               !model.cameraDevices.contains(where: { $0.id == cameraDeviceID }) else {
@@ -454,15 +802,6 @@ extension LuxelSettingsView {
     private var recordingFrameRateSettings: some View {
         LabeledContent("Frame Rate") {
             HStack(spacing: 8) {
-                Picker("Frame Rate", selection: recordingFrameRateSelection) {
-                    ForEach(recordingFrameRateChoices, id: \.self) { frameRate in
-                        Text(verbatim: String(frameRate) + " FPS")
-                            .tag(frameRate as Int)
-                    }
-                }
-                .labelsHidden()
-                .frame(width: 112)
-
                 TextField(
                     "FPS",
                     value: recordingFrameRateSelection,
@@ -507,11 +846,6 @@ extension LuxelSettingsView {
                 recordingFrameRateMessage = "Use a whole number from 1 to 60 FPS."
             }
         }
-    }
-
-    private var recordingFrameRateChoices: [Int] {
-        let current = model.settings.recordingFrameRate.framesPerSecond
-        return Array(Set(Self.recordingFrameRates + [current])).sorted()
     }
 
     private var recordingFrameRateFormatter: NumberFormatter {
