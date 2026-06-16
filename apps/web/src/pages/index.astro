@@ -1,0 +1,212 @@
+---
+import "../styles/global.css";
+
+const featureColumns = [
+  {
+    title: "Quick Record",
+    text: "Start from the menu bar, stop when the idea is captured, and let Luxel export the result."
+  },
+  {
+    title: "Replay Buffer",
+    text: "Clip the last 30 seconds after the moment already happened."
+  },
+  {
+    title: "Editable Cursor",
+    text: "Tune cursor size, click effects, spotlight, camera, and captions after recording."
+  }
+];
+
+const exportFormats = ["MP4", "HEVC", "GIF", "APNG", "WebM"];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Luxel is a native macOS menu bar recorder for quick capture, replay clips, screenshots, audio, and polished exports."
+    />
+    <title>Luxel - Native capture for Mac</title>
+  </head>
+  <body>
+    <main class="site-shell">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero__atmosphere" aria-hidden="true">
+          <span class="coast coast--left"></span>
+          <span class="coast coast--right"></span>
+          <span class="lightline"></span>
+        </div>
+
+        <header class="topbar" aria-label="Primary navigation">
+          <a class="brand" href="/" aria-label="Luxel home">
+            <img class="brand-mark" src="/luxel-icon.png" alt="" width="48" height="48" />
+            <span>Luxel</span>
+          </a>
+          <nav class="nav-links" aria-label="Page sections">
+            <a href="#features">Features</a>
+            <a href="#notch">Notch</a>
+            <a href="#export">Export</a>
+          </nav>
+          <a class="topbar-cta" href="#buy">App Store · $10</a>
+        </header>
+
+        <div class="hero__content">
+          <div class="hero-copy">
+            <p class="eyebrow">Menu bar recorder for macOS</p>
+            <h1 id="hero-title">Luxel</h1>
+            <p class="hero-copy__lead">Native capture for Mac.</p>
+            <p class="hero-copy__body">
+              Record the moment, clip the last 30 seconds, export without ceremony.
+            </p>
+            <div class="hero-actions" aria-label="Primary actions">
+              <a class="button button--primary" href="#buy">App Store · $10</a>
+              <a class="button button--ghost" href="#notch">
+                <span class="play-icon" aria-hidden="true"></span>
+                Watch demo
+              </a>
+            </div>
+          </div>
+
+          <div class="hero-product" aria-label="Luxel recording interface preview">
+            <div class="display-lid" aria-hidden="true">
+              <span class="camera-dot"></span>
+            </div>
+            <div class="recording-pill" aria-label="Recording in progress, 12 seconds">
+              <span class="record-dot" aria-hidden="true"></span>
+              <span class="waveform" aria-hidden="true">
+                {Array.from({ length: 17 }).map((_, index) => (
+                  <span style={`--level: ${[22, 44, 64, 36, 76, 48, 28, 58, 84, 52, 34, 68, 42, 74, 50, 30, 58][index]}`}></span>
+                ))}
+              </span>
+              <span class="timer">00:12</span>
+              <span class="stop-square" aria-hidden="true"></span>
+            </div>
+
+            <div class="glass-stem" aria-hidden="true"></div>
+
+            <div class="capture-panel">
+              <div class="target-row">
+                <span>Target</span>
+                <button class="target-select" type="button">
+                  <span class="display-icon" aria-hidden="true"></span>
+                  Display 1
+                  <span class="chevron" aria-hidden="true"></span>
+                </button>
+              </div>
+
+              <button class="record-button" type="button">
+                <span class="record-ring" aria-hidden="true"></span>
+                Record
+              </button>
+
+              <div class="mode-control" aria-label="Capture modes">
+                <button class="mode-control__item is-active" type="button">
+                  <span class="display-icon" aria-hidden="true"></span>
+                  Screen
+                </button>
+                <button class="mode-control__item" type="button">
+                  <span class="area-icon" aria-hidden="true"></span>
+                  Area
+                </button>
+                <button class="mode-control__item" type="button">
+                  <span class="audio-icon" aria-hidden="true"></span>
+                  Audio
+                </button>
+              </div>
+
+              <div class="permission-row" aria-label="Permission status">
+                <span class="permission-chip">
+                  <span class="display-icon" aria-hidden="true"></span>
+                  Screen
+                  <span class="status-dot" aria-hidden="true"></span>
+                </span>
+                <span class="permission-chip">
+                  <span class="mic-icon" aria-hidden="true"></span>
+                  Mic
+                  <span class="status-dot" aria-hidden="true"></span>
+                </span>
+                <button class="more-button" type="button" aria-label="More actions">•••</button>
+              </div>
+
+              <article class="recent-clip" aria-label="Most recent recording">
+                <div class="clip-thumb" aria-hidden="true">
+                  <span class="thumb-coast"></span>
+                  <span class="thumb-duration">0:23</span>
+                </div>
+                <div>
+                  <h2>Coastal Walkthrough</h2>
+                  <p>Today, 9:41 PM</p>
+                </div>
+                <button class="play-button" type="button" aria-label="Play recent recording">
+                  <span class="play-icon" aria-hidden="true"></span>
+                </button>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="feature-band" id="features">
+          {featureColumns.map((feature) => (
+            <article class="feature-band__item">
+              <span class="feature-glyph" aria-hidden="true"></span>
+              <div>
+                <h2>{feature.title}</h2>
+                <p>{feature.text}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="notch-section" id="notch" aria-labelledby="notch-title">
+        <div class="section-copy">
+          <p class="eyebrow">Capture surface</p>
+          <h2 id="notch-title">The notch becomes your recorder.</h2>
+          <p>
+            Luxel keeps recording state where your eyes already go: timer, waveform,
+            stop control, quick exports, and finished files live in one glanceable surface.
+          </p>
+        </div>
+        <div class="notch-demo" aria-label="Luxel notch states">
+          <div class="notch-demo__bar"></div>
+          <div class="notch-demo__state">
+            <span class="record-dot" aria-hidden="true"></span>
+            <span>Recording</span>
+            <strong>01:42</strong>
+          </div>
+          <div class="notch-demo__state notch-demo__state--export">
+            <span class="export-progress" aria-hidden="true"></span>
+            <span>GIF export</span>
+            <strong>48%</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="export-section" id="export" aria-labelledby="export-title">
+        <div class="section-copy">
+          <p class="eyebrow">Native export</p>
+          <h2 id="export-title">Fast files. Clean choices.</h2>
+          <p>
+            Built around Apple frameworks with native WebM support, Luxel keeps common
+            formats close without turning the recorder into an editor you have to manage.
+          </p>
+        </div>
+        <ul class="format-list" aria-label="Export formats">
+          {exportFormats.map((format) => <li>{format}</li>)}
+        </ul>
+      </section>
+
+      <section class="buy-section" id="buy" aria-labelledby="buy-title">
+        <div>
+          <p class="eyebrow">Mac App Store</p>
+          <h2 id="buy-title">One native recorder. Ten dollars.</h2>
+        </div>
+        <a class="button button--primary" href="#" aria-label="Luxel App Store release coming soon">
+          App Store · $10
+        </a>
+      </section>
+    </main>
+  </body>
+</html>
