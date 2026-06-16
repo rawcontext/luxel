@@ -87,6 +87,17 @@ struct AppBundleConfigurationTests {
         #expect(script.contains("Contents/Resources/install-cli"))
     }
 
+    @Test("build script requires team signing")
+    func buildScriptRequiresTeamSigning() throws {
+        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
+        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+        #expect(script.contains("Ad-hoc signing is not allowed"))
+        #expect(script.contains("TeamIdentifier"))
+        #expect(!script.contains("SIGN_IDENTITY:--"))
+        #expect(!script.contains("--timestamp=none"))
+    }
+
     @Test("distribution split check covers default and Mac App Store builds")
     func distributionSplitCheckCoversDefaultAndMacAppStoreBuilds() throws {
         let scriptURL = try packageRootURL().appending(path: "Scripts/check-app-distribution-build-split.sh")

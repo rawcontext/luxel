@@ -140,10 +140,17 @@ extension LuxelMenuModel {
     }
 
     func menuBarStatusPresentation(now: Date = Date()) -> RecordingSessionPresentation {
-        RecordingSessionPresentation(
-            state: recordingState.presentationState(now: now),
+        let state = switch recordingState {
+        case .countingDown, .recording, .pausing, .paused, .resuming, .stopping:
+            recordingState.presentationState(now: now)
+        case .idle, .starting, .exporting, .failed:
+            RecordingSessionPresentationState.idle
+        }
+
+        return RecordingSessionPresentation(
+            state: state,
             canStartRecording: canStartRecording,
-            showElapsedTimeInMenuBar: false
+            showElapsedTimeInMenuBar: settings.showTimeInMenuBar
         )
     }
 

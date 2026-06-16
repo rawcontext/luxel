@@ -135,6 +135,27 @@ struct ArchitectureTests {
         #expect(source.contains("AVAssetWriter"))
     }
 
+    @Test("screen recorder waits for the first written sample before stopping")
+    func screenRecorderWaitsForFirstWrittenSampleBeforeStopping() throws {
+        let packageRoot = try packageRootURL()
+        let recorderSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelCore/Infrastructure/Capture/ScreenCaptureKitRecorder.swift"),
+            encoding: .utf8
+        )
+        let writerSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelCore/Infrastructure/Capture/ScreenCaptureKitRecordingWriter.swift"),
+            encoding: .utf8
+        )
+
+        #expect(recorderSource.contains("waitForCurrentSegmentToStartWritingIfNeeded()"))
+        #expect(recorderSource.contains("initialSampleWaitAttempts"))
+        #expect(writerSource.contains("hasStartedCurrentSegmentWriting()"))
+        #expect(writerSource.contains("var hasStartedWriting: Bool"))
+        #expect(writerSource.contains("[[AnyHashable: Any]]"))
+        #expect(writerSource.contains("AnyHashable(SCStreamFrameInfo.status.rawValue)"))
+        #expect(writerSource.contains("NSNumber"))
+    }
+
     @Test("cropper supports local selection undo and redo")
     func cropperSupportsLocalSelectionUndoAndRedo() throws {
         let packageRoot = try packageRootURL()
@@ -204,8 +225,8 @@ struct ArchitectureTests {
             contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
             encoding: .utf8
         )
-        let controlsSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelRecordingControls.swift"),
+        let menuSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
             encoding: .utf8
         )
         let shortcutsSource = try String(
@@ -229,7 +250,7 @@ struct ArchitectureTests {
         )
         #expect(presentationSource.contains("isEnabled: settings.restoreLastSelection"))
         #expect(presentationSource.contains("memory: settings.lastCaptureMemory"))
-        #expect(controlsSource.contains("restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
+        #expect(menuSource.contains("restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
         #expect(shortcutsSource.contains("restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
     }
 
@@ -245,8 +266,8 @@ struct ArchitectureTests {
             encoding: .utf8
         )
         let viewSource = try sourceContents(under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
-        let controlsSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelRecordingControls.swift"),
+        let menuSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
             encoding: .utf8
         )
         let shortcutsSource = try String(
@@ -263,7 +284,7 @@ struct ArchitectureTests {
         #expect(controllerSource.contains("dimOtherDisplays: dimOtherDisplays"))
         #expect(viewSource.contains("Color.black.opacity(model.isDimmedByOtherDisplay ? 0.20 : 0.38)"))
         #expect(viewSource.contains("if let selection = model.selection, !model.isDimmedByOtherDisplay"))
-        #expect(controlsSource.contains("dimOtherDisplays: model.settings.dimOtherDisplays"))
+        #expect(menuSource.contains("dimOtherDisplays: model.settings.dimOtherDisplays"))
         #expect(shortcutsSource.contains("dimOtherDisplays: model.settings.dimOtherDisplays"))
     }
 
@@ -279,8 +300,8 @@ struct ArchitectureTests {
             encoding: .utf8
         )
         let viewSource = try sourceContents(under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
-        let controlsSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelRecordingControls.swift"),
+        let menuSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
             encoding: .utf8
         )
         let shortcutsSource = try String(
@@ -298,7 +319,7 @@ struct ArchitectureTests {
         #expect(viewSource.contains("struct CropperLoupeGrid"))
         #expect(viewSource.contains("let isLoupeRequested = flags.contains(.option)"))
         #expect(viewSource.contains("isSnappingDisabled: flags.contains(.command) || isLoupeActive"))
-        #expect(controlsSource.contains("loupeAlwaysOn: model.settings.loupeAlwaysOn"))
+        #expect(menuSource.contains("loupeAlwaysOn: model.settings.loupeAlwaysOn"))
         #expect(shortcutsSource.contains("loupeAlwaysOn: model.settings.loupeAlwaysOn"))
     }
 

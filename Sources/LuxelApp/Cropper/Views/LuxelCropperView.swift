@@ -5,8 +5,23 @@ import SwiftUI
 
 struct LuxelCropperView: View {
     private static let loupeSize = CGSize(width: 164, height: 122)
+    private static let toolbarButtonWidth: CGFloat = 196
+    private static let toolbarButtonHeight: CGFloat = 30
+    private static let toolbarControlSpacing: CGFloat = 8
+    private static let toolbarFullDisplayButtonWidth: CGFloat = 116
+    private static let toolbarIconButtonSide: CGFloat = 32
+    private static let toolbarIconWidth: CGFloat = 18
+    private static let toolbarCornerRadius: CGFloat = 8
+    private static let resizeHandleHitSize = CGSize(width: 28, height: 28)
+    private static var toolbarPairedButtonWidth: CGFloat {
+        (toolbarButtonWidth - toolbarControlSpacing) / 2
+    }
+    private static var toolbarSizeButtonWidth: CGFloat {
+        toolbarButtonWidth - toolbarFullDisplayButtonWidth - toolbarControlSpacing
+    }
 
     @Environment(\.openURL) private var openURL
+    @State private var activeDragTarget: CropperDragTarget?
     @State private var currentCameraConfiguration: CropperCameraConfiguration?
 
     @Bindable var model: LuxelCropperModel
@@ -29,6 +44,7 @@ extension LuxelCropperView {
             ZStack {
                 Color.black.opacity(model.isDimmedByOtherDisplay ? 0.20 : 0.38)
                     .ignoresSafeArea()
+                    .appKitCursor(.crosshair)
 
                 if let selection = model.selection, !model.isDimmedByOtherDisplay {
                     let rect = model.viewRect(for: selection, in: geometry.size)
@@ -49,42 +65,41 @@ extension LuxelCropperView {
                 }
 
                 if !model.isDimmedByOtherDisplay {
-                    VStack {
-                        if showsNotificationReminder, model.mode == .video {
-                            notificationReminderPanel
-                                .padding(.top, 28)
-                        }
-
-                        Spacer()
-                        cropperControls
-                            .padding(.bottom, 28)
-                    }
+                    cropperOverlayControls
                 }
             }
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        let target = dragTarget(for: value.startLocation, viewSize: geometry.size)
                         let flags = NSEvent.modifierFlags
-                        let isLoupeRequested = flags.contains(.option)
-                        let isLoupeActive = model.loupeAlwaysOn || isLoupeRequested
-                        model.updateSelection(
-                            start: value.startLocation,
-                            current: value.location,
-                            viewSize: geometry.size,
-                            isSnappingDisabled: flags.contains(.command) || isLoupeActive,
-                            isLoupeRequested: isLoupeRequested,
-                            loupeOverlaySize: Self.loupeSize
+
+                        if activeDragTarget == nil {
+                            activeDragTarget = target
+                        }
+
+                        handleDragChanged(
+                            value,
+                            target: activeDragTarget ?? target,
+                            flags: flags,
+                            viewSize: geometry.size
                         )
                     }
-                    .onEnded { _ in
-                        model.finishUpdateSelection()
+                    .onEnded { value in
+                        handleDragEnded(
+                            target: activeDragTarget ?? dragTarget(for: value.startLocation, viewSize: geometry.size)
+                        )
+                        activeDragTarget = nil
                     }
             )
             .background(cropperKeyboardShortcuts)
             .focusable()
             .onMoveCommand { direction in
                 handleMoveCommand(direction)
+            }
+            .onExitCommand {
+                onCancel()
             }
         }
     }
@@ -102,101 +117,275 @@ extension LuxelCropperView {
             }
             .disabled(!model.canRedoSelectionChange)
             .keyboardShortcut("z", modifiers: [.command, .shift])
+
+            Button("Cancel Cropper Selection") {
+                onCancel()
+            }
+            .keyboardShortcut(.cancelAction)
         }
         .frame(width: 0, height: 0)
         .opacity(0)
         .accessibilityHidden(true)
     }
 
+    private var cropperOverlayControls: some View {
+        ZStack {
+            if showsNotificationReminder, model.mode == .video {
+                VStack {
+                    notificationReminderPanel
+                        .padding(.top, 28)
+
+                    Spacer()
+                }
+            }
+
+            HStack(alignment: .center, spacing: 0) {
+                cropperControls
+                Spacer()
+            }
+        }
+        .padding(.leading, 28)
+        .padding(.vertical, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
     private var cropperControls: some View {
         GlassPanel {
-            HStack(spacing: 12) {
-                selectionGeometryControls
+            VStack(alignment: .leading, spacing: 7) {
+                toolbarControl(selectionSummaryHelp) {
+                    selectionGeometryControls
+                }
 
-                Picker("Mode", selection: cropperMode) {
-                    ForEach(LuxelCropperMode.allCases) { mode in
-                        Text(mode.toolbarLabel).tag(mode)
+                toolbarControl("Switch between recording video and capturing a screenshot.") {
+                    Picker("Mode", selection: cropperMode) {
+                        ForEach(LuxelCropperMode.allCases) { mode in
+                            Text(mode.toolbarLabel).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .controlSize(.small)
+                    .frame(width: Self.toolbarButtonWidth)
+                }
+
+                Divider()
+
+                toolbarControl("Select the full current display or apply a saved size preset.") {
+                    HStack(spacing: Self.toolbarControlSpacing) {
+                        fullDisplayButton
+                        sizePresetMenu(width: Self.toolbarSizeButtonWidth)
                     }
                 }
-                .pickerStyle(.segmented)
-                .controlSize(.small)
-                .frame(width: 126)
-                .help("Capture Mode")
 
-                Button {
-                    model.selectFullDisplay()
-                } label: {
-                    Label("Full Display", systemImage: "rectangle.inset.filled")
+                toolbarControl("Constrain the selected area. Current: \(model.aspectRatioSummary).") {
+                    aspectRatioMenu(width: Self.toolbarButtonWidth)
                 }
-                .labelStyle(.iconOnly)
-                .help("Select Full Display")
-
-                aspectRatioMenu
-
-                sizePresetMenu
 
                 if model.mode == .video {
-                    cameraMenu
+                    Divider()
 
-                    Menu {
-                        countdownButton(title: "Off", duration: nil)
-
-                        Divider()
-
-                        ForEach(CountdownPreset.all) { preset in
-                            countdownButton(title: preset.title, duration: preset.duration)
+                    toolbarControl("\(recordAudioHelp) \(cameraMenuHelp)") {
+                        HStack(spacing: Self.toolbarControlSpacing) {
+                            recordAudioToggle
+                            cameraMenu
                         }
-                    } label: {
-                        Label(model.countdownSummary, systemImage: "hourglass")
                     }
-                    .frame(width: 82)
-                    .help("Countdown")
 
-                    Menu {
-                        stopAfterButton(title: "Off", duration: nil)
-
-                        Divider()
-
-                        ForEach(StopAfterPreset.all) { preset in
-                            stopAfterButton(title: preset.title, duration: preset.duration)
+                    toolbarControl("Delay recording after pressing Record. Current: \(model.countdownSummary).") {
+                        HStack(spacing: Self.toolbarControlSpacing) {
+                            countdownMenu(width: Self.toolbarPairedButtonWidth)
+                            stopAfterMenu(width: Self.toolbarPairedButtonWidth)
                         }
-
-                        Divider()
-
-                        TextField("h:mm:ss", text: customStopAfterText)
-                            .frame(width: 84)
-
-                        Button {
-                            applyCustomStopAfterDuration()
-                        } label: {
-                            Label("Set Custom", systemImage: "timer")
-                        }
-                    } label: {
-                        Label(model.stopAfterSummary, systemImage: "timer")
                     }
-                    .frame(width: 82)
-                    .help("Stop After")
 
-                    if let audioLevelModel {
-                        CropperAudioLevelMeter(model: audioLevelModel)
+                    if model.recordsAudio, let audioLevelModel {
+                        toolbarControl("Shows the current microphone input level.") {
+                            CropperAudioLevelMeter(model: audioLevelModel)
+                        }
                     }
                 }
 
-                Button {
-                    onCancel()
-                } label: {
-                    Label("Cancel", systemImage: "xmark")
-                }
-                .labelStyle(.iconOnly)
-                .help("Cancel")
+                Divider()
 
-                primaryActionButton
+                toolbarControl("Record or cancel the selected area.") {
+                    HStack(spacing: Self.toolbarControlSpacing) {
+                        cancelButton
+                        primaryActionButton
+                    }
+                }
             }
         }
         .fixedSize()
+        .appKitCursor(.arrow)
     }
 
-    private var aspectRatioMenu: some View {
+    private func toolbarControl<Content: View>(
+        _ help: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ZStack {
+            content()
+        }
+        .frame(width: Self.toolbarButtonWidth, alignment: .leading)
+        .contentShape(Rectangle())
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+        .nativeTooltip(help)
+    }
+
+    private func toolbarButtonLabel(
+        _ title: String,
+        systemImage: String,
+        width: CGFloat,
+        isActive: Bool = false,
+        isDisabled: Bool = false
+    ) -> some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: systemImage)
+                .frame(width: Self.toolbarIconWidth)
+        }
+        .labelStyle(.titleAndIcon)
+        .font(.subheadline.weight(.semibold))
+        .lineLimit(1)
+        .minimumScaleFactor(0.78)
+        .foregroundStyle(isDisabled ? .secondary : .primary)
+        .padding(.horizontal, 10)
+        .frame(width: width, height: Self.toolbarButtonHeight, alignment: .leading)
+        .background {
+            toolbarBackground(isActive: isActive, isDisabled: isDisabled)
+        }
+    }
+
+    private func toolbarMenuLabel(_ title: String, systemImage: String, width: CGFloat) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .frame(width: Self.toolbarIconWidth)
+
+            Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.secondary)
+        }
+        .font(.subheadline.weight(.semibold))
+        .padding(.horizontal, 10)
+        .frame(width: width, height: Self.toolbarButtonHeight, alignment: .leading)
+        .background {
+            toolbarBackground()
+        }
+    }
+
+    private func toolbarIconLabel(
+        _ title: String,
+        systemImage: String,
+        isActive: Bool = false,
+        isDisabled: Bool = false
+    ) -> some View {
+        Label(title, systemImage: systemImage)
+            .labelStyle(.iconOnly)
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(isDisabled ? .secondary : .primary)
+            .frame(width: Self.toolbarIconButtonSide, height: Self.toolbarIconButtonSide)
+            .background {
+                toolbarBackground(isActive: isActive, isDisabled: isDisabled)
+            }
+    }
+
+    private func actionLabel(
+        _ title: String,
+        systemImage: String,
+        isActive: Bool = false,
+        isDisabled: Bool = false
+    ) -> some View {
+        Label(title, systemImage: systemImage)
+            .labelStyle(.titleAndIcon)
+            .font(.subheadline.weight(.semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .foregroundStyle(isDisabled ? .secondary : .primary)
+            .frame(width: Self.toolbarPairedButtonWidth, height: Self.toolbarButtonHeight)
+            .background {
+                toolbarBackground(isActive: isActive, isDisabled: isDisabled)
+            }
+    }
+
+    private func toolbarBackground(isActive: Bool = false, isDisabled: Bool = false) -> some View {
+        RoundedRectangle(cornerRadius: Self.toolbarCornerRadius, style: .continuous)
+            .fill(.white.opacity(isDisabled ? 0.08 : isActive ? 0.24 : 0.14))
+            .overlay {
+                RoundedRectangle(cornerRadius: Self.toolbarCornerRadius, style: .continuous)
+                    .stroke(.white.opacity(isDisabled ? 0.05 : 0.08), lineWidth: 1)
+            }
+    }
+
+    private var fullDisplayButton: some View {
+        Button {
+            model.selectFullDisplay()
+        } label: {
+            toolbarButtonLabel(
+                "Full Display",
+                systemImage: "rectangle.inset.filled",
+                width: Self.toolbarFullDisplayButtonWidth
+            )
+        }
+        .buttonStyle(.plain)
+        .help("Select the full current display.")
+    }
+
+    private func countdownMenu(width: CGFloat = Self.toolbarButtonWidth) -> some View {
+        Menu {
+            countdownButton(title: "Off", duration: nil)
+
+            Divider()
+
+            ForEach(CountdownPreset.all) { preset in
+                countdownButton(title: preset.title, duration: preset.duration)
+            }
+        } label: {
+            countdownMenuLabel(width: width)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .frame(width: width)
+    }
+
+    private func stopAfterMenu(width: CGFloat = Self.toolbarButtonWidth) -> some View {
+        Menu {
+            stopAfterButton(title: "Off", duration: nil)
+
+            Divider()
+
+            ForEach(StopAfterPreset.all) { preset in
+                stopAfterButton(title: preset.title, duration: preset.duration)
+            }
+
+            Divider()
+
+            TextField("h:mm:ss", text: customStopAfterText)
+                .frame(width: 84)
+                .help("Enter a custom automatic stop duration.")
+
+            Button {
+                applyCustomStopAfterDuration()
+            } label: {
+                Label("Set Custom", systemImage: "timer")
+            }
+            .help("Use the custom automatic stop duration.")
+        } label: {
+            toolbarMenuLabel(stopAfterToolbarText, systemImage: "timer", width: width)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .frame(width: width)
+    }
+
+    private func aspectRatioMenu(width: CGFloat = Self.toolbarButtonWidth) -> some View {
         Menu {
             ForEach(CaptureAspectRatioPreset.allCases, id: \.self) { preset in
                 Button {
@@ -208,14 +397,17 @@ extension LuxelCropperView {
                         Text(preset.title)
                     }
                 }
+                .help("Use the \(preset.title) aspect ratio for the selected area.")
             }
 
             Divider()
 
             TextField("Custom W", text: customAspectRatioWidthText)
                 .frame(width: 76)
+                .help("Custom aspect ratio width.")
             TextField("Custom H", text: customAspectRatioHeightText)
                 .frame(width: 76)
+                .help("Custom aspect ratio height.")
 
             Button {
                 applyCustomAspectRatio()
@@ -226,14 +418,17 @@ extension LuxelCropperView {
                     Label("Apply Custom", systemImage: "aspectratio")
                 }
             }
+            .help("Apply the custom aspect ratio values.")
         } label: {
-            Label(model.aspectRatioSummary, systemImage: "aspectratio")
+            toolbarMenuLabel(aspectRatioToolbarText, systemImage: "aspectratio", width: width)
         }
-        .frame(width: 76)
-        .help("Aspect Ratio")
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .frame(width: width)
+        .help("Constrain the selected area. Current: \(model.aspectRatioSummary).")
     }
 
-    private var sizePresetMenu: some View {
+    private func sizePresetMenu(width: CGFloat = Self.toolbarButtonWidth) -> some View {
         Menu {
             ForEach(model.sizePresets) { preset in
                 Button {
@@ -241,30 +436,32 @@ extension LuxelCropperView {
                 } label: {
                     Text(preset.name)
                 }
+                .help("Apply the \(preset.name) size preset.")
             }
         } label: {
-            Label("Size", systemImage: "arrow.up.left.and.arrow.down.right")
+            toolbarMenuLabel("Size", systemImage: "arrow.up.left.and.arrow.down.right", width: width)
         }
-        .labelStyle(.iconOnly)
-        .help("Size Presets")
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .frame(width: width)
+        .help("Apply a saved size preset to the selected area.")
+    }
+
+    private func countdownMenuLabel(width: CGFloat = Self.toolbarButtonWidth) -> some View {
+        toolbarMenuLabel(countdownToolbarText, systemImage: "hourglass", width: width)
+            .accessibilityLabel("Countdown")
+            .accessibilityValue(model.countdownSummary)
     }
 
     @ViewBuilder
     private var selectionGeometryControls: some View {
-        if model.selection == nil {
-            Text(model.selectionSummary)
-                .font(.callout)
-                .monospacedDigit()
-                .frame(minWidth: 96, alignment: .leading)
-        } else {
-            HStack(spacing: 6) {
-                SelectionNumberField(title: "X", value: selectionX)
-                SelectionNumberField(title: "Y", value: selectionY)
-                SelectionNumberField(title: "W", value: selectionWidth)
-                SelectionNumberField(title: "H", value: selectionHeight)
-            }
-            .help("Selection Geometry")
-        }
+        Text(model.selectionSummary)
+            .font(.caption)
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .frame(width: Self.toolbarButtonWidth)
+            .help(selectionSummaryHelp)
     }
 
     @ViewBuilder
@@ -296,10 +493,12 @@ extension LuxelCropperView {
                                 Text(shape.settingsLabel)
                             }
                         }
+                        .help("Set the camera overlay shape to \(shape.settingsLabel).")
                     }
                 } label: {
                     Label("Shape", systemImage: "circle")
                 }
+                .help("Set the camera overlay shape.")
 
                 Menu {
                     ForEach(CameraPreviewSize.allCases, id: \.self) { size in
@@ -312,10 +511,12 @@ extension LuxelCropperView {
                                 Text(size.settingsLabel)
                             }
                         }
+                        .help("Set the camera overlay size to \(size.settingsLabel).")
                     }
                 } label: {
                     Label("Size", systemImage: "arrow.up.left.and.arrow.down.right")
                 }
+                .help("Set the camera overlay size.")
 
                 Button {
                     updateCameraPreviewMirror(!cameraConfiguration.previewStyle.isMirrored)
@@ -326,12 +527,40 @@ extension LuxelCropperView {
                         Text("Mirror")
                     }
                 }
+                .help("Flip the camera preview horizontally.")
             }
         } label: {
-            Label(cameraMenuTitle, systemImage: cameraMenuSystemImage)
+            toolbarIconLabel(
+                cameraToolbarText,
+                systemImage: cameraMenuSystemImage,
+                isActive: cameraConfiguration.selectedDeviceID != nil
+            )
         }
-        .labelStyle(.iconOnly)
-        .help("Camera")
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .frame(width: Self.toolbarIconButtonSide, height: Self.toolbarIconButtonSide)
+        .accessibilityLabel("Camera")
+        .accessibilityValue(cameraToolbarText)
+        .help(cameraMenuHelp)
+    }
+
+    private var recordAudioToggle: some View {
+        Button {
+            recordAudio.wrappedValue.toggle()
+        } label: {
+            toolbarIconLabel(
+                microphoneToolbarText,
+                systemImage: model.recordsAudio ? "mic.fill" : "mic.slash",
+                isActive: model.recordsAudio,
+                isDisabled: !model.canToggleRecordAudio
+            )
+        }
+        .buttonStyle(.plain)
+        .frame(width: Self.toolbarIconButtonSide, height: Self.toolbarIconButtonSide)
+        .disabled(!model.canToggleRecordAudio)
+        .accessibilityLabel("Microphone")
+        .accessibilityValue(microphoneToolbarText)
+        .help(recordAudioHelp)
     }
 
     private var notificationReminderPanel: some View {
@@ -351,6 +580,7 @@ extension LuxelCropperView {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+                .help("Open Focus settings to silence notifications while recording.")
 
                 Button {
                     onNotificationReminderDismiss()
@@ -360,10 +590,23 @@ extension LuxelCropperView {
                 .labelStyle(.iconOnly)
                 .buttonStyle(.borderless)
                 .controlSize(.small)
-                .help("Dismiss Reminder")
+                .help("Hide the notification reminder.")
             }
         }
         .fixedSize()
+        .appKitCursor(.arrow)
+    }
+
+    @ViewBuilder
+    private var cancelButton: some View {
+        Button {
+            onCancel()
+        } label: {
+            actionLabel("Cancel", systemImage: "xmark")
+        }
+        .buttonStyle(.plain)
+        .frame(width: Self.toolbarPairedButtonWidth)
+        .help("Close area selection without recording or capturing.")
     }
 
     @ViewBuilder
@@ -371,11 +614,17 @@ extension LuxelCropperView {
         Button {
             commitPrimarySelection()
         } label: {
-            Label(model.primaryActionTitle, systemImage: model.primaryActionSystemImage)
+            actionLabel(
+                model.primaryActionTitle,
+                systemImage: model.primaryActionSystemImage,
+                isActive: model.canRecordSelection,
+                isDisabled: !model.canRecordSelection
+            )
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.plain)
         .disabled(!model.canRecordSelection)
-        .help(model.primaryActionHelp)
+        .frame(width: Self.toolbarPairedButtonWidth)
+        .help(primaryActionHelp)
         .contextMenu {
             if model.mode == .video {
                 Button {
@@ -383,6 +632,7 @@ extension LuxelCropperView {
                 } label: {
                     Label("Record", systemImage: "record.circle")
                 }
+                .help("Record the selected area.")
 
                 if !quickRecordingConfiguration.presets.isEmpty {
                     Menu {
@@ -392,15 +642,16 @@ extension LuxelCropperView {
                             } label: {
                                 Label(preset.name, systemImage: quickPresetSystemImage(for: preset))
                             }
+                            .help("Record with the \(preset.name) quick export preset.")
                         }
                     } label: {
                         Label("Quick Record", systemImage: "bolt.circle")
                     }
+                    .help("Record with a quick export preset.")
                 }
             }
         }
     }
-
     private func selectionOverlay(rect: CGRect, viewSize: CGSize) -> some View {
         ZStack {
             Rectangle()
@@ -412,8 +663,10 @@ extension LuxelCropperView {
                 .background(.white.opacity(0.08))
                 .frame(width: rect.width, height: rect.height)
                 .position(x: rect.midX, y: rect.midY)
+                .contentShape(Rectangle())
+                .appKitCursor(isMovingSelection ? .closedHand : .openHand)
 
-            ForEach(CaptureResizeHandle.allCases, id: \.self) { handle in
+            ForEach(Self.resizeHandlePresentationOrder, id: \.self) { handle in
                 resizeHandle(handle, rect: rect, viewSize: viewSize)
             }
         }
@@ -467,28 +720,126 @@ extension LuxelCropperView {
     ) -> some View {
         ZStack {
             Color.clear
-                .frame(width: 28, height: 28)
+                .frame(width: Self.resizeHandleHitSize.width, height: Self.resizeHandleHitSize.height)
             ResizeHandleDot()
         }
         .contentShape(Rectangle())
-        .position(handle.position(in: rect))
+        .position(resizeHandlePosition(handle, rect: rect, viewSize: viewSize))
         .help(handle.helpTitle)
-        .highPriorityGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    let isLoupeRequested = NSEvent.modifierFlags.contains(.option)
-                    model.resizeSelection(
-                        handle: handle,
-                        translation: value.translation,
-                        viewSize: viewSize,
-                        isLoupeRequested: isLoupeRequested,
-                        loupeOverlaySize: Self.loupeSize
-                    )
-                }
-                .onEnded { _ in
-                    model.finishResizeSelection()
-                }
+        .appKitCursor(handle.resizeCursor)
+    }
+
+    private var isMovingSelection: Bool {
+        if case .move = activeDragTarget {
+            return true
+        }
+
+        return false
+    }
+
+    private static var resizeHandlePresentationOrder: [CaptureResizeHandle] {
+        [.top, .left, .right, .bottom, .topLeft, .topRight, .bottomLeft, .bottomRight]
+    }
+
+    private static var resizeHandleHitTestingOrder: [CaptureResizeHandle] {
+        [.topLeft, .topRight, .bottomLeft, .bottomRight, .top, .left, .right, .bottom]
+    }
+
+    private func dragTarget(for point: CGPoint, viewSize: CGSize) -> CropperDragTarget {
+        guard let selection = model.selection else {
+            return .draw
+        }
+
+        let rect = model.viewRect(for: selection, in: viewSize)
+
+        for handle in Self.resizeHandleHitTestingOrder
+            where handleHitRect(handle, in: rect, viewSize: viewSize).contains(point) {
+            return .resize(handle)
+        }
+
+        if rect.contains(point) {
+            return .move
+        }
+
+        return .draw
+    }
+
+    private func handleHitRect(
+        _ handle: CaptureResizeHandle,
+        in rect: CGRect,
+        viewSize: CGSize
+    ) -> CGRect {
+        let center = resizeHandlePosition(handle, rect: rect, viewSize: viewSize)
+
+        return CGRect(
+            x: center.x - Self.resizeHandleHitSize.width / 2,
+            y: center.y - Self.resizeHandleHitSize.height / 2,
+            width: Self.resizeHandleHitSize.width,
+            height: Self.resizeHandleHitSize.height
         )
+    }
+
+    private func resizeHandlePosition(
+        _ handle: CaptureResizeHandle,
+        rect: CGRect,
+        viewSize: CGSize
+    ) -> CGPoint {
+        let position = handle.position(in: rect)
+        let horizontalInset = min(Self.resizeHandleHitSize.width / 2, viewSize.width / 2)
+        let verticalInset = min(Self.resizeHandleHitSize.height / 2, viewSize.height / 2)
+
+        return CGPoint(
+            x: min(max(position.x, horizontalInset), max(horizontalInset, viewSize.width - horizontalInset)),
+            y: min(max(position.y, verticalInset), max(verticalInset, viewSize.height - verticalInset))
+        )
+    }
+
+    private func handleDragChanged(
+        _ value: DragGesture.Value,
+        target: CropperDragTarget,
+        flags: NSEvent.ModifierFlags,
+        viewSize: CGSize
+    ) {
+        switch target {
+        case .draw:
+            let isLoupeRequested = flags.contains(.option)
+            let isLoupeActive = model.loupeAlwaysOn || isLoupeRequested
+            model.updateSelection(
+                start: value.startLocation,
+                current: value.location,
+                viewSize: viewSize,
+                isSnappingDisabled: flags.contains(.command) || isLoupeActive,
+                isLoupeRequested: isLoupeRequested,
+                loupeOverlaySize: Self.loupeSize
+            )
+
+        case .move:
+            model.moveSelection(
+                translation: value.translation,
+                viewSize: viewSize
+            )
+
+        case .resize(let handle):
+            model.resizeSelection(
+                handle: handle,
+                translation: value.translation,
+                viewSize: viewSize,
+                lockingAspectRatio: flags.contains(.command),
+                isLoupeRequested: flags.contains(.option),
+                loupeOverlaySize: Self.loupeSize
+            )
+        }
+    }
+
+    private func handleDragEnded(target: CropperDragTarget) {
+        switch target {
+        case .draw:
+            model.finishUpdateSelection()
+        case .move:
+            model.finishMoveSelection()
+        case .resize:
+            model.finishResizeSelection()
+        }
     }
 
     private func commitPrimarySelection() {
@@ -561,6 +912,7 @@ extension LuxelCropperView {
                 Text(title)
             }
         }
+        .help(countdownHelp(title: title, duration: duration))
     }
 
     @ViewBuilder
@@ -574,6 +926,7 @@ extension LuxelCropperView {
                 Text(title)
             }
         }
+        .help(stopAfterHelp(title: title, duration: duration))
     }
 
     private func applyCustomStopAfterDuration() {
@@ -622,35 +975,11 @@ extension LuxelCropperView {
         }
     }
 
-    private var selectionX: Binding<Int> {
+    private var recordAudio: Binding<Bool> {
         Binding {
-            model.selection?.originX ?? 0
-        } set: { value in
-            model.setSelectionX(value)
-        }
-    }
-
-    private var selectionY: Binding<Int> {
-        Binding {
-            model.selection?.originY ?? 0
-        } set: { value in
-            model.setSelectionY(value)
-        }
-    }
-
-    private var selectionWidth: Binding<Int> {
-        Binding {
-            model.selection?.width ?? 0
-        } set: { value in
-            model.setSelectionWidth(value)
-        }
-    }
-
-    private var selectionHeight: Binding<Int> {
-        Binding {
-            model.selection?.height ?? 0
-        } set: { value in
-            model.setSelectionHeight(value)
+            model.recordsAudio
+        } set: { isEnabled in
+            model.setRecordAudio(isEnabled)
         }
     }
 
@@ -671,18 +1000,77 @@ extension LuxelCropperView {
                 Text(title)
             }
         }
+        .help(deviceID == nil ? "Turn off the camera overlay." : "Use \(title) as the camera overlay.")
     }
 
     private var effectiveCameraConfiguration: CropperCameraConfiguration {
         currentCameraConfiguration ?? cameraConfiguration
     }
 
-    private var cameraMenuTitle: String {
-        effectiveCameraConfiguration.selectedDevice?.name ?? "Camera"
+    private var cameraToolbarText: String {
+        effectiveCameraConfiguration.selectedDevice?.name ?? "Camera Off"
     }
 
     private var cameraMenuSystemImage: String {
         effectiveCameraConfiguration.selectedDeviceID == nil ? "video.slash" : "video.fill"
+    }
+
+    private var cameraMenuHelp: String {
+        if let selectedDevice = effectiveCameraConfiguration.selectedDevice {
+            return "Camera overlay: \(selectedDevice.name)."
+        }
+
+        return "Choose a camera overlay for the recording."
+    }
+
+    private var selectionSummaryHelp: String {
+        guard let selection = model.selection else {
+            return "Drag to select the area to record or capture."
+        }
+
+        return "Selected area: \(selection.width) by \(selection.height) pixels."
+    }
+
+    private var recordAudioHelp: String {
+        if !model.canToggleRecordAudio {
+            return "Microphone permission is required to record mic audio."
+        }
+
+        return model.recordsAudio
+            ? "Record microphone audio with this capture."
+            : "Do not record microphone audio with this capture."
+    }
+
+    private var primaryActionHelp: String {
+        guard model.canRecordSelection else {
+            return "Drag to select an area first."
+        }
+
+        return model.primaryActionHelp
+    }
+
+    private var countdownToolbarText: String {
+        "Delay \(model.countdownSummary)"
+    }
+
+    private var aspectRatioToolbarText: String {
+        "Aspect \(model.aspectRatioSummary)"
+    }
+
+    private var stopAfterToolbarText: String {
+        "Stop \(model.stopAfterSummary)"
+    }
+
+    private var microphoneToolbarText: String {
+        model.recordsAudio ? "Mic On" : "Mic Off"
+    }
+
+    private func countdownHelp(title: String, duration: TimeInterval?) -> String {
+        duration == nil ? "Start recording immediately." : "Wait \(title) before recording starts."
+    }
+
+    private func stopAfterHelp(title: String, duration: TimeInterval?) -> String {
+        duration == nil ? "Keep recording until stopped manually." : "Stop recording after \(title)."
     }
 
     private func updateCameraPreviewShape(_ shape: CameraOverlayShape) {
@@ -740,5 +1128,172 @@ extension LuxelCropperView {
         }
 
         openURL(url)
+    }
+}
+
+private extension View {
+    func nativeTooltip(_ text: String) -> some View {
+        help(text)
+            .background(NativeTooltipView(text: text))
+    }
+
+    func appKitCursor(_ cursor: NSCursor) -> some View {
+        background(CursorRectView(cursor: cursor))
+    }
+}
+
+private struct NativeTooltipView: NSViewRepresentable {
+    let text: String
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        view.toolTip = text
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        nsView.toolTip = text
+    }
+}
+
+private enum CropperDragTarget: Equatable {
+    case draw
+    case move
+    case resize(CaptureResizeHandle)
+}
+
+private struct CursorRectView: NSViewRepresentable {
+    let cursor: NSCursor
+
+    func makeNSView(context: Context) -> CursorRectNSView {
+        let view = CursorRectNSView()
+        view.cursor = cursor
+        return view
+    }
+
+    func updateNSView(_ nsView: CursorRectNSView, context: Context) {
+        nsView.cursor = cursor
+    }
+}
+
+private final class CursorRectNSView: NSView {
+    var cursor: NSCursor = .arrow {
+        didSet {
+            window?.invalidateCursorRects(for: self)
+        }
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: cursor)
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+}
+
+private extension CaptureResizeHandle {
+    var resizeCursor: NSCursor {
+        switch self {
+        case .top, .bottom:
+            .resizeUpDown
+        case .left, .right:
+            .resizeLeftRight
+        case .topLeft, .bottomRight:
+            CropperResizeCursors.topLeftBottomRight
+        case .topRight, .bottomLeft:
+            CropperResizeCursors.topRightBottomLeft
+        }
+    }
+}
+
+private enum CropperResizeCursors {
+    static var topLeftBottomRight: NSCursor {
+        diagonalResizeCursor(isRising: true)
+    }
+
+    static var topRightBottomLeft: NSCursor {
+        diagonalResizeCursor(isRising: false)
+    }
+
+    private static func diagonalResizeCursor(isRising: Bool) -> NSCursor {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size)
+        image.lockFocus()
+
+        let start = isRising ? NSPoint(x: 4, y: 4) : NSPoint(x: 4, y: 14)
+        let end = isRising ? NSPoint(x: 14, y: 14) : NSPoint(x: 14, y: 4)
+        let vector = CGVector(dx: end.x - start.x, dy: end.y - start.y)
+        let length = max(1, hypot(vector.dx, vector.dy))
+        let unit = CGVector(dx: vector.dx / length, dy: vector.dy / length)
+        let normal = CGVector(dx: -unit.dy, dy: unit.dx)
+
+        let segments = diagonalCursorSegments(start: start, end: end, unit: unit, normal: normal)
+        drawCursorSegments(segments, color: .white, lineWidth: 4)
+        drawCursorSegments(segments, color: .black, lineWidth: 2)
+
+        image.unlockFocus()
+        image.isTemplate = false
+        return NSCursor(image: image, hotSpot: NSPoint(x: 9, y: 9))
+    }
+
+    private static func diagonalCursorSegments(
+        start: NSPoint,
+        end: NSPoint,
+        unit: CGVector,
+        normal: CGVector
+    ) -> [(NSPoint, NSPoint)] {
+        let arrowLength: CGFloat = 4
+        let arrowSpread: CGFloat = 3
+
+        return [
+            (start, end),
+            (
+                start,
+                NSPoint(
+                    x: start.x + unit.dx * arrowLength + normal.dx * arrowSpread,
+                    y: start.y + unit.dy * arrowLength + normal.dy * arrowSpread
+                )
+            ),
+            (
+                start,
+                NSPoint(
+                    x: start.x + unit.dx * arrowLength - normal.dx * arrowSpread,
+                    y: start.y + unit.dy * arrowLength - normal.dy * arrowSpread
+                )
+            ),
+            (
+                end,
+                NSPoint(
+                    x: end.x - unit.dx * arrowLength + normal.dx * arrowSpread,
+                    y: end.y - unit.dy * arrowLength + normal.dy * arrowSpread
+                )
+            ),
+            (
+                end,
+                NSPoint(
+                    x: end.x - unit.dx * arrowLength - normal.dx * arrowSpread,
+                    y: end.y - unit.dy * arrowLength - normal.dy * arrowSpread
+                )
+            )
+        ]
+    }
+
+    private static func drawCursorSegments(
+        _ segments: [(NSPoint, NSPoint)],
+        color: NSColor,
+        lineWidth: CGFloat
+    ) {
+        color.setStroke()
+
+        for (start, end) in segments {
+            let path = NSBezierPath()
+            path.lineWidth = lineWidth
+            path.lineCapStyle = .round
+            path.lineJoinStyle = .round
+            path.move(to: start)
+            path.line(to: end)
+            path.stroke()
+        }
     }
 }

@@ -62,6 +62,14 @@ final class ScreenCaptureKitRecordingWriter: NSObject, SCStreamOutput, @unchecke
         }
     }
 
+    func hasStartedCurrentSegmentWriting() async -> Bool {
+        await withCheckedContinuation { continuation in
+            sampleHandlerQueue.async { [self] in
+                continuation.resume(returning: segment?.hasStartedWriting == true)
+            }
+        }
+    }
+
     func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
         segment?.append(sampleBuffer, outputType: type)
     }
@@ -75,6 +83,10 @@ private final class RecordingWriterSegment: @unchecked Sendable {
     private let microphoneAudioInput: AVAssetWriterInput?
     private var didStartWriting = false
     private var pendingError: (any Error)?
+
+    var hasStartedWriting: Bool {
+        didStartWriting
+    }
 
     init(request: RecordingRequest, outputFileURL: URL) throws {
         let writer = try AVAssetWriter(outputURL: outputFileURL, fileType: .mp4)
@@ -104,18 +116,29 @@ private final class RecordingWriterSegment: @unchecked Sendable {
             return
         }
 
-        if outputType == .screen, !sampleBufferContainsCompleteFrame(sampleBuffer) {
+        let isCompleteScreenFrame = outputType == .screen && sampleBufferContainsCompleteFrame(sampleBuffer)
+        if outputType == .screen, !isCompleteScreenFrame {
             return
         }
 
-        guard let input = input(for: outputType), input.isReadyForMoreMediaData else {
+        guard let input = input(for: outputType) else {
             return
         }
 
-        startWritingIfNeeded(for: sampleBuffer)
+        if !didStartWriting {
+            guard isCompleteScreenFrame else {
+                return
+            }
+
+            startWritingIfNeeded(for: sampleBuffer)
+        }
 
         guard writer.status == .writing else {
             pendingError = writer.error ?? ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status))
+            return
+        }
+
+        guard input.isReadyForMoreMediaData else {
             return
         }
 
@@ -191,18 +214,73 @@ private final class RecordingWriterSegment: @unchecked Sendable {
 
     private func sampleBufferContainsCompleteFrame(_ sampleBuffer: CMSampleBuffer) -> Bool {
         guard
-            let attachmentsArray = CMSampleBufferGetSampleAttachmentsArray(
-                sampleBuffer,
-                createIfNecessary: false
-            ) as? [[SCStreamFrameInfo: Any]],
-            let attachments = attachmentsArray.first,
-            let statusRawValue = attachments[.status] as? Int,
+            let attachments = firstSampleAttachments(from: sampleBuffer),
+            let statusRawValue = frameStatusRawValue(from: attachments),
             let status = SCFrameStatus(rawValue: statusRawValue)
         else {
             return false
         }
 
         return status == .complete
+    }
+
+    private func firstSampleAttachments(from sampleBuffer: CMSampleBuffer) -> [AnyHashable: Any]? {
+        guard let attachmentsArray = CMSampleBufferGetSampleAttachmentsArray(
+            sampleBuffer,
+            createIfNecessary: false
+        ) else {
+            return nil
+        }
+
+        if let typedAttachments = attachmentsArray as? [[AnyHashable: Any]],
+           let attachments = typedAttachments.first {
+            return attachments
+        }
+
+        let firstAttachment = (attachmentsArray as NSArray).firstObject
+        if let attachments = firstAttachment as? [SCStreamFrameInfo: Any] {
+            return Dictionary(uniqueKeysWithValues: attachments.map { (AnyHashable($0.key), $0.value) })
+        }
+
+        if let attachments = firstAttachment as? [AnyHashable: Any] {
+            return attachments
+        }
+
+        guard let attachments = firstAttachment as? NSDictionary else {
+            return nil
+        }
+
+        var result: [AnyHashable: Any] = [:]
+        for (key, value) in attachments {
+            if let key = key as? SCStreamFrameInfo {
+                result[AnyHashable(key)] = value
+            } else if let key = key as? String {
+                result[AnyHashable(key)] = value
+            } else if let key = key as? NSString {
+                result[AnyHashable(key as String)] = value
+            }
+        }
+
+        return result.isEmpty ? nil : result
+    }
+
+    private func frameStatusRawValue(from attachments: [AnyHashable: Any]) -> Int? {
+        let value = attachments[AnyHashable(SCStreamFrameInfo.status)]
+            ?? attachments[AnyHashable(SCStreamFrameInfo.status.rawValue)]
+
+        if let value = value as? SCFrameStatus {
+            return value.rawValue
+        }
+
+        if let value = value as? Int {
+            return value
+        }
+
+        if let value = value as? NSNumber {
+            return value.intValue
+        }
+
+        return nil
     }
 
     private static func makeAudioInput(for writer: AVAssetWriter, enabled: Bool) throws -> AVAssetWriterInput? {
@@ -222,10 +300,12 @@ private final class RecordingWriterSegment: @unchecked Sendable {
     }
 
     private static func videoOutputSettings(for request: RecordingRequest) -> [String: Any] {
-        [
+        let pixelSize = (try? request.pixelSize.roundedToEvenDimensions) ?? request.pixelSize
+
+        return [
             AVVideoCodecKey: request.videoCodec.avVideoCodecType,
-            AVVideoWidthKey: request.pixelSize.width,
-            AVVideoHeightKey: request.pixelSize.height
+            AVVideoWidthKey: pixelSize.width,
+            AVVideoHeightKey: pixelSize.height
         ]
     }
 

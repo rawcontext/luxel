@@ -82,4 +82,8 @@ extension LuxelMenuModel {
     func revealRecording(_ recording: PastRecording) {
         fileWorkflowService.revealInFinder(recording.fileURL)
     }
+
+    func openRecordingsFolder() {
+        fileWorkflowService.openWithDefaultApp(settings.recordingsDirectory)
+    }
 }

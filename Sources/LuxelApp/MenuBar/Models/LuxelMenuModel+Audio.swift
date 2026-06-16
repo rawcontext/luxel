@@ -46,7 +46,7 @@ extension LuxelMenuModel {
     }
 
     func cropperAudioLevelConfiguration() -> CropperAudioLevelConfiguration? {
-        guard settings.recordAudio, microphoneStatus == .authorized else {
+        guard microphoneStatus == .authorized else {
             return nil
         }
 

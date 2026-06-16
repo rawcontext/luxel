@@ -144,8 +144,8 @@ struct QuickRecordingModelTests {
         #expect(selection == (try CaptureRect(x: 10, y: 580, width: 640, height: 480)))
     }
 
-    @Test("last display memory restores matching full cropper selection")
-    func lastDisplayMemoryRestoresMatchingFullCropperSelection() throws {
+    @Test("last display memory does not restore cropper selection")
+    func lastDisplayMemoryDoesNotRestoreCropperSelection() throws {
         let memory = LastCaptureMemory(
             target: .display(DisplayID(3)),
             pixelSize: try PixelSize(width: 1920, height: 1080),
@@ -156,11 +156,11 @@ struct QuickRecordingModelTests {
 
         let selection = memory.restoredTopLeftSelection(in: display)
 
-        #expect(selection == (try CaptureRect(x: 0, y: 0, width: 1920, height: 1080)))
+        #expect(selection == nil)
     }
 
-    @Test("last window memory restores matching window cropper selection")
-    func lastWindowMemoryRestoresMatchingWindowCropperSelection() throws {
+    @Test("last window memory does not restore cropper selection")
+    func lastWindowMemoryDoesNotRestoreCropperSelection() throws {
         let windowFrame = try CaptureRect(x: -1600, y: 220, width: 640, height: 480)
         let window = try makeWindowOption(id: 42, frame: windowFrame)
         let memory = LastCaptureMemory(
@@ -173,7 +173,7 @@ struct QuickRecordingModelTests {
 
         let selection = memory.restoredTopLeftSelection(in: display, availableTargets: [window])
 
-        #expect(selection == (try CaptureRect(x: 128, y: 100, width: 640, height: 480)))
+        #expect(selection == nil)
     }
 
     @Test("last nonmatching memory does not restore cropper selection")

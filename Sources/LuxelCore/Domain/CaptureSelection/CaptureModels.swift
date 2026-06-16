@@ -93,6 +93,8 @@ public struct CaptureTargetOption: Codable, Equatable, Identifiable, Sendable {
     public let kind: CaptureTargetKind
     public let title: String
     public let subtitle: String?
+    public let owningApplicationBundleIdentifier: String?
+    public let owningApplicationProcessIdentifier: Int32?
     public let target: CaptureTarget
     public let pixelSize: PixelSize
     public let frame: CaptureRect?
@@ -102,6 +104,8 @@ public struct CaptureTargetOption: Codable, Equatable, Identifiable, Sendable {
         kind: CaptureTargetKind,
         title: String,
         subtitle: String? = nil,
+        owningApplicationBundleIdentifier: String? = nil,
+        owningApplicationProcessIdentifier: Int32? = nil,
         target: CaptureTarget,
         pixelSize: PixelSize,
         frame: CaptureRect? = nil
@@ -110,6 +114,8 @@ public struct CaptureTargetOption: Codable, Equatable, Identifiable, Sendable {
         self.kind = kind
         self.title = title
         self.subtitle = subtitle
+        self.owningApplicationBundleIdentifier = owningApplicationBundleIdentifier
+        self.owningApplicationProcessIdentifier = owningApplicationProcessIdentifier
         self.target = target
         self.pixelSize = pixelSize
         self.frame = frame

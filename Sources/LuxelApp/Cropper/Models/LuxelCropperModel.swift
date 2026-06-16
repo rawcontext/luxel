@@ -135,18 +135,23 @@ final class LuxelCropperModel {
     var countdownDuration: TimeInterval?
     var stopAfterDuration: TimeInterval?
     var customStopAfterText: String
+    var recordsAudio: Bool
     var errorMessage: String?
     @ObservationIgnored private let onCountdownDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
+    @ObservationIgnored private let onRecordAudioChange: (Bool) -> Void
     @ObservationIgnored let sizePresets: [CaptureSizePreset]
     @ObservationIgnored let windowSnapFrames: [CaptureRect]
+    let canRecordAudio: Bool
     let loupeAlwaysOn: Bool
     let dimOtherDisplays: Bool
     let displayFocus: CropperDisplayFocus
     @ObservationIgnored private var selectionUndoStack: UndoStack<CropperUndoState>
     @ObservationIgnored private var resizeStartSelection: CaptureRect?
+    @ObservationIgnored private var moveStartSelection: CaptureRect?
     @ObservationIgnored private var selectionDragID = 0
     @ObservationIgnored private var resizeDragID = 0
+    @ObservationIgnored private var moveDragID = 0
 
     init(
         display: DisplayBounds,
@@ -158,11 +163,14 @@ final class LuxelCropperModel {
         ),
         initialSelection: CaptureRect? = nil,
         windowSnapFrames: [CaptureRect] = [],
+        recordAudio: Bool = false,
+        canRecordAudio: Bool = false,
         loupeAlwaysOn: Bool = false,
         dimOtherDisplays: Bool = false,
         displayFocus: CropperDisplayFocus = CropperDisplayFocus(),
         onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
-        onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in }
+        onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
+        onRecordAudioChange: @escaping (Bool) -> Void = { _ in }
     ) {
         let resolvedInitialSelection = Self.validInitialSelection(initialSelection, display: display)
 
@@ -172,13 +180,16 @@ final class LuxelCropperModel {
         self.countdownDuration = countdownDuration
         self.stopAfterDuration = stopAfterDuration
         self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
+        self.recordsAudio = recordAudio
         self.sizePresets = selectionPresetConfiguration.sizePresets
         self.windowSnapFrames = windowSnapFrames
+        self.canRecordAudio = canRecordAudio
         self.loupeAlwaysOn = loupeAlwaysOn
         self.dimOtherDisplays = dimOtherDisplays
         self.displayFocus = displayFocus
         self.onCountdownDurationChange = onCountdownDurationChange
         self.onStopAfterDurationChange = onStopAfterDurationChange
+        self.onRecordAudioChange = onRecordAudioChange
         if resolvedInitialSelection != nil {
             displayFocus.activate(display.id)
         }
@@ -222,6 +233,10 @@ extension LuxelCropperModel {
         selectionUndoStack.canRedo
     }
 
+    var canToggleRecordAudio: Bool {
+        canRecordAudio || recordsAudio
+    }
+
     var stopAfterSummary: String {
         guard let stopAfterDuration else {
             return "Off"
@@ -257,6 +272,19 @@ extension LuxelCropperModel {
             customStopAfterText = RecordingDurationText.format(duration)
         }
         onStopAfterDurationChange(duration)
+    }
+
+    func setRecordAudio(_ isEnabled: Bool) {
+        guard recordsAudio != isEnabled else {
+            return
+        }
+
+        guard !isEnabled || canRecordAudio else {
+            return
+        }
+
+        recordsAudio = isEnabled
+        onRecordAudioChange(isEnabled)
     }
 
     func setCustomStopAfterText(_ text: String) {
@@ -300,7 +328,7 @@ extension LuxelCropperModel {
         isLoupeRequested: Bool = false,
         loupeOverlaySize: CGSize = CGSize(width: 164, height: 122)
     ) {
-        guard resizeStartSelection == nil else {
+        guard resizeStartSelection == nil, moveStartSelection == nil else {
             return
         }
 
@@ -341,13 +369,62 @@ extension LuxelCropperModel {
         selectionDragID += 1
     }
 
+    func moveSelection(
+        translation: CGSize,
+        viewSize: CGSize
+    ) {
+        guard resizeStartSelection == nil else {
+            return
+        }
+
+        guard let selection else {
+            return
+        }
+
+        if moveStartSelection == nil {
+            moveStartSelection = selection
+        }
+
+        guard let moveStartSelection else {
+            return
+        }
+
+        let delta = captureDelta(from: translation, viewSize: viewSize)
+        guard delta.deltaX != 0 || delta.deltaY != 0 else {
+            return
+        }
+
+        do {
+            let draft = try CaptureSelectionDraft(display: display, topLeftSelection: moveStartSelection)
+            self.selection = try draft.moved(by: delta).topLeftSelection
+            activateDisplay()
+            snapGuides = []
+            loupeSample = nil
+            pushUndoState(coalescingToken: moveDragCoalescingToken)
+            errorMessage = nil
+        } catch {
+            errorMessage = errorMessage(for: error)
+        }
+    }
+
+    func finishMoveSelection() {
+        moveStartSelection = nil
+        loupeSample = nil
+        moveDragID += 1
+    }
+
     func resizeSelection(
         handle: CaptureResizeHandle,
         translation: CGSize,
         viewSize: CGSize,
+        lockingAspectRatio: Bool = false,
         isLoupeRequested: Bool = false,
         loupeOverlaySize: CGSize = CGSize(width: 164, height: 122)
     ) {
+        guard moveStartSelection == nil else {
+            return
+        }
+
         guard let selection else {
             return
         }
@@ -368,7 +445,7 @@ extension LuxelCropperModel {
             self.selection = try draft.resized(
                 dragging: handle,
                 by: captureDelta(from: translation, viewSize: viewSize),
-                lockingAspectRatio: activeAspectRatio != nil
+                lockingAspectRatio: lockingAspectRatio && handle.isCropperCorner
             ).topLeftSelection
             activateDisplay()
             updateLoupe(
@@ -443,22 +520,6 @@ extension LuxelCropperModel {
         } catch {
             errorMessage = errorMessage(for: error)
         }
-    }
-
-    func setSelectionX(_ originX: Int) {
-        replaceSelection(x: originX)
-    }
-
-    func setSelectionY(_ originY: Int) {
-        replaceSelection(y: originY)
-    }
-
-    func setSelectionWidth(_ width: Int) {
-        replaceSelection(width: width)
-    }
-
-    func setSelectionHeight(_ height: Int) {
-        replaceSelection(height: height)
     }
 
     func nudgeSelection(x deltaX: Int, y deltaY: Int) {
@@ -546,38 +607,16 @@ extension LuxelCropperModel {
         return try CaptureSelectionDraft(display: display, topLeftSelection: selection)
     }
 
-    private func replaceSelection(
-        x originX: Int? = nil,
-        y originY: Int? = nil,
-        width: Int? = nil,
-        height: Int? = nil
-    ) {
-        guard let selection else {
-            return
-        }
-
-        do {
-            let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
-            self.selection = try draft.replacingSelection(
-                x: originX,
-                y: originY,
-                width: width,
-                height: height
-            ).topLeftSelection
-            activateDisplay()
-            pushUndoState()
-            errorMessage = nil
-        } catch {
-            errorMessage = errorMessage(for: error)
-        }
-    }
-
     private var selectionDragCoalescingToken: String {
         "selection-drag-\(selectionDragID)"
     }
 
     private var resizeDragCoalescingToken: String {
         "resize-drag-\(resizeDragID)"
+    }
+
+    private var moveDragCoalescingToken: String {
+        "move-drag-\(moveDragID)"
     }
 
     private var currentUndoState: CropperUndoState {
@@ -722,6 +761,15 @@ extension LuxelCropperModel {
 }
 
 private extension CaptureResizeHandle {
+    var isCropperCorner: Bool {
+        switch self {
+        case .topLeft, .topRight, .bottomLeft, .bottomRight:
+            true
+        case .top, .left, .right, .bottom:
+            false
+        }
+    }
+
     func cursorPoint(in selection: CaptureRect?) -> CapturePoint {
         guard let selection else {
             return CapturePoint(x: 0, y: 0)

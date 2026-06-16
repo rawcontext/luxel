@@ -13,11 +13,19 @@ public struct NativeMediaExporter: MediaExporter, Sendable {
     }
 
     public func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+        try await export(request, to: outputFileURL, progress: nil)
+    }
+
+    public func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         switch request.format {
         case .mp4, .hevc:
-            try await avFoundationExporter.export(request, to: outputFileURL)
+            try await avFoundationExporter.export(request, to: outputFileURL, progress: progress)
         case .gif, .apng:
-            try await animatedExporter.export(request, to: outputFileURL)
+            try await animatedExporter.export(request, to: outputFileURL, progress: progress)
         case .av1, .webm:
             throw NativeMediaExporterError.unsupportedNativeFormat(request.format)
         }

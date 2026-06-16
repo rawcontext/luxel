@@ -8,7 +8,7 @@ struct QuickExportServiceTests {
     @Test("clipboard preset exports to recordings directory and copies result")
     func clipboardPresetExportsToRecordingsDirectoryAndCopiesResult() async throws {
         let metadataReader = SpyMetadataReader(source: try makeSource(width: 1920, height: 1080, frameRate: 60))
-        let exporter = SpyMediaExporter()
+        let exporter = SpyMediaExporter(reportedProgress: [0.3, 0.8])
         let progress = ProgressRecorder()
         let client = FakeExportedFileActionClient()
         let service = QuickExportService(
@@ -42,7 +42,9 @@ struct QuickExportServiceTests {
         #expect(client.revealedURLs.isEmpty)
         #expect(await progress.snapshots() == [
             .preparing(format: .gif),
-            .exporting(format: .gif, progress: 0.05),
+            .exporting(format: .gif, progress: 0),
+            .exporting(format: .gif, progress: 0.3),
+            .exporting(format: .gif, progress: 0.8),
             .completed(format: .gif)
         ])
     }
@@ -213,10 +215,27 @@ private actor SpyMetadataReader: MediaMetadataReader {
 }
 
 private actor SpyMediaExporter: MediaExporter {
+    private let reportedProgress: [Double]
     private var captured: (request: ExportRequest, outputFileURL: URL)?
 
+    init(reportedProgress: [Double] = []) {
+        self.reportedProgress = reportedProgress
+    }
+
     func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+        try await export(request, to: outputFileURL, progress: nil)
+    }
+
+    func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         captured = (request, outputFileURL)
+        for value in reportedProgress {
+            await progress?(value)
+        }
+
         return try ExportedMedia(
             fileURL: outputFileURL,
             format: request.format,

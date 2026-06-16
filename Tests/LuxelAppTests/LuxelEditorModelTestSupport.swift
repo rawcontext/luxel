@@ -170,7 +170,11 @@ struct StubMediaExporter: MediaExporter {
         self.exportedMedia = exportedMedia
     }
 
-    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+    func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         if let exportedMedia {
             return exportedMedia
         }
@@ -187,7 +191,11 @@ struct StubMediaExporter: MediaExporter {
 actor SpyMediaExporter: MediaExporter {
     private var captured: [(request: ExportRequest, outputFileURL: URL)] = []
 
-    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+    func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         captured.append((request, outputFileURL))
         return ExportedMedia(
             fileURL: outputFileURL,

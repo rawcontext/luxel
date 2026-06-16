@@ -32,6 +32,18 @@ public struct ExportedMedia: Equatable, Sendable {
     }
 }
 
+public typealias MediaExportProgressHandler = @Sendable (Double) async -> Void
+
 public protocol MediaExporter: Sendable {
-    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia
+    func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia
+}
+
+public extension MediaExporter {
+    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+        try await export(request, to: outputFileURL, progress: nil)
+    }
 }

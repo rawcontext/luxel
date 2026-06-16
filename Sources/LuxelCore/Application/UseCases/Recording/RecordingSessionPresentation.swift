@@ -104,8 +104,8 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
     private static func countingDownContent(remaining: TimeInterval) -> RecordingSessionPresentationContent {
         let countdownText = Self.countdownText(remaining)
         return RecordingSessionPresentationContent(
-            menuBarTitle: countdownText,
-            menuBarSystemImage: "hourglass",
+            menuBarTitle: Self.countdownMenuBarText(remaining),
+            menuBarSystemImage: "",
             accessibilityLabel: "Luxel recording starts in \(countdownText)",
             primaryActionTitle: "Cancel",
             primaryActionSystemImage: "xmark.circle.fill",
@@ -224,6 +224,10 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
 
     private static func countdownText(_ remaining: TimeInterval) -> String {
         "\(max(0, Int(remaining.rounded(.up)))) s"
+    }
+
+    private static func countdownMenuBarText(_ remaining: TimeInterval) -> String {
+        "\(max(0, Int(remaining.rounded(.up))))"
     }
 
     private static func twoDigits(_ value: Int) -> String {

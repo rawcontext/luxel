@@ -4,6 +4,8 @@ import SwiftUI
 
 @MainActor
 final class LuxelCropperPanelController {
+    private static let panelLevel = NSWindow.Level(rawValue: NSWindow.Level.popUpMenu.rawValue - 1)
+
     private let targetService: CaptureTargetService
     private let audioLevelMonitorFactory: () -> any AudioLevelMonitor
     private var panels: [NSPanel] = []
@@ -40,11 +42,13 @@ final class LuxelCropperPanelController {
             sizePresets: CaptureSizePreset.builtInDefaults
         ),
         restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled,
+        recordAudio: Bool = false,
         loupeAlwaysOn: Bool = false,
         dimOtherDisplays: Bool = false,
         showsNotificationReminder: Bool = false,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
+        onRecordAudioChange: @escaping @MainActor (Bool) -> Void = { _ in },
         onCameraSelectionChange: @escaping @MainActor (String?) -> Void = { _ in },
         onCameraPreviewStyleChange: @escaping @MainActor (CameraPreviewStyle) -> Void = { _ in },
         onNotificationReminderDismiss: @escaping @MainActor () -> Void = {},
@@ -67,11 +71,13 @@ final class LuxelCropperPanelController {
                     quickRecordingConfiguration: quickRecordingConfiguration,
                     selectionPresetConfiguration: selectionPresetConfiguration,
                     restoreSelectionConfiguration: restoreSelectionConfiguration,
+                    recordAudio: recordAudio,
                     loupeAlwaysOn: loupeAlwaysOn,
                     dimOtherDisplays: dimOtherDisplays,
                     showsNotificationReminder: showsNotificationReminder,
                     onCountdownDurationChange: onCountdownDurationChange,
                     onStopAfterDurationChange: onStopAfterDurationChange,
+                    onRecordAudioChange: onRecordAudioChange,
                     onCameraSelectionChange: onCameraSelectionChange,
                     onCameraPreviewStyleChange: onCameraPreviewStyleChange,
                     onNotificationReminderDismiss: onNotificationReminderDismiss,
@@ -113,10 +119,8 @@ final class LuxelCropperPanelController {
         }
 
         audioLevelModel = sharedAudioLevelModel
-        if let sharedAudioLevelModel {
-            audioLevelTask = Task {
-                await sharedAudioLevelModel.watch()
-            }
+        if presentation.recordAudio, let sharedAudioLevelModel {
+            setAudioLevelMonitoringEnabled(true, model: sharedAudioLevelModel)
         }
 
         let displayFocus = CropperDisplayFocus()
@@ -138,20 +142,29 @@ final class LuxelCropperPanelController {
                     on: display,
                     from: targets
                 ),
+                recordAudio: presentation.recordAudio,
+                canRecordAudio: sharedAudioLevelModel != nil,
                 loupeAlwaysOn: presentation.loupeAlwaysOn,
                 dimOtherDisplays: presentation.dimOtherDisplays,
                 displayFocus: displayFocus,
                 onCountdownDurationChange: presentation.onCountdownDurationChange,
-                onStopAfterDurationChange: presentation.onStopAfterDurationChange
+                onStopAfterDurationChange: presentation.onStopAfterDurationChange,
+                onRecordAudioChange: { [weak self, weak sharedAudioLevelModel] isEnabled in
+                    presentation.onRecordAudioChange(isEnabled)
+                    self?.setAudioLevelMonitoringEnabled(isEnabled, model: sharedAudioLevelModel)
+                }
             )
-            let panel = NSPanel(
+            let panel = LuxelCropperPanel(
                 contentRect: screen.frame,
                 styleMask: [.borderless],
                 backing: .buffered,
                 defer: false,
                 screen: screen
             )
-            panel.level = .screenSaver
+            panel.onCancel = { [weak self] in
+                self?.close()
+            }
+            panel.level = Self.panelLevel
             panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
             panel.backgroundColor = .clear
             panel.isOpaque = false
@@ -193,6 +206,24 @@ final class LuxelCropperPanelController {
             NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }
+
+    private func setAudioLevelMonitoringEnabled(_ isEnabled: Bool, model: LuxelAudioLevelModel?) {
+        audioLevelTask?.cancel()
+        audioLevelTask = nil
+
+        guard let model else {
+            return
+        }
+
+        if isEnabled {
+            audioLevelTask = Task {
+                await model.watch()
+            }
+        } else {
+            model.stop()
+            model.sample = .silent
+        }
+    }
 }
 
 private struct CropperPanelPresentation {
@@ -204,17 +235,44 @@ private struct CropperPanelPresentation {
     let quickRecordingConfiguration: CropperQuickRecordingConfiguration
     let selectionPresetConfiguration: CropperSelectionPresetConfiguration
     let restoreSelectionConfiguration: CropperRestoreSelectionConfiguration
+    let recordAudio: Bool
     let loupeAlwaysOn: Bool
     let dimOtherDisplays: Bool
     let showsNotificationReminder: Bool
     let onCountdownDurationChange: @MainActor (TimeInterval?) -> Void
     let onStopAfterDurationChange: @MainActor (TimeInterval?) -> Void
+    let onRecordAudioChange: @MainActor (Bool) -> Void
     let onCameraSelectionChange: @MainActor (String?) -> Void
     let onCameraPreviewStyleChange: @MainActor (CameraPreviewStyle) -> Void
     let onNotificationReminderDismiss: @MainActor () -> Void
     let onCaptureScreenshot: @MainActor (CaptureSelectionDraft) -> Void
     let onQuickSelect: @MainActor (CaptureSelectionDraft, UUID) -> Void
     let onSelect: @MainActor (CaptureSelectionDraft) -> Void
+}
+
+private final class LuxelCropperPanel: NSPanel {
+    var onCancel: (() -> Void)?
+
+    override var canBecomeKey: Bool {
+        true
+    }
+
+    override var canBecomeMain: Bool {
+        false
+    }
+
+    override func cancelOperation(_ sender: Any?) {
+        onCancel?()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 53 {
+            onCancel?()
+            return
+        }
+
+        super.keyDown(with: event)
+    }
 }
 
 private extension NSScreen {

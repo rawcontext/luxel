@@ -34,9 +34,9 @@ extension LuxelCropperModel {
     var primaryActionHelp: String {
         switch mode {
         case .video:
-            "Record"
+            "Record the selected area."
         case .photo:
-            "Capture"
+            "Capture the selected area as a screenshot."
         }
     }
 }

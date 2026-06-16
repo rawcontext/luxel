@@ -31,6 +31,29 @@ struct CaptureTargetServiceTests {
         #expect(targets == [target])
     }
 
+    @Test("menu filter hides known utility windows")
+    func menuFilterHidesKnownUtilityWindows() throws {
+        let display = try CaptureTargetOption(
+            id: "display-12",
+            kind: .display,
+            title: "Display 1",
+            target: .display(DisplayID(12)),
+            pixelSize: PixelSize(width: 1280, height: 720)
+        )
+        let appIconWindow = try windowTarget(id: 1, title: "App Icon Window")
+        let gestureOverlay = try windowTarget(id: 2, title: "Gesture Blocking Overlay")
+        let realWindow = try windowTarget(id: 3, title: "Codex")
+
+        let targets = CaptureTargetMenuFilter().visibleTargets(from: [
+            display,
+            appIconWindow,
+            gestureOverlay,
+            realWindow
+        ])
+
+        #expect(targets == [display, realWindow])
+    }
+
     @Test("service forwards explicit refresh to catalog")
     func serviceForwardsExplicitRefreshToCatalog() async throws {
         let catalog = SpyCaptureTargetCatalog(snapshots: [
@@ -98,6 +121,16 @@ struct CaptureTargetServiceTests {
             title: "Display \(id)",
             target: .display(DisplayID(id)),
             pixelSize: PixelSize(width: 1280, height: 720)
+        )
+    }
+
+    private func windowTarget(id: UInt32, title: String) throws -> CaptureTargetOption {
+        try CaptureTargetOption(
+            id: "window-\(id)",
+            kind: .window,
+            title: title,
+            target: .window(id: id),
+            pixelSize: PixelSize(width: 640, height: 480)
         )
     }
 }

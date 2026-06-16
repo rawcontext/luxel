@@ -67,8 +67,8 @@ struct RecordingSessionPresentationTests {
             canStartRecording: false
         )
 
-        #expect(presentation.menuBarTitle == "3 s")
-        #expect(presentation.menuBarSystemImage == "hourglass")
+        #expect(presentation.menuBarTitle == "3")
+        #expect(presentation.menuBarSystemImage == "")
         #expect(!presentation.animatesMenuBarSystemImage)
         #expect(presentation.accessibilityLabel == "Luxel recording starts in 3 s")
         #expect(presentation.primaryActionTitle == "Cancel")

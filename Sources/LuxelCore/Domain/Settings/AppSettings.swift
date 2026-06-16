@@ -249,7 +249,7 @@ extension AppSettings {
         self.loupeAlwaysOn = loupeAlwaysOn
         self.dimOtherDisplays = dimOtherDisplays
         self.restoreLastSelection = restoreLastSelection
-        self.userSizePresets = userSizePresets
+        self.userSizePresets = Self.removingRemovedBuiltInSizePresets(from: userSizePresets)
         self.lastCaptureMemory = lastCaptureMemory
         self.perFormatExportMemory = perFormatExportMemory
         self.screenshotFormat = screenshotFormat
@@ -261,4 +261,9 @@ extension AppSettings {
         self.lastStopAfter = lastStopAfter
     }
 
+    static func removingRemovedBuiltInSizePresets(
+        from presets: [CaptureSizePreset]
+    ) -> [CaptureSizePreset] {
+        presets.filter { !CaptureSizePreset.removedBuiltInDefaultIDs.contains($0.id) }
+    }
 }

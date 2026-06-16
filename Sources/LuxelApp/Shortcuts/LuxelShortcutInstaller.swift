@@ -80,11 +80,13 @@ struct LuxelShortcutInstaller: View {
                 quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                 selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
                 restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
+                recordAudio: model.settings.recordAudio,
                 loupeAlwaysOn: model.settings.loupeAlwaysOn,
                 dimOtherDisplays: model.settings.dimOtherDisplays,
                 showsNotificationReminder: model.settings.notificationReminder,
                 onCountdownDurationChange: saveDefaultCountdown,
                 onStopAfterDurationChange: saveStopAfterDuration,
+                onRecordAudioChange: saveRecordAudio,
                 onNotificationReminderDismiss: model.dismissNotificationReminder,
                 onQuickSelect: startQuickRecording,
                 onSelect: startRecording
@@ -106,11 +108,13 @@ struct LuxelShortcutInstaller: View {
                 quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                 selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
                 restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
+                recordAudio: model.settings.recordAudio,
                 loupeAlwaysOn: model.settings.loupeAlwaysOn,
                 dimOtherDisplays: model.settings.dimOtherDisplays,
                 showsNotificationReminder: model.settings.notificationReminder,
                 onCountdownDurationChange: saveDefaultCountdown,
                 onStopAfterDurationChange: saveStopAfterDuration,
+                onRecordAudioChange: saveRecordAudio,
                 onNotificationReminderDismiss: model.dismissNotificationReminder,
                 onCaptureScreenshot: captureScreenshot,
                 onQuickSelect: startQuickRecording,
@@ -208,6 +212,11 @@ struct LuxelShortcutInstaller: View {
 
     private func saveStopAfterDuration(_ duration: TimeInterval?) {
         model.settings.lastStopAfter = duration
+        model.saveSettings()
+    }
+
+    private func saveRecordAudio(_ isEnabled: Bool) {
+        model.settings.recordAudio = isEnabled
         model.saveSettings()
     }
 

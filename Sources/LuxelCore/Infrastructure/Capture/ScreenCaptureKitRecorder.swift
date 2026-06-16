@@ -9,6 +9,8 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
     private let contentFilterTimeout: Duration = .seconds(10)
     private let streamStartTimeout: Duration = .seconds(10)
     private let streamStopTimeout: Duration = .seconds(5)
+    private let initialSampleWaitAttempts = 20
+    private let initialSampleWaitInterval: Duration = .milliseconds(50)
     private var stream: SCStream?
     private var isStreamCapturing = false
     private var request: RecordingRequest?
@@ -107,6 +109,8 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         }
 
         do {
+            await waitForCurrentSegmentToStartWritingIfNeeded()
+
             if isStreamCapturing {
                 try await stopStreamCapture(stream)
                 isStreamCapturing = false
@@ -253,6 +257,24 @@ private extension ScreenCaptureKitRecorder {
                 } catch {
                     return
                 }
+            }
+        }
+    }
+
+    private func waitForCurrentSegmentToStartWritingIfNeeded() async {
+        guard currentSegmentFileURL != nil, let outputWriter else {
+            return
+        }
+
+        for _ in 0..<initialSampleWaitAttempts {
+            if await outputWriter.hasStartedCurrentSegmentWriting() {
+                return
+            }
+
+            do {
+                try await Task.sleep(for: initialSampleWaitInterval)
+            } catch {
+                return
             }
         }
     }

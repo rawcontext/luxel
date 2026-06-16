@@ -3,7 +3,11 @@ import Foundation
 import ScreenCaptureKit
 
 public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
-    public init() {}
+    private let menuFilter: CaptureTargetMenuFilter
+
+    public init(menuFilter: CaptureTargetMenuFilter = CaptureTargetMenuFilter()) {
+        self.menuFilter = menuFilter
+    }
 
     public func availableDisplays() async throws -> [DisplayBounds] {
         let snapshot = try await snapshot()
@@ -24,7 +28,7 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
             let bounds = try displayBounds(for: display)
             return (bounds, try displayTarget(for: bounds, index: index))
         }
-        let windowTargets = try content.windows.compactMap(windowTarget)
+        let windowTargets = menuFilter.visibleTargets(from: try content.windows.compactMap(windowTarget))
 
         return CaptureTargetCatalogSnapshot(
             displays: displayItems.map(\.bounds),
@@ -62,7 +66,8 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
             return nil
         }
 
-        let appName = window.owningApplication?.applicationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let owningApplication = window.owningApplication
+        let appName = owningApplication?.applicationName.trimmingCharacters(in: .whitespacesAndNewlines)
         let windowTitle = window.title?.trimmingCharacters(in: .whitespacesAndNewlines)
         let title = nonEmpty(windowTitle)
             ?? nonEmpty(appName)
@@ -73,6 +78,8 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
             kind: .window,
             title: title,
             subtitle: nonEmpty(appName),
+            owningApplicationBundleIdentifier: nonEmpty(owningApplication?.bundleIdentifier),
+            owningApplicationProcessIdentifier: owningApplication?.processID,
             target: .window(id: window.windowID),
             pixelSize: PixelSize(width: frame.width, height: frame.height),
             frame: CaptureRect(

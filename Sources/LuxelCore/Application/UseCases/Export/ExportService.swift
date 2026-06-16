@@ -41,9 +41,11 @@ public struct ExportService: Sendable {
         return try await withTaskCancellationHandler {
             do {
                 try Task.checkCancellation()
-                await progress?(.exporting(format: request.format, progress: 0.05))
+                await progress?(.exporting(format: request.format, progress: 0))
 
-                let exported = try await exporter.export(request, to: outputURL)
+                let exported = try await exporter.export(request, to: outputURL) { value in
+                    await progress?(.exporting(format: request.format, progress: Self.clampedProgress(value)))
+                }
                 let exportedWithFileSize = exported.withFileSizeBytes(fileSizeBytes(at: exported.fileURL))
 
                 try Task.checkCancellation()
@@ -114,6 +116,10 @@ public struct ExportService: Sendable {
         }
 
         return size.int64Value
+    }
+
+    private static func clampedProgress(_ value: Double) -> Double {
+        min(max(value, 0), 1)
     }
 }
 

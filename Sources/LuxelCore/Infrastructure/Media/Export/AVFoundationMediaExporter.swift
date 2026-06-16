@@ -23,6 +23,14 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
     }
 
     public func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+        try await export(request, to: outputFileURL, progress: nil)
+    }
+
+    public func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         let plan = try planFactory.makePlan(for: request, outputFileURL: outputFileURL)
         let asset = AVURLAsset(url: plan.inputFileURL)
         let sourceVideoTrack = try await firstVideoTrack(in: asset)
@@ -73,10 +81,14 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         exportSession.shouldOptimizeForNetworkUse = true
 
         try? FileManager.default.removeItem(at: plan.outputFileURL)
+        let progressTask = Self.startProgressPolling(exportSession, progress: progress)
 
         do {
             try await exportSession.export(to: plan.outputFileURL, as: plan.outputFileType)
+            await Self.stopProgressPolling(progressTask)
+            await progress?(1)
         } catch {
+            await Self.stopProgressPolling(progressTask)
             try? FileManager.default.removeItem(at: plan.outputFileURL)
             throw error
         }
@@ -87,6 +99,34 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
             pixelSize: plan.outputPixelSize,
             shouldMute: plan.shouldMute
         )
+    }
+
+    private static func startProgressPolling(
+        _ exportSession: AVAssetExportSession,
+        progress: MediaExportProgressHandler?
+    ) -> Task<Void, Never>? {
+        guard let progress else {
+            return nil
+        }
+
+        let progressSource = AVAssetExportSessionProgressSource(exportSession)
+        return Task {
+            await progress(0)
+
+            while !Task.isCancelled {
+                await progress(progressSource.progress)
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+        }
+    }
+
+    private static func stopProgressPolling(_ task: Task<Void, Never>?) async {
+        guard let task else {
+            return
+        }
+
+        task.cancel()
+        await task.value
     }
 
     private func firstVideoTrack(in asset: AVURLAsset) async throws -> AVAssetTrack {
@@ -211,6 +251,18 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         return exportSession
     }
 
+}
+
+private final class AVAssetExportSessionProgressSource: @unchecked Sendable {
+    private let exportSession: AVAssetExportSession
+
+    init(_ exportSession: AVAssetExportSession) {
+        self.exportSession = exportSession
+    }
+
+    var progress: Double {
+        Double(exportSession.progress)
+    }
 }
 
 public enum AVFoundationMediaExporterError: Error, Equatable {

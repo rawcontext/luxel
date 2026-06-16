@@ -36,7 +36,7 @@ struct ExportServiceTests {
 
     @Test("service emits progress snapshots")
     func serviceEmitsProgressSnapshots() async throws {
-        let exporter = SpyMediaExporter()
+        let exporter = SpyMediaExporter(reportedProgress: [0.25, 0.75])
         let progress = ProgressRecorder()
         let service = ExportService(exporter: exporter)
         let source = try makeSource()
@@ -54,7 +54,9 @@ struct ExportServiceTests {
 
         #expect(snapshots == [
             .preparing(format: .gif),
-            .exporting(format: .gif, progress: 0.05),
+            .exporting(format: .gif, progress: 0),
+            .exporting(format: .gif, progress: 0.25),
+            .exporting(format: .gif, progress: 0.75),
             .completed(format: .gif)
         ])
     }
@@ -137,13 +139,13 @@ struct ExportServiceTests {
         #expect(snapshots.map(\.jobID) == [0, 0, 0, 1, 1, 1, 2, 2, 2])
         #expect(snapshots.map(\.snapshot) == [
             .preparing(format: .mp4),
-            .exporting(format: .mp4, progress: 0.05),
+            .exporting(format: .mp4, progress: 0),
             .completed(format: .mp4),
             .preparing(format: .hevc),
-            .exporting(format: .hevc, progress: 0.05),
+            .exporting(format: .hevc, progress: 0),
             .completed(format: .hevc),
             .preparing(format: .gif),
-            .exporting(format: .gif, progress: 0.05),
+            .exporting(format: .gif, progress: 0),
             .completed(format: .gif)
         ])
     }
@@ -205,10 +207,27 @@ struct ExportServiceTests {
 }
 
 private actor SpyMediaExporter: MediaExporter {
+    private let reportedProgress: [Double]
     private var captured: [(request: ExportRequest, outputFileURL: URL)] = []
 
+    init(reportedProgress: [Double] = []) {
+        self.reportedProgress = reportedProgress
+    }
+
     func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+        try await export(request, to: outputFileURL, progress: nil)
+    }
+
+    func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         captured.append((request, outputFileURL))
+        for value in reportedProgress {
+            await progress?(value)
+        }
+
         return try ExportedMedia(
             fileURL: outputFileURL,
             format: request.format,
@@ -229,7 +248,11 @@ private actor SpyMediaExporter: MediaExporter {
 private struct WritingMediaExporter: MediaExporter {
     let byteCount: Int
 
-    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+    func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         let data = Data(repeating: 0x5A, count: byteCount)
         try data.write(to: outputFileURL)
         return ExportedMedia(
@@ -269,7 +292,11 @@ private actor CancellableMediaExporter: MediaExporter {
     private var started = false
     private var startContinuation: CheckedContinuation<Void, Never>?
 
-    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+    func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         markStarted()
 
         while true {
@@ -299,7 +326,11 @@ private actor CancellableBatchMediaExporter: MediaExporter {
     private var secondExportStarted = false
     private var secondExportContinuation: CheckedContinuation<Void, Never>?
 
-    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+    func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         captured.append((request, outputFileURL))
 
         if captured.count == 1 {

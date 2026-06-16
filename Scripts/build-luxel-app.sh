@@ -21,7 +21,15 @@ if [[ -z "${SIGN_IDENTITY}" ]]; then
 	)"
 fi
 
-SIGN_IDENTITY="${SIGN_IDENTITY:--}"
+if [[ -z "${SIGN_IDENTITY}" ]]; then
+	echo "No Apple Development code signing identity found. Luxel must be signed with a team identity." >&2
+	exit 1
+fi
+
+if [[ "${SIGN_IDENTITY}" == "-" ]]; then
+	echo "Ad-hoc signing is not allowed. Luxel must be signed with a team identity." >&2
+	exit 1
+fi
 
 cd "${PACKAGE_ROOT}"
 
@@ -45,21 +53,22 @@ chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 chmod +x "${APP_PATH}/Contents/MacOS/luxel-cli"
 chmod +x "${APP_PATH}/Contents/Resources/install-cli"
 
-if [[ -n "${SIGN_IDENTITY}" ]]; then
-	CODESIGN_ARGS=(
-		--force
-		--sign "${SIGN_IDENTITY}"
-		--options runtime
-		--entitlements "${ENTITLEMENTS}"
-	)
+codesign \
+	--force \
+	--sign "${SIGN_IDENTITY}" \
+	--options runtime \
+	--entitlements "${ENTITLEMENTS}" \
+	--timestamp \
+	"${APP_PATH}"
 
-	if [[ "${SIGN_IDENTITY}" == "-" ]]; then
-		CODESIGN_ARGS+=(--timestamp=none)
-	else
-		CODESIGN_ARGS+=(--timestamp)
-	fi
+TEAM_IDENTIFIER="$(
+	codesign -dv --verbose=4 "${APP_PATH}" 2>&1 |
+		awk -F= '/^TeamIdentifier=/ { print $2; exit }'
+)"
 
-	codesign "${CODESIGN_ARGS[@]}" "${APP_PATH}"
+if [[ -z "${TEAM_IDENTIFIER}" || "${TEAM_IDENTIFIER}" == "not set" ]]; then
+	echo "Code signing did not produce a TeamIdentifier. Luxel must be signed with a team identity." >&2
+	exit 1
 fi
 
 if [[ "${UPLOAD_CRASHLYTICS_SYMBOLS}" == "1" ]]; then

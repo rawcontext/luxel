@@ -75,6 +75,41 @@ extension SettingsTests {
         #expect(settings.lastStopAfter == nil)
     }
 
+    @Test("decoding settings removes retired built-in cropper size presets")
+    func decodingSettingsRemovesRetiredBuiltInCropperSizePresets() throws {
+        let data = Data("""
+        {
+            "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+            "userSizePresets": [
+                {
+                    "id": "00000000-0000-0000-0000-000000000701",
+                    "name": "1280x720",
+                    "pixelSize": { "width": 1280, "height": 720 }
+                },
+                {
+                    "id": "00000000-0000-0000-0000-000000000704",
+                    "name": "X/Twitter 1280x720",
+                    "pixelSize": { "width": 1280, "height": 720 }
+                },
+                {
+                    "id": "00000000-0000-0000-0000-000000000705",
+                    "name": "App Store Preview 1920x1080",
+                    "pixelSize": { "width": 1920, "height": 1080 }
+                },
+                {
+                    "id": "00000000-0000-0000-0000-000000000806",
+                    "name": "Custom X/Twitter",
+                    "pixelSize": { "width": 1280, "height": 720 }
+                }
+            ]
+        }
+        """.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(settings.userSizePresets.map(\.name) == ["1280x720", "Custom X/Twitter"])
+    }
+
     @Test("camera preview placement rejects non-finite origins")
     func cameraPreviewPlacementRejectsNonFiniteOrigins() {
         #expect(throws: AppSettingsError.invalidCameraPreviewPlacement) {

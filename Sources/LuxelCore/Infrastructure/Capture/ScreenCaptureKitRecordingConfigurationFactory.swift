@@ -8,8 +8,9 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
 
     public func makeStreamConfiguration(for request: RecordingRequest) -> SCStreamConfiguration {
         let configuration = SCStreamConfiguration()
-        configuration.width = size_t(request.pixelSize.width)
-        configuration.height = size_t(request.pixelSize.height)
+        let pixelSize = (try? request.pixelSize.roundedToEvenDimensions) ?? request.pixelSize
+        configuration.width = size_t(pixelSize.width)
+        configuration.height = size_t(pixelSize.height)
         configuration.minimumFrameInterval = CMTime(
             value: 1,
             timescale: CMTimeScale(request.frameRate.framesPerSecond)

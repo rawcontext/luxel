@@ -86,15 +86,23 @@ private struct RegisteredCodecMediaExporter: MediaExporter {
     let externalExporters: [ExportFormat: any MediaExporter]
 
     func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+        try await export(request, to: outputFileURL, progress: nil)
+    }
+
+    func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
         guard request.format.requiresExternalNativeCodec else {
-            return try await nativeExporter.export(request, to: outputFileURL)
+            return try await nativeExporter.export(request, to: outputFileURL, progress: progress)
         }
 
         guard let exporter = externalExporters[request.format] else {
             throw CodecAdapterRegistryError.unregisteredExternalFormat(request.format)
         }
 
-        return try await exporter.export(request, to: outputFileURL)
+        return try await exporter.export(request, to: outputFileURL, progress: progress)
     }
 }
 

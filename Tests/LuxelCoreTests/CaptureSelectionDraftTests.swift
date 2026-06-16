@@ -104,6 +104,22 @@ struct CaptureSelectionDraftTests {
         #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 80, width: 400, height: 320)))
     }
 
+    @Test("side handle resize moves only that side")
+    func sideHandleResizeMovesOnlyThatSide() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 180)
+        )
+
+        let resized = try draft.resized(
+            dragging: .left,
+            by: CaptureResizeDelta(x: -40, y: 90)
+        )
+
+        #expect(resized.topLeftSelection == (try CaptureRect(x: 60, y: 100, width: 360, height: 180)))
+    }
+
     @Test("resize top-left keeps opposite corner and enforces minimum size")
     func resizeTopLeftKeepsOppositeCornerAndEnforcesMinimumSize() throws {
         let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)

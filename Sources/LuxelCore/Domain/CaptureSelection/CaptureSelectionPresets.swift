@@ -74,17 +74,12 @@ public struct CaptureSizePreset: Codable, Equatable, Identifiable, Sendable {
             uncheckedID: UUID(uuidString: "00000000-0000-0000-0000-000000000703")!,
             name: "800x600",
             pixelSize: .svga800x600
-        ),
-        CaptureSizePreset(
-            uncheckedID: UUID(uuidString: "00000000-0000-0000-0000-000000000704")!,
-            name: "X/Twitter 1280x720",
-            pixelSize: .hd1280x720
-        ),
-        CaptureSizePreset(
-            uncheckedID: UUID(uuidString: "00000000-0000-0000-0000-000000000705")!,
-            name: "App Store Preview 1920x1080",
-            pixelSize: .fullHD1920x1080
         )
+    ]
+
+    static let removedBuiltInDefaultIDs: Set<UUID> = [
+        UUID(uuidString: "00000000-0000-0000-0000-000000000704")!,
+        UUID(uuidString: "00000000-0000-0000-0000-000000000705")!
     ]
 
     private init(uncheckedID id: UUID, name: String, pixelSize: PixelSize) {

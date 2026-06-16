@@ -144,8 +144,10 @@ extension AppSettings {
             ?? false
         restoreLastSelection = try container.decodeIfPresent(Bool.self, forKey: .restoreLastSelection)
             ?? true
-        userSizePresets = try container.decodeIfPresent([CaptureSizePreset].self, forKey: .userSizePresets)
-            ?? CaptureSizePreset.builtInDefaults
+        userSizePresets = Self.removingRemovedBuiltInSizePresets(
+            from: try container.decodeIfPresent([CaptureSizePreset].self, forKey: .userSizePresets)
+                ?? CaptureSizePreset.builtInDefaults
+        )
         lastCaptureMemory = try container.decodeIfPresent(LastCaptureMemory.self, forKey: .lastCaptureMemory)
         perFormatExportMemory = try container.decodeIfPresent(
             [ExportFormat: ExportMemory].self,

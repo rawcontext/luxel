@@ -23,8 +23,8 @@ struct ScreenRecordingConfigurationFactoryTests {
         let configuration = ScreenRecordingConfigurationFactory()
             .makeStreamConfiguration(for: request)
 
-        #expect(configuration.width == 641)
-        #expect(configuration.height == 839)
+        #expect(configuration.width == 642)
+        #expect(configuration.height == 840)
         #expect(configuration.minimumFrameInterval == CMTime(value: 1, timescale: 60))
         #expect(!configuration.showsCursor)
         #expect(configuration.showMouseClicks)
