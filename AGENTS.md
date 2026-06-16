@@ -62,7 +62,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Guiding Principles
 - Always verify today's date to avoid a temporal paradox.
-- When rebuilding or relaunching Luxel, always build and launch a properly signed `.app` bundle using the user's Apple Development identity (for example via `Scripts/build-luxel-app.sh`). Verify the bundle with `codesign --verify --deep --strict --verbose=2` and confirm `TeamIdentifier` is set before launching. Never launch the SwiftPM debug executable (`.build/arm64-apple-macosx/debug/Luxel`) or any ad-hoc-signed binary, because it breaks macOS TCC permissions and causes repeated permission prompts. If signing or launching the signed bundle fails, stop and report that failure instead of using an unsigned/ad-hoc fallback.
+- When rebuilding or relaunching Luxel, always build and launch a properly signed `.app` bundle using the user's Apple Development identity (for example via `Scripts/build-luxel-app.sh`). Never launch the SwiftPM debug executable (`.build/arm64-apple-macosx/debug/Luxel`) or any ad-hoc-signed binary, because it breaks macOS TCC permissions and causes repeated permission prompts. If signing or launching the signed bundle fails, stop and report that failure instead of using an unsigned/ad-hoc fallback.
 - Do Your Own Exploration - Verify assumptions against actual codebase, tests, and documentation.
 - Use Context7 for Documentation - Always query context7 for up-to-date library/service/API docs.
 - Ground Assumptions with Research - Use web search to verify syntax, patterns, version compatibility, and best practices instead of making assumptions.

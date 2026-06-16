@@ -36,6 +36,7 @@ final class LuxelStatusItemController: NSObject {
     private var menuPanelContentView: LuxelMenuPanelContentView?
     private var pendingPopoverOpenTask: Task<Void, Never>?
     private var suppressNextPopoverOpenUntil: Date?
+    private var activationSourceApplication: NSRunningApplication?
 
     private let iconSize = NSSize(width: 18, height: 18)
     private let activeIconHeight: CGFloat = 24
@@ -111,11 +112,14 @@ final class LuxelStatusItemController: NSObject {
                     editorModel: editorModel,
                     cropperPanelController: cropperPanelController,
                     shortcutController: shortcutController,
-                    openEditorWindow: { [weak windowPresenter] in
-                        windowPresenter?.openEditor()
+                    dismissMenu: { [weak self] in
+                        self?.closePopover()
                     },
-                    openSettingsWindow: { [weak windowPresenter] in
-                        windowPresenter?.openSettings()
+                    openEditorWindow: { [weak self] in
+                        self?.openEditorFromPopover()
+                    },
+                    openSettingsWindow: { [weak self] in
+                        self?.openSettingsFromPopover()
                     }
                 )
             }
@@ -276,7 +280,25 @@ final class LuxelStatusItemController: NSObject {
             return
         }
 
+        rememberActivationSourceApplication()
         togglePopover()
+    }
+
+    private func rememberActivationSourceApplication() {
+        guard let frontmostApplication = NSWorkspace.shared.frontmostApplication,
+              frontmostApplication.processIdentifier != NSRunningApplication.current.processIdentifier else {
+            return
+        }
+
+        activationSourceApplication = frontmostApplication
+    }
+
+    private func openEditorFromPopover() {
+        windowPresenter.openEditor(activationSource: activationSourceApplication)
+    }
+
+    private func openSettingsFromPopover() {
+        windowPresenter.openSettings(activationSource: activationSourceApplication)
     }
 
     private var isStatusItemButtonConfigured: Bool {
@@ -438,6 +460,7 @@ final class LuxelStatusItemController: NSObject {
             backing: .buffered,
             defer: false
         )
+        panel.delegate = self
         panel.contentView = makeMenuPanelContentView()
         panel.backgroundColor = .clear
         panel.isOpaque = false
@@ -835,6 +858,17 @@ final class LuxelStatusItemController: NSObject {
                 yRadius: 1
             ).fill()
         }
+    }
+}
+
+extension LuxelStatusItemController: NSWindowDelegate {
+    func windowDidResignKey(_ notification: Notification) {
+        guard let panel = notification.object as? NSPanel,
+              panel === menuPanel else {
+            return
+        }
+
+        closePopover()
     }
 }
 

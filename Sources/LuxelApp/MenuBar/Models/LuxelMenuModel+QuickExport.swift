@@ -41,13 +41,11 @@ extension LuxelMenuModel {
                 for: recording
             )
             refreshRecentRecordings()
-            quickExportStatusMessage = quickExportStatusText(for: result.exportedMedia)
             return .quickExported(result.exportedMedia.fileURL)
         } catch is CancellationError {
             recordingState = .idle
             quickExportTask = nil
             quickExportProgress = nil
-            quickExportStatusMessage = "Quick export canceled"
             return nil
         } catch {
             recordingState = .idle
@@ -62,16 +60,5 @@ extension LuxelMenuModel {
         quickExportTask?.cancel()
         quickExportProgress = nil
         recordingState = .idle
-    }
-
-    private func quickExportStatusText(for exportedMedia: ExportedMedia) -> String {
-        let fileName = exportedMedia.fileURL.lastPathComponent
-
-        guard let fileSizeBytes = exportedMedia.fileSizeBytes else {
-            return "Exported \(fileName)"
-        }
-
-        let fileSize = ByteCountFormatter.string(fromByteCount: fileSizeBytes, countStyle: .file)
-        return "Exported \(fileName) (\(fileSize))"
     }
 }

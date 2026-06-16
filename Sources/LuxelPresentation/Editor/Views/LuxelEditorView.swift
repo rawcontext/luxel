@@ -3,11 +3,7 @@ import LuxelCore
 import SwiftUI
 
 public struct LuxelEditorView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.dismissWindow) private var dismissWindow
     @Bindable var model: LuxelEditorModel
-    @State private var isConfirmingDiscard = false
-    @State private var editorWindow: NSWindow?
 
     public init(model: LuxelEditorModel) {
         self.model = model
@@ -26,185 +22,6 @@ extension LuxelEditorView {
                 .background(.thinMaterial)
         }
         .frame(minWidth: 900, minHeight: 560)
-        .background(EditorWindowReader(window: $editorWindow))
-        .toolbar {
-            ToolbarItemGroup {
-                Button {
-                    model.undoEditorChange()
-                } label: {
-                    Label("Undo", systemImage: "arrow.uturn.backward")
-                }
-                .disabled(!model.canUndoEditorChange)
-                .keyboardShortcut("z", modifiers: .command)
-                .help("Undo Editor Change")
-
-                Button {
-                    model.redoEditorChange()
-                } label: {
-                    Label("Redo", systemImage: "arrow.uturn.forward")
-                }
-                .disabled(!model.canRedoEditorChange)
-                .keyboardShortcut("z", modifiers: [.command, .shift])
-                .help("Redo Editor Change")
-
-                Divider()
-
-                Button {
-                    model.togglePlayback()
-                } label: {
-                    Label("Play", systemImage: "playpause")
-                }
-                .disabled(!model.hasSource)
-
-                Button {
-                    model.copyCurrentFrame()
-                } label: {
-                    Label("Copy Frame", systemImage: "doc.on.clipboard")
-                }
-                .disabled(!model.canGrabFrame)
-                .keyboardShortcut("c", modifiers: [.command, .shift])
-                .help("Copy Frame")
-
-                Button {
-                    model.saveCurrentFrameAs()
-                } label: {
-                    Label("Save Frame As", systemImage: "photo.badge.arrow.down")
-                }
-                .disabled(!model.canGrabFrame)
-                .help("Save Frame As")
-
-                Button {
-                    model.startExport()
-                } label: {
-                    Label("Export", systemImage: "square.and.arrow.down")
-                }
-                .disabled(!model.canExport)
-
-                Button {
-                    requestDiscard()
-                } label: {
-                    Label("Discard", systemImage: "trash")
-                }
-                .disabled(!model.canDiscard)
-                .keyboardShortcut("d", modifiers: .command)
-                .help("Discard Recording")
-
-                if model.canCancelExport {
-                    Button {
-                        model.cancelExport()
-                    } label: {
-                        Label("Cancel Export", systemImage: "xmark.circle")
-                    }
-                    .help("Cancel Export")
-                }
-
-                if let exportedURL = model.exportedURL {
-                    Divider()
-
-                    HStack(spacing: 8) {
-                        Button {
-                            model.saveExportedFileAs()
-                        } label: {
-                            Label("Save As", systemImage: "tray.and.arrow.down")
-                        }
-                        .help("Save a Copy")
-
-                        Button {
-                            model.openExportedFile()
-                        } label: {
-                            Label("Open", systemImage: "arrow.up.forward.app")
-                        }
-                        .help("Open Export")
-
-                        Button {
-                            model.openExportedFileWithApplication()
-                        } label: {
-                            Label("Open With", systemImage: "square.grid.3x3")
-                        }
-                        .help("Open With")
-
-                        Button {
-                            model.copyExportedFile()
-                        } label: {
-                            Label("Copy File", systemImage: "doc.on.clipboard")
-                        }
-                        .help("Copy File")
-
-                        ShareLink(item: exportedURL) {
-                            Label("Share", systemImage: "square.and.arrow.up")
-                        }
-                        .help("Share Export")
-                    }
-                    .labelStyle(.iconOnly)
-                }
-            }
-        }
-        .confirmationDialog(
-            "Discard Recording?",
-            isPresented: $isConfirmingDiscard,
-            titleVisibility: .visible
-        ) {
-            Button("Discard Recording", role: .destructive) {
-                discardRecording()
-            }
-
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Move this recording to the Trash.")
-        }
-        .dialogSuppressionToggle(
-            Text("Don't ask me again"),
-            isSuppressed: suppressDiscardConfirmation
-        )
-        .focusedSceneValue(\.luxelEditorCommandContext, editorCommandContext)
-    }
-
-    private var editorCommandContext: LuxelEditorCommandContext {
-        LuxelEditorCommandContext(
-            canUndo: model.canUndoEditorChange,
-            canRedo: model.canRedoEditorChange,
-            canDiscard: model.canDiscard,
-            canGrabFrame: model.canGrabFrame,
-            undo: {
-                model.undoEditorChange()
-            },
-            redo: {
-                model.redoEditorChange()
-            },
-            discard: {
-                requestDiscard()
-            },
-            copyFrame: {
-                model.copyCurrentFrame()
-            },
-            saveFrameAs: {
-                model.saveCurrentFrameAs()
-            }
-        )
-    }
-
-    private func requestDiscard() {
-        if model.confirmDiscard {
-            isConfirmingDiscard = true
-        } else {
-            discardRecording()
-        }
-    }
-
-    private func discardRecording() {
-        if model.discardRecording() {
-            editorWindow?.close()
-            dismissWindow(id: LuxelEditorScene.id)
-            dismiss()
-        }
-    }
-
-    private var suppressDiscardConfirmation: Binding<Bool> {
-        Binding {
-            !model.confirmDiscard
-        } set: { isSuppressed in
-            model.setConfirmDiscard(!isSuppressed)
-        }
     }
 
     private var preview: some View {
@@ -256,101 +73,189 @@ extension LuxelEditorView {
                 }
                 timelineControls
                 outputControls
-                statusControls
+                if let sidebarStatusMessage = model.sidebarStatusMessage {
+                    statusControls(sidebarStatusMessage)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
         }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Luxel")
-                .font(.headline)
-            Text(model.sourceSummary)
+        VStack(alignment: .leading, spacing: 10) {
+            if let source = model.source {
+                metadataField("Filename", source.fileURL.lastPathComponent, lineLimit: 2)
+
+                LazyVGrid(columns: metadataColumns, alignment: .leading, spacing: 8) {
+                    metadataField("Length", model.formatTime(source.duration))
+                    metadataField("Dimensions", "\(source.pixelSize.width)x\(source.pixelSize.height)")
+                    metadataField("Audio", source.hasAudio ? "Yes" : "No")
+
+                    if source.hasAlpha {
+                        metadataField("Alpha", "Yes")
+                    }
+                }
+            } else {
+                Text("No recording loaded")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var metadataColumns: [GridItem] {
+        [
+            GridItem(.flexible(minimum: 96), alignment: .leading),
+            GridItem(.flexible(minimum: 96), alignment: .leading)
+        ]
+    }
+
+    private func metadataField(
+        _ label: String,
+        _ value: String,
+        lineLimit: Int = 1
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+
+            Text(value)
                 .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+                .foregroundStyle(.primary)
+                .lineLimit(lineLimit)
+                .truncationMode(.middle)
+                .monospacedDigit()
         }
     }
 
     private var exportControls: some View {
-        GlassPanel {
-            VStack(alignment: .leading, spacing: 12) {
+        editorCard {
+            VStack(alignment: .leading, spacing: 14) {
                 SectionLabel("Export")
 
-                Menu {
-                    ForEach(model.supportedFormats, id: \.self) { format in
-                        Toggle(isOn: formatSelectionBinding(format)) {
-                            Text(format.prettyName)
-                        }
-                    }
-                } label: {
-                    Label(model.selectedFormatSummary, systemImage: "checklist")
-                        .frame(maxWidth: .infinity)
+                controlRow("Format") {
+                    formatMenu
                 }
-                .menuStyle(.button)
 
                 if model.canChooseQuality {
-                    Picker("Quality", selection: qualitySelection) {
-                        ForEach(model.availableQualities, id: \.self) { quality in
-                            Text(quality.label).tag(quality)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    qualityPicker
                 }
 
                 if model.showsGIFOptions {
+                    Divider()
                     gifControls
                 }
 
-                Toggle("Include Audio", isOn: includeAudioSelection)
-                    .disabled(!model.canIncludeAudio)
+                Divider()
 
-                if model.canIncludeAudio {
-                    VStack(alignment: .leading, spacing: 8) {
-                        LabeledContent("Audio Level", value: model.audioVolumePercentSummary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                audioExportControls
 
-                        Slider(
-                            value: audioVolumeSelection,
-                            in: 0...2
-                        )
-                        .disabled(!model.canAdjustAudioMix)
+                Divider()
 
-                        Toggle("Normalize Audio", isOn: normalizeAudioSelection)
-                            .disabled(!model.canAdjustAudioMix)
-                    }
-                }
-
-                Toggle("Crop to Fill", isOn: shouldCropSelection)
-
-                if let exportEstimateSummary = model.exportEstimateSummary {
-                    LabeledContent("Estimated Size", value: exportEstimateSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Button {
-                    model.startExport()
-                } label: {
-                    Label(model.isExporting ? "Exporting" : "Export", systemImage: "square.and.arrow.down")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!model.canExport)
-
-                Button {
-                    model.saveOriginal()
-                } label: {
-                    Label("Save Original", systemImage: "doc.on.doc")
-                        .frame(maxWidth: .infinity)
-                }
-                .disabled(!model.canSaveOriginal)
+                exportActions
             }
         }
         .task(id: model.exportEstimateTaskID) {
             await model.refreshExportEstimate()
+        }
+    }
+
+    private var formatMenu: some View {
+        Menu {
+            ForEach(model.supportedFormats, id: \.self) { format in
+                Toggle(isOn: formatSelectionBinding(format)) {
+                    Text(format.prettyName)
+                }
+            }
+        } label: {
+            Label(model.selectedFormatSummary, systemImage: "video")
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
+        }
+        .menuStyle(.button)
+    }
+
+    private var qualityPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Quality")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+
+            Picker("Quality", selection: qualitySelection) {
+                ForEach(model.availableQualities, id: \.self) { quality in
+                    Text(quality.label).tag(quality)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private var audioExportControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle("Include Audio", isOn: includeAudioSelection)
+                .disabled(!model.canIncludeAudio)
+
+            if model.canIncludeAudio {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Level")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Text(model.audioVolumePercentSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+
+                    Slider(
+                        value: audioVolumeSelection,
+                        in: 0...2
+                    )
+                    .disabled(!model.canAdjustAudioMix)
+
+                    Toggle("Normalize Audio", isOn: normalizeAudioSelection)
+                        .disabled(!model.canAdjustAudioMix)
+                }
+                .padding(.leading, 2)
+            }
+        }
+    }
+
+    private var exportActions: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let exportEstimateSummary = model.exportEstimateSummary {
+                LabeledContent("Estimated Size", value: exportEstimateSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Button {
+                model.startExport()
+            } label: {
+                Label(model.isExporting ? "Exporting" : "Export", systemImage: "square.and.arrow.down")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .disabled(!model.canExport)
+
+            Button {
+                model.saveOriginal()
+            } label: {
+                Label("Save Original", systemImage: "doc.on.doc")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .disabled(!model.canSaveOriginal)
         }
     }
 
@@ -414,63 +319,109 @@ extension LuxelEditorView {
                     }
                 }
 
-                ControlGroup {
-                    if model.canCancelExport {
-                        Button {
-                            model.cancelExport()
-                        } label: {
-                            Label("Cancel", systemImage: "xmark.circle")
-                        }
-                        .help("Cancel Export")
-                    }
-
-                    if model.exportedURL != nil {
-                        Button {
-                            model.revealExportedFile()
-                        } label: {
-                            Label("Reveal", systemImage: "magnifyingglass")
-                        }
-                        .help("Reveal in Finder")
-
-                        Button {
-                            model.copyExportedFile()
-                        } label: {
-                            Label("Copy File", systemImage: "doc.on.clipboard")
-                        }
-                        .help("Copy File")
-                    }
-
-                    if model.canRetryExport {
-                        Button {
-                            model.retryExport()
-                        } label: {
-                            Label("Retry", systemImage: "arrow.clockwise")
-                        }
-                        .help("Export Again")
-                    }
-                }
-                .labelStyle(.iconOnly)
+                exportProgressActions
             }
         }
     }
 
+    @ViewBuilder
+    private var exportProgressActions: some View {
+        HStack(spacing: 8) {
+            if model.canCancelExport {
+                Button {
+                    model.cancelExport()
+                } label: {
+                    Label("Cancel", systemImage: "xmark.circle")
+                }
+                .help("Cancel the export in progress.")
+            }
+
+            if let exportedURL = model.exportedURL {
+                Button {
+                    model.openExportedFile()
+                } label: {
+                    Label("Open", systemImage: "arrow.up.forward.app")
+                }
+                .help("Open the exported file.")
+
+                Menu {
+                    exportedFileMenuItems(exportedURL: exportedURL)
+                } label: {
+                    Label("More", systemImage: "ellipsis.circle")
+                }
+                .help("More exported file actions.")
+            }
+
+            if model.canRetryExport {
+                Button {
+                    model.retryExport()
+                } label: {
+                    Label("Retry", systemImage: "arrow.clockwise")
+                }
+                .help("Run the export again.")
+            }
+        }
+        .labelStyle(.titleAndIcon)
+    }
+
+    @ViewBuilder
+    private func exportedFileMenuItems(exportedURL: URL) -> some View {
+        Button {
+            model.revealExportedFile()
+        } label: {
+            Label("Reveal in Finder", systemImage: "magnifyingglass")
+        }
+
+        Button {
+            model.saveExportedFileAs()
+        } label: {
+            Label("Save a Copy...", systemImage: "tray.and.arrow.down")
+        }
+
+        Button {
+            model.openExportedFileWithApplication()
+        } label: {
+            Label("Open With...", systemImage: "square.grid.3x3")
+        }
+
+        Divider()
+
+        Button {
+            model.copyExportedFile()
+        } label: {
+            Label("Copy File", systemImage: "doc.on.clipboard")
+        }
+
+        Button {
+            model.copyExportedFilePath()
+        } label: {
+            Label("Copy Path", systemImage: "doc.text")
+        }
+
+        ShareLink(item: exportedURL) {
+            Label("Share...", systemImage: "square.and.arrow.up")
+        }
+    }
+
     private var timelineControls: some View {
-        GlassPanel {
+        editorCard {
             VStack(alignment: .leading, spacing: 12) {
                 SectionLabel("Timeline")
 
-                VStack(alignment: .leading, spacing: 6) {
-                    LabeledContent("Start", value: model.formatTime(model.trimStart))
-                    Slider(value: trimStartSelection, in: 0...max(model.duration, model.minimumTrimDuration))
-                }
+                timelineSliderRow(
+                    "Start",
+                    value: model.formatTime(model.trimStart),
+                    slider: Slider(value: trimStartSelection, in: 0...max(model.duration, model.minimumTrimDuration))
+                )
 
-                VStack(alignment: .leading, spacing: 6) {
-                    LabeledContent("End", value: model.formatTime(model.trimEnd))
-                    Slider(
+                timelineSliderRow(
+                    "End",
+                    value: model.formatTime(model.trimEnd),
+                    slider: Slider(
                         value: trimEndSelection,
                         in: model.minimumTrimDuration...max(model.duration, model.minimumTrimDuration)
                     )
-                }
+                )
 
                 LabeledContent("Output Duration", value: model.outputDurationSummary)
                     .font(.caption)
@@ -480,48 +431,70 @@ extension LuxelEditorView {
     }
 
     private var outputControls: some View {
-        GlassPanel {
-            VStack(alignment: .leading, spacing: 12) {
+        editorCard {
+            VStack(alignment: .leading, spacing: 14) {
                 SectionLabel("Output")
 
-                Picker("Size", selection: sizePresetSelection) {
-                    Text("Custom").tag(EditorSizePreset?.none)
-                    ForEach(LuxelEditorModel.sizePresets, id: \.self) { preset in
-                        Text(preset.label).tag(EditorSizePreset?.some(preset))
+                controlRow("Size") {
+                    Picker("Size", selection: sizePresetSelection) {
+                        Text("Custom").tag(EditorSizePreset?.none)
+                        ForEach(LuxelEditorModel.sizePresets, id: \.self) { preset in
+                            Text(preset.label).tag(EditorSizePreset?.some(preset))
+                        }
                     }
-                }
-                .pickerStyle(.menu)
-
-                LabeledContent("Width") {
-                    Stepper(value: outputWidthSelection, in: 1...8192, step: 2) {
-                        Text("\(model.outputWidth) px")
-                            .monospacedDigit()
-                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
                 }
 
-                LabeledContent("Height") {
-                    Stepper(value: outputHeightSelection, in: 1...8192, step: 2) {
-                        Text("\(model.outputHeight) px")
-                            .monospacedDigit()
-                    }
+                controlRow("Fit") {
+                    Toggle("Crop to Fill", isOn: shouldCropSelection)
                 }
 
-                LabeledContent("Frame Rate") {
-                    Stepper(value: frameRateSelection, in: 1...model.maximumFrameRate) {
-                        Text("\(model.frameRate) fps")
-                            .monospacedDigit()
-                    }
+                Divider()
+
+                controlRow("Width") {
+                    integerStepperField(
+                        "Width",
+                        value: outputWidthSelection,
+                        range: 1...8192,
+                        unit: "px",
+                        step: 2,
+                        shiftedStep: 100
+                    )
                 }
 
-                LabeledContent("Speed") {
+                controlRow("Height") {
+                    integerStepperField(
+                        "Height",
+                        value: outputHeightSelection,
+                        range: 1...8192,
+                        unit: "px",
+                        step: 2,
+                        shiftedStep: 100
+                    )
+                }
+
+                controlRow("Frame Rate") {
+                    integerStepperField(
+                        "Frame Rate",
+                        value: frameRateSelection,
+                        range: 1...model.maximumFrameRate,
+                        unit: "fps",
+                        step: 1,
+                        shiftedStep: 10
+                    )
+                }
+
+                controlRow("Speed") {
                     HStack(spacing: 8) {
-                        TextField("Speed", value: playbackSpeedSelection, format: .number.precision(.fractionLength(2)))
-                            .frame(width: 58)
-                            .multilineTextAlignment(.trailing)
-                            .monospacedDigit()
-
-                        Text("x")
-                            .foregroundStyle(.secondary)
+                        doubleStepperField(
+                            "Speed",
+                            value: playbackSpeedSelection,
+                            range: 0.1...10,
+                            unit: "x",
+                            step: 0.05,
+                            shiftedStep: 0.25
+                        )
 
                         Menu {
                             ForEach(LuxelEditorModel.playbackSpeedDetents, id: \.self) { speed in
@@ -537,7 +510,9 @@ extension LuxelEditorView {
                     }
                 }
 
-                LabeledContent("Folder") {
+                Divider()
+
+                controlRow("Folder") {
                     Button {
                         model.chooseOutputDirectory()
                     } label: {
@@ -555,34 +530,118 @@ extension LuxelEditorView {
         }
     }
 
-    private var statusControls: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(model.statusMessage)
-                .font(.caption)
-                .foregroundStyle(statusTint)
-                .lineLimit(2)
-
-            Spacer(minLength: 8)
-
-            if model.exportedURL != nil {
-                Button {
-                    model.revealExportedFile()
-                } label: {
-                    Label("Reveal", systemImage: "magnifyingglass")
-                }
-                .labelStyle(.iconOnly)
-                .help("Reveal in Finder")
-
-                Button {
-                    model.copyExportedFilePath()
-                } label: {
-                    Label("Copy Path", systemImage: "doc.text")
-                }
-                .labelStyle(.iconOnly)
-                .help("Copy File Path")
-            }
+    private func editorCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        GlassPanel {
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func controlRow<Content: View>(
+        _ label: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        HStack(alignment: .center, spacing: 14) {
+            Text(label)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .frame(width: 88, alignment: .leading)
+
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func timelineSliderRow<SliderContent: View>(
+        _ label: String,
+        value: String,
+        slider: SliderContent
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(label)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+
+                Spacer()
+
+                Text(value)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+
+            slider
+        }
+    }
+
+    private func statusControls(_ message: String) -> some View {
+        Text(message)
+            .font(.caption)
+            .foregroundStyle(statusTint)
+            .lineLimit(2)
         .padding(.horizontal, 4)
+    }
+
+    private func integerStepperField(
+        _ title: String,
+        value: Binding<Int>,
+        range: ClosedRange<Int>,
+        unit: String,
+        step: Int,
+        shiftedStep: Int
+    ) -> some View {
+        Stepper {
+            HStack(spacing: 6) {
+                TextField(title, value: value, format: .number)
+                    .frame(width: 72)
+                    .multilineTextAlignment(.trailing)
+                    .monospacedDigit()
+
+                Text(unit)
+                    .foregroundStyle(.secondary)
+            }
+        } onIncrement: {
+            value.wrappedValue = min(range.upperBound, value.wrappedValue + currentStep(step, shiftedStep))
+        } onDecrement: {
+            value.wrappedValue = max(range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep))
+        }
+    }
+
+    private func doubleStepperField(
+        _ title: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>,
+        unit: String,
+        step: Double,
+        shiftedStep: Double
+    ) -> some View {
+        Stepper {
+            HStack(spacing: 6) {
+                TextField(title, value: value, format: .number.precision(.fractionLength(2)))
+                    .frame(width: 58)
+                    .multilineTextAlignment(.trailing)
+                    .monospacedDigit()
+
+                Text(unit)
+                    .foregroundStyle(.secondary)
+            }
+        } onIncrement: {
+            value.wrappedValue = roundedSpeed(min(range.upperBound, value.wrappedValue + currentStep(step, shiftedStep)))
+        } onDecrement: {
+            value.wrappedValue = roundedSpeed(max(range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep)))
+        }
+    }
+
+    private func currentStep<T>(_ step: T, _ shiftedStep: T) -> T {
+        NSEvent.modifierFlags.contains(.shift) ? shiftedStep : step
+    }
+
+    private func roundedSpeed(_ value: Double) -> Double {
+        (value * 100).rounded() / 100
     }
 
     private var statusTint: Color {

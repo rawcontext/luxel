@@ -21,7 +21,6 @@ final class LuxelMenuModel {
     var recordingState: RecordingMenuState = .idle
     var recordingNoticeMessage: String?
     var recordingActionErrorMessage: String?
-    var quickExportStatusMessage: String?
     var quickExportProgress: QuickExportProgressPresentation?
     var recoveryState: RecordingRecoveryMenuState?
     var permissionPrompt: PermissionPrompt?

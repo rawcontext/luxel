@@ -206,7 +206,7 @@ extension LuxelMenuModel {
         if reveal || recording.options.isAudioOnly {
             fileWorkflowService.revealInFinder(recording.fileURL)
         } else {
-            openRecording(recording.fileURL)
+            openRecording(recording.primaryMediaURL)
         }
 
         return .file(recording.primaryMediaURL)

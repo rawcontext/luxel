@@ -258,14 +258,16 @@ extension LuxelCropperView {
         }
     }
 
-    private func toolbarMenuLabel(_ title: String, systemImage: String, width: CGFloat) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: systemImage)
-                .frame(width: Self.toolbarIconWidth)
+    private func toolbarMenuLabel(_ title: String, systemImage: String? = nil, width: CGFloat) -> some View {
+        HStack(spacing: systemImage == nil ? 4 : 6) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .frame(width: Self.toolbarIconWidth)
+            }
 
             Text(title)
                 .lineLimit(1)
-                .minimumScaleFactor(0.78)
+                .minimumScaleFactor(0.82)
 
             Spacer(minLength: 0)
 
@@ -274,7 +276,7 @@ extension LuxelCropperView {
                 .foregroundStyle(.secondary)
         }
         .font(.subheadline.weight(.semibold))
-        .padding(.horizontal, 10)
+        .padding(.horizontal, systemImage == nil ? 9 : 10)
         .frame(width: width, height: Self.toolbarButtonHeight, alignment: .leading)
         .background {
             toolbarBackground()
@@ -378,7 +380,7 @@ extension LuxelCropperView {
             }
             .help("Use the custom automatic stop duration.")
         } label: {
-            toolbarMenuLabel(stopAfterToolbarText, systemImage: "timer", width: width)
+            toolbarMenuLabel(compactStopAfterToolbarText, width: width)
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
@@ -448,7 +450,7 @@ extension LuxelCropperView {
     }
 
     private func countdownMenuLabel(width: CGFloat = Self.toolbarButtonWidth) -> some View {
-        toolbarMenuLabel(countdownToolbarText, systemImage: "hourglass", width: width)
+        toolbarMenuLabel(compactCountdownToolbarText, width: width)
             .accessibilityLabel("Countdown")
             .accessibilityValue(model.countdownSummary)
     }
@@ -1049,20 +1051,32 @@ extension LuxelCropperView {
         return model.primaryActionHelp
     }
 
-    private var countdownToolbarText: String {
-        "Delay \(model.countdownSummary)"
+    private var compactCountdownToolbarText: String {
+        "Delay \(compactDurationSummary(model.countdownDuration))"
     }
 
     private var aspectRatioToolbarText: String {
         "Aspect \(model.aspectRatioSummary)"
     }
 
-    private var stopAfterToolbarText: String {
-        "Stop \(model.stopAfterSummary)"
+    private var compactStopAfterToolbarText: String {
+        "Stop \(compactDurationSummary(model.stopAfterDuration))"
     }
 
     private var microphoneToolbarText: String {
         model.recordsAudio ? "Mic On" : "Mic Off"
+    }
+
+    private func compactDurationSummary(_ duration: TimeInterval?) -> String {
+        guard let duration else {
+            return "Off"
+        }
+
+        if duration < 60 {
+            return "\(Int(duration))s"
+        }
+
+        return "\(Int(duration / 60))m"
     }
 
     private func countdownHelp(title: String, duration: TimeInterval?) -> String {

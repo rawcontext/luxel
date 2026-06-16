@@ -16,6 +16,7 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
         #expect(plist["LSMinimumSystemVersion"] as? String == "26.0")
         #expect(plist["LSUIElement"] as? Bool == true)
+        #expect(plist["NSHumanReadableCopyright"] as? String == "Copyright © 2026 Context. All rights reserved.")
         let urlTypes = try #require(plist["CFBundleURLTypes"] as? [[String: Any]])
         let luxelURLType = try #require(urlTypes.first)
         #expect(luxelURLType["CFBundleURLName"] as? String == "media.luxel.app.url")

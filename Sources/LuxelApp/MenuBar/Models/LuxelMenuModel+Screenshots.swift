@@ -6,7 +6,6 @@ extension LuxelMenuModel {
     func captureScreenshotFromSelectedTarget() async {
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
-        quickExportStatusMessage = nil
 
         guard let selectedCaptureTarget else {
             recordingActionErrorMessage = "No capture target selected"
@@ -56,11 +55,9 @@ extension LuxelMenuModel {
     private func captureScreenshot(target: CaptureTarget) async {
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
-        quickExportStatusMessage = nil
 
         do {
-            let capture = try await performScreenshotCapture(target: target, format: settings.screenshotFormat)
-            quickExportStatusMessage = screenshotStatusText(for: capture.result)
+            _ = try await performScreenshotCapture(target: target, format: settings.screenshotFormat)
         } catch {
             recordingActionErrorMessage = errorMessage(error)
         }
@@ -72,13 +69,11 @@ extension LuxelMenuModel {
     ) async throws -> AutomationExecutionResult {
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
-        quickExportStatusMessage = nil
 
         let capture = try await performScreenshotCapture(
             target: target,
             format: format ?? settings.screenshotFormat
         )
-        quickExportStatusMessage = screenshotStatusText(for: capture.result)
 
         if let fileURL = capture.result.fileURL {
             return .file(fileURL)
@@ -122,17 +117,5 @@ extension LuxelMenuModel {
             fileName: fileName,
             fileURL: result.fileURL
         ))
-    }
-
-    private func screenshotStatusText(for result: ScreenshotCaptureResult) -> String {
-        if let fileURL = result.fileURL {
-            return "Captured \(fileURL.lastPathComponent)"
-        }
-
-        if result.completedDestinations.contains(.clipboard) {
-            return "Copied screenshot"
-        }
-
-        return "Screenshot capture failed"
     }
 }

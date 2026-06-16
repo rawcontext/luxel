@@ -23,6 +23,7 @@ struct LuxelMenu: View {
     let editorModel: LuxelEditorModel
     let cropperPanelController: LuxelCropperPanelController
     let shortcutController: LuxelShortcutController
+    let dismissMenu: @MainActor () -> Void
     let openEditorWindow: @MainActor () -> Void
     let openSettingsWindow: @MainActor () -> Void
 
@@ -77,8 +78,6 @@ struct LuxelMenu: View {
             allowedContentTypes: [.movie, .mpeg4Movie, .quickTimeMovie],
             allowsMultipleSelection: false
         ) { result in
-            openEditorWindow()
-
             switch result {
             case .success(let urls):
                 guard let url = urls.first else {
@@ -270,28 +269,39 @@ struct LuxelMenu: View {
     private var latestRecordingCard: some View {
         if let recording = model.recentRecordings.first {
             HStack(spacing: 8) {
-                RecentRecordingThumbnail(recording: recording)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(recentRecordingTitle(for: recording))
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.86)
-
-                    RecentRecordingMetadataLabel(recording: recording)
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                }
-                .layoutPriority(1)
-
-                Spacer(minLength: 0)
-
                 Button {
                     openRecentRecording(recording)
                 } label: {
-                    Image(systemName: recentRecordingActionSystemImage(for: recording))
+                    HStack(spacing: 8) {
+                        RecentRecordingThumbnail(recording: recording)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(recentRecordingTitle(for: recording))
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.86)
+
+                            RecentRecordingMetadataLabel(recording: recording)
+                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                        }
+                        .layoutPriority(1)
+
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .help(recentRecordingOpenTitle(for: recording))
+
+                Button {
+                    revealRecentRecording(recording)
+                } label: {
+                    Image(systemName: "folder")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(.white)
                         .frame(width: 30, height: 30)
@@ -299,7 +309,7 @@ struct LuxelMenu: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .help(recentRecordingActionTitle(for: recording))
+                .help("Show in Finder")
             }
             .padding(8)
             .luxelMenuSectionBackground(cornerRadius: 15)
@@ -348,6 +358,7 @@ struct LuxelMenu: View {
                 .frame(width: 1, height: 18)
 
             Button {
+                dismissMenu()
                 model.openRecordingsFolder()
             } label: {
                 Image(systemName: "folder")
@@ -413,7 +424,7 @@ struct LuxelMenu: View {
         .disabled(!model.canUseQuickRecordButton)
 
         Button {
-            Task {
+            startAfterDismissingMenu {
                 await model.captureScreenshotFromSelectedTarget()
             }
         } label: {
@@ -423,14 +434,16 @@ struct LuxelMenu: View {
 
         Menu {
             Button {
-                showAreaCapturePicker()
+                startAfterDismissingMenu {
+                    showAreaCapturePicker()
+                }
             } label: {
                 Label("Select Area", systemImage: "crop")
             }
             .disabled(!model.canSelectArea)
 
             Button {
-                Task {
+                startAfterDismissingMenu {
                     await model.startAudioOnlyRecording()
                 }
             } label: {
@@ -453,7 +466,7 @@ struct LuxelMenu: View {
         Divider()
 
         Button {
-            Task {
+            startAfterDismissingMenu {
                 await model.startRecordingFromLastCapture()
             }
         } label: {
@@ -577,37 +590,41 @@ struct LuxelMenu: View {
 
     private func startAfterDismissingMenu(_ action: @escaping @MainActor () async -> Void) {
         Task { @MainActor in
-            let menuWindow = NSApplication.shared.keyWindow
-            await Task.yield()
-            menuWindow?.orderOut(nil)
+            dismissMenu()
             await Task.yield()
             await action()
         }
     }
 
     private func openRecording(_ url: URL) {
-        openEditorWindow()
-
-        Task {
+        Task { @MainActor in
+            dismissMenu()
+            await Task.yield()
+            openEditorWindow()
             model.configureEditor(editorModel)
             await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
         }
     }
 
     private func openLuxelSettings() {
-        openSettingsWindow()
-    }
-
-    private func openRecentRecording(_ recording: PastRecording) {
-        if opensInEditor(recording) {
-            openRecording(recording.fileURL)
-        } else {
-            model.revealRecording(recording)
+        Task { @MainActor in
+            dismissMenu()
+            await Task.yield()
+            openSettingsWindow()
         }
     }
 
-    private func opensInEditor(_ recording: PastRecording) -> Bool {
-        recording.kind == .recording && !recording.options.isAudioOnly
+    private func openRecentRecording(_ recording: PastRecording) {
+        if recording.kind == .recording {
+            openRecording(recording.primaryMediaURL)
+        } else {
+            revealRecentRecording(recording)
+        }
+    }
+
+    private func revealRecentRecording(_ recording: PastRecording) {
+        dismissMenu()
+        model.revealRecording(recording)
     }
 
     private func recentRecordingSystemImage(for recording: PastRecording) -> String {
@@ -628,12 +645,8 @@ struct LuxelMenu: View {
         }
     }
 
-    private func recentRecordingActionSystemImage(for recording: PastRecording) -> String {
-        opensInEditor(recording) ? "play.fill" : "folder"
-    }
-
-    private func recentRecordingActionTitle(for recording: PastRecording) -> String {
-        opensInEditor(recording) ? "Open in editor" : "Show in Finder"
+    private func recentRecordingOpenTitle(for recording: PastRecording) -> String {
+        recording.kind == .recording ? "Open in editor" : "Show in Finder"
     }
 
     private func recentRecordingTitle(for recording: PastRecording) -> String {

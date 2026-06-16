@@ -29,13 +29,6 @@ struct LuxelRecordingStatusMessages: View {
                 .lineLimit(2)
         }
 
-        if let quickExportStatusMessage = model.quickExportStatusMessage {
-            Text(quickExportStatusMessage)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-        }
-
         if let recoveryStatusMessage = model.recoveryStatusMessage {
             Text(recoveryStatusMessage)
                 .font(.caption)

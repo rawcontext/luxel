@@ -68,7 +68,9 @@ extension RecordingHistoryTests {
             existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov"), cameraURL, cursorURL]
         )
 
-        #expect(service.getPastRecordings() == [recording])
+        let recordings = service.getPastRecordings()
+        #expect(recordings == [recording])
+        #expect(recordings.first?.primaryMediaURL == rootURL.appendingPathComponent("screen.mov"))
     }
 
     @Test("getPastRecordings drops missing bundle sidecars with diagnostics")

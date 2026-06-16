@@ -428,6 +428,15 @@ extension LuxelEditorModel {
         }
     }
 
+    var sidebarStatusMessage: String? {
+        switch status {
+        case .empty, .ready:
+            nil
+        default:
+            statusMessage
+        }
+    }
+
     public func open(fileURL: URL, outputDirectory: URL) async {
         self.outputDirectory = outputDirectory
         status = .loading(fileURL.lastPathComponent)

@@ -51,9 +51,6 @@ struct LuxelApp: App {
             LuxelEditorView(model: editorModel)
         }
         .defaultLaunchBehavior(.suppressed)
-        .commands {
-            LuxelEditorCommands()
-        }
 
         Settings {
             LuxelSettingsView(
