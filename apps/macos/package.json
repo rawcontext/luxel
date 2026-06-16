@@ -1,0 +1,13 @@
+{
+  "name": "@luxel/macos",
+  "private": true,
+  "scripts": {
+    "build": "swift build --configuration debug",
+    "test": "swift test",
+    "lint": "swiftlint lint --config ../../.swiftlint.yml --quiet",
+    "app:build": "Scripts/build-luxel-app.sh",
+    "app:build:mas": "Scripts/build-luxel-mas-pkg.sh",
+    "check:codec-licenses": "Scripts/check-codec-licenses.sh",
+    "check:distribution": "Scripts/check-app-distribution-build-split.sh"
+  }
+}

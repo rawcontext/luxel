@@ -3,5 +3,5 @@ repos:
     rev: 0.63.3
     hooks:
       - id: swiftlint
-        entry: Scripts/swiftlint-precommit.sh
+        entry: apps/macos/Scripts/swiftlint-precommit.sh
         require_serial: true

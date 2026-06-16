@@ -1,2 +1,5 @@
 docs/Luxel
 .build/
+apps/macos/.build/
+node_modules/
+.turbo/

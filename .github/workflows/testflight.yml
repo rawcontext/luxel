@@ -47,14 +47,22 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Read tool versions
+        id: tool-versions
+        run: |
+          ruby_version="$(awk '$1 == "ruby" { print $2 }' .tool-versions)"
+          echo "ruby=${ruby_version}" >> "$GITHUB_OUTPUT"
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
+          ruby-version: ${{ steps.tool-versions.outputs.ruby }}
           bundler-cache: true
+          working-directory: apps/macos
 
       - name: Verify Xcode
         run: xcodebuild -version
 
       - name: Upload to TestFlight
+        working-directory: apps/macos
         run: bundle exec fastlane mac release_testflight
