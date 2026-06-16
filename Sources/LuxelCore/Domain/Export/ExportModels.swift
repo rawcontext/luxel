@@ -48,7 +48,7 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
         case .av1:
             "MP4 (AV1)"
         case .webm:
-            "WebM"
+            "WebM (VP9)"
         case .apng:
             "APNG"
         }

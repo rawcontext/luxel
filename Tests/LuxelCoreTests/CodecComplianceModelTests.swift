@@ -96,14 +96,17 @@ struct CodecComplianceModelTests {
         #expect(CodecLicensePolicy().decision(for: tool) == .developmentToolExempt)
     }
 
-    @Test("license gate passes when no shipped codec dependencies are bundled")
-    func licenseGatePassesWhenNoShippedCodecDependenciesAreBundled() {
+    @Test("license gate passes for bundled WebM codec dependencies")
+    func licenseGatePassesForBundledWebMCodecDependencies() throws {
+        let ledgerURL = try packageRootURL().appending(path: "THIRD_PARTY_LICENSES.md")
+        let markdown = try String(contentsOf: ledgerURL, encoding: .utf8)
+        let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
         let report = CodecLicenseGate().validate(
             dependencies: CodecDependency.bundledNativeCodecStack,
-            ledger: CodecLicenseLedger()
+            ledger: ledger
         )
 
-        #expect(CodecDependency.bundledNativeCodecStack.isEmpty)
+        #expect(CodecDependency.bundledNativeCodecStack.map(\.id) == ["libvpx", "libopus"])
         #expect(report.isPassing)
         #expect(report.violations.isEmpty)
     }
@@ -119,7 +122,7 @@ struct CodecComplianceModelTests {
             ledger: ledger
         )
 
-        #expect(ledger.entries.isEmpty)
+        #expect(ledger.entries.map(\.dependencyID) == ["libvpx", "libopus"])
         #expect(report.isPassing)
         #expect(report.violations.isEmpty)
     }
@@ -148,6 +151,27 @@ struct CodecComplianceModelTests {
                 licenseText: "Redistribution and use in source and binary forms are permitted."
             )
         ]))
+    }
+
+    @Test("license ledger markdown parser stops dependency text at nondependency headings")
+    func licenseLedgerMarkdownParserStopsDependencyTextAtNondependencyHeadings() throws {
+        let markdown = """
+        ## Dependency: libvpx
+        Name: libvpx
+        License: BSD-3-Clause
+        Copyright: Copyright 2026 The libvpx authors
+        License Text:
+        Redistribution and use in source and binary forms are permitted.
+
+        ## Swift Argument Parser
+
+        This section is not a codec dependency.
+        """
+
+        let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
+
+        #expect(ledger.entries.count == 1)
+        #expect(!ledger.entries[0].licenseText.contains("Swift Argument Parser"))
     }
 
     @Test("license ledger markdown parser rejects unknown licenses")

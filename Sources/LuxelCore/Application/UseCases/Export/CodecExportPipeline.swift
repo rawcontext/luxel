@@ -47,7 +47,8 @@ public struct CodecExportPipeline: Sendable {
             try await muxer.begin(try CodecMuxerConfiguration(
                 outputFileURL: outputFileURL,
                 format: request.format,
-                tracks: tracks
+                tracks: tracks,
+                pixelSize: outputPixelSize
             ))
             await progress?(0)
 
@@ -56,10 +57,11 @@ public struct CodecExportPipeline: Sendable {
                 progress: progress
             )
 
-            try await writeVideoPackets(progressTracker: progressTracker)
-            if includesAudio, let audioEncoder {
-                try await writeAudioPackets(audioEncoder: audioEncoder, progressTracker: progressTracker)
-            }
+            try await writeSourcePackets(
+                includesAudio: includesAudio,
+                audioEncoder: audioEncoder,
+                progressTracker: progressTracker
+            )
 
             try Task.checkCancellation()
             try await muxer.finalize()
@@ -102,42 +104,90 @@ public struct CodecExportPipeline: Sendable {
         return audioEncoder
     }
 
-    private func writeVideoPackets(progressTracker: CodecExportProgressTracker) async throws {
-        while let frame = try await mediaSource.nextVideoFrame() {
+    private func writeSourcePackets(
+        includesAudio: Bool,
+        audioEncoder: (any CodecAudioEncoder)?,
+        progressTracker: CodecExportProgressTracker
+    ) async throws {
+        var nextVideoFrame = try await mediaSource.nextVideoFrame()
+        var nextAudioChunk = includesAudio ? try await mediaSource.nextAudioChunk() : nil
+
+        while nextVideoFrame != nil || nextAudioChunk != nil {
             try Task.checkCancellation()
-            let packets = try await videoEncoder.encode(frame: frame)
-            for packet in packets {
-                try await muxer.write(packet, to: .video)
+
+            if shouldWriteVideoFrame(nextVideoFrame, before: nextAudioChunk) {
+                guard let frame = nextVideoFrame else {
+                    continue
+                }
+                let packets = try await videoEncoder.encode(frame: frame)
+                for packet in packets {
+                    try await muxer.write(packet, to: .video)
+                }
+                await progressTracker.completeUnit()
+                nextVideoFrame = try await mediaSource.nextVideoFrame()
+            } else if let chunk = nextAudioChunk, let audioEncoder {
+                let packets = try await audioEncoder.encode(chunk: chunk)
+                for packet in packets {
+                    try await muxer.write(packet, to: .audio)
+                }
+                await progressTracker.completeUnit()
+                nextAudioChunk = try await mediaSource.nextAudioChunk()
             }
-            await progressTracker.completeUnit()
         }
 
-        for packet in try await videoEncoder.finish() {
-            try await muxer.write(packet, to: .video)
+        var finalPackets = try await videoEncoder.finish().map {
+            PendingEncodedPacket(packet: $0, track: .video)
+        }
+        if includesAudio, let audioEncoder {
+            finalPackets.append(contentsOf: try await audioEncoder.finish().map {
+                PendingEncodedPacket(packet: $0, track: .audio)
+            })
+        }
+
+        for packet in finalPackets.sortedByPresentationTime() {
+            try await muxer.write(packet.packet, to: packet.track)
         }
     }
 
-    private func writeAudioPackets(
-        audioEncoder: any CodecAudioEncoder,
-        progressTracker: CodecExportProgressTracker
-    ) async throws {
-        while let chunk = try await mediaSource.nextAudioChunk() {
-            try Task.checkCancellation()
-            let packets = try await audioEncoder.encode(chunk: chunk)
-            for packet in packets {
-                try await muxer.write(packet, to: .audio)
-            }
-            await progressTracker.completeUnit()
+    private func shouldWriteVideoFrame(
+        _ videoFrame: CodecVideoFrame?,
+        before audioChunk: CodecAudioChunk?
+    ) -> Bool {
+        guard let videoFrame else {
+            return false
+        }
+        guard let audioChunk else {
+            return true
         }
 
-        for packet in try await audioEncoder.finish() {
-            try await muxer.write(packet, to: .audio)
+        return videoFrame.presentationTime <= audioChunk.presentationTime
+    }
+}
+
+private struct PendingEncodedPacket {
+    let packet: EncodedPacket
+    let track: CodecTrack
+
+    var trackOrder: Int {
+        switch track {
+        case .video:
+            0
+        case .audio:
+            1
         }
     }
 }
 
-public enum CodecExportPipelineError: Error, Equatable {
-    case missingAudioEncoder
+private extension [PendingEncodedPacket] {
+    func sortedByPresentationTime() -> [PendingEncodedPacket] {
+        sorted { lhs, rhs in
+            if lhs.packet.presentationTime == rhs.packet.presentationTime {
+                return lhs.trackOrder < rhs.trackOrder
+            }
+
+            return lhs.packet.presentationTime < rhs.packet.presentationTime
+        }
+    }
 }
 
 private actor CodecExportProgressTracker {
@@ -154,4 +204,8 @@ private actor CodecExportProgressTracker {
         completedUnits += 1
         await progress?(min(Double(completedUnits) / Double(totalUnits), 1))
     }
+}
+
+public enum CodecExportPipelineError: Error, Equatable {
+    case missingAudioEncoder
 }

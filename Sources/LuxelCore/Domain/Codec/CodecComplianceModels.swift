@@ -81,7 +81,22 @@ public struct CodecDependency: Codable, Equatable, Identifiable, Sendable {
         )
     ]
 
-    public static let bundledNativeCodecStack: [CodecDependency] = []
+    public static let bundledNativeCodecStack: [CodecDependency] = [
+        CodecDependency(
+            id: "libvpx",
+            name: "libvpx",
+            role: "VP9 video encode",
+            license: .bsd3Clause,
+            patentGrant: "Google Additional IP Rights Grant"
+        ),
+        CodecDependency(
+            id: "libopus",
+            name: "libopus",
+            role: "Opus audio encode",
+            license: .bsd3Clause,
+            patentGrant: "Xiph, Broadcom, and Microsoft/Skype patent grants"
+        )
+    ]
 }
 
 public enum CodecLicenseDecision: Equatable, Sendable {

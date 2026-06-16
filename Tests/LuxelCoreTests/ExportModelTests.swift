@@ -19,7 +19,7 @@ extension ExportModelTests {
         #expect(ExportFormat.mp4.prettyName == "MP4 (H264)")
         #expect(ExportFormat.hevc.prettyName == "MP4 (H265)")
         #expect(ExportFormat.av1.prettyName == "MP4 (AV1)")
-        #expect(ExportFormat.webm.prettyName == "WebM")
+        #expect(ExportFormat.webm.prettyName == "WebM (VP9)")
         #expect(ExportFormat.gif.prettyName == "GIF")
         #expect(ExportFormat.apng.prettyName == "APNG")
     }

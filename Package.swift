@@ -9,6 +9,7 @@ let package = Package(
     ],
     products: [
         .library(name: "LuxelCore", targets: ["LuxelCore"]),
+        .library(name: "LuxelCodecWebM", targets: ["LuxelCodecWebM"]),
         .executable(name: "Luxel", targets: ["LuxelApp"]),
         .executable(name: "luxel-cli", targets: ["LuxelCLIExecutable"])
     ],
@@ -21,6 +22,7 @@ let package = Package(
             name: "LuxelApp",
             dependencies: [
                 "LuxelCore",
+                "LuxelCodecWebM",
                 "LuxelPresentation",
                 .product(name: "FirebaseCore", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseCrashlytics", package: "firebase-ios-sdk")
@@ -36,7 +38,27 @@ let package = Package(
         ),
         .target(name: "LuxelPresentation", dependencies: ["LuxelCore"]),
         .target(name: "LuxelCore"),
+        .target(
+            name: "LuxelCodecWebM",
+            dependencies: [
+                "LuxelCore",
+                "CWebMCodecShims"
+            ]
+        ),
+        .target(
+            name: "CWebMCodecShims",
+            dependencies: [
+                "CVPX",
+                "COpus"
+            ],
+            linkerSettings: [
+                .linkedLibrary("c++")
+            ]
+        ),
+        .binaryTarget(name: "CVPX", path: "Vendor/Artifacts/CVPX.xcframework"),
+        .binaryTarget(name: "COpus", path: "Vendor/Artifacts/COpus.xcframework"),
         .testTarget(name: "LuxelCoreTests", dependencies: ["LuxelCore"]),
+        .testTarget(name: "LuxelCodecWebMTests", dependencies: ["LuxelCodecWebM"]),
         .testTarget(
             name: "LuxelCLITests",
             dependencies: [

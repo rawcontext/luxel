@@ -144,8 +144,14 @@ public struct CodecMuxerConfiguration: Equatable, Sendable {
     public let outputFileURL: URL
     public let format: ExportFormat
     public let tracks: [CodecTrack]
+    public let pixelSize: PixelSize?
 
-    public init(outputFileURL: URL, format: ExportFormat, tracks: [CodecTrack]) throws {
+    public init(
+        outputFileURL: URL,
+        format: ExportFormat,
+        tracks: [CodecTrack],
+        pixelSize: PixelSize? = nil
+    ) throws {
         guard !tracks.isEmpty else {
             throw CodecPipelineModelError.invalidMuxerConfiguration
         }
@@ -153,6 +159,7 @@ public struct CodecMuxerConfiguration: Equatable, Sendable {
         self.outputFileURL = outputFileURL
         self.format = format
         self.tracks = tracks
+        self.pixelSize = pixelSize
     }
 }
 

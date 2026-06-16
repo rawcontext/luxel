@@ -78,6 +78,17 @@ public struct CodecLicenseLedgerMarkdownParser: Equatable, Sendable {
                 continue
             }
 
+            if dependencyID != nil, isMarkdownHeading(line) {
+                try appendCurrentEntry()
+                dependencyID = nil
+                name = nil
+                licenseRawValue = nil
+                copyrightNotice = nil
+                licenseTextLines = []
+                isReadingLicenseText = false
+                continue
+            }
+
             guard dependencyID != nil else {
                 continue
             }
@@ -124,6 +135,10 @@ public struct CodecLicenseLedgerMarkdownParser: Equatable, Sendable {
         return trimmedLine
             .dropFirst(prefix.count)
             .trimmingCharacters(in: .whitespaces)
+    }
+
+    private func isMarkdownHeading(_ line: String) -> Bool {
+        line.trimmingCharacters(in: .whitespaces).hasPrefix("## ")
     }
 }
 
