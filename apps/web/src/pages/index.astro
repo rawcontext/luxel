@@ -3,16 +3,16 @@ import "../styles/global.css";
 
 const featureColumns = [
   {
-    title: "Quick Record",
-    text: "Start from the menu bar, stop when the idea is captured, and let Luxel export the result."
+    title: "Menu Bar Capture",
+    text: "Record displays, windows, selected areas, screenshots, and audio from a native menu bar surface."
   },
   {
-    title: "Replay Buffer",
-    text: "Clip the last 30 seconds after the moment already happened."
+    title: "Quick Exports",
+    text: "Apply reusable presets after capture and send results to Finder, Clipboard, or a notification."
   },
   {
-    title: "Editable Cursor",
-    text: "Tune cursor size, click effects, spotlight, camera, and captions after recording."
+    title: "Editor Exports",
+    text: "Trim, resize, retime, and export recordings as MP4, HEVC MP4, GIF, APNG, or WebM."
   }
 ];
 
@@ -26,8 +26,9 @@ const exportFormats = ["MP4", "HEVC", "GIF", "APNG", "WebM"];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Luxel is a native macOS menu bar recorder for quick capture, replay clips, screenshots, audio, and polished exports."
+      content="Luxel is a native macOS menu bar recorder for screen capture, screenshots, audio, camera previews, quick exports, and polished exports."
     />
+    <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
     <title>Luxel - Native capture for Mac</title>
   </head>
   <body>
@@ -41,15 +42,16 @@ const exportFormats = ["MP4", "HEVC", "GIF", "APNG", "WebM"];
 
         <header class="topbar" aria-label="Primary navigation">
           <a class="brand" href="/" aria-label="Luxel home">
-            <img class="brand-mark" src="/luxel-icon.png" alt="" width="48" height="48" />
+            <img class="brand-mark" src="/luxel-icon.svg" alt="" width="48" height="48" />
             <span>Luxel</span>
           </a>
           <nav class="nav-links" aria-label="Page sections">
             <a href="#features">Features</a>
             <a href="#notch">Notch</a>
             <a href="#export">Export</a>
+            <a href="/docs">Docs</a>
           </nav>
-          <a class="topbar-cta" href="#buy">App Store · $10</a>
+          <a class="topbar-cta" href="/docs">Read docs</a>
         </header>
 
         <div class="hero__content">
@@ -58,13 +60,13 @@ const exportFormats = ["MP4", "HEVC", "GIF", "APNG", "WebM"];
             <h1 id="hero-title">Luxel</h1>
             <p class="hero-copy__lead">Native capture for Mac.</p>
             <p class="hero-copy__body">
-              Record the moment, clip the last 30 seconds, export without ceremony.
+              Record screens, windows, selected areas, screenshots, and audio, then export without ceremony.
             </p>
             <div class="hero-actions" aria-label="Primary actions">
-              <a class="button button--primary" href="#buy">App Store · $10</a>
+              <a class="button button--primary" href="/docs">Read docs</a>
               <a class="button button--ghost" href="#notch">
                 <span class="play-icon" aria-hidden="true"></span>
-                Watch demo
+                See capture surface
               </a>
             </div>
           </div>
@@ -189,8 +191,9 @@ const exportFormats = ["MP4", "HEVC", "GIF", "APNG", "WebM"];
           <p class="eyebrow">Native export</p>
           <h2 id="export-title">Fast files. Clean choices.</h2>
           <p>
-            Built around Apple frameworks with native WebM support, Luxel keeps common
-            formats close without turning the recorder into an editor you have to manage.
+            Built around native macOS capture and export paths with WebM support, Luxel
+            keeps common formats close without turning the recorder into an editor you
+            have to manage.
           </p>
         </div>
         <ul class="format-list" aria-label="Export formats">
@@ -198,13 +201,13 @@ const exportFormats = ["MP4", "HEVC", "GIF", "APNG", "WebM"];
         </ul>
       </section>
 
-      <section class="buy-section" id="buy" aria-labelledby="buy-title">
+      <section class="docs-cta-section" id="docs" aria-labelledby="docs-title">
         <div>
-          <p class="eyebrow">Mac App Store</p>
-          <h2 id="buy-title">One native recorder. Ten dollars.</h2>
+          <p class="eyebrow">Documentation</p>
+          <h2 id="docs-title">Capture, export, and troubleshoot with confidence.</h2>
         </div>
-        <a class="button button--primary" href="#" aria-label="Luxel App Store release coming soon">
-          App Store · $10
+        <a class="button button--primary" href="/docs">
+          Open docs
         </a>
       </section>
     </main>

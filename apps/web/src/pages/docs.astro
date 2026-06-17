@@ -1,0 +1,1379 @@
+---
+import "../styles/global.css";
+
+const navGroups = [
+  {
+    title: "Start",
+    links: [
+      { href: "#overview", label: "Overview" },
+      { href: "#install", label: "Install and first launch" },
+      { href: "#permissions", label: "Permissions" },
+      { href: "#concepts", label: "Core concepts" }
+    ]
+  },
+  {
+    title: "Guides",
+    links: [
+      { href: "#capture", label: "Capture" },
+      { href: "#cropper", label: "Area picker" },
+      { href: "#screenshots", label: "Screenshots" },
+      { href: "#editor", label: "Edit and export" },
+      { href: "#workflows", label: "Workflows" }
+    ]
+  },
+  {
+    title: "Reference",
+    links: [
+      { href: "#shortcuts", label: "Shortcuts" },
+      { href: "#cli", label: "Command line" },
+      { href: "#automation", label: "Automation" },
+      { href: "#settings", label: "Settings" },
+      { href: "#troubleshooting", label: "Troubleshooting" },
+      { href: "#faq", label: "FAQ" }
+    ]
+  }
+];
+
+const keycaps = {
+  command: { label: "Command", symbol: "⌘", className: "is-modifier" },
+  control: { label: "Control", symbol: "⌃", className: "is-modifier" },
+  option: { label: "Option", symbol: "⌥", className: "is-modifier" },
+  shift: { label: "Shift", symbol: "⇧", className: "is-modifier" },
+  escape: { label: "Escape", symbol: "Esc", className: "is-wide" },
+  click: { label: "Click", symbol: "click", className: "is-word" }
+};
+
+const keycap = (key) => {
+  if (keycaps[key]) {
+    return keycaps[key];
+  }
+
+  return {
+    label: key.length === 1 ? key.toUpperCase() : key,
+    symbol: key.length === 1 ? key.toUpperCase() : key,
+    className: key.length === 1 ? "is-letter" : "is-word"
+  };
+};
+
+const shortcutLabel = (keys) => keys.map((key) => keycap(key).label).join("-");
+
+const globalShortcuts = [
+  { command: "Select Area", keys: ["command", "control", "option", "r"], result: "Open the area picker for recording or screenshots." },
+  { command: "Toggle Recording", keys: ["command", "control", "option", "t"], result: "Stop an active recording, or start from the default target." },
+  { command: "Record Active Window", keys: ["command", "control", "option", "shift", "w"], result: "Record the current active window." },
+  { command: "Record Fullscreen", keys: ["command", "control", "option", "shift", "f"], result: "Record the main display." },
+  { command: "Audio Only", keys: ["command", "control", "option", "a"], result: "Start an audio-only recording." },
+  { command: "Quick Record Last", keys: ["command", "control", "option", "q"], result: "Use the remembered last capture with the quick preset." },
+  { command: "Screenshot", keys: ["command", "control", "option", "s"], result: "Capture a screenshot of the selected target." },
+  { command: "Screenshot Active Window", keys: ["command", "control", "option", "w"], result: "Capture the active window." },
+  { command: "Screenshot Fullscreen", keys: ["command", "control", "option", "f"], result: "Capture the main display." }
+];
+
+const areaPickerShortcuts = [
+  { keys: ["escape"], action: "Cancel area selection." },
+  { keys: ["command", "z"], action: "Undo a selection edit." },
+  { keys: ["command", "shift", "z"], action: "Redo a selection edit." },
+  { keys: ["option", "click"], action: "Use the active quick recording preset when one is available." }
+];
+
+const systemShortcutConflicts = [
+  ["command", "shift", "3"],
+  ["command", "shift", "4"],
+  ["command", "shift", "5"],
+  ["command", "shift", "6"],
+  ["command", "control", "shift", "3"],
+  ["command", "control", "shift", "4"]
+];
+
+const settingsPanes = [
+  ["Recording", "Cursor visibility, click highlights, frame rate, system audio, microphone audio, audio-only format, microphone selection, camera preview, and camera preview style."],
+  ["Output", "Recordings folder, loop exports, and whether Luxel asks before discarding a recording."],
+  ["Screenshots", "Screenshot format, destinations, thumbnail behavior, and window backdrop behavior."],
+  ["Presets", "Quick export presets, cropper size presets, loupe behavior, dimming, and last-selection restoration."],
+  ["Shortcuts", "Global shortcut enablement, shortcut search, custom shortcut editing, reset/clear controls, conflict warnings, and URL automation."],
+  ["Notch", "Built-in notch surface, idle quick actions, recording waveform, auto-collapse timing, and floating HUD fallback."],
+  ["System", "Menu bar timer, notification reminders, launch at login, update settings, and acknowledgements."]
+];
+
+const troubleshooting = [
+  { problem: "Luxel keeps asking for screen permission", answer: "Make sure you are opening the same copy of Luxel each time. After changing Screen & System Audio Recording access, quit and reopen Luxel." },
+  { problem: "Record buttons are disabled", answer: "Choose a capture target and resolve the visible permission chips. Screen capture needs Screen & System Audio Recording permission; audio-only capture needs microphone permission." },
+  { problem: "Screen capture still fails after allowing permission", answer: "Quit and reopen Luxel after changing Screen & System Audio Recording access. If Luxel still is not listed, remove old Luxel entries from the permission list and open Luxel again." },
+  { problem: "Microphone audio is missing", answer: "Enable Record Microphone, choose a valid microphone or System Default, and grant Microphone permission. GIF and APNG exports do not carry audio." },
+  { problem: "Transparent screenshot backdrop is disabled", answer: "Use a window target and an alpha-capable format, either PNG or HEIC. JPEG cannot preserve transparency." },
+  { problem: "Quick Record is disabled", answer: "Create or select a quick export preset, then choose a target or enable Remember Last Capture so Luxel has a previous capture to repeat." },
+  { problem: "Copy Frame or Save Frame As is disabled", answer: "Pause preview playback first. Frame grabs use the current paused frame and save as PNG." },
+  { problem: "Shortcut does not fire", answer: "Make sure Keyboard Shortcuts is enabled, remove duplicate shortcuts, and avoid macOS screenshot shortcuts, including:", shortcuts: systemShortcutConflicts },
+  { problem: "The notch surface is not visible", answer: "Luxel uses the built-in notch when a notched display is detected and the Notch setting is enabled. Otherwise it falls back to the floating HUD if that fallback is enabled, or to menu-bar-only status." }
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Luxel user documentation for installation, permissions, capture, screenshots, editing, export, shortcuts, automation, settings, and troubleshooting."
+    />
+    <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
+    <title>Luxel Documentation</title>
+  </head>
+  <body class="docs-page">
+    <header class="docs-topbar">
+      <a class="docs-brand" href="/" aria-label="Luxel home">
+        <img src="/luxel-icon.svg" width="36" height="36" alt="" />
+        <span>Luxel</span>
+      </a>
+      <nav aria-label="Documentation navigation">
+        <a href="#overview">Start</a>
+        <a href="#capture">Guides</a>
+        <a href="#shortcuts">Reference</a>
+        <a href="/">Home</a>
+      </nav>
+    </header>
+
+    <main class="docs-layout">
+      <aside class="docs-sidebar" aria-label="Documentation sections">
+        <nav>
+          {navGroups.map((group) => (
+            <div class="docs-nav-group">
+              <p>{group.title}</p>
+              {group.links.map((link) => <a href={link.href}>{link.label}</a>)}
+            </div>
+          ))}
+        </nav>
+      </aside>
+
+      <div class="docs-content">
+        <section class="docs-hero" id="overview" aria-labelledby="overview-title">
+          <p class="docs-eyebrow">Luxel Docs</p>
+          <h1 id="overview-title">Use Luxel from first launch to final export.</h1>
+          <p class="docs-lead">
+            Luxel is a native macOS menu bar recorder for screen capture, area capture,
+            screenshots, audio-only recordings, camera preview overlays, quick exports,
+            and editor-based exports.
+          </p>
+
+          <div class="docs-hero-grid">
+            <article>
+              <h2>Start in three steps</h2>
+              <ol>
+                <li>Launch Luxel and find it in the menu bar.</li>
+                <li>Grant only the permissions needed for the capture you are about to make.</li>
+                <li>Pick a target, record or screenshot, then open the result in the editor or Finder.</li>
+              </ol>
+            </article>
+
+            <article>
+              <h2>Capture from the app or scripts</h2>
+              <p>
+                Use the menu bar for interactive recording, global shortcuts for repeated
+                actions, and the <code>luxel</code> command for scripted captures.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="install" aria-labelledby="install-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Setup</p>
+            <h2 id="install-title">Installation and first launch</h2>
+          </div>
+
+          <div class="split-grid">
+            <article>
+              <h3>Install Luxel</h3>
+              <ol>
+                <li>Install and launch Luxel.</li>
+                <li>Keep the app in a stable location before granting permissions.</li>
+                <li>Open Luxel from Finder or Launchpad.</li>
+                <li>Look for the Luxel status item in the macOS menu bar.</li>
+              </ol>
+              <p class="note">
+                Current builds require macOS 26.0 or later. Luxel runs from the menu bar,
+                so the menu bar item is the main place to start captures and open settings.
+              </p>
+            </article>
+
+            <article>
+              <h3>First capture</h3>
+              <ol>
+                <li>Open Luxel from the menu bar.</li>
+                <li>Choose a target from Target, or use Area to draw a custom region.</li>
+                <li>Enable System Audio, Microphone, or Camera only if the recording needs them.</li>
+                <li>Click Screen, Area, Audio, or Screenshot from the More menu.</li>
+                <li>Stop recording from the menu bar, notch surface, or shortcut.</li>
+              </ol>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="permissions" aria-labelledby="permissions-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Privacy</p>
+            <h2 id="permissions-title">Permissions</h2>
+            <p>
+              Luxel requests permissions only when a feature needs them. Permission chips
+              appear in the menu when a required permission is missing.
+            </p>
+          </div>
+
+          <div class="permission-grid">
+            <article>
+              <h3>Screen & System Audio Recording</h3>
+              <p>
+                Required for display, window, area, screenshot, and system-audio capture.
+                macOS may label this setting as Screen & System Audio Recording in
+                System Settings > Privacy & Security.
+              </p>
+              <p class="expected">After granting access, quit and reopen Luxel.</p>
+            </article>
+
+            <article>
+              <h3>Microphone</h3>
+              <p>
+                Required when Record Microphone is on, when the area picker microphone
+                toggle is on, or when you start an audio-only recording.
+              </p>
+              <p class="expected">You can choose System Default or a specific input device.</p>
+            </article>
+
+            <article>
+              <h3>Camera</h3>
+              <p>
+                Required when camera preview is enabled. Luxel uses the selected camera
+                to show a floating preview overlay for recordings.
+              </p>
+              <p class="expected">Camera controls appear after you choose a camera device.</p>
+            </article>
+          </div>
+
+          <div class="callout">
+            <h3>Permission tip</h3>
+            <p>
+              After changing Screen & System Audio Recording access, quit and reopen Luxel.
+              If macOS keeps prompting, make sure you are opening the same copy of Luxel
+              each time.
+            </p>
+          </div>
+        </section>
+
+        <section class="docs-section" id="concepts" aria-labelledby="concepts-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Model</p>
+            <h2 id="concepts-title">Core concepts</h2>
+          </div>
+
+          <div class="concept-list">
+            <article>
+              <h3>Menu bar first</h3>
+              <p>
+                Luxel lives in the menu bar. The panel contains target selection,
+                capture buttons, audio toggles, permission status, recent files, settings,
+                and the More menu.
+              </p>
+            </article>
+            <article>
+              <h3>Targets</h3>
+              <p>
+                A target can be a display, an app window, or a selected area. Active-window
+                and fullscreen commands resolve their target at the moment capture starts.
+              </p>
+            </article>
+            <article>
+              <h3>Recordings folder</h3>
+              <p>
+                New recordings default to <code>~/Movies/Luxel</code>. You can choose a different
+                folder in Output settings.
+              </p>
+            </article>
+            <article>
+              <h3>Editor</h3>
+              <p>
+                Standard video recordings open in the editor after capture. Audio-only
+                recordings and quick exports finish directly to a file or post-action.
+              </p>
+            </article>
+            <article>
+              <h3>Quick exports</h3>
+              <p>
+                Export presets can turn a capture into a GIF, MP4, HEVC MP4, APNG,
+                or preset destination without manually opening every export control.
+              </p>
+            </article>
+            <article>
+              <h3>Recent files</h3>
+              <p>
+                The menu shows the latest recording or screenshot and a Recent menu.
+                Recordings open in the editor; screenshots reveal in Finder.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="capture" aria-labelledby="capture-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Guide</p>
+            <h2 id="capture-title">Capture guide</h2>
+          </div>
+
+          <div class="guide-stack">
+            <article>
+              <h3>Record a screen, window, or target</h3>
+              <ol>
+                <li>Open Luxel from the menu bar.</li>
+                <li>Choose Target and select a display or window.</li>
+                <li>Turn on System Audio or Microphone if needed.</li>
+                <li>Click Screen, or choose Quick Record from More if a quick preset is configured.</li>
+                <li>Use Stop, Pause, or Resume from the recording controls.</li>
+              </ol>
+              <p class="tip">Audio-only recordings do not support pause and resume.</p>
+            </article>
+
+            <article>
+              <h3>Record audio only</h3>
+              <ol>
+                <li>Grant Microphone permission.</li>
+                <li>Choose System Default or a specific input device in Recording settings.</li>
+                <li>Choose AAC or ALAC as the audio-only format.</li>
+                <li>Click Audio in the menu bar or use the Audio Only shortcut.</li>
+              </ol>
+              <p class="tip">Audio-only files use the <code>.m4a</code> extension.</p>
+            </article>
+
+            <article>
+              <h3>Add camera preview</h3>
+              <ol>
+                <li>Open Recording settings or the area picker camera menu.</li>
+                <li>Choose a camera device and grant Camera permission.</li>
+                <li>Choose circle or rounded-rectangle shape, size, and mirror behavior.</li>
+                <li>Position the floating preview before or during setup.</li>
+              </ol>
+              <p class="tip">
+                The floating preview appears in the recording when it overlaps the
+                capture target.
+              </p>
+            </article>
+
+            <article>
+              <h3>Use countdown and auto-stop</h3>
+              <p>
+                The area picker supports countdown presets of Off, 3 seconds, 5 seconds,
+                and 10 seconds. Stop-after presets include Off, 10 seconds, 30 seconds,
+                1 minute, 5 minutes, and a custom duration from 0:01 to 12:00:00.
+              </p>
+              <p class="tip">Stopping during countdown cancels the countdown instead of saving a recording.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="cropper" aria-labelledby="cropper-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Area Picker</p>
+            <h2 id="cropper-title">Select and refine an area</h2>
+          </div>
+
+          <div class="split-grid">
+            <article>
+              <h3>Draw a selection</h3>
+              <p>
+                Click Area to open the full-screen selection overlay. Drag to draw a
+                region, resize it with handles, or use Full Display to select the display.
+                The minimum selection is 32 by 32 pixels.
+              </p>
+              <p>
+                Size presets include 1280 by 720, 1920 by 1080, and 800 by 600.
+                Aspect ratio choices include Free, 16:9, 4:3, 1:1, 9:16, and 21:9.
+              </p>
+            </article>
+
+            <article>
+              <h3>Useful controls</h3>
+              <ul>
+                <li>Switch between video and photo mode.</li>
+                <li>Toggle microphone and camera when permissions allow it.</li>
+                <li>Use the loupe for precise edges.</li>
+                <li>Dim other displays or restore the last selection from Presets settings.</li>
+                <li>Open Focus settings from the notification reminder if you want fewer interruptions.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="mini-reference">
+            <h3>Area picker shortcuts and gestures</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Input</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {areaPickerShortcuts.map((shortcut) => (
+                  <tr>
+                    <td>
+                      <span class="shortcut-keys" aria-label={shortcutLabel(shortcut.keys)}>
+                        {shortcut.keys.map((key) => {
+                          const meta = keycap(key);
+                          return <kbd class={meta.className} title={meta.label}>{meta.symbol}</kbd>;
+                        })}
+                      </span>
+                    </td>
+                    <td>{shortcut.action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="docs-section" id="screenshots" aria-labelledby="screenshots-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Guide</p>
+            <h2 id="screenshots-title">Screenshots</h2>
+          </div>
+
+          <div class="split-grid">
+            <article>
+              <h3>Capture a screenshot</h3>
+              <ol>
+                <li>Choose a target, active window, fullscreen shortcut, or area photo mode.</li>
+                <li>Choose Screenshot from the More menu or use a screenshot shortcut.</li>
+                <li>Luxel sends the result to the selected screenshot destinations.</li>
+              </ol>
+              <p>
+                Destinations are Copy to Clipboard, Save File, and Open Preview. At least
+                one destination stays enabled.
+              </p>
+            </article>
+
+            <article>
+              <h3>Formats and backdrops</h3>
+              <p>
+                Screenshot formats are PNG, JPEG, and HEIC. Window backdrops can be
+                opaque, transparent, or transparent with shadow.
+              </p>
+              <p class="tip">
+                Transparent backdrops require a window target and an alpha-capable format.
+                Use PNG or HEIC; JPEG disables transparency.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="editor" aria-labelledby="editor-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Guide</p>
+            <h2 id="editor-title">Edit and export recordings</h2>
+          </div>
+
+          <div class="guide-stack">
+            <article>
+              <h3>Open and review</h3>
+              <p>
+                After a standard video recording stops, Luxel opens the editor with a
+                preview, source filename, duration, dimensions, audio status, alpha status,
+                estimated file size, Save Original, and Export controls.
+              </p>
+              <p>
+                You can also import an existing movie from More > Open Recording.
+              </p>
+            </article>
+
+            <article>
+              <h3>Trim, resize, and retime</h3>
+              <ul>
+                <li>Use Timeline start and end controls to trim the output range.</li>
+                <li>Choose Original, percentage size presets, or Custom width and height.</li>
+                <li>Use Crop to Fill when fitting the output size.</li>
+                <li>Set frame rate and playback speed from 0.1x to 10x.</li>
+                <li>Preview playback loops inside the trim range.</li>
+              </ul>
+            </article>
+
+            <article>
+              <h3>Choose export formats</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Format</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>MP4 (H264)</td>
+                    <td>Apple-native video export with Compact, Balanced, or High quality.</td>
+                  </tr>
+                  <tr>
+                    <td>MP4 (H265)</td>
+                    <td>HEVC export with Compact, Balanced, or High quality.</td>
+                  </tr>
+                  <tr>
+                    <td>GIF</td>
+                    <td>Animated image export. Audio is dropped. Supports loop and dithering options.</td>
+                  </tr>
+                  <tr>
+                    <td>APNG</td>
+                    <td>Lossless animated PNG export. Audio is dropped.</td>
+                  </tr>
+                  <tr>
+                    <td>WebM (VP9)</td>
+                    <td>Registered external codec export with Compact, Balanced, or High quality.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="tip">
+                MP4, HEVC, and WebM exports use even pixel dimensions.
+              </p>
+            </article>
+
+            <article>
+              <h3>Export actions</h3>
+              <p>
+                During export, Luxel shows progress and lets you cancel. After export,
+                actions include Open, Reveal in Finder, Save a Copy, Open With, Copy File,
+                Copy Path, and Share. Multi-format export creates a batch folder named
+                after the source recording.
+              </p>
+              <p class="tip">
+                Copy Frame and Save Frame As use the current paused frame and save PNG output.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="workflows" aria-labelledby="workflows-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Workflows</p>
+            <h2 id="workflows-title">Compound workflows</h2>
+          </div>
+
+          <div class="workflow-grid">
+            <article>
+              <h3>Capture, refine, export, share</h3>
+              <ol>
+                <li>Record a display, window, or area.</li>
+                <li>Stop to open the editor.</li>
+                <li>Trim the range, choose size, frame rate, and speed.</li>
+                <li>Export as MP4, HEVC, GIF, APNG, or WebM.</li>
+                <li>Use Copy Path, Share, or Reveal in Finder from the exported file menu.</li>
+              </ol>
+            </article>
+
+            <article>
+              <h3>Fast GIF from a selected area</h3>
+              <ol>
+                <li>Create an export preset with GIF format and the desired destination.</li>
+                <li>Set it as the Quick Recording preset.</li>
+                <li>
+                  Open Area, draw a selection, and press
+                  <span class="shortcut-keys shortcut-keys--inline" aria-label="Option-click">
+                    <kbd class="is-modifier" title="Option">⌥</kbd>
+                    <kbd class="is-word" title="Click">click</kbd>
+                  </span>
+                  Record.
+                </li>
+                <li>Let the preset run its post-action after capture.</li>
+              </ol>
+            </article>
+
+            <article>
+              <h3>Repeat a previous capture</h3>
+              <ol>
+                <li>Turn on Remember Last Capture in Presets settings.</li>
+                <li>Make a normal capture once.</li>
+                <li>Use Quick Record Last from the More menu, shortcut, CLI, URL automation, or App Shortcut.</li>
+              </ol>
+            </article>
+
+            <article>
+              <h3>Clean screenshot handoff</h3>
+              <ol>
+                <li>Choose PNG or HEIC in Screenshots settings.</li>
+                <li>For a window screenshot, choose transparent with shadow if desired.</li>
+                <li>Enable Clipboard, Save File, Preview, or a combination.</li>
+                <li>Capture from the More menu, area photo mode, shortcut, CLI, or App Shortcut.</li>
+              </ol>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="shortcuts" aria-labelledby="shortcuts-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Reference</p>
+            <h2 id="shortcuts-title">Keyboard shortcuts</h2>
+            <p>
+              Open Settings > Shortcuts to enable, search, edit, reset, or clear shortcuts.
+              Custom shortcuts must use one key plus at least one modifier.
+            </p>
+          </div>
+
+          <table class="reference-table">
+            <thead>
+              <tr>
+                <th>Command</th>
+                <th>Default shortcut</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {globalShortcuts.map((shortcut) => (
+                <tr>
+                  <td>{shortcut.command}</td>
+                  <td>
+                    <span class="shortcut-keys" aria-label={shortcutLabel(shortcut.keys)}>
+                      {shortcut.keys.map((key) => {
+                        const meta = keycap(key);
+                        return <kbd class={meta.className} title={meta.label}>{meta.symbol}</kbd>;
+                      })}
+                    </span>
+                  </td>
+                  <td>{shortcut.result}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div class="callout">
+            <h3>Conflict warnings</h3>
+            <p>
+              Luxel warns about duplicate shortcuts and known macOS screenshot shortcuts.
+            </p>
+            <div class="shortcut-cluster" aria-label="Known macOS screenshot shortcut conflicts">
+              {systemShortcutConflicts.map((shortcut) => (
+                <span class="shortcut-keys" aria-label={shortcutLabel(shortcut)}>
+                  {shortcut.map((key) => {
+                    const meta = keycap(key);
+                    return <kbd class={meta.className} title={meta.label}>{meta.symbol}</kbd>;
+                  })}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section class="docs-section" id="cli" aria-labelledby="cli-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Reference</p>
+            <h2 id="cli-title">Command line tool</h2>
+            <p>
+              Use <code>luxel</code> when you want captures in scripts, shell aliases,
+              or repeatable workflows.
+            </p>
+          </div>
+
+          <div class="guide-stack">
+            <article>
+              <h3>Common commands</h3>
+              <p>
+                The CLI can start recordings, stop or toggle recording, capture screenshots,
+                open the latest recording, and jump to a settings pane.
+              </p>
+              <pre><code>luxel record --display main --preset "Quick GIF" --wait
+luxel screenshot --active-window --format png --json
+luxel toggle --last-area
+luxel latest --reveal
+luxel preferences --pane shortcuts</code></pre>
+              <p class="tip">
+                Use <code>--wait</code> when a script should pause until Luxel finishes.
+                Use <code>--json</code> when another tool needs machine-readable output.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="automation" aria-labelledby="automation-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Reference</p>
+            <h2 id="automation-title">URL automation and App Shortcuts</h2>
+          </div>
+
+          <div class="split-grid">
+            <article>
+              <h3>URL scheme</h3>
+              <p>
+                Luxel registers the <code>luxel://</code> URL scheme. Starting captures can
+                require confirmation; commands like stop, preferences, and latest are
+                allowed by default.
+              </p>
+              <pre><code>luxel://record?target=display&amp;display=main&amp;countdown=3
+luxel://screenshot?target=activeWindow&amp;format=heic
+luxel://toggle
+luxel://stop
+luxel://preferences?pane=shortcuts
+luxel://latest?reveal=true</code></pre>
+            </article>
+          </div>
+
+          <div class="guide-stack">
+            <article>
+              <h3>App Shortcuts</h3>
+              <p>
+                Luxel exposes App Intents for Start Recording, Stop Recording, Toggle
+                Recording, Capture Screenshot, and Get Latest Recording.
+                Shortcut phrases include "Start a recording with Luxel", "Stop Luxel",
+                "Toggle Luxel", "Take a screenshot with Luxel", and "Show my latest
+                Luxel recording".
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="settings" aria-labelledby="settings-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Reference</p>
+            <h2 id="settings-title">Settings and preferences</h2>
+          </div>
+
+          <table class="reference-table">
+            <thead>
+              <tr>
+                <th>Pane</th>
+                <th>What it controls</th>
+              </tr>
+            </thead>
+            <tbody>
+              {settingsPanes.map(([pane, description]) => (
+                <tr>
+                  <td>{pane}</td>
+                  <td>{description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div class="split-grid">
+            <article>
+              <h3>Quick presets</h3>
+              <p>
+                Export presets can be added, duplicated, deleted, renamed, and assigned
+                as the Quick Recording preset. Presets support format, size rule, frame
+                rate, destination, and post-action. Preset destinations are Recordings
+                Folder or Clipboard.
+              </p>
+            </article>
+
+            <article>
+              <h3>System behavior</h3>
+              <p>
+                System settings cover the menu bar timer, notification reminders, launch
+                at login, updates, and acknowledgements.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="troubleshooting" aria-labelledby="troubleshooting-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Help</p>
+            <h2 id="troubleshooting-title">Troubleshooting</h2>
+          </div>
+
+          <div class="troubleshooting-list">
+            {troubleshooting.map((item) => (
+              <details>
+                <summary>{item.problem}</summary>
+                <p>{item.answer}</p>
+                {item.shortcuts && (
+                  <div class="shortcut-cluster" aria-label="Known macOS screenshot shortcut conflicts">
+                    {item.shortcuts.map((shortcut) => (
+                      <span class="shortcut-keys" aria-label={shortcutLabel(shortcut)}>
+                        {shortcut.map((key) => {
+                          const meta = keycap(key);
+                          return <kbd class={meta.className} title={meta.label}>{meta.symbol}</kbd>;
+                        })}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <section class="docs-section" id="faq" aria-labelledby="faq-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Help</p>
+            <h2 id="faq-title">FAQ</h2>
+          </div>
+
+          <div class="faq-grid">
+            <article>
+              <h3>Where are recordings saved?</h3>
+              <p>
+                By default, recordings are saved in <code>~/Movies/Luxel</code>. Change the folder
+                in Settings > Output.
+              </p>
+            </article>
+            <article>
+              <h3>Can I export audio in GIF or APNG?</h3>
+              <p>
+                No. GIF and APNG are animated image formats in Luxel and drop audio.
+                Use MP4, HEVC MP4, or WebM when audio is required.
+              </p>
+            </article>
+            <article>
+              <h3>How does camera preview work?</h3>
+              <p>
+                Choose a camera in Recording settings or the area picker. Luxel shows a
+                floating camera preview that can appear in the captured area.
+              </p>
+            </article>
+            <article>
+              <h3>Can I control Luxel from scripts?</h3>
+              <p>
+                Yes. Use the <code>luxel</code> command for shell workflows, or use the
+                <code>luxel://</code> URL scheme from apps that can open URLs.
+              </p>
+            </article>
+          </div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(body.docs-page) {
+    background:
+      linear-gradient(180deg, #05050c 0%, #090b10 38%, #05050c 100%),
+      #05050c;
+    color: #f4f6f8;
+  }
+
+  .docs-page {
+    --docs-ink: #f4f6f8;
+    --docs-muted: #a9b3bd;
+    --docs-soft: #1a1f27;
+    --docs-line: rgb(244 246 248 / 0.13);
+    --docs-panel: #10131a;
+    --docs-panel-strong: #151923;
+    --docs-accent: #8ce7d1;
+    --docs-accent-strong: #f4c95d;
+    --docs-warn: #ffb86b;
+    --docs-code: #f7f2dd;
+    --docs-shadow: 0 22px 70px rgb(0 0 0 / 0.42);
+  }
+
+  .docs-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    min-height: 4.5rem;
+    padding: 0.85rem clamp(1rem, 4vw, 3rem);
+    border-bottom: 1px solid var(--docs-line);
+    background: rgb(5 5 12 / 0.86);
+    backdrop-filter: blur(18px);
+  }
+
+  .docs-brand,
+  .docs-topbar nav,
+  .docs-hero-grid,
+  .permission-grid,
+  .concept-list,
+  .split-grid,
+  .workflow-grid,
+  .faq-grid {
+    display: grid;
+  }
+
+  .docs-brand {
+    grid-auto-flow: column;
+    align-items: center;
+    justify-content: start;
+    gap: 0.65rem;
+    color: var(--docs-ink);
+    font-size: 1.18rem;
+    font-weight: 780;
+  }
+
+  .docs-brand img {
+    border-radius: 0.65rem;
+    box-shadow: 0 10px 28px rgb(0 0 0 / 0.38);
+  }
+
+  .docs-topbar nav {
+    grid-auto-flow: column;
+    gap: clamp(0.9rem, 3vw, 2rem);
+    color: var(--docs-muted);
+    font-size: 0.96rem;
+    font-weight: 650;
+  }
+
+  .docs-topbar a:hover {
+    color: var(--docs-accent);
+  }
+
+  .docs-layout {
+    display: grid;
+    grid-template-columns: 17rem minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 4rem);
+    width: min(calc(100% - 2rem), 92rem);
+    margin-inline: auto;
+    padding-block: clamp(1.5rem, 4vw, 3.5rem) 5rem;
+  }
+
+  .docs-sidebar {
+    position: sticky;
+    top: 6rem;
+    align-self: start;
+    max-height: calc(100svh - 7rem);
+    overflow: auto;
+    padding: 1rem;
+    border: 1px solid var(--docs-line);
+    border-radius: 8px;
+    background: rgb(16 19 26 / 0.78);
+    box-shadow: var(--docs-shadow);
+    backdrop-filter: blur(18px);
+  }
+
+  .docs-sidebar nav {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .docs-nav-group {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .docs-nav-group p {
+    color: var(--docs-muted);
+    font-size: 0.75rem;
+    font-weight: 780;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .docs-nav-group a {
+    padding: 0.35rem 0.45rem;
+    border-radius: 6px;
+    color: #d6dde5;
+    font-size: 0.94rem;
+  }
+
+  .docs-nav-group a:hover {
+    background: rgb(140 231 209 / 0.10);
+    color: var(--docs-accent);
+  }
+
+  .docs-content {
+    display: grid;
+    gap: 2rem;
+    min-width: 0;
+  }
+
+  .docs-hero,
+  .docs-section {
+    min-width: 0;
+    scroll-margin-top: 6rem;
+  }
+
+  .docs-content > *,
+  .docs-section > *,
+  .docs-hero-grid > *,
+  .permission-grid > *,
+  .concept-list > *,
+  .split-grid > *,
+  .guide-stack > *,
+  .workflow-grid > *,
+  .faq-grid > * {
+    min-width: 0;
+  }
+
+  .docs-hero {
+    padding: clamp(1.5rem, 4vw, 3rem);
+    border: 1px solid var(--docs-line);
+    border-radius: 8px;
+    background:
+      linear-gradient(135deg, rgb(21 25 35 / 0.96), rgb(8 11 18 / 0.96)),
+      linear-gradient(90deg, rgb(140 231 209 / 0.14), transparent 42%, rgb(244 201 93 / 0.10));
+    box-shadow: var(--docs-shadow);
+  }
+
+  .docs-eyebrow {
+    margin-bottom: 0.75rem;
+    color: var(--docs-accent);
+    font-size: 0.78rem;
+    font-weight: 820;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .docs-hero h1 {
+    max-width: 50rem;
+    margin: 0;
+    color: var(--docs-ink);
+    font-size: clamp(2.25rem, 5vw, 4.75rem);
+    line-height: 0.98;
+    letter-spacing: 0;
+  }
+
+  .docs-lead {
+    max-width: 54rem;
+    margin-top: 1.15rem;
+    color: #cdd6de;
+    font-size: clamp(1.08rem, 2vw, 1.35rem);
+    line-height: 1.55;
+  }
+
+  .docs-hero-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .docs-hero-grid article,
+  .permission-grid article,
+  .concept-list article,
+  .split-grid article,
+  .guide-stack article,
+  .workflow-grid article,
+  .faq-grid article,
+  .mini-reference,
+  .callout {
+    border: 1px solid var(--docs-line);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgb(21 25 35 / 0.94), rgb(14 17 24 / 0.94));
+  }
+
+  .docs-hero-grid article,
+  .permission-grid article,
+  .concept-list article,
+  .split-grid article,
+  .guide-stack article,
+  .workflow-grid article,
+  .faq-grid article {
+    padding: 1.15rem;
+  }
+
+  .docs-section {
+    display: grid;
+    gap: 1rem;
+    padding-block: 1rem;
+  }
+
+  .section-heading {
+    max-width: 58rem;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    color: var(--docs-ink);
+    font-size: clamp(1.75rem, 3vw, 2.7rem);
+    line-height: 1.08;
+    letter-spacing: 0;
+  }
+
+  .section-heading p:not(.docs-eyebrow) {
+    margin-top: 0.8rem;
+    color: var(--docs-muted);
+    font-size: 1.03rem;
+  }
+
+  h2,
+  h3 {
+    color: var(--docs-ink);
+    letter-spacing: 0;
+  }
+
+  h3 {
+    margin: 0 0 0.55rem;
+    font-size: 1.08rem;
+  }
+
+  p,
+  li,
+  td,
+  th,
+  summary {
+    line-height: 1.6;
+  }
+
+  p,
+  li,
+  td {
+    color: #c3cbd3;
+    overflow-wrap: anywhere;
+  }
+
+  ol,
+  ul {
+    margin-block: 0.6rem 0;
+    padding-left: 1.25rem;
+  }
+
+  li + li {
+    margin-top: 0.35rem;
+  }
+
+  .note,
+  .tip,
+  .expected {
+    margin-top: 0.85rem;
+    color: var(--docs-muted);
+    font-size: 0.94rem;
+  }
+
+  .tip {
+    color: var(--docs-accent);
+  }
+
+  .expected {
+    color: var(--docs-warn);
+  }
+
+  .permission-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .concept-list,
+  .workflow-grid,
+  .faq-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .split-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .guide-stack {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .callout {
+    padding: 1rem;
+    border-color: rgb(140 231 209 / 0.28);
+    background: linear-gradient(180deg, rgb(13 33 31 / 0.88), rgb(12 18 25 / 0.88));
+  }
+
+  .mini-reference {
+    padding: 1rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    border: 1px solid var(--docs-line);
+    border-radius: 8px;
+    background: var(--docs-panel-strong);
+  }
+
+  th,
+  td {
+    padding: 0.9rem;
+    border-bottom: 1px solid var(--docs-line);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    color: #eef3f4;
+    font-size: 0.82rem;
+    font-weight: 820;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  tr:last-child td {
+    border-bottom: 0;
+  }
+
+  code {
+    border-radius: 5px;
+    background: rgb(244 246 248 / 0.10);
+    color: var(--docs-code);
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.92em;
+  }
+
+  td code {
+    padding: 0.12rem 0.25rem;
+  }
+
+  .shortcut-keys {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.28rem;
+    align-items: center;
+    vertical-align: middle;
+  }
+
+  .shortcut-keys--inline {
+    margin-inline: 0.35rem;
+  }
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding: 0 0.44rem;
+    border: 1px solid rgb(244 246 248 / 0.22);
+    border-radius: 7px;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0.055)),
+      #121722;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      inset 0 -1px 0 rgb(0 0 0 / 0.42),
+      0 1px 2px rgb(0 0 0 / 0.32);
+    color: var(--docs-ink);
+    font-family: "SF Pro Text", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.92rem;
+    font-weight: 780;
+    line-height: 1;
+  }
+
+  kbd.is-modifier {
+    color: #f4f6f8;
+    font-size: 1.02rem;
+  }
+
+  kbd.is-letter {
+    min-width: 1.72rem;
+    font-size: 0.78rem;
+    letter-spacing: 0;
+  }
+
+  kbd.is-wide,
+  kbd.is-word {
+    min-width: auto;
+    padding-inline: 0.58rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+  }
+
+  kbd.is-word {
+    text-transform: none;
+  }
+
+  .shortcut-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.58rem;
+    margin-top: 0.9rem;
+  }
+
+  pre {
+    margin: 0.85rem 0 0;
+    overflow: auto;
+    border-radius: 8px;
+    background: #07090f;
+    color: #f5fbf8;
+  }
+
+  pre code {
+    display: block;
+    padding: 1rem;
+    background: transparent;
+    color: inherit;
+  }
+
+  .reference-table {
+    box-shadow: var(--docs-shadow);
+  }
+
+  .troubleshooting-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  details {
+    border: 1px solid var(--docs-line);
+    border-radius: 8px;
+    background: var(--docs-panel);
+  }
+
+  summary {
+    cursor: pointer;
+    padding: 1rem;
+    color: var(--docs-ink);
+    font-weight: 760;
+  }
+
+  details p {
+    padding: 0 1rem 1rem;
+  }
+
+  @media (max-width: 980px) {
+    .docs-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .docs-sidebar {
+      position: relative;
+      top: auto;
+      max-height: none;
+    }
+
+    .docs-sidebar nav {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .permission-grid,
+    .concept-list,
+    .workflow-grid,
+    .faq-grid,
+    .split-grid,
+    .docs-hero-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .docs-topbar {
+      align-items: start;
+      flex-direction: column;
+    }
+
+    .docs-topbar nav {
+      width: 100%;
+      grid-auto-flow: row;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.45rem;
+      font-size: 0.86rem;
+    }
+
+    .docs-layout {
+      width: min(calc(100% - 1rem), 92rem);
+      padding-top: 1rem;
+    }
+
+    .docs-sidebar nav {
+      grid-template-columns: 1fr;
+    }
+
+    .docs-hero,
+    .docs-hero-grid article,
+    .permission-grid article,
+    .concept-list article,
+    .split-grid article,
+    .guide-stack article,
+    .workflow-grid article,
+    .faq-grid article,
+    .callout,
+    .mini-reference {
+      padding: 1rem;
+    }
+
+    table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }
+</style>
