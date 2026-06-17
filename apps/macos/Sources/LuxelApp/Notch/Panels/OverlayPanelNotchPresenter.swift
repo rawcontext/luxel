@@ -426,6 +426,7 @@ private struct FlatTopIslandShape: Shape {
 private struct NotchSurfaceView: View {
     private static let appleNotchCornerRadius: CGFloat = 8
     private static let pureBlack = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
+    private static let stopActionRed = Color(.sRGB, red: 0.72, green: 0.10, blue: 0.13, opacity: 1)
 
     let update: NotchPresentationUpdate
     let phase: NotchRenderPhase
@@ -516,12 +517,13 @@ private struct NotchSurfaceView: View {
                 Button {
                     onAction(action.id)
                 } label: {
-                    Label(action.title, systemImage: action.systemImage)
-                        .labelStyle(.iconOnly)
+                    Image(systemName: action.systemImage)
                         .font(.system(size: iconSize, weight: .semibold))
+                        .frame(width: iconSize, height: iconSize, alignment: .center)
                         .frame(width: buttonSize, height: buttonSize)
                         .foregroundStyle(actionForeground(action))
                         .background(actionBackground(action), in: Circle())
+                        .accessibilityLabel(Text(action.title))
                 }
                 .buttonStyle(.plain)
                 .help(action.title)
@@ -547,7 +549,7 @@ private struct NotchSurfaceView: View {
 
     private func actionBackground(_ action: NotchActivityActionDescriptor) -> Color {
         if action.id == .stopRecording {
-            return .red
+            return Self.stopActionRed
         }
 
         switch action.role {
