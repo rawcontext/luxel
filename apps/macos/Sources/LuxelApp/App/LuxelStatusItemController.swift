@@ -49,6 +49,7 @@ final class LuxelStatusItemController: NSObject {
     private let menuPanelMinimumHeight: CGFloat = 150
     private let menuPanelFittingHeightPadding: CGFloat = 8
     private let menuPanelArrowHeight: CGFloat = 10
+    private let menuPanelArrowHorizontalOffset: CGFloat = -4
     private let statusItemStopWatchdogDelay: Duration = .seconds(8)
 
     init(
@@ -464,13 +465,11 @@ private extension LuxelStatusItemController {
     }
 
     private var isMouseOverStatusItemButton: Bool {
-        guard let button = statusItem.button,
-              let window = button.window else {
+        guard let button = statusItem.button else {
             return false
         }
 
-        let buttonFrame = window
-            .convertToScreen(button.convert(button.bounds, to: nil))
+        let buttonFrame = statusItemButtonFrame(relativeTo: button)
             .insetBy(dx: -4, dy: -4)
         return buttonFrame.contains(NSEvent.mouseLocation)
     }
@@ -619,24 +618,44 @@ private extension LuxelStatusItemController {
         relativeTo button: NSStatusBarButton,
         panelSize: NSSize
     ) -> (frame: NSRect, arrowCenterX: CGFloat) {
-        let buttonFrame = button.window.map { window in
-            window.convertToScreen(button.convert(button.bounds, to: nil))
-        } ?? .zero
+        let buttonFrame = statusItemButtonFrame(relativeTo: button)
+        let anchorMidX = buttonFrame.midX + menuPanelArrowHorizontalOffset
         let screenFrame = button.window?.screen?.visibleFrame
             ?? NSScreen.main?.visibleFrame
             ?? NSScreen.screens.first?.visibleFrame
             ?? .zero
         let margin: CGFloat = 8
         let originX = min(
-            max(buttonFrame.midX - panelSize.width / 2, screenFrame.minX + margin),
+            max(anchorMidX - panelSize.width / 2, screenFrame.minX + margin),
             screenFrame.maxX - panelSize.width - margin
         )
         let topY = buttonFrame.minY > 0 ? buttonFrame.minY : screenFrame.maxY
         let originY = topY - panelSize.height
         let frame = NSRect(origin: NSPoint(x: originX, y: originY), size: panelSize)
-        let arrowCenterX = buttonFrame.midX - frame.minX
+        let arrowCenterX = anchorMidX - frame.minX
 
         return (frame, arrowCenterX)
+    }
+
+    private func statusItemButtonFrame(relativeTo button: NSStatusBarButton) -> NSRect {
+        guard let window = button.window else {
+            return .zero
+        }
+
+        let convertedFrame = window.convertToScreen(button.convert(button.bounds, to: nil))
+        let accessibilityFrame = button.accessibilityFrame()
+        guard accessibilityFrame.width > 0,
+              accessibilityFrame.height > 0,
+              accessibilityFrame.minX.isFinite else {
+            return convertedFrame
+        }
+
+        return NSRect(
+            x: accessibilityFrame.minX,
+            y: convertedFrame.minY,
+            width: accessibilityFrame.width,
+            height: convertedFrame.height
+        )
     }
 
     private func stopRecordingFromStatusItem() {

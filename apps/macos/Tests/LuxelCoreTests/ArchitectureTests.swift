@@ -104,6 +104,7 @@ extension ArchitectureTests {
         #expect(source.contains("stopRecordingFromStatusItem()"))
         #expect(source.contains("setStatusItemLength(activeStatusItemWidth"))
         #expect(source.contains("if let button = statusItem.button {\n            configureStatusItemButton(button)"))
+        #expect(source.contains("button.accessibilityFrame()"))
         #expect(source.contains("private func activeStatusItemWidth"))
         #expect(source.contains("makeActiveRecordingFrame"))
         #expect(source.contains("watchAudioLevels(onlyWhenRecording: true)"))

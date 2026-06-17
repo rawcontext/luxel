@@ -6,3 +6,4 @@ apps/web/.turbo/
 apps/web/dist/
 node_modules/
 .turbo/
+.DS_Store
