@@ -51,11 +51,6 @@ extension LuxelEditorModel {
         exportProgress = .preparing(format: format)
 
         do {
-            try FileManager.default.createDirectory(
-                at: outputDirectory,
-                withIntermediateDirectories: true
-            )
-
             let exportRequests = try selectedFormats.map { selectedFormat in
                 try makeExportRequest(source: source, format: selectedFormat)
             }
@@ -67,13 +62,20 @@ extension LuxelEditorModel {
             let exportService = exportService
             let outputDirectory = outputDirectory
             let defaultName = defaultExportName(for: source.fileURL)
+            let exportOutputDirectory: URL
+            if exportRequests.count > 1 {
+                exportOutputDirectory = batchOutputDirectory(defaultName: defaultName, in: outputDirectory)
+            } else {
+                exportOutputDirectory = outputDirectory
+            }
+            try fileSystem.createDirectory(at: exportOutputDirectory)
 
             exportTask = Task { [weak self] in
                 do {
                     if exportRequests.count == 1, let request = exportRequests.first {
                         let exported = try await exportService.export(
                             request,
-                            to: outputDirectory,
+                            to: exportOutputDirectory,
                             defaultName: defaultName
                         ) { snapshot in
                             await MainActor.run {
@@ -91,7 +93,7 @@ extension LuxelEditorModel {
                         let batch = try ExportBatch(exportRequests)
                         let exported = try await exportService.runBatch(
                             batch,
-                            to: outputDirectory,
+                            to: exportOutputDirectory,
                             defaultName: defaultName
                         ) { snapshot in
                             await MainActor.run {
@@ -248,11 +250,11 @@ extension LuxelEditorModel {
     }
 
     func openExportedFile() {
-        guard let exportedURL else {
+        guard let exportedOpenURL else {
             return
         }
 
-        fileWorkflowService.openWithDefaultApp(exportedURL)
+        fileWorkflowService.openWithDefaultApp(exportedOpenURL)
     }
 
     func openExportedFileWithApplication() {
@@ -288,6 +290,10 @@ extension LuxelEditorModel {
 
     func defaultExportName(for fileURL: URL) -> String {
         "\(fileURL.deletingPathExtension().lastPathComponent) Export"
+    }
+
+    func batchOutputDirectory(defaultName: String, in outputDirectory: URL) -> URL {
+        outputDirectory.appending(path: defaultName, directoryHint: .isDirectory)
     }
 
     func originalOutputURL(for fileURL: URL) -> URL {

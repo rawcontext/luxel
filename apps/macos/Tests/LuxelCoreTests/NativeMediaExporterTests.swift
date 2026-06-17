@@ -59,9 +59,7 @@ struct NativeMediaExporterTests {
 
     private func fixtureURL(_ fileName: String) throws -> URL {
         try packageRootURL()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "docs/Luxel/test/fixtures")
+            .appending(path: "Tests/Fixtures")
             .appending(path: fileName)
     }
 

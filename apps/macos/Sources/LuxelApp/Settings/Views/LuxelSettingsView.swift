@@ -220,7 +220,8 @@ extension LuxelSettingsView {
         }
 
         Section {
-            Toggle("Record Audio", isOn: $model.settings.recordAudio)
+            Toggle("Record System Audio", isOn: $model.settings.recordSystemAudio)
+            Toggle("Record Microphone", isOn: $model.settings.recordAudio)
             Picker("Microphone", selection: audioInputDeviceSelection) {
                 ForEach(model.audioInputDevices) { device in
                     Text(device.name).tag(device.id)

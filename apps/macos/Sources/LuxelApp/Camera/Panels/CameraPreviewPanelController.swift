@@ -299,6 +299,8 @@ private struct CameraCaptureSessionHandle: @unchecked Sendable {
 
 private final class CameraPreviewPanelView: NSView {
     private let previewLayer: AVCaptureVideoPreviewLayer
+    private let glassBorderLayer = CALayer()
+    private let glassHighlightLayer = CALayer()
     private let closeButton = NSButton(frame: .zero)
     private let style: CameraPreviewStyle
     private let snapOrigin: (NSRect) -> NSPoint
@@ -329,6 +331,9 @@ private final class CameraPreviewPanelView: NSView {
         previewLayer.videoGravity = .resizeAspectFill
         previewLayer.transform = style.isMirrored ? CATransform3DMakeScale(-1, 1, 1) : CATransform3DIdentity
         layer?.addSublayer(previewLayer)
+        configureGlassBorderLayers()
+        layer?.addSublayer(glassBorderLayer)
+        layer?.addSublayer(glassHighlightLayer)
         configureCloseButton()
         addSubview(closeButton)
         updateHoverControls()
@@ -341,12 +346,19 @@ private final class CameraPreviewPanelView: NSView {
 
     override func layout() {
         super.layout()
+        let cornerRadius = style.shape.cornerRadius(for: bounds.size)
+
         previewLayer.frame = bounds
+        previewLayer.cornerRadius = cornerRadius
+        previewLayer.cornerCurve = .continuous
+        previewLayer.masksToBounds = true
         closeButton.frame = closeButtonFrame()
-        layer?.cornerRadius = style.shape.cornerRadius(for: bounds.size)
-        layer?.masksToBounds = true
-        layer?.borderWidth = 1
-        layer?.borderColor = NSColor.white.withAlphaComponent(0.18).cgColor
+        layer?.cornerRadius = cornerRadius
+        layer?.cornerCurve = .continuous
+        layer?.masksToBounds = false
+
+        layoutGlassLayer(glassBorderLayer, inset: 0, cornerRadius: cornerRadius)
+        layoutGlassLayer(glassHighlightLayer, inset: 2, cornerRadius: cornerRadius)
     }
 
     override func updateTrackingAreas() {
@@ -425,25 +437,35 @@ private final class CameraPreviewPanelView: NSView {
         closeButton.toolTip = "Close Camera Preview"
     }
 
+    private func configureGlassBorderLayers() {
+        glassBorderLayer.backgroundColor = NSColor.clear.cgColor
+        glassBorderLayer.borderWidth = 2
+        glassBorderLayer.borderColor = NSColor.white.withAlphaComponent(0.24).cgColor
+        glassBorderLayer.shadowColor = NSColor.white.cgColor
+        glassBorderLayer.shadowOpacity = 0.16
+        glassBorderLayer.shadowRadius = 12
+        glassBorderLayer.shadowOffset = .zero
+
+        glassHighlightLayer.backgroundColor = NSColor.clear.cgColor
+        glassHighlightLayer.borderWidth = 1
+        glassHighlightLayer.borderColor = NSColor.white.withAlphaComponent(0.36).cgColor
+    }
+
+    private func layoutGlassLayer(_ layer: CALayer, inset: CGFloat, cornerRadius: CGFloat) {
+        layer.frame = bounds.insetBy(dx: inset, dy: inset)
+        layer.cornerRadius = max(0, cornerRadius - inset)
+        layer.cornerCurve = .continuous
+    }
+
     private func closeButtonFrame() -> NSRect {
         let buttonSize = CGSize(width: 24, height: 24)
 
-        switch style.shape {
-        case .circle:
-            return NSRect(
-                x: bounds.midX - buttonSize.width / 2,
-                y: bounds.maxY - buttonSize.height - 8,
-                width: buttonSize.width,
-                height: buttonSize.height
-            )
-        case .roundedRect:
-            return NSRect(
-                x: bounds.maxX - buttonSize.width - 8,
-                y: bounds.maxY - buttonSize.height - 8,
-                width: buttonSize.width,
-                height: buttonSize.height
-            )
-        }
+        return NSRect(
+            x: bounds.maxX - buttonSize.width - 8,
+            y: bounds.maxY - buttonSize.height - 8,
+            width: buttonSize.width,
+            height: buttonSize.height
+        )
     }
 
     private func updateHoverControls() {
@@ -488,7 +510,7 @@ private extension CameraOverlayShape {
     func cornerRadius(for size: CGSize) -> CGFloat {
         switch self {
         case .circle:
-            min(size.width, size.height) / 2
+            min(size.width, size.height) * 0.18
         case .roundedRect:
             16
         }

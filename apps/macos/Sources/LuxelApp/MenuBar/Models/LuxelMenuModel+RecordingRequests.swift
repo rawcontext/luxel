@@ -79,16 +79,24 @@ extension LuxelMenuModel {
     }
 
     private func resolveRecordingAudioMode() -> (mode: RecordingAudioMode, noticeMessage: String?) {
-        guard settings.recordAudio else {
+        switch (settings.recordSystemAudio, settings.recordAudio) {
+        case (true, true):
+            let resolution = resolveSelectedAudioInputDevice()
+            return (
+                .systemAndMicrophone(deviceID: resolution.microphoneDeviceID),
+                resolution.fallbackMessage
+            )
+        case (true, false):
+            return (.system, nil)
+        case (false, true):
+            let resolution = resolveSelectedAudioInputDevice()
+            return (
+                .microphone(deviceID: resolution.microphoneDeviceID),
+                resolution.fallbackMessage
+            )
+        case (false, false):
             return (.none, nil)
         }
-
-        let resolution = resolveSelectedAudioInputDevice()
-
-        return (
-            .systemAndMicrophone(deviceID: resolution.microphoneDeviceID),
-            resolution.fallbackMessage
-        )
     }
 
     func nextRecordingFileURL(now: Date, directory: URL? = nil) throws -> URL {

@@ -8,7 +8,10 @@ final class LuxelCropperPanelController {
 
     private let targetService: CaptureTargetService
     private let audioLevelMonitorFactory: () -> any AudioLevelMonitor
+    private let exclusionRegistry: CaptureExclusionRegistry
+    private let loupeImageProvider: any CropperLoupeImageProvider
     private var panels: [NSPanel] = []
+    private var exclusionRegistrationID: UUID?
     private var audioLevelModel: LuxelAudioLevelModel?
     private var audioLevelTask: Task<Void, Never>?
 
@@ -16,11 +19,16 @@ final class LuxelCropperPanelController {
         targetService: CaptureTargetService = CaptureTargetService(
             catalog: CachedCaptureTargetCatalog(upstream: ScreenCaptureKitCaptureTargetCatalog())
         ),
+        exclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry(),
+        loupeImageProvider: (any CropperLoupeImageProvider)? = nil,
         audioLevelMonitorFactory: @escaping () -> any AudioLevelMonitor = {
             AVCaptureAudioLevelMonitor()
         }
     ) {
         self.targetService = targetService
+        self.exclusionRegistry = exclusionRegistry
+        self.loupeImageProvider = loupeImageProvider
+            ?? ScreenCaptureKitCropperLoupeImageProvider(exclusionRegistry: exclusionRegistry)
         self.audioLevelMonitorFactory = audioLevelMonitorFactory
     }
 
@@ -85,7 +93,7 @@ final class LuxelCropperPanelController {
                     onQuickSelect: onQuickSelect,
                     onSelect: onSelect
                 )
-                present(
+                await present(
                     displays: displays,
                     targets: targets,
                     presentation: presentation
@@ -103,13 +111,19 @@ final class LuxelCropperPanelController {
         audioLevelModel = nil
         panels.forEach { $0.close() }
         panels = []
+        if let exclusionRegistrationID {
+            self.exclusionRegistrationID = nil
+            Task {
+                await exclusionRegistry.unregister(exclusionRegistrationID)
+            }
+        }
     }
 
     private func present(
         displays: [DisplayBounds],
         targets: [CaptureTargetOption],
         presentation: CropperPanelPresentation
-    ) {
+    ) async {
         let displaysByID = Dictionary(uniqueKeysWithValues: displays.map { ($0.id, $0) })
         let sharedAudioLevelModel = presentation.audioLevelConfiguration.map {
             LuxelAudioLevelModel(
@@ -145,6 +159,7 @@ final class LuxelCropperPanelController {
                 recordAudio: presentation.recordAudio,
                 canRecordAudio: sharedAudioLevelModel != nil,
                 loupeAlwaysOn: presentation.loupeAlwaysOn,
+                loupeImageProvider: loupeImageProvider,
                 dimOtherDisplays: presentation.dimOtherDisplays,
                 displayFocus: displayFocus,
                 onCountdownDurationChange: presentation.onCountdownDurationChange,
@@ -200,10 +215,25 @@ final class LuxelCropperPanelController {
             panels.append(panel)
         }
 
+        await registerPanelsForCaptureExclusion()
+
         if panels.isEmpty {
             NSSound.beep()
         } else {
             NSApplication.shared.activate(ignoringOtherApps: true)
+        }
+    }
+
+    private func registerPanelsForCaptureExclusion() async {
+        let windowIDs = panels
+            .map(\.windowNumber)
+            .filter { $0 > 0 }
+            .map(UInt32.init)
+
+        if let exclusionRegistrationID {
+            await exclusionRegistry.register(windowIDs: windowIDs, registrationID: exclusionRegistrationID)
+        } else {
+            exclusionRegistrationID = await exclusionRegistry.register(windowIDs: windowIDs)
         }
     }
 

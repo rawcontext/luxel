@@ -27,7 +27,7 @@ extension CameraOverlayShape {
     var settingsLabel: String {
         switch self {
         case .circle:
-            "Circle"
+            "Squircle"
         case .roundedRect:
             "Rounded"
         }

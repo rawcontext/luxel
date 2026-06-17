@@ -21,22 +21,26 @@ public final class ScreenCaptureKitStillCapturer: StillCapturer, @unchecked Send
     }
 
     public func capture(_ request: ScreenshotRequest) async throws -> ImageData {
-        let contentFilter = try await contentFilterProvider.contentFilter(for: request.target)
-        let configuration = try configurationFactory.makeConfiguration(
-            for: request,
-            contentRect: contentFilter.contentRect,
-            pointPixelScale: contentFilter.pointPixelScale
-        )
-        let image = try await SCScreenshotManager.captureImage(
-            contentFilter: contentFilter,
-            configuration: configuration
-        )
+        let image = try await captureImage(request)
         let data = try imageEncoder.encode(image, format: request.format)
 
         return try ImageData(
             data: data,
             format: request.format,
             pixelSize: PixelSize(width: image.width, height: image.height)
+        )
+    }
+
+    public func captureImage(_ request: ScreenshotRequest) async throws -> CGImage {
+        let contentFilter = try await contentFilterProvider.contentFilter(for: request.target)
+        let configuration = try configurationFactory.makeConfiguration(
+            for: request,
+            contentRect: contentFilter.contentRect,
+            pointPixelScale: contentFilter.pointPixelScale
+        )
+        return try await SCScreenshotManager.captureImage(
+            contentFilter: contentFilter,
+            configuration: configuration
         )
     }
 }

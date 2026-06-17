@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import LuxelCore
 import Observation
@@ -85,6 +86,13 @@ enum LuxelCropperMode: String, CaseIterable, Identifiable, Sendable {
     var id: Self { self }
 }
 
+enum CropperLoupeImageStatus: Equatable {
+    case idle
+    case loading
+    case ready
+    case unavailable
+}
+
 private struct CropperUndoState: Equatable, Sendable {
     let selection: CaptureRect?
     let aspectRatioPreset: CaptureAspectRatioPreset
@@ -137,9 +145,12 @@ final class LuxelCropperModel {
     var customStopAfterText: String
     var recordsAudio: Bool
     var errorMessage: String?
+    var loupeImage: CGImage?
+    var loupeImageStatus: CropperLoupeImageStatus = .idle
     @ObservationIgnored private let onCountdownDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored private let onRecordAudioChange: (Bool) -> Void
+    @ObservationIgnored private let loupeImageProvider: (any CropperLoupeImageProvider)?
     @ObservationIgnored let sizePresets: [CaptureSizePreset]
     @ObservationIgnored let windowSnapFrames: [CaptureRect]
     let canRecordAudio: Bool
@@ -152,6 +163,9 @@ final class LuxelCropperModel {
     @ObservationIgnored private var selectionDragID = 0
     @ObservationIgnored private var resizeDragID = 0
     @ObservationIgnored private var moveDragID = 0
+    @ObservationIgnored private var loupeImageTask: Task<Void, Never>?
+    @ObservationIgnored private var loupeImageGeneration = 0
+    @ObservationIgnored private var loupeImageSourceRect: CaptureRect?
 
     init(
         display: DisplayBounds,
@@ -166,6 +180,7 @@ final class LuxelCropperModel {
         recordAudio: Bool = false,
         canRecordAudio: Bool = false,
         loupeAlwaysOn: Bool = false,
+        loupeImageProvider: (any CropperLoupeImageProvider)? = nil,
         dimOtherDisplays: Bool = false,
         displayFocus: CropperDisplayFocus = CropperDisplayFocus(),
         onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
@@ -185,6 +200,7 @@ final class LuxelCropperModel {
         self.windowSnapFrames = windowSnapFrames
         self.canRecordAudio = canRecordAudio
         self.loupeAlwaysOn = loupeAlwaysOn
+        self.loupeImageProvider = loupeImageProvider
         self.dimOtherDisplays = dimOtherDisplays
         self.displayFocus = displayFocus
         self.onCountdownDurationChange = onCountdownDurationChange
@@ -358,14 +374,14 @@ extension LuxelCropperModel {
             errorMessage = nil
         } catch {
             snapGuides = []
-            loupeSample = nil
+            clearLoupe()
             errorMessage = errorMessage(for: error)
         }
     }
 
     func finishUpdateSelection() {
         snapGuides = []
-        loupeSample = nil
+        clearLoupe()
         selectionDragID += 1
     }
 
@@ -399,7 +415,7 @@ extension LuxelCropperModel {
             self.selection = try draft.moved(by: delta).topLeftSelection
             activateDisplay()
             snapGuides = []
-            loupeSample = nil
+            clearLoupe()
             pushUndoState(coalescingToken: moveDragCoalescingToken)
             errorMessage = nil
         } catch {
@@ -409,7 +425,7 @@ extension LuxelCropperModel {
 
     func finishMoveSelection() {
         moveStartSelection = nil
-        loupeSample = nil
+        clearLoupe()
         moveDragID += 1
     }
 
@@ -457,7 +473,7 @@ extension LuxelCropperModel {
             pushUndoState(coalescingToken: resizeDragCoalescingToken)
             errorMessage = nil
         } catch {
-            loupeSample = nil
+            clearLoupe()
             errorMessage = errorMessage(for: error)
         }
     }
@@ -556,7 +572,7 @@ extension LuxelCropperModel {
 
     func finishResizeSelection() {
         resizeStartSelection = nil
-        loupeSample = nil
+        clearLoupe()
         resizeDragID += 1
     }
 
@@ -665,16 +681,72 @@ extension LuxelCropperModel {
     ) {
         guard shouldShowLoupe(isRequested: isRequested),
               let overlayPixelSize = loupeOverlayPixelSize(viewSize: viewSize, overlaySize: overlaySize) else {
-            loupeSample = nil
+            clearLoupe()
             return
         }
 
-        loupeSample = try? CaptureLoupeSampleResolver.sample(
+        guard let sample = try? CaptureLoupeSampleResolver.sample(
             cursor: cursor,
             display: display,
             selection: selection,
             overlaySize: overlayPixelSize
-        )
+        ) else {
+            clearLoupe()
+            return
+        }
+
+        loupeSample = sample
+        updateLoupeImage(for: sample)
+    }
+
+    private func updateLoupeImage(for sample: CaptureLoupeSample) {
+        guard let loupeImageProvider else {
+            loupeImage = nil
+            loupeImageSourceRect = nil
+            loupeImageStatus = .unavailable
+            return
+        }
+
+        guard sample.sourceRect != loupeImageSourceRect else {
+            return
+        }
+
+        loupeImageSourceRect = sample.sourceRect
+        loupeImageStatus = loupeImage == nil ? .loading : .ready
+        loupeImageGeneration += 1
+        let generation = loupeImageGeneration
+        let provider = loupeImageProvider
+        loupeImageTask?.cancel()
+        loupeImageTask = Task { @MainActor [weak self, display, sample, provider] in
+            do {
+                let image = try await provider.image(for: sample, display: display)
+                guard !Task.isCancelled,
+                      self?.loupeImageGeneration == generation else {
+                    return
+                }
+
+                self?.loupeImage = image
+                self?.loupeImageStatus = .ready
+            } catch {
+                guard !Task.isCancelled,
+                      self?.loupeImageGeneration == generation else {
+                    return
+                }
+
+                self?.loupeImage = nil
+                self?.loupeImageStatus = .unavailable
+            }
+        }
+    }
+
+    private func clearLoupe() {
+        loupeImageTask?.cancel()
+        loupeImageTask = nil
+        loupeImageGeneration += 1
+        loupeSample = nil
+        loupeImage = nil
+        loupeImageSourceRect = nil
+        loupeImageStatus = .idle
     }
 
     private func shouldShowLoupe(isRequested: Bool) -> Bool {

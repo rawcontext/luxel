@@ -99,9 +99,7 @@ extension LuxelEditorModelTests {
 
     func fixtureURL(_ fileName: String) throws -> URL {
         try packageRootURL()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appending(path: "docs/Luxel/test/fixtures")
+            .appending(path: "Tests/Fixtures")
             .appending(path: fileName)
     }
 
@@ -397,6 +395,7 @@ struct CopiedFile: Equatable {
 final class StubExportedFileActionClient: ExportedFileActionClient {
     let saveDestination: URL?
     private(set) var requestedSaveNames: [String] = []
+    private(set) var openedURLs: [URL] = []
 
     init(saveDestination: URL? = nil) {
         self.saveDestination = saveDestination
@@ -425,7 +424,9 @@ final class StubExportedFileActionClient: ExportedFileActionClient {
 
     func revealInFinder(_ fileURL: URL) {}
 
-    func openWithDefaultApp(_ fileURL: URL) {}
+    func openWithDefaultApp(_ fileURL: URL) {
+        openedURLs.append(fileURL)
+    }
 
     func open(_ fileURL: URL, withApplicationAt applicationURL: URL) {}
 }

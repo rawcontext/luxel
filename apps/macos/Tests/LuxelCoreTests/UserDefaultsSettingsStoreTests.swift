@@ -50,6 +50,7 @@ struct UserDefaultsSettingsStoreTests {
             keystrokeRenderOptions: try persistedKeystrokeOptions(),
             pauseKeystrokeCaptureShortcut: "command+control+option+k",
             record60FPS: true,
+            recordSystemAudio: true,
             recordAudio: true,
             audioInputDeviceID: "mic-1",
             audioInputDeviceName: "Studio Mic",
@@ -223,6 +224,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.record60FPS)
         #expect(settings.recordingFrameRate == (try FrameRate(60)))
         #expect(!settings.loopExports)
+        #expect(settings.recordSystemAudio)
         #expect(settings.recordAudio)
         #expect(settings.audioInputDeviceID == "device-1")
         #expect(settings.audioInputDeviceName == nil)

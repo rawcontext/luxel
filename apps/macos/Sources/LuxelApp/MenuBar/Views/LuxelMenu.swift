@@ -13,7 +13,7 @@ struct LuxelMenu: View {
     private static let captureActionButtonCornerRadius: CGFloat = 12
     private static let footerButtonHeight: CGFloat = 32
     private static let footerButtonCornerRadius: CGFloat = 11
-    private static let footerMicButtonWidth: CGFloat = 38
+    private static let footerAudioButtonWidth: CGFloat = 38
     private static let footerRecentFolderButtonWidth: CGFloat = 34
     private static let footerMoreButtonWidth: CGFloat = 42
 
@@ -320,7 +320,8 @@ private extension LuxelMenu {
 
     private var footerControls: some View {
         HStack(spacing: 8) {
-            recordAudioFooterToggle
+            recordSystemAudioFooterToggle
+            recordMicrophoneFooterToggle
 
             recentFooterControl
                 .layoutPriority(1)
@@ -377,25 +378,48 @@ private extension LuxelMenu {
         .clipShape(RoundedRectangle(cornerRadius: Self.footerButtonCornerRadius, style: .continuous))
     }
 
-    private var recordAudioFooterToggle: some View {
+    private var recordSystemAudioFooterToggle: some View {
         Button {
-            recordAudio.wrappedValue.toggle()
+            recordSystemAudio.wrappedValue.toggle()
         } label: {
-            Image(systemName: model.settings.recordAudio ? "mic.fill" : "mic.slash")
-                .labelStyle(.iconOnly)
-                .font(.callout.weight(.semibold))
-                .foregroundStyle(model.settings.recordAudio ? .black : .white)
-                .frame(width: Self.footerMicButtonWidth, height: Self.footerButtonHeight)
-                .background(
-                    model.settings.recordAudio ? .white.opacity(0.92) : .white.opacity(0.10),
-                    in: RoundedRectangle(cornerRadius: Self.footerButtonCornerRadius, style: .continuous)
-                )
+            footerAudioToggleIcon(
+                systemImage: model.settings.recordSystemAudio ? "speaker.wave.2.fill" : "speaker.slash.fill",
+                isActive: model.settings.recordSystemAudio
+            )
         }
         .buttonStyle(.plain)
         .frame(height: Self.footerButtonHeight)
-        .help(recordAudioHelp)
+        .help(recordSystemAudioHelp)
+        .accessibilityLabel("System Audio")
+        .accessibilityValue(model.settings.recordSystemAudio ? "On" : "Off")
+    }
+
+    private var recordMicrophoneFooterToggle: some View {
+        Button {
+            recordMicrophone.wrappedValue.toggle()
+        } label: {
+            footerAudioToggleIcon(
+                systemImage: model.settings.recordAudio ? "mic.fill" : "mic.slash",
+                isActive: model.settings.recordAudio
+            )
+        }
+        .buttonStyle(.plain)
+        .frame(height: Self.footerButtonHeight)
+        .help(recordMicrophoneHelp)
         .accessibilityLabel("Microphone")
         .accessibilityValue(model.settings.recordAudio ? "On" : "Off")
+    }
+
+    private func footerAudioToggleIcon(systemImage: String, isActive: Bool) -> some View {
+        Image(systemName: systemImage)
+            .labelStyle(.iconOnly)
+            .font(.callout.weight(.semibold))
+            .foregroundStyle(isActive ? .black : .white)
+            .frame(width: Self.footerAudioButtonWidth, height: Self.footerButtonHeight)
+            .background(
+                isActive ? .white.opacity(0.92) : .white.opacity(0.10),
+                in: RoundedRectangle(cornerRadius: Self.footerButtonCornerRadius, style: .continuous)
+            )
     }
 
     @ViewBuilder
@@ -691,7 +715,16 @@ private extension LuxelMenu {
         }
     }
 
-    private var recordAudio: Binding<Bool> {
+    private var recordSystemAudio: Binding<Bool> {
+        Binding {
+            model.settings.recordSystemAudio
+        } set: { isEnabled in
+            model.settings.recordSystemAudio = isEnabled
+            model.saveSettings()
+        }
+    }
+
+    private var recordMicrophone: Binding<Bool> {
         Binding {
             model.settings.recordAudio
         } set: { isEnabled in
@@ -705,7 +738,13 @@ private extension LuxelMenu {
         }
     }
 
-    private var recordAudioHelp: String {
+    private var recordSystemAudioHelp: String {
+        model.settings.recordSystemAudio
+            ? "Record system sound with screen and area recordings."
+            : "Do not record system sound with screen and area recordings."
+    }
+
+    private var recordMicrophoneHelp: String {
         if model.settings.recordAudio {
             return "Record microphone audio with screen and area recordings."
         }

@@ -1,11 +1,22 @@
 import Foundation
 import LuxelCore
 
-public enum WebMCodecError: Error, Equatable {
+public enum WebMCodecError: Error, Equatable, LocalizedError {
     case unsupportedFormat(ExportFormat)
     case invalidConfiguration(String)
     case encoderFailure(String)
     case muxerFailure(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .unsupportedFormat(let format):
+            "WebM export does not support \(format.prettyName)."
+        case .invalidConfiguration(let message),
+             .encoderFailure(let message),
+             .muxerFailure(let message):
+            message
+        }
+    }
 }
 
 extension String {

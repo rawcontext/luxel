@@ -10,7 +10,7 @@ struct EditorDraftState: Equatable, Sendable {
         sizePreset: .original,
         outputWidth: 1280,
         outputHeight: 720,
-        frameRate: 30,
+        frameRate: 60,
         playbackSpeed: .normal,
         shouldMute: false,
         audioVolume: 1,

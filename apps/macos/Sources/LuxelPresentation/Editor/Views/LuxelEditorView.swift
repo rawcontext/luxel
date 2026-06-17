@@ -136,7 +136,7 @@ extension LuxelEditorView {
                 exportActions
             }
 
-            editorDisclosureCard("Export") {
+            editorDisclosureCard("Export Format") {
                 VStack(alignment: .leading, spacing: 14) {
                     controlRow("Format") {
                         formatMenu
@@ -238,26 +238,38 @@ extension LuxelEditorView {
                     .monospacedDigit()
             }
 
-            Button {
-                model.startExport()
-            } label: {
-                Label(model.isExporting ? "Exporting" : "Export", systemImage: "square.and.arrow.down")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(!model.canExport)
+            HStack(spacing: 8) {
+                Button {
+                    model.saveOriginal()
+                } label: {
+                    exportActionLabel("Save Original", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(.bordered)
+                .disabled(!model.canSaveOriginal)
 
-            Button {
-                model.saveOriginal()
-            } label: {
-                Label("Save As", systemImage: "doc.on.doc")
-                    .frame(maxWidth: .infinity)
+                Button {
+                    model.startExport()
+                } label: {
+                    exportActionLabel(
+                        model.isExporting ? "Exporting" : "Export",
+                        systemImage: "square.and.arrow.down"
+                    )
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!model.canExport)
             }
-            .buttonStyle(.bordered)
             .controlSize(.large)
-            .disabled(!model.canSaveOriginal)
         }
+    }
+
+    private func exportActionLabel(
+        _ title: String,
+        systemImage: String
+    ) -> some View {
+        Label(title, systemImage: systemImage)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+            .frame(maxWidth: .infinity)
     }
 
     private var gifControls: some View {
@@ -291,9 +303,11 @@ extension LuxelEditorView {
         GlassPanel {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Image(systemName: model.exportPanelSystemImage)
-                        .foregroundStyle(exportPanelTint)
-                        .frame(width: 18)
+                    if showsExportPanelStatusIcon {
+                        Image(systemName: model.exportPanelSystemImage)
+                            .foregroundStyle(exportPanelTint)
+                            .frame(width: 18)
+                    }
 
                     Text(model.exportPanelTitle)
                         .font(.subheadline)
@@ -307,7 +321,7 @@ extension LuxelEditorView {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
 
-                if model.isExporting || model.exportProgress != nil {
+                if model.exportJobs.count > 1, model.isExporting || model.exportProgress != nil {
                     ProgressView(value: model.exportProgressValue)
                         .progressViewStyle(.linear)
                 }
@@ -441,6 +455,7 @@ extension LuxelEditorView {
                     }
                     .labelsHidden()
                     .pickerStyle(.menu)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
 
                 controlRow("Fit") {
@@ -454,7 +469,7 @@ extension LuxelEditorView {
                         "Width",
                         value: outputWidthSelection,
                         range: 1...8192,
-                        unit: "px",
+                        unitHelp: "Pixels",
                         step: 2,
                         shiftedStep: 100
                     )
@@ -465,7 +480,7 @@ extension LuxelEditorView {
                         "Height",
                         value: outputHeightSelection,
                         range: 1...8192,
-                        unit: "px",
+                        unitHelp: "Pixels",
                         step: 2,
                         shiftedStep: 100
                     )
@@ -476,35 +491,21 @@ extension LuxelEditorView {
                         "Frame Rate",
                         value: frameRateSelection,
                         range: 1...model.maximumFrameRate,
-                        unit: "fps",
+                        unitHelp: "Frames per second",
                         step: 1,
                         shiftedStep: 10
                     )
                 }
 
                 controlRow("Speed") {
-                    HStack(spacing: 8) {
-                        doubleStepperField(
-                            "Speed",
-                            value: playbackSpeedSelection,
-                            range: 0.1...10,
-                            unit: "x",
-                            step: 0.05,
-                            shiftedStep: 0.25
-                        )
-
-                        Menu {
-                            ForEach(LuxelEditorModel.playbackSpeedDetents, id: \.self) { speed in
-                                Button(speedPresetLabel(speed)) {
-                                    model.setPlaybackSpeed(speed)
-                                }
-                            }
-                        } label: {
-                            Label("Speed Presets", systemImage: "speedometer")
-                        }
-                        .labelStyle(.iconOnly)
-                        .help("Speed Presets")
-                    }
+                    doubleStepperField(
+                        "Speed",
+                        value: playbackSpeedSelection,
+                        range: 0.1...10,
+                        unitHelp: "Playback speed multiplier",
+                        step: 0.1,
+                        shiftedStep: 0.5
+                    )
                 }
 
                 Divider()
@@ -594,50 +595,42 @@ extension LuxelEditorView {
         _ title: String,
         value: Binding<Int>,
         range: ClosedRange<Int>,
-        unit: String,
+        unitHelp: String,
         step: Int,
         shiftedStep: Int
     ) -> some View {
         Stepper {
-            HStack(spacing: 6) {
-                TextField(title, value: value, format: .number)
-                    .frame(width: 72)
-                    .multilineTextAlignment(.trailing)
-                    .monospacedDigit()
-
-                Text(unit)
-                    .foregroundStyle(.secondary)
-            }
+            TextField(title, value: value, format: .number)
+                .frame(width: 72)
+                .multilineTextAlignment(.trailing)
+                .monospacedDigit()
         } onIncrement: {
             value.wrappedValue = min(range.upperBound, value.wrappedValue + currentStep(step, shiftedStep))
         } onDecrement: {
             value.wrappedValue = max(range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep))
         }
+        .help(unitHelp)
     }
 
     private func doubleStepperField(
         _ title: String,
         value: Binding<Double>,
         range: ClosedRange<Double>,
-        unit: String,
+        unitHelp: String,
         step: Double,
         shiftedStep: Double
     ) -> some View {
         Stepper {
-            HStack(spacing: 6) {
-                TextField(title, value: value, format: .number.precision(.fractionLength(2)))
-                    .frame(width: 58)
-                    .multilineTextAlignment(.trailing)
-                    .monospacedDigit()
-
-                Text(unit)
-                    .foregroundStyle(.secondary)
-            }
+            TextField(title, value: value, format: .number.precision(.fractionLength(1)))
+                .frame(width: 58)
+                .multilineTextAlignment(.trailing)
+                .monospacedDigit()
         } onIncrement: {
             value.wrappedValue = roundedSpeed(min(range.upperBound, value.wrappedValue + currentStep(step, shiftedStep)))
         } onDecrement: {
             value.wrappedValue = roundedSpeed(max(range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep)))
         }
+        .help(unitHelp)
     }
 
     private func currentStep<T>(_ step: T, _ shiftedStep: T) -> T {
@@ -671,9 +664,11 @@ extension LuxelEditorView {
 
     private func exportJobRow(_ job: ExportJobSnapshot) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: exportJobSystemImage(job))
-                .foregroundStyle(exportJobTint(job))
-                .frame(width: 18)
+            if showsExportJobStatusIcon(job) {
+                Image(systemName: exportJobSystemImage(job))
+                    .foregroundStyle(exportJobTint(job))
+                    .frame(width: 18)
+            }
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -716,6 +711,14 @@ extension LuxelEditorView {
         case .none:
             "clock"
         }
+    }
+
+    private var showsExportPanelStatusIcon: Bool {
+        model.exportPanelSystemImage != "checkmark.circle"
+    }
+
+    private func showsExportJobStatusIcon(_ job: ExportJobSnapshot) -> Bool {
+        job.progress?.phase != .completed
     }
 
     private func exportJobTint(_ job: ExportJobSnapshot) -> Color {
@@ -855,15 +858,6 @@ extension LuxelEditorView {
         } set: { shouldCrop in
             model.setShouldCrop(shouldCrop)
         }
-    }
-
-    private func speedPresetLabel(_ speed: Double) -> String {
-        if speed == speed.rounded() {
-            return "\(Int(speed))x"
-        }
-
-        return String(format: "%.2fx", speed)
-            .replacingOccurrences(of: #"\.?0+x$"#, with: "x", options: .regularExpression)
     }
 
     private func gifDitheringLabel(_ mode: GIFDitheringMode) -> String {

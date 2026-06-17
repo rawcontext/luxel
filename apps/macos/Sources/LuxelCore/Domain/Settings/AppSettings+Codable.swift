@@ -14,6 +14,7 @@ extension AppSettings {
         case record60FPS
         case recordingFrameRate
         case loopExports
+        case recordSystemAudio
         case recordAudio
         case audioInputDeviceID
         case audioInputDeviceName
@@ -93,6 +94,7 @@ extension AppSettings {
         recordingFrameRate = recording.frameRate
         record60FPS = recording.records60FPS
         loopExports = recording.loopsExports
+        recordSystemAudio = recording.recordsSystemAudio
         recordAudio = recording.recordsAudio
         let audioInput = try Self.decodeAudioInput(from: container)
         audioInputDeviceID = audioInput.id
@@ -166,7 +168,7 @@ extension AppSettings {
 
     private static func decodeRecordingSettings(from container: AppSettingsDecoder) throws -> RecordingSettings {
         let legacyRecord60FPS = try container.decodeIfPresent(Bool.self, forKey: .record60FPS)
-            ?? false
+            ?? true
         let frameRate = Self.supportedRecordingFrameRate(
             try container.decodeIfPresent(FrameRate.self, forKey: .recordingFrameRate)
         ) ?? Self.legacyRecordingFrameRate(record60FPS: legacyRecord60FPS)
@@ -174,6 +176,8 @@ extension AppSettings {
         return try RecordingSettings(
             frameRate: frameRate,
             loopsExports: container.decodeIfPresent(Bool.self, forKey: .loopExports) ?? true,
+            recordsSystemAudio: container.decodeIfPresent(Bool.self, forKey: .recordSystemAudio)
+                ?? (container.decodeIfPresent(Bool.self, forKey: .recordAudio) ?? false),
             recordsAudio: container.decodeIfPresent(Bool.self, forKey: .recordAudio) ?? false,
             audioOnlyFormat: container.decodeIfPresent(AudioRecordingFormat.self, forKey: .audioOnlyFormat) ?? .aac
         )
@@ -307,18 +311,21 @@ private struct RecordingSettings {
     let frameRate: FrameRate
     let records60FPS: Bool
     let loopsExports: Bool
+    let recordsSystemAudio: Bool
     let recordsAudio: Bool
     let audioOnlyFormat: AudioRecordingFormat
 
     init(
         frameRate: FrameRate,
         loopsExports: Bool,
+        recordsSystemAudio: Bool,
         recordsAudio: Bool,
         audioOnlyFormat: AudioRecordingFormat
     ) {
         self.frameRate = frameRate
         records60FPS = frameRate.framesPerSecond == 60
         self.loopsExports = loopsExports
+        self.recordsSystemAudio = recordsSystemAudio
         self.recordsAudio = recordsAudio
         self.audioOnlyFormat = audioOnlyFormat
     }

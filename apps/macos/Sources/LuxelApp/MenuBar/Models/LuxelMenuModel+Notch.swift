@@ -60,13 +60,12 @@ extension LuxelMenuModel {
     ) async {
         switch interaction {
         case .hoverEntered:
-            notchHoverCollapseTask?.cancel()
             notchPresentationState = .expanded
             await refreshNotchSurface()
         case .hoverExited:
-            scheduleNotchCollapse()
+            notchPresentationState = .collapsed
+            await refreshNotchSurface()
         case .setExpanded(let isExpanded):
-            notchHoverCollapseTask?.cancel()
             notchPresentationState = isExpanded ? .expanded : .collapsed
             await refreshNotchSurface()
         case .action(let actionID):
@@ -131,20 +130,6 @@ extension LuxelMenuModel {
     ) {
         if case .openEditor(let fileURL) = stopAction {
             openEditor(fileURL)
-        }
-    }
-
-    private func scheduleNotchCollapse() {
-        notchHoverCollapseTask?.cancel()
-        let hoverGraceDuration = NotchMotion.standard.hoverGraceDuration
-        notchHoverCollapseTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(hoverGraceDuration * 1_000_000_000))
-            guard !Task.isCancelled else {
-                return
-            }
-
-            self?.notchPresentationState = .collapsed
-            await self?.refreshNotchSurface()
         }
     }
 

@@ -1,5 +1,6 @@
 import AppKit
 import Darwin
+import LuxelCore
 import LuxelPresentation
 import SwiftUI
 
@@ -18,12 +19,17 @@ struct LuxelApp: App {
         let errorReporter = LuxelCompositionRoot.errorReporter()
         let captureTargetCatalog = LuxelCompositionRoot.captureTargetCatalog()
         let captureTargetService = LuxelCompositionRoot.captureTargetService(catalog: captureTargetCatalog)
+        let captureExclusionRegistry = CaptureExclusionRegistry()
         let model = LuxelMenuModel(
             captureTargetService: captureTargetService,
+            captureExclusionRegistry: captureExclusionRegistry,
             errorReporter: errorReporter
         )
         let editorModel = LuxelCompositionRoot.editorModel(errorReporter: errorReporter)
-        let cropperPanelController = LuxelCropperPanelController(targetService: captureTargetService)
+        let cropperPanelController = LuxelCropperPanelController(
+            targetService: captureTargetService,
+            exclusionRegistry: captureExclusionRegistry
+        )
         let shortcutController = LuxelShortcutController()
         let windowPresenter = LuxelWindowPresenter(
             model: model,

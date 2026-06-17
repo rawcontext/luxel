@@ -1,5 +1,6 @@
 import CoreGraphics
 import CoreMedia
+import CoreVideo
 import Foundation
 import ScreenCaptureKit
 
@@ -17,6 +18,7 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         )
         configuration.showsCursor = request.showCursor
         configuration.showMouseClicks = request.highlightClicks
+        configuration.pixelFormat = kCVPixelFormatType_32BGRA
         configuration.capturesAudio = request.audio.capturesSystemAudio
         configuration.captureMicrophone = request.audio.capturesMicrophone
         configuration.microphoneCaptureDeviceID = request.audio.microphoneDeviceID

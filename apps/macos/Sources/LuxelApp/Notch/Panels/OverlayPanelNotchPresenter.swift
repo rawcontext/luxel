@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     fileprivate static let panelSize = NSSize(width: 536, height: 188)
+    fileprivate static let expandedHeight: CGFloat = 58
     private static let edgeMargin: CGFloat = 8
 
     private let exclusionRegistry: CaptureExclusionRegistry
@@ -14,8 +15,9 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     private var panel: NSPanel?
     private var hostingView: NSHostingView<NotchSurfaceView>?
     private var currentUpdate: NotchPresentationUpdate?
+    private var currentGeometry: NotchGeometry?
     private var exclusionRegistrationID: UUID?
-    private var hoverRect: NSRect?
+    private var hoverRects: [NSRect] = []
     private var isHovering = false
     private var localMouseMonitor: Any?
     private var globalMouseMonitor: Any?
@@ -37,9 +39,10 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     func acquire(on geometry: NotchGeometry) async {
         let panel = panel ?? makePanel()
         self.panel = panel
-        hoverRect = Self.hoverRect(for: geometry, isExpanded: false)
+        updateHoverRects(for: geometry, isExpanded: false)
         installMouseMonitorsIfNeeded()
         panel.setFrame(Self.panelFrame(for: geometry), display: true)
+        handleMouseLocation(NSEvent.mouseLocation)
         await registerForCaptureExclusion(panel)
     }
 
@@ -49,7 +52,7 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
 
         let panel = panel ?? makePanel()
         self.panel = panel
-        hoverRect = Self.hoverRect(for: update.geometry, isExpanded: update.presentationState == .expanded)
+        updateHoverRects(for: update.geometry, isExpanded: update.presentationState == .expanded)
         installMouseMonitorsIfNeeded()
         panel.setFrame(Self.panelFrame(for: update.geometry), display: true)
         panel.ignoresMouseEvents = update.activity == .dormant
@@ -96,6 +99,7 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
         }
 
         await registerForCaptureExclusion(panel)
+        handleMouseLocation(NSEvent.mouseLocation)
     }
 
     func setExpanded(_ isExpanded: Bool) async {
@@ -113,7 +117,9 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
         self.currentUpdate = update
 
         if let panel {
+            updateHoverRects(for: update.geometry, isExpanded: isExpanded)
             render(update, phase: .settled, in: panel)
+            handleMouseLocation(NSEvent.mouseLocation)
         }
     }
 
@@ -121,10 +127,11 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
         panel?.orderOut(nil)
         cancelMorphIn()
         removeMouseMonitors()
-        hoverRect = nil
+        hoverRects = []
         isHovering = false
         hostingView = nil
         currentUpdate = nil
+        currentGeometry = nil
 
         if let exclusionRegistrationID {
             await exclusionRegistry.unregister(exclusionRegistrationID)
@@ -236,17 +243,25 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     }
 
     private func handleMouseLocation(_ location: NSPoint) {
-        guard let hoverRect else {
+        guard !hoverRects.isEmpty else {
             return
         }
 
-        let hovering = hoverRect.contains(location)
+        let hovering = hoverRects.contains { $0.contains(location) }
         guard hovering != isHovering else {
             return
         }
 
+        if let currentGeometry {
+            hoverRects = Self.hoverRects(for: currentGeometry, isExpanded: hovering)
+        }
         isHovering = hovering
         continuation.yield(hovering ? .hoverEntered : .hoverExited)
+    }
+
+    private func updateHoverRects(for geometry: NotchGeometry, isExpanded: Bool) {
+        currentGeometry = geometry
+        hoverRects = Self.hoverRects(for: geometry, isExpanded: isExpanded)
     }
 
     private static func panelFrame(for geometry: NotchGeometry) -> NSRect {
@@ -259,12 +274,32 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
         return NSRect(origin: NSPoint(x: originX, y: originY), size: panelSize)
     }
 
-    private static func hoverRect(for geometry: NotchGeometry, isExpanded: Bool) -> NSRect {
+    private static func hoverRects(for geometry: NotchGeometry, isExpanded: Bool) -> [NSRect] {
         if isExpanded {
-            return panelFrame(for: geometry).insetBy(dx: -8, dy: -8)
+            return [
+                geometry.cameraHousingRect.nsRect,
+                expandedSurfaceRect(for: geometry)
+            ]
         }
 
-        return geometry.cameraHousingRect.nsRect.insetBy(dx: -28, dy: -18)
+        return [geometry.cameraHousingRect.nsRect]
+    }
+
+    private static func expandedSurfaceRect(for geometry: NotchGeometry) -> NSRect {
+        let screen = geometry.screenFrame.nsRect
+        let housing = geometry.cameraHousingRect.nsRect
+        let width = notchWidth(for: geometry)
+        let originX = housing.midX - width / 2
+        return NSRect(
+            x: originX,
+            y: screen.maxY - expandedHeight,
+            width: width,
+            height: expandedHeight
+        )
+    }
+
+    fileprivate static func notchWidth(for geometry: NotchGeometry) -> CGFloat {
+        max(170, min(220, geometry.cameraHousingRect.nsRect.width))
     }
 }
 
@@ -304,6 +339,7 @@ private struct FlatTopIslandShape: Shape {
 
 private struct NotchSurfaceView: View {
     private static let appleNotchCornerRadius: CGFloat = 8
+    private static let pureBlack = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
 
     let update: NotchPresentationUpdate
     let phase: NotchRenderPhase
@@ -362,7 +398,7 @@ private struct NotchSurfaceView: View {
     private var expandedSurface: some View {
         ZStack(alignment: .topLeading) {
             FlatTopIslandShape(cornerRadius: expandedCornerRadius)
-                .fill(Color.black)
+                .fill(Self.pureBlack)
                 .overlay {
                     FlatTopIslandShape(cornerRadius: expandedCornerRadius)
                         .stroke(.white.opacity(phase == .seed ? 0 : 0.08), lineWidth: 0.8)
@@ -434,7 +470,7 @@ private struct NotchSurfaceView: View {
     }
 
     private var expandedHeight: CGFloat {
-        58
+        OverlayPanelNotchPresenter.expandedHeight
     }
 
     private var seedWidth: CGFloat {
@@ -450,7 +486,7 @@ private struct NotchSurfaceView: View {
     }
 
     private var notchWidth: CGFloat {
-        max(170, min(220, update.geometry.cameraHousingRect.nsRect.width))
+        OverlayPanelNotchPresenter.notchWidth(for: update.geometry)
     }
 }
 

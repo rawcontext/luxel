@@ -4,7 +4,7 @@ import LuxelPresentation
 import SwiftUI
 
 struct LuxelCropperView: View {
-    static let loupeSize = CGSize(width: 164, height: 122)
+    static let loupeSize = CGSize(width: 204, height: 136)
     static let toolbarButtonWidth: CGFloat = 196
     static let toolbarButtonHeight: CGFloat = 30
     static let toolbarControlSpacing: CGFloat = 8
@@ -57,7 +57,11 @@ extension LuxelCropperView {
                 }
 
                 if let loupeSample = model.loupeSample, !model.isDimmedByOtherDisplay {
-                    CropperLoupeView(sample: loupeSample)
+                    CropperLoupeView(
+                        sample: loupeSample,
+                        image: model.loupeImage,
+                        imageStatus: model.loupeImageStatus
+                    )
                         .frame(width: Self.loupeSize.width, height: Self.loupeSize.height)
                         .position(loupePosition(for: loupeSample, viewSize: geometry.size))
                         .allowsHitTesting(false)

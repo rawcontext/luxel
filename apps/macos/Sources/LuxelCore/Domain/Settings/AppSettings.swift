@@ -75,6 +75,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var record60FPS: Bool
     public var recordingFrameRate: FrameRate
     public var loopExports: Bool
+    public var recordSystemAudio: Bool
     public var recordAudio: Bool
     public var audioInputDeviceID: String?
     public var audioInputDeviceName: String?
@@ -149,9 +150,10 @@ extension AppSettings {
         keystrokeOverlayEnabled: Bool = false,
         keystrokeRenderOptions: KeystrokeRenderOptions = .standard,
         pauseKeystrokeCaptureShortcut: String = "",
-        record60FPS: Bool = false,
+        record60FPS: Bool = true,
         recordingFrameRate: FrameRate? = nil,
         loopExports: Bool = true,
+        recordSystemAudio: Bool = false,
         recordAudio: Bool = false,
         audioInputDeviceID: String? = AudioInputDeviceID.systemDefault,
         audioInputDeviceName: String? = AudioInputDeviceOption.systemDefault.name,
@@ -215,6 +217,7 @@ extension AppSettings {
         self.record60FPS = resolvedRecordingFrameRate.framesPerSecond == 60
         self.recordingFrameRate = resolvedRecordingFrameRate
         self.loopExports = loopExports
+        self.recordSystemAudio = recordSystemAudio
         self.recordAudio = recordAudio
         self.audioInputDeviceID = audioInputDeviceID
         self.audioInputDeviceName = audioInputDeviceName

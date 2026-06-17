@@ -25,7 +25,7 @@ public final class LuxelEditorModel {
     }
 
     static let sizePresets = EditorSizePreset.allCases
-    static let playbackSpeedDetents: [Double] = [0.25, 0.5, 1, 1.5, 2, 3, 4]
+    static let defaultFrameRate = 60
 
     var source: SourceMedia?
     var status: Status = .empty
@@ -36,7 +36,7 @@ public final class LuxelEditorModel {
     var sizePreset: EditorSizePreset? = .original
     var outputWidth = 1280
     var outputHeight = 720
-    var frameRate = 30
+    var frameRate = defaultFrameRate
     var playbackSpeed: PlaybackSpeed = .normal
     var shouldMute = false
     var audioVolume = 1.0
@@ -139,7 +139,7 @@ extension LuxelEditorModel {
     }
 
     var maximumFrameRate: Int {
-        max(1, source?.nominalFrameRate.framesPerSecond ?? 120)
+        max(Self.defaultFrameRate, source?.nominalFrameRate.framesPerSecond ?? 120)
     }
 
     var availableQualities: [ExportQuality] {
@@ -224,7 +224,7 @@ extension LuxelEditorModel {
     }
 
     var canRetryExport: Bool {
-        hasSource && !isExporting
+        isRecoverableExportFailure
     }
 
     var canUndoEditorChange: Bool {
@@ -366,6 +366,14 @@ extension LuxelEditorModel {
         return nil
     }
 
+    var exportedOpenURL: URL? {
+        if case .exportedBatch(let urls) = status {
+            return urls.first?.deletingLastPathComponent()
+        }
+
+        return exportedURL
+    }
+
     var usesAlphaPreviewBackground: Bool {
         source?.hasAlpha == true
     }
@@ -458,7 +466,7 @@ extension LuxelEditorModel {
             trimEnd = media.duration
             playbackSpeed = .normal
             applySizePreset(.original)
-            applyFrameRate(media.nominalFrameRate.framesPerSecond)
+            applyFrameRate(Self.defaultFrameRate)
             applyExportMemory(for: format)
             shouldMute = !media.hasAudio || format.dropsAudio
             let item = AVPlayerItem(url: fileURL)

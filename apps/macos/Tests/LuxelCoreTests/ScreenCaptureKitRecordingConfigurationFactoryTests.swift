@@ -1,5 +1,6 @@
 import CoreGraphics
 import CoreMedia
+import CoreVideo
 import LuxelCore
 import ScreenCaptureKit
 import Testing
@@ -28,6 +29,7 @@ struct ScreenRecordingConfigurationFactoryTests {
         #expect(configuration.minimumFrameInterval == CMTime(value: 1, timescale: 60))
         #expect(!configuration.showsCursor)
         #expect(configuration.showMouseClicks)
+        #expect(configuration.pixelFormat == kCVPixelFormatType_32BGRA)
         #expect(configuration.capturesAudio)
         #expect(configuration.captureMicrophone)
         #expect(configuration.microphoneCaptureDeviceID == "mic-1")

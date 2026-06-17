@@ -21,9 +21,10 @@ extension SettingsTests {
         #expect(!settings.keystrokeOverlayEnabled)
         #expect(settings.keystrokeRenderOptions == .standard)
         #expect(settings.pauseKeystrokeCaptureShortcut == "")
-        #expect(!settings.record60FPS)
-        #expect(settings.recordingFrameRate == (try FrameRate(30)))
+        #expect(settings.record60FPS)
+        #expect(settings.recordingFrameRate == (try FrameRate(60)))
         #expect(settings.loopExports)
+        #expect(!settings.recordSystemAudio)
         #expect(!settings.recordAudio)
         #expect(settings.audioInputDeviceID == "SYSTEM_DEFAULT")
         #expect(settings.audioInputDeviceName == "System Default")
@@ -169,6 +170,37 @@ extension SettingsTests {
 
         #expect(settings.recordingFrameRate == (try FrameRate(24)))
         #expect(!settings.record60FPS)
+    }
+
+    @Test("legacy record audio setting enables both audio sources")
+    func legacyRecordAudioSettingEnablesBothAudioSources() throws {
+        let data = Data("""
+        {
+            "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+            "recordAudio": true
+        }
+        """.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(settings.recordSystemAudio)
+        #expect(settings.recordAudio)
+    }
+
+    @Test("system and microphone audio settings decode independently")
+    func systemAndMicrophoneAudioSettingsDecodeIndependently() throws {
+        let data = Data("""
+        {
+            "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+            "recordSystemAudio": true,
+            "recordAudio": false
+        }
+        """.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(settings.recordSystemAudio)
+        #expect(!settings.recordAudio)
     }
 
     @Test("notch surface settings validate auto collapse timing")

@@ -430,10 +430,6 @@ private struct WebMCluster {
     var firstVideoKeyframeTimecode: Int64?
 
     mutating func append(block: Data, packet: WebMPacket, packetTimecode: Int64) throws {
-        guard packetTimecode >= timecode else {
-            throw WebMCodecError.muxerFailure("WebM muxer received out-of-order packets.")
-        }
-
         blocks.append(block)
         if packet.track == .video, packet.packet.isKeyFrame, firstVideoKeyframeTimecode == nil {
             firstVideoKeyframeTimecode = packetTimecode

@@ -61,14 +61,14 @@ public struct PermissionGuidanceService: Sendable {
         case .notDetermined:
             PermissionGuidance(
                 title: "Microphone Permission",
-                message: "Luxel needs Microphone permission when audio recording is enabled.",
+                message: "Luxel needs Microphone permission when microphone recording is enabled.",
                 actionTitle: "Continue",
                 action: .request
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
                 title: "Microphone Permission",
-                message: "Luxel needs Microphone permission when audio recording is enabled. "
+                message: "Luxel needs Microphone permission when microphone recording is enabled. "
                     + "Open System Settings and allow Luxel to use the microphone.",
                 actionTitle: "Open Settings",
                 action: .openSettings

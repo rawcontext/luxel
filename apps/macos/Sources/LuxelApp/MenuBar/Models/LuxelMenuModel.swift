@@ -63,7 +63,6 @@ final class LuxelMenuModel {
     @ObservationIgnored let commandLineToolInstallService: CommandLineToolInstallService
     @ObservationIgnored let errorReporter: any ErrorReporter
     @ObservationIgnored var notchPresentationState: NotchPresentationState = .collapsed
-    @ObservationIgnored var notchHoverCollapseTask: Task<Void, Never>?
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),

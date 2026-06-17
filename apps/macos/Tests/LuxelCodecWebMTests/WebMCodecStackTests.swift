@@ -49,6 +49,37 @@ struct WebMCodecStackTests {
         #expect(Int(document.segment.size) == document.segment.payloadRange.count)
     }
 
+    @Test("media exporter writes a WebM fixture clip with audio")
+    func mediaExporterWritesWebMFixtureClipWithAudio() async throws {
+        let outputURL = temporaryWebMURL()
+        defer {
+            try? FileManager.default.removeItem(at: outputURL)
+        }
+
+        let request = try ExportRequest(
+            inputFileURL: fixtureURL("input@2x.mp4"),
+            format: .webm,
+            pixelSize: PixelSize(width: 320, height: 180),
+            frameRate: FrameRate(60),
+            timeRange: TimeRange(start: 0, end: 2.2),
+            shouldMute: false,
+            shouldCrop: false
+        )
+
+        let exported = try await WebMMediaExporter().export(request, to: outputURL)
+        let data = try Data(contentsOf: outputURL)
+
+        #expect(exported.fileURL == outputURL)
+        #expect(exported.format == .webm)
+        #expect(!exported.shouldMute)
+        #expect(data.contains(Data("V_VP9".utf8)))
+        #expect(data.contains(Data("A_OPUS".utf8)))
+
+        let document = try WebMTestDocument(data: data)
+        try assertTracks(in: document, includeAudio: true)
+        try assertCuesResolveToClusters(in: document)
+    }
+
     @Test("codec adapter registration exposes WebM")
     func codecAdapterRegistrationExposesWebM() throws {
         let registry = try CodecAdapterRegistry(registrations: [
@@ -213,6 +244,23 @@ struct WebMCodecStackTests {
         FileManager.default.temporaryDirectory
             .appending(path: UUID().uuidString)
             .appendingPathExtension("webm")
+    }
+
+    private func fixtureURL(_ fileName: String) throws -> URL {
+        try packageRootURL()
+            .appending(path: "Tests/Fixtures")
+            .appending(path: fileName)
+    }
+
+    private func packageRootURL() throws -> URL {
+        var url = URL(fileURLWithPath: #filePath)
+        while url.lastPathComponent != "Tests" {
+            let next = url.deletingLastPathComponent()
+            try #require(next.path != url.path)
+            url = next
+        }
+
+        return url.deletingLastPathComponent()
     }
 
     private func fakeVideoPacket(index: Int, byteCount: Int, keyframeInterval: Int) throws -> EncodedPacket {
