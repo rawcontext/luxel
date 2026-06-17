@@ -213,7 +213,7 @@ struct AutomationCommandTests {
             settings: settings,
             context: AutomationPolicyContext()
         ) == .confirm(AutomationPolicyPrompt(
-            title: "Allow URL Automation?",
+            title: "Allow Automation Request?",
             message: "Another app wants to start a screen recording."
         )))
         #expect(AutomationPolicy.evaluate(
@@ -221,7 +221,7 @@ struct AutomationCommandTests {
             settings: settings,
             context: AutomationPolicyContext(hasActiveRecording: false)
         ) == .confirm(AutomationPolicyPrompt(
-            title: "Allow URL Automation?",
+            title: "Allow Automation Request?",
             message: "Another app wants to toggle recording."
         )))
     }
@@ -240,7 +240,7 @@ struct AutomationCommandTests {
         )
 
         #expect(decision == .confirm(AutomationPolicyPrompt(
-            title: "Allow URL Automation?",
+            title: "Allow Automation Request?",
             message: "Terminal wants to start a screen recording."
         )))
     }

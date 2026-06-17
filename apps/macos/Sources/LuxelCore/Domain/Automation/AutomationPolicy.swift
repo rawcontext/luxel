@@ -60,7 +60,7 @@ public enum AutomationPolicy {
     ) -> AutomationPolicyPrompt {
         let callerName = context.callerDisplayName ?? "Another app"
         return AutomationPolicyPrompt(
-            title: "Allow URL Automation?",
+            title: "Allow Automation Request?",
             message: "\(callerName) wants to \(command.actionDescription)."
         )
     }

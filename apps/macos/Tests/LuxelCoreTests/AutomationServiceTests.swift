@@ -17,7 +17,7 @@ struct AutomationServiceTests {
         )
 
         #expect(result == .requiresConfirmation(AutomationPolicyPrompt(
-            title: "Allow URL Automation?",
+            title: "Allow Automation Request?",
             message: "Another app wants to start a screen recording."
         )))
         #expect(executor.calls.isEmpty)
@@ -39,7 +39,7 @@ struct AutomationServiceTests {
         )
 
         #expect(result == .requiresConfirmation(AutomationPolicyPrompt(
-            title: "Allow URL Automation?",
+            title: "Allow Automation Request?",
             message: "Terminal wants to capture a screenshot."
         )))
         #expect(executor.calls.isEmpty)

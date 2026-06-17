@@ -48,7 +48,6 @@ extension LuxelMenuModel {
         if alwaysAllow,
            let callerID = automationPrompt.context.callerID,
            !settings.urlAutomationGrants.contains(callerID) {
-            settings.allowURLAutomation = true
             settings.urlAutomationGrants.append(callerID)
             saveSettings()
         }
