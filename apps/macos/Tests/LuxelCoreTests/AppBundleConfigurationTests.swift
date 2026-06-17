@@ -11,7 +11,7 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundleDisplayName"] as? String == "Luxel")
         #expect(plist["CFBundleExecutable"] as? String == "Luxel")
         #expect(plist["CFBundleIdentifier"] as? String == "media.luxel.app")
-        #expect(plist["CFBundleShortVersionString"] as? String == "0.1.0")
+        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.0")
         #expect(plist["CFBundleVersion"] as? String == "1")
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
         #expect(plist["LSMinimumSystemVersion"] as? String == "26.0")
@@ -44,6 +44,14 @@ struct AppBundleConfigurationTests {
         #expect(entitlements["com.apple.security.device.camera"] as? Bool == true)
         #expect(entitlements["com.apple.security.files.user-selected.read-write"] == nil)
         #expect(entitlements["com.apple.security.get-task-allow"] == nil)
+    }
+
+    @Test("Mac App Store entitlements allow sandboxed network client access")
+    func macAppStoreEntitlementsAllowSandboxedNetworkClientAccess() throws {
+        let entitlements = try readPlist("Configuration/Luxel/Luxel.MacAppStore.entitlements")
+
+        #expect(entitlements["com.apple.security.app-sandbox"] as? Bool == true)
+        #expect(entitlements["com.apple.security.network.client"] as? Bool == true)
     }
 
     @Test("build script bundles third-party license ledger as app resource")
