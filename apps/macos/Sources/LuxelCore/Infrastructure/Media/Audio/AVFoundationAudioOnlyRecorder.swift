@@ -3,9 +3,12 @@ import Foundation
 
 public final class AVFoundationAudioOnlyRecorder: AudioRecorder, @unchecked Sendable {
     private let lock = NSLock()
+    private let audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
     private var activeSession: AudioOnlyCaptureSession?
 
-    public init() {}
+    public init(audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)? = nil) {
+        self.audioLevelHandler = audioLevelHandler
+    }
 
     public func startRecording(_ request: AudioRecordingRequest) async throws {
         guard request.audio.capturesMicrophone, !request.audio.capturesSystemAudio else {
@@ -16,7 +19,11 @@ public final class AVFoundationAudioOnlyRecorder: AudioRecorder, @unchecked Send
             throw AVFoundationAudioOnlyRecorderError.alreadyRecording
         }
 
-        let session = try AudioOnlyCaptureSession(request: request)
+        let session = try AudioOnlyCaptureSession(
+            request: request,
+            audioLevelHandler: audioLevelHandler
+        )
+        audioLevelHandler?(.silent)
         lock.withLock {
             activeSession = session
         }
@@ -35,6 +42,7 @@ public final class AVFoundationAudioOnlyRecorder: AudioRecorder, @unchecked Send
         }
 
         try await session.stop()
+        audioLevelHandler?(.silent)
     }
 }
 
@@ -53,7 +61,10 @@ private final class AudioOnlyCaptureSession: @unchecked Sendable {
     private let queue = DispatchQueue(label: "media.luxel.audio-only-recorder")
     private let writerDelegate: AudioWriterDelegate
 
-    init(request: AudioRecordingRequest) throws {
+    init(
+        request: AudioRecordingRequest,
+        audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
+    ) throws {
         try FileManager.default.createDirectory(
             at: request.outputFileURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
@@ -69,7 +80,11 @@ private final class AudioOnlyCaptureSession: @unchecked Sendable {
             throw AVFoundationAudioOnlyRecorderError.writerSetupFailed("Cannot add audio input")
         }
         writer.add(writerInput)
-        writerDelegate = AudioWriterDelegate(writer: writer, writerInput: writerInput)
+        writerDelegate = AudioWriterDelegate(
+            writer: writer,
+            writerInput: writerInput,
+            audioLevelHandler: audioLevelHandler
+        )
 
         guard let device = Self.captureDevice(deviceID: request.audio.microphoneDeviceID) else {
             throw AVFoundationAudioOnlyRecorderError.unsupportedAudioSource
@@ -148,11 +163,17 @@ private final class AudioWriterDelegate: NSObject, AVCaptureAudioDataOutputSampl
     private let lock = NSLock()
     private let writer: AVAssetWriter
     private let writerInput: AVAssetWriterInput
+    private let audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
     private var didStartWriting = false
 
-    init(writer: AVAssetWriter, writerInput: AVAssetWriterInput) {
+    init(
+        writer: AVAssetWriter,
+        writerInput: AVAssetWriterInput,
+        audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
+    ) {
         self.writer = writer
         self.writerInput = writerInput
+        self.audioLevelHandler = audioLevelHandler
     }
 
     func captureOutput(
@@ -172,6 +193,10 @@ private final class AudioWriterDelegate: NSObject, AVCaptureAudioDataOutputSampl
             }
 
             writerInput.append(sampleBuffer)
+        }
+
+        if let sample = CMSampleBufferAudioLevelSampler.sample(from: sampleBuffer) {
+            audioLevelHandler?(sample)
         }
     }
 

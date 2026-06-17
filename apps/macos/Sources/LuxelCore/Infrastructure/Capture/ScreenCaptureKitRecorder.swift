@@ -6,6 +6,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
     private let configurationFactory: ScreenRecordingConfigurationFactory
     private let segmentComposer: AVFoundationRecordingSegmentComposer
     private let fileManager: FileManager
+    private let audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
     private let contentFilterTimeout: Duration = .seconds(10)
     private let streamStartTimeout: Duration = .seconds(10)
     private let streamStopTimeout: Duration = .seconds(5)
@@ -22,12 +23,14 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         contentFilterProvider: any ScreenCaptureKitContentFilterProvider = ShareableContentFilterProvider(),
         configurationFactory: ScreenRecordingConfigurationFactory = ScreenRecordingConfigurationFactory(),
         segmentComposer: AVFoundationRecordingSegmentComposer = AVFoundationRecordingSegmentComposer(),
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)? = nil
     ) {
         self.contentFilterProvider = contentFilterProvider
         self.configurationFactory = configurationFactory
         self.segmentComposer = segmentComposer
         self.fileManager = fileManager
+        self.audioLevelHandler = audioLevelHandler
         super.init()
     }
 
@@ -50,7 +53,10 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
             ),
             delegate: nil
         )
-        let outputWriter = ScreenCaptureKitRecordingWriter(fileManager: fileManager)
+        let outputWriter = ScreenCaptureKitRecordingWriter(
+            fileManager: fileManager,
+            audioLevelHandler: audioLevelHandler
+        )
 
         self.stream = stream
         self.request = resolvedRequest

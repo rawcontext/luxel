@@ -57,10 +57,46 @@ struct NotchActivityPresentationTests {
         #expect(viewModel.collapsedTitle == session.menuBarTitle)
         #expect(viewModel.expandedDetail == "Elapsed 1:42")
         #expect(viewModel.leadingEarText == "1:42")
-        #expect(viewModel.trailingEarText == "Mic 65%")
+        #expect(viewModel.trailingEarText == "Audio 65%")
         #expect(viewModel.audioLevel == AudioLevelSample(rms: 0.3, peak: 0.65))
         #expect(viewModel.actions.map(\.id) == [
-            .stopRecording
+            .stopRecording,
+            .recordArea,
+            .screenshot,
+            .openSettings
+        ])
+        #expect(viewModel.actions.map(\.systemImage) == [
+            "stop.fill",
+            "viewfinder",
+            "camera",
+            "gearshape"
+        ])
+    }
+
+    @Test("recording replaces the initiating notch action with stop")
+    func recordingReplacesTheInitiatingNotchActionWithStop() {
+        let activity = NotchActivity.recording(
+            elapsed: 12,
+            audioLevel: AudioLevelSample(rms: 0.2, peak: 0.4),
+            muted: false
+        )
+
+        let viewModel = NotchActivityPresentation.viewModel(
+            for: activity,
+            recordingActionToReplace: .recordArea
+        )
+
+        #expect(viewModel.actions.map(\.id) == [
+            .recordFullscreen,
+            .stopRecording,
+            .screenshot,
+            .openSettings
+        ])
+        #expect(viewModel.actions.map(\.systemImage) == [
+            "rectangle.dashed",
+            "stop.fill",
+            "camera",
+            "gearshape"
         ])
     }
 
@@ -72,7 +108,7 @@ struct NotchActivityPresentationTests {
 
         #expect(viewModel.audioLevel == nil)
         #expect(viewModel.trailingEarText == "Muted")
-        #expect(viewModel.actions.map(\.id) == [.stopRecording])
+        #expect(viewModel.actions.map(\.id) == [.stopRecording, .recordArea, .screenshot, .openSettings])
     }
 
     @Test("paused mirrors session timer and exposes resume stop discard")
@@ -85,7 +121,7 @@ struct NotchActivityPresentationTests {
 
         #expect(viewModel.collapsedTitle == session.menuBarTitle)
         #expect(viewModel.expandedDetail == "Paused at 1:02:02")
-        #expect(viewModel.actions.map(\.id) == [.stopRecording])
+        #expect(viewModel.actions.map(\.id) == [.stopRecording, .recordArea, .screenshot, .openSettings])
     }
 
     @Test("replay buffering exposes coverage progress and actions")

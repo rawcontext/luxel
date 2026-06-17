@@ -93,7 +93,10 @@ public enum NotchActivityActionRole: String, Codable, Equatable, Sendable {
 }
 
 public enum NotchActivityPresentation {
-    public static func viewModel(for activity: NotchActivity) -> NotchActivityViewModel {
+    public static func viewModel(
+        for activity: NotchActivity,
+        recordingActionToReplace: NotchActivityActionID? = nil
+    ) -> NotchActivityViewModel {
         switch activity {
         case .dormant:
             dormantViewModel
@@ -102,9 +105,14 @@ public enum NotchActivityPresentation {
         case .arming(let remaining):
             armingViewModel(remaining: remaining)
         case .recording(let elapsed, let audioLevel, let muted):
-            recordingViewModel(elapsed: elapsed, audioLevel: audioLevel, isMuted: muted)
+            recordingViewModel(
+                elapsed: elapsed,
+                audioLevel: audioLevel,
+                isMuted: muted,
+                actionToReplace: recordingActionToReplace
+            )
         case .paused(let elapsed):
-            pausedViewModel(elapsed: elapsed)
+            pausedViewModel(elapsed: elapsed, actionToReplace: recordingActionToReplace)
         case .replayBuffering(let coverage):
             replayBufferingViewModel(coverage: coverage)
         case .processing:
@@ -137,14 +145,18 @@ public enum NotchActivityPresentation {
             collapsedSystemImage: "record.circle",
             expandedTitle: "Luxel",
             expandedDetail: "Ready",
-            actions: [
-                action(.recordFullscreen, "Record Screen", "rectangle.dashed"),
-                action(.recordArea, "Record Area", "viewfinder"),
-                action(.screenshot, "Screenshot", "camera"),
-                action(.openSettings, "Settings", "gearshape")
-            ],
+            actions: idleHoverActions,
             accessibilityLabel: "Luxel ready"
         )
+    }
+
+    private static var idleHoverActions: [NotchActivityActionDescriptor] {
+        [
+            action(.recordFullscreen, "Record Screen", "rectangle.dashed"),
+            action(.recordArea, "Record Area", "viewfinder"),
+            action(.screenshot, "Screenshot", "camera"),
+            action(.openSettings, "Settings", "gearshape")
+        ]
     }
 
     private static func armingViewModel(remaining: TimeInterval) -> NotchActivityViewModel {
@@ -164,7 +176,8 @@ public enum NotchActivityPresentation {
     private static func recordingViewModel(
         elapsed: TimeInterval,
         audioLevel: AudioLevelSample,
-        isMuted: Bool
+        isMuted: Bool,
+        actionToReplace: NotchActivityActionID?
     ) -> NotchActivityViewModel {
         let elapsedText = elapsedTimeText(elapsed)
         return NotchActivityViewModel(
@@ -173,16 +186,17 @@ public enum NotchActivityPresentation {
             expandedTitle: "Recording",
             expandedDetail: "Elapsed \(elapsedText)",
             leadingEarText: elapsedText,
-            trailingEarText: isMuted ? "Muted" : "Mic \(levelPercent(audioLevel.peak))",
+            trailingEarText: isMuted ? "Muted" : "Audio \(levelPercent(audioLevel.peak))",
             audioLevel: isMuted ? nil : audioLevel,
-            actions: [
-                action(.stopRecording, "Stop", "stop.circle.fill", role: .destructive)
-            ],
+            actions: recordingActions(replacing: actionToReplace),
             accessibilityLabel: "Luxel recording, elapsed \(elapsedText)"
         )
     }
 
-    private static func pausedViewModel(elapsed: TimeInterval) -> NotchActivityViewModel {
+    private static func pausedViewModel(
+        elapsed: TimeInterval,
+        actionToReplace: NotchActivityActionID?
+    ) -> NotchActivityViewModel {
         let elapsedText = elapsedTimeText(elapsed)
         return NotchActivityViewModel(
             collapsedTitle: elapsedText,
@@ -191,11 +205,24 @@ public enum NotchActivityPresentation {
             expandedDetail: "Paused at \(elapsedText)",
             leadingEarText: elapsedText,
             trailingEarText: "Paused",
-            actions: [
-                action(.stopRecording, "Stop", "stop.circle.fill", role: .destructive)
-            ],
+            actions: recordingActions(replacing: actionToReplace),
             accessibilityLabel: "Luxel recording paused at \(elapsedText)"
         )
+    }
+
+    private static func recordingActions(
+        replacing actionID: NotchActivityActionID?
+    ) -> [NotchActivityActionDescriptor] {
+        let fallbackActionID = NotchActivityActionID.recordFullscreen
+        let requestedActionID = actionID ?? fallbackActionID
+        let replacementActionID = idleHoverActions.contains { $0.id == requestedActionID }
+            ? requestedActionID
+            : fallbackActionID
+        let stopAction = action(.stopRecording, "Stop Recording", "stop.fill", role: .destructive)
+
+        return idleHoverActions.map { action in
+            action.id == replacementActionID ? stopAction : action
+        }
     }
 
     private static func replayBufferingViewModel(

@@ -34,8 +34,7 @@ extension LuxelMenuModel {
     }
 
     var shouldShowRecordingAudioLevelMeter: Bool {
-        recordingState.activeRecording?.options.audio.capturesMicrophone == true
-            && microphoneStatus == .authorized
+        recordingState.activeRecording?.options.audio.capturesAudio == true
     }
 
     var canPauseOrResumeRecording: Bool {

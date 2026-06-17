@@ -9,7 +9,10 @@ private let luxelRecordingLogger = Logger(
 
 @MainActor
 extension LuxelMenuModel {
-    func startRecording(from draft: CaptureSelectionDraft) async {
+    func startRecording(
+        from draft: CaptureSelectionDraft,
+        notchRecordingActionID: NotchActivityActionID? = nil
+    ) async {
         do {
             let target = try draft.captureTarget
             let pixelSize = try draft.pixelSize
@@ -17,14 +20,19 @@ extension LuxelMenuModel {
                 target: target,
                 pixelSize: pixelSize,
                 captureKind: .standard,
-                countdownSeconds: cropperCountdownSeconds
+                countdownSeconds: cropperCountdownSeconds,
+                notchRecordingActionID: notchRecordingActionID
             )
         } catch {
             recordingState = .failed(errorMessage(error))
         }
     }
 
-    func startQuickRecording(from draft: CaptureSelectionDraft, presetID: UUID) async {
+    func startQuickRecording(
+        from draft: CaptureSelectionDraft,
+        presetID: UUID,
+        notchRecordingActionID: NotchActivityActionID? = nil
+    ) async {
         do {
             let target = try draft.captureTarget
             let pixelSize = try draft.pixelSize
@@ -32,7 +40,8 @@ extension LuxelMenuModel {
                 target: target,
                 pixelSize: pixelSize,
                 captureKind: .quick(presetID: presetID),
-                countdownSeconds: cropperCountdownSeconds
+                countdownSeconds: cropperCountdownSeconds,
+                notchRecordingActionID: notchRecordingActionID
             )
         } catch {
             recordingState = .failed(errorMessage(error))
@@ -57,7 +66,10 @@ extension LuxelMenuModel {
         )
     }
 
-    func startFullscreenRecording(entryPoint: RecordingStartEntryPoint = .recordFullscreenShortcut) async {
+    func startFullscreenRecording(
+        entryPoint: RecordingStartEntryPoint = .recordFullscreenShortcut,
+        notchRecordingActionID: NotchActivityActionID? = nil
+    ) async {
         guard let displayTarget = fullscreenCaptureTarget else {
             recordingState = .failed("No display target available")
             return
@@ -71,11 +83,15 @@ extension LuxelMenuModel {
             target: displayTarget.target,
             pixelSize: displayTarget.pixelSize,
             captureKind: .standard,
-            latencySpan: latencySpan
+            latencySpan: latencySpan,
+            notchRecordingActionID: notchRecordingActionID
         )
     }
 
-    func startActiveWindowRecording(entryPoint: RecordingStartEntryPoint = .recordActiveWindowShortcut) async {
+    func startActiveWindowRecording(
+        entryPoint: RecordingStartEntryPoint = .recordActiveWindowShortcut,
+        notchRecordingActionID: NotchActivityActionID? = nil
+    ) async {
         guard canSelectArea else {
             recordingState = .failed("No active window target available")
             return
@@ -97,7 +113,8 @@ extension LuxelMenuModel {
             target: windowTarget.target,
             pixelSize: windowTarget.pixelSize,
             captureKind: .standard,
-            latencySpan: latencySpan
+            latencySpan: latencySpan,
+            notchRecordingActionID: notchRecordingActionID
         )
     }
 
@@ -261,7 +278,8 @@ extension LuxelMenuModel {
         captureKind: QuickCaptureKind,
         countdownSeconds: Int? = nil,
         outputDirectory: URL? = nil,
-        latencySpan: RecordingStartLatencySpan? = nil
+        latencySpan: RecordingStartLatencySpan? = nil,
+        notchRecordingActionID: NotchActivityActionID? = nil
     ) async {
         guard canBeginRecordingStart else {
             if let latencySpan {
@@ -284,7 +302,8 @@ extension LuxelMenuModel {
             await startRecording(
                 preparedRequest.request,
                 noticeMessage: preparedRequest.noticeMessage,
-                latencySpan: latencySpan
+                latencySpan: latencySpan,
+                notchRecordingActionID: notchRecordingActionID
             )
         } catch {
             recordingState = .failed(errorMessage(error))
@@ -311,7 +330,8 @@ extension LuxelMenuModel {
     private func startRecording(
         _ request: RecordingRequest,
         noticeMessage: String? = nil,
-        latencySpan: RecordingStartLatencySpan? = nil
+        latencySpan: RecordingStartLatencySpan? = nil,
+        notchRecordingActionID: NotchActivityActionID? = nil
     ) async {
         guard canBeginRecordingStart else {
             if let latencySpan {
@@ -322,6 +342,7 @@ extension LuxelMenuModel {
 
         recordingNoticeMessage = noticeMessage
         recordingActionErrorMessage = nil
+        activeNotchRecordingActionID = notchRecordingActionID
         recordingState = .starting
         setCameraPreviewHoverControlsEnabled(false)
 

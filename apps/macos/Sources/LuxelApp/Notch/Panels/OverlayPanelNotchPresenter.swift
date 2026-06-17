@@ -529,25 +529,34 @@ private struct NotchSurfaceView: View {
         }
         .frame(maxWidth: .infinity, alignment: .center)
     }
+
     private func actionForeground(_ action: NotchActivityActionDescriptor) -> Color {
+        if action.id == .stopRecording {
+            return .white
+        }
+
         switch action.role {
         case .destructive:
-            .red
+            return .red
         case .primary:
-            .black
+            return .black
         case .standard:
-            .white
+            return .white
         }
     }
 
     private func actionBackground(_ action: NotchActivityActionDescriptor) -> Color {
+        if action.id == .stopRecording {
+            return .red
+        }
+
         switch action.role {
         case .destructive:
-            .red.opacity(0.16)
+            return .red.opacity(0.16)
         case .primary:
-            .white
+            return .white
         case .standard:
-            .white.opacity(0.12)
+            return .white.opacity(0.12)
         }
     }
 

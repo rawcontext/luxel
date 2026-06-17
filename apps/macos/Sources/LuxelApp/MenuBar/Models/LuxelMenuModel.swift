@@ -19,7 +19,13 @@ final class LuxelMenuModel {
     var captureTargets: [CaptureTargetOption] = []
     var selectedCaptureTargetID: String?
     var captureTargetStatusMessage: String?
-    var recordingState: RecordingMenuState = .idle
+    var recordingState: RecordingMenuState = .idle {
+        didSet {
+            if !recordingState.keepsActiveNotchRecordingAction {
+                activeNotchRecordingActionID = nil
+            }
+        }
+    }
     var recordingNoticeMessage: String?
     var recordingActionErrorMessage: String?
     var quickExportProgress: QuickExportProgressPresentation?
@@ -43,6 +49,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let cameraDeviceService: CameraDeviceService
     @ObservationIgnored let cameraPreviewPanelController: CameraPreviewPanelController
     @ObservationIgnored let audioLevelMonitorFactory: () -> any AudioLevelMonitor
+    @ObservationIgnored let recordingAudioLevelMonitorFactory: () -> any AudioLevelMonitor
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored let bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker
     @ObservationIgnored let quickExportService: QuickExportService
@@ -63,6 +70,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let commandLineToolInstallService: CommandLineToolInstallService
     @ObservationIgnored let errorReporter: any ErrorReporter
     @ObservationIgnored var notchPresentationState: NotchPresentationState = .collapsed
+    @ObservationIgnored var activeNotchRecordingActionID: NotchActivityActionID?
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
@@ -109,8 +117,10 @@ final class LuxelMenuModel {
         errorReporter: any ErrorReporter = NoopErrorReporter(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
         recorder: (any CaptureRecorder)? = nil,
-        audioRecorder: any AudioRecorder = LuxelCompositionRoot.audioRecorder()
+        audioRecorder: (any AudioRecorder)? = nil
     ) {
+        let recordingAudioLevelBroadcaster = AudioLevelBroadcaster()
+
         self.settingsStore = settingsStore
         self.permissionClient = permissionClient
         self.launchAtLoginService = launchAtLoginService
@@ -122,6 +132,9 @@ final class LuxelMenuModel {
         self.cameraDeviceService = cameraDeviceService
         self.cameraPreviewPanelController = cameraPreviewPanelController
         self.audioLevelMonitorFactory = audioLevelMonitorFactory
+        self.recordingAudioLevelMonitorFactory = {
+            recordingAudioLevelBroadcaster
+        }
         self.fileWorkflowService = fileWorkflowService
         self.bookmarkedDirectoryPicker = bookmarkedDirectoryPicker
         self.quickExportService = quickExportService
@@ -147,14 +160,21 @@ final class LuxelMenuModel {
         let recordingOutputFinalizer = LuxelCompositionRoot.recordingOutputFinalizer()
         self.recordingLifecycleService = RecordingLifecycleService(
             recorder: recorder ?? LuxelCompositionRoot.captureRecorder(
-                exclusionRegistry: captureExclusionRegistry
+                exclusionRegistry: captureExclusionRegistry,
+                audioLevelHandler: { sample in
+                    recordingAudioLevelBroadcaster.publish(sample)
+                }
             ),
             history: recordingHistoryService,
             userNotifier: UserNotificationsNotifier(),
             outputFinalizer: recordingOutputFinalizer
         )
         self.audioRecordingLifecycleService = AudioRecordingLifecycleService(
-            recorder: audioRecorder,
+            recorder: audioRecorder ?? LuxelCompositionRoot.audioRecorder(
+                audioLevelHandler: { sample in
+                    recordingAudioLevelBroadcaster.publish(sample)
+                }
+            ),
             history: recordingHistoryService,
             outputFinalizer: recordingOutputFinalizer
         )

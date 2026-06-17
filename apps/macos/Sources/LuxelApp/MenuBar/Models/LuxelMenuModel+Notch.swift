@@ -30,6 +30,7 @@ extension LuxelMenuModel {
             displays: notchDisplays,
             preferences: settings.notchSurfacePreferences,
             presentationState: notchPresentationState,
+            recordingActionToReplace: activeNotchRecordingActionID,
             reduceMotion: reduceMotion
         )
     }
@@ -92,10 +93,10 @@ extension LuxelMenuModel {
         case .recordArea:
             showAreaCapturePicker()
         case .recordWindow:
-            await startActiveWindowRecording()
+            await startActiveWindowRecording(notchRecordingActionID: .recordWindow)
         case .recordFullscreen:
             await refreshCaptureTargets()
-            await startFullscreenRecording()
+            await startFullscreenRecording(notchRecordingActionID: .recordFullscreen)
         case .screenshot:
             showScreenshotCapturePicker()
         case .openSettings:
@@ -151,7 +152,7 @@ extension LuxelMenuModel {
             return .recording(
                 elapsed: clock.elapsed(at: now),
                 audioLevel: audioLevelSample,
-                muted: !recording.options.audio.capturesMicrophone
+                muted: !recording.options.audio.capturesAudio
             )
         case .paused(_, let clock):
             return .paused(elapsed: clock.elapsed(at: now))

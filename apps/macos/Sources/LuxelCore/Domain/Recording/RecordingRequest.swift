@@ -24,6 +24,10 @@ public enum RecordingAudioMode: Codable, Equatable, Sendable {
         }
     }
 
+    public var capturesAudio: Bool {
+        capturesSystemAudio || capturesMicrophone
+    }
+
     public var microphoneDeviceID: String? {
         switch self {
         case .microphone(let deviceID), .systemAndMicrophone(let deviceID):

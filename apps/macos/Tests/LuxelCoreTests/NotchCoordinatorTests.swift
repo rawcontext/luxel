@@ -49,6 +49,27 @@ struct NotchCoordinatorTests {
         #expect(result.update?.motion == .reduced)
     }
 
+    @Test("present passes recording action replacement into view model")
+    func presentPassesRecordingActionReplacementIntoViewModel() async throws {
+        let presenter = SpyNotchPresenter()
+        let coordinator = NotchCoordinator(presenter: presenter)
+        let recording = NotchActivity.recording(elapsed: 5, audioLevel: .silent, muted: false)
+
+        let result = await coordinator.present(
+            activities: [recording],
+            displays: [try builtInNotchedDisplay()],
+            presentationState: .expanded,
+            recordingActionToReplace: .recordArea
+        )
+
+        #expect(result.update?.viewModel.actions.map(\.id) == [
+            .recordFullscreen,
+            .stopRecording,
+            .screenshot,
+            .openSettings
+        ])
+    }
+
     @Test("present releases presenter when notch is unavailable")
     func presentReleasesPresenterWhenNotchIsUnavailable() async throws {
         let presenter = SpyNotchPresenter()

@@ -18,6 +18,21 @@ public struct AudioLevelSample: Equatable, Sendable {
         )
     }
 
+    public static func combined(_ samples: [AudioLevelSample]) -> AudioLevelSample {
+        guard !samples.isEmpty else {
+            return .silent
+        }
+
+        let rms = sqrt(samples.reduce(0) { total, sample in
+            total + (sample.rms * sample.rms)
+        })
+        let peak = samples.reduce(0) { total, sample in
+            total + sample.peak
+        }
+
+        return AudioLevelSample(rms: rms, peak: peak)
+    }
+
     private static func linearPower(decibels: Float) -> Double {
         guard decibels.isFinite else {
             return 0

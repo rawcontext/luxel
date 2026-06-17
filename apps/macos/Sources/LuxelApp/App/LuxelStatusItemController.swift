@@ -240,7 +240,7 @@ private extension LuxelStatusItemController {
 
     private func refreshRecordingAudioLevelMonitoring() {
         guard let activeRecording = model.recordingState.activeRecording,
-              activeRecording.options.audio.capturesMicrophone else {
+              activeRecording.options.audio.capturesAudio else {
             stopRecordingAudioLevelMonitoring()
             return
         }
@@ -248,7 +248,7 @@ private extension LuxelStatusItemController {
         let taskID = [
             model.recordingAudioLevelMonitorTaskID,
             activeRecording.fileURL.path,
-            activeRecording.options.audio.microphoneDeviceID ?? AudioInputDeviceID.systemDefault
+            String(describing: activeRecording.options.audio)
         ].joined(separator: ":")
         guard recordingAudioLevelTaskID != taskID else {
             return
@@ -360,14 +360,17 @@ private extension LuxelStatusItemController {
     }
 
     private func showNotchAreaCapturePicker() {
-        showNotchCapturePicker(initialMode: .video)
+        showNotchCapturePicker(initialMode: .video, recordingActionID: .recordArea)
     }
 
     private func showNotchScreenshotCapturePicker() {
-        showNotchCapturePicker(initialMode: .photo)
+        showNotchCapturePicker(initialMode: .photo, recordingActionID: nil)
     }
 
-    private func showNotchCapturePicker(initialMode: LuxelCropperMode) {
+    private func showNotchCapturePicker(
+        initialMode: LuxelCropperMode,
+        recordingActionID: NotchActivityActionID?
+    ) {
         model.refreshCameraDevices()
         cropperPanelController.show(
             initialMode: initialMode,
@@ -414,12 +417,19 @@ private extension LuxelStatusItemController {
             },
             onQuickSelect: { [weak model] draft, presetID in
                 Task {
-                    await model?.startQuickRecording(from: draft, presetID: presetID)
+                    await model?.startQuickRecording(
+                        from: draft,
+                        presetID: presetID,
+                        notchRecordingActionID: recordingActionID
+                    )
                 }
             },
             onSelect: { [weak model] draft in
                 Task {
-                    await model?.startRecording(from: draft)
+                    await model?.startRecording(
+                        from: draft,
+                        notchRecordingActionID: recordingActionID
+                    )
                 }
             }
         )
@@ -812,7 +822,6 @@ private extension LuxelStatusItemController {
     private func setRecordingFrame() {
         let presentation = model.recordingPresentation()
         let frame = makeActiveRecordingFrame(
-            pulse: recordingPulse(for: recordingFrameIndex),
             elapsedText: presentation.menuBarTitle,
             audioLevel: model.audioLevelSample
         )
@@ -843,13 +852,7 @@ private extension LuxelStatusItemController {
         return image
     }
 
-    private func recordingPulse(for frame: Int) -> Double {
-        let phase = Double(frame) / 18.0
-        return 0.5 - (cos(phase * 2.0 * .pi) * 0.5)
-    }
-
     private func makeActiveRecordingFrame(
-        pulse: Double,
         elapsedText: String,
         audioLevel: AudioLevelSample
     ) -> NSImage {
@@ -860,7 +863,6 @@ private extension LuxelStatusItemController {
 
         drawActiveRecordingFrame(
             in: NSRect(origin: .zero, size: size),
-            pulse: pulse,
             elapsedText: elapsedText,
             audioLevel: audioLevel
         )
@@ -921,7 +923,6 @@ private extension LuxelStatusItemController {
 
     private func drawActiveRecordingFrame(
         in rect: NSRect,
-        pulse: Double,
         elapsedText: String,
         audioLevel: AudioLevelSample
     ) {
@@ -957,7 +958,6 @@ private extension LuxelStatusItemController {
 
         drawWaveform(
             in: NSRect(x: 35, y: 4, width: waveformWidth, height: 16),
-            pulse: pulse,
             audioLevel: audioLevel
         )
 
@@ -975,20 +975,18 @@ private extension LuxelStatusItemController {
 
     private func drawWaveform(
         in rect: NSRect,
-        pulse: Double,
         audioLevel: AudioLevelSample
     ) {
         let bars: [CGFloat] = [
             0.30, 0.72, 0.42, 0.88, 0.56, 0.78, 0.34,
             0.64, 0.92, 0.50, 0.76, 0.44, 0.70, 0.36
         ]
-        let level = max(0.18, CGFloat(audioLevel.peak))
-        let animatedLevel = min(1, level + (CGFloat(pulse) * 0.18))
+        let level = min(1, max(CGFloat(audioLevel.rms), CGFloat(audioLevel.peak)))
         let barWidth: CGFloat = 2
         let step = rect.width / CGFloat(bars.count)
 
         for (index, bar) in bars.enumerated() {
-            let height = max(3, rect.height * min(1, bar * (0.55 + animatedLevel)))
+            let height = max(2, rect.height * min(1, bar * (0.2 + level)))
             let barX = rect.minX + (CGFloat(index) * step) + ((step - barWidth) / 2)
             let barY = rect.midY - (height / 2)
 

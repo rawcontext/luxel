@@ -13,6 +13,11 @@ extension LuxelMenuModel {
     }
 
     func watchAudioLevels(onlyWhenRecording: Bool = false) async {
+        if onlyWhenRecording {
+            await watchRecordingAudioLevels()
+            return
+        }
+
         let audioLevelMonitor = audioLevelMonitorFactory()
         defer {
             audioLevelMonitor.stop()
@@ -24,23 +29,30 @@ extension LuxelMenuModel {
             return
         }
 
-        let microphoneDeviceID: String?
-        if onlyWhenRecording {
-            guard let activeRecording = recordingState.activeRecording,
-                  activeRecording.options.audio.capturesMicrophone else {
-                return
-            }
-
-            microphoneDeviceID = activeRecording.options.audio.microphoneDeviceID
-        } else {
-            guard settings.recordAudio else {
-                return
-            }
-
-            microphoneDeviceID = resolveSelectedAudioInputDevice().microphoneDeviceID
+        guard settings.recordAudio else {
+            return
         }
 
+        let microphoneDeviceID = resolveSelectedAudioInputDevice().microphoneDeviceID
         for await sample in audioLevelMonitor.start(deviceID: microphoneDeviceID) {
+            audioLevelSample = sample
+        }
+    }
+
+    private func watchRecordingAudioLevels() async {
+        let audioLevelMonitor = recordingAudioLevelMonitorFactory()
+        defer {
+            audioLevelMonitor.stop()
+        }
+
+        audioLevelSample = .silent
+
+        guard let activeRecording = recordingState.activeRecording,
+              activeRecording.options.audio.capturesAudio else {
+            return
+        }
+
+        for await sample in audioLevelMonitor.start(deviceID: nil) {
             audioLevelSample = sample
         }
     }

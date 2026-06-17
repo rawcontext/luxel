@@ -7,10 +7,15 @@ final class ScreenCaptureKitRecordingWriter: NSObject, SCStreamOutput, @unchecke
     let sampleHandlerQueue = DispatchQueue(label: "media.luxel.screen-capture-kit-recording-writer")
 
     private let fileManager: FileManager
+    private let audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
     private var segment: RecordingWriterSegment?
 
-    init(fileManager: FileManager = .default) {
+    init(
+        fileManager: FileManager = .default,
+        audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)? = nil
+    ) {
         self.fileManager = fileManager
+        self.audioLevelHandler = audioLevelHandler
     }
 
     func startSegment(for request: RecordingRequest, outputFileURL: URL) async throws {
@@ -28,8 +33,10 @@ final class ScreenCaptureKitRecordingWriter: NSObject, SCStreamOutput, @unchecke
                     try? fileManager.removeItem(at: outputFileURL)
                     segment = try RecordingWriterSegment(
                         request: request,
-                        outputFileURL: outputFileURL
+                        outputFileURL: outputFileURL,
+                        audioLevelHandler: audioLevelHandler
                     )
+                    audioLevelHandler?(.silent)
                     continuation.resume()
                 } catch {
                     continuation.resume(throwing: error)
@@ -47,6 +54,7 @@ final class ScreenCaptureKitRecordingWriter: NSObject, SCStreamOutput, @unchecke
                 }
 
                 self.segment = nil
+                audioLevelHandler?(.silent)
                 segment.finish(fileManager: fileManager, continuation: continuation)
             }
         }
@@ -57,6 +65,7 @@ final class ScreenCaptureKitRecordingWriter: NSObject, SCStreamOutput, @unchecke
             sampleHandlerQueue.async { [self] in
                 segment?.cancel(fileManager: fileManager)
                 segment = nil
+                audioLevelHandler?(.silent)
                 continuation.resume()
             }
         }
@@ -81,6 +90,8 @@ private final class RecordingWriterSegment: @unchecked Sendable {
     private let videoInput: AVAssetWriterInput
     private let systemAudioInput: AVAssetWriterInput?
     private let microphoneAudioInput: AVAssetWriterInput?
+    private let audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
+    private var audioLevelMixer: RecordingAudioLevelMixer
     private var didStartWriting = false
     private var pendingError: (any Error)?
 
@@ -88,7 +99,11 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         didStartWriting
     }
 
-    init(request: RecordingRequest, outputFileURL: URL) throws {
+    init(
+        request: RecordingRequest,
+        outputFileURL: URL,
+        audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
+    ) throws {
         let writer = try AVAssetWriter(outputURL: outputFileURL, fileType: .mp4)
         let videoInput = AVAssetWriterInput(
             mediaType: .video,
@@ -109,12 +124,16 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         self.videoInput = videoInput
         self.systemAudioInput = systemAudioInput
         self.microphoneAudioInput = microphoneAudioInput
+        self.audioLevelHandler = audioLevelHandler
+        self.audioLevelMixer = RecordingAudioLevelMixer(audio: request.audio)
     }
 
     func append(_ sampleBuffer: CMSampleBuffer, outputType: SCStreamOutputType) {
         guard pendingError == nil, CMSampleBufferDataIsReady(sampleBuffer) else {
             return
         }
+
+        updateAudioLevel(sampleBuffer, outputType: outputType)
 
         let isCompleteScreenFrame = outputType == .screen && sampleBufferContainsCompleteFrame(sampleBuffer)
         if outputType == .screen, !isCompleteScreenFrame {
@@ -210,6 +229,15 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         @unknown default:
             nil
         }
+    }
+
+    private func updateAudioLevel(_ sampleBuffer: CMSampleBuffer, outputType: SCStreamOutputType) {
+        guard let sample = CMSampleBufferAudioLevelSampler.sample(from: sampleBuffer),
+              let combinedSample = audioLevelMixer.update(sample, outputType: outputType) else {
+            return
+        }
+
+        audioLevelHandler?(combinedSample)
     }
 
     private func sampleBufferContainsCompleteFrame(_ sampleBuffer: CMSampleBuffer) -> Bool {
@@ -316,6 +344,42 @@ private final class RecordingWriterSegment: @unchecked Sendable {
             AVNumberOfChannelsKey: 2,
             AVEncoderBitRateKey: 192_000
         ]
+    }
+}
+
+private struct RecordingAudioLevelMixer {
+    private let capturesSystemAudio: Bool
+    private let capturesMicrophone: Bool
+    private var systemSample = AudioLevelSample.silent
+    private var microphoneSample = AudioLevelSample.silent
+
+    init(audio: RecordingAudioMode) {
+        self.capturesSystemAudio = audio.capturesSystemAudio
+        self.capturesMicrophone = audio.capturesMicrophone
+    }
+
+    mutating func update(_ sample: AudioLevelSample, outputType: SCStreamOutputType) -> AudioLevelSample? {
+        switch outputType {
+        case .audio:
+            guard capturesSystemAudio else {
+                return nil
+            }
+            systemSample = sample
+        case .microphone:
+            guard capturesMicrophone else {
+                return nil
+            }
+            microphoneSample = sample
+        case .screen:
+            return nil
+        @unknown default:
+            return nil
+        }
+
+        return AudioLevelSample.combined([
+            capturesSystemAudio ? systemSample : nil,
+            capturesMicrophone ? microphoneSample : nil
+        ].compactMap { $0 })
     }
 }
 

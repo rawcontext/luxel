@@ -42,15 +42,19 @@ enum LuxelCompositionRoot {
     }
 
     static func captureRecorder(
-        exclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry()
+        exclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry(),
+        audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)? = nil
     ) -> any CaptureRecorder {
         ScreenCaptureKitRecorder(
-            contentFilterProvider: ShareableContentFilterProvider(exclusionRegistry: exclusionRegistry)
+            contentFilterProvider: ShareableContentFilterProvider(exclusionRegistry: exclusionRegistry),
+            audioLevelHandler: audioLevelHandler
         )
     }
 
-    static func audioRecorder() -> any AudioRecorder {
-        AVFoundationAudioOnlyRecorder()
+    static func audioRecorder(
+        audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)? = nil
+    ) -> any AudioRecorder {
+        AVFoundationAudioOnlyRecorder(audioLevelHandler: audioLevelHandler)
     }
 
     static func recordingOutputFinalizer() -> any RecordingOutputFinalizer {

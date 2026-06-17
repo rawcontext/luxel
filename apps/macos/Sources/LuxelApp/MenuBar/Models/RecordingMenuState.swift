@@ -141,6 +141,15 @@ extension RecordingMenuState {
         }
     }
 
+    var keepsActiveNotchRecordingAction: Bool {
+        switch self {
+        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping:
+            true
+        case .idle, .exporting, .failed:
+            false
+        }
+    }
+
     private enum ActivePresentationPhase {
         case recording
         case pausing

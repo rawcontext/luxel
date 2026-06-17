@@ -17,6 +17,7 @@ public final class NotchCoordinator: @unchecked Sendable {
         activities: [NotchActivity],
         preferences: NotchSurfacePreferences = .defaults,
         presentationState: NotchPresentationState = .collapsed,
+        recordingActionToReplace: NotchActivityActionID? = nil,
         motion: NotchMotion = .standard,
         reduceMotion: Bool = false
     ) -> NotchCoordinatorObservation {
@@ -25,6 +26,7 @@ public final class NotchCoordinator: @unchecked Sendable {
             activities: activities,
             preferences: preferences,
             presentationState: presentationState,
+            recordingActionToReplace: recordingActionToReplace,
             motion: motion,
             reduceMotion: reduceMotion
         )
@@ -36,6 +38,7 @@ public final class NotchCoordinator: @unchecked Sendable {
         activities: [NotchActivity],
         preferences: NotchSurfacePreferences = .defaults,
         presentationState: NotchPresentationState = .collapsed,
+        recordingActionToReplace: NotchActivityActionID? = nil,
         motion: NotchMotion = .standard,
         reduceMotion: Bool = false
     ) -> NotchCoordinatorObservation {
@@ -59,6 +62,7 @@ public final class NotchCoordinator: @unchecked Sendable {
                     displays: displays,
                     preferences: preferences,
                     presentationState: presentationState,
+                    recordingActionToReplace: recordingActionToReplace,
                     motion: motion,
                     reduceMotion: reduceMotion
                 )
@@ -75,6 +79,7 @@ public final class NotchCoordinator: @unchecked Sendable {
         displays: [NotchDisplayDescriptor],
         preferences: NotchSurfacePreferences = .defaults,
         presentationState: NotchPresentationState = .collapsed,
+        recordingActionToReplace: NotchActivityActionID? = nil,
         motion: NotchMotion = .standard,
         reduceMotion: Bool = false
     ) async -> NotchCoordinatorResult {
@@ -88,7 +93,10 @@ public final class NotchCoordinator: @unchecked Sendable {
         }
 
         let activity = NotchActivityResolver.resolve(activities)
-        let viewModel = NotchActivityPresentation.viewModel(for: activity)
+        let viewModel = NotchActivityPresentation.viewModel(
+            for: activity,
+            recordingActionToReplace: recordingActionToReplace
+        )
         let update = NotchPresentationUpdate(
             geometry: geometry,
             activity: activity,
