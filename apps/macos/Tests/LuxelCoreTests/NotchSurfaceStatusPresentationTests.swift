@@ -12,6 +12,7 @@ struct NotchSurfaceStatusPresentationTests {
         #expect(presentation.statusText == "Notch Available")
         #expect(presentation.detailText == "Luxel can use the built-in notch display.")
         #expect(presentation.selection == .notch(try #require(NotchGeometry.resolve(from: display))))
+        #expect(!presentation.showsStatus)
     }
 
     @Test("missing notch display reports HUD fallback")
@@ -21,6 +22,7 @@ struct NotchSurfaceStatusPresentationTests {
         #expect(presentation.statusText == "Floating HUD Fallback")
         #expect(presentation.detailText == "No built-in notched display is currently detected.")
         #expect(presentation.selection == .floatingHUD(.noNotchedDisplay))
+        #expect(presentation.showsStatus)
     }
 
     @Test("disabled fallback reports menu bar only")
@@ -35,6 +37,7 @@ struct NotchSurfaceStatusPresentationTests {
             presentation.detailText == "No built-in notched display is detected, and floating HUD fallback is off."
         )
         #expect(presentation.selection == .menuBarOnly(.noNotchedDisplay))
+        #expect(presentation.showsStatus)
     }
 
     @Test("disabled notch reports fallback reason")
@@ -49,6 +52,7 @@ struct NotchSurfaceStatusPresentationTests {
             presentation.detailText == "The notch surface is disabled, so recording controls will use the fallback surface."
         )
         #expect(presentation.selection == .floatingHUD(.notchDisabled))
+        #expect(presentation.showsStatus)
     }
 
     private func builtInNotchedDisplay() throws -> NotchDisplayDescriptor {

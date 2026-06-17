@@ -30,6 +30,7 @@ extension LuxelMenuModel {
         }
 
         do {
+            try await captureTargetService.refresh()
             captureTargets = try await captureTargetService.availableTargets()
             if selectedCaptureTarget == nil {
                 selectedCaptureTargetID = captureTargets.first?.id

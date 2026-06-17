@@ -4,8 +4,8 @@ import Testing
 
 @Suite("Automation service")
 struct AutomationServiceTests {
-    @Test("denied commands do not execute")
-    func deniedCommandsDoNotExecute() async throws {
+    @Test("ungranted start commands request confirmation by default")
+    func ungrantedStartCommandsRequestConfirmationByDefault() async throws {
         let executor = SpyAutomationCommandExecutor()
         let service = AutomationService(executor: executor)
         let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))
@@ -16,7 +16,10 @@ struct AutomationServiceTests {
             context: AutomationPolicyContext()
         )
 
-        #expect(result == .denied("URL automation is disabled"))
+        #expect(result == .requiresConfirmation(AutomationPolicyPrompt(
+            title: "Allow URL Automation?",
+            message: "Another app wants to start a screen recording."
+        )))
         #expect(executor.calls.isEmpty)
     }
 
@@ -24,10 +27,7 @@ struct AutomationServiceTests {
     func ungrantedStartCommandsRequestConfirmationWithoutExecuting() async throws {
         let executor = SpyAutomationCommandExecutor()
         let service = AutomationService(executor: executor)
-        let settings = AppSettings(
-            recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"),
-            allowURLAutomation: true
-        )
+        let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))
 
         let result = try await service.execute(
             AutomationInvocation(command: .screenshot(AutomationScreenshotOptions(target: .activeWindow))),
@@ -45,8 +45,8 @@ struct AutomationServiceTests {
         #expect(executor.calls.isEmpty)
     }
 
-    @Test("safe commands execute while URL automation is disabled")
-    func safeCommandsExecuteWhileURLAutomationIsDisabled() async throws {
+    @Test("safe commands execute by default")
+    func safeCommandsExecuteByDefault() async throws {
         let executor = SpyAutomationCommandExecutor()
         let service = AutomationService(executor: executor)
         let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))

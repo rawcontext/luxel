@@ -173,13 +173,13 @@ struct AutomationCommandTests {
         let base = try #require(URL(string: "luxel-callback://error"))
 
         #expect(
-            AutomationCallbackURLBuilder.errorURL(message: "URL automation is disabled", callback: base)?
-                .absoluteString == "luxel-callback://error?errorMessage=URL%20automation%20is%20disabled"
+            AutomationCallbackURLBuilder.errorURL(message: "Recording failed", callback: base)?
+                .absoluteString == "luxel-callback://error?errorMessage=Recording%20failed"
         )
     }
 
-    @Test("policy allows safe commands while automation is disabled")
-    func policyAllowsSafeCommandsWhileAutomationIsDisabled() {
+    @Test("policy allows safe commands by default")
+    func policyAllowsSafeCommandsByDefault() {
         let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))
 
         #expect(AutomationPolicy.evaluate(
@@ -204,28 +204,31 @@ struct AutomationCommandTests {
         ) == .allow)
     }
 
-    @Test("policy denies start commands while automation is disabled")
-    func policyDeniesStartCommandsWhileAutomationIsDisabled() {
+    @Test("policy confirms ungranted start commands by default")
+    func policyConfirmsUngrantedStartCommandsByDefault() {
         let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))
 
         #expect(AutomationPolicy.evaluate(
             command: .record(AutomationRecordingOptions(target: .lastArea)),
             settings: settings,
             context: AutomationPolicyContext()
-        ) == .deny("URL automation is disabled"))
+        ) == .confirm(AutomationPolicyPrompt(
+            title: "Allow URL Automation?",
+            message: "Another app wants to start a screen recording."
+        )))
         #expect(AutomationPolicy.evaluate(
             command: .toggle(nil),
             settings: settings,
             context: AutomationPolicyContext(hasActiveRecording: false)
-        ) == .deny("URL automation is disabled"))
+        ) == .confirm(AutomationPolicyPrompt(
+            title: "Allow URL Automation?",
+            message: "Another app wants to toggle recording."
+        )))
     }
 
-    @Test("policy confirms ungranted start commands when automation is enabled")
-    func policyConfirmsUngrantedStartCommandsWhenAutomationIsEnabled() {
-        let settings = AppSettings(
-            recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"),
-            allowURLAutomation: true
-        )
+    @Test("policy confirms ungranted named callers")
+    func policyConfirmsUngrantedNamedCallers() {
+        let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))
 
         let decision = AutomationPolicy.evaluate(
             command: .record(AutomationRecordingOptions(target: .lastArea)),
@@ -242,11 +245,10 @@ struct AutomationCommandTests {
         )))
     }
 
-    @Test("policy allows granted callers when automation is enabled")
-    func policyAllowsGrantedCallersWhenAutomationIsEnabled() {
+    @Test("policy allows granted callers")
+    func policyAllowsGrantedCallers() {
         let settings = AppSettings(
             recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"),
-            allowURLAutomation: true,
             urlAutomationGrants: ["com.example.terminal"]
         )
 

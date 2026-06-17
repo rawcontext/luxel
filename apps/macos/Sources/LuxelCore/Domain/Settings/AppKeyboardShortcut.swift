@@ -18,9 +18,29 @@ public enum AppKeyboardShortcutModifier: String, Codable, CaseIterable, Equatabl
             "Shift"
         }
     }
+
+    public var displaySymbol: String {
+        switch self {
+        case .command:
+            "\u{2318}"
+        case .control:
+            "\u{2303}"
+        case .option:
+            "\u{2325}"
+        case .shift:
+            "\u{21E7}"
+        }
+    }
 }
 
 public struct AppKeyboardShortcut: Codable, Equatable, Identifiable, Sendable {
+    private static let displayModifierOrder: [AppKeyboardShortcutModifier] = [
+        .control,
+        .option,
+        .shift,
+        .command
+    ]
+
     public let key: String
     public let modifiers: [AppKeyboardShortcutModifier]
 
@@ -65,6 +85,14 @@ public struct AppKeyboardShortcut: Codable, Equatable, Identifiable, Sendable {
 
     public var displayName: String {
         (modifiers.map(\.displayName) + [key.uppercased()]).joined(separator: " ")
+    }
+
+    public var compactDisplayName: String {
+        let orderedModifierSymbols = Self.displayModifierOrder.compactMap { modifier in
+            modifiers.contains(modifier) ? modifier.displaySymbol : nil
+        }
+
+        return (orderedModifierSymbols + [key.uppercased()]).joined()
     }
 }
 

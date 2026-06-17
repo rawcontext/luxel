@@ -12,6 +12,8 @@ struct LuxelSettingsView: View {
     @Environment(\.openWindow) private var openWindow
     @State private var isShowingAcknowledgements = false
     @State private var recordingFrameRateMessage: String?
+    @State private var editingShortcutCommandID: String?
+    @State private var shortcutSearchText = ""
     @State private var selectedPane: LuxelSettingsPane = .recording
 
     @Bindable var model: LuxelMenuModel
@@ -71,6 +73,16 @@ extension LuxelSettingsView {
             if model.settings.screenshotBackdrop.usesAlpha,
                !model.settings.screenshotFormat.supportsAlpha {
                 model.settings.screenshotBackdrop = .opaque
+            }
+        }
+        .onChange(of: model.settings.enableShortcuts) {
+            if !model.settings.enableShortcuts {
+                editingShortcutCommandID = nil
+            }
+        }
+        .onChange(of: selectedPane) {
+            if selectedPane != .shortcuts {
+                editingShortcutCommandID = nil
             }
         }
         .onChange(of: model.launchAtLogin) {
@@ -209,8 +221,10 @@ extension LuxelSettingsView {
     private var recordingSettingsForm: some View {
         Section {
             Toggle("Show Cursor", isOn: $model.settings.showCursor)
+                .help("Include the pointer in new recordings.")
             Toggle("Highlight Clicks", isOn: $model.settings.highlightClicks)
                 .disabled(!model.settings.showCursor)
+                .help("Show a visual ring when clicks happen.")
 
             recordingFrameRateSettings
         } header: {
@@ -221,13 +235,16 @@ extension LuxelSettingsView {
 
         Section {
             Toggle("Record System Audio", isOn: $model.settings.recordSystemAudio)
+                .help("Capture sound playing from your Mac.")
             Toggle("Record Microphone", isOn: $model.settings.recordAudio)
+                .help("Capture audio from the selected microphone.")
             Picker("Microphone", selection: audioInputDeviceSelection) {
                 ForEach(model.audioInputDevices) { device in
                     Text(device.name).tag(device.id)
                 }
             }
             .disabled(!model.settings.recordAudio)
+            .help("Choose which microphone Luxel records.")
 
             Picker("Audio-Only Format", selection: $model.settings.audioOnlyFormat) {
                 ForEach(AudioRecordingFormat.allCases, id: \.self) { format in
@@ -235,6 +252,7 @@ extension LuxelSettingsView {
                 }
             }
             .pickerStyle(.menu)
+            .help("Choose the file format for audio-only recordings.")
         } header: {
             Text("Audio")
         }
@@ -250,6 +268,7 @@ extension LuxelSettingsView {
                 }
             }
             .pickerStyle(.menu)
+            .help("Choose the camera overlay for recordings.")
 
             Picker("Shape", selection: cameraPreviewShapeSelection) {
                 ForEach(CameraOverlayShape.allCases, id: \.self) { shape in
@@ -258,6 +277,7 @@ extension LuxelSettingsView {
             }
             .pickerStyle(.segmented)
             .disabled(model.settings.cameraDeviceID == nil)
+            .help("Choose the shape of the camera overlay.")
 
             Picker("Size", selection: cameraPreviewSizeSelection) {
                 ForEach(CameraPreviewSize.allCases, id: \.self) { size in
@@ -266,9 +286,11 @@ extension LuxelSettingsView {
             }
             .pickerStyle(.segmented)
             .disabled(model.settings.cameraDeviceID == nil)
+            .help("Choose the size of the camera overlay.")
 
             Toggle("Mirror Preview", isOn: cameraPreviewMirroredSelection)
                 .disabled(model.settings.cameraDeviceID == nil)
+                .help("Flip the camera preview horizontally.")
         } header: {
             Text("Camera")
         } footer: {
@@ -291,11 +313,13 @@ extension LuxelSettingsView {
                         Image(systemName: "folder")
                     }
                 }
-                .help(model.settings.recordingsDirectory.path)
+                .help("Choose where new recordings are saved. Current: \(model.settings.recordingsDirectory.path)")
             }
 
             Toggle("Loop Exports", isOn: $model.settings.loopExports)
+                .help("Make exported videos loop when the format supports it.")
             Toggle("Confirm Discard", isOn: $model.settings.confirmDiscard)
+                .help("Ask before closing an editor with unsaved changes.")
         } header: {
             Text("Recordings")
         } footer: {
@@ -312,6 +336,7 @@ extension LuxelSettingsView {
                 }
             }
             .pickerStyle(.menu)
+            .help("Choose the default screenshot file format.")
 
             Picker("Window Backdrop", selection: $model.settings.screenshotBackdrop) {
                 ForEach(CaptureBackdrop.allCases, id: \.self) { backdrop in
@@ -321,37 +346,21 @@ extension LuxelSettingsView {
                 }
             }
             .pickerStyle(.menu)
+            .help("Choose the background used behind window screenshots.")
 
             ForEach(ScreenshotDestination.allCases, id: \.self) { destination in
                 Toggle(destination.settingsLabel, isOn: screenshotDestinationBinding(destination))
+                    .help(screenshotDestinationHelp(destination))
             }
 
             Toggle("Show Thumbnail", isOn: $model.settings.screenshotShowThumbnail)
+                .help("Show a small preview after capturing a screenshot.")
         } header: {
             Text("Capture")
         } footer: {
             Text("At least one screenshot destination stays enabled.")
         }
 
-        Section("Shortcuts") {
-            shortcutPicker(
-                "Screenshot",
-                selection: $model.settings.captureScreenshotShortcut,
-                presets: AppKeyboardShortcutPresets.captureScreenshot
-            )
-
-            shortcutPicker(
-                "Active Window",
-                selection: $model.settings.screenshotActiveWindowShortcut,
-                presets: AppKeyboardShortcutPresets.screenshotActiveWindow
-            )
-
-            shortcutPicker(
-                "Fullscreen",
-                selection: $model.settings.screenshotFullscreenShortcut,
-                presets: AppKeyboardShortcutPresets.screenshotFullscreen
-            )
-        }
     }
 
     @ViewBuilder
@@ -360,8 +369,11 @@ extension LuxelSettingsView {
 
         Section("Cropper") {
             Toggle("Always Show Loupe", isOn: $model.settings.loupeAlwaysOn)
+                .help("Keep the precision loupe visible while selecting an area.")
             Toggle("Dim Other Displays", isOn: $model.settings.dimOtherDisplays)
+                .help("Darken inactive displays while choosing a capture area.")
             Toggle("Restore Last Selection", isOn: $model.settings.restoreLastSelection)
+                .help("Start area selection from your previous capture region.")
         }
 
         CaptureSizePresetSettingsSection(settings: $model.settings)
@@ -371,50 +383,28 @@ extension LuxelSettingsView {
     private var shortcutSettingsForm: some View {
         Section {
             Toggle("Keyboard Shortcuts", isOn: $model.settings.enableShortcuts)
-
-            shortcutPicker(
-                "Select Area",
-                selection: $model.settings.triggerCropperShortcut,
-                presets: AppKeyboardShortcutPresets.capture
-            )
-
-            shortcutPicker(
-                "Toggle Recording",
-                selection: $model.settings.toggleRecordingShortcut,
-                presets: AppKeyboardShortcutPresets.toggleRecording
-            )
-
-            shortcutPicker(
-                "Record Active Window",
-                selection: $model.settings.recordActiveWindowShortcut,
-                presets: AppKeyboardShortcutPresets.recordActiveWindow
-            )
-
-            shortcutPicker(
-                "Record Fullscreen",
-                selection: $model.settings.recordFullscreenShortcut,
-                presets: AppKeyboardShortcutPresets.recordFullscreen
-            )
-
-            shortcutPicker(
-                "Audio Only",
-                selection: $model.settings.audioOnlyRecordingShortcut,
-                presets: AppKeyboardShortcutPresets.audioOnlyRecording
-            )
-
-            shortcutPicker(
-                "Quick Record Last",
-                selection: $model.settings.quickRecordLastShortcut,
-                presets: AppKeyboardShortcutPresets.quickRecordLast
-            )
+                .help("Enable Luxel's global recording and screenshot shortcuts.")
         } header: {
-            Text("Recording Shortcuts")
-        } footer: {
-            Text("Shortcut conflicts are shown inline when a system shortcut uses the same keys.")
+            Text("Keyboard")
         }
 
-        Section("Automation") {
-            Toggle("Allow URL Automation", isOn: $model.settings.allowURLAutomation)
+        Section {
+            LuxelShortcutSearchField(text: $shortcutSearchText)
+                .padding(.bottom, 6)
+                .help("Filter shortcuts by command name or group.")
+
+            LuxelShortcutSettingsTable(
+                commands: visibleShortcutCommands,
+                allCommands: shortcutCommands,
+                isEnabled: model.settings.enableShortcuts,
+                conflictDetector: shortcutConflictDetector,
+                editingCommandID: $editingShortcutCommandID
+            )
+            .help("Edit, clear, or reset Luxel keyboard shortcuts.")
+        } header: {
+            Text("Commands")
+        } footer: {
+            Text("Shortcut conflicts are shown inline when a system shortcut uses the same keys.")
         }
     }
 
@@ -424,7 +414,9 @@ extension LuxelSettingsView {
             let isConfigured = model.settings.replayBufferConfiguration != nil
 
             LabeledContent("Status", value: "Engine Coming Soon")
+                .help("Replay buffer capture is not implemented yet.")
             Toggle("Enable Replay Buffer", isOn: replayBufferEnabled)
+                .help("Prepare settings for saving recent recording history.")
 
             Picker("Length", selection: replayBufferLengthSelection) {
                 ForEach(Self.replayBufferLengths, id: \.self) { seconds in
@@ -433,8 +425,10 @@ extension LuxelSettingsView {
             }
             .pickerStyle(.menu)
             .disabled(!isConfigured)
+            .help("Choose how much recent recording history to keep.")
 
             LabeledContent("Source", value: "Display with Cursor")
+                .help("Replay buffer will capture the display and cursor.")
 
             Picker("Frame Rate", selection: replayBufferFrameRateSelection) {
                 ForEach(Self.replayBufferFrameRates, id: \.self) { frameRate in
@@ -443,12 +437,15 @@ extension LuxelSettingsView {
             }
             .pickerStyle(.menu)
             .disabled(!isConfigured)
+            .help("Choose the frame rate for replay buffer clips.")
 
             Toggle("Include System Audio", isOn: replayBufferSystemAudioSelection)
                 .disabled(!isConfigured)
+                .help("Include Mac audio in replay buffer clips.")
 
             Toggle("Resume on Launch", isOn: $model.settings.replayBufferResumeOnLaunch)
                 .disabled(!isConfigured)
+                .help("Restart the replay buffer when Luxel opens.")
 
             Picker("Clip Opens In", selection: $model.settings.replayClipDestination) {
                 ForEach(ReplayClipDestination.allCases) { destination in
@@ -457,12 +454,8 @@ extension LuxelSettingsView {
             }
             .pickerStyle(.menu)
             .disabled(!isConfigured)
+            .help("Choose what happens after saving a replay clip.")
 
-            shortcutPicker(
-                "Clip Shortcut",
-                selection: $model.settings.clipReplayBufferShortcut,
-                presets: AppKeyboardShortcutPresets.clipReplayBuffer
-            )
         } header: {
             HStack(spacing: 6) {
                 Text("Replay Buffer")
@@ -479,16 +472,22 @@ extension LuxelSettingsView {
         Section("Notch Surface") {
             let notchStatus = model.notchSurfaceStatusPresentation
 
-            LabeledContent("Status", value: notchStatus.statusText)
-            Text(notchStatus.detailText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if notchStatus.showsStatus {
+                LabeledContent("Status", value: notchStatus.statusText)
+                    .help("Shows whether the notch surface is available.")
+                Text(notchStatus.detailText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
 
             Toggle("Enable Notch Surface", isOn: notchSurfaceEnabled)
+                .help("Show recording controls around the built-in notch.")
             Toggle("Idle Quick Actions", isOn: notchIdleHoverActionsEnabled)
                 .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+                .help("Show quick actions when hovering near the notch while idle.")
             Toggle("Recording Waveform", isOn: notchWaveformEnabled)
                 .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+                .help("Show an audio waveform on the notch surface while recording.")
 
             Picker("Auto Collapse", selection: notchAutoCollapseSecondsSelection) {
                 ForEach(Self.notchAutoCollapseDurations, id: \.self) { seconds in
@@ -497,9 +496,11 @@ extension LuxelSettingsView {
             }
             .pickerStyle(.menu)
             .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+            .help("Choose how quickly expanded notch controls collapse.")
 
             Toggle("Floating HUD Fallback", isOn: notchFloatingHUDFallbackEnabled)
                 .disabled(!model.settings.notchSurfaceSettings.isEnabled)
+                .help("Use a floating HUD when notch controls are unavailable.")
         }
     }
 
@@ -507,11 +508,14 @@ extension LuxelSettingsView {
     private var systemSettingsForm: some View {
         Section("Menu Bar") {
             Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
+                .help("Show elapsed recording time in the menu bar.")
             Toggle("Remind About Notifications", isOn: $model.settings.notificationReminder)
+                .help("Remind you to silence notifications before recording.")
         }
 
         Section("Startup") {
             Toggle("Launch at Login", isOn: $model.launchAtLogin)
+                .help("Open Luxel automatically when you sign in.")
         }
 
         if AppDistribution.current.capabilities.allowsCommandLineToolInstaller {
@@ -524,6 +528,7 @@ extension LuxelSettingsView {
                     }
                     .help("Install to \(model.commandLineToolInstallService.defaultDestination.path)")
                 }
+                .help("Install the command line helper for terminal automation.")
 
                 if let installStatus = model.commandLineToolInstallStatus {
                     Label(installStatus.message, systemImage: installStatus.systemImage)
@@ -537,16 +542,20 @@ extension LuxelSettingsView {
             let updatePresentation = updateSettingsPresentation
 
             LabeledContent("Current Version", value: model.appMetadata.versionSummary)
+                .help("Shows the installed Luxel version.")
             LabeledContent("Status", value: updatePresentation.statusText)
+                .help("Shows the current update availability.")
 
             if updatePresentation.showsDeveloperIDUpdateControls {
                 Toggle("Check Automatically", isOn: $model.settings.updatePreferences.automaticallyCheckForUpdates)
+                    .help("Let Luxel periodically check for updates.")
 
                 Toggle(
                     "Install Automatically",
                     isOn: $model.settings.updatePreferences.automaticallyDownloadAndInstall
                 )
                     .disabled(!updatePresentation.automaticInstallToggleEnabled)
+                    .help("Download and install updates without asking.")
 
                 Picker("Channel", selection: $model.settings.updatePreferences.channel) {
                     ForEach(UpdateChannel.allCases) { channel in
@@ -554,6 +563,7 @@ extension LuxelSettingsView {
                     }
                 }
                 .pickerStyle(.menu)
+                .help("Choose which update channel Luxel checks.")
 
                 Button {} label: {
                     Label("Check Now", systemImage: "arrow.clockwise")
@@ -569,7 +579,9 @@ extension LuxelSettingsView {
 
         Section("About") {
             LabeledContent("App", value: model.appMetadata.displayName)
+                .help("Shows the application name.")
             LabeledContent("Version", value: model.appMetadata.versionSummary)
+                .help("Shows the installed version and build.")
 
             if !model.appMetadata.copyright.isEmpty {
                 Text(model.appMetadata.copyright)
@@ -582,6 +594,7 @@ extension LuxelSettingsView {
             } label: {
                 Label("Acknowledgements", systemImage: "doc.text")
             }
+            .help("View third-party codec acknowledgements.")
         }
     }
 
@@ -601,6 +614,114 @@ extension LuxelSettingsView {
         )
     }
 
+    private var visibleShortcutCommands: [LuxelShortcutSettingsCommand] {
+        let searchText = shortcutSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return shortcutCommands.filter { $0.matchesSearch(searchText) }
+    }
+
+    private var shortcutCommands: [LuxelShortcutSettingsCommand] {
+        [
+            shortcutCommand(
+                id: "select-area",
+                title: "Select Area",
+                detail: "Choose a screen area to record.",
+                group: "Recording",
+                selection: $model.settings.triggerCropperShortcut,
+                presets: AppKeyboardShortcutPresets.capture
+            ),
+            shortcutCommand(
+                id: "toggle-recording",
+                title: "Toggle Recording",
+                detail: "Start or stop recording.",
+                group: "Recording",
+                selection: $model.settings.toggleRecordingShortcut,
+                presets: AppKeyboardShortcutPresets.toggleRecording
+            ),
+            shortcutCommand(
+                id: "record-active-window",
+                title: "Record Active Window",
+                detail: "Record the frontmost window.",
+                group: "Recording",
+                selection: $model.settings.recordActiveWindowShortcut,
+                presets: AppKeyboardShortcutPresets.recordActiveWindow
+            ),
+            shortcutCommand(
+                id: "record-fullscreen",
+                title: "Record Fullscreen",
+                detail: "Record the current display.",
+                group: "Recording",
+                selection: $model.settings.recordFullscreenShortcut,
+                presets: AppKeyboardShortcutPresets.recordFullscreen
+            ),
+            shortcutCommand(
+                id: "audio-only",
+                title: "Audio Only",
+                detail: "Start an audio-only recording.",
+                group: "Recording",
+                selection: $model.settings.audioOnlyRecordingShortcut,
+                presets: AppKeyboardShortcutPresets.audioOnlyRecording
+            ),
+            shortcutCommand(
+                id: "quick-record-last",
+                title: "Quick Record Last",
+                detail: "Record the previous capture target with quick export settings.",
+                group: "Recording",
+                selection: $model.settings.quickRecordLastShortcut,
+                presets: AppKeyboardShortcutPresets.quickRecordLast
+            ),
+            shortcutCommand(
+                id: "screenshot",
+                title: "Screenshot",
+                detail: "Capture a screenshot with the default target.",
+                group: "Screenshots",
+                selection: $model.settings.captureScreenshotShortcut,
+                presets: AppKeyboardShortcutPresets.captureScreenshot
+            ),
+            shortcutCommand(
+                id: "screenshot-active-window",
+                title: "Screenshot Active Window",
+                detail: "Capture the frontmost window.",
+                group: "Screenshots",
+                selection: $model.settings.screenshotActiveWindowShortcut,
+                presets: AppKeyboardShortcutPresets.screenshotActiveWindow
+            ),
+            shortcutCommand(
+                id: "screenshot-fullscreen",
+                title: "Screenshot Fullscreen",
+                detail: "Capture the current display.",
+                group: "Screenshots",
+                selection: $model.settings.screenshotFullscreenShortcut,
+                presets: AppKeyboardShortcutPresets.screenshotFullscreen
+            ),
+            shortcutCommand(
+                id: "clip-replay-buffer",
+                title: "Clip Replay Buffer",
+                detail: "Save the recent replay buffer.",
+                group: "Replay Buffer",
+                selection: $model.settings.clipReplayBufferShortcut,
+                presets: AppKeyboardShortcutPresets.clipReplayBuffer
+            )
+        ]
+    }
+
+    private func shortcutCommand(
+        id: String,
+        title: String,
+        detail: String,
+        group: String,
+        selection: Binding<String>,
+        presets: [AppKeyboardShortcut]
+    ) -> LuxelShortcutSettingsCommand {
+        LuxelShortcutSettingsCommand(
+            id: id,
+            title: title,
+            detail: detail,
+            searchGroup: group,
+            selection: selection,
+            defaultRawValue: presets.first?.rawValue ?? ""
+        )
+    }
+
     @ViewBuilder
     private var recordingFrameRateSettings: some View {
         LabeledContent("Frame Rate") {
@@ -613,11 +734,13 @@ extension LuxelSettingsView {
                 .labelsHidden()
                 .multilineTextAlignment(.trailing)
                 .frame(width: 56)
+                .help("Choose the recording frame rate from 1 to 60 FPS.")
 
                 Text("FPS")
                     .foregroundStyle(.secondary)
             }
         }
+        .help("Choose how many frames per second new recordings use.")
 
         if let recordingFrameRateMessage {
             Text(recordingFrameRateMessage)
@@ -843,31 +966,6 @@ extension LuxelSettingsView {
         }
     }
 
-    @ViewBuilder
-    private func shortcutPicker(
-        _ title: String,
-        selection: Binding<String>,
-        presets: [AppKeyboardShortcut]
-    ) -> some View {
-        Picker(title, selection: selection) {
-            Text("None").tag("")
-            ForEach(presets) { shortcut in
-                Text(shortcut.displayName).tag(shortcut.rawValue)
-            }
-        }
-        .disabled(!model.settings.enableShortcuts)
-
-        if model.settings.enableShortcuts,
-           let conflict = shortcutConflictDetector.conflict(forRawValue: selection.wrappedValue) {
-            Label(
-                "Conflicts with \(conflict.systemAction)",
-                systemImage: "exclamationmark.triangle"
-            )
-            .font(.caption)
-            .foregroundStyle(.orange)
-        }
-    }
-
     private func screenshotDestinationBinding(_ destination: ScreenshotDestination) -> Binding<Bool> {
         Binding {
             model.settings.screenshotDestinations.contains(destination)
@@ -881,6 +979,17 @@ extension LuxelSettingsView {
             } else if model.settings.screenshotDestinations.count > 1 {
                 model.settings.screenshotDestinations.removeAll { $0 == destination }
             }
+        }
+    }
+
+    private func screenshotDestinationHelp(_ destination: ScreenshotDestination) -> String {
+        switch destination {
+        case .clipboard:
+            "Copy each screenshot to the Clipboard."
+        case .file:
+            "Save each screenshot as a file."
+        case .preview:
+            "Open each screenshot in Preview."
         }
     }
 

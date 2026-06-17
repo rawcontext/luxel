@@ -16,8 +16,10 @@ struct ExportPresetSettingsSection: View {
                     }
                 }
                 .pickerStyle(.menu)
+                .help("Choose the preset used by quick recording.")
 
                 Toggle("Remember Last Capture", isOn: $settings.rememberLastCapture)
+                    .help("Reuse the last capture target for quick recording.")
             }
 
             Section("Presets") {
@@ -28,6 +30,7 @@ struct ExportPresetSettingsSection: View {
                 }
                 .pickerStyle(.menu)
                 .disabled(settings.exportPresets.isEmpty)
+                .help("Choose which export preset to edit.")
 
                 HStack {
                     Button {
@@ -35,6 +38,7 @@ struct ExportPresetSettingsSection: View {
                     } label: {
                         Label("Add", systemImage: "plus")
                     }
+                    .help("Create a new export preset.")
 
                     Button {
                         duplicateSelectedPreset()
@@ -42,6 +46,7 @@ struct ExportPresetSettingsSection: View {
                         Label("Duplicate", systemImage: "doc.on.doc")
                     }
                     .disabled(currentSelectedPresetID == nil)
+                    .help("Copy the selected export preset.")
 
                     Button(role: .destructive) {
                         deleteSelectedPreset()
@@ -49,6 +54,7 @@ struct ExportPresetSettingsSection: View {
                         Label("Delete", systemImage: "trash")
                     }
                     .disabled(currentSelectedPresetID == nil)
+                    .help("Delete the selected export preset.")
                 }
                 .buttonStyle(.bordered)
 
@@ -133,6 +139,7 @@ private struct ExportPresetEditor: View {
 
     var body: some View {
         TextField("Name", text: name)
+            .help("Name this export preset.")
 
         Picker("Format", selection: $preset.format) {
             ForEach(ExportFormat.appleNativeV1Formats, id: \.self) { format in
@@ -140,6 +147,7 @@ private struct ExportPresetEditor: View {
             }
         }
         .pickerStyle(.menu)
+        .help("Choose the export file format.")
 
         Picker("Size", selection: sizeSelection) {
             ForEach(PresetSizeSelection.allCases) { selection in
@@ -147,11 +155,13 @@ private struct ExportPresetEditor: View {
             }
         }
         .pickerStyle(.menu)
+        .help("Choose how much to resize exported video.")
 
         if case .maxWidth = preset.sizeRule {
             Stepper(value: maxWidth, in: 1...10_000, step: 10) {
                 Text("Max Width \(maxWidth.wrappedValue) px")
             }
+            .help("Set the maximum exported width in pixels.")
         }
 
         Picker("Frame Rate", selection: frameRateSelection) {
@@ -160,6 +170,7 @@ private struct ExportPresetEditor: View {
             }
         }
         .pickerStyle(.menu)
+        .help("Choose the exported video frame rate.")
 
         Picker("Destination", selection: destinationSelection) {
             ForEach(PresetDestinationSelection.allCases) { destination in
@@ -167,6 +178,7 @@ private struct ExportPresetEditor: View {
             }
         }
         .pickerStyle(.menu)
+        .help("Choose where the exported result goes.")
 
         Picker("After Export", selection: postActionSelection) {
             ForEach(ExportPresetPostAction.allCases, id: \.self) { action in
@@ -175,6 +187,7 @@ private struct ExportPresetEditor: View {
         }
         .pickerStyle(.menu)
         .disabled(preset.destination == .clipboard)
+        .help("Choose what Luxel does after exporting.")
     }
 
     private var name: Binding<String> {

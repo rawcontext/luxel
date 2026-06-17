@@ -37,31 +37,39 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         }
 
         let contentFilter = try await prepareContentFilter(for: request.target)
+        let resolvedRequest = configurationFactory.requestByResolvingCaptureGeometry(
+            request,
+            contentRect: contentFilter.contentRect,
+            pointPixelScale: contentFilter.pointPixelScale
+        )
         let stream = SCStream(
             filter: contentFilter,
-            configuration: configurationFactory.makeStreamConfiguration(for: request),
+            configuration: configurationFactory.makeStreamConfiguration(
+                for: resolvedRequest,
+                pointPixelScale: contentFilter.pointPixelScale
+            ),
             delegate: nil
         )
         let outputWriter = ScreenCaptureKitRecordingWriter(fileManager: fileManager)
 
         self.stream = stream
-        self.request = request
+        self.request = resolvedRequest
         self.outputWriter = outputWriter
-        self.currentSegmentFileURL = request.outputFileURL
+        self.currentSegmentFileURL = resolvedRequest.outputFileURL
         self.segmentFileURLs = []
 
         do {
-            try await outputWriter.startSegment(for: request, outputFileURL: request.outputFileURL)
-            try addStreamOutputs(to: stream, writer: outputWriter, for: request)
+            try await outputWriter.startSegment(for: resolvedRequest, outputFileURL: resolvedRequest.outputFileURL)
+            try addStreamOutputs(to: stream, writer: outputWriter, for: resolvedRequest)
             try await startStreamCapture(stream)
             isStreamCapturing = true
         } catch let error as ScreenCaptureKitRecorderError {
             await outputWriter.cancelCurrentSegment()
-            clearRecordingState(removeTemporarySegments: true, preserving: request.outputFileURL)
+            clearRecordingState(removeTemporarySegments: true, preserving: resolvedRequest.outputFileURL)
             throw error
         } catch {
             await outputWriter.cancelCurrentSegment()
-            clearRecordingState(removeTemporarySegments: true, preserving: request.outputFileURL)
+            clearRecordingState(removeTemporarySegments: true, preserving: resolvedRequest.outputFileURL)
             throw ScreenCaptureKitRecorderError.startFailed(String(describing: error))
         }
     }

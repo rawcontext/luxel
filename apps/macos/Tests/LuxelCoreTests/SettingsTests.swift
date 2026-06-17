@@ -56,7 +56,7 @@ extension SettingsTests {
         #expect(settings.updatePreferences.channel == .stable)
         #expect(settings.showTimeInMenuBar)
         #expect(settings.notificationReminder)
-        #expect(!settings.allowURLAutomation)
+        #expect(settings.allowURLAutomation)
         #expect(settings.urlAutomationGrants.isEmpty)
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)
         #expect(settings.quickExportPresetID == ExportPreset.quickGIFID)

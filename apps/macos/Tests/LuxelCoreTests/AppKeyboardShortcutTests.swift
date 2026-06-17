@@ -16,6 +16,16 @@ struct AppKeyboardShortcutTests {
         #expect(shortcut.displayName == "Command Shift R")
     }
 
+    @Test("shortcut exposes compact symbol display")
+    func shortcutExposesCompactSymbolDisplay() throws {
+        let shortcut = try AppKeyboardShortcut(
+            key: "p",
+            modifiers: [.command, .option, .shift]
+        )
+
+        #expect(shortcut.compactDisplayName == "\u{2325}\u{21E7}\u{2318}P")
+    }
+
     @Test("raw value parser accepts valid shortcuts")
     func rawValueParserAcceptsValidShortcuts() throws {
         let shortcut = try #require(AppKeyboardShortcut(rawValue: " control + option + 5 "))

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import ScreenCaptureKit
 
@@ -7,9 +8,17 @@ public protocol ScreenCaptureKitContentFilterProvider: Sendable {
 
 public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvider {
     private let exclusionRegistry: CaptureExclusionRegistry?
+    private let activatesWindowTargetsBeforeCapture: Bool
+    private let windowActivationSettleDuration: Duration
 
-    public init(exclusionRegistry: CaptureExclusionRegistry? = nil) {
+    public init(
+        exclusionRegistry: CaptureExclusionRegistry? = nil,
+        activatesWindowTargetsBeforeCapture: Bool = true,
+        windowActivationSettleDuration: Duration = .milliseconds(300)
+    ) {
         self.exclusionRegistry = exclusionRegistry
+        self.activatesWindowTargetsBeforeCapture = activatesWindowTargetsBeforeCapture
+        self.windowActivationSettleDuration = windowActivationSettleDuration
     }
 
     public func contentFilter(for target: CaptureTarget) async throws -> SCContentFilter {
@@ -27,11 +36,39 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
             )
 
         case .window(let id):
+            let content = try await contentByPreparingWindowTarget(id, from: content)
             guard let window = content.windows.first(where: { $0.windowID == id }) else {
                 throw SCKContentFilterProviderError.windowUnavailable(id)
             }
 
             return SCContentFilter(desktopIndependentWindow: window)
+        }
+    }
+
+    private func contentByPreparingWindowTarget(
+        _ windowID: UInt32,
+        from content: SCShareableContent
+    ) async throws -> SCShareableContent {
+        guard activatesWindowTargetsBeforeCapture,
+              let window = content.windows.first(where: { $0.windowID == windowID }),
+              let processID = window.owningApplication?.processID,
+              await activateOwningApplicationIfNeeded(processID: processID) else {
+            return content
+        }
+
+        try await Task.sleep(for: windowActivationSettleDuration)
+        return try await SCShareableContent.current
+    }
+
+    private func activateOwningApplicationIfNeeded(processID: pid_t) async -> Bool {
+        await MainActor.run {
+            guard processID != NSRunningApplication.current.processIdentifier,
+                  let application = NSRunningApplication(processIdentifier: processID),
+                  !application.isActive else {
+                return false
+            }
+
+            return application.activate(options: .activateAllWindows)
         }
     }
 

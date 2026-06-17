@@ -14,6 +14,7 @@ struct CaptureSizePresetSettingsSection: View {
             }
             .pickerStyle(.menu)
             .disabled(settings.userSizePresets.isEmpty)
+            .help("Choose which saved cropper size to edit.")
 
             HStack {
                 Button {
@@ -21,6 +22,7 @@ struct CaptureSizePresetSettingsSection: View {
                 } label: {
                     Label("Add", systemImage: "plus")
                 }
+                .help("Create a new cropper size preset.")
 
                 Button {
                     duplicateSelectedPreset()
@@ -28,6 +30,7 @@ struct CaptureSizePresetSettingsSection: View {
                     Label("Duplicate", systemImage: "doc.on.doc")
                 }
                 .disabled(currentSelectedPresetID == nil)
+                .help("Copy the selected cropper size preset.")
 
                 Button(role: .destructive) {
                     deleteSelectedPreset()
@@ -35,6 +38,7 @@ struct CaptureSizePresetSettingsSection: View {
                     Label("Delete", systemImage: "trash")
                 }
                 .disabled(currentSelectedPresetID == nil)
+                .help("Delete the selected cropper size preset.")
             }
             .buttonStyle(.bordered)
 
@@ -113,14 +117,17 @@ private struct CaptureSizePresetEditor: View {
 
     var body: some View {
         TextField("Name", text: name)
+            .help("Name this cropper size preset.")
 
         Stepper(value: width, in: 1...10_000, step: 10) {
             Text("Width \(preset.pixelSize.width) px")
         }
+        .help("Set the preset width in pixels.")
 
         Stepper(value: height, in: 1...10_000, step: 10) {
             Text("Height \(preset.pixelSize.height) px")
         }
+        .help("Set the preset height in pixels.")
     }
 
     private var name: Binding<String> {

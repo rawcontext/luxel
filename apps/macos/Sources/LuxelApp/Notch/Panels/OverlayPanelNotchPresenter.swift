@@ -7,6 +7,13 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     fileprivate static let panelSize = NSSize(width: 536, height: 188)
     fileprivate static let expandedHeight: CGFloat = 58
     private static let edgeMargin: CGFloat = 8
+    private static let hoverExitDebounceNanoseconds: UInt64 = 180_000_000
+    private static let mouseMonitorEventMask: NSEvent.EventTypeMask = [
+        .mouseMoved,
+        .leftMouseDown,
+        .rightMouseDown,
+        .otherMouseDown
+    ]
 
     private let exclusionRegistry: CaptureExclusionRegistry
     private let stream: AsyncStream<NotchInteraction>
@@ -21,6 +28,7 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     private var isHovering = false
     private var localMouseMonitor: Any?
     private var globalMouseMonitor: Any?
+    private var hoverExitTask: Task<Void, Never>?
     private var morphInTask: Task<Void, Never>?
     private var morphInGeneration = 0
     private var currentPhase: NotchRenderPhase = .settled
@@ -126,6 +134,7 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     func release() async {
         panel?.orderOut(nil)
         cancelMorphIn()
+        cancelPendingHoverExit()
         removeMouseMonitors()
         hoverRects = []
         isHovering = false
@@ -217,15 +226,17 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
             return
         }
 
-        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved]) { [weak self] event in
+        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: Self.mouseMonitorEventMask) { [weak self] event in
+            let isMouseDown = event.isMouseDown
             Task { @MainActor in
-                self?.handleMouseLocation(NSEvent.mouseLocation)
+                self?.handleMouseEvent(isMouseDown: isMouseDown)
             }
             return event
         }
-        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved]) { [weak self] _ in
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: Self.mouseMonitorEventMask) { [weak self] event in
+            let isMouseDown = event.isMouseDown
             Task { @MainActor in
-                self?.handleMouseLocation(NSEvent.mouseLocation)
+                self?.handleMouseEvent(isMouseDown: isMouseDown)
             }
         }
     }
@@ -248,15 +259,82 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
         }
 
         let hovering = hoverRects.contains { $0.contains(location) }
-        guard hovering != isHovering else {
+        if hovering {
+            cancelPendingHoverExit()
+            guard !isHovering else {
+                return
+            }
+
+            if let currentGeometry {
+                hoverRects = Self.hoverRects(for: currentGeometry, isExpanded: true)
+            }
+            isHovering = true
+            continuation.yield(.hoverEntered)
+            return
+        }
+
+        guard isHovering else {
+            return
+        }
+
+        scheduleHoverExit()
+    }
+
+    private func scheduleHoverExit() {
+        guard hoverExitTask == nil else {
+            return
+        }
+
+        hoverExitTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: Self.hoverExitDebounceNanoseconds)
+            } catch {
+                return
+            }
+
+            self?.completePendingHoverExit()
+        }
+    }
+
+    private func completePendingHoverExit() {
+        hoverExitTask = nil
+        guard isHovering,
+              !hoverRects.contains(where: { $0.contains(NSEvent.mouseLocation) }) else {
             return
         }
 
         if let currentGeometry {
-            hoverRects = Self.hoverRects(for: currentGeometry, isExpanded: hovering)
+            hoverRects = Self.hoverRects(for: currentGeometry, isExpanded: false)
         }
-        isHovering = hovering
-        continuation.yield(hovering ? .hoverEntered : .hoverExited)
+        isHovering = false
+        continuation.yield(.hoverExited)
+    }
+
+    private func handleMouseEvent(isMouseDown: Bool) {
+        if isMouseDown {
+            collapseExpandedNotchIfNeeded(at: NSEvent.mouseLocation)
+            return
+        }
+
+        handleMouseLocation(NSEvent.mouseLocation)
+    }
+
+    private func collapseExpandedNotchIfNeeded(at location: NSPoint) {
+        guard currentUpdate?.presentationState == .expanded,
+              let currentGeometry,
+              !Self.expandedSurfaceHitRect(for: currentGeometry).contains(location) else {
+            return
+        }
+
+        cancelPendingHoverExit()
+        isHovering = false
+        hoverRects = Self.hoverRects(for: currentGeometry, isExpanded: false)
+        continuation.yield(.setExpanded(false))
+    }
+
+    private func cancelPendingHoverExit() {
+        hoverExitTask?.cancel()
+        hoverExitTask = nil
     }
 
     private func updateHoverRects(for geometry: NotchGeometry, isExpanded: Bool) {
@@ -276,30 +354,38 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
 
     private static func hoverRects(for geometry: NotchGeometry, isExpanded: Bool) -> [NSRect] {
         if isExpanded {
-            return [
-                geometry.cameraHousingRect.nsRect,
-                expandedSurfaceRect(for: geometry)
-            ]
+            return [panelFrame(for: geometry).insetBy(dx: -8, dy: -8)]
         }
 
-        return [geometry.cameraHousingRect.nsRect]
+        return [geometry.cameraHousingRect.nsRect.insetBy(dx: -28, dy: -18)]
     }
 
-    private static func expandedSurfaceRect(for geometry: NotchGeometry) -> NSRect {
+    private static func expandedSurfaceHitRect(for geometry: NotchGeometry) -> NSRect {
         let screen = geometry.screenFrame.nsRect
         let housing = geometry.cameraHousingRect.nsRect
         let width = notchWidth(for: geometry)
-        let originX = housing.midX - width / 2
         return NSRect(
-            x: originX,
+            x: housing.midX - width / 2,
             y: screen.maxY - expandedHeight,
             width: width,
             height: expandedHeight
         )
+        .insetBy(dx: -8, dy: -8)
     }
 
     fileprivate static func notchWidth(for geometry: NotchGeometry) -> CGFloat {
         max(170, min(220, geometry.cameraHousingRect.nsRect.width))
+    }
+}
+
+private extension NSEvent {
+    var isMouseDown: Bool {
+        switch type {
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            true
+        default:
+            false
+        }
     }
 }
 

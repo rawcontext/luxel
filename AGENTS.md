@@ -62,12 +62,13 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Guiding Principles
 - Always verify today's date to avoid a temporal paradox.
-- When rebuilding or relaunching Luxel, always build and launch a properly signed `.app` bundle using the user's Apple Development identity (for example via `apps/macos/Scripts/build-luxel-app.sh`). Never launch the SwiftPM debug executable (`apps/macos/.build/arm64-apple-macosx/debug/Luxel`) or any ad-hoc-signed binary, because it breaks macOS TCC permissions and causes repeated permission prompts. If signing or launching the signed bundle fails, stop and report that failure instead of using an unsigned/ad-hoc fallback.
+- When rebuilding or relaunching Luxel, always build and launch a properly signed `.app` bundle using the user's Apple Development identity (for example via `apps/macos/Scripts/build-luxel-app.sh`). Never launch the SwiftPM debug executable (`apps/macos/.build/arm64-apple-macosx/debug/Luxel`) or any ad-hoc-signed binary, because it breaks macOS TCC permissions and causes repeated permission prompts. If signing or launching the signed bundle fails, stop and report that failure instead of using an unsigned/ad-hoc fallback. Always relaunch the app after a successful build, even if the user didn't explicitly ask for it, because the new build may have fixed issues that would prevent a successful launch.
 - Do Your Own Exploration - Verify assumptions against actual codebase, tests, and documentation.
 - Use Context7 for Documentation - Always query context7 for up-to-date library/service/API docs.
 - Ground Assumptions with Research - Use web search to verify syntax, patterns, version compatibility, and best practices instead of making assumptions.
 - Trust self-documenting code. Do not add comments that restate what the code does. Only add comments when explaining why something non-obvious is necessary.
 - Do NOT modify linting rules or code coverage requirements without explicit approval.
+- Avoid mentioning your guiding principles they are for your inner monologue, not for the user.
 
 ## Package Versions
 

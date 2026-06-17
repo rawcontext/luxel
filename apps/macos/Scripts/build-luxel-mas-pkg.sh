@@ -8,7 +8,7 @@ INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
 BASE_ENTITLEMENTS="${PACKAGE_ROOT}/Configuration/Luxel/Luxel.MacAppStore.entitlements"
 GOOGLE_SERVICE_INFO_PLIST="${GOOGLE_SERVICE_INFO_PLIST:-${PACKAGE_ROOT}/Configuration/Luxel/GoogleService-Info.plist}"
 THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
-APP_ICON_GENERATOR="${PACKAGE_ROOT}/Scripts/generate-luxel-app-icon.swift"
+APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 OUTPUT_DIR="${OUTPUT_DIR:-${PACKAGE_ROOT}/.build/mas}"
 APP_PATH="${APP_PATH:-${OUTPUT_DIR}/${APP_NAME}.app}"
 PKG_PATH="${PKG_PATH:-${OUTPUT_DIR}/${APP_NAME}.pkg}"
@@ -40,32 +40,6 @@ require_file() {
 		echo "${description} not found at ${path}" >&2
 		exit 1
 	fi
-}
-
-generate_app_icon() {
-	local resources_dir="$1"
-	local source_png="${OUTPUT_DIR}/${APP_NAME}-icon-1024.png"
-	local iconset="${OUTPUT_DIR}/${APP_NAME}.iconset"
-	local point_size
-	local pixel_size
-
-	require_file "${APP_ICON_GENERATOR}" "App icon generator"
-
-	swift "${APP_ICON_GENERATOR}" "${source_png}" >/dev/null
-	rm -rf "${iconset}"
-	mkdir -p "${iconset}"
-
-	for point_size in 16 32 128 256 512; do
-		pixel_size="${point_size}"
-		sips -z "${pixel_size}" "${pixel_size}" "${source_png}" \
-			--out "${iconset}/icon_${point_size}x${point_size}.png" >/dev/null
-
-		pixel_size="$((point_size * 2))"
-		sips -z "${pixel_size}" "${pixel_size}" "${source_png}" \
-			--out "${iconset}/icon_${point_size}x${point_size}@2x.png" >/dev/null
-	done
-
-	iconutil --convert icns --output "${resources_dir}/${APP_NAME}.icns" "${iconset}"
 }
 
 if [[ -z "${PROVISIONING_PROFILE}" ]]; then
@@ -148,6 +122,8 @@ mkdir -p "${APP_PATH}/Contents/Resources"
 cp "${INFO_PLIST}" "${APP_PATH}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Delete :CFBundleIconFile" "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true
 /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string ${APP_NAME}" "${APP_PATH}/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Add :CFBundleIconName string ${APP_NAME}" "${APP_PATH}/Contents/Info.plist"
 if [[ -n "${MARKETING_VERSION}" ]]; then
 	/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${MARKETING_VERSION}" "${APP_PATH}/Contents/Info.plist"
 fi
@@ -160,7 +136,7 @@ fi
 cp "${PROVISIONING_PROFILE}" "${APP_PATH}/Contents/embedded.provisionprofile"
 cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
-generate_app_icon "${APP_PATH}/Contents/Resources"
+"${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
 if [[ -f "${GOOGLE_SERVICE_INFO_PLIST}" ]]; then
 	cp "${GOOGLE_SERVICE_INFO_PLIST}" "${APP_PATH}/Contents/Resources/GoogleService-Info.plist"
 fi

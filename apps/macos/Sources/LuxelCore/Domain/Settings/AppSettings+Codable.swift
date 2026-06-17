@@ -127,8 +127,7 @@ extension AppSettings {
             ?? true
         notificationReminder = try container.decodeIfPresent(Bool.self, forKey: .notificationReminder)
             ?? true
-        allowURLAutomation = try container.decodeIfPresent(Bool.self, forKey: .allowURLAutomation)
-            ?? false
+        allowURLAutomation = true
         urlAutomationGrants = try container.decodeIfPresent([String].self, forKey: .urlAutomationGrants)
             ?? []
         exportPresets = try container.decodeIfPresent([ExportPreset].self, forKey: .exportPresets)

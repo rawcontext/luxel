@@ -26,7 +26,7 @@ struct ScreenCaptureKitStillCapturerTests {
         #expect(!configuration.showsCursor)
         #expect(configuration.width == 640)
         #expect(configuration.height == 360)
-        #expect(configuration.sourceRect == CGRect(x: 10, y: 20, width: 320, height: 180))
+        #expect(configuration.sourceRect == CGRect(x: 5, y: 10, width: 160, height: 90))
     }
 
     @Test("configuration can request point scale output")

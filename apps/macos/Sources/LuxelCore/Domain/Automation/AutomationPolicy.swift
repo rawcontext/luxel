@@ -42,10 +42,6 @@ public enum AutomationPolicy {
             return .allow
         }
 
-        guard settings.allowURLAutomation else {
-            return .deny("URL automation is disabled")
-        }
-
         if let callerID = context.callerID,
            settings.urlAutomationGrants.contains(callerID) {
             return .allow

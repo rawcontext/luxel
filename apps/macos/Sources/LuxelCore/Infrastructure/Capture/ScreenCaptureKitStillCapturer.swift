@@ -66,12 +66,7 @@ public struct ScreenStillConfigurationFactory: Sendable {
         }
 
         if case .area(_, let rect) = request.target {
-            configuration.sourceRect = CGRect(
-                x: rect.originX,
-                y: rect.originY,
-                width: rect.width,
-                height: rect.height
-            )
+            configuration.sourceRect = sourceRect(from: rect, pointPixelScale: pointPixelScale)
         }
 
         let pointSize = pointSize(for: request.target, contentRect: contentRect)
@@ -92,6 +87,16 @@ public struct ScreenStillConfigurationFactory: Sendable {
         }
 
         return contentRect.size
+    }
+
+    private func sourceRect(from rect: CaptureRect, pointPixelScale: Float) -> CGRect {
+        let pointScale = max(CGFloat(pointPixelScale), 1)
+        return CGRect(
+            x: CGFloat(rect.originX) / pointScale,
+            y: CGFloat(rect.originY) / pointScale,
+            width: CGFloat(rect.width) / pointScale,
+            height: CGFloat(rect.height) / pointScale
+        )
     }
 }
 

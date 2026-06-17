@@ -180,7 +180,7 @@ extension AppSettings {
         updatePreferences: UpdatePreferences = .defaults,
         showTimeInMenuBar: Bool = true,
         notificationReminder: Bool = true,
-        allowURLAutomation: Bool = false,
+        allowURLAutomation: Bool = true,
         urlAutomationGrants: [String] = [],
         exportPresets: [ExportPreset] = ExportPreset.builtInDefaults,
         quickExportPresetID: UUID? = ExportPreset.quickGIFID,
@@ -244,7 +244,7 @@ extension AppSettings {
         self.updatePreferences = updatePreferences
         self.showTimeInMenuBar = showTimeInMenuBar
         self.notificationReminder = notificationReminder
-        self.allowURLAutomation = allowURLAutomation
+        self.allowURLAutomation = true
         self.urlAutomationGrants = urlAutomationGrants
         self.exportPresets = exportPresets
         self.quickExportPresetID = quickExportPresetID
