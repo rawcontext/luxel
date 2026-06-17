@@ -47,6 +47,8 @@ public final class LuxelEditorModel {
     var gifLoopCount = 3
     var gifDithering: GIFDitheringMode = .auto
     var outputDirectory = LuxelEditorModel.defaultRecordingsDirectory
+    var recordingNavigationURLs: [URL] = []
+    var recordingNavigationIndex: Int?
     let supportedFormats: [ExportFormat]
     var exportProgress: ExportProgressSnapshot?
     var exportJobs: [ExportJobSnapshot] = []
@@ -199,6 +201,14 @@ extension LuxelEditorModel {
         status == .exporting || status == .savingOriginal
     }
 
+    var isLoadingSource: Bool {
+        if case .loading = status {
+            return true
+        }
+
+        return false
+    }
+
     var isGrabbingFrame: Bool {
         frameGrabTask != nil || status == .copyingFrame || status == .savingFrame
     }
@@ -225,6 +235,26 @@ extension LuxelEditorModel {
 
     var canRetryExport: Bool {
         isRecoverableExportFailure
+    }
+
+    var canNavigateToOlderRecording: Bool {
+        guard !isExporting,
+              !isLoadingSource,
+              let recordingNavigationIndex else {
+            return false
+        }
+
+        return recordingNavigationIndex < recordingNavigationURLs.count - 1
+    }
+
+    var canNavigateToNewerRecording: Bool {
+        guard !isExporting,
+              !isLoadingSource,
+              let recordingNavigationIndex else {
+            return false
+        }
+
+        return recordingNavigationIndex > 0
     }
 
     var canUndoEditorChange: Bool {
@@ -447,6 +477,7 @@ extension LuxelEditorModel {
 
     public func open(fileURL: URL, outputDirectory: URL) async {
         self.outputDirectory = outputDirectory
+        refreshRecordingNavigation(selectedFileURL: fileURL, outputDirectory: outputDirectory)
         status = .loading(fileURL.lastPathComponent)
         exportProgress = nil
         exportJobs = []

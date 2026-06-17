@@ -28,4 +28,8 @@ public struct CameraDeviceService: Sendable {
 
         return devices.first { $0.id == selectedID }
     }
+
+    public func defaultCameraDevice(in devices: [CameraDeviceOption]) -> CameraDeviceOption? {
+        devices.first { $0.kind == .builtIn } ?? devices.first
+    }
 }

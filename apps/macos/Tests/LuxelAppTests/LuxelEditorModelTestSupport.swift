@@ -103,6 +103,28 @@ extension LuxelEditorModelTests {
             .appending(path: fileName)
     }
 
+    func temporaryDirectory() throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "LuxelEditorModelTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+            .standardizedFileURL
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    func makeRecordingFile(
+        named fileName: String,
+        in directory: URL,
+        modificationDate: Date
+    ) throws -> URL {
+        let fileURL = directory.appending(path: fileName).standardizedFileURL
+        try Data([0]).write(to: fileURL)
+        try FileManager.default.setAttributes(
+            [.modificationDate: modificationDate],
+            ofItemAtPath: fileURL.path
+        )
+        return fileURL
+    }
+
     func packageRootURL() throws -> URL {
         var url = URL(fileURLWithPath: #filePath)
         while url.lastPathComponent != "Tests" {

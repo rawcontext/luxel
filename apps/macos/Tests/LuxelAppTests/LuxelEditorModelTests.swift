@@ -93,6 +93,48 @@ extension LuxelEditorModelTests {
         #expect(model.source?.fileURL == URL(fileURLWithPath: "/tmp/next.mp4"))
     }
 
+    @Test("opening recordings builds newest-first directory navigation")
+    func openingRecordingsBuildsNewestFirstDirectoryNavigation() async throws {
+        let model = makeModel()
+        let directory = try temporaryDirectory()
+        let olderURL = try makeRecordingFile(
+            named: "older.mp4",
+            in: directory,
+            modificationDate: Date(timeIntervalSince1970: 2_100_000_000)
+        )
+        let latestURL = try makeRecordingFile(
+            named: "latest.mp4",
+            in: directory,
+            modificationDate: Date(timeIntervalSince1970: 2_100_000_060)
+        )
+        _ = try makeRecordingFile(
+            named: "latest-export.gif",
+            in: directory,
+            modificationDate: Date(timeIntervalSince1970: 2_100_000_120)
+        )
+
+        await model.open(fileURL: olderURL, outputDirectory: directory)
+
+        #expect(model.recordingNavigationURLs == [
+            latestURL.standardizedFileURL,
+            olderURL.standardizedFileURL
+        ])
+        #expect(model.canNavigateToNewerRecording)
+        #expect(!model.canNavigateToOlderRecording)
+
+        await model.open(fileURL: latestURL, outputDirectory: directory)
+
+        #expect(model.source?.fileURL == latestURL.standardizedFileURL)
+        #expect(!model.canNavigateToNewerRecording)
+        #expect(model.canNavigateToOlderRecording)
+
+        await model.navigateToOlderRecording()
+
+        #expect(model.source?.fileURL == olderURL.standardizedFileURL)
+        #expect(model.canNavigateToNewerRecording)
+        #expect(!model.canNavigateToOlderRecording)
+    }
+
     @Test("import failure clears stale export progress")
     func importFailureClearsStaleExportProgress() {
         let model = makeModel()

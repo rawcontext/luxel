@@ -40,6 +40,7 @@ final class LuxelStatusItemController: NSObject {
     private var pendingPopoverOpenTask: Task<Void, Never>?
     private var suppressNextPopoverOpenUntil: Date?
     private var activationSourceApplication: NSRunningApplication?
+    private var isPresentingPermissionPrompt = false
 
     private let iconSize = NSSize(width: 18, height: 18)
     private let activeIconHeight: CGFloat = 24
@@ -127,6 +128,9 @@ private extension LuxelStatusItemController {
                     },
                     openSettingsWindow: { [weak self] in
                         self?.openSettingsFromPopover()
+                    },
+                    presentPermissionPrompt: { [weak self] source in
+                        self?.presentPermissionPrompt(for: source)
                     }
                 )
             }
@@ -222,6 +226,7 @@ private extension LuxelStatusItemController {
         quickExportProgressPanelController.update(progress: model.quickExportProgress) { [weak model] in
             model?.cancelQuickExport()
         }
+        presentPendingPermissionPromptIfNeeded()
         refreshNotchSurface()
     }
 
@@ -309,6 +314,67 @@ private extension LuxelStatusItemController {
         windowPresenter.openSettings(activationSource: activationSourceApplication)
     }
 
+    private func presentPendingPermissionPromptIfNeeded() {
+        guard !isPresentingPermissionPrompt,
+              let prompt = model.permissionPrompt else {
+            return
+        }
+
+        presentPermissionPrompt(prompt)
+    }
+
+    private func presentPermissionPrompt(for source: CapturePermissionSource) {
+        presentPermissionPrompt(model.makePermissionPrompt(forSource: source))
+    }
+
+    private func presentPermissionPrompt(_ prompt: PermissionPrompt) {
+        guard !isPresentingPermissionPrompt else {
+            model.permissionPrompt = prompt
+            return
+        }
+
+        isPresentingPermissionPrompt = true
+        model.permissionPrompt = nil
+        closePopover()
+
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self else {
+                return
+            }
+
+            let shouldPerformAction = runPermissionAlert(prompt)
+            isPresentingPermissionPrompt = false
+
+            if shouldPerformAction {
+                await model.performPermissionAction(prompt)
+            } else {
+                model.permissionPrompt = nil
+            }
+
+            presentPendingPermissionPromptIfNeeded()
+        }
+    }
+
+    private func runPermissionAlert(_ prompt: PermissionPrompt) -> Bool {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = prompt.guidance.title
+        alert.informativeText = prompt.guidance.message
+
+        let primaryButton = alert.addButton(withTitle: prompt.guidance.actionTitle)
+        primaryButton.keyEquivalent = "\r"
+        primaryButton.keyEquivalentModifierMask = []
+
+        let cancelButton = alert.addButton(withTitle: "Cancel")
+        cancelButton.keyEquivalent = "\u{1b}"
+        cancelButton.keyEquivalentModifierMask = []
+
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
     private func startNotchSurface() {
         model.refreshNotchDisplays()
         Task { @MainActor [weak self] in
@@ -317,7 +383,6 @@ private extension LuxelStatusItemController {
             }
 
             await model.refreshPermissions()
-            await model.refreshCaptureTargets()
             refreshNotchSurface()
         }
         notchDisplayTask = Task { @MainActor [weak model] in
@@ -381,7 +446,7 @@ private extension LuxelStatusItemController {
             quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
             selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
             restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
-            recordAudio: model.settings.recordAudio,
+            recordAudio: model.captureCapabilities.microphoneTrackAvailable,
             loupeAlwaysOn: model.settings.loupeAlwaysOn,
             dimOtherDisplays: model.settings.dimOtherDisplays,
             showsNotificationReminder: model.settings.notificationReminder,
@@ -393,7 +458,12 @@ private extension LuxelStatusItemController {
                 model?.settings.lastStopAfter = duration
                 model?.saveSettings()
             },
-            onRecordAudioChange: { [weak model] isEnabled in
+            onRecordAudioChange: { [weak self, weak model] isEnabled in
+                guard !isEnabled || model?.microphoneStatus == .authorized else {
+                    self?.presentPermissionPrompt(for: .microphone)
+                    return
+                }
+
                 model?.settings.recordAudio = isEnabled
                 model?.saveSettings()
             },

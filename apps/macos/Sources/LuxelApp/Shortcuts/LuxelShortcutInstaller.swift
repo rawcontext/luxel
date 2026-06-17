@@ -80,7 +80,7 @@ struct LuxelShortcutInstaller: View {
                 quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                 selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
                 restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
-                recordAudio: model.settings.recordAudio,
+                recordAudio: model.captureCapabilities.microphoneTrackAvailable,
                 loupeAlwaysOn: model.settings.loupeAlwaysOn,
                 dimOtherDisplays: model.settings.dimOtherDisplays,
                 showsNotificationReminder: model.settings.notificationReminder,
@@ -108,7 +108,7 @@ struct LuxelShortcutInstaller: View {
                 quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                 selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
                 restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
-                recordAudio: model.settings.recordAudio,
+                recordAudio: model.captureCapabilities.microphoneTrackAvailable,
                 loupeAlwaysOn: model.settings.loupeAlwaysOn,
                 dimOtherDisplays: model.settings.dimOtherDisplays,
                 showsNotificationReminder: model.settings.notificationReminder,
@@ -216,6 +216,11 @@ struct LuxelShortcutInstaller: View {
     }
 
     private func saveRecordAudio(_ isEnabled: Bool) {
+        guard !isEnabled || model.microphoneStatus == .authorized else {
+            model.presentPermissionPrompt(for: .microphone)
+            return
+        }
+
         model.settings.recordAudio = isEnabled
         model.saveSettings()
     }

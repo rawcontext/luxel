@@ -1,6 +1,7 @@
 public enum PermissionGuidanceAction: Codable, Equatable, Sendable {
     case request
     case openSettings
+    case enableSource
 }
 
 public struct PermissionGuidance: Codable, Equatable, Sendable {
@@ -36,23 +37,93 @@ public struct PermissionGuidanceService: Sendable {
         }
     }
 
+    public func guidance(
+        for source: CapturePermissionSource,
+        presentation: CaptureSourcePermissionPresentation,
+        status: PermissionStatus
+    ) -> PermissionGuidance {
+        switch source {
+        case .screenPixels:
+            screenRecordingGuidance(status: status)
+        case .systemAudio:
+            systemAudioGuidance(presentation: presentation, status: status)
+        case .microphone:
+            microphoneGuidance(presentation: presentation, status: status)
+        case .camera:
+            cameraGuidance(presentation: presentation, status: status)
+        }
+    }
+
     private func screenRecordingGuidance(status: PermissionStatus) -> PermissionGuidance {
         switch status {
         case .authorized:
             PermissionGuidance(
-                title: "Screen Recording Enabled",
-                message: "Luxel can record your screen.",
+                title: "Screen capture ready",
+                message: "Luxel can record your screen and system sound.",
                 actionTitle: "OK",
                 action: .request
             )
-        case .notDetermined, .denied, .restricted, .unknown:
+        case .notDetermined:
             PermissionGuidance(
-                title: "Screen Recording Permission",
-                message: "Luxel needs Screen Recording permission to capture displays, windows, and selected areas. "
-                    + "Continue, enable Luxel in System Settings if prompted, then quit and reopen Luxel.",
+                title: "Screen capture is off",
+                message: "macOS needs approval before Luxel can record your screen or system sound. "
+                    + "Turn Luxel on in Screen & System Audio Recording, then return here.",
                 actionTitle: "Continue",
                 action: .request
             )
+        case .denied, .restricted, .unknown:
+            PermissionGuidance(
+                title: "Screen capture is off",
+                message: "Turn Luxel on in Screen & System Audio Recording, then return here.",
+                actionTitle: "Open System Settings",
+                action: .openSettings
+            )
+        }
+    }
+
+    private func systemAudioGuidance(
+        presentation: CaptureSourcePermissionPresentation,
+        status: PermissionStatus
+    ) -> PermissionGuidance {
+        switch presentation.phase {
+        case .ready:
+            PermissionGuidance(
+                title: presentation.title,
+                message: presentation.message,
+                actionTitle: "OK",
+                action: .request
+            )
+        case .offByUser:
+            PermissionGuidance(
+                title: presentation.title,
+                message: presentation.message,
+                actionTitle: presentation.actionTitle,
+                action: .enableSource
+            )
+        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch, .pausedByMacOS, .blocked:
+            switch status {
+            case .notDetermined:
+                PermissionGuidance(
+                    title: presentation.title,
+                    message: "System sound uses macOS Screen & System Audio Recording.",
+                    actionTitle: "Continue",
+                    action: .request
+                )
+            case .authorized:
+                PermissionGuidance(
+                    title: presentation.title,
+                    message: presentation.message,
+                    actionTitle: presentation.actionTitle,
+                    action: .enableSource
+                )
+            case .denied, .restricted, .unknown:
+                PermissionGuidance(
+                    title: presentation.title,
+                    message: "Turn Luxel on for system audio in Screen & System Audio Recording.",
+                    actionTitle: "Open System Settings",
+                    action: .openSettings
+                )
+            }
         }
     }
 
@@ -60,53 +131,83 @@ public struct PermissionGuidanceService: Sendable {
         switch status {
         case .notDetermined:
             PermissionGuidance(
-                title: "Microphone Permission",
-                message: "Luxel needs Microphone permission when microphone recording is enabled.",
+                title: "Microphone is off",
+                message: "Allow microphone access to add your voice to recordings.",
                 actionTitle: "Continue",
                 action: .request
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
-                title: "Microphone Permission",
-                message: "Luxel needs Microphone permission when microphone recording is enabled. "
-                    + "Open System Settings and allow Luxel to use the microphone.",
-                actionTitle: "Open Settings",
+                title: "Microphone is off",
+                message: "Allow microphone access to add your voice to recordings.",
+                actionTitle: "Open System Settings",
                 action: .openSettings
             )
         case .authorized:
             PermissionGuidance(
-                title: "Microphone Enabled",
-                message: "Luxel can record microphone audio.",
+                title: "Microphone on",
+                message: "Microphone audio will be included with recordings.",
                 actionTitle: "OK",
                 action: .request
             )
         }
     }
 
+    private func microphoneGuidance(
+        presentation: CaptureSourcePermissionPresentation,
+        status: PermissionStatus
+    ) -> PermissionGuidance {
+        if presentation.phase == .offByUser {
+            return PermissionGuidance(
+                title: presentation.title,
+                message: presentation.message,
+                actionTitle: presentation.actionTitle,
+                action: .enableSource
+            )
+        }
+
+        return microphoneGuidance(status: status)
+    }
+
     private func cameraGuidance(status: PermissionStatus) -> PermissionGuidance {
         switch status {
         case .notDetermined:
             PermissionGuidance(
-                title: "Camera Permission",
-                message: "Luxel needs Camera permission when camera preview or camera-track recording is enabled.",
+                title: "Camera is off",
+                message: "Allow camera access to add your camera overlay.",
                 actionTitle: "Continue",
                 action: .request
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
-                title: "Camera Permission",
-                message: "Luxel needs Camera permission when camera preview or camera-track recording is enabled. "
-                    + "Open System Settings and allow Luxel to use the camera.",
-                actionTitle: "Open Settings",
+                title: "Camera is off",
+                message: "Allow camera access to add your camera overlay.",
+                actionTitle: "Open System Settings",
                 action: .openSettings
             )
         case .authorized:
             PermissionGuidance(
-                title: "Camera Enabled",
-                message: "Luxel can use the camera for preview and camera-track recording.",
+                title: "Camera on",
+                message: "Camera overlay will be included with recordings.",
                 actionTitle: "OK",
                 action: .request
             )
         }
+    }
+
+    private func cameraGuidance(
+        presentation: CaptureSourcePermissionPresentation,
+        status: PermissionStatus
+    ) -> PermissionGuidance {
+        if presentation.phase == .offByUser {
+            return PermissionGuidance(
+                title: presentation.title,
+                message: presentation.message,
+                actionTitle: presentation.actionTitle,
+                action: .enableSource
+            )
+        }
+
+        return cameraGuidance(status: status)
     }
 }

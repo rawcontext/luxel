@@ -25,54 +25,19 @@ extension LuxelMenuModel {
         }
 
         await refreshPermissions()
-        if cameraStatus == .notDetermined {
-            _ = await permissionClient.request(.camera)
-            await refreshPermissions()
-        }
-
         guard cameraStatus == .authorized else {
-            await permissionClient.openSettings(for: .camera)
+            closeCameraPreviewOutsideRecording()
+            presentPermissionPrompt(for: .camera)
             return
         }
 
-        await syncCameraPreviewPanelWithSettings()
+        closeCameraPreviewOutsideRecording()
     }
 
     func setCameraPreviewStyleFromCropper(_ style: CameraPreviewStyle) async {
         settings.cameraPreviewStyle = style
         saveSettings()
-        await syncCameraPreviewPanelWithSettings()
-    }
-
-    func syncCameraPreviewPanelWithSettings() async {
-        guard let cameraDeviceID = settings.cameraDeviceID else {
-            cameraPreviewPanelController.close()
-            return
-        }
-
-        if cameraStatus == .unknown {
-            await refreshPermissions()
-        }
-
-        guard cameraStatus == .authorized else {
-            cameraPreviewPanelController.close()
-            presentPermissionPrompt(for: .camera)
-            return
-        }
-
-        cameraPreviewPanelController.present(
-            deviceID: cameraDeviceID,
-            style: settings.cameraPreviewStyle,
-            placements: settings.cameraPreviewPlacements,
-            snapRect: cameraPreviewSnapRect,
-            showsHoverControls: canShowCameraPreviewHoverControls,
-            onPlacementChange: { [weak self] displayID, placement in
-                self?.saveCameraPreviewPlacement(displayID: displayID, placement: placement)
-            },
-            onClose: { [weak self] in
-                self?.disableCameraPreviewFromPanel()
-            }
-        )
+        closeCameraPreviewOutsideRecording()
     }
 
     func presentCameraPreviewForRecording(_ request: RecordingRequest) async {
@@ -87,14 +52,8 @@ extension LuxelMenuModel {
             await refreshPermissions()
         }
 
-        if cameraStatus == .notDetermined {
-            _ = await permissionClient.request(.camera)
-            await refreshPermissions()
-        }
-
         guard cameraStatus == .authorized else {
             cameraPreviewPanelController.close()
-            presentPermissionPrompt(for: .camera)
             return
         }
 
@@ -113,7 +72,43 @@ extension LuxelMenuModel {
         )
     }
 
+    func enableDefaultCameraSource() async {
+        if cameraStatus == .unknown {
+            await refreshPermissions()
+        }
+
+        guard cameraStatus == .authorized else {
+            presentPermissionPrompt(for: .camera)
+            return
+        }
+
+        refreshCameraDevices()
+        guard let defaultCamera = cameraDeviceService.defaultCameraDevice(in: cameraDevices) else {
+            cameraPreviewPanelController.close()
+            return
+        }
+
+        settings.cameraDeviceID = defaultCamera.id
+        saveSettings()
+        closeCameraPreviewOutsideRecording()
+    }
+
     func closeCameraPreviewForFinishedRecording() {
+        cameraPreviewPanelController.close()
+    }
+
+    func closeCameraPreviewOutsideRecording() {
+        switch recordingState {
+        case .idle, .failed, .exporting:
+            cameraPreviewPanelController.close()
+        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping:
+            break
+        }
+    }
+
+    func disableCameraSource() {
+        settings.cameraDeviceID = nil
+        saveSettings()
         cameraPreviewPanelController.close()
     }
 
@@ -130,9 +125,7 @@ extension LuxelMenuModel {
     }
 
     private func disableCameraPreviewFromPanel() {
-        settings.cameraDeviceID = nil
-        saveSettings()
-        cameraPreviewPanelController.close()
+        disableCameraSource()
     }
 
     private func saveCameraPreviewPlacement(

@@ -26,12 +26,12 @@ struct LuxelMenu: View {
     let dismissMenu: @MainActor () -> Void
     let openEditorWindow: @MainActor () -> Void
     let openSettingsWindow: @MainActor () -> Void
+    let presentPermissionPrompt: @MainActor (CapturePermissionSource) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             LuxelCaptureTargetPicker(model: model)
             captureActionSelector
-            permissionButtons
             LuxelRecordingStatusMessages(model: model)
             LuxelReplayBufferControls(model: model)
             latestRecordingCard
@@ -88,23 +88,6 @@ struct LuxelMenu: View {
             case .failure(let error):
                 editorModel.reportImportFailure(error)
             }
-        }
-        .alert(
-            Text(model.permissionPrompt?.guidance.title ?? "Permission"),
-            isPresented: permissionPromptPresented,
-            presenting: model.permissionPrompt
-        ) { prompt in
-            Button(prompt.guidance.actionTitle) {
-                Task {
-                    await model.performPermissionAction(prompt)
-                }
-            }
-
-            Button("Cancel", role: .cancel) {
-                model.permissionPrompt = nil
-            }
-        } message: { prompt in
-            Text(prompt.guidance.message)
         }
         .alert(
             Text(model.recoveryPrompt?.title ?? "Recording Recovery"),
@@ -176,7 +159,7 @@ private extension LuxelMenu {
             captureActionButtonLabel(action)
         }
         .buttonStyle(.plain)
-        .disabled(!canPerformCaptureAction(action))
+        .disabled(!canPerformCaptureAction(action) && !canRecoverCaptureAction(action))
     }
 
     @ViewBuilder
@@ -203,68 +186,6 @@ private extension LuxelMenu {
         }
         .frame(maxWidth: .infinity, minHeight: Self.captureActionButtonHeight)
         .contentShape(RoundedRectangle(cornerRadius: Self.captureActionButtonCornerRadius, style: .continuous))
-    }
-
-    @ViewBuilder
-    private var permissionButtons: some View {
-        let needsScreenRecording = model.screenRecordingStatus != .authorized
-        let needsMicrophone = model.microphoneStatus != .authorized
-        let needsCamera = model.settings.cameraDeviceID != nil && model.cameraStatus != .authorized
-
-        if needsScreenRecording || needsMicrophone || needsCamera {
-            HStack(spacing: 6) {
-                if needsScreenRecording {
-                    permissionButton(
-                        title: "Screen",
-                        systemImage: "display",
-                        status: model.screenRecordingStatus,
-                        permission: .screenRecording
-                    )
-                }
-
-                if needsMicrophone {
-                    permissionButton(
-                        title: "Mic",
-                        systemImage: "mic",
-                        status: model.microphoneStatus,
-                        permission: .microphone
-                    )
-                }
-
-                if needsCamera {
-                    permissionButton(
-                        title: "Camera",
-                        systemImage: "video",
-                        status: model.cameraStatus,
-                        permission: .camera
-                    )
-                }
-            }
-        }
-    }
-
-    private func permissionButton(
-        title: String,
-        systemImage: String,
-        status: PermissionStatus,
-        permission: SystemPermission
-    ) -> some View {
-        Button {
-            model.presentPermissionPrompt(for: permission)
-        } label: {
-            Label {
-                Text(title)
-            } icon: {
-                Image(systemName: systemImage)
-                    .foregroundStyle(status.tint)
-            }
-            .font(.callout.weight(.medium))
-            .lineLimit(1)
-            .frame(maxWidth: .infinity, minHeight: 28)
-            .luxelMenuControlBackground(cornerRadius: 10)
-        }
-        .buttonStyle(.plain)
-        .help(model.permissionActionTitle(for: permission))
     }
 
     @ViewBuilder
@@ -322,6 +243,7 @@ private extension LuxelMenu {
         HStack(spacing: 8) {
             recordSystemAudioFooterToggle
             recordMicrophoneFooterToggle
+            cameraFooterToggle
 
             recentFooterControl
                 .layoutPriority(1)
@@ -379,45 +301,58 @@ private extension LuxelMenu {
     }
 
     private var recordSystemAudioFooterToggle: some View {
-        Button {
-            recordSystemAudio.wrappedValue.toggle()
+        let presentation = model.sourcePermissionPresentation(for: .systemAudio)
+
+        return Button {
+            handleSystemAudioFooterAction(presentation)
         } label: {
-            footerAudioToggleIcon(
-                systemImage: model.settings.recordSystemAudio ? "speaker.wave.2.fill" : "speaker.slash.fill",
-                isActive: model.settings.recordSystemAudio
-            )
+            footerSourceIcon(presentation)
         }
         .buttonStyle(.plain)
         .frame(height: Self.footerButtonHeight)
-        .help(recordSystemAudioHelp)
+        .help(presentation.message)
         .accessibilityLabel("System Audio")
-        .accessibilityValue(model.settings.recordSystemAudio ? "On" : "Off")
+        .accessibilityValue(presentation.statusTitle)
     }
 
     private var recordMicrophoneFooterToggle: some View {
-        Button {
-            recordMicrophone.wrappedValue.toggle()
+        let presentation = model.sourcePermissionPresentation(for: .microphone)
+
+        return Button {
+            handleMicrophoneFooterAction(presentation)
         } label: {
-            footerAudioToggleIcon(
-                systemImage: model.settings.recordAudio ? "mic.fill" : "mic.slash",
-                isActive: model.settings.recordAudio
-            )
+            footerSourceIcon(presentation)
         }
         .buttonStyle(.plain)
         .frame(height: Self.footerButtonHeight)
-        .help(recordMicrophoneHelp)
+        .help(presentation.message)
         .accessibilityLabel("Microphone")
-        .accessibilityValue(model.settings.recordAudio ? "On" : "Off")
+        .accessibilityValue(presentation.statusTitle)
     }
 
-    private func footerAudioToggleIcon(systemImage: String, isActive: Bool) -> some View {
-        Image(systemName: systemImage)
+    private var cameraFooterToggle: some View {
+        let presentation = model.sourcePermissionPresentation(for: .camera)
+
+        return Button {
+            handleCameraFooterAction(presentation)
+        } label: {
+            footerSourceIcon(presentation)
+        }
+        .buttonStyle(.plain)
+        .frame(height: Self.footerButtonHeight)
+        .help(presentation.message)
+        .accessibilityLabel("Camera")
+        .accessibilityValue(presentation.statusTitle)
+    }
+
+    private func footerSourceIcon(_ presentation: CaptureSourcePermissionPresentation) -> some View {
+        Image(systemName: presentation.systemImage)
             .labelStyle(.iconOnly)
             .font(.callout.weight(.semibold))
-            .foregroundStyle(isActive ? .black : .white)
+            .foregroundStyle(presentation.isReady ? .black : .white)
             .frame(width: Self.footerAudioButtonWidth, height: Self.footerButtonHeight)
             .background(
-                isActive ? .white.opacity(0.92) : .white.opacity(0.10),
+                presentation.isReady ? .white.opacity(0.92) : .white.opacity(0.10),
                 in: RoundedRectangle(cornerRadius: Self.footerButtonCornerRadius, style: .continuous)
             )
     }
@@ -538,6 +473,7 @@ private extension LuxelMenu {
 
     private func performCaptureAction(_ action: LuxelCaptureAction) {
         guard canPerformCaptureAction(action) else {
+            recoverCaptureAction(action)
             return
         }
 
@@ -557,6 +493,49 @@ private extension LuxelMenu {
         }
     }
 
+    private func canRecoverCaptureAction(_ action: LuxelCaptureAction) -> Bool {
+        switch action {
+        case .screen, .area:
+            model.sourcePermissionPresentation(for: .screenPixels).needsSetup
+        case .audio:
+            audioCaptureRecoverySource() != nil
+        }
+    }
+
+    private func recoverCaptureAction(_ action: LuxelCaptureAction) {
+        switch action {
+        case .screen, .area:
+            presentPermissionPrompt(.screenPixels)
+        case .audio:
+            if let source = audioCaptureRecoverySource() {
+                presentPermissionPrompt(source)
+            }
+        }
+    }
+
+    private func audioCaptureRecoverySource() -> CapturePermissionSource? {
+        let microphone = model.sourcePermissionPresentation(for: .microphone)
+        let systemAudio = model.sourcePermissionPresentation(for: .systemAudio)
+
+        if microphone.needsSetup {
+            return .microphone
+        }
+
+        if systemAudio.needsSetup {
+            return .systemAudio
+        }
+
+        if microphone.phase == .offByUser {
+            return .microphone
+        }
+
+        if systemAudio.phase == .offByUser {
+            return .systemAudio
+        }
+
+        return nil
+    }
+
     private func showAreaCapturePicker() {
         model.refreshCameraDevices()
         cropperPanelController.show(
@@ -567,7 +546,7 @@ private extension LuxelMenu {
             quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
             selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
             restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
-            recordAudio: model.settings.recordAudio,
+            recordAudio: model.captureCapabilities.microphoneTrackAvailable,
             loupeAlwaysOn: model.settings.loupeAlwaysOn,
             dimOtherDisplays: model.settings.dimOtherDisplays,
             showsNotificationReminder: model.settings.notificationReminder,
@@ -580,6 +559,11 @@ private extension LuxelMenu {
                 model.saveSettings()
             },
             onRecordAudioChange: { isEnabled in
+                guard !isEnabled || model.microphoneStatus == .authorized else {
+                    presentPermissionPrompt(.microphone)
+                    return
+                }
+
                 model.settings.recordAudio = isEnabled
                 model.saveSettings()
             },
@@ -685,16 +669,6 @@ private extension LuxelMenu {
         await model.refreshCaptureTargets()
     }
 
-    private var permissionPromptPresented: Binding<Bool> {
-        Binding {
-            model.permissionPrompt != nil
-        } set: { isPresented in
-            if !isPresented {
-                model.permissionPrompt = nil
-            }
-        }
-    }
-
     private var recoveryPromptPresented: Binding<Bool> {
         Binding {
             model.recoveryPrompt != nil
@@ -715,45 +689,43 @@ private extension LuxelMenu {
         }
     }
 
-    private var recordSystemAudio: Binding<Bool> {
-        Binding {
-            model.settings.recordSystemAudio
-        } set: { isEnabled in
-            model.settings.recordSystemAudio = isEnabled
+    private func handleSystemAudioFooterAction(_ presentation: CaptureSourcePermissionPresentation) {
+        switch presentation.phase {
+        case .ready:
+            model.settings.recordSystemAudio = false
             model.saveSettings()
+        case .offByUser:
+            model.settings.recordSystemAudio = true
+            model.saveSettings()
+        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch, .pausedByMacOS, .blocked:
+            presentPermissionPrompt(.systemAudio)
         }
     }
 
-    private var recordMicrophone: Binding<Bool> {
-        Binding {
-            model.settings.recordAudio
-        } set: { isEnabled in
-            if isEnabled, model.microphoneStatus != .authorized {
-                model.presentPermissionPrompt(for: .microphone)
-                return
+    private func handleMicrophoneFooterAction(_ presentation: CaptureSourcePermissionPresentation) {
+        switch presentation.phase {
+        case .ready:
+            model.settings.recordAudio = false
+            model.saveSettings()
+        case .offByUser:
+            model.settings.recordAudio = true
+            model.saveSettings()
+        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch, .pausedByMacOS, .blocked:
+            presentPermissionPrompt(.microphone)
+        }
+    }
+
+    private func handleCameraFooterAction(_ presentation: CaptureSourcePermissionPresentation) {
+        switch presentation.phase {
+        case .ready:
+            model.disableCameraSource()
+        case .offByUser:
+            Task {
+                await model.enableDefaultCameraSource()
             }
-
-            model.settings.recordAudio = isEnabled
-            model.saveSettings()
+        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch, .pausedByMacOS, .blocked:
+            presentPermissionPrompt(.camera)
         }
-    }
-
-    private var recordSystemAudioHelp: String {
-        model.settings.recordSystemAudio
-            ? "Record system sound with screen and area recordings."
-            : "Do not record system sound with screen and area recordings."
-    }
-
-    private var recordMicrophoneHelp: String {
-        if model.settings.recordAudio {
-            return "Record microphone audio with screen and area recordings."
-        }
-
-        if model.microphoneStatus == .authorized {
-            return "Do not record microphone audio with screen and area recordings."
-        }
-
-        return "Grant microphone permission to enable mic recording."
     }
 }
 

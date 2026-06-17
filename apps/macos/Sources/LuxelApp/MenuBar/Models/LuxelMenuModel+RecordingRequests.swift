@@ -28,7 +28,7 @@ extension LuxelMenuModel {
                 showCursor: usesBakedCursor,
                 highlightClicks: usesBakedCursor && settings.highlightClicks,
                 captureKeystrokes: settings.keystrokeOverlayEnabled,
-                camera: settings.cameraRecordingOptions,
+                camera: captureCapabilities.cameraOverlayAvailable ? settings.cameraRecordingOptions : nil,
                 audio: resolvedAudio.mode,
                 videoCodec: .h264,
                 captureKind: captureKind,
@@ -79,7 +79,10 @@ extension LuxelMenuModel {
     }
 
     private func resolveRecordingAudioMode() -> (mode: RecordingAudioMode, noticeMessage: String?) {
-        switch (settings.recordSystemAudio, settings.recordAudio) {
+        let recordsSystemAudio = captureCapabilities.systemAudioTrackAvailable
+        let recordsMicrophone = captureCapabilities.microphoneTrackAvailable
+
+        switch (recordsSystemAudio, recordsMicrophone) {
         case (true, true):
             let resolution = resolveSelectedAudioInputDevice()
             return (
@@ -96,6 +99,38 @@ extension LuxelMenuModel {
             )
         case (false, false):
             return (.none, nil)
+        }
+    }
+
+    func recordingRequestWithAvailableSources(_ request: RecordingRequest) -> RecordingRequest {
+        RecordingRequest(
+            target: request.target,
+            outputFileURL: request.outputFileURL,
+            pixelSize: request.pixelSize,
+            frameRate: request.frameRate,
+            showCursor: request.showCursor,
+            highlightClicks: request.highlightClicks,
+            captureKeystrokes: request.captureKeystrokes,
+            camera: captureCapabilities.cameraOverlayAvailable ? request.camera : nil,
+            audio: recordingAudioModeWithAvailableSources(request.audio),
+            videoCodec: request.videoCodec,
+            captureKind: request.captureKind,
+            schedule: request.schedule,
+            timelapse: request.timelapse
+        )
+    }
+
+    private func recordingAudioModeWithAvailableSources(_ audio: RecordingAudioMode) -> RecordingAudioMode {
+        switch (audio.capturesSystemAudio && captureCapabilities.systemAudioTrackAvailable,
+                audio.capturesMicrophone && captureCapabilities.microphoneTrackAvailable) {
+        case (true, true):
+            .systemAndMicrophone(deviceID: audio.microphoneDeviceID)
+        case (true, false):
+            .system
+        case (false, true):
+            .microphone(deviceID: audio.microphoneDeviceID)
+        case (false, false):
+            .none
         }
     }
 

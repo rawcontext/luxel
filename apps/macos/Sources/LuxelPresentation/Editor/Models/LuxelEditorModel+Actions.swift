@@ -4,6 +4,32 @@ import LuxelCore
 import Observation
 
 extension LuxelEditorModel {
+    func navigateToOlderRecording() async {
+        guard let recordingNavigationIndex,
+              canNavigateToOlderRecording else {
+            return
+        }
+
+        await openRecordingNavigationItem(at: recordingNavigationIndex + 1)
+    }
+
+    func navigateToNewerRecording() async {
+        guard let recordingNavigationIndex,
+              canNavigateToNewerRecording else {
+            return
+        }
+
+        await openRecordingNavigationItem(at: recordingNavigationIndex - 1)
+    }
+
+    private func openRecordingNavigationItem(at index: Int) async {
+        guard recordingNavigationURLs.indices.contains(index) else {
+            return
+        }
+
+        await open(fileURL: recordingNavigationURLs[index], outputDirectory: outputDirectory)
+    }
+
     func refreshExportEstimate() async {
         guard let source else {
             exportEstimate = nil
@@ -481,6 +507,7 @@ extension LuxelEditorModel {
 
     func clearSource() {
         source = nil
+        recordingNavigationIndex = nil
         exportProgress = nil
         exportJobs = []
         exportEstimate = nil
@@ -493,6 +520,78 @@ extension LuxelEditorModel {
         playbackRequested = false
         player.replaceCurrentItem(with: nil)
         resetEditorUndoStack()
+    }
+
+    func refreshRecordingNavigation(selectedFileURL: URL, outputDirectory: URL) {
+        let selectedFileURL = selectedFileURL.standardizedFileURL
+        recordingNavigationURLs = Self.recordingNavigationURLs(
+            in: outputDirectory,
+            selectedFileURL: selectedFileURL
+        )
+        recordingNavigationIndex = recordingNavigationURLs.firstIndex {
+            $0.standardizedFileURL == selectedFileURL
+        }
+    }
+
+    private static func recordingNavigationURLs(
+        in outputDirectory: URL,
+        selectedFileURL: URL
+    ) -> [URL] {
+        let directoryURLs = (try? FileManager.default.contentsOfDirectory(
+            at: outputDirectory,
+            includingPropertiesForKeys: [
+                .creationDateKey,
+                .contentModificationDateKey,
+                .isRegularFileKey
+            ],
+            options: [.skipsHiddenFiles]
+        )) ?? []
+
+        let recordingURLs = directoryURLs.compactMap { url -> (url: URL, date: Date)? in
+            guard isNavigableRecordingURL(url),
+                  let values = try? url.resourceValues(forKeys: [
+                    .creationDateKey,
+                    .contentModificationDateKey,
+                    .isRegularFileKey
+                  ]),
+                  values.isRegularFile == true else {
+                return nil
+            }
+
+            let date = [
+                values.creationDate,
+                values.contentModificationDate
+            ].compactMap(\.self).max() ?? .distantPast
+
+            return (url.standardizedFileURL, date)
+        }
+        .sorted { lhs, rhs in
+            if lhs.date == rhs.date {
+                return lhs.url.lastPathComponent > rhs.url.lastPathComponent
+            }
+
+            return lhs.date > rhs.date
+        }
+        .map(\.url)
+
+        return uniqueNavigationURLs(recordingURLs + [selectedFileURL])
+    }
+
+    private static func isNavigableRecordingURL(_ url: URL) -> Bool {
+        switch url.pathExtension.lowercased() {
+        case "m4v", "mov", "mp4":
+            true
+        default:
+            false
+        }
+    }
+
+    private static func uniqueNavigationURLs(_ urls: [URL]) -> [URL] {
+        var seenPaths: Set<String> = []
+
+        return urls.filter { url in
+            seenPaths.insert(url.standardizedFileURL.path).inserted
+        }
     }
 
     func makeExportJobs(for formats: [ExportFormat]) -> [ExportJobSnapshot] {

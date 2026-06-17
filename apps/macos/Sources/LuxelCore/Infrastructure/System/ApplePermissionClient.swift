@@ -3,7 +3,6 @@ import AVFoundation
 import AVFAudio
 import CoreGraphics
 import Foundation
-import ScreenCaptureKit
 
 public struct ApplePermissionClient: PermissionClient {
     public init() {}
@@ -11,11 +10,7 @@ public struct ApplePermissionClient: PermissionClient {
     public func status(for permission: SystemPermission) async -> PermissionStatus {
         switch permission {
         case .screenRecording:
-            if CGPreflightScreenCaptureAccess() {
-                return .authorized
-            }
-
-            return await screenCaptureKitStatus()
+            return CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined
         case .microphone:
             return AVAudioApplication.shared.recordPermission.permissionStatus
         case .camera:
@@ -49,15 +44,6 @@ public struct ApplePermissionClient: PermissionClient {
         }
 
         NSWorkspace.shared.open(url)
-    }
-
-    private func screenCaptureKitStatus() async -> PermissionStatus {
-        do {
-            _ = try await SCShareableContent.current
-            return .authorized
-        } catch {
-            return .denied
-        }
     }
 }
 

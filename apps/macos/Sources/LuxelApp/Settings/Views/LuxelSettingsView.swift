@@ -88,23 +88,6 @@ extension LuxelSettingsView {
         .onChange(of: model.launchAtLogin) {
             model.setLaunchAtLogin(model.launchAtLogin)
         }
-        .alert(
-            Text(model.permissionPrompt?.guidance.title ?? "Permission"),
-            isPresented: permissionPromptPresented,
-            presenting: model.permissionPrompt
-        ) { prompt in
-            Button(prompt.guidance.actionTitle) {
-                Task {
-                    await model.performPermissionAction(prompt)
-                }
-            }
-
-            Button("Cancel", role: .cancel) {
-                model.permissionPrompt = nil
-            }
-        } message: { prompt in
-            Text(prompt.guidance.message)
-        }
         .sheet(isPresented: $isShowingAcknowledgements) {
             CodecAcknowledgementsView(text: CodecAcknowledgementsResource.bundledText())
         }
@@ -990,16 +973,6 @@ extension LuxelSettingsView {
             "Save each screenshot as a file."
         case .preview:
             "Open each screenshot in Preview."
-        }
-    }
-
-    private var permissionPromptPresented: Binding<Bool> {
-        Binding {
-            model.permissionPrompt != nil
-        } set: { isPresented in
-            if !isPresented {
-                model.permissionPrompt = nil
-            }
         }
     }
 

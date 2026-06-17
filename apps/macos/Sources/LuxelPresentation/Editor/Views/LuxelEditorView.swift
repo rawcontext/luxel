@@ -50,6 +50,9 @@ extension LuxelEditorView {
             }
         }
         .frame(minWidth: 560, maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .topLeading) {
+            recordingNavigationControls
+        }
         .contextMenu {
             Button("Copy Frame") {
                 model.copyCurrentFrame()
@@ -61,6 +64,52 @@ extension LuxelEditorView {
             }
             .disabled(!model.canGrabFrame)
         }
+    }
+
+    private var recordingNavigationControls: some View {
+        GlassEffectContainer(spacing: 6) {
+            HStack(spacing: 6) {
+                recordingNavigationButton(
+                    title: "Back",
+                    systemImage: "chevron.left",
+                    isEnabled: model.canNavigateToOlderRecording
+                ) {
+                    await model.navigateToOlderRecording()
+                }
+                .help("Open older recording")
+
+                recordingNavigationButton(
+                    title: "Forward",
+                    systemImage: "chevron.right",
+                    isEnabled: model.canNavigateToNewerRecording
+                ) {
+                    await model.navigateToNewerRecording()
+                }
+                .help("Open newer recording")
+            }
+        }
+        .controlSize(.small)
+        .padding(12)
+    }
+
+    private func recordingNavigationButton(
+        title: String,
+        systemImage: String,
+        isEnabled: Bool,
+        action: @escaping @MainActor () async -> Void
+    ) -> some View {
+        Button {
+            Task {
+                await action()
+            }
+        } label: {
+            Image(systemName: systemImage)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+                .accessibilityLabel(title)
+        }
+        .buttonStyle(.glass)
+        .disabled(!isEnabled)
     }
 
     private var controls: some View {

@@ -61,6 +61,130 @@ extension ArchitectureTests {
         }
     }
 
+    @Test("permission UX avoids private macOS privacy state edits")
+    func permissionUXAvoidsPrivatePrivacyStateEdits() throws {
+        let sourceDirectory = try packageRootURL().appending(path: "Sources")
+        let forbiddenSnippets = [
+            "TCC.db",
+            "ScreenCaptureApprovals.plist",
+            "tccutil reset",
+            "systemsetup -setusingnetworktime",
+            "systemsetup -setdate",
+            "systemsetup -settime",
+            "systemstatusd"
+        ]
+
+        for fileURL in try swiftFiles(under: sourceDirectory) {
+            let contents = try String(contentsOf: fileURL, encoding: .utf8)
+            for forbiddenSnippet in forbiddenSnippets {
+                #expect(!contents.contains(forbiddenSnippet), "\(fileURL.path) contains \(forbiddenSnippet)")
+            }
+        }
+    }
+
+    @Test("screen permission status check does not touch ScreenCaptureKit")
+    func screenPermissionStatusCheckDoesNotTouchScreenCaptureKit() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelCore/Infrastructure/System/ApplePermissionClient.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined"))
+        #expect(source.contains("CGRequestScreenCaptureAccess()"))
+        #expect(!source.contains("import ScreenCaptureKit"))
+        #expect(!source.contains("SCShareableContent.current"))
+    }
+
+    @Test("status item startup does not enumerate capture targets")
+    func statusItemStartupDoesNotEnumerateCaptureTargets() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/App/LuxelStatusItemController.swift"),
+            encoding: .utf8
+        )
+        let startupRange = try #require(source.range(of: "private func startNotchSurface()"))
+        let nextFunctionRange = try #require(source[startupRange.upperBound...].range(of: "private func "))
+        let startupSource = source[startupRange.lowerBound..<nextFunctionRange.lowerBound]
+
+        #expect(startupSource.contains("await model.refreshPermissions()"))
+        #expect(!startupSource.contains("refreshCaptureTargets()"))
+    }
+
+    @Test("notch surface stays dormant until screen permission is authorized")
+    func notchSurfaceStaysDormantUntilScreenPermissionIsAuthorized() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Notch.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("private var canUseScreenDependentNotchAction: Bool"))
+        #expect(source.contains("screenRecordingStatus == .authorized"))
+        #expect(source.contains("presentPermissionPrompt(forSource: .screenPixels)"))
+        #expect(source.contains(
+            "case .idle:\n"
+                + "            guard screenRecordingStatus == .authorized else {\n"
+                + "                return .dormant\n"
+                + "            }"
+        ))
+        #expect(source.contains(
+            "case .failed(let message):\n"
+                + "            guard screenRecordingStatus == .authorized else {\n"
+                + "                return .dormant\n"
+                + "            }"
+        ))
+    }
+
+    @Test("notch action icons expose hover tooltips")
+    func notchActionIconsExposeHoverTooltips() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/Notch/Panels/OverlayPanelNotchPresenter.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("@State private var hoveredActionID: NotchActivityActionID?"))
+        #expect(source.contains("private func notchActionTooltip(for action: NotchActivityActionDescriptor) -> some View"))
+        #expect(source.contains(".help(Text(action.title))"))
+        #expect(source.contains(".onHover { isHovered in"))
+    }
+
+    @Test("system audio footer off state toggles without permission prompt")
+    func systemAudioFooterOffStateTogglesWithoutPermissionPrompt() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
+            encoding: .utf8
+        )
+        let handlerRange = try #require(source.range(of: "private func handleSystemAudioFooterAction"))
+        let nextHandlerRange = try #require(source[handlerRange.upperBound...].range(of: "private func handleMicrophoneFooterAction"))
+        let handlerSource = String(source[handlerRange.lowerBound..<nextHandlerRange.lowerBound])
+
+        #expect(handlerSource.contains("case .offByUser:\n            model.settings.recordSystemAudio = true\n            model.saveSettings()"))
+        #expect(!handlerSource.contains("case .offByUser:\n            presentPermissionPrompt(.systemAudio)"))
+    }
+
+    @Test("permission prompts are hosted outside transient SwiftUI menu surfaces")
+    func permissionPromptsAreHostedOutsideTransientSwiftUIMenuSurfaces() throws {
+        let packageRoot = try packageRootURL()
+        let statusItemSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/App/LuxelStatusItemController.swift"),
+            encoding: .utf8
+        )
+        let menuSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
+            encoding: .utf8
+        )
+        let settingsSource = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Settings/Views/LuxelSettingsView.swift"),
+            encoding: .utf8
+        )
+
+        #expect(statusItemSource.contains("private func presentPendingPermissionPromptIfNeeded()"))
+        #expect(statusItemSource.contains("let alert = NSAlert()"))
+        #expect(statusItemSource.contains("let primaryButton = alert.addButton(withTitle: prompt.guidance.actionTitle)"))
+        #expect(statusItemSource.contains("primaryButton.keyEquivalent = \"\\r\""))
+        #expect(statusItemSource.contains("presentPermissionPrompt(model.makePermissionPrompt(forSource: source))"))
+        #expect(!menuSource.contains("isPresented: permissionPromptPresented"))
+        #expect(!settingsSource.contains("isPresented: permissionPromptPresented"))
+    }
+
     @Test("menu bar status is owned by one AppKit status item")
     func menuBarStatusIsOwnedByOneAppKitStatusItem() throws {
         let sourceDirectory = try packageRootURL().appending(path: "Sources/LuxelApp")
@@ -378,12 +502,19 @@ extension ArchitectureTests {
             cameraSource.range(of: "func presentCameraPreviewForRecording(_ request: RecordingRequest) async")
         )
         let recordingCameraHelperSource = String(cameraSource[recordingCameraHelperRange.lowerBound...])
+        let cameraPreviewPresentCallCount = cameraSource
+            .components(separatedBy: "cameraPreviewPanelController.present(")
+            .count - 1
 
         #expect(recorderStartRange.lowerBound < cameraStartRange.lowerBound)
         #expect(recordingSource.contains("closeCameraPreviewForFinishedRecording()"))
         #expect(cameraSource.contains("func presentCameraPreviewForRecording(_ request: RecordingRequest) async"))
+        #expect(cameraPreviewPresentCallCount == 1)
+        #expect(!cameraSource.contains("syncCameraPreviewPanelWithSettings("))
         #expect(recordingCameraHelperSource.contains("guard let camera = request.camera"))
-        #expect(recordingCameraHelperSource.contains("permissionClient.request(.camera)"))
+        #expect(recordingCameraHelperSource.contains("guard cameraStatus == .authorized"))
+        #expect(recordingCameraHelperSource.contains("cameraPreviewPanelController.close()"))
+        #expect(!recordingCameraHelperSource.contains("permissionClient.request(.camera)"))
         #expect(recordingCameraHelperSource.contains("showsHoverControls: false"))
         #expect(cameraSource.contains("func closeCameraPreviewForFinishedRecording()"))
     }

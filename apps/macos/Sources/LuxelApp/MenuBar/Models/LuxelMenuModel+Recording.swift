@@ -163,7 +163,10 @@ extension LuxelMenuModel {
                 countdownSeconds,
                 to: request
             )
-            await startRecording(scheduledRequest, latencySpan: latencySpan)
+            await startRecording(
+                recordingRequestWithAvailableSources(scheduledRequest),
+                latencySpan: latencySpan
+            )
         } catch {
             recordingState = .failed(errorMessage(error))
             LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "request-build-failed")

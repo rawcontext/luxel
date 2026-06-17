@@ -91,13 +91,33 @@ extension LuxelMenuModel {
     ) async {
         switch actionID {
         case .recordArea:
+            guard canUseScreenDependentNotchAction else {
+                presentPermissionPrompt(forSource: .screenPixels)
+                break
+            }
+
             showAreaCapturePicker()
         case .recordWindow:
+            guard canUseScreenDependentNotchAction else {
+                presentPermissionPrompt(forSource: .screenPixels)
+                break
+            }
+
             await startActiveWindowRecording(notchRecordingActionID: .recordWindow)
         case .recordFullscreen:
+            guard canUseScreenDependentNotchAction else {
+                presentPermissionPrompt(forSource: .screenPixels)
+                break
+            }
+
             await refreshCaptureTargets()
             await startFullscreenRecording(notchRecordingActionID: .recordFullscreen)
         case .screenshot:
+            guard canUseScreenDependentNotchAction else {
+                presentPermissionPrompt(forSource: .screenPixels)
+                break
+            }
+
             showScreenshotCapturePicker()
         case .openSettings:
             openSettings()
@@ -115,6 +135,11 @@ extension LuxelMenuModel {
         case .cancelExport:
             cancelQuickExport()
         case .retry:
+            guard canUseScreenDependentNotchAction else {
+                presentPermissionPrompt(forSource: .screenPixels)
+                break
+            }
+
             await refreshCaptureTargets()
             await startRecordingFromSelectedTarget()
         case .quickGIF, .markMoment, .clipReplay, .pauseReplayBuffer, .cancelProcessing, .revealStorage,
@@ -141,6 +166,10 @@ extension LuxelMenuModel {
 
         switch recordingState {
         case .idle:
+            guard screenRecordingStatus == .authorized else {
+                return .dormant
+            }
+
             return .idleHover
         case .starting, .stopping:
             return .processing
@@ -159,6 +188,10 @@ extension LuxelMenuModel {
         case .exporting(let snapshot):
             return .exporting(snapshot: snapshot)
         case .failed(let message):
+            guard screenRecordingStatus == .authorized else {
+                return .dormant
+            }
+
             let recoveryAction: NotchRecoveryAction? = message.localizedCaseInsensitiveContains("permission")
                 ? .openSettings
                 : .retry
@@ -168,6 +201,10 @@ extension LuxelMenuModel {
                 recoveryAction: recoveryAction
             )).map(NotchActivity.error) ?? .dormant
         }
+    }
+
+    private var canUseScreenDependentNotchAction: Bool {
+        screenRecordingStatus == .authorized
     }
 
 }

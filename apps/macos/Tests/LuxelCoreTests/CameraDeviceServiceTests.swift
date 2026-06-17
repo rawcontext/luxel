@@ -39,6 +39,18 @@ struct CameraDeviceServiceTests {
         #expect(service.selectedCameraDevice(selectedID: nil, in: [builtIn, external]) == nil)
         #expect(service.selectedCameraDevice(selectedID: "missing", in: [builtIn, external]) == nil)
     }
+
+    @Test("defaultCameraDevice prefers built-in camera")
+    func defaultCameraDevicePrefersBuiltInCamera() {
+        let external = CameraDeviceOption(id: "external", name: "USB Camera", kind: .external)
+        let builtIn = CameraDeviceOption(id: "built-in", name: "FaceTime HD", kind: .builtIn)
+        let continuity = CameraDeviceOption(id: "continuity", name: "iPhone Camera", kind: .continuity)
+        let service = CameraDeviceService(catalog: FakeCameraDeviceCatalog(devices: []))
+
+        #expect(service.defaultCameraDevice(in: [external, builtIn, continuity]) == builtIn)
+        #expect(service.defaultCameraDevice(in: [external, continuity]) == external)
+        #expect(service.defaultCameraDevice(in: []) == nil)
+    }
 }
 
 private struct FakeCameraDeviceCatalog: CameraDeviceCatalog {

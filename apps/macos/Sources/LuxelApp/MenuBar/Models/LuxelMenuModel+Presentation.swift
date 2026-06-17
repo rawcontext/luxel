@@ -57,7 +57,7 @@ extension LuxelMenuModel {
     var canUseAudioOnlyButton: Bool {
         switch recordingState {
         case .idle, .failed:
-            microphoneStatus == .authorized
+            captureCapabilities.audioOnlyRecordingAvailable
         case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
@@ -66,7 +66,7 @@ extension LuxelMenuModel {
     var canUseRecordAgainButton: Bool {
         switch recordingState {
         case .idle, .failed:
-            screenRecordingStatus == .authorized && settings.lastCaptureMemory != nil
+            captureCapabilities.recordAgainAvailable
         case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
@@ -79,7 +79,7 @@ extension LuxelMenuModel {
     var canCaptureScreenshot: Bool {
         switch recordingState {
         case .idle, .failed:
-            screenRecordingStatus == .authorized && selectedCaptureTarget != nil
+            captureCapabilities.screenshotAvailable
         case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
@@ -88,7 +88,7 @@ extension LuxelMenuModel {
     var canSelectArea: Bool {
         switch recordingState {
         case .idle, .failed:
-            screenRecordingStatus == .authorized
+            captureCapabilities.areaRecordingAvailable
         case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
             false
         }
@@ -123,7 +123,7 @@ extension LuxelMenuModel {
     }
 
     var canStartRecording: Bool {
-        screenRecordingStatus == .authorized && selectedCaptureTarget != nil
+        captureCapabilities.screenRecordingAvailable
     }
 
     var isRecordingAudioOnly: Bool {
