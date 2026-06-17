@@ -5,6 +5,7 @@ public final class NotchCoordinator: @unchecked Sendable {
         self.presenter = presenter
     }
 
+    @MainActor
     public var interactions: AsyncStream<NotchInteraction> {
         presenter.interactions
     }

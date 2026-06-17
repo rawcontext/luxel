@@ -1,3 +1,4 @@
+@MainActor
 public protocol NotchPresenter: Sendable {
     var interactions: AsyncStream<NotchInteraction> { get }
 

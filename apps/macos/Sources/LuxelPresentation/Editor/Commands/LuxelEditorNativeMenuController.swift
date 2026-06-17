@@ -84,7 +84,7 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
 
         menu.addItem(separator())
         menu.addItem(item("Save Current Frame As...", action: #selector(saveCurrentFrameAs)))
-        menu.addItem(item("Save Original", action: #selector(saveOriginal)))
+        menu.addItem(item("Save As", action: #selector(saveOriginal)))
         menu.addItem(separator())
         menu.addItem(item("Export", action: #selector(startExport)))
         menu.addItem(item("Cancel Export", action: #selector(cancelExport)))

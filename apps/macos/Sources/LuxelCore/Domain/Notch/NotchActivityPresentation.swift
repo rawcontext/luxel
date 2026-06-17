@@ -138,12 +138,10 @@ public enum NotchActivityPresentation {
             expandedTitle: "Luxel",
             expandedDetail: "Ready",
             actions: [
-                action(.recordArea, "Record Area", "record.circle"),
-                action(.recordWindow, "Record Window", "macwindow"),
-                action(.recordFullscreen, "Record Fullscreen", "display"),
+                action(.recordFullscreen, "Record Screen", "rectangle.dashed"),
+                action(.recordArea, "Record Area", "viewfinder"),
                 action(.screenshot, "Screenshot", "camera"),
-                action(.quickGIF, "Quick GIF", "bolt"),
-                action(.openSettings, "Settings", "gear")
+                action(.openSettings, "Settings", "gearshape")
             ],
             accessibilityLabel: "Luxel ready"
         )
@@ -178,11 +176,7 @@ public enum NotchActivityPresentation {
             trailingEarText: isMuted ? "Muted" : "Mic \(levelPercent(audioLevel.peak))",
             audioLevel: isMuted ? nil : audioLevel,
             actions: [
-                action(.pauseRecording, "Pause", "pause.circle"),
-                action(.stopRecording, "Stop", "stop.circle.fill", role: .destructive),
-                action(.markMoment, "Mark Moment", "flag"),
-                action(.clipReplay, "Clip Replay", "gobackward"),
-                action(.toggleMute, isMuted ? "Unmute" : "Mute", isMuted ? "mic" : "mic.slash")
+                action(.stopRecording, "Stop", "stop.circle.fill", role: .destructive)
             ],
             accessibilityLabel: "Luxel recording, elapsed \(elapsedText)"
         )
@@ -198,9 +192,7 @@ public enum NotchActivityPresentation {
             leadingEarText: elapsedText,
             trailingEarText: "Paused",
             actions: [
-                action(.resumeRecording, "Resume", "play.circle", role: .primary),
-                action(.stopRecording, "Stop", "stop.circle.fill", role: .destructive),
-                action(.discardRecording, "Discard", "trash", role: .destructive)
+                action(.stopRecording, "Stop", "stop.circle.fill", role: .destructive)
             ],
             accessibilityLabel: "Luxel recording paused at \(elapsedText)"
         )
@@ -230,9 +222,6 @@ public enum NotchActivityPresentation {
             collapsedSystemImage: "progress.indicator",
             expandedTitle: "Finishing Recording",
             expandedDetail: "Preparing the file",
-            actions: [
-                action(.cancelProcessing, "Cancel", "xmark.circle", role: .destructive)
-            ],
             accessibilityLabel: "Luxel finishing recording"
         )
     }

@@ -500,6 +500,37 @@ extension LuxelMenuModel {
         }
     }
 
+    func discardActiveRecording() async {
+        let stopAction = await stopRecording()
+        let fileURL: URL?
+
+        switch stopAction {
+        case .openEditor(let url), .quickExported(let url), .audioRecorded(let url):
+            fileURL = url
+        case .none:
+            fileURL = nil
+        }
+
+        guard let fileURL else {
+            return
+        }
+
+        refreshRecentRecordings()
+
+        guard let recording = recentRecordings.first(where: { recording in
+            recording.fileURL == fileURL || recording.primaryMediaURL == fileURL
+        }) else {
+            return
+        }
+
+        do {
+            _ = try recordingHistoryService.discardRecording(recording)
+            refreshRecentRecordings()
+        } catch {
+            recordingActionErrorMessage = errorMessage(error)
+        }
+    }
+
     private func handleAutoStoppedRecording(
         _ recording: PastRecording,
         openRecording: @escaping @MainActor (URL) -> Void

@@ -30,6 +30,9 @@ final class LuxelStatusItemController: NSObject {
     private var statusItemStopWatchdogTask: Task<Void, Never>?
     private var recordingAudioLevelTask: Task<Void, Never>?
     private var recordingAudioLevelTaskID: String?
+    private var notchDisplayTask: Task<Void, Never>?
+    private var notchInteractionTask: Task<Void, Never>?
+    private var notchSurfaceRefreshTask: Task<Void, Never>?
     private var applicationResignActiveObserver: NSObjectProtocol?
     private var menuPanel: NSPanel?
     private var menuHostingController: NSHostingController<AnyView>?
@@ -67,6 +70,7 @@ final class LuxelStatusItemController: NSObject {
         installPopoverDismissalObserver()
         installURLHandler()
         startStatusRefresh()
+        startNotchSurface()
         refreshStatusItem()
         recoverInterruptedRecording()
     }
@@ -217,6 +221,7 @@ private extension LuxelStatusItemController {
         quickExportProgressPanelController.update(progress: model.quickExportProgress) { [weak model] in
             model?.cancelQuickExport()
         }
+        refreshNotchSurface()
     }
 
     private func setStatusItemLength(_ length: CGFloat) {
@@ -301,6 +306,122 @@ private extension LuxelStatusItemController {
 
     private func openSettingsFromPopover() {
         windowPresenter.openSettings(activationSource: activationSourceApplication)
+    }
+
+    private func startNotchSurface() {
+        model.refreshNotchDisplays()
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+
+            await model.refreshPermissions()
+            await model.refreshCaptureTargets()
+            refreshNotchSurface()
+        }
+        notchDisplayTask = Task { @MainActor [weak model] in
+            await model?.watchNotchDisplayUpdates()
+        }
+        notchInteractionTask = Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+
+            await model.watchNotchInteractions(
+                openEditor: { [weak self] fileURL in
+                    self?.windowPresenter.openEditor(fileURL: fileURL)
+                },
+                openSettings: { [weak self] in
+                    self?.windowPresenter.openSettings()
+                },
+                showAreaCapturePicker: { [weak self] in
+                    self?.showNotchAreaCapturePicker()
+                },
+                showScreenshotCapturePicker: { [weak self] in
+                    self?.showNotchScreenshotCapturePicker()
+                }
+            )
+        }
+        refreshNotchSurface()
+    }
+
+    private func refreshNotchSurface() {
+        notchSurfaceRefreshTask?.cancel()
+        notchSurfaceRefreshTask = Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+
+            await model.refreshNotchSurface(
+                reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+            )
+        }
+    }
+
+    private func showNotchAreaCapturePicker() {
+        showNotchCapturePicker(initialMode: .video)
+    }
+
+    private func showNotchScreenshotCapturePicker() {
+        showNotchCapturePicker(initialMode: .photo)
+    }
+
+    private func showNotchCapturePicker(initialMode: LuxelCropperMode) {
+        model.refreshCameraDevices()
+        cropperPanelController.show(
+            initialMode: initialMode,
+            countdownDuration: model.settings.defaultCountdown,
+            stopAfterDuration: model.settings.lastStopAfter,
+            audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
+            cameraConfiguration: model.cropperCameraConfiguration(),
+            quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
+            selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
+            restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
+            recordAudio: model.settings.recordAudio,
+            loupeAlwaysOn: model.settings.loupeAlwaysOn,
+            dimOtherDisplays: model.settings.dimOtherDisplays,
+            showsNotificationReminder: model.settings.notificationReminder,
+            onCountdownDurationChange: { [weak model] duration in
+                model?.settings.defaultCountdown = duration
+                model?.saveSettings()
+            },
+            onStopAfterDurationChange: { [weak model] duration in
+                model?.settings.lastStopAfter = duration
+                model?.saveSettings()
+            },
+            onRecordAudioChange: { [weak model] isEnabled in
+                model?.settings.recordAudio = isEnabled
+                model?.saveSettings()
+            },
+            onCameraSelectionChange: { [weak model] deviceID in
+                Task {
+                    await model?.setCameraDeviceFromCropper(deviceID)
+                }
+            },
+            onCameraPreviewStyleChange: { [weak model] style in
+                Task {
+                    await model?.setCameraPreviewStyleFromCropper(style)
+                }
+            },
+            onNotificationReminderDismiss: { [weak model] in
+                model?.dismissNotificationReminder()
+            },
+            onCaptureScreenshot: { [weak model] draft in
+                Task {
+                    await model?.captureScreenshot(from: draft)
+                }
+            },
+            onQuickSelect: { [weak model] draft, presetID in
+                Task {
+                    await model?.startQuickRecording(from: draft, presetID: presetID)
+                }
+            },
+            onSelect: { [weak model] draft in
+                Task {
+                    await model?.startRecording(from: draft)
+                }
+            }
+        )
     }
 
     private var isStatusItemButtonConfigured: Bool {

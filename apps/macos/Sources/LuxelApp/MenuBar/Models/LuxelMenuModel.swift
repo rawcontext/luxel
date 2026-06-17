@@ -1,3 +1,4 @@
+import Foundation
 import LuxelCore
 import Observation
 
@@ -56,10 +57,13 @@ final class LuxelMenuModel {
     @ObservationIgnored let activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver
     @ObservationIgnored let pointerDisplayProvider: any PointerDisplayProvider
     @ObservationIgnored let notchDisplayProvider: any NotchDisplayProvider
+    @ObservationIgnored let notchCoordinator: NotchCoordinator
     @ObservationIgnored let fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver
     @ObservationIgnored let screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter
     @ObservationIgnored let commandLineToolInstallService: CommandLineToolInstallService
     @ObservationIgnored let errorReporter: any ErrorReporter
+    @ObservationIgnored var notchPresentationState: NotchPresentationState = .collapsed
+    @ObservationIgnored var notchHoverCollapseTask: Task<Void, Never>?
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
@@ -98,6 +102,7 @@ final class LuxelMenuModel {
         activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver = ActiveWindowCaptureTargetResolver(),
         pointerDisplayProvider: any PointerDisplayProvider = AppKitPointerDisplayProvider(),
         notchDisplayProvider: any NotchDisplayProvider = AppKitNotchDisplayProvider(),
+        notchPresenter: (any NotchPresenter)? = nil,
         fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver = FullscreenCaptureTargetResolver(),
         screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter = AppKitScreenshotThumbnailPresenter(),
         commandLineToolInstallService: CommandLineToolInstallService = LuxelCompositionRoot
@@ -132,6 +137,9 @@ final class LuxelMenuModel {
         self.activeWindowCaptureTargetResolver = activeWindowCaptureTargetResolver
         self.pointerDisplayProvider = pointerDisplayProvider
         self.notchDisplayProvider = notchDisplayProvider
+        let resolvedNotchPresenter = notchPresenter
+            ?? OverlayPanelNotchPresenter(exclusionRegistry: captureExclusionRegistry)
+        self.notchCoordinator = NotchCoordinator(presenter: resolvedNotchPresenter)
         self.fullscreenCaptureTargetResolver = fullscreenCaptureTargetResolver
         self.screenshotThumbnailPresenter = screenshotThumbnailPresenter
         self.commandLineToolInstallService = commandLineToolInstallService

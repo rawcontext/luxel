@@ -11,12 +11,16 @@ struct NotchActivityPresentationTests {
         #expect(viewModel.collapsedTitle == "Luxel")
         #expect(viewModel.expandedTitle == "Luxel")
         #expect(viewModel.actions.map(\.id) == [
-            .recordArea,
-            .recordWindow,
             .recordFullscreen,
+            .recordArea,
             .screenshot,
-            .quickGIF,
             .openSettings
+        ])
+        #expect(viewModel.actions.map(\.systemImage) == [
+            "rectangle.dashed",
+            "viewfinder",
+            "camera",
+            "gearshape"
         ])
     }
 
@@ -56,24 +60,19 @@ struct NotchActivityPresentationTests {
         #expect(viewModel.trailingEarText == "Mic 65%")
         #expect(viewModel.audioLevel == AudioLevelSample(rms: 0.3, peak: 0.65))
         #expect(viewModel.actions.map(\.id) == [
-            .pauseRecording,
-            .stopRecording,
-            .markMoment,
-            .clipReplay,
-            .toggleMute
+            .stopRecording
         ])
     }
 
-    @Test("muted recording hides audio level and offers unmute")
-    func mutedRecordingHidesAudioLevelAndOffersUnmute() {
+    @Test("muted recording hides audio level")
+    func mutedRecordingHidesAudioLevel() {
         let viewModel = NotchActivityPresentation.viewModel(
             for: .recording(elapsed: 5, audioLevel: AudioLevelSample(rms: 1, peak: 1), muted: true)
         )
 
         #expect(viewModel.audioLevel == nil)
         #expect(viewModel.trailingEarText == "Muted")
-        #expect(viewModel.actions.last?.title == "Unmute")
-        #expect(viewModel.actions.last?.systemImage == "mic")
+        #expect(viewModel.actions.map(\.id) == [.stopRecording])
     }
 
     @Test("paused mirrors session timer and exposes resume stop discard")
@@ -86,7 +85,7 @@ struct NotchActivityPresentationTests {
 
         #expect(viewModel.collapsedTitle == session.menuBarTitle)
         #expect(viewModel.expandedDetail == "Paused at 1:02:02")
-        #expect(viewModel.actions.map(\.id) == [.resumeRecording, .stopRecording, .discardRecording])
+        #expect(viewModel.actions.map(\.id) == [.stopRecording])
     }
 
     @Test("replay buffering exposes coverage progress and actions")

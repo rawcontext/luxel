@@ -63,6 +63,9 @@ extension LuxelSettingsView {
         }
         .onChange(of: model.settings) {
             model.saveSettings()
+            Task {
+                await model.refreshNotchSurface()
+            }
         }
         .onChange(of: model.settings.screenshotFormat) {
             if model.settings.screenshotBackdrop.usesAlpha,
@@ -120,8 +123,6 @@ extension LuxelSettingsView {
 
     private var settingsSidebar: some View {
         VStack(alignment: .leading, spacing: 16) {
-            settingsSidebarHeader
-
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(LuxelSettingsPane.allCases) { pane in
                     settingsSidebarButton(pane)
@@ -129,46 +130,12 @@ extension LuxelSettingsView {
             }
 
             Spacer(minLength: 24)
-
-            SettingsGlassCard(cornerRadius: 14, padding: 12, tint: .blue.opacity(0.08)) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(model.appMetadata.displayName)
-                        .font(.caption.weight(.semibold))
-                    Text(model.appMetadata.versionSummary)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
         }
         .padding(.horizontal, 16)
         .padding(.top, 22)
         .padding(.bottom, 16)
         .frame(width: 232)
         .background(.regularMaterial)
-    }
-
-    private var settingsSidebarHeader: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.blue.opacity(0.18))
-                Image(systemName: "sparkles.rectangle.stack")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.blue)
-            }
-            .frame(width: 40, height: 40)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Luxel")
-                    .font(.headline.weight(.semibold))
-                Text("Settings")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.bottom, 2)
     }
 
     private func settingsSidebarButton(_ pane: LuxelSettingsPane) -> some View {
@@ -182,7 +149,7 @@ extension LuxelSettingsView {
             HStack(spacing: 10) {
                 Image(systemName: pane.systemImage)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(isSelected ? pane.tint : .secondary)
+                    .foregroundStyle(.secondary)
                     .frame(width: 22)
 
                 Text(pane.title)
@@ -190,22 +157,13 @@ extension LuxelSettingsView {
                     .foregroundStyle(.primary)
 
                 Spacer(minLength: 8)
-
-                if pane == .experimental {
-                    Text("Beta")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.orange)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(.orange.opacity(0.14), in: Capsule())
-                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 9)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .background {
-                SettingsSidebarSelectionBackground(isSelected: isSelected, tint: pane.tint)
+                SettingsSidebarSelectionBackground(isSelected: isSelected)
             }
         }
         .buttonStyle(.plain)
@@ -238,6 +196,8 @@ extension LuxelSettingsView {
             presetSettingsForm
         case .shortcuts:
             shortcutSettingsForm
+        case .notch:
+            notchSettingsForm
         case .experimental:
             experimentalSettingsForm
         case .system:
@@ -511,7 +471,11 @@ extension LuxelSettingsView {
             Text("Replay buffer capture is not active until the engine lands.")
         }
 
-        Section {
+    }
+
+    @ViewBuilder
+    private var notchSettingsForm: some View {
+        Section("Notch Surface") {
             let notchStatus = model.notchSurfaceStatusPresentation
 
             LabeledContent("Status", value: notchStatus.statusText)
@@ -533,15 +497,8 @@ extension LuxelSettingsView {
             .pickerStyle(.menu)
             .disabled(!model.settings.notchSurfaceSettings.isEnabled)
 
-            Toggle("Recent Shelf", isOn: notchRecentShelfEnabled)
-                .disabled(!model.settings.notchSurfaceSettings.isEnabled)
             Toggle("Floating HUD Fallback", isOn: notchFloatingHUDFallbackEnabled)
                 .disabled(!model.settings.notchSurfaceSettings.isEnabled)
-        } header: {
-            HStack(spacing: 6) {
-                Text("Notch Surface")
-                ExperimentalBadge()
-            }
         }
     }
 
@@ -753,12 +710,6 @@ extension LuxelSettingsView {
             updateNotchSurfaceSettings { settings in
                 try settings.replacing(autoCollapseSeconds: seconds)
             }
-        }
-    }
-
-    private var notchRecentShelfEnabled: Binding<Bool> {
-        notchSurfaceSettingsBinding(\.showsRecentShelf) { settings, isEnabled in
-            try settings.replacing(showsRecentShelf: isEnabled)
         }
     }
 

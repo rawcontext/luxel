@@ -6,6 +6,7 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
     case screenshots
     case presets
     case shortcuts
+    case notch
     case experimental
     case system
 
@@ -25,6 +26,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Presets"
         case .shortcuts:
             "Shortcuts"
+        case .notch:
+            "Notch"
         case .experimental:
             "Experimental"
         case .system:
@@ -44,6 +47,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Reusable export presets and cropper size presets."
         case .shortcuts:
             "Keyboard shortcuts and URL automation."
+        case .notch:
+            "Built-in notch display controls and fallback behavior."
         case .experimental:
             "Preview features that are still being built out."
         case .system:
@@ -63,6 +68,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "slider.horizontal.3"
         case .shortcuts:
             "keyboard"
+        case .notch:
+            "laptopcomputer"
         case .experimental:
             "sparkles"
         case .system:
@@ -70,24 +77,6 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
         }
     }
 
-    var tint: Color {
-        switch self {
-        case .recording:
-            .blue
-        case .output:
-            .green
-        case .screenshots:
-            .cyan
-        case .presets:
-            .purple
-        case .shortcuts:
-            .indigo
-        case .experimental:
-            .orange
-        case .system:
-            .gray
-        }
-    }
 }
 
 struct ExperimentalBadge: View {
@@ -103,15 +92,14 @@ struct ExperimentalBadge: View {
 
 struct SettingsSidebarSelectionBackground: View {
     let isSelected: Bool
-    let tint: Color
 
     var body: some View {
         if isSelected {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(tint.opacity(0.18))
+                .fill(.primary.opacity(0.08))
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(tint.opacity(0.14), lineWidth: 1)
+                        .stroke(.white.opacity(0.08), lineWidth: 1)
                 }
         } else {
             RoundedRectangle(cornerRadius: 12, style: .continuous)

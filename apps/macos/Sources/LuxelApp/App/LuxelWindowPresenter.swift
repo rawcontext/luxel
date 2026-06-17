@@ -80,7 +80,8 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
             .frame(minWidth: 840, minHeight: 660)
         )
         let window = NSWindow(contentViewController: hostingController)
-        window.title = "Luxel Settings"
+        window.title = ""
+        window.titleVisibility = .hidden
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.setContentSize(NSSize(width: 920, height: 760))
         window.minSize = NSSize(width: 840, height: 660)

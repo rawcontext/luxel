@@ -131,30 +131,30 @@ extension LuxelEditorView {
     }
 
     private var exportControls: some View {
-        editorCard {
-            VStack(alignment: .leading, spacing: 14) {
-                SectionLabel("Export")
-
-                controlRow("Format") {
-                    formatMenu
-                }
-
-                if model.canChooseQuality {
-                    qualityPicker
-                }
-
-                if model.showsGIFOptions {
-                    Divider()
-                    gifControls
-                }
-
-                Divider()
-
-                audioExportControls
-
-                Divider()
-
+        VStack(alignment: .leading, spacing: 12) {
+            editorCard {
                 exportActions
+            }
+
+            editorDisclosureCard("Export") {
+                VStack(alignment: .leading, spacing: 14) {
+                    controlRow("Format") {
+                        formatMenu
+                    }
+
+                    if model.canChooseQuality {
+                        qualityPicker
+                    }
+
+                    if model.showsGIFOptions {
+                        Divider()
+                        gifControls
+                    }
+
+                    Divider()
+
+                    audioExportControls
+                }
             }
         }
         .task(id: model.exportEstimateTaskID) {
@@ -199,7 +199,7 @@ extension LuxelEditorView {
             Toggle("Include Audio", isOn: includeAudioSelection)
                 .disabled(!model.canIncludeAudio)
 
-            if model.canIncludeAudio {
+            if model.includesAudio {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .firstTextBaseline) {
                         Text("Level")
@@ -232,9 +232,10 @@ extension LuxelEditorView {
     private var exportActions: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let exportEstimateSummary = model.exportEstimateSummary {
-                LabeledContent("Estimated Size", value: exportEstimateSummary)
+                Text(exportEstimateSummary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
 
             Button {
@@ -250,7 +251,7 @@ extension LuxelEditorView {
             Button {
                 model.saveOriginal()
             } label: {
-                Label("Save Original", systemImage: "doc.on.doc")
+                Label("Save As", systemImage: "doc.on.doc")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -404,10 +405,8 @@ extension LuxelEditorView {
     }
 
     private var timelineControls: some View {
-        editorCard {
+        editorDisclosureCard("Timeline") {
             VStack(alignment: .leading, spacing: 12) {
-                SectionLabel("Timeline")
-
                 timelineSliderRow(
                     "Start",
                     value: model.formatTime(model.trimStart),
@@ -431,10 +430,8 @@ extension LuxelEditorView {
     }
 
     private var outputControls: some View {
-        editorCard {
+        editorDisclosureCard("Output") {
             VStack(alignment: .leading, spacing: 14) {
-                SectionLabel("Output")
-
                 controlRow("Size") {
                     Picker("Size", selection: sizePresetSelection) {
                         Text("Custom").tag(EditorSizePreset?.none)
@@ -536,6 +533,13 @@ extension LuxelEditorView {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func editorDisclosureCard<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        EditorDisclosureCard(title, content: content)
     }
 
     private func controlRow<Content: View>(
@@ -873,5 +877,54 @@ extension LuxelEditorView {
         case .diffusion:
             "Diffusion"
         }
+    }
+}
+
+private struct EditorDisclosureCard<Content: View>: View {
+    @State private var isExpanded = false
+
+    private let title: String
+    private let content: Content
+
+    init(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        GlassPanel {
+            VStack(alignment: .leading, spacing: 12) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        SectionLabel(title)
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                if isExpanded {
+                    Divider()
+
+                    content
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
