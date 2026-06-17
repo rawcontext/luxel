@@ -109,8 +109,8 @@ extension ArchitectureTests {
         #expect(!startupSource.contains("refreshCaptureTargets()"))
     }
 
-    @Test("notch surface stays dormant until screen permission is authorized")
-    func notchSurfaceStaysDormantUntilScreenPermissionIsAuthorized() throws {
+    @Test("notch idle quick actions can prompt for screen permission")
+    func notchIdleQuickActionsCanPromptForScreenPermission() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Notch.swift"),
             encoding: .utf8
@@ -121,11 +121,9 @@ extension ArchitectureTests {
         #expect(source.contains("presentPermissionPrompt(forSource: .screenPixels)"))
         #expect(source.contains(
             "case .idle:\n"
-                + "            guard screenRecordingStatus == .authorized else {\n"
-                + "                return .dormant\n"
-                + "            }"
+                + "            return .idleHover"
         ))
-        #expect(source.contains(
+        #expect(!source.contains(
             "case .failed(let message):\n"
                 + "            guard screenRecordingStatus == .authorized else {\n"
                 + "                return .dormant\n"
@@ -144,6 +142,20 @@ extension ArchitectureTests {
         #expect(source.contains("private func notchActionTooltip(for action: NotchActivityActionDescriptor) -> some View"))
         #expect(source.contains(".help(Text(action.title))"))
         #expect(source.contains(".onHover { isHovered in"))
+    }
+
+    @Test("notch hover regions track the visible surface")
+    func notchHoverRegionsTrackTheVisibleSurface() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/Notch/Panels/OverlayPanelNotchPresenter.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("return [expandedSurfaceHitRect(for: geometry)]"))
+        #expect(source.contains("private static func collapsedHoverRect(for geometry: NotchGeometry) -> NSRect"))
+        #expect(source.contains("housing.maxY - height"))
+        #expect(!source.contains("panelFrame(for: geometry).insetBy(dx: -8, dy: -8)"))
+        #expect(!source.contains("geometry.cameraHousingRect.nsRect.insetBy(dx: -28, dy: -18)"))
     }
 
     @Test("system audio footer off state toggles without permission prompt")

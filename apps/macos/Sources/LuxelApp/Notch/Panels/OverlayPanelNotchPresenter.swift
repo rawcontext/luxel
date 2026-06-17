@@ -6,6 +6,8 @@ import SwiftUI
 final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     fileprivate static let panelSize = NSSize(width: 536, height: 188)
     fileprivate static let expandedHeight: CGFloat = 58
+    private static let collapsedHoverHorizontalOutset: CGFloat = 12
+    private static let collapsedHoverHeight: CGFloat = 14
     private static let edgeMargin: CGFloat = 8
     private static let hoverExitDebounceNanoseconds: UInt64 = 180_000_000
     private static let mouseMonitorEventMask: NSEvent.EventTypeMask = [
@@ -354,10 +356,21 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
 
     private static func hoverRects(for geometry: NotchGeometry, isExpanded: Bool) -> [NSRect] {
         if isExpanded {
-            return [panelFrame(for: geometry).insetBy(dx: -8, dy: -8)]
+            return [expandedSurfaceHitRect(for: geometry)]
         }
 
-        return [geometry.cameraHousingRect.nsRect.insetBy(dx: -28, dy: -18)]
+        return [collapsedHoverRect(for: geometry)]
+    }
+
+    private static func collapsedHoverRect(for geometry: NotchGeometry) -> NSRect {
+        let housing = geometry.cameraHousingRect.nsRect
+        let height = min(collapsedHoverHeight, housing.height)
+        return NSRect(
+            x: housing.minX - collapsedHoverHorizontalOutset,
+            y: housing.maxY - height,
+            width: housing.width + collapsedHoverHorizontalOutset * 2,
+            height: height
+        )
     }
 
     private static func expandedSurfaceHitRect(for geometry: NotchGeometry) -> NSRect {
@@ -494,8 +507,7 @@ private struct NotchSurfaceView: View {
                 }
 
             actionControls(buttonSize: 28, iconSize: 12, spacing: 5)
-                .offset(y: 6)
-                .frame(width: expandedWidth, height: expandedHeight, alignment: .top)
+                .frame(width: expandedWidth, height: expandedHeight, alignment: .center)
                 .opacity(update.viewModel.actions.isEmpty ? 0 : 1)
             .opacity(phase == .settled ? 1 : 0)
             .scaleEffect(phase == .seed ? 0.92 : 1, anchor: .top)

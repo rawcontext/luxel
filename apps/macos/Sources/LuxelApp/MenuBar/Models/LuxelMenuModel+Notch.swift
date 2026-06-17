@@ -166,10 +166,6 @@ extension LuxelMenuModel {
 
         switch recordingState {
         case .idle:
-            guard screenRecordingStatus == .authorized else {
-                return .dormant
-            }
-
             return .idleHover
         case .starting, .stopping:
             return .processing
@@ -188,10 +184,6 @@ extension LuxelMenuModel {
         case .exporting(let snapshot):
             return .exporting(snapshot: snapshot)
         case .failed(let message):
-            guard screenRecordingStatus == .authorized else {
-                return .dormant
-            }
-
             let recoveryAction: NotchRecoveryAction? = message.localizedCaseInsensitiveContains("permission")
                 ? .openSettings
                 : .retry
