@@ -16,6 +16,7 @@ extension LuxelEditorModelTests {
         screenshotDestinationClient: SpyScreenshotDestinationClient = SpyScreenshotDestinationClient(),
         audioPeakAnalyzer: any AudioPeakAnalyzer = SpyAudioPeakAnalyzer(),
         codecAvailability: CodecAvailability = .none,
+        directoryAccessService: BookmarkedDirectoryAccessService? = nil,
         exportMemory: [ExportFormat: ExportMemory] = [:],
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil,
         errorReporter: any ErrorReporter = NoopErrorReporter()
@@ -44,6 +45,7 @@ extension LuxelEditorModelTests {
             audioPeakAnalyzer: audioPeakAnalyzer,
             fileSystem: fileSystem,
             codecAvailability: codecAvailability,
+            directoryAccessService: directoryAccessService,
             exportMemory: exportMemory,
             onExportMemoryChange: onExportMemoryChange,
             errorReporter: errorReporter

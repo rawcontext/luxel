@@ -1,3 +1,4 @@
+import Foundation
 import LuxelCore
 
 @MainActor
@@ -71,7 +72,9 @@ extension LuxelMenuModel {
     }
 
     func revealRecoveredRecording(_ prompt: RecoveryPrompt) {
-        fileWorkflowService.revealInFinder(prompt.fileURL)
+        withRecordingsDirectoryAccess { _ in
+            fileWorkflowService.revealInFinder(prompt.fileURL)
+        }
         recoveryPrompt = nil
     }
 
@@ -81,10 +84,41 @@ extension LuxelMenuModel {
     }
 
     func revealRecording(_ recording: PastRecording) {
-        fileWorkflowService.revealInFinder(recording.fileURL)
+        withRecordingsDirectoryAccess { _ in
+            fileWorkflowService.revealInFinder(recording.fileURL)
+        }
     }
 
     func openRecordingsFolder() {
-        fileWorkflowService.openWithDefaultApp(settings.recordingsDirectory)
+        withRecordingsDirectoryAccess { directory in
+            fileWorkflowService.openWithDefaultApp(directory)
+        }
+    }
+
+    private func withRecordingsDirectoryAccess(_ operation: (URL) -> Void) {
+        guard let bookmark = settings.recordingsDirectoryBookmark else {
+            operation(settings.recordingsDirectory)
+            return
+        }
+
+        let result = directoryAccessService.withAccess(to: bookmark) { directory in
+            operation(directory.url)
+            return true
+        }
+
+        if result.value == nil {
+            recordingActionErrorMessage = errorMessage(MenuDirectoryAccessError.revoked(result.directory.url))
+        }
+    }
+}
+
+private enum MenuDirectoryAccessError: LocalizedError {
+    case revoked(URL)
+
+    var errorDescription: String? {
+        switch self {
+        case .revoked(let url):
+            "Luxel no longer has permission to open \(url.lastPathComponent). Choose the recordings folder again."
+        }
     }
 }

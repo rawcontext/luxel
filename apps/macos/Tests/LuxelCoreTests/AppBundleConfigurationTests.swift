@@ -11,7 +11,7 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundleDisplayName"] as? String == "Luxel")
         #expect(plist["CFBundleExecutable"] as? String == "Luxel")
         #expect(plist["CFBundleIdentifier"] as? String == "media.luxel.app")
-        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.2")
+        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.3")
         #expect(plist["CFBundleVersion"] as? String == "1")
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
         #expect(plist["LSMinimumSystemVersion"] as? String == "26.0")
@@ -51,6 +51,9 @@ struct AppBundleConfigurationTests {
         let entitlements = try readPlist("Configuration/Luxel/Luxel.MacAppStore.entitlements")
 
         #expect(entitlements["com.apple.security.app-sandbox"] as? Bool == true)
+        #expect(entitlements["com.apple.security.assets.movies.read-write"] as? Bool == true)
+        #expect(entitlements["com.apple.security.files.bookmarks.app-scope"] as? Bool == true)
+        #expect(entitlements["com.apple.security.files.user-selected.read-write"] as? Bool == true)
         #expect(entitlements["com.apple.security.network.client"] as? Bool == true)
     }
 

@@ -981,7 +981,11 @@ extension LuxelSettingsView {
 
         Task {
             model.configureEditor(editorModel)
-            await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
+            await editorModel.open(
+                fileURL: url,
+                outputDirectory: model.settings.recordingsDirectory,
+                outputDirectoryBookmark: model.settings.recordingsDirectoryBookmark
+            )
         }
     }
 

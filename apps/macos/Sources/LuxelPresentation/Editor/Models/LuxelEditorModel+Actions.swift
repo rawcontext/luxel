@@ -27,7 +27,11 @@ extension LuxelEditorModel {
             return
         }
 
-        await open(fileURL: recordingNavigationURLs[index], outputDirectory: outputDirectory)
+        await open(
+            fileURL: recordingNavigationURLs[index],
+            outputDirectory: outputDirectory,
+            outputDirectoryBookmark: outputDirectoryBookmark
+        )
     }
 
     func refreshExportEstimate() async {
@@ -87,51 +91,65 @@ extension LuxelEditorModel {
             )
             let exportService = exportService
             let outputDirectory = outputDirectory
+            let outputDirectoryBookmark = outputDirectoryBookmark
+            let directoryAccessService = directoryAccessService
             let defaultName = defaultExportName(for: source.fileURL)
-            let exportOutputDirectory: URL
-            if exportRequests.count > 1 {
-                exportOutputDirectory = batchOutputDirectory(defaultName: defaultName, in: outputDirectory)
-            } else {
-                exportOutputDirectory = outputDirectory
-            }
-            try fileSystem.createDirectory(at: exportOutputDirectory)
+            let fileSystem = fileSystem
 
             exportTask = Task { [weak self] in
                 do {
-                    if exportRequests.count == 1, let request = exportRequests.first {
-                        let exported = try await exportService.export(
-                            request,
-                            to: exportOutputDirectory,
-                            defaultName: defaultName
-                        ) { snapshot in
-                            await MainActor.run {
-                                self?.handleSingleExportProgress(snapshot)
-                            }
+                    try await withExportDirectoryAccess(
+                        outputDirectory: outputDirectory,
+                        bookmark: outputDirectoryBookmark,
+                        directoryAccessService: directoryAccessService
+                    ) { resolvedOutputDirectory in
+                        let exportOutputDirectory: URL
+                        if exportRequests.count > 1 {
+                            exportOutputDirectory = editorBatchOutputDirectory(
+                                defaultName: defaultName,
+                                in: resolvedOutputDirectory
+                            )
+                        } else {
+                            exportOutputDirectory = resolvedOutputDirectory
                         }
 
-                        await MainActor.run {
-                            self?.finishExport(
-                                with: exported,
-                                remembering: exportMemoryByFormat[exported.format]
-                            )
-                        }
-                    } else {
-                        let batch = try ExportBatch(exportRequests)
-                        let exported = try await exportService.runBatch(
-                            batch,
-                            to: exportOutputDirectory,
-                            defaultName: defaultName
-                        ) { snapshot in
-                            await MainActor.run {
-                                self?.handleBatchExportProgress(snapshot)
-                            }
-                        }
+                        try fileSystem.createDirectory(at: exportOutputDirectory)
 
-                        await MainActor.run {
-                            self?.finishBatchExport(
-                                with: exported,
-                                remembering: exportMemoryByFormat
-                            )
+                        if exportRequests.count == 1, let request = exportRequests.first {
+                            let exported = try await exportService.export(
+                                request,
+                                to: exportOutputDirectory,
+                                defaultName: defaultName
+                            ) { snapshot in
+                                await MainActor.run {
+                                    self?.handleSingleExportProgress(snapshot)
+                                }
+                            }
+
+                            await MainActor.run {
+                                self?.finishExport(
+                                    with: exported,
+                                    remembering: exportMemoryByFormat[exported.format]
+                                )
+                            }
+                        } else {
+                            let batch = try ExportBatch(exportRequests)
+                            let exported = try await exportService.runBatch(
+                                batch,
+                                to: exportOutputDirectory,
+                                defaultName: defaultName
+                            ) { snapshot in
+                                await MainActor.run {
+                                    self?.handleBatchExportProgress(snapshot)
+                                }
+                            }
+
+                            await MainActor.run {
+                                self?.finishBatchExport(
+                                    with: exported,
+                                    remembering: exportMemoryByFormat
+                                )
+                            }
                         }
                     }
                 } catch is CancellationError {
@@ -163,17 +181,27 @@ extension LuxelEditorModel {
         exportProgress = nil
 
         let passthroughExportService = passthroughExportService
-        let request = PassthroughExportRequest(
-            inputFileURL: source.fileURL,
-            outputFileURL: originalOutputURL(for: source.fileURL)
-        )
+        let inputFileURL = source.fileURL
+        let outputDirectory = outputDirectory
+        let outputDirectoryBookmark = outputDirectoryBookmark
+        let directoryAccessService = directoryAccessService
 
         exportTask = Task { [weak self] in
             do {
-                let result = try await passthroughExportService.export(request)
+                try await withExportDirectoryAccess(
+                    outputDirectory: outputDirectory,
+                    bookmark: outputDirectoryBookmark,
+                    directoryAccessService: directoryAccessService
+                ) { resolvedOutputDirectory in
+                    let request = PassthroughExportRequest(
+                        inputFileURL: inputFileURL,
+                        outputFileURL: editorOriginalOutputURL(for: inputFileURL, in: resolvedOutputDirectory)
+                    )
+                    let result = try await passthroughExportService.export(request)
 
-                await MainActor.run {
-                    self?.finishSavedOriginal(result.fileURL)
+                    await MainActor.run {
+                        self?.finishSavedOriginal(result.fileURL)
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -251,6 +279,7 @@ extension LuxelEditorModel {
         }
 
         outputDirectory = directory
+        outputDirectoryBookmark = nil
     }
 
     func saveExportedFileAs() {
@@ -272,7 +301,9 @@ extension LuxelEditorModel {
             return
         }
 
-        fileWorkflowService.revealInFinder(exportedURL)
+        withCurrentOutputDirectoryAccess {
+            fileWorkflowService.revealInFinder(exportedURL)
+        }
     }
 
     func openExportedFile() {
@@ -280,7 +311,9 @@ extension LuxelEditorModel {
             return
         }
 
-        fileWorkflowService.openWithDefaultApp(exportedOpenURL)
+        withCurrentOutputDirectoryAccess {
+            fileWorkflowService.openWithDefaultApp(exportedOpenURL)
+        }
     }
 
     func openExportedFileWithApplication() {
@@ -319,19 +352,11 @@ extension LuxelEditorModel {
     }
 
     func batchOutputDirectory(defaultName: String, in outputDirectory: URL) -> URL {
-        outputDirectory.appending(path: defaultName, directoryHint: .isDirectory)
+        editorBatchOutputDirectory(defaultName: defaultName, in: outputDirectory)
     }
 
     func originalOutputURL(for fileURL: URL) -> URL {
-        let baseName = "\(fileURL.deletingPathExtension().lastPathComponent) Original"
-        let fileExtension = fileURL.pathExtension
-        let outputURL = outputDirectory.appending(path: baseName)
-
-        guard !fileExtension.isEmpty else {
-            return outputURL
-        }
-
-        return outputURL.appendingPathExtension(fileExtension)
+        editorOriginalOutputURL(for: fileURL, in: outputDirectory)
     }
 
     static var defaultRecordingsDirectory: URL {
@@ -676,7 +701,9 @@ extension LuxelEditorModel {
             return
         }
 
-        fileWorkflowService.revealInFinder(fileURL)
+        withCurrentOutputDirectoryAccess {
+            fileWorkflowService.revealInFinder(fileURL)
+        }
     }
 
     var isRecoverableExportFailure: Bool {
@@ -888,135 +915,4 @@ extension LuxelEditorModel {
         )
     }
 
-    func schedulePreviewAudioMixUpdate() {
-        previewAudioMixTask?.cancel()
-        previewAudioMixTask = nil
-
-        guard let source,
-              let playerItem = player.currentItem else {
-            player.isMuted = true
-            player.currentItem?.audioMix = nil
-            return
-        }
-
-        player.isMuted = !includesAudio
-        guard includesAudio else {
-            playerItem.audioMix = nil
-            return
-        }
-
-        guard audioVolume != 1 || normalizeAudio else {
-            playerItem.audioMix = nil
-            return
-        }
-
-        let taskID = currentPreviewAudioMixTaskID(source: source)
-        let request: ExportRequest
-        do {
-            request = try makeExportRequest(source: source, format: format)
-        } catch {
-            playerItem.audioMix = nil
-            return
-        }
-        let sourceAudioTracks = source.audioTracks
-
-        previewAudioMixTask = Task { [weak self] in
-            do {
-                guard let self else {
-                    return
-                }
-
-                let gains = try await self.audioMixResolutionService.resolvedGains(
-                    for: request,
-                    sourceAudioTracks: sourceAudioTracks
-                )
-                let audioMix = try await self.makePreviewAudioMix(
-                    for: playerItem,
-                    gain: gains[.system] ?? 1
-                )
-
-                guard !Task.isCancelled,
-                      self.currentPreviewAudioMixTaskID(source: source) == taskID,
-                      self.player.currentItem === playerItem else {
-                    return
-                }
-
-                playerItem.audioMix = audioMix
-                self.previewAudioMixTask = nil
-            } catch is CancellationError {
-            } catch {
-                guard !Task.isCancelled,
-                      self?.player.currentItem === playerItem else {
-                    return
-                }
-
-                playerItem.audioMix = nil
-                self?.previewAudioMixTask = nil
-            }
-        }
-    }
-
-    func makePreviewAudioMix(
-        for playerItem: AVPlayerItem,
-        gain: Double
-    ) async throws -> AVAudioMix? {
-        let audioTracks = try await playerItem.asset.loadTracks(withMediaType: .audio)
-        guard !audioTracks.isEmpty else {
-            return nil
-        }
-
-        let audioMix = AVMutableAudioMix()
-        audioMix.inputParameters = audioTracks.map { audioTrack in
-            let parameters = AVMutableAudioMixInputParameters(track: audioTrack)
-            parameters.audioTimePitchAlgorithm = .timeDomain
-            parameters.setVolume(Float(gain), at: .zero)
-            return parameters
-        }
-        return audioMix
-    }
-
-    func currentPreviewAudioMixTaskID(source: SourceMedia) -> PreviewAudioMixTaskID {
-        PreviewAudioMixTaskID(
-            sourceFileURL: source.fileURL,
-            format: format,
-            trimStart: trimStart,
-            trimEnd: trimEnd,
-            shouldMute: shouldMute,
-            audioVolume: audioVolume,
-            normalizeAudio: normalizeAudio
-        )
-    }
-
-    func currentGIFOptions(for format: ExportFormat) throws -> GIFRenderOptions? {
-        guard format == .gif || format == .apng else {
-            return nil
-        }
-
-        if format == .apng {
-            return try GIFRenderOptions(loopMode: gifLoopMode)
-        }
-
-        let resolvedQuality = quality.isAvailable(for: format)
-            ? quality
-            : ExportQuality.defaultQuality(for: format)
-        return try GIFRenderOptions(
-            quality: resolvedQuality,
-            loopMode: gifLoopMode,
-            dithering: gifDithering
-        )
-    }
-
-    func applyPlaybackRateIfNeeded() {
-        guard playbackRequested else {
-            return
-        }
-
-        player.rate = Float(playbackSpeed.value)
-    }
-
-    func errorMessage(_ error: Error) -> String {
-        errorReporter.record(error, context: "editor")
-        let description = (error as NSError).localizedDescription
-        return description.isEmpty ? String(describing: error) : description
-    }
 }

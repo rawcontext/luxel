@@ -52,6 +52,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let recordingAudioLevelMonitorFactory: () -> any AudioLevelMonitor
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored let bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker
+    @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService
     @ObservationIgnored let quickExportService: QuickExportService
     @ObservationIgnored let replayBufferClipService: ReplayBufferClipService?
     @ObservationIgnored var recordingStartTask: Task<ActiveRecording, any Error>?
@@ -99,6 +100,8 @@ final class LuxelMenuModel {
             client: AppKitExportedFileActionClient()
         ),
         bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker = AppKitBookmarkedDirectoryPicker(),
+        directoryAccessService: BookmarkedDirectoryAccessService = LuxelCompositionRoot
+            .bookmarkedDirectoryAccessService(),
         quickExportService: QuickExportService? = nil,
         replayBufferClipService: ReplayBufferClipService? = nil,
         screenshotCaptureService: ScreenshotCaptureService? = nil,
@@ -137,6 +140,7 @@ final class LuxelMenuModel {
         }
         self.fileWorkflowService = fileWorkflowService
         self.bookmarkedDirectoryPicker = bookmarkedDirectoryPicker
+        self.directoryAccessService = directoryAccessService
         self.quickExportService = quickExportService
             ?? LuxelCompositionRoot.quickExportService(fileWorkflowService: fileWorkflowService)
         self.replayBufferClipService = replayBufferClipService

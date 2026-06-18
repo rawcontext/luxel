@@ -56,6 +56,34 @@ public struct BookmarkedDirectoryAccessService: Sendable {
             accessStarted: accessStarted
         )
     }
+
+    public func withAccess<Result>(
+        to directory: BookmarkedDirectory,
+        operation: @Sendable (BookmarkedDirectory) async throws -> Result
+    ) async rethrows -> BookmarkedDirectoryAccessResult<Result> {
+        let resolvedDirectory = resolve(directory)
+
+        guard resolvedDirectory.accessState != .revoked else {
+            return BookmarkedDirectoryAccessResult(
+                directory: resolvedDirectory,
+                value: nil,
+                accessStarted: false
+            )
+        }
+
+        let accessStarted = access.startAccessing(resolvedDirectory.url)
+        defer {
+            if accessStarted {
+                access.stopAccessing(resolvedDirectory.url)
+            }
+        }
+
+        return BookmarkedDirectoryAccessResult(
+            directory: resolvedDirectory,
+            value: try await operation(resolvedDirectory),
+            accessStarted: accessStarted
+        )
+    }
 }
 
 public struct BookmarkedDirectoryAccessResult<Result>: Sendable where Result: Sendable {

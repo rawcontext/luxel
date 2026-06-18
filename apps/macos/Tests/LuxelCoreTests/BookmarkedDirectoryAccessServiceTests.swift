@@ -93,6 +93,34 @@ struct BookmarkedDirectoryAccessServiceTests {
         #expect(access.activeURLs.isEmpty)
     }
 
+    @Test("async with access balances successful security scope")
+    func asyncWithAccessBalancesSuccessfulSecurityScope() async {
+        let directory = makeDirectory()
+        let access = SpySecurityScopedResourceAccess()
+        let service = BookmarkedDirectoryAccessService(
+            resolver: StubBookmarkedDirectoryResolver(
+                resolution: BookmarkedDirectoryResolution(
+                    url: directory.url,
+                    bookmarkData: directory.bookmarkData,
+                    isStale: false
+                )
+            ),
+            access: access
+        )
+
+        let result = await service.withAccess(to: directory) { resolvedDirectory in
+            #expect(access.activeURLs == [resolvedDirectory.url])
+            await Task.yield()
+            return resolvedDirectory.url.lastPathComponent
+        }
+
+        #expect(result.value == "selected")
+        #expect(result.accessStarted)
+        #expect(access.startedURLs == [directory.url])
+        #expect(access.stoppedURLs == [directory.url])
+        #expect(access.activeURLs.isEmpty)
+    }
+
     @Test("with access does not stop when security scope does not start")
     func withAccessDoesNotStopWhenSecurityScopeDoesNotStart() {
         let directory = makeDirectory()

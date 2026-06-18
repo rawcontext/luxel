@@ -47,6 +47,7 @@ public final class LuxelEditorModel {
     var gifLoopCount = 3
     var gifDithering: GIFDitheringMode = .auto
     var outputDirectory = LuxelEditorModel.defaultRecordingsDirectory
+    var outputDirectoryBookmark: BookmarkedDirectory?
     var recordingNavigationURLs: [URL] = []
     var recordingNavigationIndex: Int?
     let supportedFormats: [ExportFormat]
@@ -65,6 +66,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored let frameGrabService: FrameGrabService
     @ObservationIgnored let audioMixResolutionService: AudioMixResolutionService
     @ObservationIgnored let fileSystem: any FileSystem
+    @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService?
     @ObservationIgnored var playbackRequested = false
     @ObservationIgnored var playbackTimeObserver: PlaybackTimeObserver?
     @ObservationIgnored var exportTask: Task<Void, Never>?
@@ -100,6 +102,7 @@ public final class LuxelEditorModel {
         audioPeakAnalyzer: any AudioPeakAnalyzer = AVAssetReaderAudioPeakAnalyzer(),
         fileSystem: any FileSystem = LocalFileSystem(),
         codecAvailability: CodecAvailability = .none,
+        directoryAccessService: BookmarkedDirectoryAccessService? = nil,
         exportMemory: [ExportFormat: ExportMemory] = [:],
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil,
         errorReporter: any ErrorReporter = NoopErrorReporter()
@@ -112,6 +115,7 @@ public final class LuxelEditorModel {
         self.frameGrabService = frameGrabService
         self.audioMixResolutionService = AudioMixResolutionService(analyzer: audioPeakAnalyzer)
         self.fileSystem = fileSystem
+        self.directoryAccessService = directoryAccessService
         self.supportedFormats = codecAvailability.availableExportFormats
         self.exportMemoryByFormat = exportMemory
         self.onExportMemoryChange = onExportMemoryChange
@@ -475,8 +479,13 @@ extension LuxelEditorModel {
         }
     }
 
-    public func open(fileURL: URL, outputDirectory: URL) async {
+    public func open(
+        fileURL: URL,
+        outputDirectory: URL,
+        outputDirectoryBookmark: BookmarkedDirectory? = nil
+    ) async {
         self.outputDirectory = outputDirectory
+        self.outputDirectoryBookmark = outputDirectoryBookmark
         refreshRecordingNavigation(selectedFileURL: fileURL, outputDirectory: outputDirectory)
         status = .loading(fileURL.lastPathComponent)
         exportProgress = nil

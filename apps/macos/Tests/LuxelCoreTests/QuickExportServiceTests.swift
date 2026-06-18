@@ -85,6 +85,48 @@ struct QuickExportServiceTests {
         #expect(client.copiedFileURLs.isEmpty)
     }
 
+    @Test("recordings directory bookmark resolves quick export destination")
+    func recordingsDirectoryBookmarkResolvesQuickExportDestination() async throws {
+        let metadataReader = SpyMetadataReader(source: try makeSource())
+        let exporter = SpyMediaExporter()
+        let access = QuickExportScopedAccess()
+        let bookmark = BookmarkedDirectory(
+            url: URL(fileURLWithPath: "/tmp/stale-recordings"),
+            bookmarkData: Data([0x10])
+        )
+        let directoryAccessService = BookmarkedDirectoryAccessService(
+            resolver: QuickExportBookmarkResolver(
+                resolution: BookmarkedDirectoryResolution(
+                    url: URL(fileURLWithPath: "/tmp/resolved-recordings"),
+                    bookmarkData: bookmark.bookmarkData,
+                    isStale: false
+                )
+            ),
+            access: access
+        )
+        let service = QuickExportService(
+            metadataReader: metadataReader,
+            exportService: ExportService(exporter: exporter),
+            fileWorkflowService: ExportedFileWorkflowService(client: FakeExportedFileActionClient()),
+            directoryAccessService: directoryAccessService
+        )
+
+        let result = try await service.runQuickExport(
+            recording: makeRecording(),
+            presetID: ExportPreset.quickGIFID,
+            presets: ExportPreset.builtInDefaults,
+            recordingsDirectory: bookmark.url,
+            recordingsDirectoryBookmark: bookmark
+        )
+
+        let expectedOutputURL = URL(fileURLWithPath: "/tmp/resolved-recordings/Luxel Clip Quick GIF.gif")
+        #expect(await exporter.capturedExport()?.outputFileURL == expectedOutputURL)
+        #expect(result.exportedMedia.fileURL == expectedOutputURL)
+        #expect(access.startedURLs == [URL(fileURLWithPath: "/tmp/resolved-recordings")])
+        #expect(access.stoppedURLs == [URL(fileURLWithPath: "/tmp/resolved-recordings")])
+        #expect(access.activeURLs.isEmpty)
+    }
+
     @Test("notify post action delegates to user notifier")
     func notifyPostActionDelegatesToUserNotifier() async throws {
         let metadataReader = SpyMetadataReader(source: try makeSource())
@@ -312,4 +354,29 @@ private final class FakeExportedFileActionClient: ExportedFileActionClient {
     func openWithDefaultApp(_ fileURL: URL) {}
 
     func open(_ fileURL: URL, withApplicationAt applicationURL: URL) {}
+}
+
+private struct QuickExportBookmarkResolver: BookmarkedDirectoryResolver {
+    let resolution: BookmarkedDirectoryResolution
+
+    func resolve(_ directory: BookmarkedDirectory) throws -> BookmarkedDirectoryResolution {
+        resolution
+    }
+}
+
+private final class QuickExportScopedAccess: SecurityScopedResourceAccess, @unchecked Sendable {
+    private(set) var startedURLs: [URL] = []
+    private(set) var stoppedURLs: [URL] = []
+    private(set) var activeURLs: [URL] = []
+
+    func startAccessing(_ url: URL) -> Bool {
+        startedURLs.append(url)
+        activeURLs.append(url)
+        return true
+    }
+
+    func stopAccessing(_ url: URL) {
+        stoppedURLs.append(url)
+        activeURLs.removeAll { $0 == url }
+    }
 }

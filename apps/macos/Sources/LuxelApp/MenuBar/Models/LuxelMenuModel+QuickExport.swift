@@ -12,7 +12,8 @@ extension LuxelMenuModel {
                 recording: recording,
                 presetID: presetID,
                 presets: settings.exportPresets,
-                recordingsDirectory: settings.recordingsDirectory
+                recordingsDirectory: settings.recordingsDirectory,
+                recordingsDirectoryBookmark: settings.recordingsDirectoryBookmark
             ) { [weak self] snapshot in
                 guard !Task.isCancelled else {
                     return

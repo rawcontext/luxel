@@ -97,8 +97,11 @@ extension ArchitectureTests {
 
     @Test("status item startup does not enumerate capture targets")
     func statusItemStartupDoesNotEnumerateCaptureTargets() throws {
-        let source = try String(
-            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/App/LuxelStatusItemController.swift"),
+        let source = try sourceText(
+            for: [
+                "Sources/LuxelApp/App/LuxelStatusItemController.swift",
+                "Sources/LuxelApp/App/LuxelStatusItemController+Rendering.swift"
+            ],
             encoding: .utf8
         )
         let startupRange = try #require(source.range(of: "private func startNotchSurface()"))
@@ -226,8 +229,11 @@ extension ArchitectureTests {
 
     @Test("menu bar status click stops active recording before opening popover")
     func menuBarStatusClickStopsActiveRecordingBeforeOpeningPopover() throws {
-        let source = try String(
-            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/App/LuxelStatusItemController.swift"),
+        let source = try sourceText(
+            for: [
+                "Sources/LuxelApp/App/LuxelStatusItemController.swift",
+                "Sources/LuxelApp/App/LuxelStatusItemController+Rendering.swift"
+            ],
             encoding: .utf8
         )
 
@@ -241,7 +247,7 @@ extension ArchitectureTests {
         #expect(source.contains("setStatusItemLength(activeStatusItemWidth"))
         #expect(source.contains("if let button = statusItem.button {\n            configureStatusItemButton(button)"))
         #expect(source.contains("button.accessibilityFrame()"))
-        #expect(source.contains("private func activeStatusItemWidth"))
+        #expect(source.contains("func activeStatusItemWidth"))
         #expect(source.contains("makeActiveRecordingFrame"))
         #expect(source.contains("watchAudioLevels(onlyWhenRecording: true)"))
         #expect(source.contains("handleStatusItemStopWatchdog()"))
@@ -575,6 +581,13 @@ private extension ArchitectureTests {
     private func sourceContents(under directory: URL) throws -> String {
         try swiftFiles(under: directory)
             .map { try String(contentsOf: $0, encoding: .utf8) }
+            .joined(separator: "\n")
+    }
+
+    private func sourceText(for paths: [String], encoding: String.Encoding = .utf8) throws -> String {
+        let packageRoot = try packageRootURL()
+        return try paths
+            .map { try String(contentsOf: packageRoot.appending(path: $0), encoding: encoding) }
             .joined(separator: "\n")
     }
 

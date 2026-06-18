@@ -42,7 +42,11 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
         Task {
             model.configureEditor(editorModel)
-            await editorModel.open(fileURL: fileURL, outputDirectory: model.settings.recordingsDirectory)
+            await editorModel.open(
+                fileURL: fileURL,
+                outputDirectory: model.settings.recordingsDirectory,
+                outputDirectoryBookmark: model.settings.recordingsDirectoryBookmark
+            )
         }
     }
 

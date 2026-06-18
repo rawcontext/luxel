@@ -612,7 +612,11 @@ private extension LuxelMenu {
             await Task.yield()
             openEditorWindow()
             model.configureEditor(editorModel)
-            await editorModel.open(fileURL: url, outputDirectory: model.settings.recordingsDirectory)
+            await editorModel.open(
+                fileURL: url,
+                outputDirectory: model.settings.recordingsDirectory,
+                outputDirectoryBookmark: model.settings.recordingsDirectoryBookmark
+            )
         }
     }
 
@@ -953,30 +957,6 @@ private struct RecentRecordingMetadataLabel: View {
 
     private static func twoDigits(_ value: Int) -> String {
         value < 10 ? "0\(value)" : "\(value)"
-    }
-}
-
-private extension URL {
-    var isImageLikeMedia: Bool {
-        switch pathExtension.lowercased() {
-        case "gif", "heic", "jpeg", "jpg", "png", "tif", "tiff", "webp":
-            true
-        default:
-            false
-        }
-    }
-}
-
-extension View {
-    func luxelMenuSectionBackground(cornerRadius: CGFloat) -> some View {
-        background(.white.opacity(0.09), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-    }
-
-    func luxelMenuControlBackground(cornerRadius: CGFloat, isActive: Bool = false) -> some View {
-        background(
-            .white.opacity(isActive ? 0.14 : 0.09),
-            in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        )
     }
 }
 

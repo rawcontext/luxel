@@ -60,10 +60,14 @@ enum LuxelCompositionRoot {
     static func recordingOutputFinalizer() -> any RecordingOutputFinalizer {
         FileSystemRecordingOutputFinalizer(
             fileSystem: LocalFileSystem(),
-            directoryAccessService: BookmarkedDirectoryAccessService(
-                resolver: FoundationBookmarkedDirectoryResolver(),
-                access: URLSecurityScopedResourceAccess()
-            )
+            directoryAccessService: bookmarkedDirectoryAccessService()
+        )
+    }
+
+    static func bookmarkedDirectoryAccessService() -> BookmarkedDirectoryAccessService {
+        BookmarkedDirectoryAccessService(
+            resolver: FoundationBookmarkedDirectoryResolver(),
+            access: URLSecurityScopedResourceAccess()
         )
     }
 
@@ -110,6 +114,7 @@ enum LuxelCompositionRoot {
                 estimator: codecAdapterRegistry.exportSizeEstimator(nativeEstimator: NativeExportSizeEstimator())
             ),
             codecAvailability: codecAdapterRegistry.availability,
+            directoryAccessService: bookmarkedDirectoryAccessService(),
             errorReporter: errorReporter
         )
     }
@@ -125,6 +130,7 @@ enum LuxelCompositionRoot {
                 fileSystem: LocalFileSystem()
             ),
             fileWorkflowService: fileWorkflowService,
+            directoryAccessService: bookmarkedDirectoryAccessService(),
             userNotifier: UserNotificationsNotifier()
         )
     }
