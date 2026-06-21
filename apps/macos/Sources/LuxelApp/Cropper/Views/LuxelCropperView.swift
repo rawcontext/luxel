@@ -130,7 +130,7 @@ extension LuxelCropperView {
     }
 
     private var cropperOverlayControls: some View {
-        ZStack {
+        ZStack(alignment: .topTrailing) {
             if shouldShowNotificationReminder {
                 VStack {
                     notificationReminderPanel
@@ -138,16 +138,14 @@ extension LuxelCropperView {
 
                     Spacer()
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
 
-            HStack(alignment: .center, spacing: 0) {
-                cropperControls
-                Spacer()
-            }
+            cropperControls
         }
-        .padding(.leading, 28)
+        .padding(.horizontal, 28)
         .padding(.vertical, 28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
     }
 
     private var shouldShowNotificationReminder: Bool {
