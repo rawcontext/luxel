@@ -11,7 +11,7 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundleDisplayName"] as? String == "Luxel")
         #expect(plist["CFBundleExecutable"] as? String == "Luxel")
         #expect(plist["CFBundleIdentifier"] as? String == "media.luxel.app")
-        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.4")
+        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.5")
         #expect(plist["CFBundleVersion"] as? String == "1")
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
         #expect(plist["LSMinimumSystemVersion"] as? String == "26.0")
