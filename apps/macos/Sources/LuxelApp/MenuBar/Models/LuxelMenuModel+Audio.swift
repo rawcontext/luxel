@@ -58,16 +58,6 @@ extension LuxelMenuModel {
         }
     }
 
-    func cropperAudioLevelConfiguration() -> CropperAudioLevelConfiguration? {
-        guard microphoneStatus == .authorized else {
-            return nil
-        }
-
-        let resolution = resolveSelectedAudioInputDevice()
-
-        return CropperAudioLevelConfiguration(deviceID: resolution.microphoneDeviceID)
-    }
-
     @discardableResult
     func resolveSelectedAudioInputDevice() -> AudioInputDeviceResolution {
         audioInputDevices = audioInputDeviceService.availableInputDevices()

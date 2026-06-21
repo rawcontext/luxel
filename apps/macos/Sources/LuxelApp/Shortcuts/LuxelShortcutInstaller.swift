@@ -64,7 +64,7 @@ struct LuxelShortcutInstaller: View {
             cropperPanelController.show(
                 countdownDuration: model.settings.defaultCountdown,
                 stopAfterDuration: model.settings.lastStopAfter,
-                audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
+                canRecordAudio: model.microphoneStatus == .authorized,
                 quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                 selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
                 restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),

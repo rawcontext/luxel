@@ -439,7 +439,7 @@ extension LuxelStatusItemController {
         cropperPanelController.show(
             countdownDuration: model.settings.defaultCountdown,
             stopAfterDuration: model.settings.lastStopAfter,
-            audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
+            canRecordAudio: model.microphoneStatus == .authorized,
             cameraConfiguration: model.cropperCameraConfiguration(),
             quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
             selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),

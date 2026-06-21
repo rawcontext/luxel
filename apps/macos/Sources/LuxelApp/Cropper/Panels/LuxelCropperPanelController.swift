@@ -7,31 +7,24 @@ final class LuxelCropperPanelController {
     private static let panelLevel = NSWindow.Level(rawValue: NSWindow.Level.popUpMenu.rawValue - 1)
 
     private let targetService: CaptureTargetService
-    private let audioLevelMonitorFactory: () -> any AudioLevelMonitor
     private let exclusionRegistry: CaptureExclusionRegistry
     private var panels: [NSPanel] = []
     private var exclusionRegistrationID: UUID?
-    private var audioLevelModel: LuxelAudioLevelModel?
-    private var audioLevelTask: Task<Void, Never>?
 
     init(
         targetService: CaptureTargetService = CaptureTargetService(
             catalog: CachedCaptureTargetCatalog(upstream: ScreenCaptureKitCaptureTargetCatalog())
         ),
-        exclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry(),
-        audioLevelMonitorFactory: @escaping () -> any AudioLevelMonitor = {
-            AVCaptureAudioLevelMonitor()
-        }
+        exclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry()
     ) {
         self.targetService = targetService
         self.exclusionRegistry = exclusionRegistry
-        self.audioLevelMonitorFactory = audioLevelMonitorFactory
     }
 
     func show(
         countdownDuration: TimeInterval? = nil,
         stopAfterDuration: TimeInterval? = nil,
-        audioLevelConfiguration: CropperAudioLevelConfiguration? = nil,
+        canRecordAudio: Bool = false,
         cameraConfiguration: CropperCameraConfiguration = CropperCameraConfiguration(
             selectedDeviceID: nil,
             devices: [],
@@ -69,7 +62,7 @@ final class LuxelCropperPanelController {
                 let presentation = CropperPanelPresentation(
                     countdownDuration: countdownDuration,
                     stopAfterDuration: stopAfterDuration,
-                    audioLevelConfiguration: audioLevelConfiguration,
+                    canRecordAudio: canRecordAudio,
                     cameraConfiguration: cameraConfiguration,
                     quickRecordingConfiguration: quickRecordingConfiguration,
                     selectionPresetConfiguration: selectionPresetConfiguration,
@@ -99,10 +92,6 @@ final class LuxelCropperPanelController {
     }
 
     func close() {
-        audioLevelTask?.cancel()
-        audioLevelTask = nil
-        audioLevelModel?.stop()
-        audioLevelModel = nil
         panels.forEach { $0.close() }
         panels = []
         if let exclusionRegistrationID {
@@ -119,18 +108,6 @@ final class LuxelCropperPanelController {
         presentation: CropperPanelPresentation
     ) async {
         let displaysByID = Dictionary(uniqueKeysWithValues: displays.map { ($0.id, $0) })
-        let sharedAudioLevelModel = presentation.audioLevelConfiguration.map {
-            LuxelAudioLevelModel(
-                deviceID: $0.deviceID,
-                monitor: audioLevelMonitorFactory()
-            )
-        }
-
-        audioLevelModel = sharedAudioLevelModel
-        if presentation.recordAudio, let sharedAudioLevelModel {
-            setAudioLevelMonitoringEnabled(true, model: sharedAudioLevelModel)
-        }
-
         let displayFocus = CropperDisplayFocus()
 
         for screen in NSScreen.screens {
@@ -152,15 +129,14 @@ final class LuxelCropperPanelController {
                     from: targets
                 ),
                 recordAudio: presentation.recordAudio,
-                canRecordAudio: sharedAudioLevelModel != nil,
+                canRecordAudio: presentation.canRecordAudio,
                 loupeAlwaysOn: presentation.loupeAlwaysOn,
                 dimOtherDisplays: presentation.dimOtherDisplays,
                 displayFocus: displayFocus,
                 onCountdownDurationChange: presentation.onCountdownDurationChange,
                 onStopAfterDurationChange: presentation.onStopAfterDurationChange,
-                onRecordAudioChange: { [weak self, weak sharedAudioLevelModel] isEnabled in
+                onRecordAudioChange: { isEnabled in
                     presentation.onRecordAudioChange(isEnabled)
-                    self?.setAudioLevelMonitoringEnabled(isEnabled, model: sharedAudioLevelModel)
                 }
             )
             let panel = LuxelCropperPanel(
@@ -181,7 +157,6 @@ final class LuxelCropperPanelController {
             panel.contentView = NSHostingView(
                 rootView: LuxelCropperView(
                     model: model,
-                    audioLevelModel: sharedAudioLevelModel,
                     cameraConfiguration: presentation.cameraConfiguration,
                     quickRecordingConfiguration: presentation.quickRecordingConfiguration,
                     showsNotificationReminder: presentation.showsNotificationReminder,
@@ -229,29 +204,12 @@ final class LuxelCropperPanelController {
         }
     }
 
-    private func setAudioLevelMonitoringEnabled(_ isEnabled: Bool, model: LuxelAudioLevelModel?) {
-        audioLevelTask?.cancel()
-        audioLevelTask = nil
-
-        guard let model else {
-            return
-        }
-
-        if isEnabled {
-            audioLevelTask = Task {
-                await model.watch()
-            }
-        } else {
-            model.stop()
-            model.sample = .silent
-        }
-    }
 }
 
 private struct CropperPanelPresentation {
     let countdownDuration: TimeInterval?
     let stopAfterDuration: TimeInterval?
-    let audioLevelConfiguration: CropperAudioLevelConfiguration?
+    let canRecordAudio: Bool
     let cameraConfiguration: CropperCameraConfiguration
     let quickRecordingConfiguration: CropperQuickRecordingConfiguration
     let selectionPresetConfiguration: CropperSelectionPresetConfiguration

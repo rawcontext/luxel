@@ -25,7 +25,6 @@ struct LuxelCropperView: View {
     @State var currentCameraConfiguration: CropperCameraConfiguration?
 
     @Bindable var model: LuxelCropperModel
-    let audioLevelModel: LuxelAudioLevelModel?
     let cameraConfiguration: CropperCameraConfiguration
     let quickRecordingConfiguration: CropperQuickRecordingConfiguration
     let showsNotificationReminder: Bool
@@ -186,12 +185,6 @@ extension LuxelCropperView {
                     HStack(spacing: Self.toolbarControlSpacing) {
                         countdownMenu(width: Self.toolbarPairedButtonWidth)
                         stopAfterMenu(width: Self.toolbarPairedButtonWidth)
-                    }
-                }
-
-                if model.recordsAudio, let audioLevelModel {
-                    toolbarControl("Shows the current microphone input level.") {
-                        CropperAudioLevelMeter(model: audioLevelModel)
                     }
                 }
 
