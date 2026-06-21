@@ -16,7 +16,6 @@ const navGroups = [
     links: [
       { href: "#capture", label: "Capture" },
       { href: "#cropper", label: "Area picker" },
-      { href: "#screenshots", label: "Screenshots" },
       { href: "#editor", label: "Edit and export" },
       { href: "#workflows", label: "Workflows" }
     ]
@@ -58,15 +57,12 @@ const keycap = (key) => {
 const shortcutLabel = (keys) => keys.map((key) => keycap(key).label).join("-");
 
 const globalShortcuts = [
-  { command: "Select Area", keys: ["command", "control", "option", "r"], result: "Open the area picker for recording or screenshots." },
+  { command: "Select Area", keys: ["command", "control", "option", "r"], result: "Open the area picker for recording." },
   { command: "Toggle Recording", keys: ["command", "control", "option", "t"], result: "Stop an active recording, or start from the default target." },
   { command: "Record Active Window", keys: ["command", "control", "option", "shift", "w"], result: "Record the current active window." },
   { command: "Record Fullscreen", keys: ["command", "control", "option", "shift", "f"], result: "Record the main display." },
   { command: "Audio Only", keys: ["command", "control", "option", "a"], result: "Start an audio-only recording." },
-  { command: "Quick Record Last", keys: ["command", "control", "option", "q"], result: "Use the remembered last capture with the quick preset." },
-  { command: "Screenshot", keys: ["command", "control", "option", "s"], result: "Capture a screenshot of the selected target." },
-  { command: "Screenshot Active Window", keys: ["command", "control", "option", "w"], result: "Capture the active window." },
-  { command: "Screenshot Fullscreen", keys: ["command", "control", "option", "f"], result: "Capture the main display." }
+  { command: "Quick Record Last", keys: ["command", "control", "option", "q"], result: "Use the remembered last capture with the quick preset." }
 ];
 
 const areaPickerShortcuts = [
@@ -88,7 +84,6 @@ const systemShortcutConflicts = [
 const settingsPanes = [
   ["Recording", "Cursor visibility, click highlights, frame rate, system audio, microphone audio, audio-only format, microphone selection, camera preview, and camera preview style."],
   ["Output", "Recordings folder, loop exports, and whether Luxel asks before discarding a recording."],
-  ["Screenshots", "Screenshot format, destinations, thumbnail behavior, and window backdrop behavior."],
   ["Presets", "Quick export presets, cropper size presets, loupe behavior, dimming, and last-selection restoration."],
   ["Shortcuts", "Global shortcut enablement, shortcut search, custom shortcut editing, reset/clear controls, conflict warnings, and URL automation."],
   ["Notch", "Built-in notch surface, idle quick actions, recording waveform, auto-collapse timing, and floating HUD fallback."],
@@ -100,10 +95,9 @@ const troubleshooting = [
   { problem: "Record buttons are disabled", answer: "Choose a capture target and resolve the visible permission chips. Screen capture needs Screen & System Audio Recording permission; audio-only capture needs microphone permission." },
   { problem: "Screen capture still fails after allowing permission", answer: "Quit and reopen Luxel after changing Screen & System Audio Recording access. If Luxel still is not listed, remove old Luxel entries from the permission list and open Luxel again." },
   { problem: "Microphone audio is missing", answer: "Enable Record Microphone, choose a valid microphone or System Default, and grant Microphone permission. GIF and APNG exports do not carry audio." },
-  { problem: "Transparent screenshot backdrop is disabled", answer: "Use a window target and an alpha-capable format, either PNG or HEIC. JPEG cannot preserve transparency." },
   { problem: "Quick Record is disabled", answer: "Create or select a quick export preset, then choose a target or enable Remember Last Capture so Luxel has a previous capture to repeat." },
   { problem: "Copy Frame or Save Frame As is disabled", answer: "Pause preview playback first. Frame grabs use the current paused frame and save as PNG." },
-  { problem: "Shortcut does not fire", answer: "Make sure Keyboard Shortcuts is enabled, remove duplicate shortcuts, and avoid macOS screenshot shortcuts, including:", shortcuts: systemShortcutConflicts },
+  { problem: "Shortcut does not fire", answer: "Make sure Keyboard Shortcuts is enabled, remove duplicate shortcuts, and avoid known macOS capture shortcuts, including:", shortcuts: systemShortcutConflicts },
   { problem: "The notch surface is not visible", answer: "Luxel uses the built-in notch when a notched display is detected and the Notch setting is enabled. Otherwise it falls back to the floating HUD if that fallback is enabled, or to menu-bar-only status." }
 ];
 ---
@@ -115,7 +109,7 @@ const troubleshooting = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Luxel user documentation for installation, permissions, capture, screenshots, editing, export, shortcuts, automation, settings, and troubleshooting."
+      content="Luxel user documentation for installation, permissions, capture, editing, export, shortcuts, automation, settings, and troubleshooting."
     />
     <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
     <title>Luxel Documentation</title>
@@ -152,8 +146,8 @@ const troubleshooting = [
           <h1 id="overview-title">Use Luxel from first launch to final export.</h1>
           <p class="docs-lead">
             Luxel is a native macOS menu bar recorder for screen capture, area capture,
-            screenshots, audio-only recordings, camera preview overlays, quick exports,
-            and editor-based exports.
+            audio-only recordings, camera preview overlays, quick exports, and
+            editor-based exports.
           </p>
 
           <div class="docs-hero-grid">
@@ -162,7 +156,7 @@ const troubleshooting = [
               <ol>
                 <li>Launch Luxel and find it in the menu bar.</li>
                 <li>Grant only the permissions needed for the capture you are about to make.</li>
-                <li>Pick a target, record or screenshot, then open the result in the editor or Finder.</li>
+                <li>Pick a target, record, then open the result in the editor or Finder.</li>
               </ol>
             </article>
 
@@ -203,7 +197,7 @@ const troubleshooting = [
                 <li>Open Luxel from the menu bar.</li>
                 <li>Choose a target from Target, or use Area to draw a custom region.</li>
                 <li>Enable System Audio, Microphone, or Camera only if the recording needs them.</li>
-                <li>Click Screen, Area, Audio, or Screenshot from the More menu.</li>
+                <li>Click Screen, Area, or Audio from the More menu.</li>
                 <li>Stop recording from the menu bar, notch surface, or shortcut.</li>
               </ol>
             </article>
@@ -224,7 +218,7 @@ const troubleshooting = [
             <article>
               <h3>Screen & System Audio Recording</h3>
               <p>
-                Required for display, window, area, screenshot, and system-audio capture.
+                Required for display, window, area, and system-audio capture.
                 macOS may label this setting as Screen & System Audio Recording in
                 System Settings > Privacy & Security.
               </p>
@@ -306,8 +300,8 @@ const troubleshooting = [
             <article>
               <h3>Recent files</h3>
               <p>
-                The menu shows the latest recording or screenshot and a Recent menu.
-                Recordings open in the editor; screenshots reveal in Finder.
+                The menu shows the latest recording and a Recent menu. Recordings open
+                in the editor.
               </p>
             </article>
           </div>
@@ -392,7 +386,7 @@ const troubleshooting = [
             <article>
               <h3>Useful controls</h3>
               <ul>
-                <li>Switch between video and photo mode.</li>
+                <li>Choose countdown, stop-after, audio, camera, ratio, and size controls.</li>
                 <li>Toggle microphone and camera when permissions allow it.</li>
                 <li>Use the loupe for precise edges.</li>
                 <li>Dim other displays or restore the last selection from Presets settings.</li>
@@ -426,40 +420,6 @@ const troubleshooting = [
                 ))}
               </tbody>
             </table>
-          </div>
-        </section>
-
-        <section class="docs-section" id="screenshots" aria-labelledby="screenshots-title">
-          <div class="section-heading">
-            <p class="docs-eyebrow">Guide</p>
-            <h2 id="screenshots-title">Screenshots</h2>
-          </div>
-
-          <div class="split-grid">
-            <article>
-              <h3>Capture a screenshot</h3>
-              <ol>
-                <li>Choose a target, active window, fullscreen shortcut, or area photo mode.</li>
-                <li>Choose Screenshot from the More menu or use a screenshot shortcut.</li>
-                <li>Luxel sends the result to the selected screenshot destinations.</li>
-              </ol>
-              <p>
-                Destinations are Copy to Clipboard, Save File, and Open Preview. At least
-                one destination stays enabled.
-              </p>
-            </article>
-
-            <article>
-              <h3>Formats and backdrops</h3>
-              <p>
-                Screenshot formats are PNG, JPEG, and HEIC. Window backdrops can be
-                opaque, transparent, or transparent with shadow.
-              </p>
-              <p class="tip">
-                Transparent backdrops require a window target and an alpha-capable format.
-                Use PNG or HEIC; JPEG disables transparency.
-              </p>
-            </article>
           </div>
         </section>
 
@@ -590,12 +550,12 @@ const troubleshooting = [
             </article>
 
             <article>
-              <h3>Clean screenshot handoff</h3>
+              <h3>Paused-frame handoff</h3>
               <ol>
-                <li>Choose PNG or HEIC in Screenshots settings.</li>
-                <li>For a window screenshot, choose transparent with shadow if desired.</li>
-                <li>Enable Clipboard, Save File, Preview, or a combination.</li>
-                <li>Capture from the More menu, area photo mode, shortcut, CLI, or App Shortcut.</li>
+                <li>Open a recording in the editor.</li>
+                <li>Pause on the frame you need.</li>
+                <li>Use Copy Frame or Save Frame As from the editor actions.</li>
+                <li>Use the saved PNG or clipboard image in the destination app.</li>
               </ol>
             </article>
           </div>
@@ -640,9 +600,9 @@ const troubleshooting = [
           <div class="callout">
             <h3>Conflict warnings</h3>
             <p>
-              Luxel warns about duplicate shortcuts and known macOS screenshot shortcuts.
+              Luxel warns about duplicate shortcuts and known macOS capture shortcuts.
             </p>
-            <div class="shortcut-cluster" aria-label="Known macOS screenshot shortcut conflicts">
+            <div class="shortcut-cluster" aria-label="Known macOS capture shortcut conflicts">
               {systemShortcutConflicts.map((shortcut) => (
                 <span class="shortcut-keys" aria-label={shortcutLabel(shortcut)}>
                   {shortcut.map((key) => {
@@ -669,11 +629,10 @@ const troubleshooting = [
             <article>
               <h3>Common commands</h3>
               <p>
-                The CLI can start recordings, stop or toggle recording, capture screenshots,
-                open the latest recording, and jump to a settings pane.
+                The CLI can start recordings, stop or toggle recording, open the latest
+                recording, and jump to a settings pane.
               </p>
               <pre><code>luxel record --display main --preset "Quick GIF" --wait
-luxel screenshot --active-window --format png --json
 luxel toggle --last-area
 luxel latest --reveal
 luxel preferences --pane shortcuts</code></pre>
@@ -700,7 +659,6 @@ luxel preferences --pane shortcuts</code></pre>
                 allowed by default.
               </p>
               <pre><code>luxel://record?target=display&amp;display=main&amp;countdown=3
-luxel://screenshot?target=activeWindow&amp;format=heic
 luxel://toggle
 luxel://stop
 luxel://preferences?pane=shortcuts
@@ -713,10 +671,9 @@ luxel://latest?reveal=true</code></pre>
               <h3>App Shortcuts</h3>
               <p>
                 Luxel exposes App Intents for Start Recording, Stop Recording, Toggle
-                Recording, Capture Screenshot, and Get Latest Recording.
+                Recording, and Get Latest Recording.
                 Shortcut phrases include "Start a recording with Luxel", "Stop Luxel",
-                "Toggle Luxel", "Take a screenshot with Luxel", and "Show my latest
-                Luxel recording".
+                "Toggle Luxel", and "Show my latest Luxel recording".
               </p>
             </article>
           </div>
@@ -778,7 +735,7 @@ luxel://latest?reveal=true</code></pre>
                 <summary>{item.problem}</summary>
                 <p>{item.answer}</p>
                 {item.shortcuts && (
-                  <div class="shortcut-cluster" aria-label="Known macOS screenshot shortcut conflicts">
+                  <div class="shortcut-cluster" aria-label="Known macOS capture shortcut conflicts">
                     {item.shortcuts.map((shortcut) => (
                       <span class="shortcut-keys" aria-label={shortcutLabel(shortcut)}>
                         {shortcut.map((key) => {
