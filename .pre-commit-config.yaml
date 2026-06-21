@@ -4,4 +4,6 @@ repos:
     hooks:
       - id: swiftlint
         entry: apps/macos/Scripts/swiftlint-precommit.sh
+        always_run: true
+        pass_filenames: false
         require_serial: true
