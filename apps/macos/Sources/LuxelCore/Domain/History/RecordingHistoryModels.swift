@@ -2,13 +2,11 @@ import Foundation
 
 public enum HistoryEntryKind: String, Codable, Equatable, Sendable {
     case recording
-    case screenshot
 }
 
 public enum RecordingHistoryFilter: String, CaseIterable, Codable, Equatable, Sendable {
     case all
     case recordings
-    case screenshots
 
     public func includes(_ recording: PastRecording) -> Bool {
         switch self {
@@ -16,8 +14,6 @@ public enum RecordingHistoryFilter: String, CaseIterable, Codable, Equatable, Se
             true
         case .recordings:
             recording.kind == .recording
-        case .screenshots:
-            recording.kind == .screenshot
         }
     }
 }
@@ -121,11 +117,14 @@ public struct PastRecording: Codable, Equatable, Sendable {
         fileURL = try container.decode(URL.self, forKey: .fileURL)
         name = try container.decode(String.self, forKey: .name)
         date = try container.decode(Date.self, forKey: .date)
-        kind = try container.decodeIfPresent(HistoryEntryKind.self, forKey: .kind)
+        kind =
+            try container.decodeIfPresent(HistoryEntryKind.self, forKey: .kind)
             ?? .recording
-        options = try container.decodeIfPresent(RecordingOptions.self, forKey: .options)
+        options =
+            try container.decodeIfPresent(RecordingOptions.self, forKey: .options)
             ?? RecordingOptions(frameRate: 0)
-        exports = try container.decodeIfPresent([RecordingExport].self, forKey: .exports)
+        exports =
+            try container.decodeIfPresent([RecordingExport].self, forKey: .exports)
             ?? []
         bundleManifest = try container.decodeIfPresent(BundleManifest.self, forKey: .bundleManifest)
     }
@@ -273,21 +272,28 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
 
         frameRate = try container.decode(Int.self, forKey: .frameRate)
         captureRect = try container.decodeIfPresent(CaptureRect.self, forKey: .captureRect)
-        showCursor = try container.decodeIfPresent(Bool.self, forKey: .showCursor)
+        showCursor =
+            try container.decodeIfPresent(Bool.self, forKey: .showCursor)
             ?? true
-        highlightClicks = try container.decodeIfPresent(Bool.self, forKey: .highlightClicks)
+        highlightClicks =
+            try container.decodeIfPresent(Bool.self, forKey: .highlightClicks)
             ?? false
-        captureKeystrokes = try container.decodeIfPresent(Bool.self, forKey: .captureKeystrokes)
+        captureKeystrokes =
+            try container.decodeIfPresent(Bool.self, forKey: .captureKeystrokes)
             ?? false
         camera = try container.decodeIfPresent(CameraRecordingOptions.self, forKey: .camera)
         displayID = try container.decodeIfPresent(DisplayID.self, forKey: .displayID)
-        audio = try container.decodeIfPresent(RecordingAudioMode.self, forKey: .audio)
+        audio =
+            try container.decodeIfPresent(RecordingAudioMode.self, forKey: .audio)
             ?? .none
-        videoCodec = try container.decodeIfPresent(RecordingCodec.self, forKey: .videoCodec)
+        videoCodec =
+            try container.decodeIfPresent(RecordingCodec.self, forKey: .videoCodec)
             ?? .h264
-        captureKind = try container.decodeIfPresent(QuickCaptureKind.self, forKey: .captureKind)
+        captureKind =
+            try container.decodeIfPresent(QuickCaptureKind.self, forKey: .captureKind)
             ?? .standard
-        isAudioOnly = try container.decodeIfPresent(Bool.self, forKey: .isAudioOnly)
+        isAudioOnly =
+            try container.decodeIfPresent(Bool.self, forKey: .isAudioOnly)
             ?? false
         schedule = try container.decodeIfPresent(RecordingSchedule.self, forKey: .schedule)
         timelapse = try container.decodeIfPresent(TimelapseOptions.self, forKey: .timelapse)

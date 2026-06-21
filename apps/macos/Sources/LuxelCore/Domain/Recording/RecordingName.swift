@@ -22,7 +22,8 @@ public struct RecordingName: Equatable, Sendable {
         now: Date,
         calendar: Calendar = .current
     ) -> RecordingName {
-        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: now)
+        let components = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second], from: now)
         let value = String(
             format: "%@ %04d-%02d-%02d at %02d.%02d.%02d%@",
             title,

@@ -13,7 +13,8 @@ public struct I420Frame: Equatable, Sendable {
               pixelSize.height.isMultiple(of: 2),
               yPlane.count == pixelSize.width * pixelSize.height,
               uPlane.count == chromaWidth * chromaHeight,
-              vPlane.count == chromaWidth * chromaHeight else {
+              vPlane.count == chromaWidth * chromaHeight
+        else {
             throw CodecPipelineModelError.invalidI420Frame
         }
 
@@ -181,7 +182,8 @@ public struct CodecMediaSourceDescription: Equatable, Sendable {
 
         if audioChunkCount > 0 {
             guard let audioSampleRate, audioSampleRate > 0,
-                  let audioChannelCount, audioChannelCount > 0 else {
+                  let audioChannelCount, audioChannelCount > 0
+            else {
                 throw CodecPipelineModelError.invalidMediaSourceDescription
             }
         }

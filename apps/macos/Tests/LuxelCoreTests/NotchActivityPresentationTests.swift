@@ -10,18 +10,20 @@ struct NotchActivityPresentationTests {
 
         #expect(viewModel.collapsedTitle == "Luxel")
         #expect(viewModel.expandedTitle == "Luxel")
-        #expect(viewModel.actions.map(\.id) == [
-            .recordFullscreen,
-            .recordArea,
-            .screenshot,
-            .openSettings
-        ])
-        #expect(viewModel.actions.map(\.systemImage) == [
-            "rectangle.dashed",
-            "viewfinder",
-            "camera",
-            "gearshape"
-        ])
+        #expect(
+            viewModel.actions.map(\.id) == [
+                .recordFullscreen,
+                .recordArea,
+                .recordAudioOnly,
+                .openSettings
+            ])
+        #expect(
+            viewModel.actions.map(\.systemImage) == [
+                "rectangle.dashed",
+                "viewfinder",
+                "waveform",
+                "gearshape"
+            ])
     }
 
     @Test("arming exposes countdown and cancel action")
@@ -30,14 +32,15 @@ struct NotchActivityPresentationTests {
 
         #expect(viewModel.collapsedTitle == "4 s")
         #expect(viewModel.expandedTitle == "Recording starts in 4 s")
-        #expect(viewModel.actions == [
-            NotchActivityActionDescriptor(
-                id: .cancel,
-                title: "Cancel",
-                systemImage: "xmark.circle.fill",
-                role: .destructive
-            )
-        ])
+        #expect(
+            viewModel.actions == [
+                NotchActivityActionDescriptor(
+                    id: .cancel,
+                    title: "Cancel",
+                    systemImage: "xmark.circle.fill",
+                    role: .destructive
+                )
+            ])
     }
 
     @Test("recording mirrors session timer and exposes controls")
@@ -59,18 +62,20 @@ struct NotchActivityPresentationTests {
         #expect(viewModel.leadingEarText == "1:42")
         #expect(viewModel.trailingEarText == "Audio 65%")
         #expect(viewModel.audioLevel == AudioLevelSample(rms: 0.3, peak: 0.65))
-        #expect(viewModel.actions.map(\.id) == [
-            .stopRecording,
-            .recordArea,
-            .screenshot,
-            .openSettings
-        ])
-        #expect(viewModel.actions.map(\.systemImage) == [
-            "stop.fill",
-            "viewfinder",
-            "camera",
-            "gearshape"
-        ])
+        #expect(
+            viewModel.actions.map(\.id) == [
+                .stopRecording,
+                .recordArea,
+                .recordAudioOnly,
+                .openSettings
+            ])
+        #expect(
+            viewModel.actions.map(\.systemImage) == [
+                "stop.fill",
+                "viewfinder",
+                "waveform",
+                "gearshape"
+            ])
     }
 
     @Test("recording replaces the initiating notch action with stop")
@@ -86,18 +91,20 @@ struct NotchActivityPresentationTests {
             recordingActionToReplace: .recordArea
         )
 
-        #expect(viewModel.actions.map(\.id) == [
-            .recordFullscreen,
-            .stopRecording,
-            .screenshot,
-            .openSettings
-        ])
-        #expect(viewModel.actions.map(\.systemImage) == [
-            "rectangle.dashed",
-            "stop.fill",
-            "camera",
-            "gearshape"
-        ])
+        #expect(
+            viewModel.actions.map(\.id) == [
+                .recordFullscreen,
+                .stopRecording,
+                .recordAudioOnly,
+                .openSettings
+            ])
+        #expect(
+            viewModel.actions.map(\.systemImage) == [
+                "rectangle.dashed",
+                "stop.fill",
+                "waveform",
+                "gearshape"
+            ])
     }
 
     @Test("muted recording hides audio level")
@@ -108,7 +115,8 @@ struct NotchActivityPresentationTests {
 
         #expect(viewModel.audioLevel == nil)
         #expect(viewModel.trailingEarText == "Muted")
-        #expect(viewModel.actions.map(\.id) == [.stopRecording, .recordArea, .screenshot, .openSettings])
+        #expect(
+            viewModel.actions.map(\.id) == [.stopRecording, .recordArea, .recordAudioOnly, .openSettings])
     }
 
     @Test("paused mirrors session timer and exposes resume stop discard")
@@ -121,7 +129,8 @@ struct NotchActivityPresentationTests {
 
         #expect(viewModel.collapsedTitle == session.menuBarTitle)
         #expect(viewModel.expandedDetail == "Paused at 1:02:02")
-        #expect(viewModel.actions.map(\.id) == [.stopRecording, .recordArea, .screenshot, .openSettings])
+        #expect(
+            viewModel.actions.map(\.id) == [.stopRecording, .recordArea, .recordAudioOnly, .openSettings])
     }
 
     @Test("replay buffering exposes coverage progress and actions")
@@ -153,20 +162,15 @@ struct NotchActivityPresentationTests {
         #expect(viewModel.actions.map(\.id) == [.cancelExport])
     }
 
-    @Test("completed and screenshot activities carry artifact actions")
-    func completedAndScreenshotActivitiesCarryArtifactActions() {
+    @Test("completed activities carry artifact actions")
+    func completedActivitiesCarryArtifactActions() {
         let export = NotchArtifact(fileURL: URL(filePath: "/tmp/Luxel.gif"), kind: .export)
-        let screenshot = NotchArtifact(fileURL: URL(filePath: "/tmp/Luxel.png"), kind: .screenshot)
 
         let completed = NotchActivityPresentation.viewModel(for: .completed(artifact: export))
-        let captured = NotchActivityPresentation.viewModel(for: .screenshotCaptured(artifact: screenshot))
 
         #expect(completed.expandedTitle == "Export Ready")
         #expect(completed.artifact == export)
         #expect(completed.actions.map(\.id) == [.reveal, .copy, .openInEditor])
-        #expect(captured.expandedTitle == "Screenshot Captured")
-        #expect(captured.artifact == screenshot)
-        #expect(captured.actions.map(\.id) == [.copy, .save, .openInPreview])
     }
 
     @Test("errors expose matching recovery action")
@@ -182,14 +186,15 @@ struct NotchActivityPresentationTests {
         #expect(viewModel.collapsedTitle == "Error")
         #expect(viewModel.expandedTitle == "Screen Recording")
         #expect(viewModel.expandedDetail == "Permission is required.")
-        #expect(viewModel.actions == [
-            NotchActivityActionDescriptor(
-                id: .openSettings,
-                title: "Open Settings",
-                systemImage: "gear",
-                role: .primary
-            )
-        ])
+        #expect(
+            viewModel.actions == [
+                NotchActivityActionDescriptor(
+                    id: .openSettings,
+                    title: "Open Settings",
+                    systemImage: "gear",
+                    role: .primary
+                )
+            ])
     }
 
     @Test("now playing exposes preview progress")

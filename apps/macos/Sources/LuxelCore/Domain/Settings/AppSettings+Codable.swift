@@ -35,9 +35,6 @@ extension AppSettings {
         case audioOnlyRecordingShortcut
         case quickRecordLastShortcut
         case clipReplayBufferShortcut
-        case captureScreenshotShortcut
-        case screenshotActiveWindowShortcut
-        case screenshotFullscreenShortcut
         case updatePreferences
         case showTimeInMenuBar
         case notificationReminder
@@ -52,10 +49,6 @@ extension AppSettings {
         case userSizePresets
         case lastCaptureMemory
         case perFormatExportMemory
-        case screenshotFormat
-        case screenshotDestinations
-        case screenshotShowThumbnail
-        case screenshotBackdrop
         case confirmDiscard
         case defaultCountdown
         case lastStopAfter
@@ -63,33 +56,39 @@ extension AppSettings {
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let defaultUpdatePreferences = UpdatePreferences.defaults
 
         recordingsDirectory = try container.decode(URL.self, forKey: .recordingsDirectory)
         recordingsDirectoryBookmark = try container.decodeIfPresent(
             BookmarkedDirectory.self,
             forKey: .recordingsDirectoryBookmark
         )
-        showCursor = try container.decodeIfPresent(Bool.self, forKey: .showCursor)
+        showCursor =
+            try container.decodeIfPresent(Bool.self, forKey: .showCursor)
             ?? true
-        highlightClicks = try container.decodeIfPresent(Bool.self, forKey: .highlightClicks)
+        highlightClicks =
+            try container.decodeIfPresent(Bool.self, forKey: .highlightClicks)
             ?? false
-        cursorMode = try container.decodeIfPresent(CursorMode.self, forKey: .cursorMode)
+        cursorMode =
+            try container.decodeIfPresent(CursorMode.self, forKey: .cursorMode)
             ?? Self.cursorMode(showCursor: showCursor)
-        cursorRenderOptions = try container.decodeIfPresent(
-            CursorRenderOptions.self,
-            forKey: .cursorRenderOptions
-        ) ?? Self.cursorRenderOptions(showCursor: showCursor, highlightClicks: highlightClicks)
-        keystrokeOverlayEnabled = try container.decodeIfPresent(Bool.self, forKey: .keystrokeOverlayEnabled)
+        cursorRenderOptions =
+            try container.decodeIfPresent(
+                CursorRenderOptions.self,
+                forKey: .cursorRenderOptions
+            ) ?? Self.cursorRenderOptions(showCursor: showCursor, highlightClicks: highlightClicks)
+        keystrokeOverlayEnabled =
+            try container.decodeIfPresent(Bool.self, forKey: .keystrokeOverlayEnabled)
             ?? false
-        keystrokeRenderOptions = try container.decodeIfPresent(
-            KeystrokeRenderOptions.self,
-            forKey: .keystrokeRenderOptions
-        ) ?? .standard
-        pauseKeystrokeCaptureShortcut = try container.decodeIfPresent(
-            String.self,
-            forKey: .pauseKeystrokeCaptureShortcut
-        ) ?? ""
+        keystrokeRenderOptions =
+            try container.decodeIfPresent(
+                KeystrokeRenderOptions.self,
+                forKey: .keystrokeRenderOptions
+            ) ?? .standard
+        pauseKeystrokeCaptureShortcut =
+            try container.decodeIfPresent(
+                String.self,
+                forKey: .pauseKeystrokeCaptureShortcut
+            ) ?? ""
         let recording = try Self.decodeRecordingSettings(from: container)
         recordingFrameRate = recording.frameRate
         record60FPS = recording.records60FPS
@@ -118,59 +117,35 @@ extension AppSettings {
         audioOnlyRecordingShortcut = shortcuts.audioOnlyRecording
         quickRecordLastShortcut = shortcuts.quickRecordLast
         clipReplayBufferShortcut = shortcuts.clipReplayBuffer
-        captureScreenshotShortcut = shortcuts.captureScreenshot
-        screenshotActiveWindowShortcut = shortcuts.screenshotActiveWindow
-        screenshotFullscreenShortcut = shortcuts.screenshotFullscreen
-        updatePreferences = try container.decodeIfPresent(UpdatePreferences.self, forKey: .updatePreferences)
-            ?? defaultUpdatePreferences
-        showTimeInMenuBar = try container.decodeIfPresent(Bool.self, forKey: .showTimeInMenuBar)
-            ?? true
-        notificationReminder = try container.decodeIfPresent(Bool.self, forKey: .notificationReminder)
-            ?? true
+        let general = try Self.decodeGeneralSettings(from: container)
+        updatePreferences = general.updatePreferences
+        showTimeInMenuBar = general.showTimeInMenuBar
+        notificationReminder = general.notificationReminder
         allowURLAutomation = true
-        urlAutomationGrants = try container.decodeIfPresent([String].self, forKey: .urlAutomationGrants)
-            ?? []
-        exportPresets = try container.decodeIfPresent([ExportPreset].self, forKey: .exportPresets)
-            ?? ExportPreset.builtInDefaults
-        if container.contains(.quickExportPresetID) {
-            quickExportPresetID = try container.decodeIfPresent(UUID.self, forKey: .quickExportPresetID)
-        } else {
-            quickExportPresetID = ExportPreset.quickGIFID
-        }
-        rememberLastCapture = try container.decodeIfPresent(Bool.self, forKey: .rememberLastCapture)
-            ?? true
-        loupeAlwaysOn = try container.decodeIfPresent(Bool.self, forKey: .loupeAlwaysOn)
-            ?? false
-        dimOtherDisplays = try container.decodeIfPresent(Bool.self, forKey: .dimOtherDisplays)
-            ?? false
-        restoreLastSelection = try container.decodeIfPresent(Bool.self, forKey: .restoreLastSelection)
-            ?? true
-        userSizePresets = Self.removingRemovedBuiltInSizePresets(
-            from: try container.decodeIfPresent([CaptureSizePreset].self, forKey: .userSizePresets)
-                ?? CaptureSizePreset.builtInDefaults
-        )
-        lastCaptureMemory = try container.decodeIfPresent(LastCaptureMemory.self, forKey: .lastCaptureMemory)
-        perFormatExportMemory = try container.decodeIfPresent(
-            [ExportFormat: ExportMemory].self,
-            forKey: .perFormatExportMemory
-        ) ?? [:]
-        let screenshot = try Self.decodeScreenshotSettings(from: container)
-        screenshotFormat = screenshot.format
-        screenshotDestinations = screenshot.destinations
-        screenshotShowThumbnail = screenshot.showsThumbnail
-        screenshotBackdrop = screenshot.backdrop
-        confirmDiscard = try container.decodeIfPresent(Bool.self, forKey: .confirmDiscard)
-            ?? true
-        defaultCountdown = try container.decodeIfPresent(TimeInterval.self, forKey: .defaultCountdown)
-        lastStopAfter = try container.decodeIfPresent(TimeInterval.self, forKey: .lastStopAfter)
+        urlAutomationGrants = general.urlAutomationGrants
+        exportPresets = general.exportPresets
+        quickExportPresetID = general.quickExportPresetID
+        rememberLastCapture = general.rememberLastCapture
+        loupeAlwaysOn = general.loupeAlwaysOn
+        dimOtherDisplays = general.dimOtherDisplays
+        restoreLastSelection = general.restoreLastSelection
+        userSizePresets = general.userSizePresets
+        lastCaptureMemory = general.lastCaptureMemory
+        perFormatExportMemory = general.perFormatExportMemory
+        confirmDiscard = general.confirmDiscard
+        defaultCountdown = general.defaultCountdown
+        lastStopAfter = general.lastStopAfter
     }
 
-    private static func decodeRecordingSettings(from container: AppSettingsDecoder) throws -> RecordingSettings {
-        let legacyRecord60FPS = try container.decodeIfPresent(Bool.self, forKey: .record60FPS)
+    private static func decodeRecordingSettings(from container: AppSettingsDecoder) throws
+    -> RecordingSettings {
+        let legacyRecord60FPS =
+            try container.decodeIfPresent(Bool.self, forKey: .record60FPS)
             ?? true
-        let frameRate = Self.supportedRecordingFrameRate(
-            try container.decodeIfPresent(FrameRate.self, forKey: .recordingFrameRate)
-        ) ?? Self.legacyRecordingFrameRate(record60FPS: legacyRecord60FPS)
+        let frameRate =
+            Self.supportedRecordingFrameRate(
+                try container.decodeIfPresent(FrameRate.self, forKey: .recordingFrameRate)
+            ) ?? Self.legacyRecordingFrameRate(record60FPS: legacyRecord60FPS)
 
         return try RecordingSettings(
             frameRate: frameRate,
@@ -178,11 +153,13 @@ extension AppSettings {
             recordsSystemAudio: container.decodeIfPresent(Bool.self, forKey: .recordSystemAudio)
                 ?? (container.decodeIfPresent(Bool.self, forKey: .recordAudio) ?? false),
             recordsAudio: container.decodeIfPresent(Bool.self, forKey: .recordAudio) ?? false,
-            audioOnlyFormat: container.decodeIfPresent(AudioRecordingFormat.self, forKey: .audioOnlyFormat) ?? .aac
+            audioOnlyFormat: container.decodeIfPresent(
+                AudioRecordingFormat.self, forKey: .audioOnlyFormat) ?? .aac
         )
     }
 
-    private static func decodeAudioInput(from container: AppSettingsDecoder) throws -> AudioInputSettings {
+    private static func decodeAudioInput(from container: AppSettingsDecoder) throws
+    -> AudioInputSettings {
         let id: String?
         if container.contains(.audioInputDeviceID) {
             id = try container.decodeIfPresent(String.self, forKey: .audioInputDeviceID)
@@ -206,9 +183,12 @@ extension AppSettings {
         from container: AppSettingsDecoder
     ) throws -> CaptureSurfaceSettings {
         try CaptureSurfaceSettings(
-            cameraDeviceID: container.decodeIfPresent(String.self, forKey: .cameraDeviceID).flatMap(Self.nonEmpty),
-            cameraSeparateTrack: container.decodeIfPresent(Bool.self, forKey: .cameraSeparateTrack) ?? true,
-            cameraPreviewStyle: container.decodeIfPresent(CameraPreviewStyle.self, forKey: .cameraPreviewStyle)
+            cameraDeviceID: container.decodeIfPresent(String.self, forKey: .cameraDeviceID).flatMap(
+                Self.nonEmpty),
+            cameraSeparateTrack: container.decodeIfPresent(Bool.self, forKey: .cameraSeparateTrack)
+                ?? true,
+            cameraPreviewStyle: container.decodeIfPresent(
+                CameraPreviewStyle.self, forKey: .cameraPreviewStyle)
                 ?? CameraPreviewStyle(),
             cameraPreviewPlacements: container.decodeIfPresent(
                 [DisplayID: CameraPreviewPlacement].self,
@@ -222,9 +202,11 @@ extension AppSettings {
                 Bool.self,
                 forKey: .replayBufferResumeOnLaunch
             ) ?? false,
-            replayClipDestination: container.decodeIfPresent(ReplayClipDestination.self, forKey: .replayClipDestination)
+            replayClipDestination: container.decodeIfPresent(
+                ReplayClipDestination.self, forKey: .replayClipDestination)
                 ?? .editor,
-            notchSurfaceSettings: container.decodeIfPresent(NotchSurfaceSettings.self, forKey: .notchSurfaceSettings)
+            notchSurfaceSettings: container.decodeIfPresent(
+                NotchSurfaceSettings.self, forKey: .notchSurfaceSettings)
                 ?? .defaults,
             enableShortcuts: container.decodeIfPresent(Bool.self, forKey: .enableShortcuts) ?? true
         )
@@ -233,28 +215,61 @@ extension AppSettings {
     private static func decodeShortcuts(from container: AppSettingsDecoder) throws -> ShortcutSettings {
         try ShortcutSettings(
             triggerCropper: container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut) ?? "",
-            toggleRecording: container.decodeIfPresent(String.self, forKey: .toggleRecordingShortcut) ?? "",
-            recordActiveWindow: container.decodeIfPresent(String.self, forKey: .recordActiveWindowShortcut) ?? "",
-            recordFullscreen: container.decodeIfPresent(String.self, forKey: .recordFullscreenShortcut) ?? "",
-            audioOnlyRecording: container.decodeIfPresent(String.self, forKey: .audioOnlyRecordingShortcut) ?? "",
-            quickRecordLast: container.decodeIfPresent(String.self, forKey: .quickRecordLastShortcut) ?? "",
-            clipReplayBuffer: container.decodeIfPresent(String.self, forKey: .clipReplayBufferShortcut) ?? "",
-            captureScreenshot: container.decodeIfPresent(String.self, forKey: .captureScreenshotShortcut) ?? "",
-            screenshotActiveWindow: container.decodeIfPresent(
-                String.self,
-                forKey: .screenshotActiveWindowShortcut
-            ) ?? "",
-            screenshotFullscreen: container.decodeIfPresent(String.self, forKey: .screenshotFullscreenShortcut) ?? ""
+            toggleRecording: container.decodeIfPresent(String.self, forKey: .toggleRecordingShortcut)
+                ?? "",
+            recordActiveWindow: container.decodeIfPresent(
+                String.self, forKey: .recordActiveWindowShortcut) ?? "",
+            recordFullscreen: container.decodeIfPresent(String.self, forKey: .recordFullscreenShortcut)
+                ?? "",
+            audioOnlyRecording: container.decodeIfPresent(
+                String.self, forKey: .audioOnlyRecordingShortcut) ?? "",
+            quickRecordLast: container.decodeIfPresent(String.self, forKey: .quickRecordLastShortcut)
+                ?? "",
+            clipReplayBuffer: container.decodeIfPresent(String.self, forKey: .clipReplayBufferShortcut)
+                ?? ""
         )
     }
 
-    private static func decodeScreenshotSettings(from container: AppSettingsDecoder) throws -> ScreenshotSettings {
-        try ScreenshotSettings(
-            format: container.decodeIfPresent(ScreenshotFormat.self, forKey: .screenshotFormat) ?? .png,
-            destinations: container.decodeIfPresent([ScreenshotDestination].self, forKey: .screenshotDestinations)
-                ?? [.clipboard, .file],
-            showsThumbnail: container.decodeIfPresent(Bool.self, forKey: .screenshotShowThumbnail) ?? true,
-            backdrop: container.decodeIfPresent(CaptureBackdrop.self, forKey: .screenshotBackdrop) ?? .opaque
+    private static func decodeGeneralSettings(from container: AppSettingsDecoder) throws
+    -> GeneralSettings {
+        let quickExportPresetID: UUID?
+        if container.contains(.quickExportPresetID) {
+            quickExportPresetID = try container.decodeIfPresent(UUID.self, forKey: .quickExportPresetID)
+        } else {
+            quickExportPresetID = ExportPreset.quickGIFID
+        }
+
+        return try GeneralSettings(
+            updatePreferences: container.decodeIfPresent(
+                UpdatePreferences.self, forKey: .updatePreferences) ?? .defaults,
+            showTimeInMenuBar: container.decodeIfPresent(Bool.self, forKey: .showTimeInMenuBar)
+                ?? true,
+            notificationReminder: container.decodeIfPresent(Bool.self, forKey: .notificationReminder)
+                ?? true,
+            urlAutomationGrants: container.decodeIfPresent(
+                [String].self, forKey: .urlAutomationGrants) ?? [],
+            exportPresets: container.decodeIfPresent(
+                [ExportPreset].self, forKey: .exportPresets) ?? ExportPreset.builtInDefaults,
+            quickExportPresetID: quickExportPresetID,
+            rememberLastCapture: container.decodeIfPresent(Bool.self, forKey: .rememberLastCapture)
+                ?? true,
+            loupeAlwaysOn: container.decodeIfPresent(Bool.self, forKey: .loupeAlwaysOn) ?? false,
+            dimOtherDisplays: container.decodeIfPresent(Bool.self, forKey: .dimOtherDisplays) ?? false,
+            restoreLastSelection: container.decodeIfPresent(Bool.self, forKey: .restoreLastSelection)
+                ?? true,
+            userSizePresets: removingRemovedBuiltInSizePresets(
+                from: container.decodeIfPresent([CaptureSizePreset].self, forKey: .userSizePresets)
+                    ?? CaptureSizePreset.builtInDefaults
+            ),
+            lastCaptureMemory: container.decodeIfPresent(
+                LastCaptureMemory.self, forKey: .lastCaptureMemory),
+            perFormatExportMemory: container.decodeIfPresent(
+                [ExportFormat: ExportMemory].self,
+                forKey: .perFormatExportMemory
+            ) ?? [:],
+            confirmDiscard: container.decodeIfPresent(Bool.self, forKey: .confirmDiscard) ?? true,
+            defaultCountdown: container.decodeIfPresent(TimeInterval.self, forKey: .defaultCountdown),
+            lastStopAfter: container.decodeIfPresent(TimeInterval.self, forKey: .lastStopAfter)
         )
     }
 
@@ -282,7 +297,8 @@ extension AppSettings {
 
     static func supportedRecordingFrameRate(_ frameRate: FrameRate?) -> FrameRate? {
         guard let frameRate,
-              (1...60).contains(frameRate.framesPerSecond) else {
+              (1...60).contains(frameRate.framesPerSecond)
+        else {
             return nil
         }
 
@@ -355,14 +371,23 @@ private struct ShortcutSettings {
     let audioOnlyRecording: String
     let quickRecordLast: String
     let clipReplayBuffer: String
-    let captureScreenshot: String
-    let screenshotActiveWindow: String
-    let screenshotFullscreen: String
 }
 
-private struct ScreenshotSettings {
-    let format: ScreenshotFormat
-    let destinations: [ScreenshotDestination]
-    let showsThumbnail: Bool
-    let backdrop: CaptureBackdrop
+private struct GeneralSettings {
+    let updatePreferences: UpdatePreferences
+    let showTimeInMenuBar: Bool
+    let notificationReminder: Bool
+    let urlAutomationGrants: [String]
+    let exportPresets: [ExportPreset]
+    let quickExportPresetID: UUID?
+    let rememberLastCapture: Bool
+    let loupeAlwaysOn: Bool
+    let dimOtherDisplays: Bool
+    let restoreLastSelection: Bool
+    let userSizePresets: [CaptureSizePreset]
+    let lastCaptureMemory: LastCaptureMemory?
+    let perFormatExportMemory: [ExportFormat: ExportMemory]
+    let confirmDiscard: Bool
+    let defaultCountdown: TimeInterval?
+    let lastStopAfter: TimeInterval?
 }

@@ -44,7 +44,8 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         return AVVideoComposition(configuration: compositionConfiguration)
     }
 
-    private func compositionGeometry(sourceVideoTrack: AVAssetTrack) async throws -> VideoCompositionGeometry {
+    private func compositionGeometry(sourceVideoTrack: AVAssetTrack) async throws
+    -> VideoCompositionGeometry {
         let naturalSize = try await sourceVideoTrack.load(.naturalSize)
         let preferredTransform = try await sourceVideoTrack.load(.preferredTransform)
         let transformedRect = CGRect(origin: .zero, size: naturalSize).applying(preferredTransform)
@@ -128,7 +129,8 @@ struct AVFoundationVideoCompositionFactory: Sendable {
 
         while CMTimeCompare(currentTime, timeRange.end) < 0 {
             let proposedEndTime = CMTimeAdd(currentTime, frameDuration)
-            let nextTime = CMTimeCompare(proposedEndTime, timeRange.end) > 0 ? timeRange.end : proposedEndTime
+            let nextTime =
+                CMTimeCompare(proposedEndTime, timeRange.end) > 0 ? timeRange.end : proposedEndTime
             let rampTimeRange = CMTimeRange(
                 start: currentTime,
                 duration: CMTimeSubtract(nextTime, currentTime)
@@ -136,28 +138,32 @@ struct AVFoundationVideoCompositionFactory: Sendable {
             let startTransform = try cameraPath.transform(at: outputSeconds(currentTime, in: timeRange))
             let endTransform = try cameraPath.transform(at: outputSeconds(nextTime, in: timeRange))
 
-            layerConfiguration.addCropRectangleRamp(AVVideoCompositionLayerInstruction.CropRectangleRamp(
-                timeRange: rampTimeRange,
-                start: sourceCropRect(for: startTransform, geometry: geometry, spatialCropRect: spatialCropRect),
-                end: sourceCropRect(for: endTransform, geometry: geometry, spatialCropRect: spatialCropRect)
-            ))
-            layerConfiguration.addTransformRamp(AVVideoCompositionLayerInstruction.TransformRamp(
-                timeRange: rampTimeRange,
-                start: renderTransform(
-                    geometry: geometry,
-                    outputSize: outputSize,
-                    shouldCrop: shouldCrop,
-                    spatialCropRect: spatialCropRect,
-                    cameraTransform: startTransform
-                ),
-                end: renderTransform(
-                    geometry: geometry,
-                    outputSize: outputSize,
-                    shouldCrop: shouldCrop,
-                    spatialCropRect: spatialCropRect,
-                    cameraTransform: endTransform
-                )
-            ))
+            layerConfiguration.addCropRectangleRamp(
+                AVVideoCompositionLayerInstruction.CropRectangleRamp(
+                    timeRange: rampTimeRange,
+                    start: sourceCropRect(
+                        for: startTransform, geometry: geometry, spatialCropRect: spatialCropRect),
+                    end: sourceCropRect(
+                        for: endTransform, geometry: geometry, spatialCropRect: spatialCropRect)
+                ))
+            layerConfiguration.addTransformRamp(
+                AVVideoCompositionLayerInstruction.TransformRamp(
+                    timeRange: rampTimeRange,
+                    start: renderTransform(
+                        geometry: geometry,
+                        outputSize: outputSize,
+                        shouldCrop: shouldCrop,
+                        spatialCropRect: spatialCropRect,
+                        cameraTransform: startTransform
+                    ),
+                    end: renderTransform(
+                        geometry: geometry,
+                        outputSize: outputSize,
+                        shouldCrop: shouldCrop,
+                        spatialCropRect: spatialCropRect,
+                        cameraTransform: endTransform
+                    )
+                ))
 
             currentTime = nextTime
         }
@@ -208,7 +214,8 @@ struct AVFoundationVideoCompositionFactory: Sendable {
             presentationSize: geometry.presentationSize,
             spatialCropRect: spatialCropRect
         )
-        let sourceCrop = presentationCrop
+        let sourceCrop =
+            presentationCrop
             .applying(geometry.sourceToPresentationTransform.inverted())
             .standardized
 
@@ -247,7 +254,8 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         let clampedRect = requestedRect.intersection(presentationBounds)
         guard !clampedRect.isNull,
               clampedRect.width > 0,
-              clampedRect.height > 0 else {
+              clampedRect.height > 0
+        else {
             throw AVFoundationVideoCompositionFactoryError.invalidCropRect
         }
 

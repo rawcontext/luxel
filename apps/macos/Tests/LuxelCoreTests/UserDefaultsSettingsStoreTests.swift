@@ -7,7 +7,8 @@ struct UserDefaultsSettingsStoreTests {
     @Test("load returns defaults before settings are saved")
     func loadReturnsDefaultsBeforeSettingsAreSaved() throws {
         let defaults = makeUserDefaults()
-        let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
+        let defaultSettings = AppSettings.defaults(
+            recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
 
         #expect(try store.load() == defaultSettings)
@@ -16,13 +17,15 @@ struct UserDefaultsSettingsStoreTests {
     @Test("save persists settings")
     func savePersistsSettings() throws {
         let defaults = makeUserDefaults()
-        let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
+        let defaultSettings = AppSettings.defaults(
+            recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
         let settings = try persistedSettings()
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
 
         try store.save(settings)
 
-        let reloadedStore = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
+        let reloadedStore = UserDefaultsSettingsStore(
+            userDefaults: defaults, defaultSettings: defaultSettings)
         #expect(try reloadedStore.load() == settings)
     }
 
@@ -70,9 +73,6 @@ struct UserDefaultsSettingsStoreTests {
             audioOnlyRecordingShortcut: "command+control+option+a",
             quickRecordLastShortcut: "command+control+option+q",
             clipReplayBufferShortcut: "command+control+option+c",
-            captureScreenshotShortcut: "command+control+option+s",
-            screenshotActiveWindowShortcut: "command+control+option+w",
-            screenshotFullscreenShortcut: "command+control+option+f",
             updatePreferences: UpdatePreferences(
                 automaticallyCheckForUpdates: false,
                 automaticallyDownloadAndInstall: false,
@@ -91,10 +91,6 @@ struct UserDefaultsSettingsStoreTests {
             userSizePresets: [sizePreset],
             lastCaptureMemory: try persistedLastCaptureMemory(presetID: presetID),
             perFormatExportMemory: try persistedExportMemory(),
-            screenshotFormat: .heic,
-            screenshotDestinations: [.file, .preview],
-            screenshotShowThumbnail: false,
-            screenshotBackdrop: .transparentWithShadow,
             confirmDiscard: false,
             defaultCountdown: 5,
             lastStopAfter: 60
@@ -190,22 +186,24 @@ struct UserDefaultsSettingsStoreTests {
     @Test("load ignores removed clean-room settings keys")
     func loadIgnoresRemovedCleanRoomSettingsKeys() throws {
         let defaults = makeUserDefaults()
-        let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
-        let oldPayload = Data("""
-        {
-            "recordingsDirectory": "file:///tmp/luxel/",
-            "allowAnalytics": true,
-            "showCursor": false,
-            "highlightClicks": true,
-            "record60FPS": true,
-            "loopExports": false,
-            "recordAudio": true,
-            "audioInputDeviceID": "device-1",
-            "lossyCompression": true,
-            "enableShortcuts": false,
-            "triggerCropperShortcut": "command+shift+5"
-        }
-        """.utf8)
+        let defaultSettings = AppSettings.defaults(
+            recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
+        let oldPayload = Data(
+            """
+      {
+          "recordingsDirectory": "file:///tmp/luxel/",
+          "allowAnalytics": true,
+          "showCursor": false,
+          "highlightClicks": true,
+          "record60FPS": true,
+          "loopExports": false,
+          "recordAudio": true,
+          "audioInputDeviceID": "device-1",
+          "lossyCompression": true,
+          "enableShortcuts": false,
+          "triggerCropperShortcut": "command+shift+5"
+      }
+      """.utf8)
         defaults.set(oldPayload, forKey: "settings")
 
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
@@ -247,9 +245,6 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.audioOnlyRecordingShortcut == "")
         #expect(settings.quickRecordLastShortcut == "")
         #expect(settings.clipReplayBufferShortcut == "")
-        #expect(settings.captureScreenshotShortcut == "")
-        #expect(settings.screenshotActiveWindowShortcut == "")
-        #expect(settings.screenshotFullscreenShortcut == "")
         #expect(settings.updatePreferences == .defaults)
         #expect(settings.showTimeInMenuBar)
         #expect(settings.notificationReminder)
@@ -264,10 +259,6 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.userSizePresets == CaptureSizePreset.builtInDefaults)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)
-        #expect(settings.screenshotFormat == .png)
-        #expect(settings.screenshotDestinations == [.clipboard, .file])
-        #expect(settings.screenshotShowThumbnail)
-        #expect(settings.screenshotBackdrop == .opaque)
         #expect(settings.confirmDiscard)
         #expect(settings.defaultCountdown == nil)
         #expect(settings.lastStopAfter == nil)
@@ -276,13 +267,15 @@ struct UserDefaultsSettingsStoreTests {
     @Test("load preserves explicit nil quick preset")
     func loadPreservesExplicitNilQuickPreset() throws {
         let defaults = makeUserDefaults()
-        let defaultSettings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
-        let payload = Data("""
-        {
-            "recordingsDirectory": "file:///tmp/luxel/",
-            "quickExportPresetID": null
-        }
-        """.utf8)
+        let defaultSettings = AppSettings.defaults(
+            recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
+        let payload = Data(
+            """
+      {
+          "recordingsDirectory": "file:///tmp/luxel/",
+          "quickExportPresetID": null
+      }
+      """.utf8)
         defaults.set(payload, forKey: "settings")
 
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)

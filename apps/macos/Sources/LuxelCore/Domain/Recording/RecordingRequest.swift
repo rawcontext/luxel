@@ -184,7 +184,8 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
             camera: container.decodeIfPresent(CameraRecordingOptions.self, forKey: .camera),
             audio: container.decodeIfPresent(RecordingAudioMode.self, forKey: .audio) ?? .none,
             videoCodec: container.decodeIfPresent(RecordingCodec.self, forKey: .videoCodec) ?? .h264,
-            captureKind: container.decodeIfPresent(QuickCaptureKind.self, forKey: .captureKind) ?? .standard,
+            captureKind: container.decodeIfPresent(QuickCaptureKind.self, forKey: .captureKind)
+                ?? .standard,
             schedule: container.decodeIfPresent(RecordingSchedule.self, forKey: .schedule),
             timelapse: container.decodeIfPresent(TimelapseOptions.self, forKey: .timelapse)
         )

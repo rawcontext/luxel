@@ -10,10 +10,11 @@ struct AudioInputDeviceServiceTests {
         ])
         let service = AudioInputDeviceService(catalog: catalog)
 
-        #expect(service.availableInputDevices() == [
-            .systemDefault,
-            AudioInputDeviceOption(id: "mic-1", name: "Studio Mic")
-        ])
+        #expect(
+            service.availableInputDevices() == [
+                .systemDefault,
+                AudioInputDeviceOption(id: "mic-1", name: "Studio Mic")
+            ])
     }
 
     @Test("availableInputDevices removes duplicate device IDs")
@@ -25,10 +26,11 @@ struct AudioInputDeviceServiceTests {
         ])
         let service = AudioInputDeviceService(catalog: catalog)
 
-        #expect(service.availableInputDevices() == [
-            .systemDefault,
-            AudioInputDeviceOption(id: "mic-1", name: "Studio Mic")
-        ])
+        #expect(
+            service.availableInputDevices() == [
+                .systemDefault,
+                AudioInputDeviceOption(id: "mic-1", name: "Studio Mic")
+            ])
     }
 
     @Test("inputDeviceUpdates forwards update source events")

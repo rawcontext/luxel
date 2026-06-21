@@ -19,14 +19,17 @@ public final class CoreGraphicsActiveWindowCatalog: ActiveWindowCatalog {
             return frontmostApplicationWindows.map(\.id)
         }
 
-        return windows
+        return
+            windows
             .filter { $0.ownerProcessID != currentProcessID }
             .map(\.id)
     }
 
     private func windowInfos() -> [WindowInfo] {
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
-        guard let dictionaries = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+        guard
+            let dictionaries = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]]
+        else {
             return []
         }
 
@@ -40,7 +43,8 @@ public final class CoreGraphicsActiveWindowCatalog: ActiveWindowCatalog {
         init?(dictionary: [String: Any]) {
             guard let id = dictionary.uint32Value(for: kCGWindowNumber),
                   dictionary.intValue(for: kCGWindowLayer) == 0,
-                  dictionary.doubleValue(for: kCGWindowAlpha, default: 1) > 0 else {
+                  dictionary.doubleValue(for: kCGWindowAlpha, default: 1) > 0
+            else {
                 return nil
             }
 
@@ -50,8 +54,8 @@ public final class CoreGraphicsActiveWindowCatalog: ActiveWindowCatalog {
     }
 }
 
-private extension Dictionary where Key == String, Value == Any {
-    func intValue(for key: CFString) -> Int? {
+extension Dictionary where Key == String, Value == Any {
+    fileprivate func intValue(for key: CFString) -> Int? {
         if let value = self[key as String] as? Int {
             return value
         }
@@ -63,7 +67,7 @@ private extension Dictionary where Key == String, Value == Any {
         return nil
     }
 
-    func uint32Value(for key: CFString) -> UInt32? {
+    fileprivate func uint32Value(for key: CFString) -> UInt32? {
         guard let value = intValue(for: key), value >= 0 else {
             return nil
         }
@@ -71,7 +75,7 @@ private extension Dictionary where Key == String, Value == Any {
         return UInt32(value)
     }
 
-    func doubleValue(for key: CFString, default defaultValue: Double) -> Double {
+    fileprivate func doubleValue(for key: CFString, default defaultValue: Double) -> Double {
         if let value = self[key as String] as? Double {
             return value
         }

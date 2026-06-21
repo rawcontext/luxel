@@ -38,17 +38,19 @@ struct TranscribeRecordingServiceTests {
             sourceTrack: .microphone
         )
         #expect(result == TranscribedRecording(track: expectedTrack))
-        #expect(transcriber.requests == [
-            SpeechTranscriptionRequest(
-                audioURL: audioURL,
-                preferredLanguage: Locale.LanguageCode("en"),
-                sourceTrack: .microphone
-            )
-        ])
-        #expect(progressRecorder.snapshots == [
-            SpeechTranscriptionProgress(fractionCompleted: 0.25),
-            SpeechTranscriptionProgress(fractionCompleted: 1)
-        ])
+        #expect(
+            transcriber.requests == [
+                SpeechTranscriptionRequest(
+                    audioURL: audioURL,
+                    preferredLanguage: Locale.LanguageCode("en"),
+                    sourceTrack: .microphone
+                )
+            ])
+        #expect(
+            progressRecorder.snapshots == [
+                SpeechTranscriptionProgress(fractionCompleted: 0.25),
+                SpeechTranscriptionProgress(fractionCompleted: 1)
+            ])
     }
 
     @Test("transcribe persists captions when recording bundle is supplied")
@@ -56,29 +58,34 @@ struct TranscribeRecordingServiceTests {
         let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
         let fileSystem = FakeTranscriptionFileSystem()
         let bundle = RecordingBundle(rootURL: rootURL, manifest: try BundleManifest())
-        let transcriber = SpySpeechTranscriber(result: SpeechTranscriptionResult(
-            words: [
-                try RecognizedWord(start: 0, duration: 0.4, text: "Saved.", confidence: 0.9)
-            ],
-            language: Locale.LanguageCode("en")
-        ))
+        let transcriber = SpySpeechTranscriber(
+            result: SpeechTranscriptionResult(
+                words: [
+                    try RecognizedWord(start: 0, duration: 0.4, text: "Saved.", confidence: 0.9)
+                ],
+                language: Locale.LanguageCode("en")
+            ))
         let service = TranscribeRecordingService(
             transcriber: transcriber,
             sidecarPersistence: CaptionSidecarPersistenceService(fileSystem: fileSystem)
         )
 
-        let result = try await service.transcribe(TranscribeRecordingRequest(
-            audioURL: URL(fileURLWithPath: "/tmp/recording.m4a"),
-            sourceTrack: .system,
-            recordingBundle: bundle
-        ))
+        let result = try await service.transcribe(
+            TranscribeRecordingRequest(
+                audioURL: URL(fileURLWithPath: "/tmp/recording.m4a"),
+                sourceTrack: .system,
+                recordingBundle: bundle
+            ))
 
         let updatedBundle = try #require(result.updatedBundle)
-        #expect(updatedBundle.manifest.sidecar(for: .captions) == (try BundleSidecarManifest(kind: .captions)))
-        #expect(fileSystem.writtenData.map(\.url) == [
-            rootURL.appendingPathComponent("captions.json"),
-            rootURL.appendingPathComponent("bundle.json")
-        ])
+        #expect(
+            updatedBundle.manifest.sidecar(for: .captions) == (try BundleSidecarManifest(kind: .captions))
+        )
+        #expect(
+            fileSystem.writtenData.map(\.url) == [
+                rootURL.appendingPathComponent("captions.json"),
+                rootURL.appendingPathComponent("bundle.json")
+            ])
 
         let document = try JSONDecoder().decode(
             CaptionSidecarDocument.self,

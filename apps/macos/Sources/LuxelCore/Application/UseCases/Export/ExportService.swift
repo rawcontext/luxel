@@ -33,7 +33,8 @@ public struct ExportService: Sendable {
         defaultName: String,
         progress: ProgressHandler? = nil
     ) async throws -> ExportedMedia {
-        let outputURL = outputDirectory.appending(path: request.outputFileName(defaultName: defaultName))
+        let outputURL = outputDirectory.appending(
+            path: request.outputFileName(defaultName: defaultName))
         let cleanup = ExportOutputCleanup(fileSystem: fileSystem, outputURL: outputURL)
 
         await progress?(.preparing(format: request.format))
@@ -121,7 +122,8 @@ public struct ExportService: Sendable {
 
     private func fileSizeBytes(at fileURL: URL) -> Int64? {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-              let size = attributes[.size] as? NSNumber else {
+              let size = attributes[.size] as? NSNumber
+        else {
             return nil
         }
 

@@ -17,8 +17,7 @@ extension LuxelMenuModel {
     }
 
     var canFilterRecentRecordings: Bool {
-        recentRecordings.contains { $0.kind == .recording }
-            && recentRecordings.contains { $0.kind == .screenshot }
+        false
     }
 
     func refreshCaptureTargets() async {
@@ -107,7 +106,8 @@ extension LuxelMenuModel {
         }
 
         if result.value == nil {
-            recordingActionErrorMessage = errorMessage(MenuDirectoryAccessError.revoked(result.directory.url))
+            recordingActionErrorMessage = errorMessage(
+                MenuDirectoryAccessError.revoked(result.directory.url))
         }
     }
 }

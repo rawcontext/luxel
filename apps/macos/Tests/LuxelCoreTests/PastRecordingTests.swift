@@ -1,14 +1,14 @@
 import Foundation
-@testable import LuxelCore
 import Testing
+
+@testable import LuxelCore
 
 @Suite("Past recording models")
 struct PastRecordingTests {
-    @Test("video recording excludes audio-only recordings and screenshots")
-    func videoRecordingExcludesAudioOnlyRecordingsAndScreenshots() {
+    @Test("video recording excludes audio-only recordings")
+    func videoRecordingExcludesAudioOnlyRecordings() {
         #expect(videoRecording().isVideoRecording)
         #expect(!audioOnlyRecording().isVideoRecording)
-        #expect(!screenshot().isVideoRecording)
     }
 
     private func videoRecording() -> PastRecording {
@@ -29,12 +29,4 @@ struct PastRecordingTests {
         )
     }
 
-    private func screenshot() -> PastRecording {
-        PastRecording(
-            fileURL: URL(fileURLWithPath: "/tmp/screenshot.png"),
-            name: "Screenshot",
-            date: Date(timeIntervalSince1970: 0),
-            kind: .screenshot
-        )
-    }
 }

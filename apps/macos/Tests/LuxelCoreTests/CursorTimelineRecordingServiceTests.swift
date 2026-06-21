@@ -24,13 +24,15 @@ struct CursorTimelineRecordingServiceTests {
 
         let timeline = try await service.recordTimeline(request)
 
-        #expect(timeline.samples == [
-            try CursorSample(time: 1, position: CursorPoint(x: 10, y: 20), cursorImageID: "arrow"),
-            try CursorSample(time: 7, position: CursorPoint(x: 90, y: 100), cursorImageID: "ibeam")
-        ])
-        #expect(timeline.clicks == [
-            try CursorClickEvent(time: 7.75, button: .left, phase: .released)
-        ])
+        #expect(
+            timeline.samples == [
+                try CursorSample(time: 1, position: CursorPoint(x: 10, y: 20), cursorImageID: "arrow"),
+                try CursorSample(time: 7, position: CursorPoint(x: 90, y: 100), cursorImageID: "ibeam")
+            ])
+        #expect(
+            timeline.clicks == [
+                try CursorClickEvent(time: 7.75, button: .left, phase: .released)
+            ])
         #expect(timeline.spotlightToggles == [7.5])
         #expect(timeline.cursorImages == [ibeam, arrow])
     }
@@ -50,10 +52,11 @@ struct CursorTimelineRecordingServiceTests {
 
         let timeline = try await service.recordTimeline(request)
 
-        #expect(timeline.samples.map(\.position) == [
-            try CursorPoint(x: 100.5, y: 100.25),
-            try CursorPoint(x: -28, y: 670)
-        ])
+        #expect(
+            timeline.samples.map(\.position) == [
+                try CursorPoint(x: 100.5, y: 100.25),
+                try CursorPoint(x: -28, y: 670)
+            ])
     }
 
     @Test("recording deduplicates cursor images by id")
@@ -98,10 +101,11 @@ struct CursorTimelineRecordingServiceTests {
         let expectedSidecar = try BundleSidecarManifest(kind: .cursor)
 
         #expect(updatedBundle.manifest.sidecar(for: .cursor) == expectedSidecar)
-        #expect(fileSystem.writtenData.map(\.url) == [
-            rootURL.appendingPathComponent("cursor.json"),
-            rootURL.appendingPathComponent("bundle.json")
-        ])
+        #expect(
+            fileSystem.writtenData.map(\.url) == [
+                rootURL.appendingPathComponent("cursor.json"),
+                rootURL.appendingPathComponent("bundle.json")
+            ])
 
         let document = try JSONDecoder().decode(
             CursorSidecarDocument.self,

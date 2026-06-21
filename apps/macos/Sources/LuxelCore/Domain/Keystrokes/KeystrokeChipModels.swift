@@ -169,7 +169,8 @@ public struct KeystrokeChipPlanner: Sendable {
     ) -> RepeatGroup? {
         let event = events[index]
         guard event.kind == .keyDown,
-              let displayText = specialText(for: event) ?? typingText(for: event) else {
+              let displayText = specialText(for: event) ?? typingText(for: event)
+        else {
             return nil
         }
 
@@ -181,7 +182,8 @@ public struct KeystrokeChipPlanner: Sendable {
             guard next.kind == .keyDown,
                   next.isRepeat,
                   next.keyCode == event.keyCode,
-                  (specialText(for: next) ?? typingText(for: next)) == displayText else {
+                  (specialText(for: next) ?? typingText(for: next)) == displayText
+            else {
                 break
             }
 
@@ -205,7 +207,8 @@ public struct KeystrokeChipPlanner: Sendable {
     private func shortcutText(for event: KeystrokeEvent) -> String? {
         guard event.kind == .keyDown,
               !event.modifiers.subtracting([.shift]).isEmpty,
-              let keyText = specialText(for: event) ?? characterText(for: event) else {
+              let keyText = specialText(for: event) ?? characterText(for: event)
+        else {
             return nil
         }
 
@@ -214,7 +217,8 @@ public struct KeystrokeChipPlanner: Sendable {
 
     private func characterText(for event: KeystrokeEvent) -> String? {
         guard let characters = event.characters,
-              !characters.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+              !characters.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
             return nil
         }
 
@@ -225,7 +229,8 @@ public struct KeystrokeChipPlanner: Sendable {
         guard event.kind == .keyDown,
               event.modifiers.subtracting([.shift]).isEmpty,
               specialText(for: event) == nil,
-              let characters = characterText(for: event) else {
+              let characters = characterText(for: event)
+        else {
             return nil
         }
 
@@ -299,8 +304,10 @@ public struct KeystrokeChipPlanner: Sendable {
         _ chip: KeystrokeChip,
         to plannedChips: inout [KeystrokeChip]
     ) throws {
-        while activeChipIndexes(at: chip.timeRange.start, in: plannedChips).count >= rules.maxVisibleChips {
-            guard let evictedIndex = activeChipIndexes(at: chip.timeRange.start, in: plannedChips).first else {
+        while activeChipIndexes(at: chip.timeRange.start, in: plannedChips).count
+                >= rules.maxVisibleChips {
+            guard let evictedIndex = activeChipIndexes(at: chip.timeRange.start, in: plannedChips).first
+            else {
                 break
             }
 

@@ -52,19 +52,21 @@ struct ExportServiceTests {
 
         let snapshots = await progress.snapshots()
 
-        #expect(snapshots == [
-            .preparing(format: .gif),
-            .exporting(format: .gif, progress: 0),
-            .exporting(format: .gif, progress: 0.25),
-            .exporting(format: .gif, progress: 0.75),
-            .completed(format: .gif)
-        ])
+        #expect(
+            snapshots == [
+                .preparing(format: .gif),
+                .exporting(format: .gif, progress: 0),
+                .exporting(format: .gif, progress: 0.25),
+                .exporting(format: .gif, progress: 0.75),
+                .completed(format: .gif)
+            ])
     }
 
     @Test("service records actual output file size")
     func serviceRecordsActualOutputFileSize() async throws {
         let directory = FileManager.default.temporaryDirectory
-            .appending(path: "luxel-export-service-tests-\(UUID().uuidString)", directoryHint: .isDirectory)
+            .appending(
+                path: "luxel-export-service-tests-\(UUID().uuidString)", directoryHint: .isDirectory)
         defer { try? FileManager.default.removeItem(at: directory) }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
@@ -131,23 +133,25 @@ struct ExportServiceTests {
 
         #expect(exported.map(\.format) == [.mp4, .hevc, .gif])
         #expect(captured.map(\.request.format) == [.mp4, .hevc, .gif])
-        #expect(captured.map(\.outputFileURL.path) == [
-            "/tmp/exports/Luxel Clip H264.mp4",
-            "/tmp/exports/Luxel Clip H265.mp4",
-            "/tmp/exports/Luxel Clip GIF.gif"
-        ])
+        #expect(
+            captured.map(\.outputFileURL.path) == [
+                "/tmp/exports/Luxel Clip H264.mp4",
+                "/tmp/exports/Luxel Clip H265.mp4",
+                "/tmp/exports/Luxel Clip GIF.gif"
+            ])
         #expect(snapshots.map(\.jobID) == [0, 0, 0, 1, 1, 1, 2, 2, 2])
-        #expect(snapshots.map(\.snapshot) == [
-            .preparing(format: .mp4),
-            .exporting(format: .mp4, progress: 0),
-            .completed(format: .mp4),
-            .preparing(format: .hevc),
-            .exporting(format: .hevc, progress: 0),
-            .completed(format: .hevc),
-            .preparing(format: .gif),
-            .exporting(format: .gif, progress: 0),
-            .completed(format: .gif)
-        ])
+        #expect(
+            snapshots.map(\.snapshot) == [
+                .preparing(format: .mp4),
+                .exporting(format: .mp4, progress: 0),
+                .completed(format: .mp4),
+                .preparing(format: .hevc),
+                .exporting(format: .hevc, progress: 0),
+                .completed(format: .hevc),
+                .preparing(format: .gif),
+                .exporting(format: .gif, progress: 0),
+                .completed(format: .gif)
+            ])
     }
 
     @Test("batch export names audio formats distinctly")
@@ -163,13 +167,14 @@ struct ExportServiceTests {
         )
 
         let captured = await exporter.capturedExports()
-        #expect(captured.map(\.outputFileURL.path) == [
-            "/tmp/exports/Luxel Clip M4A AAC.m4a",
-            "/tmp/exports/Luxel Clip M4A ALAC.m4a",
-            "/tmp/exports/Luxel Clip WAV.wav",
-            "/tmp/exports/Luxel Clip CAF.caf",
-            "/tmp/exports/Luxel Clip FLAC.flac"
-        ])
+        #expect(
+            captured.map(\.outputFileURL.path) == [
+                "/tmp/exports/Luxel Clip M4A AAC.m4a",
+                "/tmp/exports/Luxel Clip M4A ALAC.m4a",
+                "/tmp/exports/Luxel Clip WAV.wav",
+                "/tmp/exports/Luxel Clip CAF.caf",
+                "/tmp/exports/Luxel Clip FLAC.flac"
+            ])
     }
 
     @Test("batch cancellation keeps completed output and removes in-flight output")
@@ -200,9 +205,10 @@ struct ExportServiceTests {
 
         let captured = await exporter.capturedExports()
         #expect(captured.map(\.request.format) == [.mp4, .gif])
-        #expect(fileSystem.removedURLs == [
-            URL(fileURLWithPath: "/tmp/exports/Luxel Clip GIF.gif")
-        ])
+        #expect(
+            fileSystem.removedURLs == [
+                URL(fileURLWithPath: "/tmp/exports/Luxel Clip GIF.gif")
+            ])
     }
 
     private func makeSource() throws -> SourceMedia {

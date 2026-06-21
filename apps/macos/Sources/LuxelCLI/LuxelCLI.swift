@@ -10,7 +10,6 @@ public struct LuxelCLI: ParsableCommand {
             LuxelRecordCommand.self,
             LuxelStopCommand.self,
             LuxelToggleCommand.self,
-            LuxelScreenshotCommand.self,
             LuxelClipCommand.self,
             LuxelLatestCommand.self,
             LuxelPreferencesCommand.self
@@ -117,12 +116,13 @@ public struct LuxelRecordCommand: ParsableCommand {
             }
 
             return try AutomationInvocation(
-                command: .record(AutomationRecordingOptions(
-                    target: resolvedTarget,
-                    presetName: preset,
-                    countdownSeconds: validatedCountdown(countdown),
-                    outputDirectory: try resolvedOutputDirectory(saveTo)
-                )),
+                command: .record(
+                    AutomationRecordingOptions(
+                        target: resolvedTarget,
+                        presetName: preset,
+                        countdownSeconds: validatedCountdown(countdown),
+                        outputDirectory: try resolvedOutputDirectory(saveTo)
+                    )),
                 callbacks: callbacks.resolvedCallbacks()
             )
         }
@@ -195,45 +195,8 @@ public struct LuxelToggleCommand: ParsableCommand {
                 )
             }
 
-            return try AutomationInvocation(command: .toggle(options), callbacks: callbacks.resolvedCallbacks())
-        }
-    }
-
-    public mutating func run() throws {
-        try runLuxelCommand(invocation, execution: execution)
-    }
-}
-
-public struct LuxelScreenshotCommand: ParsableCommand {
-    public static let configuration = CommandConfiguration(
-        commandName: "screenshot",
-        abstract: "Capture a Luxel screenshot."
-    )
-
-    @OptionGroup public var target: LuxelCaptureTargetArguments
-
-    @Option(help: "Screenshot format: png, jpeg, or heic.")
-    public var format: LuxelScreenshotFormat?
-
-    @OptionGroup public var callbacks: LuxelCallbackArguments
-
-    @OptionGroup public var execution: LuxelCommandExecutionArguments
-
-    public init() {}
-
-    public var invocation: AutomationInvocation {
-        get throws {
-            guard let resolvedTarget = try target.resolvedTarget(required: true) else {
-                throw LuxelCLIError.missingTarget
-            }
-
             return try AutomationInvocation(
-                command: .screenshot(AutomationScreenshotOptions(
-                    target: resolvedTarget,
-                    format: format?.domainValue
-                )),
-                callbacks: callbacks.resolvedCallbacks()
-            )
+                command: .toggle(options), callbacks: callbacks.resolvedCallbacks())
         }
     }
 
@@ -263,7 +226,8 @@ public struct LuxelClipCommand: ParsableCommand {
                 throw LuxelCLIError.invalidClipDuration
             }
 
-            return try AutomationInvocation(command: .clip(seconds: seconds), callbacks: callbacks.resolvedCallbacks())
+            return try AutomationInvocation(
+                command: .clip(seconds: seconds), callbacks: callbacks.resolvedCallbacks())
         }
     }
 
@@ -289,7 +253,8 @@ public struct LuxelPreferencesCommand: ParsableCommand {
 
     public var invocation: AutomationInvocation {
         get throws {
-            try AutomationInvocation(command: .preferences(pane?.domainValue), callbacks: callbacks.resolvedCallbacks())
+            try AutomationInvocation(
+                command: .preferences(pane?.domainValue), callbacks: callbacks.resolvedCallbacks())
         }
     }
 
@@ -397,7 +362,8 @@ public struct LuxelCallbackArguments: ParsableArguments {
         guard let url = URL(string: value),
               url.scheme?.isEmpty == false,
               !url.isFileURL,
-              url.scheme?.lowercased() != "file" else {
+              url.scheme?.lowercased() != "file"
+        else {
             throw LuxelCLIError.invalidCallbackURL(name)
         }
 
@@ -405,28 +371,10 @@ public struct LuxelCallbackArguments: ParsableArguments {
     }
 }
 
-public enum LuxelScreenshotFormat: String, CaseIterable, ExpressibleByArgument {
-    case png
-    case jpeg
-    case heic
-
-    var domainValue: ScreenshotFormat {
-        switch self {
-        case .png:
-            .png
-        case .jpeg:
-            .jpeg
-        case .heic:
-            .heic
-        }
-    }
-}
-
 public enum LuxelPreferencesPane: String, CaseIterable, ExpressibleByArgument {
     case general
     case presets
     case shortcuts
-    case screenshots
     case updates
     case about
 
@@ -438,8 +386,6 @@ public enum LuxelPreferencesPane: String, CaseIterable, ExpressibleByArgument {
             .presets
         case .shortcuts:
             .shortcuts
-        case .screenshots:
-            .screenshots
         case .updates:
             .updates
         case .about:

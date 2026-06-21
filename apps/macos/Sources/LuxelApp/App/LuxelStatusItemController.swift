@@ -78,9 +78,10 @@ final class LuxelStatusItemController: NSObject {
     }
 }
 
-private extension LuxelStatusItemController {
+extension LuxelStatusItemController {
     private func configureStatusItem() {
-        let autosaveIdentifier = Bundle.main.bundleIdentifier
+        let autosaveIdentifier =
+            Bundle.main.bundleIdentifier
             .map { "\($0).statusItem" } ?? "media.luxel.app.statusItem"
         statusItem.autosaveName = NSStatusItem.AutosaveName(autosaveIdentifier)
 
@@ -166,7 +167,8 @@ private extension LuxelStatusItemController {
     private func recoverInterruptedRecording() {
         Task { @MainActor [weak self] in
             guard let self,
-                  let recording = await model.recoverInterruptedRecording() else {
+                  let recording = await model.recoverInterruptedRecording()
+            else {
                 return
             }
 
@@ -247,7 +249,8 @@ private extension LuxelStatusItemController {
 
     private func refreshRecordingAudioLevelMonitoring() {
         guard let activeRecording = model.recordingState.activeRecording,
-              activeRecording.options.audio.capturesAudio else {
+              activeRecording.options.audio.capturesAudio
+        else {
             stopRecordingAudioLevelMonitoring()
             return
         }
@@ -282,12 +285,12 @@ private extension LuxelStatusItemController {
     @objc private func handleStatusItemClick() {
         Self.logger.info(
             """
-            Status item clicked has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
-            recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
-            is_handling_stop=\(self.isHandlingStatusItemStop, privacy: .public) \
-            button_configured=\(self.isStatusItemButtonConfigured, privacy: .public) \
-            popover_shown=\(self.isPopoverShown, privacy: .public)
-            """
+      Status item clicked has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
+      recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+      is_handling_stop=\(self.isHandlingStatusItemStop, privacy: .public) \
+      button_configured=\(self.isStatusItemButtonConfigured, privacy: .public) \
+      popover_shown=\(self.isPopoverShown, privacy: .public)
+      """
         )
 
         if model.hasActiveRecording {
@@ -301,7 +304,8 @@ private extension LuxelStatusItemController {
 
     private func rememberActivationSourceApplication() {
         guard let frontmostApplication = NSWorkspace.shared.frontmostApplication,
-              frontmostApplication.processIdentifier != NSRunningApplication.current.processIdentifier else {
+              frontmostApplication.processIdentifier != NSRunningApplication.current.processIdentifier
+        else {
             return
         }
 
@@ -318,7 +322,8 @@ private extension LuxelStatusItemController {
 
     private func presentPendingPermissionPromptIfNeeded() {
         guard !isPresentingPermissionPrompt,
-              let prompt = model.permissionPrompt else {
+              let prompt = model.permissionPrompt
+        else {
             return
         }
 
@@ -404,9 +409,6 @@ private extension LuxelStatusItemController {
                 },
                 showAreaCapturePicker: { [weak self] in
                     self?.showNotchAreaCapturePicker()
-                },
-                showScreenshotCapturePicker: { [weak self] in
-                    self?.showNotchScreenshotCapturePicker()
                 }
             )
         }
@@ -427,20 +429,14 @@ private extension LuxelStatusItemController {
     }
 
     private func showNotchAreaCapturePicker() {
-        showNotchCapturePicker(initialMode: .video, recordingActionID: .recordArea)
-    }
-
-    private func showNotchScreenshotCapturePicker() {
-        showNotchCapturePicker(initialMode: .photo, recordingActionID: nil)
+        showNotchCapturePicker(recordingActionID: .recordArea)
     }
 
     private func showNotchCapturePicker(
-        initialMode: LuxelCropperMode,
         recordingActionID: NotchActivityActionID?
     ) {
         model.refreshCameraDevices()
         cropperPanelController.show(
-            initialMode: initialMode,
             countdownDuration: model.settings.defaultCountdown,
             stopAfterDuration: model.settings.lastStopAfter,
             audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
@@ -451,7 +447,7 @@ private extension LuxelStatusItemController {
             recordAudio: model.captureCapabilities.microphoneTrackAvailable,
             loupeAlwaysOn: model.settings.loupeAlwaysOn,
             dimOtherDisplays: model.settings.dimOtherDisplays,
-            showsNotificationReminder: model.settings.notificationReminder,
+            showsNotificationReminder: false,
             onCountdownDurationChange: { [weak model] duration in
                 model?.settings.defaultCountdown = duration
                 model?.saveSettings()
@@ -481,11 +477,6 @@ private extension LuxelStatusItemController {
             },
             onNotificationReminderDismiss: { [weak model] in
                 model?.dismissNotificationReminder()
-            },
-            onCaptureScreenshot: { [weak model] draft in
-                Task {
-                    await model?.captureScreenshot(from: draft)
-                }
             },
             onQuickSelect: { [weak model] draft, presetID in
                 Task {
@@ -557,7 +548,7 @@ private extension LuxelStatusItemController {
     }
 }
 
-private extension LuxelStatusItemController {
+extension LuxelStatusItemController {
     private func openPopover() {
         pendingPopoverOpenTask?.cancel()
         pendingPopoverOpenTask = Task { @MainActor [weak self] in
@@ -568,7 +559,8 @@ private extension LuxelStatusItemController {
             await prepareMenuForPopover()
 
             guard !Task.isCancelled,
-                  let button = statusItem.button else {
+                  let button = statusItem.button
+            else {
                 pendingPopoverOpenTask = nil
                 return
             }
@@ -603,7 +595,8 @@ private extension LuxelStatusItemController {
             guard let self,
                   let panel,
                   panel.isVisible,
-                  let button = self.statusItem.button else {
+                  let button = self.statusItem.button
+            else {
                 return
             }
 
@@ -647,11 +640,13 @@ private extension LuxelStatusItemController {
             return fallbackMenuPanelSize
         }
 
-        let fittingSize = menuHostingController.sizeThatFits(in: CGSize(
-            width: menuPanelWidth,
-            height: CGFloat.greatestFiniteMagnitude
-        ))
-        let fittedHeight = fittingSize.height.isFinite && fittingSize.height > 0
+        let fittingSize = menuHostingController.sizeThatFits(
+            in: CGSize(
+                width: menuPanelWidth,
+                height: CGFloat.greatestFiniteMagnitude
+            ))
+        let fittedHeight =
+            fittingSize.height.isFinite && fittingSize.height > 0
             ? fittingSize.height
             : menuPanelFallbackHeight
         let height = ceil(max(menuPanelMinimumHeight, fittedHeight + menuPanelFittingHeightPadding))
@@ -702,7 +697,8 @@ private extension LuxelStatusItemController {
     ) -> (frame: NSRect, arrowCenterX: CGFloat) {
         let buttonFrame = statusItemButtonFrame(relativeTo: button)
         let anchorMidX = buttonFrame.midX + menuPanelArrowHorizontalOffset
-        let screenFrame = button.window?.screen?.visibleFrame
+        let screenFrame =
+            button.window?.screen?.visibleFrame
             ?? NSScreen.main?.visibleFrame
             ?? NSScreen.screens.first?.visibleFrame
             ?? .zero
@@ -728,7 +724,8 @@ private extension LuxelStatusItemController {
         let accessibilityFrame = button.accessibilityFrame()
         guard accessibilityFrame.width > 0,
               accessibilityFrame.height > 0,
-              accessibilityFrame.minX.isFinite else {
+              accessibilityFrame.minX.isFinite
+        else {
             return convertedFrame
         }
 
@@ -744,9 +741,9 @@ private extension LuxelStatusItemController {
         guard !isHandlingStatusItemStop else {
             Self.logger.info(
                 """
-                Status item stop ignored reason=stop-already-handling \
-                recording_state=\(self.model.recordingState.loggingDescription, privacy: .public)
-                """
+        Status item stop ignored reason=stop-already-handling \
+        recording_state=\(self.model.recordingState.loggingDescription, privacy: .public)
+        """
             )
             return
         }
@@ -755,9 +752,9 @@ private extension LuxelStatusItemController {
         closePopover()
         Self.logger.info(
             """
-            Status item stop began recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
-            active_recording=\(self.model.recordingState.activeRecording?.name ?? "none", privacy: .private)
-            """
+      Status item stop began recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+      active_recording=\(self.model.recordingState.activeRecording?.name ?? "none", privacy: .private)
+      """
         )
 
         statusItemStopTask?.cancel()
@@ -779,11 +776,11 @@ private extension LuxelStatusItemController {
 
             Self.logger.info(
                 """
-                Status item stop task completed action=\(stopAction?.loggingDescription ?? "none", privacy: .public) \
-                recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
-                has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
-                error_message=\(self.model.recordingActionErrorMessage ?? "none", privacy: .public)
-                """
+        Status item stop task completed action=\(stopAction?.loggingDescription ?? "none", privacy: .public) \
+        recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+        has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
+        error_message=\(self.model.recordingActionErrorMessage ?? "none", privacy: .public)
+        """
             )
             handleStatusItemStopAction(stopAction)
         }
@@ -830,9 +827,9 @@ private extension LuxelStatusItemController {
         statusItemStopTask?.cancel()
         Self.logger.fault(
             """
-            Status item stop watchdog terminating app recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
-            active_recording=\(self.model.recordingState.activeRecording?.name ?? "none", privacy: .private)
-            """
+      Status item stop watchdog terminating app recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+      active_recording=\(self.model.recordingState.activeRecording?.name ?? "none", privacy: .private)
+      """
         )
         NSApplication.shared.terminate(nil)
     }
@@ -862,7 +859,7 @@ private extension LuxelStatusItemController {
     }
 }
 
-private extension LuxelStatusItemController {
+extension LuxelStatusItemController {
     private func startRecordingAnimation() {
         guard recordingAnimationTimer == nil else {
             return
@@ -917,7 +914,8 @@ private extension LuxelStatusItemController {
 extension LuxelStatusItemController: NSWindowDelegate {
     func windowDidResignKey(_ notification: Notification) {
         guard let panel = notification.object as? NSPanel,
-              panel === menuPanel else {
+              panel === menuPanel
+        else {
             return
         }
 

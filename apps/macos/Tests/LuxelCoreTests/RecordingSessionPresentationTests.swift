@@ -110,8 +110,10 @@ struct RecordingSessionPresentationTests {
     @Test("transitional states disable actions")
     func transitionalStatesDisableActions() {
         let starting = RecordingSessionPresentation(state: .starting, canStartRecording: true)
-        let pausing = RecordingSessionPresentation(state: .pausing(elapsed: 4), canStartRecording: false)
-        let resuming = RecordingSessionPresentation(state: .resuming(elapsed: 5), canStartRecording: false)
+        let pausing = RecordingSessionPresentation(
+            state: .pausing(elapsed: 4), canStartRecording: false)
+        let resuming = RecordingSessionPresentation(
+            state: .resuming(elapsed: 5), canStartRecording: false)
         let stopping = RecordingSessionPresentation(state: .stopping, canStartRecording: false)
 
         #expect(starting.menuBarTitle == "Starting")

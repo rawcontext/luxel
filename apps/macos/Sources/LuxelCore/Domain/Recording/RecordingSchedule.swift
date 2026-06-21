@@ -166,16 +166,17 @@ public enum RecordingDurationText {
             return value
         }
 
-        let duration = switch values.count {
-        case 1:
-            values[0]
-        case 2:
-            try seconds(minutes: values[0], seconds: values[1])
-        case 3:
-            try seconds(hours: values[0], minutes: values[1], seconds: values[2])
-        default:
-            throw RecordingDurationTextError.invalidFormat
-        }
+        let duration =
+            switch values.count {
+            case 1:
+                values[0]
+            case 2:
+                try seconds(minutes: values[0], seconds: values[1])
+            case 3:
+                try seconds(hours: values[0], minutes: values[1], seconds: values[2])
+            default:
+                throw RecordingDurationTextError.invalidFormat
+            }
 
         guard (1...43_200).contains(duration) else {
             throw RecordingDurationTextError.invalidDuration
@@ -223,8 +224,8 @@ public enum RecordingDurationTextError: Error, Equatable {
     case invalidDuration
 }
 
-private extension Array where Element == RecordingClockEvent {
-    var sortedByDate: [RecordingClockEvent] {
+extension Array where Element == RecordingClockEvent {
+    fileprivate var sortedByDate: [RecordingClockEvent] {
         sorted { lhs, rhs in
             lhs.date < rhs.date
         }

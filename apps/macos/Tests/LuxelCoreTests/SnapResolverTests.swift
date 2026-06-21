@@ -15,22 +15,23 @@ struct SnapResolverTests {
         )
 
         #expect(result.rect == (try CaptureRect(x: 0, y: 0, width: 320, height: 180)))
-        #expect(result.guides == [
-            CaptureSnapGuide(
-                axis: .vertical,
-                position: 0,
-                sourceAnchor: .leading,
-                targetAnchor: .leading,
-                targetKind: .screen
-            ),
-            CaptureSnapGuide(
-                axis: .horizontal,
-                position: 0,
-                sourceAnchor: .top,
-                targetAnchor: .top,
-                targetKind: .screen
-            )
-        ])
+        #expect(
+            result.guides == [
+                CaptureSnapGuide(
+                    axis: .vertical,
+                    position: 0,
+                    sourceAnchor: .leading,
+                    targetAnchor: .leading,
+                    targetKind: .screen
+                ),
+                CaptureSnapGuide(
+                    axis: .horizontal,
+                    position: 0,
+                    sourceAnchor: .top,
+                    targetAnchor: .top,
+                    targetKind: .screen
+                )
+            ])
     }
 
     @Test("snaps to nearest window frame edge")
@@ -45,22 +46,23 @@ struct SnapResolverTests {
         )
 
         #expect(result.rect == (try CaptureRect(x: 500, y: 400, width: 300, height: 200)))
-        #expect(result.guides == [
-            CaptureSnapGuide(
-                axis: .vertical,
-                position: 500,
-                sourceAnchor: .leading,
-                targetAnchor: .trailing,
-                targetKind: .window
-            ),
-            CaptureSnapGuide(
-                axis: .horizontal,
-                position: 400,
-                sourceAnchor: .top,
-                targetAnchor: .bottom,
-                targetKind: .window
-            )
-        ])
+        #expect(
+            result.guides == [
+                CaptureSnapGuide(
+                    axis: .vertical,
+                    position: 500,
+                    sourceAnchor: .leading,
+                    targetAnchor: .trailing,
+                    targetKind: .window
+                ),
+                CaptureSnapGuide(
+                    axis: .horizontal,
+                    position: 400,
+                    sourceAnchor: .top,
+                    targetAnchor: .bottom,
+                    targetKind: .window
+                )
+            ])
     }
 
     @Test("snaps centers and respects magnetism boundary")

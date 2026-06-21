@@ -96,9 +96,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var audioOnlyRecordingShortcut: String
     public var quickRecordLastShortcut: String
     public var clipReplayBufferShortcut: String
-    public var captureScreenshotShortcut: String
-    public var screenshotActiveWindowShortcut: String
-    public var screenshotFullscreenShortcut: String
     public var updatePreferences: UpdatePreferences
     public var showTimeInMenuBar: Bool
     public var notificationReminder: Bool
@@ -113,10 +110,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var userSizePresets: [CaptureSizePreset]
     public var lastCaptureMemory: LastCaptureMemory?
     public var perFormatExportMemory: [ExportFormat: ExportMemory]
-    public var screenshotFormat: ScreenshotFormat
-    public var screenshotDestinations: [ScreenshotDestination]
-    public var screenshotShowThumbnail: Bool
-    public var screenshotBackdrop: CaptureBackdrop
     public var confirmDiscard: Bool
     public var defaultCountdown: TimeInterval?
     public var lastStopAfter: TimeInterval?
@@ -174,9 +167,6 @@ extension AppSettings {
         audioOnlyRecordingShortcut: String = "",
         quickRecordLastShortcut: String = "",
         clipReplayBufferShortcut: String = "",
-        captureScreenshotShortcut: String = "",
-        screenshotActiveWindowShortcut: String = "",
-        screenshotFullscreenShortcut: String = "",
         updatePreferences: UpdatePreferences = .defaults,
         showTimeInMenuBar: Bool = true,
         notificationReminder: Bool = true,
@@ -191,10 +181,6 @@ extension AppSettings {
         userSizePresets: [CaptureSizePreset] = CaptureSizePreset.builtInDefaults,
         lastCaptureMemory: LastCaptureMemory? = nil,
         perFormatExportMemory: [ExportFormat: ExportMemory] = [:],
-        screenshotFormat: ScreenshotFormat = .png,
-        screenshotDestinations: [ScreenshotDestination] = [.clipboard, .file],
-        screenshotShowThumbnail: Bool = true,
-        screenshotBackdrop: CaptureBackdrop = .opaque,
         confirmDiscard: Bool = true,
         defaultCountdown: TimeInterval? = nil,
         lastStopAfter: TimeInterval? = nil
@@ -204,16 +190,19 @@ extension AppSettings {
         self.showCursor = showCursor
         self.highlightClicks = highlightClicks
         self.cursorMode = cursorMode ?? Self.cursorMode(showCursor: showCursor)
-        self.cursorRenderOptions = cursorRenderOptions ?? Self.cursorRenderOptions(
-            showCursor: showCursor,
-            highlightClicks: highlightClicks
-        )
+        self.cursorRenderOptions =
+            cursorRenderOptions
+            ?? Self.cursorRenderOptions(
+                showCursor: showCursor,
+                highlightClicks: highlightClicks
+            )
         self.keystrokeOverlayEnabled = keystrokeOverlayEnabled
         self.keystrokeRenderOptions = keystrokeRenderOptions
         self.pauseKeystrokeCaptureShortcut = pauseKeystrokeCaptureShortcut
-        let resolvedRecordingFrameRate = Self.supportedRecordingFrameRate(
-            recordingFrameRate ?? Self.legacyRecordingFrameRate(record60FPS: record60FPS)
-        ) ?? Self.legacyRecordingFrameRate(record60FPS: record60FPS)
+        let resolvedRecordingFrameRate =
+            Self.supportedRecordingFrameRate(
+                recordingFrameRate ?? Self.legacyRecordingFrameRate(record60FPS: record60FPS)
+            ) ?? Self.legacyRecordingFrameRate(record60FPS: record60FPS)
         self.record60FPS = resolvedRecordingFrameRate.framesPerSecond == 60
         self.recordingFrameRate = resolvedRecordingFrameRate
         self.loopExports = loopExports
@@ -238,9 +227,6 @@ extension AppSettings {
         self.audioOnlyRecordingShortcut = audioOnlyRecordingShortcut
         self.quickRecordLastShortcut = quickRecordLastShortcut
         self.clipReplayBufferShortcut = clipReplayBufferShortcut
-        self.captureScreenshotShortcut = captureScreenshotShortcut
-        self.screenshotActiveWindowShortcut = screenshotActiveWindowShortcut
-        self.screenshotFullscreenShortcut = screenshotFullscreenShortcut
         self.updatePreferences = updatePreferences
         self.showTimeInMenuBar = showTimeInMenuBar
         self.notificationReminder = notificationReminder
@@ -255,10 +241,6 @@ extension AppSettings {
         self.userSizePresets = Self.removingRemovedBuiltInSizePresets(from: userSizePresets)
         self.lastCaptureMemory = lastCaptureMemory
         self.perFormatExportMemory = perFormatExportMemory
-        self.screenshotFormat = screenshotFormat
-        self.screenshotDestinations = screenshotDestinations
-        self.screenshotShowThumbnail = screenshotShowThumbnail
-        self.screenshotBackdrop = screenshotBackdrop
         self.confirmDiscard = confirmDiscard
         self.defaultCountdown = defaultCountdown
         self.lastStopAfter = lastStopAfter

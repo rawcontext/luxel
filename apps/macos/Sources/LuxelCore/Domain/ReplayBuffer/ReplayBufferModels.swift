@@ -165,7 +165,8 @@ public struct SegmentLedger: Codable, Equatable, Sendable {
         let requestedStart = max(0, latestEnd - lastSeconds)
         let selectedSegments = segments.filter { $0.end > requestedStart }
         guard let firstSelectedSegment = selectedSegments.first,
-              let lastSelectedSegment = selectedSegments.last else {
+              let lastSelectedSegment = selectedSegments.last
+        else {
             return ReplayBufferClipCoverage(
                 segments: [],
                 requestedDuration: lastSeconds,
@@ -209,7 +210,8 @@ public struct SegmentLedger: Codable, Equatable, Sendable {
             return Array(segments.suffix(1))
         }
 
-        let firstIndexToKeep = firstOverlapIndex == segments.startIndex
+        let firstIndexToKeep =
+            firstOverlapIndex == segments.startIndex
             ? firstOverlapIndex
             : segments.index(before: firstOverlapIndex)
         return Array(segments[firstIndexToKeep...])

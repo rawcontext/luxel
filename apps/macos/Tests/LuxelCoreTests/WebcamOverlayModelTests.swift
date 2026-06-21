@@ -61,7 +61,8 @@ struct WebcamOverlayModelTests {
         )
 
         #expect(try topLeft.rect(in: outputSize) == CaptureRect(x: 58, y: 58, width: 480, height: 480))
-        #expect(try bottomRight.rect(in: outputSize) == CaptureRect(x: 1382, y: 542, width: 480, height: 480))
+        #expect(
+            try bottomRight.rect(in: outputSize) == CaptureRect(x: 1382, y: 542, width: 480, height: 480))
     }
 
     @Test("normalized overlay resolves around center point")

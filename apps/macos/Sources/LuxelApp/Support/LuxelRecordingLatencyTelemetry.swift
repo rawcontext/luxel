@@ -55,20 +55,20 @@ enum LuxelRecordingLatencyTelemetry {
 
         logger.info(
             """
-            Recording start completed entry_point=\(span.entryPoint.rawValue, privacy: .public) \
-            result=\(result, privacy: .public) \
-            target_kind=\(target?.latencyTargetKind ?? "unknown", privacy: .public) \
-            elapsed_ms=\(elapsedMilliseconds, privacy: .public) \
-            budget_ms=\(budgetMilliseconds, privacy: .public) \
-            met_budget=\(metBudget, privacy: .public)
-            """
+      Recording start completed entry_point=\(span.entryPoint.rawValue, privacy: .public) \
+      result=\(result, privacy: .public) \
+      target_kind=\(target?.latencyTargetKind ?? "unknown", privacy: .public) \
+      elapsed_ms=\(elapsedMilliseconds, privacy: .public) \
+      budget_ms=\(budgetMilliseconds, privacy: .public) \
+      met_budget=\(metBudget, privacy: .public)
+      """
         )
         signposter.endInterval("Recording start", span.intervalState)
     }
 }
 
-private extension CaptureTarget {
-    var latencyTargetKind: String {
+extension CaptureTarget {
+    fileprivate var latencyTargetKind: String {
         switch self {
         case .display:
             "display"
@@ -80,8 +80,8 @@ private extension CaptureTarget {
     }
 }
 
-private extension Duration {
-    var wholeMilliseconds: Int64 {
+extension Duration {
+    fileprivate var wholeMilliseconds: Int64 {
         let durationComponents = components
         return durationComponents.seconds * 1_000
             + durationComponents.attoseconds / 1_000_000_000_000_000

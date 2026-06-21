@@ -9,7 +9,8 @@ struct AVAssetReaderCodecMediaSourceTests {
         let mediaSource = AVAssetReaderCodecMediaSource()
         let requestedPixelSize = try PixelSize(width: 321, height: 181)
         let expectedPixelSize = try PixelSize(width: 322, height: 182)
-        let request = try makeRequest(fileName: "input.mp4", pixelSize: requestedPixelSize, shouldMute: true)
+        let request = try makeRequest(
+            fileName: "input.mp4", pixelSize: requestedPixelSize, shouldMute: true)
 
         let description = try await mediaSource.prepare(request)
         let frames = try await collectVideoFrames(from: mediaSource)
@@ -18,9 +19,18 @@ struct AVAssetReaderCodecMediaSourceTests {
         #expect(!description.hasAudio)
         #expect(frames.count == description.videoFrameCount)
         #expect(frames.allSatisfy { $0.frame.pixelSize == expectedPixelSize })
-        #expect(frames.allSatisfy { $0.frame.yPlane.count == expectedPixelSize.width * expectedPixelSize.height })
-        #expect(frames.allSatisfy { $0.frame.uPlane.count == expectedPixelSize.width * expectedPixelSize.height / 4 })
-        #expect(frames.allSatisfy { $0.frame.vPlane.count == expectedPixelSize.width * expectedPixelSize.height / 4 })
+        #expect(
+            frames.allSatisfy {
+                $0.frame.yPlane.count == expectedPixelSize.width * expectedPixelSize.height
+            })
+        #expect(
+            frames.allSatisfy {
+                $0.frame.uPlane.count == expectedPixelSize.width * expectedPixelSize.height / 4
+            })
+        #expect(
+            frames.allSatisfy {
+                $0.frame.vPlane.count == expectedPixelSize.width * expectedPixelSize.height / 4
+            })
         #expect(abs(frames[0].presentationTime - 0.0) < 0.02)
         #expect(abs(frames[1].presentationTime - 0.1) < 0.02)
         #expect(abs(frames[2].presentationTime - 0.2) < 0.02)
@@ -30,7 +40,8 @@ struct AVAssetReaderCodecMediaSourceTests {
     @Test("source emits forty eight kilohertz stereo PCM chunks")
     func sourceEmitsFortyEightKilohertzStereoPCMChunks() async throws {
         let mediaSource = AVAssetReaderCodecMediaSource()
-        let request = try makeRequest(fileName: "input@2x.mp4", pixelSize: PixelSize(width: 320, height: 180))
+        let request = try makeRequest(
+            fileName: "input@2x.mp4", pixelSize: PixelSize(width: 320, height: 180))
 
         let description = try await mediaSource.prepare(request)
         _ = try await collectVideoFrames(from: mediaSource)
@@ -45,18 +56,20 @@ struct AVAssetReaderCodecMediaSourceTests {
         #expect(chunks.allSatisfy { $0.pcmData.count.isMultiple(of: 4) })
         #expect(abs(chunks[0].presentationTime - 0.0) < 0.03)
         #expect(chunks.allSatisfy { $0.duration > 0 })
-        #expect(zip(chunks, chunks.dropFirst()).allSatisfy { $0.presentationTime <= $1.presentationTime })
+        #expect(
+            zip(chunks, chunks.dropFirst()).allSatisfy { $0.presentationTime <= $1.presentationTime })
     }
 
     @Test("muted requests skip audio sourcing")
     func mutedRequestsSkipAudioSourcing() async throws {
         let mediaSource = AVAssetReaderCodecMediaSource()
 
-        let description = try await mediaSource.prepare(try makeRequest(
-            fileName: "input@2x.mp4",
-            pixelSize: PixelSize(width: 320, height: 180),
-            shouldMute: true
-        ))
+        let description = try await mediaSource.prepare(
+            try makeRequest(
+                fileName: "input@2x.mp4",
+                pixelSize: PixelSize(width: 320, height: 180),
+                shouldMute: true
+            ))
 
         #expect(!description.hasAudio)
         #expect(try await mediaSource.nextAudioChunk() == nil)

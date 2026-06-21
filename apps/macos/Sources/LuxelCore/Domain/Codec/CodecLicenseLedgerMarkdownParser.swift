@@ -42,23 +42,26 @@ public struct CodecLicenseLedgerMarkdownParser: Equatable, Sendable {
             }
 
             guard let copyrightNotice, !copyrightNotice.isBlank else {
-                throw CodecLicenseLedgerMarkdownParserError.missingCopyrightNotice(dependencyID: dependencyID)
+                throw CodecLicenseLedgerMarkdownParserError.missingCopyrightNotice(
+                    dependencyID: dependencyID)
             }
 
-            let licenseText = licenseTextLines
+            let licenseText =
+                licenseTextLines
                 .joined(separator: "\n")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             guard !licenseText.isBlank else {
                 throw CodecLicenseLedgerMarkdownParserError.missingLicenseText(dependencyID: dependencyID)
             }
 
-            entries.append(CodecLicenseLedgerEntry(
-                dependencyID: dependencyID,
-                name: name,
-                license: license,
-                copyrightNotice: copyrightNotice,
-                licenseText: licenseText
-            ))
+            entries.append(
+                CodecLicenseLedgerEntry(
+                    dependencyID: dependencyID,
+                    name: name,
+                    license: license,
+                    copyrightNotice: copyrightNotice,
+                    licenseText: licenseText
+                ))
         }
 
         for line in markdown.components(separatedBy: .newlines) {
@@ -120,7 +123,8 @@ public struct CodecLicenseLedgerMarkdownParser: Equatable, Sendable {
             return nil
         }
 
-        return trimmedLine
+        return
+            trimmedLine
             .dropFirst(prefix.count)
             .trimmingCharacters(in: .whitespaces)
     }
@@ -132,7 +136,8 @@ public struct CodecLicenseLedgerMarkdownParser: Equatable, Sendable {
             return nil
         }
 
-        return trimmedLine
+        return
+            trimmedLine
             .dropFirst(prefix.count)
             .trimmingCharacters(in: .whitespaces)
     }
@@ -142,8 +147,8 @@ public struct CodecLicenseLedgerMarkdownParser: Equatable, Sendable {
     }
 }
 
-private extension String {
-    var isBlank: Bool {
+extension String {
+    fileprivate var isBlank: Bool {
         allSatisfy(\.isWhitespace)
     }
 }

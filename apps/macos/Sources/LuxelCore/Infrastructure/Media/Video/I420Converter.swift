@@ -123,7 +123,8 @@ public struct I420Converter: Sendable {
     private func validate(pixelSize: PixelSize, bytesPerRow: Int) throws {
         guard pixelSize.width.isMultiple(of: 2),
               pixelSize.height.isMultiple(of: 2),
-              bytesPerRow >= pixelSize.width * 4 else {
+              bytesPerRow >= pixelSize.width * 4
+        else {
             throw I420ConverterError.invalidPixelSize
         }
     }

@@ -45,27 +45,28 @@ struct KeystrokeTimelineRecordingServiceTests {
 
         let timeline = try await service.recordTimeline(request)
 
-        #expect(timeline.events == [
-            try KeystrokeEvent(
-                time: 1,
-                kind: .flagsChanged,
-                keyCode: 55,
-                modifiers: [.command]
-            ),
-            try KeystrokeEvent(
-                time: 7,
-                kind: .keyDown,
-                keyCode: 40,
-                characters: "k",
-                modifiers: [.command, .shift]
-            ),
-            try KeystrokeEvent(
-                time: 7.5,
-                kind: .keyDown,
-                keyCode: 123,
-                isRepeat: true
-            )
-        ])
+        #expect(
+            timeline.events == [
+                try KeystrokeEvent(
+                    time: 1,
+                    kind: .flagsChanged,
+                    keyCode: 55,
+                    modifiers: [.command]
+                ),
+                try KeystrokeEvent(
+                    time: 7,
+                    kind: .keyDown,
+                    keyCode: 40,
+                    characters: "k",
+                    modifiers: [.command, .shift]
+                ),
+                try KeystrokeEvent(
+                    time: 7.5,
+                    kind: .keyDown,
+                    keyCode: 123,
+                    isRepeat: true
+                )
+            ])
         #expect(timeline.pauses.isEmpty)
     }
 
@@ -93,16 +94,17 @@ struct KeystrokeTimelineRecordingServiceTests {
 
         let timeline = try await service.recordTimeline(request)
 
-        #expect(timeline.pauses == [
-            KeystrokePauseInterval(
-                timeRange: try TimeRange(start: 1, end: 2),
-                cause: .secureInput
-            ),
-            KeystrokePauseInterval(
-                timeRange: try TimeRange(start: 5.5, end: 6.5),
-                cause: .user
-            )
-        ])
+        #expect(
+            timeline.pauses == [
+                KeystrokePauseInterval(
+                    timeRange: try TimeRange(start: 1, end: 2),
+                    cause: .secureInput
+                ),
+                KeystrokePauseInterval(
+                    timeRange: try TimeRange(start: 5.5, end: 6.5),
+                    cause: .user
+                )
+            ])
         #expect(timeline.eventsOutsidePauses().isEmpty)
     }
 
@@ -132,10 +134,11 @@ struct KeystrokeTimelineRecordingServiceTests {
         let expectedSidecar = try BundleSidecarManifest(kind: .keystrokes)
 
         #expect(updatedBundle.manifest.sidecar(for: .keystrokes) == expectedSidecar)
-        #expect(fileSystem.writtenData.map(\.url) == [
-            rootURL.appendingPathComponent("keystrokes.json"),
-            rootURL.appendingPathComponent("bundle.json")
-        ])
+        #expect(
+            fileSystem.writtenData.map(\.url) == [
+                rootURL.appendingPathComponent("keystrokes.json"),
+                rootURL.appendingPathComponent("bundle.json")
+            ])
 
         let document = try JSONDecoder().decode(
             KeystrokeSidecarDocument.self,

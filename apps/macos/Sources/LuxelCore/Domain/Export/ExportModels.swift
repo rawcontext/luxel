@@ -380,14 +380,18 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         audioMix = try container.decodeIfPresent(AudioMixPlan.self, forKey: .audioMix)
         shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
         cropRect = try container.decodeIfPresent(CaptureRect.self, forKey: .cropRect)
-        quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
+        quality =
+            try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
             ?? .balanced
-        speed = try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed)
+        speed =
+            try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed)
             ?? .normal
         gifOptions = try container.decodeIfPresent(GIFRenderOptions.self, forKey: .gifOptions)
         cursorOptions = try container.decodeIfPresent(CursorRenderOptions.self, forKey: .cursorOptions)
-        keystrokeOptions = try container.decodeIfPresent(KeystrokeRenderOptions.self, forKey: .keystrokeOptions)
-        captionOptions = try container.decodeIfPresent(CaptionRenderOptions.self, forKey: .captionOptions)
+        keystrokeOptions = try container.decodeIfPresent(
+            KeystrokeRenderOptions.self, forKey: .keystrokeOptions)
+        captionOptions = try container.decodeIfPresent(
+            CaptionRenderOptions.self, forKey: .captionOptions)
         cameraOverlay = try container.decodeIfPresent(CameraOverlayPlan.self, forKey: .cameraOverlay)
         zoomBlocks = try container.decodeIfPresent([ZoomBlock].self, forKey: .zoomBlocks) ?? []
     }

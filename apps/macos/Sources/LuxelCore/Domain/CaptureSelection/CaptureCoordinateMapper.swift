@@ -34,7 +34,8 @@ public enum CaptureCoordinateMapper {
         guard selection.originX >= 0,
               selection.originY >= 0,
               selection.originX + selection.width <= display.width,
-              selection.originY + selection.height <= display.height else {
+              selection.originY + selection.height <= display.height
+        else {
             throw CaptureModelError.selectionOutsideDisplay
         }
 
@@ -53,7 +54,8 @@ public enum CaptureCoordinateMapper {
         guard rect.originX >= 0,
               rect.originY >= 0,
               rect.originX + rect.width <= display.width,
-              rect.originY + rect.height <= display.height else {
+              rect.originY + rect.height <= display.height
+        else {
             throw CaptureModelError.selectionOutsideDisplay
         }
 
@@ -79,7 +81,8 @@ public enum CaptureCoordinateMapper {
         guard localRect.originX >= 0,
               localRect.originY >= 0,
               localRect.originX + localRect.width <= display.width,
-              localRect.originY + localRect.height <= display.height else {
+              localRect.originY + localRect.height <= display.height
+        else {
             throw CaptureModelError.selectionOutsideDisplay
         }
 

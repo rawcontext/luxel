@@ -1,8 +1,8 @@
 import Foundation
 
-public extension AppSettings {
+extension AppSettings {
     @discardableResult
-    mutating func addExportPreset(id: UUID = UUID()) throws -> ExportPreset {
+    public mutating func addExportPreset(id: UUID = UUID()) throws -> ExportPreset {
         let preset = try ExportPreset(
             id: id,
             name: exportPresets.uniquePresetName(base: "New Preset"),
@@ -20,7 +20,7 @@ public extension AppSettings {
     }
 
     @discardableResult
-    mutating func duplicateExportPreset(id: UUID, newID: UUID = UUID()) throws -> ExportPreset {
+    public mutating func duplicateExportPreset(id: UUID, newID: UUID = UUID()) throws -> ExportPreset {
         guard let preset = exportPresets.first(where: { $0.id == id }) else {
             throw ExportPresetSettingsError.presetNotFound(id)
         }
@@ -38,7 +38,7 @@ public extension AppSettings {
         return copy
     }
 
-    mutating func deleteExportPreset(id: UUID) {
+    public mutating func deleteExportPreset(id: UUID) {
         exportPresets.removeAll { $0.id == id }
 
         if quickExportPresetID == id {
@@ -51,8 +51,8 @@ public enum ExportPresetSettingsError: Error, Equatable {
     case presetNotFound(UUID)
 }
 
-private extension [ExportPreset] {
-    func uniquePresetName(base: String) -> String {
+extension [ExportPreset] {
+    fileprivate func uniquePresetName(base: String) -> String {
         let names = Set(map(\.name))
         guard names.contains(base) else {
             return base

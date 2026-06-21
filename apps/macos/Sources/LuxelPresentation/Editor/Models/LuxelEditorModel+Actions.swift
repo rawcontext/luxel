@@ -6,7 +6,8 @@ import Observation
 extension LuxelEditorModel {
     func navigateToOlderRecording() async {
         guard let recordingNavigationIndex,
-              canNavigateToOlderRecording else {
+              canNavigateToOlderRecording
+        else {
             return
         }
 
@@ -15,7 +16,8 @@ extension LuxelEditorModel {
 
     func navigateToNewerRecording() async {
         guard let recordingNavigationIndex,
-              canNavigateToNewerRecording else {
+              canNavigateToNewerRecording
+        else {
             return
         }
 
@@ -226,9 +228,11 @@ extension LuxelEditorModel {
 
         do {
             let request = try makeCurrentFrameGrabRequest()
-            guard let destinationURL = fileWorkflowService.chooseSaveDestination(
-                suggestedFileName: request.suggestedFileName
-            ) else {
+            guard
+                let destinationURL = fileWorkflowService.chooseSaveDestination(
+                    suggestedFileName: request.suggestedFileName
+                )
+            else {
                 return
             }
 
@@ -274,7 +278,9 @@ extension LuxelEditorModel {
     }
 
     func chooseOutputDirectory() {
-        guard let directory = fileWorkflowService.chooseOutputDirectory(currentDirectory: outputDirectory) else {
+        guard
+            let directory = fileWorkflowService.chooseOutputDirectory(currentDirectory: outputDirectory)
+        else {
             return
         }
 
@@ -360,7 +366,8 @@ extension LuxelEditorModel {
     }
 
     static var defaultRecordingsDirectory: URL {
-        let moviesDirectory = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
+        let moviesDirectory =
+            FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Movies")
 
         return moviesDirectory.appending(path: "Luxel")
@@ -375,7 +382,8 @@ extension LuxelEditorModel {
         updateExportJob(id: batchSnapshot.jobID, snapshot: batchSnapshot.snapshot)
 
         let jobCount = max(exportJobs.count, 1)
-        let progress = (Double(batchSnapshot.jobID) + batchSnapshot.snapshot.progress) / Double(jobCount)
+        let progress =
+            (Double(batchSnapshot.jobID) + batchSnapshot.snapshot.progress) / Double(jobCount)
         exportProgress = ExportProgressSnapshot(
             phase: batchSnapshot.snapshot.phase,
             actionTitle: batchSnapshot.snapshot.actionTitle,
@@ -439,7 +447,7 @@ extension LuxelEditorModel {
         status = .failed(errorMessage(error))
     }
 
-    func startFrameGrab(destinations: [ScreenshotDestination]) {
+    func startFrameGrab(destinations: [FrameGrabDestination]) {
         do {
             try startFrameGrab(
                 request: makeCurrentFrameGrabRequest(),
@@ -452,7 +460,7 @@ extension LuxelEditorModel {
 
     func startFrameGrab(
         request: FrameGrabRequest,
-        destinations: [ScreenshotDestination],
+        destinations: [FrameGrabDestination],
         outputFileURL: URL? = nil
     ) {
         do {
@@ -514,13 +522,12 @@ extension LuxelEditorModel {
 
     func makeCurrentFrameGrabRequest() throws -> FrameGrabRequest {
         guard let source else {
-            throw ScreenshotModelError.invalidFrameTime
+            throw FrameGrabError.invalidFrameTime
         }
 
         return try FrameGrabRequest(
             sourceFileURL: source.fileURL,
-            time: currentFrameTime,
-            format: .png
+            time: currentFrameTime
         )
     }
 
@@ -562,15 +569,16 @@ extension LuxelEditorModel {
         in outputDirectory: URL,
         selectedFileURL: URL
     ) -> [URL] {
-        let directoryURLs = (try? FileManager.default.contentsOfDirectory(
-            at: outputDirectory,
-            includingPropertiesForKeys: [
-                .creationDateKey,
-                .contentModificationDateKey,
-                .isRegularFileKey
-            ],
-            options: [.skipsHiddenFiles]
-        )) ?? []
+        let directoryURLs =
+            (try? FileManager.default.contentsOfDirectory(
+                at: outputDirectory,
+                includingPropertiesForKeys: [
+                    .creationDateKey,
+                    .contentModificationDateKey,
+                    .isRegularFileKey
+                ],
+                options: [.skipsHiddenFiles]
+            )) ?? []
 
         let recordingURLs = directoryURLs.compactMap { url -> (url: URL, date: Date)? in
             guard isNavigableRecordingURL(url),
@@ -579,14 +587,16 @@ extension LuxelEditorModel {
                     .contentModificationDateKey,
                     .isRegularFileKey
                   ]),
-                  values.isRegularFile == true else {
+                  values.isRegularFile == true
+            else {
                 return nil
             }
 
-            let date = [
-                values.creationDate,
-                values.contentModificationDate
-            ].compactMap(\.self).max() ?? .distantPast
+            let date =
+                [
+                    values.creationDate,
+                    values.contentModificationDate
+                ].compactMap(\.self).max() ?? .distantPast
 
             return (url.standardizedFileURL, date)
         }
@@ -719,7 +729,9 @@ extension LuxelEditorModel {
     }
 
     func updateSizePresetFromDimensions() {
-        guard let source, let currentPixelSize = try? PixelSize(width: outputWidth, height: outputHeight) else {
+        guard let source,
+              let currentPixelSize = try? PixelSize(width: outputWidth, height: outputHeight)
+        else {
             sizePreset = nil
             return
         }
@@ -759,7 +771,8 @@ extension LuxelEditorModel {
 
         applySizePreset(memory.sizePreset)
         applyFrameRate(memory.frameRate.framesPerSecond)
-        quality = memory.quality.isAvailable(for: format)
+        quality =
+            memory.quality.isAvailable(for: format)
             ? memory.quality
             : ExportQuality.defaultQuality(for: format)
         if format == .gif || format == .apng, let gifOptions = memory.gifOptions {
@@ -848,7 +861,8 @@ extension LuxelEditorModel {
         frameRate = min(max(state.frameRate, 1), maximumFrameRate)
         playbackSpeed = state.playbackSpeed
         applyPlaybackRateIfNeeded()
-        quality = state.quality.isAvailable(for: format)
+        quality =
+            state.quality.isAvailable(for: format)
             ? state.quality
             : ExportQuality.defaultQuality(for: format)
         gifLoopModeKind = state.gifLoopModeKind
@@ -873,7 +887,8 @@ extension LuxelEditorModel {
         ExportMemory(
             sizePreset: sizePreset ?? .original,
             frameRate: try FrameRate(frameRate),
-            quality: quality.isAvailable(for: format) ? quality : ExportQuality.defaultQuality(for: format),
+            quality: quality.isAvailable(for: format)
+                ? quality : ExportQuality.defaultQuality(for: format),
             gifOptions: try currentGIFOptions(for: format)
         )
     }

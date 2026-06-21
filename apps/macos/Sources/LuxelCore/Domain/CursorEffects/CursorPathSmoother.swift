@@ -35,7 +35,8 @@ public enum CursorPathSmoother {
         guard let first = samples.first,
               let last = samples.last,
               time > first.time,
-              time < last.time else {
+              time < last.time
+        else {
             return nil
         }
 
@@ -48,7 +49,8 @@ public enum CursorPathSmoother {
         let upper = samples[upperIndex]
         guard lower.time < upper.time,
               isRenderable(lower, frameSize: frameSize),
-              isRenderable(upper, frameSize: frameSize) else {
+              isRenderable(upper, frameSize: frameSize)
+        else {
             return nil
         }
 
@@ -84,7 +86,8 @@ public enum CursorPathSmoother {
         case .off:
             return try interpolatedPoint(from: lower.position, to: upper.position, progress: progress)
         case .light, .medium:
-            let previous = renderableNeighbor(before: lowerIndex, in: samples, frameSize: frameSize) ?? lower
+            let previous =
+                renderableNeighbor(before: lowerIndex, in: samples, frameSize: frameSize) ?? lower
             let next = renderableNeighbor(after: upperIndex, in: samples, frameSize: frameSize) ?? upper
             let tension = level == .light ? 0.5 : 0
             let position = try catmullRomPoint(
@@ -194,8 +197,8 @@ public enum CursorPathSmoother {
     }
 }
 
-private extension Double {
-    func clamped(to range: ClosedRange<Self>) -> Self {
+extension Double {
+    fileprivate func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
     }
 }

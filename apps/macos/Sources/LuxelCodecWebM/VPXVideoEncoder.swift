@@ -46,7 +46,8 @@ public actor VPXVideoEncoder: CodecVideoEncoder {
 
         let presentationTimeUnits = Int64((frame.presentationTime * Double(frameRate)).rounded())
         let durationUnits = max(1, UInt32((frame.duration * Double(frameRate)).rounded()))
-        nextPresentationTimeUnits = max(nextPresentationTimeUnits, presentationTimeUnits + Int64(durationUnits))
+        nextPresentationTimeUnits = max(
+            nextPresentationTimeUnits, presentationTimeUnits + Int64(durationUnits))
 
         var packetList = LuxelCodecPacketList()
         var errorBuffer = [CChar](repeating: 0, count: 512)
@@ -55,7 +56,8 @@ public actor VPXVideoEncoder: CodecVideoEncoder {
                 try frame.frame.vPlane.withUnsafeBytes { vBuffer in
                     guard let yAddress = yBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
                           let uAddress = uBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
-                          let vAddress = vBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else {
+                          let vAddress = vBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+                    else {
                         throw WebMCodecError.invalidConfiguration("I420 frame planes were empty.")
                     }
 

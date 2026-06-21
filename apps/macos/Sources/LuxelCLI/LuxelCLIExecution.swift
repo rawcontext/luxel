@@ -56,7 +56,8 @@ public func runLuxelCommand(
     }
 
     guard invocation.callbacks.success == nil,
-          invocation.callbacks.error == nil else {
+          invocation.callbacks.error == nil
+    else {
         throw LuxelCLIError.callbackConflict
     }
 
@@ -203,7 +204,8 @@ public final class LocalLuxelCallbackReceiver: LuxelCallbackReceiver, @unchecked
 
     private func receive(_ connection: NWConnection) {
         connection.start(queue: queue)
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 16_384) { [weak self] data, _, _, error in
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 16_384) {
+            [weak self] data, _, _, error in
             guard let self else {
                 connection.cancel()
                 return
@@ -226,12 +228,12 @@ public final class LocalLuxelCallbackReceiver: LuxelCallbackReceiver, @unchecked
 
     private func respond(on connection: NWConnection) {
         let response = """
-        HTTP/1.1 204 No Content\r
-        Connection: close\r
-        Content-Length: 0\r
-        \r
+      HTTP/1.1 204 No Content\r
+      Connection: close\r
+      Content-Length: 0\r
+      \r
 
-        """
+      """
         connection.send(
             content: Data(response.utf8),
             completion: .contentProcessed { _ in
@@ -258,7 +260,8 @@ public final class LocalLuxelCallbackReceiver: LuxelCallbackReceiver, @unchecked
 
         let parts = requestLine.split(separator: " ")
         guard parts.count >= 2,
-              let components = URLComponents(string: "http://localhost\(parts[1])") else {
+              let components = URLComponents(string: "http://localhost\(parts[1])")
+        else {
             return .failure(LuxelCLIError.invalidCallbackRequest)
         }
 
@@ -272,10 +275,11 @@ public final class LocalLuxelCallbackReceiver: LuxelCallbackReceiver, @unchecked
             return .success(.failure(errorMessage: query["errorMessage"] ?? "Luxel command failed"))
         }
 
-        return .success(.success(
-            filePath: query["filePath"],
-            recordingID: query["recordingID"]
-        ))
+        return .success(
+            .success(
+                filePath: query["filePath"],
+                recordingID: query["recordingID"]
+            ))
     }
 }
 

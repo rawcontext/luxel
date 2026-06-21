@@ -4,6 +4,7 @@ import CoreMedia
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
+
 extension SampledAnimatedSizeEstimator {
     func renderedFrame(
         atFrameIndex index: Int,
@@ -100,12 +101,14 @@ extension SampledAnimatedSizeEstimator {
     ) throws -> Int {
         let data = NSMutableData()
         let typeIdentifier = try typeIdentifier(for: format)
-        guard let destination = CGImageDestinationCreateWithData(
-            data as CFMutableData,
-            typeIdentifier as CFString,
-            frames.count,
-            nil
-        ) else {
+        guard
+            let destination = CGImageDestinationCreateWithData(
+                data as CFMutableData,
+                typeIdentifier as CFString,
+                frames.count,
+                nil
+            )
+        else {
             throw SampledAnimatedSizeEstimatorError.cannotCreateDestination
         }
 

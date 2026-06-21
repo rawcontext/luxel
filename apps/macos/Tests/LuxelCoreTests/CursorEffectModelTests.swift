@@ -69,7 +69,8 @@ struct CursorEffectModelTests {
             try cursorSample(time: 3, x: 10, y: 10)
         ]
 
-        let smoothed = try #require(try CursorPathSmoother.sample(at: 1.25, from: samples, level: .medium))
+        let smoothed = try #require(
+            try CursorPathSmoother.sample(at: 1.25, from: samples, level: .medium))
 
         #expect(smoothed.position == (try CursorPoint(x: 2.03125, y: 0)))
     }
@@ -164,9 +165,12 @@ struct CursorEffectModelTests {
     func timelineRejectsInvalidImageReferencesAndUnsortedEvents() throws {
         let arrow = try cursorImage(id: "arrow")
         let duplicateArrow = try cursorImage(id: "arrow")
-        let firstSample = try CursorSample(time: 1, position: CursorPoint(x: 0, y: 0), cursorImageID: "arrow")
-        let secondSample = try CursorSample(time: 0.5, position: CursorPoint(x: 1, y: 1), cursorImageID: "arrow")
-        let missingImageSample = try CursorSample(time: 1, position: CursorPoint(x: 0, y: 0), cursorImageID: "ibeam")
+        let firstSample = try CursorSample(
+            time: 1, position: CursorPoint(x: 0, y: 0), cursorImageID: "arrow")
+        let secondSample = try CursorSample(
+            time: 0.5, position: CursorPoint(x: 1, y: 1), cursorImageID: "arrow")
+        let missingImageSample = try CursorSample(
+            time: 1, position: CursorPoint(x: 0, y: 0), cursorImageID: "ibeam")
 
         #expect(throws: CursorEffectModelError.duplicateCursorImageID) {
             _ = try CursorTimeline(samples: [firstSample], cursorImages: [arrow, duplicateArrow])
@@ -313,7 +317,8 @@ struct CursorEffectModelTests {
         )
     }
 
-    private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws -> CursorSample {
+    private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws
+    -> CursorSample {
         try CursorSample(
             time: time,
             position: CursorPoint(x: xCoordinate, y: yCoordinate),

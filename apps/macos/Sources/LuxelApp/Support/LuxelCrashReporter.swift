@@ -44,8 +44,10 @@ final class LuxelCrashReporter: ErrorReporter {
             return
         }
 
-        Crashlytics.crashlytics().record(error: error, userInfo: [
-            "context": context
-        ])
+        Crashlytics.crashlytics().record(
+            error: error,
+            userInfo: [
+                "context": context
+            ])
     }
 }

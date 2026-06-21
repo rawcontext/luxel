@@ -70,7 +70,8 @@ struct BitrateModelSizeEstimatorTests {
         ]
 
         for expectation in expectations {
-            let request = try makeRequest(format: expectation.format, timeRange: TimeRange(start: 0, end: 1))
+            let request = try makeRequest(
+                format: expectation.format, timeRange: TimeRange(start: 0, end: 1))
 
             let estimate = try await BitrateModelSizeEstimator().estimate(request)
             let expected = try ExportEstimate(bytes: expectation.bytes, confidence: .modeled)

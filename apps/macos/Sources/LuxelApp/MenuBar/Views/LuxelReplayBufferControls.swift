@@ -9,12 +9,14 @@ struct LuxelReplayBufferControls: View {
         if presentation.isVisible {
             Divider()
 
-            Button {} label: {
+            Button {
+            } label: {
                 Label(presentation.clipActionTitle, systemImage: "gobackward")
             }
             .disabled(!presentation.canClip)
 
-            Button {} label: {
+            Button {
+            } label: {
                 Label(presentation.pauseActionTitle, systemImage: "pause.circle")
             }
             .disabled(!presentation.canPause)

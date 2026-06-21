@@ -8,7 +8,8 @@ public struct AVAssetReaderAudioPeakAnalyzer: AudioPeakAnalyzer {
 
     public init() {}
 
-    public func measurePeaks(_ request: AudioPeakAnalysisRequest) async throws -> [AudioTrackKind: Double] {
+    public func measurePeaks(_ request: AudioPeakAnalysisRequest) async throws -> [AudioTrackKind:
+        Double] {
         guard !request.audioTracks.isEmpty else {
             return [:]
         }
@@ -75,10 +76,12 @@ public struct AVAssetReaderAudioPeakAnalyzer: AudioPeakAnalyzer {
         from sourceAudioTrack: AVAssetTrack,
         sourceTimeRange: CMTimeRange
     ) throws -> AVMutableCompositionTrack {
-        guard let audioTrack = composition.addMutableTrack(
-            withMediaType: .audio,
-            preferredTrackID: kCMPersistentTrackID_Invalid
-        ) else {
+        guard
+            let audioTrack = composition.addMutableTrack(
+                withMediaType: .audio,
+                preferredTrackID: kCMPersistentTrackID_Invalid
+            )
+        else {
             throw AVAssetReaderAudioPeakAnalyzerError.cannotCreateAudioTrack
         }
 
@@ -153,8 +156,8 @@ public enum AVAssetReaderAudioPeakAnalyzerError: Error, Equatable {
     case audioDataCopyFailed(OSStatus)
 }
 
-private extension AVAssetReader {
-    var errorDescription: String {
+extension AVAssetReader {
+    fileprivate var errorDescription: String {
         error.map(String.init(describing:)) ?? "Unknown AVAssetReader error"
     }
 }

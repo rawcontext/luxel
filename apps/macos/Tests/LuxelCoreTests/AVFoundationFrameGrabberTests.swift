@@ -9,17 +9,16 @@ struct AVFoundationFrameGrabberTests {
     func grabExtractsPNGFrameFromMovie() async throws {
         let request = try FrameGrabRequest(
             sourceFileURL: fixtureURL("input.mp4"),
-            time: 1,
-            format: .png
+            time: 1
         )
 
         let imageData = try await AVFoundationFrameGrabber().grab(request)
         let expectedPixelSize = try PixelSize(width: 2560, height: 1440)
 
-        #expect(imageData.format == .png)
         #expect(imageData.pixelSize == expectedPixelSize)
         #expect(imageData.data.starts(with: [0x89, 0x50, 0x4e, 0x47]))
-        #expect(CGImageSourceCreateWithData(imageData.data as CFData, nil).map(CGImageSourceGetCount) == 1)
+        #expect(
+            CGImageSourceCreateWithData(imageData.data as CFData, nil).map(CGImageSourceGetCount) == 1)
     }
 
     @Test("grab crops a frame before encoding")

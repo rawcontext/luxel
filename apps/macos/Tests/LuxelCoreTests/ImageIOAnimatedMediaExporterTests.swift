@@ -217,7 +217,8 @@ struct ImageIOAnimatedMediaExporterTests {
         let height = try #require(properties[kCGImagePropertyPixelHeight] as? Int)
         let gifProperties = properties[kCGImagePropertyGIFDictionary] as? [CFString: Any]
         let pngProperties = properties[kCGImagePropertyPNGDictionary] as? [CFString: Any]
-        let frameDelay = gifProperties?[kCGImagePropertyGIFUnclampedDelayTime] as? TimeInterval
+        let frameDelay =
+            gifProperties?[kCGImagePropertyGIFUnclampedDelayTime] as? TimeInterval
             ?? gifProperties?[kCGImagePropertyGIFDelayTime] as? TimeInterval
             ?? pngProperties?[kCGImagePropertyAPNGUnclampedDelayTime] as? TimeInterval
             ?? pngProperties?[kCGImagePropertyAPNGDelayTime] as? TimeInterval
@@ -296,8 +297,8 @@ private struct AnimatedImageMetadata {
     let frameDelay: TimeInterval
 }
 
-private extension Data {
-    func containsASCII(_ string: String) -> Bool {
+extension Data {
+    fileprivate func containsASCII(_ string: String) -> Bool {
         containsSequence(Array(string.utf8))
     }
 

@@ -59,7 +59,8 @@ public struct CaptionCueBuilderConfiguration: Equatable, Sendable {
               maximumDuration >= minimumDuration,
               maximumDuration.isFinite,
               speechPauseThreshold >= 0,
-              speechPauseThreshold.isFinite else {
+              speechPauseThreshold.isFinite
+        else {
             throw CaptionModelError.invalidCueBuilderConfiguration
         }
 
@@ -245,11 +246,12 @@ private struct CaptionLineWrapper {
         var tokens: [String] = []
         var startIndex = word.startIndex
         while startIndex < word.endIndex {
-            let endIndex = word.index(
-                startIndex,
-                offsetBy: maxCharactersPerLine,
-                limitedBy: word.endIndex
-            ) ?? word.endIndex
+            let endIndex =
+                word.index(
+                    startIndex,
+                    offsetBy: maxCharactersPerLine,
+                    limitedBy: word.endIndex
+                ) ?? word.endIndex
             tokens.append(String(word[startIndex..<endIndex]))
             startIndex = endIndex
         }

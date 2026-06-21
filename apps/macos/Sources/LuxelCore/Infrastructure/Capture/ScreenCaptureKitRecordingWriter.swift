@@ -23,7 +23,8 @@ final class ScreenCaptureKitRecordingWriter: NSObject, SCStreamOutput, @unchecke
             sampleHandlerQueue.async { [self] in
                 do {
                     guard segment == nil else {
-                        throw ScreenCaptureKitRecorderError.resumeFailed("A recording segment is already active")
+                        throw ScreenCaptureKitRecorderError.resumeFailed(
+                            "A recording segment is already active")
                     }
 
                     try fileManager.createDirectory(
@@ -79,7 +80,10 @@ final class ScreenCaptureKitRecordingWriter: NSObject, SCStreamOutput, @unchecke
         }
     }
 
-    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+    func stream(
+        _ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer,
+        of type: SCStreamOutputType
+    ) {
         segment?.append(sampleBuffer, outputType: type)
     }
 }
@@ -116,8 +120,10 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         }
         writer.add(videoInput)
 
-        let systemAudioInput = try Self.makeAudioInput(for: writer, enabled: request.audio.capturesSystemAudio)
-        let microphoneAudioInput = try Self.makeAudioInput(for: writer, enabled: request.audio.capturesMicrophone)
+        let systemAudioInput = try Self.makeAudioInput(
+            for: writer, enabled: request.audio.capturesSystemAudio)
+        let microphoneAudioInput = try Self.makeAudioInput(
+            for: writer, enabled: request.audio.capturesMicrophone)
 
         self.outputFileURL = outputFileURL
         self.writer = writer
@@ -135,7 +141,8 @@ private final class RecordingWriterSegment: @unchecked Sendable {
 
         updateAudioLevel(sampleBuffer, outputType: outputType)
 
-        let isCompleteScreenFrame = outputType == .screen && sampleBufferContainsCompleteFrame(sampleBuffer)
+        let isCompleteScreenFrame =
+            outputType == .screen && sampleBufferContainsCompleteFrame(sampleBuffer)
         if outputType == .screen, !isCompleteScreenFrame {
             return
         }
@@ -153,7 +160,8 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         }
 
         guard writer.status == .writing else {
-            pendingError = writer.error ?? ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status))
+            pendingError =
+                writer.error ?? ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status))
             return
         }
 
@@ -210,7 +218,8 @@ private final class RecordingWriterSegment: @unchecked Sendable {
 
         let startTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         guard startTime.isValid, writer.startWriting() else {
-            pendingError = writer.error ?? ScreenCaptureKitRecorderError.startFailed("Cannot start asset writer")
+            pendingError =
+                writer.error ?? ScreenCaptureKitRecorderError.startFailed("Cannot start asset writer")
             return
         }
 
@@ -233,7 +242,8 @@ private final class RecordingWriterSegment: @unchecked Sendable {
 
     private func updateAudioLevel(_ sampleBuffer: CMSampleBuffer, outputType: SCStreamOutputType) {
         guard let sample = CMSampleBufferAudioLevelSampler.sample(from: sampleBuffer),
-              let combinedSample = audioLevelMixer.update(sample, outputType: outputType) else {
+              let combinedSample = audioLevelMixer.update(sample, outputType: outputType)
+        else {
             return
         }
 
@@ -253,10 +263,12 @@ private final class RecordingWriterSegment: @unchecked Sendable {
     }
 
     private func firstSampleAttachments(from sampleBuffer: CMSampleBuffer) -> [AnyHashable: Any]? {
-        guard let attachmentsArray = CMSampleBufferGetSampleAttachmentsArray(
-            sampleBuffer,
-            createIfNecessary: false
-        ) else {
+        guard
+            let attachmentsArray = CMSampleBufferGetSampleAttachmentsArray(
+                sampleBuffer,
+                createIfNecessary: false
+            )
+        else {
             return nil
         }
 
@@ -293,7 +305,8 @@ private final class RecordingWriterSegment: @unchecked Sendable {
     }
 
     private func frameStatusRawValue(from attachments: [AnyHashable: Any]) -> Int? {
-        let value = attachments[AnyHashable(SCStreamFrameInfo.status)]
+        let value =
+            attachments[AnyHashable(SCStreamFrameInfo.status)]
             ?? attachments[AnyHashable(SCStreamFrameInfo.status.rawValue)]
 
         if let value = value as? SCFrameStatus {
@@ -311,7 +324,8 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         return nil
     }
 
-    private static func makeAudioInput(for writer: AVAssetWriter, enabled: Bool) throws -> AVAssetWriterInput? {
+    private static func makeAudioInput(for writer: AVAssetWriter, enabled: Bool) throws
+    -> AVAssetWriterInput? {
         guard enabled else {
             return nil
         }
@@ -358,7 +372,8 @@ private struct RecordingAudioLevelMixer {
         self.capturesMicrophone = audio.capturesMicrophone
     }
 
-    mutating func update(_ sample: AudioLevelSample, outputType: SCStreamOutputType) -> AudioLevelSample? {
+    mutating func update(_ sample: AudioLevelSample, outputType: SCStreamOutputType)
+    -> AudioLevelSample? {
         switch outputType {
         case .audio:
             guard capturesSystemAudio else {
@@ -376,10 +391,11 @@ private struct RecordingAudioLevelMixer {
             return nil
         }
 
-        return AudioLevelSample.combined([
-            capturesSystemAudio ? systemSample : nil,
-            capturesMicrophone ? microphoneSample : nil
-        ].compactMap { $0 })
+        return AudioLevelSample.combined(
+            [
+                capturesSystemAudio ? systemSample : nil,
+                capturesMicrophone ? microphoneSample : nil
+            ].compactMap { $0 })
     }
 }
 
@@ -403,18 +419,21 @@ private final class RecordingWriterFinishCompletion: @unchecked Sendable {
         case .completed:
             continuation.resume(returning: outputFileURL)
         case .failed, .cancelled:
-            let error = writer.error ?? ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status))
+            let error =
+                writer.error ?? ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status))
             continuation.resume(throwing: error)
         case .unknown, .writing:
-            continuation.resume(throwing: ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status)))
+            continuation.resume(
+                throwing: ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status)))
         @unknown default:
-            continuation.resume(throwing: ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status)))
+            continuation.resume(
+                throwing: ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status)))
         }
     }
 }
 
-private extension RecordingCodec {
-    var avVideoCodecType: AVVideoCodecType {
+extension RecordingCodec {
+    fileprivate var avVideoCodecType: AVVideoCodecType {
         switch self {
         case .h264:
             .h264

@@ -5,8 +5,6 @@ import SwiftUI
 
 struct CropperLoupeView: View {
     let sample: CaptureLoupeSample
-    let image: CGImage?
-    let imageStatus: CropperLoupeImageStatus
 
     var body: some View {
         GlassPanel {
@@ -26,16 +24,9 @@ struct CropperLoupeView: View {
             RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .fill(.black.opacity(0.46))
 
-            if let image {
-                Image(decorative: image, scale: 1)
-                    .resizable()
-                    .interpolation(.none)
-                    .scaledToFill()
-            } else {
-                CropperLoupeGrid(sample: sample)
-                    .padding(5)
-                    .opacity(imageStatus == .unavailable ? 0.34 : 0.54)
-            }
+            CropperLoupeGrid(sample: sample)
+                .padding(5)
+                .opacity(0.54)
 
             crosshair
         }

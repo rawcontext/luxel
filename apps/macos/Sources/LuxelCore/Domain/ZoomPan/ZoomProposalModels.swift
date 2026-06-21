@@ -27,7 +27,8 @@ public enum ZoomProposalEngine {
 
         return try proposedBlocks(
             from: interestPoints.sorted { $0.time < $1.time },
-            mediaDuration: mediaDuration(cursorTimeline: cursorTimeline, keystrokeTimeline: keystrokeTimeline),
+            mediaDuration: mediaDuration(
+                cursorTimeline: cursorTimeline, keystrokeTimeline: keystrokeTimeline),
             tuning: tuning
         )
     }
@@ -41,16 +42,19 @@ public enum ZoomProposalEngine {
                 return nil
             }
 
-            guard let sample = try CursorPathSmoother.sample(
-                at: click.time,
-                from: timeline.samples,
-                level: .light,
-                frameSize: sourceSize
-            ) else {
+            guard
+                let sample = try CursorPathSmoother.sample(
+                    at: click.time,
+                    from: timeline.samples,
+                    level: .light,
+                    frameSize: sourceSize
+                )
+            else {
                 return nil
             }
 
-            return try ZoomInterestPoint(time: click.time, position: sample.position, sourceSize: sourceSize, weight: 1)
+            return try ZoomInterestPoint(
+                time: click.time, position: sample.position, sourceSize: sourceSize, weight: 1)
         }
     }
 
@@ -68,12 +72,14 @@ public enum ZoomProposalEngine {
                 return nil
             }
 
-            guard let sample = try CursorPathSmoother.sample(
-                at: event.time,
-                from: cursorTimeline.samples,
-                level: .light,
-                frameSize: sourceSize
-            ) else {
+            guard
+                let sample = try CursorPathSmoother.sample(
+                    at: event.time,
+                    from: cursorTimeline.samples,
+                    level: .light,
+                    frameSize: sourceSize
+                )
+            else {
                 return nil
             }
 
@@ -103,12 +109,13 @@ public enum ZoomProposalEngine {
             if normalizedDistance(from: dwellStart.position, to: sample.position, sourceSize: sourceSize)
                 > tuning.dwellMovementTolerance {
                 if last.time - dwellStart.time >= tuning.dwellDurationThreshold {
-                    points.append(try ZoomInterestPoint(
-                        time: (dwellStart.time + last.time) / 2,
-                        position: dwellStart.position,
-                        sourceSize: sourceSize,
-                        weight: tuning.minimumClusterWeight
-                    ))
+                    points.append(
+                        try ZoomInterestPoint(
+                            time: (dwellStart.time + last.time) / 2,
+                            position: dwellStart.position,
+                            sourceSize: sourceSize,
+                            weight: tuning.minimumClusterWeight
+                        ))
                 }
 
                 dwellStart = sample
@@ -118,12 +125,13 @@ public enum ZoomProposalEngine {
         }
 
         if last.time - dwellStart.time >= tuning.dwellDurationThreshold {
-            points.append(try ZoomInterestPoint(
-                time: (dwellStart.time + last.time) / 2,
-                position: dwellStart.position,
-                sourceSize: sourceSize,
-                weight: tuning.minimumClusterWeight
-            ))
+            points.append(
+                try ZoomInterestPoint(
+                    time: (dwellStart.time + last.time) / 2,
+                    position: dwellStart.position,
+                    sourceSize: sourceSize,
+                    weight: tuning.minimumClusterWeight
+                ))
         }
 
         return points
@@ -237,11 +245,12 @@ public enum ZoomProposalEngine {
         cursorTimeline: CursorTimeline,
         keystrokeTimeline: KeystrokeTimeline?
     ) -> TimeInterval {
-        let cursorDuration = [
-            cursorTimeline.samples.last?.time,
-            cursorTimeline.clicks.last?.time,
-            cursorTimeline.spotlightToggles.last
-        ].compactMap { $0 }.max() ?? 0
+        let cursorDuration =
+            [
+                cursorTimeline.samples.last?.time,
+                cursorTimeline.clicks.last?.time,
+                cursorTimeline.spotlightToggles.last
+            ].compactMap { $0 }.max() ?? 0
         let keystrokeDuration = keystrokeTimeline?.events.last?.time ?? 0
 
         return max(cursorDuration, keystrokeDuration)
@@ -269,7 +278,8 @@ private struct ZoomInterestPoint: Equatable, Sendable {
         guard time.isFinite,
               time >= 0,
               weight.isFinite,
-              weight > 0 else {
+              weight > 0
+        else {
             throw ZoomPanModelError.invalidProposalTuning
         }
 
@@ -294,8 +304,8 @@ public enum ZoomPanModelError: Error, Equatable {
     case unknownDraftID
 }
 
-private extension Double {
-    func clamped(to range: ClosedRange<Self>) -> Self {
+extension Double {
+    fileprivate func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
     }
 }

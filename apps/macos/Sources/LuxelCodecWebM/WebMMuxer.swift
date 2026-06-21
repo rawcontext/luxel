@@ -37,7 +37,8 @@ public actor WebMMuxer: CodecContainerMuxer {
             throw WebMCodecError.muxerFailure("WebM muxer was used before begin.")
         }
         guard tracks.contains(track) else {
-            throw WebMCodecError.muxerFailure("WebM muxer received an undeclared \(track.rawValue) packet.")
+            throw WebMCodecError.muxerFailure(
+                "WebM muxer received an undeclared \(track.rawValue) packet.")
         }
 
         try writer.append(WebMPacket(track: track, packet: packet))
@@ -144,13 +145,14 @@ private final class WebMStreamingWriter {
 
     func append(_ packet: WebMPacket) throws {
         let packetTimecode = Int64((packet.packet.presentationTime * 1_000).rounded())
-        let packetEndTimecode = Int64(((packet.packet.presentationTime + packet.packet.duration) * 1_000).rounded(.up))
+        let packetEndTimecode = Int64(
+            ((packet.packet.presentationTime + packet.packet.duration) * 1_000).rounded(.up))
         maxEndTimecode = max(maxEndTimecode, packetEndTimecode)
 
         if var cluster = currentCluster {
             let relativeTimecode = packetTimecode - cluster.timecode
-            if relativeTimecode >= Self.clusterDurationLimit ||
-                cluster.blocks.count + simpleBlockPayloadSize(packet: packet) > Self.clusterPayloadLimit {
+            if relativeTimecode >= Self.clusterDurationLimit
+                || cluster.blocks.count + simpleBlockPayloadSize(packet: packet) > Self.clusterPayloadLimit {
                 try flushCurrentCluster()
                 try startCluster(timecode: packetTimecode, packet: packet)
                 return
@@ -198,7 +200,8 @@ private final class WebMStreamingWriter {
 
         let clusterPosition = currentSegmentPosition
         var payload = Data()
-        payload.append(EBML.unsignedElement(id: WebMElementID.clusterTimecode, value: UInt64(cluster.timecode)))
+        payload.append(
+            EBML.unsignedElement(id: WebMElementID.clusterTimecode, value: UInt64(cluster.timecode)))
         payload.append(cluster.blocks)
         try write(EBML.element(id: WebMElementID.cluster, payload: payload))
 
@@ -242,7 +245,8 @@ private final class WebMStreamingWriter {
             payload.append(seekEntry(targetID: entry.id, position: entry.position))
         }
 
-        let payloadCapacity = Self.seekHeadReservationSize - EBML.idBytes(WebMElementID.seekHead).count - 8
+        let payloadCapacity =
+            Self.seekHeadReservationSize - EBML.idBytes(WebMElementID.seekHead).count - 8
         guard payload.count <= payloadCapacity else {
             throw WebMCodecError.muxerFailure("Reserved WebM SeekHead space was too small.")
         }
@@ -297,12 +301,13 @@ private final class WebMStreamingWriter {
 
     private func infoElement(durationMilliseconds: Double) -> (data: Data, durationPayloadOffset: Int) {
         var payload = Data()
-        payload.append(EBML.unsignedElement(id: WebMElementID.timestampScale, value: Self.timestampScale))
+        payload.append(
+            EBML.unsignedElement(id: WebMElementID.timestampScale, value: Self.timestampScale))
         payload.append(EBML.stringElement(id: WebMElementID.muxingApp, value: "Luxel"))
         payload.append(EBML.stringElement(id: WebMElementID.writingApp, value: "Luxel"))
-        let durationPayloadOffset = payload.count +
-            EBML.idBytes(WebMElementID.duration).count +
-            EBML.fixedSizeVint(8, length: 1).count
+        let durationPayloadOffset =
+            payload.count + EBML.idBytes(WebMElementID.duration).count
+            + EBML.fixedSizeVint(8, length: 1).count
         payload.append(EBML.floatElement(id: WebMElementID.duration, value: durationMilliseconds))
 
         let header = EBML.idBytes(WebMElementID.info) + EBML.vint(UInt64(payload.count))
@@ -333,7 +338,8 @@ private final class WebMStreamingWriter {
 
         var video = Data()
         video.append(EBML.unsignedElement(id: WebMElementID.pixelWidth, value: UInt64(pixelSize.width)))
-        video.append(EBML.unsignedElement(id: WebMElementID.pixelHeight, value: UInt64(pixelSize.height)))
+        video.append(
+            EBML.unsignedElement(id: WebMElementID.pixelHeight, value: UInt64(pixelSize.height)))
         video.append(EBML.element(id: WebMElementID.colour, payload: colour))
 
         var payload = Data()
@@ -406,7 +412,8 @@ private final class WebMStreamingWriter {
         for cuePoint in cuePoints {
             var trackPositions = Data()
             trackPositions.append(EBML.unsignedElement(id: WebMElementID.cueTrack, value: 1))
-            trackPositions.append(EBML.unsignedElement(id: WebMElementID.cueClusterPosition, value: cuePoint.clusterPosition))
+            trackPositions.append(
+                EBML.unsignedElement(id: WebMElementID.cueClusterPosition, value: cuePoint.clusterPosition))
 
             var cue = Data()
             cue.append(EBML.unsignedElement(id: WebMElementID.cueTime, value: UInt64(cuePoint.timecode)))
@@ -419,7 +426,8 @@ private final class WebMStreamingWriter {
     private func seekEntry(targetID: UInt64, position: UInt64) -> Data {
         var payload = Data()
         payload.append(EBML.binaryElement(id: WebMElementID.seekID, payload: EBML.idBytes(targetID)))
-        payload.append(EBML.unsignedElement(id: WebMElementID.seekPosition, value: position, byteWidth: 8))
+        payload.append(
+            EBML.unsignedElement(id: WebMElementID.seekPosition, value: position, byteWidth: 8))
         return EBML.element(id: WebMElementID.seek, payload: payload)
     }
 }
@@ -615,29 +623,29 @@ private enum EBML {
     }
 }
 
-private extension Data {
-    mutating func append(_ byte: UInt8) {
+extension Data {
+    fileprivate mutating func append(_ byte: UInt8) {
         append(contentsOf: [byte])
     }
 
-    mutating func appendLittleEndian(_ value: UInt16) {
+    fileprivate mutating func appendLittleEndian(_ value: UInt16) {
         append(UInt8(value & 0x00FF))
         append(UInt8((value >> 8) & 0x00FF))
     }
 
-    mutating func appendLittleEndian(_ value: UInt32) {
+    fileprivate mutating func appendLittleEndian(_ value: UInt32) {
         append(UInt8(value & 0x0000_00FF))
         append(UInt8((value >> 8) & 0x0000_00FF))
         append(UInt8((value >> 16) & 0x0000_00FF))
         append(UInt8((value >> 24) & 0x0000_00FF))
     }
 
-    mutating func appendUInt16BigEndian(_ value: UInt16) {
+    fileprivate mutating func appendUInt16BigEndian(_ value: UInt16) {
         append(UInt8((value >> 8) & 0x00FF))
         append(UInt8(value & 0x00FF))
     }
 
-    mutating func appendUInt64BigEndian(_ value: UInt64) {
+    fileprivate mutating func appendUInt64BigEndian(_ value: UInt64) {
         for shift in stride(from: 56, through: 0, by: -8) {
             append(UInt8((value >> UInt64(shift)) & 0xFF))
         }

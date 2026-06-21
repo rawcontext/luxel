@@ -15,7 +15,8 @@ public struct BundleAppMetadataReader: AppMetadataReader {
 
     public func read() -> AppMetadata {
         AppMetadata(
-            displayName: value(for: "CFBundleDisplayName", fallingBackTo: "CFBundleName", defaultValue: "Luxel"),
+            displayName: value(
+                for: "CFBundleDisplayName", fallingBackTo: "CFBundleName", defaultValue: "Luxel"),
             version: value(for: "CFBundleShortVersionString", defaultValue: "0.0.0"),
             build: value(for: "CFBundleVersion", defaultValue: ""),
             copyright: value(for: "NSHumanReadableCopyright", defaultValue: "")

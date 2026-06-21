@@ -20,7 +20,8 @@ public struct NormalizedRect: Codable, Equatable, Sendable {
               width > 0,
               height > 0,
               originX + width <= 1,
-              originY + height <= 1 else {
+              originY + height <= 1
+        else {
             throw ZoomPanModelError.invalidNormalizedRect
         }
 
@@ -51,8 +52,8 @@ public struct NormalizedRect: Codable, Equatable, Sendable {
     }
 }
 
-private extension Double {
-    func clamped(to range: ClosedRange<Self>) -> Self {
+extension Double {
+    fileprivate func clamped(to range: ClosedRange<Self>) -> Self {
         min(max(self, range.lowerBound), range.upperBound)
     }
 }
@@ -238,7 +239,8 @@ public struct CameraPath: Equatable, Sendable {
                 from: cursorTimeline.samples,
                 level: cursorSmoothing,
                 frameSize: sourceSize
-              ) else {
+              )
+        else {
             return transform
         }
 
@@ -261,8 +263,10 @@ public struct CameraPath: Equatable, Sendable {
         )
         let deadZoneWidth = cameraTransform.sourceRect.width * 0.6
         let deadZoneHeight = cameraTransform.sourceRect.height * 0.6
-        let deadZoneX = cameraTransform.sourceRect.originX + (cameraTransform.sourceRect.width - deadZoneWidth) / 2
-        let deadZoneY = cameraTransform.sourceRect.originY + (cameraTransform.sourceRect.height - deadZoneHeight) / 2
+        let deadZoneX =
+            cameraTransform.sourceRect.originX + (cameraTransform.sourceRect.width - deadZoneWidth) / 2
+        let deadZoneY =
+            cameraTransform.sourceRect.originY + (cameraTransform.sourceRect.height - deadZoneHeight) / 2
         var originX = cameraTransform.sourceRect.originX
         var originY = cameraTransform.sourceRect.originY
 
@@ -314,8 +318,10 @@ public struct CameraPath: Equatable, Sendable {
     ) throws -> CameraTransform {
         let progress = criticallyDampedProgress(progress)
         let scale = start.scale + (end.scale - start.scale) * progress
-        let originX = start.sourceRect.originX + (end.sourceRect.originX - start.sourceRect.originX) * progress
-        let originY = start.sourceRect.originY + (end.sourceRect.originY - start.sourceRect.originY) * progress
+        let originX =
+            start.sourceRect.originX + (end.sourceRect.originX - start.sourceRect.originX) * progress
+        let originY =
+            start.sourceRect.originY + (end.sourceRect.originY - start.sourceRect.originY) * progress
 
         return try transform(scale: scale, originX: originX, originY: originY)
     }
@@ -336,7 +342,8 @@ public struct CameraPath: Equatable, Sendable {
         return response / endResponse
     }
 
-    private func transform(scale: Double, centeredAt center: NormalizedPoint) throws -> CameraTransform {
+    private func transform(scale: Double, centeredAt center: NormalizedPoint) throws
+    -> CameraTransform {
         let size = 1 / scale
         return try transform(
             scale: scale,

@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import LuxelCore
 import Testing
+
 @testable import LuxelPresentation
 
 @MainActor
@@ -17,7 +18,9 @@ extension LuxelEditorModelTests {
             exporter: StubMediaExporter(exportedMedia: try exportedMedia(fileURL: exportedURL))
         )
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.startExport()
 
         while model.isExporting {
@@ -36,7 +39,9 @@ extension LuxelEditorModelTests {
     func failedExportCanRetry() async throws {
         let model = makeModel()
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.status = .failed("Export failed")
 
         #expect(model.canRetryExport)
@@ -47,7 +52,8 @@ extension LuxelEditorModelTests {
         let model = makeModel()
 
         model.exportProgress = .completed(format: .mp4)
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/next.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/next.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
 
         #expect(model.exportProgress == nil)
         #expect(!model.showsExportProgressPanel)
@@ -58,7 +64,9 @@ extension LuxelEditorModelTests {
     func openingAlphaSourceUsesAlphaPreviewBackground() async throws {
         let model = makeModel(metadataReader: StubMetadataReader(hasAlpha: true))
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/alpha.mov"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/alpha.mov"), outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
 
         #expect(model.usesAlphaPreviewBackground)
         #expect(model.sourceSummary.contains("alpha"))
@@ -68,7 +76,9 @@ extension LuxelEditorModelTests {
     func openingOpaqueSourceKeepsStandardPreviewBackground() async throws {
         let model = makeModel(metadataReader: StubMetadataReader(hasAlpha: false))
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/opaque.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/opaque.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
 
         #expect(!model.usesAlphaPreviewBackground)
         #expect(!model.sourceSummary.contains("alpha"))
@@ -113,11 +123,14 @@ extension LuxelEditorModelTests {
     func openingNewRecordingResetsEditorUndoHistory() async throws {
         let model = makeModel()
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setTrimStart(3)
         #expect(model.canUndoEditorChange)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/next.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/next.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
 
         #expect(!model.canUndoEditorChange)
         #expect(!model.canRedoEditorChange)
@@ -150,10 +163,11 @@ extension LuxelEditorModelTests {
 
         await model.open(fileURL: olderURL, outputDirectory: directory)
 
-        #expect(model.recordingNavigationURLs == [
-            latestURL.standardizedFileURL,
-            olderURL.standardizedFileURL
-        ])
+        #expect(
+            model.recordingNavigationURLs == [
+                latestURL.standardizedFileURL,
+                olderURL.standardizedFileURL
+            ])
         #expect(model.canNavigateToNewerRecording)
         #expect(!model.canNavigateToOlderRecording)
 
@@ -189,9 +203,10 @@ extension LuxelEditorModelTests {
 
         model.reportImportFailure(StubError.importFailed)
 
-        #expect(reporter.records == [
-            SpyErrorReporter.Record(context: "editor", description: "importFailed")
-        ])
+        #expect(
+            reporter.records == [
+                SpyErrorReporter.Record(context: "editor", description: "importFailed")
+            ])
     }
 
     @Test("save original copies source without exporting")
@@ -210,17 +225,18 @@ extension LuxelEditorModelTests {
         let expectedOutputURL = URL(fileURLWithPath: "/tmp/source Original.mp4")
         #expect(model.status == .saved(expectedOutputURL))
         #expect(fileSystem.createdDirectories.map(\.path) == ["/tmp"])
-        #expect(fileSystem.copiedFiles == [
-            CopiedFile(sourceURL: sourceURL, destinationURL: expectedOutputURL)
-        ])
+        #expect(
+            fileSystem.copiedFiles == [
+                CopiedFile(sourceURL: sourceURL, destinationURL: expectedOutputURL)
+            ])
     }
 
     @Test("copy current frame sends frame to clipboard")
     func copyCurrentFrameSendsFrameToClipboard() async throws {
         let imageData = try frameImageData()
         let frameGrabber = SpyFrameGrabber(imageData: imageData)
-        let destinationClient = SpyScreenshotDestinationClient()
-        let model = makeModel(frameGrabber: frameGrabber, screenshotDestinationClient: destinationClient)
+        let destinationClient = SpyFrameGrabDestinationClient()
+        let model = makeModel(frameGrabber: frameGrabber, frameGrabDestinationClient: destinationClient)
         let sourceURL = URL(fileURLWithPath: "/tmp/source.mp4")
 
         await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
@@ -233,9 +249,10 @@ extension LuxelEditorModelTests {
         }
 
         #expect(destinationClient.copiedImages == [imageData])
-        #expect(frameGrabber.requests == [
-            try FrameGrabRequest(sourceFileURL: sourceURL, time: 0, format: .png)
-        ])
+        #expect(
+            frameGrabber.requests == [
+                try FrameGrabRequest(sourceFileURL: sourceURL, time: 0)
+            ])
         #expect(model.status == .copiedFrame)
         #expect(model.statusMessage == "Copied frame")
     }
@@ -244,13 +261,13 @@ extension LuxelEditorModelTests {
     func saveCurrentFrameAsksForDestinationAndWritesSelectedFile() async throws {
         let imageData = try frameImageData()
         let frameGrabber = SpyFrameGrabber(imageData: imageData)
-        let fileWriter = SpyScreenshotFileWriter()
+        let fileWriter = SpyFrameGrabFileWriter()
         let destinationURL = URL(fileURLWithPath: "/tmp/source frame.png")
         let fileActionClient = StubExportedFileActionClient(saveDestination: destinationURL)
         let model = makeModel(
             fileActionClient: fileActionClient,
             frameGrabber: frameGrabber,
-            screenshotFileWriter: fileWriter
+            frameGrabFileWriter: fileWriter
         )
         let sourceURL = URL(fileURLWithPath: "/tmp/source.mp4")
 
@@ -262,12 +279,14 @@ extension LuxelEditorModelTests {
         }
 
         #expect(fileActionClient.requestedSaveNames == ["source (frame 0.00.0).png"])
-        #expect(fileWriter.writes == [
-            SpyScreenshotFileWriter.Write(imageData: imageData, fileURL: destinationURL)
-        ])
-        #expect(frameGrabber.requests == [
-            try FrameGrabRequest(sourceFileURL: sourceURL, time: 0, format: .png)
-        ])
+        #expect(
+            fileWriter.writes == [
+                SpyFrameGrabFileWriter.Write(imageData: imageData, fileURL: destinationURL)
+            ])
+        #expect(
+            frameGrabber.requests == [
+                try FrameGrabRequest(sourceFileURL: sourceURL, time: 0)
+            ])
         #expect(model.status == .savedFrame(destinationURL))
         #expect(model.statusMessage == "Saved source frame.png")
     }
@@ -342,7 +361,9 @@ extension LuxelEditorModelTests {
         let estimator = SpyExportSizeEstimator()
         let model = makeModel(exportSizeEstimator: estimator)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormat(.hevc)
         model.setTrimStart(2)
         model.setTrimEnd(8)
@@ -376,7 +397,9 @@ extension LuxelEditorModelTests {
         let estimator = SpyExportSizeEstimator()
         let model = makeModel(exportSizeEstimator: estimator)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormat(.gif)
         model.setQuality(.compact)
         model.setGIFLoopModeKind(.bounce)
@@ -399,7 +422,9 @@ extension LuxelEditorModelTests {
         let estimator = SpyExportSizeEstimator()
         let model = makeModel(exportSizeEstimator: estimator)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormat(.apng)
         model.setGIFLoopModeKind(.bounce)
         await model.refreshExportEstimate()
@@ -432,7 +457,9 @@ extension LuxelEditorModelTests {
     func formatSelectionKeepsAtLeastOneFormat() async throws {
         let model = makeModel()
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
 
         model.setFormatSelection(.mp4, isSelected: false)
         #expect(model.selectedFormats == [.mp4])
@@ -497,7 +524,9 @@ extension LuxelEditorModelTests {
         ]
         let model = makeModel(exportMemory: memory)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
 
         #expect(model.sizePreset == .percent50)
         #expect(model.outputWidth == 640)
@@ -539,7 +568,9 @@ extension LuxelEditorModelTests {
         ]
         let model = makeModel(exportMemory: memory)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormat(.hevc)
 
         #expect(model.format == .hevc)
@@ -573,7 +604,9 @@ extension LuxelEditorModelTests {
     func editorUndoRedoRestoresDraftOptions() async throws {
         let model = makeModel()
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         #expect(!model.canUndoEditorChange)
         #expect(!model.canRedoEditorChange)
 
@@ -612,7 +645,9 @@ extension LuxelEditorModelTests {
         let exporter = SpyMediaExporter()
         let model = makeModel(exporter: exporter)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setPlaybackSpeed(2)
 
         #expect(model.playbackSpeed == (try PlaybackSpeed(2)))
@@ -639,7 +674,9 @@ extension LuxelEditorModelTests {
         let exporter = SpyMediaExporter()
         let model = makeModel(exporter: exporter)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setAudioVolume(0.35)
         model.setNormalizeAudio(true)
 
@@ -673,7 +710,8 @@ extension LuxelEditorModelTests {
     func audioMixControlsApplyToPreviewPlayback() async throws {
         let model = makeModel()
 
-        await model.open(fileURL: try fixtureURL("input@2x.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: try fixtureURL("input@2x.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
 
         #expect(!model.player.isMuted)
         #expect(model.player.currentItem?.audioMix == nil)
@@ -711,13 +749,14 @@ extension LuxelEditorModelTests {
 
         #expect(isApproximately(Double(audioVolumeRamp.start), expectedGain))
         #expect(isApproximately(Double(audioVolumeRamp.end), expectedGain))
-        #expect(await analyzer.requests() == [
-            AudioPeakAnalysisRequest(
-                inputFileURL: sourceURL,
-                timeRange: try TimeRange(start: 1, end: 4),
-                audioTracks: [.system]
-            )
-        ])
+        #expect(
+            await analyzer.requests() == [
+                AudioPeakAnalysisRequest(
+                    inputFileURL: sourceURL,
+                    timeRange: try TimeRange(start: 1, end: 4),
+                    audioTracks: [.system]
+                )
+            ])
     }
 
     @Test("GIF options participate in undo and export requests")
@@ -725,7 +764,9 @@ extension LuxelEditorModelTests {
         let exporter = SpyMediaExporter()
         let model = makeModel(exporter: exporter)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormat(.gif)
         model.setGIFLoopModeKind(.bounce)
         model.setGIFDithering(.diffusion)
@@ -762,7 +803,9 @@ extension LuxelEditorModelTests {
     func trimStartChangesCoalesceIntoOneUndoStep() async throws {
         let model = makeModel()
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setTrimStart(1)
         model.setTrimStart(2)
         model.setTrimStart(3)
@@ -787,7 +830,9 @@ extension LuxelEditorModelTests {
             captured.append((format, memory))
         }
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormat(.hevc)
         model.setSizePreset(.percent50)
         model.setFrameRate(24)
@@ -815,7 +860,9 @@ extension LuxelEditorModelTests {
             captured.append((format, memory))
         }
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormat(.gif)
         model.setSizePreset(.percent50)
         model.setFrameRate(12)
@@ -851,7 +898,9 @@ extension LuxelEditorModelTests {
             captured.append((format, memory))
         }
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormat(.apng)
         model.setSizePreset(.percent50)
         model.setFrameRate(12)
@@ -888,7 +937,9 @@ extension LuxelEditorModelTests {
         }
         let batchDirectory = URL(fileURLWithPath: "/tmp/source Export", isDirectory: true)
 
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.setFormatSelection(.hevc, isSelected: true)
         model.setFormatSelection(.gif, isSelected: true)
         model.setGIFLoopModeKind(.bounce)
@@ -910,43 +961,35 @@ extension LuxelEditorModelTests {
         #expect(captured[0].request.gifOptions == nil)
         #expect(captured[1].request.gifOptions == nil)
         #expect(captured[2].request.gifOptions == expectedGIFOptions)
-        #expect(captured.map(\.outputFileURL.path) == [
-            "/tmp/source Export/source Export H264.mp4",
-            "/tmp/source Export/source Export H265.mp4",
-            "/tmp/source Export/source Export GIF.gif"
-        ])
+        #expect(
+            captured.map(\.outputFileURL.path) == [
+                "/tmp/source Export/source Export H264.mp4",
+                "/tmp/source Export/source Export H265.mp4",
+                "/tmp/source Export/source Export GIF.gif"
+            ])
         #expect(fileSystem.createdDirectories == [batchDirectory])
-        #expect(model.status == .exportedBatch([
-            URL(fileURLWithPath: "/tmp/source Export/source Export H264.mp4"),
-            URL(fileURLWithPath: "/tmp/source Export/source Export H265.mp4"),
-            URL(fileURLWithPath: "/tmp/source Export/source Export GIF.gif")
-        ]))
+        #expect(
+            model.status
+                == .exportedBatch([
+                    URL(fileURLWithPath: "/tmp/source Export/source Export H264.mp4"),
+                    URL(fileURLWithPath: "/tmp/source Export/source Export H265.mp4"),
+                    URL(fileURLWithPath: "/tmp/source Export/source Export GIF.gif")
+                ]))
         #expect(model.exportPanelMessage == "3 files exported")
         #expect(model.exportProgressValue == 1)
         #expect(!model.canRetryExport)
         #expect(model.exportedOpenURL == batchDirectory)
         #expect(model.exportJobs.map(\.format) == [.mp4, .hevc, .gif])
         #expect(model.exportJobs.map(\.statusSummary) == ["Complete", "Complete", "Complete"])
-        #expect(model.exportJobs.compactMap(\.fileURL).map(\.path) == [
-            "/tmp/source Export/source Export H264.mp4",
-            "/tmp/source Export/source Export H265.mp4",
-            "/tmp/source Export/source Export GIF.gif"
-        ])
+        #expect(
+            model.exportJobs.compactMap(\.fileURL).map(\.path) == [
+                "/tmp/source Export/source Export H264.mp4",
+                "/tmp/source Export/source Export H265.mp4",
+                "/tmp/source Export/source Export GIF.gif"
+            ])
         model.openExportedFile()
         #expect(fileActionClient.openedURLs == [batchDirectory])
         #expect(rememberedFormats == [.mp4, .hevc, .gif])
-    }
-
-    @Test("unsupported estimate clears stale value")
-    func unsupportedEstimateClearsStaleValue() async throws {
-        let model = makeModel(exportSizeEstimator: StubFailingExportSizeEstimator())
-
-        model.exportEstimate = try ExportEstimate(bytes: 42, confidence: .modeled)
-        await model.open(fileURL: URL(fileURLWithPath: "/tmp/source.mp4"), outputDirectory: URL(fileURLWithPath: "/tmp"))
-        await model.refreshExportEstimate()
-
-        #expect(model.exportEstimate == nil)
-        #expect(model.exportEstimateSummary == nil)
     }
 
 }

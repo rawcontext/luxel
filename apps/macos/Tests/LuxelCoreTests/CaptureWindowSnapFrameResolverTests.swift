@@ -13,9 +13,10 @@ struct CaptureWindowSnapFrameResolverTests {
 
         let frames = CaptureWindowSnapFrameResolver.windowFrames(on: display, from: [window])
 
-        #expect(frames == [
-            try CaptureRect(x: 100, y: 100, width: 640, height: 360)
-        ])
+        #expect(
+            frames == [
+                try CaptureRect(x: 100, y: 100, width: 640, height: 360)
+            ])
     }
 
     @Test("ignores display targets windows without frames and windows outside display")

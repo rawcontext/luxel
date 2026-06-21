@@ -176,18 +176,19 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
                 didBuildCameraPath = true
             }
 
-            frames.append(try AnimatedFrameRenderer().renderGIFBitmap(
-                frame,
-                outputPixelSize: outputPixelSize,
-                shouldCrop: shouldCrop,
-                sourceCropRect: request.cropRect,
-                backgroundMatte: backgroundMatte,
-                cameraTransform: try cameraTransform(
-                    for: time,
-                    request: request,
-                    cameraPath: cameraPath
-                )
-            ))
+            frames.append(
+                try AnimatedFrameRenderer().renderGIFBitmap(
+                    frame,
+                    outputPixelSize: outputPixelSize,
+                    shouldCrop: shouldCrop,
+                    sourceCropRect: request.cropRect,
+                    backgroundMatte: backgroundMatte,
+                    cameraTransform: try cameraTransform(
+                        for: time,
+                        request: request,
+                        cameraPath: cameraPath
+                    )
+                ))
             await progress?(Double(frameIndex + 1) / Double(max(1, schedule.frameTimes.count)))
         }
 
@@ -259,12 +260,14 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
             throw ImageIOAnimatedMediaExporterError.unsupportedFormat(format)
         }
 
-        guard let destination = CGImageDestinationCreateWithURL(
-            outputFileURL as CFURL,
-            typeIdentifier as CFString,
-            frameCount,
-            nil
-        ) else {
+        guard
+            let destination = CGImageDestinationCreateWithURL(
+                outputFileURL as CFURL,
+                typeIdentifier as CFString,
+                frameCount,
+                nil
+            )
+        else {
             throw ImageIOAnimatedMediaExporterError.cannotCreateDestination
         }
 

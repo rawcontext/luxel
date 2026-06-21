@@ -48,7 +48,8 @@ extension LuxelMenuModel {
         audioLevelSample = .silent
 
         guard let activeRecording = recordingState.activeRecording,
-              activeRecording.options.audio.capturesAudio else {
+              activeRecording.options.audio.capturesAudio
+        else {
             return
         }
 

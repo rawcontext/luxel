@@ -1,6 +1,7 @@
 import Foundation
 
-public typealias SpeechTranscriptionProgressHandler = @Sendable (SpeechTranscriptionProgress) -> Void
+public typealias SpeechTranscriptionProgressHandler =
+    @Sendable (SpeechTranscriptionProgress) -> Void
 
 public protocol SpeechTranscriber: Sendable {
     func transcribe(

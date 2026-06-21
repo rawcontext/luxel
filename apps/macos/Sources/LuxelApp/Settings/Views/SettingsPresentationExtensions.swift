@@ -1,45 +1,6 @@
 import LuxelCore
 import SwiftUI
 
-extension ScreenshotFormat {
-    var settingsLabel: String {
-        switch self {
-        case .png:
-            "PNG"
-        case .jpeg:
-            "JPEG"
-        case .heic:
-            "HEIC"
-        }
-    }
-}
-
-extension ScreenshotDestination {
-    var settingsLabel: String {
-        switch self {
-        case .clipboard:
-            "Copy to Clipboard"
-        case .file:
-            "Save File"
-        case .preview:
-            "Open Preview"
-        }
-    }
-}
-
-extension CaptureBackdrop {
-    var settingsLabel: String {
-        switch self {
-        case .opaque:
-            "Opaque"
-        case .transparent:
-            "Transparent"
-        case .transparentWithShadow:
-            "Transparent + Shadow"
-        }
-    }
-}
-
 extension CommandLineToolInstallStatus {
     var message: String {
         switch self {

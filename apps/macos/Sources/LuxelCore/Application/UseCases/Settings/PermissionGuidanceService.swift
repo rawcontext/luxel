@@ -26,7 +26,8 @@ public struct PermissionGuidance: Codable, Equatable, Sendable {
 public struct PermissionGuidanceService: Sendable {
     public init() {}
 
-    public func guidance(for permission: SystemPermission, status: PermissionStatus) -> PermissionGuidance {
+    public func guidance(for permission: SystemPermission, status: PermissionStatus)
+    -> PermissionGuidance {
         switch permission {
         case .screenRecording:
             screenRecordingGuidance(status: status)
@@ -101,7 +102,8 @@ public struct PermissionGuidanceService: Sendable {
                 actionTitle: presentation.actionTitle,
                 action: .enableSource
             )
-        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch, .pausedByMacOS, .blocked:
+        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch,
+             .pausedByMacOS, .blocked:
             switch status {
             case .notDetermined:
                 PermissionGuidance(

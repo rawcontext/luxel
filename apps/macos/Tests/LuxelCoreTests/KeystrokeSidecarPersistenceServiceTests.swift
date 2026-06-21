@@ -23,10 +23,11 @@ struct KeystrokeSidecarPersistenceServiceTests {
         ]
 
         #expect(updatedBundle.manifest.sidecars == expectedSidecars)
-        #expect(fileSystem.writtenData.map(\.url) == [
-            rootURL.appendingPathComponent("keystrokes.json"),
-            rootURL.appendingPathComponent("bundle.json")
-        ])
+        #expect(
+            fileSystem.writtenData.map(\.url) == [
+                rootURL.appendingPathComponent("keystrokes.json"),
+                rootURL.appendingPathComponent("bundle.json")
+            ])
 
         let keystrokeDocument = try JSONDecoder().decode(
             KeystrokeSidecarDocument.self,
@@ -54,9 +55,10 @@ struct KeystrokeSidecarPersistenceServiceTests {
         let updatedBundle = try service.save(sampleTimeline(), in: bundle)
 
         #expect(updatedBundle == bundle)
-        #expect(fileSystem.writtenData.map(\.url) == [
-            rootURL.appendingPathComponent("keyboard-events.json")
-        ])
+        #expect(
+            fileSystem.writtenData.map(\.url) == [
+                rootURL.appendingPathComponent("keyboard-events.json")
+            ])
     }
 
     @Test("load returns nil without keystroke sidecar")
@@ -92,16 +94,17 @@ struct KeystrokeSidecarPersistenceServiceTests {
 
     @Test("sidecar document rejects unsupported schema versions")
     func sidecarDocumentRejectsUnsupportedSchemaVersions() throws {
-        let data = Data("""
-        {
-          "schemaVersion": 2,
-          "timeline": {
-            "schemaVersion": 1,
-            "events": [],
-            "pauses": []
-          }
+        let data = Data(
+            """
+      {
+        "schemaVersion": 2,
+        "timeline": {
+          "schemaVersion": 1,
+          "events": [],
+          "pauses": []
         }
-        """.utf8)
+      }
+      """.utf8)
 
         #expect(throws: KeystrokeModelError.unsupportedSidecarSchemaVersion) {
             _ = try JSONDecoder().decode(KeystrokeSidecarDocument.self, from: data)

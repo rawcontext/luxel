@@ -37,11 +37,12 @@ public struct AudioMixResolutionService: Sendable {
             return mixPlan.resolvedGains()
         }
 
-        let measuredPeaks = try await analyzer.measurePeaks(AudioPeakAnalysisRequest(
-            inputFileURL: request.inputFileURL,
-            timeRange: request.timeRange,
-            audioTracks: audioTracksToAnalyze
-        ))
+        let measuredPeaks = try await analyzer.measurePeaks(
+            AudioPeakAnalysisRequest(
+                inputFileURL: request.inputFileURL,
+                timeRange: request.timeRange,
+                audioTracks: audioTracksToAnalyze
+            ))
         return mixPlan.resolvedGains(measuredPeaks: measuredPeaks)
     }
 

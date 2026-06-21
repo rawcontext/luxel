@@ -233,22 +233,23 @@ extension ZoomPanModelTests {
 
         let mapped = try mapper.map(blocks)
 
-        #expect(mapped == [
-            try zoomBlock(
-                start: 0,
-                end: 0.25,
-                rect: firstRect,
-                zoom: 1.4,
-                transitionOverride: 0.3
-            ),
-            try zoomBlock(
-                start: 0.5,
-                end: 2,
-                rect: secondRect,
-                zoom: 2.2,
-                transitionOverride: 0.5
-            )
-        ])
+        #expect(
+            mapped == [
+                try zoomBlock(
+                    start: 0,
+                    end: 0.25,
+                    rect: firstRect,
+                    zoom: 1.4,
+                    transitionOverride: 0.3
+                ),
+                try zoomBlock(
+                    start: 0.5,
+                    end: 2,
+                    rect: secondRect,
+                    zoom: 2.2,
+                    transitionOverride: 0.5
+                )
+            ])
     }
 
     @Test("proposal engine clusters nearby clicks into zoom blocks")
@@ -483,7 +484,8 @@ extension ZoomPanModelTests {
         )
     }
 
-    private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws -> CursorSample {
+    private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws
+    -> CursorSample {
         try CursorSample(
             time: time,
             position: CursorPoint(x: xCoordinate, y: yCoordinate),

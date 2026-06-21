@@ -9,14 +9,15 @@ extension LuxelMenuModel {
     }
 
     func presentPermissionPrompt(for permission: SystemPermission) {
-        let source = switch permission {
-        case .screenRecording:
-            CapturePermissionSource.screenPixels
-        case .microphone:
-            CapturePermissionSource.microphone
-        case .camera:
-            CapturePermissionSource.camera
-        }
+        let source =
+            switch permission {
+            case .screenRecording:
+                CapturePermissionSource.screenPixels
+            case .microphone:
+                CapturePermissionSource.microphone
+            case .camera:
+                CapturePermissionSource.camera
+            }
 
         presentPermissionPrompt(forSource: source)
     }

@@ -23,10 +23,11 @@ struct CaptionSidecarPersistenceServiceTests {
         ]
 
         #expect(updatedBundle.manifest.sidecars == expectedSidecars)
-        #expect(fileSystem.writtenData.map(\.url) == [
-            rootURL.appendingPathComponent("captions.json"),
-            rootURL.appendingPathComponent("bundle.json")
-        ])
+        #expect(
+            fileSystem.writtenData.map(\.url) == [
+                rootURL.appendingPathComponent("captions.json"),
+                rootURL.appendingPathComponent("bundle.json")
+            ])
 
         let captionDocument = try JSONDecoder().decode(
             CaptionSidecarDocument.self,
@@ -54,9 +55,10 @@ struct CaptionSidecarPersistenceServiceTests {
         let updatedBundle = try service.save(sampleTrack(), in: bundle)
 
         #expect(updatedBundle == bundle)
-        #expect(fileSystem.writtenData.map(\.url) == [
-            rootURL.appendingPathComponent("reviewed-captions.json")
-        ])
+        #expect(
+            fileSystem.writtenData.map(\.url) == [
+                rootURL.appendingPathComponent("reviewed-captions.json")
+            ])
     }
 
     @Test("load returns nil without captions sidecar")
@@ -92,15 +94,16 @@ struct CaptionSidecarPersistenceServiceTests {
 
     @Test("sidecar document rejects unsupported schema versions")
     func sidecarDocumentRejectsUnsupportedSchemaVersions() throws {
-        let data = Data("""
-        {
-          "schemaVersion": 2,
-          "track": {
-            "cues": [],
-            "language": "en"
-          }
+        let data = Data(
+            """
+      {
+        "schemaVersion": 2,
+        "track": {
+          "cues": [],
+          "language": "en"
         }
-        """.utf8)
+      }
+      """.utf8)
 
         #expect(throws: CaptionModelError.unsupportedSidecarSchemaVersion) {
             _ = try JSONDecoder().decode(CaptionSidecarDocument.self, from: data)

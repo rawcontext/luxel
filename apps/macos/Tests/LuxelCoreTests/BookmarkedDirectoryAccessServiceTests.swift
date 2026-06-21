@@ -21,11 +21,13 @@ struct BookmarkedDirectoryAccessServiceTests {
 
         let resolved = service.resolve(directory)
 
-        #expect(resolved == BookmarkedDirectory(
-            url: URL(fileURLWithPath: "/tmp/resolved"),
-            bookmarkData: Data([0x02]),
-            accessState: .resolved
-        ))
+        #expect(
+            resolved
+                == BookmarkedDirectory(
+                    url: URL(fileURLWithPath: "/tmp/resolved"),
+                    bookmarkData: Data([0x02]),
+                    accessState: .resolved
+                ))
     }
 
     @Test("resolve marks stale bookmarks stale")
@@ -59,11 +61,13 @@ struct BookmarkedDirectoryAccessServiceTests {
 
         let resolved = service.resolve(directory)
 
-        #expect(resolved == BookmarkedDirectory(
-            url: directory.url,
-            bookmarkData: directory.bookmarkData,
-            accessState: .revoked
-        ))
+        #expect(
+            resolved
+                == BookmarkedDirectory(
+                    url: directory.url,
+                    bookmarkData: directory.bookmarkData,
+                    accessState: .revoked
+                ))
     }
 
     @Test("with access balances successful security scope")
@@ -188,15 +192,17 @@ private struct StubBookmarkedDirectoryResolver: BookmarkedDirectoryResolver {
             throw error
         }
 
-        return resolution ?? BookmarkedDirectoryResolution(
-            url: directory.url,
-            bookmarkData: directory.bookmarkData,
-            isStale: false
-        )
+        return resolution
+            ?? BookmarkedDirectoryResolution(
+                url: directory.url,
+                bookmarkData: directory.bookmarkData,
+                isStale: false
+            )
     }
 }
 
-private final class SpySecurityScopedResourceAccess: SecurityScopedResourceAccess, @unchecked Sendable {
+private final class SpySecurityScopedResourceAccess: SecurityScopedResourceAccess,
+                                                     @unchecked Sendable {
     private let startsSuccessfully: Bool
     private(set) var startedURLs: [URL] = []
     private(set) var stoppedURLs: [URL] = []

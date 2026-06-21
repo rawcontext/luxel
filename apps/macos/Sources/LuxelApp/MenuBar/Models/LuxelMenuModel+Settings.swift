@@ -23,7 +23,8 @@ extension LuxelMenuModel {
     }
 
     func configureEditor(_ editorModel: LuxelEditorModel) {
-        editorModel.configureExportMemory(settings.perFormatExportMemory) { [weak self] format, memory in
+        editorModel.configureExportMemory(settings.perFormatExportMemory) {
+            [weak self] format, memory in
             self?.rememberExportMemory(memory, for: format)
         }
         editorModel.configureDiscard(
@@ -40,9 +41,11 @@ extension LuxelMenuModel {
 
     func chooseRecordingsDirectory() {
         do {
-            guard let directory = try bookmarkedDirectoryPicker.chooseDirectory(
-                currentDirectory: settings.recordingsDirectory
-            ) else {
+            guard
+                let directory = try bookmarkedDirectoryPicker.chooseDirectory(
+                    currentDirectory: settings.recordingsDirectory
+                )
+            else {
                 return
             }
 

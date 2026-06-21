@@ -14,7 +14,6 @@ struct CapturePermissionPresentationTests {
 
         #expect(!state.screenRecordingAvailable)
         #expect(!state.areaRecordingAvailable)
-        #expect(!state.screenshotAvailable)
         #expect(state.audioOnlyRecordingAvailable)
         #expect(state.microphoneTrackAvailable)
     }

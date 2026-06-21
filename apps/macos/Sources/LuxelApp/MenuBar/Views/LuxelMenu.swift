@@ -1,5 +1,5 @@
-import AppKit
 import AVFoundation
+import AppKit
 import LuxelCore
 import LuxelPresentation
 import SwiftUI
@@ -29,17 +29,19 @@ struct LuxelMenu: View {
     let presentPermissionPrompt: @MainActor (CapturePermissionSource) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            LuxelCaptureTargetPicker(model: model)
-            captureActionSelector
-            LuxelRecordingStatusMessages(model: model)
-            LuxelReplayBufferControls(model: model)
-            latestRecordingCard
-            footerControls
+        GlassEffectContainer(spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
+                LuxelCaptureTargetPicker(model: model)
+                captureActionSelector
+                LuxelRecordingStatusMessages(model: model)
+                LuxelReplayBufferControls(model: model)
+                latestRecordingCard
+                footerControls
+            }
+            .frame(width: Self.contentWidth, alignment: .leading)
+            .padding(Self.contentPadding)
+            .padding(Self.outerPadding)
         }
-        .frame(width: Self.contentWidth, alignment: .leading)
-        .padding(Self.contentPadding)
-        .padding(Self.outerPadding)
         .fixedSize(horizontal: false, vertical: true)
         .background {
             LuxelShortcutInstaller(
@@ -142,7 +144,7 @@ struct LuxelMenu: View {
     }
 }
 
-private extension LuxelMenu {
+extension LuxelMenu {
     private var captureActionSelector: some View {
         HStack(spacing: 6) {
             captureActionButton(.screen)
@@ -167,7 +169,8 @@ private extension LuxelMenu {
         if canPerformCaptureAction(action) {
             captureActionButtonContent(action)
                 .foregroundStyle(.white)
-                .luxelMenuControlBackground(cornerRadius: Self.captureActionButtonCornerRadius, isActive: true)
+                .luxelMenuControlBackground(
+                    cornerRadius: Self.captureActionButtonCornerRadius, isActive: true)
         } else {
             captureActionButtonContent(action)
                 .foregroundStyle(.secondary)
@@ -185,7 +188,8 @@ private extension LuxelMenu {
                 .font(.caption.weight(.semibold))
         }
         .frame(maxWidth: .infinity, minHeight: Self.captureActionButtonHeight)
-        .contentShape(RoundedRectangle(cornerRadius: Self.captureActionButtonCornerRadius, style: .continuous))
+        .contentShape(
+            RoundedRectangle(cornerRadius: Self.captureActionButtonCornerRadius, style: .continuous))
     }
 
     @ViewBuilder
@@ -276,7 +280,7 @@ private extension LuxelMenu {
             }
             .buttonStyle(.plain)
             .disabled(model.recentRecordings.isEmpty)
-            .help("Show recent recordings and screenshots")
+            .help("Show recent recordings")
 
             Rectangle()
                 .fill(.white.opacity(0.16))
@@ -295,7 +299,9 @@ private extension LuxelMenu {
             .help("Open \(model.recordingsDirectorySummary)")
             .accessibilityLabel("Open Luxel folder")
         }
-        .frame(maxWidth: .infinity, minHeight: Self.footerButtonHeight, maxHeight: Self.footerButtonHeight)
+        .frame(
+            maxWidth: .infinity, minHeight: Self.footerButtonHeight, maxHeight: Self.footerButtonHeight
+        )
         .luxelMenuControlBackground(cornerRadius: Self.footerButtonCornerRadius)
         .clipShape(RoundedRectangle(cornerRadius: Self.footerButtonCornerRadius, style: .continuous))
     }
@@ -351,9 +357,10 @@ private extension LuxelMenu {
             .font(.callout.weight(.semibold))
             .foregroundStyle(presentation.isReady ? .black : .white)
             .frame(width: Self.footerAudioButtonWidth, height: Self.footerButtonHeight)
-            .background(
-                presentation.isReady ? .white.opacity(0.92) : .white.opacity(0.10),
-                in: RoundedRectangle(cornerRadius: Self.footerButtonCornerRadius, style: .continuous)
+            .luxelMenuControlBackground(
+                cornerRadius: Self.footerButtonCornerRadius,
+                idleOpacity: presentation.isReady ? 0.92 : 0.10,
+                hoverOpacity: presentation.isReady ? 0.96 : 0.16
             )
     }
 
@@ -383,15 +390,6 @@ private extension LuxelMenu {
             Label("Quick Record", systemImage: "bolt.circle")
         }
         .disabled(!model.canUseQuickRecordButton)
-
-        Button {
-            startAfterDismissingMenu {
-                await model.captureScreenshotFromSelectedTarget()
-            }
-        } label: {
-            Label("Screenshot", systemImage: "camera")
-        }
-        .disabled(!model.canCaptureScreenshot)
 
         Menu {
             Button {
@@ -549,7 +547,7 @@ private extension LuxelMenu {
             recordAudio: model.captureCapabilities.microphoneTrackAvailable,
             loupeAlwaysOn: model.settings.loupeAlwaysOn,
             dimOtherDisplays: model.settings.dimOtherDisplays,
-            showsNotificationReminder: model.settings.notificationReminder,
+            showsNotificationReminder: false,
             onCountdownDurationChange: { duration in
                 model.settings.defaultCountdown = duration
                 model.saveSettings()
@@ -579,11 +577,6 @@ private extension LuxelMenu {
             },
             onNotificationReminderDismiss: {
                 model.dismissNotificationReminder()
-            },
-            onCaptureScreenshot: { draft in
-                Task {
-                    await model.captureScreenshot(from: draft)
-                }
             },
             onQuickSelect: { draft, presetID in
                 Task {
@@ -629,11 +622,7 @@ private extension LuxelMenu {
     }
 
     private func openRecentRecording(_ recording: PastRecording) {
-        if recording.kind == .recording {
-            openRecording(recording.primaryMediaURL)
-        } else {
-            revealRecentRecording(recording)
-        }
+        openRecording(recording.primaryMediaURL)
     }
 
     private func revealRecentRecording(_ recording: PastRecording) {
@@ -642,25 +631,15 @@ private extension LuxelMenu {
     }
 
     private func recentRecordingSystemImage(for recording: PastRecording) -> String {
-        switch recording.kind {
-        case .recording:
-            recording.options.isAudioOnly ? "waveform" : "film"
-        case .screenshot:
-            "photo"
-        }
+        recording.options.isAudioOnly ? "waveform" : "film"
     }
 
     private func recentRecordingBadgeSystemImage(for recording: PastRecording) -> String {
-        switch recording.kind {
-        case .recording:
-            recording.options.isAudioOnly ? "waveform" : "film"
-        case .screenshot:
-            "camera"
-        }
+        recording.options.isAudioOnly ? "waveform" : "film"
     }
 
     private func recentRecordingOpenTitle(for recording: PastRecording) -> String {
-        recording.kind == .recording ? "Open in editor" : "Show in Finder"
+        "Open in editor"
     }
 
     private func recentRecordingTitle(for recording: PastRecording) -> String {
@@ -701,7 +680,8 @@ private extension LuxelMenu {
         case .offByUser:
             model.settings.recordSystemAudio = true
             model.saveSettings()
-        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch, .pausedByMacOS, .blocked:
+        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch,
+             .pausedByMacOS, .blocked:
             presentPermissionPrompt(.systemAudio)
         }
     }
@@ -714,7 +694,8 @@ private extension LuxelMenu {
         case .offByUser:
             model.settings.recordAudio = true
             model.saveSettings()
-        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch, .pausedByMacOS, .blocked:
+        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch,
+             .pausedByMacOS, .blocked:
             presentPermissionPrompt(.microphone)
         }
     }
@@ -727,7 +708,8 @@ private extension LuxelMenu {
             Task {
                 await model.enableDefaultCameraSource()
             }
-        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch, .pausedByMacOS, .blocked:
+        case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch,
+             .pausedByMacOS, .blocked:
             presentPermissionPrompt(.camera)
         }
     }
@@ -782,34 +764,20 @@ private struct RecentRecordingThumbnail: View {
     private var thumbnailRequest: RecentRecordingThumbnailRequest {
         RecentRecordingThumbnailRequest(
             fileURL: thumbnailURL,
-            isAudioOnly: recording.kind == .recording && recording.options.isAudioOnly
+            isAudioOnly: recording.options.isAudioOnly
         )
     }
 
     private var thumbnailURL: URL {
-        if recording.kind == .recording {
-            return recording.latestExport?.fileURL ?? recording.primaryMediaURL
-        }
-
-        return recording.fileURL
+        recording.latestExport?.fileURL ?? recording.primaryMediaURL
     }
 
     private var placeholderSystemImage: String {
-        switch recording.kind {
-        case .recording:
-            recording.options.isAudioOnly ? "waveform" : "film"
-        case .screenshot:
-            "photo"
-        }
+        recording.options.isAudioOnly ? "waveform" : "film"
     }
 
     private var badgeSystemImage: String {
-        switch recording.kind {
-        case .recording:
-            recording.options.isAudioOnly ? "waveform" : "film"
-        case .screenshot:
-            "camera"
-        }
+        recording.options.isAudioOnly ? "waveform" : "film"
     }
 
     @MainActor
@@ -864,11 +832,6 @@ private struct RecentRecordingMetadataLabel: View {
         Text(metadataText)
             .task(id: mediaURL) {
                 durationText = nil
-
-                guard recording.kind == .recording else {
-                    return
-                }
-
                 durationText = await Self.durationText(for: mediaURL)
             }
     }
@@ -894,11 +857,7 @@ private struct RecentRecordingMetadataLabel: View {
     }
 
     private var mediaURL: URL {
-        if recording.kind == .recording {
-            return recording.latestExport?.fileURL ?? recording.primaryMediaURL
-        }
-
-        return recording.fileURL
+        recording.latestExport?.fileURL ?? recording.primaryMediaURL
     }
 
     private var fileSizeText: String? {
@@ -920,7 +879,7 @@ private struct RecentRecordingMetadataLabel: View {
 
         let fileExtension = mediaURL.pathExtension
         guard !fileExtension.isEmpty else {
-            return recording.kind == .screenshot ? "Screenshot" : nil
+            return nil
         }
 
         return fileExtension.uppercased()

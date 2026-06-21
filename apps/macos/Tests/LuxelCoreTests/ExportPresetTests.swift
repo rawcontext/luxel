@@ -61,7 +61,8 @@ struct ExportPresetTests {
             destination: .recordingsDirectory,
             postAction: .none
         )
-        let request = try preset.resolvedRequest(source: makeSource(width: 640, height: 360, frameRate: 12))
+        let request = try preset.resolvedRequest(
+            source: makeSource(width: 640, height: 360, frameRate: 12))
 
         #expect(request.frameRate == (try FrameRate(12)))
     }

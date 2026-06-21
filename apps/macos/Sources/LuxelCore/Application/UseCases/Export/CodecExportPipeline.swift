@@ -30,11 +30,12 @@ public struct CodecExportPipeline: Sendable {
             let sourceDescription = try await mediaSource.prepare(request)
             try Task.checkCancellation()
 
-            try await videoEncoder.prepare(CodecVideoEncoderConfiguration(
-                pixelSize: outputPixelSize,
-                frameRate: request.frameRate,
-                quality: request.resolvedQuality
-            ))
+            try await videoEncoder.prepare(
+                CodecVideoEncoderConfiguration(
+                    pixelSize: outputPixelSize,
+                    frameRate: request.frameRate,
+                    quality: request.resolvedQuality
+                ))
 
             let includesAudio = !request.outputShouldMute && sourceDescription.hasAudio
             let audioEncoder = try await prepareAudioEncoder(
@@ -44,16 +45,18 @@ public struct CodecExportPipeline: Sendable {
             )
             let tracks: [CodecTrack] = includesAudio ? [.video, .audio] : [.video]
 
-            try await muxer.begin(try CodecMuxerConfiguration(
-                outputFileURL: outputFileURL,
-                format: request.format,
-                tracks: tracks,
-                pixelSize: outputPixelSize
-            ))
+            try await muxer.begin(
+                try CodecMuxerConfiguration(
+                    outputFileURL: outputFileURL,
+                    format: request.format,
+                    tracks: tracks,
+                    pixelSize: outputPixelSize
+                ))
             await progress?(0)
 
             let progressTracker = CodecExportProgressTracker(
-                totalUnits: sourceDescription.videoFrameCount + (includesAudio ? sourceDescription.audioChunkCount : 0),
+                totalUnits: sourceDescription.videoFrameCount
+                    + (includesAudio ? sourceDescription.audioChunkCount : 0),
                 progress: progress
             )
 
@@ -139,9 +142,10 @@ public struct CodecExportPipeline: Sendable {
             PendingEncodedPacket(packet: $0, track: .video)
         }
         if includesAudio, let audioEncoder {
-            finalPackets.append(contentsOf: try await audioEncoder.finish().map {
-                PendingEncodedPacket(packet: $0, track: .audio)
-            })
+            finalPackets.append(
+                contentsOf: try await audioEncoder.finish().map {
+                    PendingEncodedPacket(packet: $0, track: .audio)
+                })
         }
 
         for packet in finalPackets.sortedByPresentationTime() {
@@ -178,8 +182,8 @@ private struct PendingEncodedPacket {
     }
 }
 
-private extension [PendingEncodedPacket] {
-    func sortedByPresentationTime() -> [PendingEncodedPacket] {
+extension [PendingEncodedPacket] {
+    fileprivate func sortedByPresentationTime() -> [PendingEncodedPacket] {
         sorted { lhs, rhs in
             if lhs.packet.presentationTime == rhs.packet.presentationTime {
                 return lhs.trackOrder < rhs.trackOrder

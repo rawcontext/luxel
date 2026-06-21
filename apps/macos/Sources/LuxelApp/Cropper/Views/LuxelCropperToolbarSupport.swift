@@ -4,12 +4,12 @@ import SwiftUI
 
 extension LuxelCropperView {
     func commitPrimarySelection() {
-        let quickPresetID: UUID? = if model.mode == .video,
-                                      NSEvent.modifierFlags.contains(.option) {
-            quickRecordingConfiguration.activePresetID
-        } else {
-            nil
-        }
+        let quickPresetID: UUID? =
+            if NSEvent.modifierFlags.contains(.option) {
+                quickRecordingConfiguration.activePresetID
+            } else {
+                nil
+            }
 
         commitSelection(quickPresetID: quickPresetID)
     }
@@ -20,15 +20,10 @@ extension LuxelCropperView {
                 return
             }
 
-            switch model.mode {
-            case .video:
-                if let quickPresetID {
-                    onQuickSelect(draft, quickPresetID)
-                } else {
-                    onSelect(draft)
-                }
-            case .photo:
-                onCaptureScreenshot(draft)
+            if let quickPresetID {
+                onQuickSelect(draft, quickPresetID)
+            } else {
+                onSelect(draft)
             }
         } catch {
             NSSound.beep()
@@ -101,14 +96,6 @@ extension LuxelCropperView {
         }
     }
 
-    var cropperMode: Binding<LuxelCropperMode> {
-        Binding {
-            model.mode
-        } set: { mode in
-            model.setMode(mode)
-        }
-    }
-
     var recordAudio: Binding<Bool> {
         Binding {
             model.recordsAudio
@@ -159,7 +146,7 @@ extension LuxelCropperView {
 
     var selectionSummaryHelp: String {
         guard let selection = model.selection else {
-            return "Drag to select the area to record or capture."
+            return "Drag to select the area to record."
         }
 
         return "Selected area: \(selection.width) by \(selection.height) pixels."
@@ -269,7 +256,8 @@ extension LuxelCropperView {
     }
 
     func openFocusSettings() {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.Focus-Settings.extension") else {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.Focus-Settings.extension")
+        else {
             return
         }
 

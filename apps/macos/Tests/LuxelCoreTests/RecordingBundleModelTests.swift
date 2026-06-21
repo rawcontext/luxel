@@ -75,10 +75,11 @@ struct RecordingBundleModelTests {
         #expect(bundle.sidecarURL(for: .camera) == rootURL.appendingPathComponent("camera.mov"))
         #expect(bundle.sidecarURL(for: .captions) == rootURL.appendingPathComponent("captions.json"))
         #expect(bundle.sidecarURL(for: .cursor) == nil)
-        #expect(bundle.sidecars == [
-            .camera: rootURL.appendingPathComponent("camera.mov"),
-            .captions: rootURL.appendingPathComponent("captions.json")
-        ])
+        #expect(
+            bundle.sidecars == [
+                .camera: rootURL.appendingPathComponent("camera.mov"),
+                .captions: rootURL.appendingPathComponent("captions.json")
+            ])
     }
 
     @Test("manifest round trips through JSON")

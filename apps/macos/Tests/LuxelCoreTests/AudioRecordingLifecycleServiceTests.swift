@@ -68,9 +68,10 @@ struct AudioRecordingLifecycleServiceTests {
         #expect(recorder.startedRequests.map(\.outputFileURL) == [stagingURL])
         #expect(recording.fileURL == finalURL)
         #expect(store.recordings == [recording])
-        #expect(fileSystem.movedFiles == [
-            AudioRecordingOutputMove(sourceURL: stagingURL, destinationURL: finalURL)
-        ])
+        #expect(
+            fileSystem.movedFiles == [
+                AudioRecordingOutputMove(sourceURL: stagingURL, destinationURL: finalURL)
+            ])
     }
 
     @Test("stop clears active audio recording when output finalization has no file")
@@ -95,9 +96,11 @@ struct AudioRecordingLifecycleServiceTests {
             )
         )
 
-        await #expect(throws: RecordingLifecycleError.outputFinalizationFailed(
-            "No recording output was produced. Try recording again."
-        )) {
+        await #expect(
+            throws: RecordingLifecycleError.outputFinalizationFailed(
+                "No recording output was produced. Try recording again."
+            )
+        ) {
             try await service.stopRecording()
         }
         #expect(store.activeRecording == nil)
@@ -229,10 +232,11 @@ private final class AudioRecordingOutputFileSystem: FileSystem, @unchecked Senda
     func moveFile(from sourceURL: URL, to destinationURL: URL) throws {
         existingFiles.remove(sourceURL)
         existingFiles.insert(destinationURL)
-        movedFiles.append(AudioRecordingOutputMove(
-            sourceURL: sourceURL,
-            destinationURL: destinationURL
-        ))
+        movedFiles.append(
+            AudioRecordingOutputMove(
+                sourceURL: sourceURL,
+                destinationURL: destinationURL
+            ))
     }
 
     func writeData(_ data: Data, to url: URL) throws {}

@@ -22,7 +22,9 @@ extension LuxelMenuModel {
         )
     }
 
-    func refreshNotchSurface(reduceMotion: Bool = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion) async {
+    func refreshNotchSurface(
+        reduceMotion: Bool = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    ) async {
         let now = Date()
 
         await notchCoordinator.present(
@@ -38,16 +40,14 @@ extension LuxelMenuModel {
     func watchNotchInteractions(
         openEditor: @escaping @MainActor (URL) -> Void,
         openSettings: @escaping @MainActor () -> Void,
-        showAreaCapturePicker: @escaping @MainActor () -> Void,
-        showScreenshotCapturePicker: @escaping @MainActor () -> Void
+        showAreaCapturePicker: @escaping @MainActor () -> Void
     ) async {
         for await interaction in notchCoordinator.interactions {
             await handleNotchInteraction(
                 interaction,
                 openEditor: openEditor,
                 openSettings: openSettings,
-                showAreaCapturePicker: showAreaCapturePicker,
-                showScreenshotCapturePicker: showScreenshotCapturePicker
+                showAreaCapturePicker: showAreaCapturePicker
             )
         }
     }
@@ -56,8 +56,7 @@ extension LuxelMenuModel {
         _ interaction: NotchInteraction,
         openEditor: @escaping @MainActor (URL) -> Void,
         openSettings: @escaping @MainActor () -> Void,
-        showAreaCapturePicker: @escaping @MainActor () -> Void,
-        showScreenshotCapturePicker: @escaping @MainActor () -> Void
+        showAreaCapturePicker: @escaping @MainActor () -> Void
     ) async {
         switch interaction {
         case .hoverEntered:
@@ -74,8 +73,7 @@ extension LuxelMenuModel {
                 actionID,
                 openEditor: openEditor,
                 openSettings: openSettings,
-                showAreaCapturePicker: showAreaCapturePicker,
-                showScreenshotCapturePicker: showScreenshotCapturePicker
+                showAreaCapturePicker: showAreaCapturePicker
             )
         case .dragArtifact:
             break
@@ -86,8 +84,7 @@ extension LuxelMenuModel {
         _ actionID: NotchActivityActionID,
         openEditor: @escaping @MainActor (URL) -> Void,
         openSettings: @escaping @MainActor () -> Void,
-        showAreaCapturePicker: @escaping @MainActor () -> Void,
-        showScreenshotCapturePicker: @escaping @MainActor () -> Void
+        showAreaCapturePicker: @escaping @MainActor () -> Void
     ) async {
         switch actionID {
         case .recordArea:
@@ -112,13 +109,15 @@ extension LuxelMenuModel {
 
             await refreshCaptureTargets()
             await startFullscreenRecording(notchRecordingActionID: .recordFullscreen)
-        case .screenshot:
-            guard canUseScreenDependentNotchAction else {
-                presentPermissionPrompt(forSource: .screenPixels)
+        case .recordAudioOnly:
+            guard canUseAudioOnlyButton else {
+                if let source = notchAudioCaptureRecoverySource() {
+                    presentPermissionPrompt(forSource: source)
+                }
                 break
             }
 
-            showScreenshotCapturePicker()
+            await startAudioOnlyRecording(notchRecordingActionID: .recordAudioOnly)
         case .openSettings:
             openSettings()
         case .cancel:
@@ -184,19 +183,44 @@ extension LuxelMenuModel {
         case .exporting(let snapshot):
             return .exporting(snapshot: snapshot)
         case .failed(let message):
-            let recoveryAction: NotchRecoveryAction? = message.localizedCaseInsensitiveContains("permission")
+            let recoveryAction: NotchRecoveryAction? =
+                message.localizedCaseInsensitiveContains("permission")
                 ? .openSettings
                 : .retry
-            return (try? NotchError(
-                title: "Recording Failed",
-                message: message,
-                recoveryAction: recoveryAction
-            )).map(NotchActivity.error) ?? .dormant
+            return
+                (try? NotchError(
+                    title: "Recording Failed",
+                    message: message,
+                    recoveryAction: recoveryAction
+                )).map(NotchActivity.error) ?? .dormant
         }
     }
 
     private var canUseScreenDependentNotchAction: Bool {
         screenRecordingStatus == .authorized
+    }
+
+    private func notchAudioCaptureRecoverySource() -> CapturePermissionSource? {
+        let microphone = sourcePermissionPresentation(for: .microphone)
+        let systemAudio = sourcePermissionPresentation(for: .systemAudio)
+
+        if microphone.needsSetup {
+            return .microphone
+        }
+
+        if systemAudio.needsSetup {
+            return .systemAudio
+        }
+
+        if microphone.phase == .offByUser {
+            return .microphone
+        }
+
+        if systemAudio.phase == .offByUser {
+            return .systemAudio
+        }
+
+        return nil
     }
 
 }

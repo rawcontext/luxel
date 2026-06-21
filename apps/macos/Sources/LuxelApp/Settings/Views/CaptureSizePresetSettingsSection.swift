@@ -73,7 +73,8 @@ struct CaptureSizePresetSettingsSection: View {
 
     private var selectedPresetBinding: Binding<CaptureSizePreset>? {
         guard let selectedPresetID = currentSelectedPresetID,
-              let index = settings.userSizePresets.firstIndex(where: { $0.id == selectedPresetID }) else {
+              let index = settings.userSizePresets.firstIndex(where: { $0.id == selectedPresetID })
+        else {
             return nil
         }
 
@@ -93,7 +94,8 @@ struct CaptureSizePresetSettingsSection: View {
 
     private func duplicateSelectedPreset() {
         guard let presetID = currentSelectedPresetID,
-              let preset = try? settings.duplicateCaptureSizePreset(id: presetID) else {
+              let preset = try? settings.duplicateCaptureSizePreset(id: presetID)
+        else {
             return
         }
         selectedPresetID = preset.id
@@ -156,10 +158,12 @@ private struct CaptureSizePresetEditor: View {
     }
 
     private func updatePixelSize(width: Int? = nil, height: Int? = nil) {
-        guard let pixelSize = try? PixelSize(
-            width: max(1, width ?? preset.pixelSize.width),
-            height: max(1, height ?? preset.pixelSize.height)
-        ) else {
+        guard
+            let pixelSize = try? PixelSize(
+                width: max(1, width ?? preset.pixelSize.width),
+                height: max(1, height ?? preset.pixelSize.height)
+            )
+        else {
             return
         }
 

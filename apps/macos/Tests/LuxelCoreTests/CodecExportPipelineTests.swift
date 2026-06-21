@@ -34,26 +34,27 @@ struct CodecExportPipelineTests {
         #expect(exported.format == .webm)
         #expect(exported.pixelSize == pixelSize)
         #expect(!exported.shouldMute)
-        #expect(await events.snapshot() == [
-            "source.prepare:webm",
-            "video.prepare:4x4:30:balanced",
-            "audio.prepare:48000:2:balanced",
-            "muxer.begin:webm:video,audio",
-            "source.video:0",
-            "source.audio:0",
-            "video.encode:0",
-            "muxer.write:video:v0",
-            "source.video:0.033",
-            "audio.encode:0",
-            "muxer.write:audio:a0",
-            "video.encode:0.033",
-            "muxer.write:video:v33",
-            "video.finish",
-            "audio.finish",
-            "muxer.write:video:vf",
-            "muxer.write:audio:af",
-            "muxer.finalize"
-        ])
+        #expect(
+            await events.snapshot() == [
+                "source.prepare:webm",
+                "video.prepare:4x4:30:balanced",
+                "audio.prepare:48000:2:balanced",
+                "muxer.begin:webm:video,audio",
+                "source.video:0",
+                "source.audio:0",
+                "video.encode:0",
+                "muxer.write:video:v0",
+                "source.video:0.033",
+                "audio.encode:0",
+                "muxer.write:audio:a0",
+                "video.encode:0.033",
+                "muxer.write:video:v33",
+                "video.finish",
+                "audio.finish",
+                "muxer.write:video:vf",
+                "muxer.write:audio:af",
+                "muxer.finalize"
+            ])
     }
 
     @Test("muted requests skip audio source and encoder")
@@ -311,17 +312,21 @@ private actor StubVideoEncoder: CodecVideoEncoder {
 
     func encode(frame: CodecVideoFrame) async throws -> [EncodedPacket] {
         await events.append("video.encode:\(frame.presentationTime.shortText)")
-        return [try EncodedPacket(
-            dataString: "v\(Int((frame.presentationTime * 1_000).rounded()))",
-            presentationTime: frame.presentationTime,
-            duration: frame.duration,
-            isKeyFrame: frame.presentationTime == 0
-        )]
+        return [
+            try EncodedPacket(
+                dataString: "v\(Int((frame.presentationTime * 1_000).rounded()))",
+                presentationTime: frame.presentationTime,
+                duration: frame.duration,
+                isKeyFrame: frame.presentationTime == 0
+            )
+        ]
     }
 
     func finish() async throws -> [EncodedPacket] {
         await events.append("video.finish")
-        return [try EncodedPacket(dataString: "vf", presentationTime: 1, duration: 0, isKeyFrame: false)]
+        return [
+            try EncodedPacket(dataString: "vf", presentationTime: 1, duration: 0, isKeyFrame: false)
+        ]
     }
 }
 
@@ -340,12 +345,14 @@ private actor StubAudioEncoder: CodecAudioEncoder {
 
     func encode(chunk: CodecAudioChunk) async throws -> [EncodedPacket] {
         await events.append("audio.encode:\(chunk.presentationTime.shortText)")
-        return [try EncodedPacket(
-            dataString: "a\(Int((chunk.presentationTime * 1_000).rounded()))",
-            presentationTime: chunk.presentationTime,
-            duration: chunk.duration,
-            isKeyFrame: true
-        )]
+        return [
+            try EncodedPacket(
+                dataString: "a\(Int((chunk.presentationTime * 1_000).rounded()))",
+                presentationTime: chunk.presentationTime,
+                duration: chunk.duration,
+                isKeyFrame: true
+            )
+        ]
     }
 
     func finish() async throws -> [EncodedPacket] {
@@ -381,8 +388,9 @@ private actor StubContainerMuxer: CodecContainerMuxer {
     }
 }
 
-private extension CodecAudioChunk {
-    init(dataString: String, presentationTime: TimeInterval, duration: TimeInterval) throws {
+extension CodecAudioChunk {
+    fileprivate init(dataString: String, presentationTime: TimeInterval, duration: TimeInterval)
+    throws {
         try self.init(
             pcmData: Data(dataString.utf8),
             presentationTime: presentationTime,
@@ -391,8 +399,8 @@ private extension CodecAudioChunk {
     }
 }
 
-private extension EncodedPacket {
-    init(
+extension EncodedPacket {
+    fileprivate init(
         dataString: String,
         presentationTime: TimeInterval,
         duration: TimeInterval,
@@ -407,8 +415,8 @@ private extension EncodedPacket {
     }
 }
 
-private extension TimeInterval {
-    var shortText: String {
+extension TimeInterval {
+    fileprivate var shortText: String {
         let rounded = (self * 1_000).rounded() / 1_000
         return String(format: "%.3g", rounded)
     }

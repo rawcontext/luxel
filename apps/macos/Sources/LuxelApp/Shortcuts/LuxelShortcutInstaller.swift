@@ -35,15 +35,6 @@ struct LuxelShortcutInstaller: View {
             .onChange(of: model.settings.quickRecordLastShortcut) {
                 configureShortcut()
             }
-            .onChange(of: model.settings.captureScreenshotShortcut) {
-                configureShortcut()
-            }
-            .onChange(of: model.settings.screenshotActiveWindowShortcut) {
-                configureShortcut()
-            }
-            .onChange(of: model.settings.screenshotFullscreenShortcut) {
-                configureShortcut()
-            }
     }
 
     private func configureShortcut() {
@@ -56,9 +47,6 @@ struct LuxelShortcutInstaller: View {
     private var shortcutRegistrations: [LuxelShortcutRegistration] {
         [
             cropperShortcutRegistration(),
-            screenshotShortcutRegistration(),
-            activeWindowScreenshotShortcutRegistration(),
-            fullscreenScreenshotShortcutRegistration(),
             toggleRecordingShortcutRegistration(),
             activeWindowRecordingShortcutRegistration(),
             fullscreenRecordingShortcutRegistration(),
@@ -83,7 +71,7 @@ struct LuxelShortcutInstaller: View {
                 recordAudio: model.captureCapabilities.microphoneTrackAvailable,
                 loupeAlwaysOn: model.settings.loupeAlwaysOn,
                 dimOtherDisplays: model.settings.dimOtherDisplays,
-                showsNotificationReminder: model.settings.notificationReminder,
+                showsNotificationReminder: false,
                 onCountdownDurationChange: saveDefaultCountdown,
                 onStopAfterDurationChange: saveStopAfterDuration,
                 onRecordAudioChange: saveRecordAudio,
@@ -91,60 +79,6 @@ struct LuxelShortcutInstaller: View {
                 onQuickSelect: startQuickRecording,
                 onSelect: startRecording
             )
-        }
-    }
-
-    private func screenshotShortcutRegistration() -> LuxelShortcutRegistration {
-        LuxelShortcutRegistration(rawShortcut: model.settings.captureScreenshotShortcut) {
-            guard model.canSelectArea else {
-                return
-            }
-
-            cropperPanelController.show(
-                initialMode: .photo,
-                countdownDuration: model.settings.defaultCountdown,
-                stopAfterDuration: model.settings.lastStopAfter,
-                audioLevelConfiguration: model.cropperAudioLevelConfiguration(),
-                quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
-                selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
-                restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
-                recordAudio: model.captureCapabilities.microphoneTrackAvailable,
-                loupeAlwaysOn: model.settings.loupeAlwaysOn,
-                dimOtherDisplays: model.settings.dimOtherDisplays,
-                showsNotificationReminder: model.settings.notificationReminder,
-                onCountdownDurationChange: saveDefaultCountdown,
-                onStopAfterDurationChange: saveStopAfterDuration,
-                onRecordAudioChange: saveRecordAudio,
-                onNotificationReminderDismiss: model.dismissNotificationReminder,
-                onCaptureScreenshot: captureScreenshot,
-                onQuickSelect: startQuickRecording,
-                onSelect: startRecording
-            )
-        }
-    }
-
-    private func activeWindowScreenshotShortcutRegistration() -> LuxelShortcutRegistration {
-        LuxelShortcutRegistration(rawShortcut: model.settings.screenshotActiveWindowShortcut) {
-            guard model.canSelectArea else {
-                return
-            }
-
-            Task {
-                await model.captureActiveWindowScreenshot()
-            }
-        }
-    }
-
-    private func fullscreenScreenshotShortcutRegistration() -> LuxelShortcutRegistration {
-        LuxelShortcutRegistration(rawShortcut: model.settings.screenshotFullscreenShortcut) {
-            guard model.screenRecordingStatus == .authorized,
-                  model.fullscreenCaptureTarget != nil else {
-                return
-            }
-
-            Task {
-                await model.captureFullscreenScreenshot()
-            }
         }
     }
 
@@ -171,7 +105,8 @@ struct LuxelShortcutInstaller: View {
     private func fullscreenRecordingShortcutRegistration() -> LuxelShortcutRegistration {
         LuxelShortcutRegistration(rawShortcut: model.settings.recordFullscreenShortcut) {
             guard model.screenRecordingStatus == .authorized,
-                  model.fullscreenCaptureTarget != nil else {
+                  model.fullscreenCaptureTarget != nil
+            else {
                 return
             }
 
@@ -234,12 +169,6 @@ struct LuxelShortcutInstaller: View {
     private func startRecording(_ draft: CaptureSelectionDraft) {
         Task {
             await model.startRecording(from: draft)
-        }
-    }
-
-    private func captureScreenshot(_ draft: CaptureSelectionDraft) {
-        Task {
-            await model.captureScreenshot(from: draft)
         }
     }
 

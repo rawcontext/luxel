@@ -16,32 +16,13 @@ struct AutomationServiceTests {
             context: AutomationPolicyContext()
         )
 
-        #expect(result == .requiresConfirmation(AutomationPolicyPrompt(
-            title: "Allow Automation Request?",
-            message: "Another app wants to start a screen recording."
-        )))
-        #expect(executor.calls.isEmpty)
-    }
-
-    @Test("ungranted start commands request confirmation without executing")
-    func ungrantedStartCommandsRequestConfirmationWithoutExecuting() async throws {
-        let executor = SpyAutomationCommandExecutor()
-        let service = AutomationService(executor: executor)
-        let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))
-
-        let result = try await service.execute(
-            AutomationInvocation(command: .screenshot(AutomationScreenshotOptions(target: .activeWindow))),
-            settings: settings,
-            context: AutomationPolicyContext(
-                callerID: "com.example.terminal",
-                callerDisplayName: "Terminal"
-            )
-        )
-
-        #expect(result == .requiresConfirmation(AutomationPolicyPrompt(
-            title: "Allow Automation Request?",
-            message: "Terminal wants to capture a screenshot."
-        )))
+        #expect(
+            result
+                == .requiresConfirmation(
+                    AutomationPolicyPrompt(
+                        title: "Allow Automation Request?",
+                        message: "Another app wants to start a screen recording."
+                    )))
         #expect(executor.calls.isEmpty)
     }
 
@@ -95,7 +76,6 @@ struct AutomationServiceTests {
             presetName: "Quick GIF",
             countdownSeconds: 3
         )
-        let screenshotOptions = AutomationScreenshotOptions(target: .activeWindow, format: .png)
 
         let recordResult = try await service.execute(
             AutomationInvocation(command: .record(recordOptions)),
@@ -107,11 +87,6 @@ struct AutomationServiceTests {
             settings: settings,
             context: context
         )
-        let screenshotResult = try await service.execute(
-            AutomationInvocation(command: .screenshot(screenshotOptions)),
-            settings: settings,
-            context: context
-        )
         let clipResult = try await service.execute(
             AutomationInvocation(command: .clip(seconds: 30)),
             settings: settings,
@@ -120,14 +95,13 @@ struct AutomationServiceTests {
 
         #expect(recordResult == .executed(.file(fileURL)))
         #expect(toggleResult == .executed(.file(fileURL)))
-        #expect(screenshotResult == .executed(.file(fileURL)))
         #expect(clipResult == .executed(.file(fileURL)))
-        #expect(executor.calls == [
-            .record(recordOptions),
-            .toggle(recordOptions),
-            .screenshot(screenshotOptions),
-            .clip(seconds: 30)
-        ])
+        #expect(
+            executor.calls == [
+                .record(recordOptions),
+                .toggle(recordOptions),
+                .clip(seconds: 30)
+            ])
     }
 
     @Test("executor errors propagate")
@@ -170,7 +144,6 @@ private final class SpyAutomationCommandExecutor: AutomationCommandExecutor, @un
         case record(AutomationRecordingOptions)
         case stop
         case toggle(AutomationRecordingOptions?)
-        case screenshot(AutomationScreenshotOptions)
         case clip(seconds: Int?)
         case preferences(AutomationPreferencesPane?)
         case latest(reveal: Bool)
@@ -198,10 +171,6 @@ private final class SpyAutomationCommandExecutor: AutomationCommandExecutor, @un
 
     func toggle(_ options: AutomationRecordingOptions?) async throws -> AutomationExecutionResult {
         try execute(.toggle(options))
-    }
-
-    func captureScreenshot(_ options: AutomationScreenshotOptions) async throws -> AutomationExecutionResult {
-        try execute(.screenshot(options))
     }
 
     func clipReplayBuffer(seconds: Int?) async throws -> AutomationExecutionResult {

@@ -95,7 +95,8 @@ struct ExportPresetSettingsSection: View {
 
     private var selectedPresetBinding: Binding<ExportPreset>? {
         guard let selectedPresetID = currentSelectedPresetID,
-              let index = settings.exportPresets.firstIndex(where: { $0.id == selectedPresetID }) else {
+              let index = settings.exportPresets.firstIndex(where: { $0.id == selectedPresetID })
+        else {
             return nil
         }
 
@@ -115,7 +116,8 @@ struct ExportPresetSettingsSection: View {
 
     private func duplicateSelectedPreset() {
         guard let presetID = currentSelectedPresetID,
-              let preset = try? settings.duplicateExportPreset(id: presetID) else {
+              let preset = try? settings.duplicateExportPreset(id: presetID)
+        else {
             return
         }
         selectedPresetID = preset.id
@@ -363,8 +365,8 @@ private enum PresetDestinationSelection: String, CaseIterable, Identifiable {
     }
 }
 
-private extension ExportPresetPostAction {
-    var label: String {
+extension ExportPresetPostAction {
+    fileprivate var label: String {
         switch self {
         case .none:
             "None"

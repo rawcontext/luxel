@@ -29,7 +29,8 @@ public struct CursorTimelineRecordingService: Sendable {
         self.sidecarPersistence = sidecarPersistence
     }
 
-    public func recordTimeline(_ request: CursorTimelineRecordingRequest) async throws -> CursorTimeline {
+    public func recordTimeline(_ request: CursorTimelineRecordingRequest) async throws
+    -> CursorTimeline {
         let mapper = try MediaTimeMapper(
             recordingDuration: request.recordingDuration,
             pauses: request.pauses
@@ -84,16 +85,18 @@ private struct CursorTimelineRecordingBuilder {
                 return
             }
 
-            let localPosition = try captureFrame.map {
-                try CursorCoordinateMapper.localPoint(fromGlobalPoint: position, in: $0)
-            } ?? position
+            let localPosition =
+                try captureFrame.map {
+                    try CursorCoordinateMapper.localPoint(fromGlobalPoint: position, in: $0)
+                } ?? position
 
             appendCursorImageIfNeeded(cursorImage)
-            samples.append(try CursorSample(
-                time: mediaTime,
-                position: localPosition,
-                cursorImageID: cursorImage.id
-            ))
+            samples.append(
+                try CursorSample(
+                    time: mediaTime,
+                    position: localPosition,
+                    cursorImageID: cursorImage.id
+                ))
 
         case .click(let wallTime, let button, let phase):
             guard let mediaTime = mapper.mediaTime(forWallTime: wallTime) else {

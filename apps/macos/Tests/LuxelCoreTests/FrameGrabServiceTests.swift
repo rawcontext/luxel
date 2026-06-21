@@ -5,11 +5,11 @@ import Testing
 @Suite("Frame grab service")
 struct FrameGrabServiceTests {
     @MainActor
-    @Test("grab fans out to clipboard file and preview")
+    @Test("grab fans out to clipboard and file")
     func grabFansOutToDestinations() async throws {
         let imageData = try makeImageData()
         let grabber = StubFrameGrabber(imageData: imageData)
-        let fileWriter = SpyScreenshotFileWriter()
+        let fileWriter = SpyFrameGrabFileWriter()
         let destinationClient = SpyFrameGrabDestinationClient()
         let service = FrameGrabService(
             frameGrabber: grabber,
@@ -19,17 +19,18 @@ struct FrameGrabServiceTests {
         let request = try makeRequest()
         let outputURL = URL(fileURLWithPath: "/tmp/frame.png")
 
-        let result = try await service.grab(try FrameGrabJob(
-            request: request,
-            destinations: [.clipboard, .file, .preview],
-            outputFileURL: outputURL
-        ))
+        let result = try await service.grab(
+            try FrameGrabJob(
+                request: request,
+                destinations: [.clipboard, .file],
+                outputFileURL: outputURL
+            ))
 
         #expect(grabber.requests == [request])
         #expect(destinationClient.copiedImages == [imageData])
-        #expect(fileWriter.writes == [SpyScreenshotFileWriter.Write(imageData: imageData, fileURL: outputURL)])
-        #expect(destinationClient.openedURLs == [outputURL])
-        #expect(result.completedDestinations == [.clipboard, .file, .preview])
+        #expect(
+            fileWriter.writes == [SpyFrameGrabFileWriter.Write(imageData: imageData, fileURL: outputURL)])
+        #expect(result.completedDestinations == [.clipboard, .file])
         #expect(result.failedDestinations.isEmpty)
         #expect(result.fileURL == outputURL)
     }
@@ -39,7 +40,7 @@ struct FrameGrabServiceTests {
     func grabReportsDestinationFailures() async throws {
         let imageData = try makeImageData()
         let destinationClient = SpyFrameGrabDestinationClient(copyError: StubError.copyFailed)
-        let fileWriter = SpyScreenshotFileWriter()
+        let fileWriter = SpyFrameGrabFileWriter()
         let service = FrameGrabService(
             frameGrabber: StubFrameGrabber(imageData: imageData),
             fileWriter: fileWriter,
@@ -47,11 +48,12 @@ struct FrameGrabServiceTests {
         )
         let outputURL = URL(fileURLWithPath: "/tmp/frame.png")
 
-        let result = try await service.grab(try FrameGrabJob(
-            request: makeRequest(),
-            destinations: [.clipboard, .file],
-            outputFileURL: outputURL
-        ))
+        let result = try await service.grab(
+            try FrameGrabJob(
+                request: makeRequest(),
+                destinations: [.clipboard, .file],
+                outputFileURL: outputURL
+            ))
 
         #expect(result.completedDestinations == [.file])
         #expect(result.failedDestinations == [.clipboard])
@@ -62,10 +64,10 @@ struct FrameGrabServiceTests {
     func jobValidatesDestinations() throws {
         let request = try makeRequest()
 
-        #expect(throws: ScreenshotModelError.emptyScreenshotDestinations) {
+        #expect(throws: FrameGrabError.emptyFrameGrabDestinations) {
             _ = try FrameGrabJob(request: request, destinations: [])
         }
-        #expect(throws: ScreenshotModelError.fileDestinationRequiresOutputURL) {
+        #expect(throws: FrameGrabError.fileDestinationRequiresOutputURL) {
             _ = try FrameGrabJob(request: request, destinations: [.file])
         }
     }
@@ -74,62 +76,56 @@ struct FrameGrabServiceTests {
         try FrameGrabRequest(sourceFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"), time: 1)
     }
 
-    private func makeImageData() throws -> ImageData {
-        try ImageData(
+    private func makeImageData() throws -> FrameGrabImageData {
+        try FrameGrabImageData(
             data: Data([0x89, 0x50, 0x4e, 0x47]),
-            format: .png,
             pixelSize: PixelSize(width: 2, height: 2)
         )
     }
 }
 
 private final class StubFrameGrabber: FrameGrabber, @unchecked Sendable {
-    let imageData: ImageData
+    let imageData: FrameGrabImageData
     private(set) var requests: [FrameGrabRequest] = []
 
-    init(imageData: ImageData) {
+    init(imageData: FrameGrabImageData) {
         self.imageData = imageData
     }
 
-    func grab(_ request: FrameGrabRequest) async throws -> ImageData {
+    func grab(_ request: FrameGrabRequest) async throws -> FrameGrabImageData {
         requests.append(request)
         return imageData
     }
 }
 
-private final class SpyScreenshotFileWriter: ScreenshotFileWriter, @unchecked Sendable {
+private final class SpyFrameGrabFileWriter: FrameGrabFileWriter, @unchecked Sendable {
     struct Write: Equatable {
-        let imageData: ImageData
+        let imageData: FrameGrabImageData
         let fileURL: URL
     }
 
     private(set) var writes: [Write] = []
 
-    func write(_ imageData: ImageData, to fileURL: URL) throws {
+    func write(_ imageData: FrameGrabImageData, to fileURL: URL) throws {
         writes.append(Write(imageData: imageData, fileURL: fileURL))
     }
 }
 
 @MainActor
-private final class SpyFrameGrabDestinationClient: ScreenshotDestinationClient {
+private final class SpyFrameGrabDestinationClient: FrameGrabDestinationClient {
     let copyError: (any Error)?
-    private(set) var copiedImages: [ImageData] = []
-    private(set) var openedURLs: [URL] = []
+    private(set) var copiedImages: [FrameGrabImageData] = []
 
     init(copyError: (any Error)? = nil) {
         self.copyError = copyError
     }
 
-    func copyImageToPasteboard(_ imageData: ImageData) throws {
+    func copyImageToPasteboard(_ imageData: FrameGrabImageData) throws {
         if let copyError {
             throw copyError
         }
 
         copiedImages.append(imageData)
-    }
-
-    func openWithDefaultApp(_ fileURL: URL) throws {
-        openedURLs.append(fileURL)
     }
 }
 

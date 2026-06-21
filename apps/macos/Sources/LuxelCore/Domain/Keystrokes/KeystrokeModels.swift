@@ -270,7 +270,8 @@ public struct KeystrokeChipPlannerRules: Equatable, Sendable {
               modifierHoldThreshold >= 0,
               modifierHoldThreshold.isFinite,
               repeatCollapseThreshold > 0,
-              maxVisibleChips > 0 else {
+              maxVisibleChips > 0
+        else {
             throw KeystrokeModelError.invalidChipPlannerRules
         }
 

@@ -14,7 +14,8 @@ public enum SnapResolver {
             return CaptureSnapResult(rect: candidate, guides: [])
         }
 
-        let targets = screenFrames.map { CaptureSnapTarget(kind: .screen, rect: $0) }
+        let targets =
+            screenFrames.map { CaptureSnapTarget(kind: .screen, rect: $0) }
             + windowFrames.map { CaptureSnapTarget(kind: .window, rect: $0) }
         guard !targets.isEmpty else {
             return CaptureSnapResult(rect: candidate, guides: [])
@@ -160,8 +161,8 @@ private struct CaptureSnap {
     let guide: CaptureSnapGuide
 }
 
-private extension CaptureRect {
-    var verticalAnchors: [CaptureSnapAnchorValue] {
+extension CaptureRect {
+    fileprivate var verticalAnchors: [CaptureSnapAnchorValue] {
         [
             CaptureSnapAnchorValue(anchor: .leading, position: originX, targetKind: .screen),
             CaptureSnapAnchorValue(anchor: .trailing, position: originX + width, targetKind: .screen),
@@ -169,7 +170,7 @@ private extension CaptureRect {
         ]
     }
 
-    var horizontalAnchors: [CaptureSnapAnchorValue] {
+    fileprivate var horizontalAnchors: [CaptureSnapAnchorValue] {
         [
             CaptureSnapAnchorValue(anchor: .top, position: originY, targetKind: .screen),
             CaptureSnapAnchorValue(anchor: .bottom, position: originY + height, targetKind: .screen),

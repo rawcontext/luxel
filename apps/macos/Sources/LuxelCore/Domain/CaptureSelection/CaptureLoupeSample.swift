@@ -62,10 +62,12 @@ public enum CaptureLoupeSampleResolver {
     ) -> (origin: CapturePoint, quadrant: CaptureLoupeQuadrant) {
         let fitsRight = cursor.xCoordinate + cursorOffset + overlaySize.width <= display.width
         let fitsBelow = cursor.yCoordinate + cursorOffset + overlaySize.height <= display.height
-        let originX = fitsRight
+        let originX =
+            fitsRight
             ? cursor.xCoordinate + cursorOffset
             : cursor.xCoordinate - cursorOffset - overlaySize.width
-        let originY = fitsBelow
+        let originY =
+            fitsBelow
             ? cursor.yCoordinate + cursorOffset
             : cursor.yCoordinate - cursorOffset - overlaySize.height
         let origin = CapturePoint(
@@ -147,8 +149,8 @@ private enum VerticalPlacement {
     case below
 }
 
-private extension CapturePoint {
-    func clamped(to display: DisplayBounds) -> CapturePoint {
+extension CapturePoint {
+    fileprivate func clamped(to display: DisplayBounds) -> CapturePoint {
         CapturePoint(
             x: min(max(xCoordinate, 0), display.width),
             y: min(max(yCoordinate, 0), display.height)

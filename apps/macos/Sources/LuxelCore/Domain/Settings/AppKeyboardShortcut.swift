@@ -1,6 +1,7 @@
 import Foundation
 
-public enum AppKeyboardShortcutModifier: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
+public enum AppKeyboardShortcutModifier: String, Codable, CaseIterable, Equatable, Hashable,
+                                         Sendable {
     case command
     case control
     case option
@@ -57,7 +58,8 @@ public struct AppKeyboardShortcut: Codable, Equatable, Identifiable, Sendable {
     }
 
     public init?(rawValue: String) {
-        let parts = rawValue
+        let parts =
+            rawValue
             .split(separator: "+")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
             .filter { !$0.isEmpty }
@@ -68,7 +70,8 @@ public struct AppKeyboardShortcut: Codable, Equatable, Identifiable, Sendable {
 
         let modifiers = parts.dropLast().compactMap(AppKeyboardShortcutModifier.init(rawValue:))
         guard modifiers.count == parts.dropLast().count,
-              let shortcut = try? AppKeyboardShortcut(key: key, modifiers: modifiers) else {
+              let shortcut = try? AppKeyboardShortcut(key: key, modifiers: modifiers)
+        else {
             return nil
         }
 
@@ -124,18 +127,6 @@ public enum AppKeyboardShortcutPresets {
     public static let clipReplayBuffer: [AppKeyboardShortcut] = [
         AppKeyboardShortcut(rawValue: "command+control+option+c")
     ].compactMap { $0 }
-
-    public static let captureScreenshot: [AppKeyboardShortcut] = [
-        AppKeyboardShortcut(rawValue: "command+control+option+s")
-    ].compactMap { $0 }
-
-    public static let screenshotActiveWindow: [AppKeyboardShortcut] = [
-        AppKeyboardShortcut(rawValue: "command+control+option+w")
-    ].compactMap { $0 }
-
-    public static let screenshotFullscreen: [AppKeyboardShortcut] = [
-        AppKeyboardShortcut(rawValue: "command+control+option+f")
-    ].compactMap { $0 }
 }
 
 public struct AppKeyboardShortcutConflict: Equatable, Sendable {
@@ -150,12 +141,12 @@ public struct AppKeyboardShortcutConflict: Equatable, Sendable {
 
 public struct AppKeyboardShortcutConflictDetector: Sendable {
     public static let knownSystemConflicts: [AppKeyboardShortcutConflict] = [
-        systemConflict("command+shift+3", action: "macOS full-screen screenshot"),
-        systemConflict("command+shift+4", action: "macOS selection screenshot"),
-        systemConflict("command+shift+5", action: "macOS Screenshot"),
-        systemConflict("command+shift+6", action: "macOS Touch Bar screenshot"),
-        systemConflict("command+control+shift+3", action: "macOS full-screen screenshot to Clipboard"),
-        systemConflict("command+control+shift+4", action: "macOS selection screenshot to Clipboard")
+        systemConflict("command+shift+3", action: "macOS full-screen capture"),
+        systemConflict("command+shift+4", action: "macOS selection capture"),
+        systemConflict("command+shift+5", action: "macOS capture controls"),
+        systemConflict("command+shift+6", action: "macOS Touch Bar capture"),
+        systemConflict("command+control+shift+3", action: "macOS full-screen capture to Clipboard"),
+        systemConflict("command+control+shift+4", action: "macOS selection capture to Clipboard")
     ].compactMap(\.self)
 
     private let conflictsByShortcut: [String: AppKeyboardShortcutConflict]

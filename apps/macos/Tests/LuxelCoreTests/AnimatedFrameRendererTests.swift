@@ -1,7 +1,8 @@
 import CoreGraphics
 import ImageIO
-@testable import LuxelCore
 import Testing
+
+@testable import LuxelCore
 
 @Suite("Animated frame renderer")
 struct AnimatedFrameRendererTests {
@@ -20,9 +21,10 @@ struct AnimatedFrameRendererTests {
             cameraTransform: cameraTransform
         )
 
-        #expect(bitmap.pixels.allSatisfy { pixel in
-            pixel.red > pixel.blue && pixel.red > pixel.green && pixel.alpha > 0
-        })
+        #expect(
+            bitmap.pixels.allSatisfy { pixel in
+                pixel.red > pixel.blue && pixel.red > pixel.green && pixel.alpha > 0
+            })
     }
 
     @Test("source crop rect crops before output scaling")
@@ -35,9 +37,10 @@ struct AnimatedFrameRendererTests {
             sourceCropRect: CaptureRect(x: 2, y: 0, width: 2, height: 2)
         )
 
-        #expect(bitmap.pixels.allSatisfy { pixel in
-            pixel.blue > pixel.red && pixel.blue > pixel.green && pixel.alpha > 0
-        })
+        #expect(
+            bitmap.pixels.allSatisfy { pixel in
+                pixel.blue > pixel.red && pixel.blue > pixel.green && pixel.alpha > 0
+            })
     }
 
     @Test("GIF bitmap rendering preserves alpha or applies matte")
@@ -81,35 +84,38 @@ struct AnimatedFrameRendererTests {
     private func splitColorImage(width: Int, height: Int) throws -> CGImage {
         let outputSize = CGSize(width: width, height: height)
         let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let context = try #require(CGContext(
-            data: nil,
-            width: width,
-            height: height,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ))
+        let context = try #require(
+            CGContext(
+                data: nil,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ))
 
         context.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
         context.fill(CGRect(x: 0, y: 0, width: outputSize.width / 2, height: outputSize.height))
         context.setFillColor(CGColor(red: 0, green: 0, blue: 1, alpha: 1))
-        context.fill(CGRect(x: outputSize.width / 2, y: 0, width: outputSize.width / 2, height: outputSize.height))
+        context.fill(
+            CGRect(x: outputSize.width / 2, y: 0, width: outputSize.width / 2, height: outputSize.height))
 
         return try #require(context.makeImage())
     }
 
     private func transparentRedImage() throws -> CGImage {
         let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let context = try #require(CGContext(
-            data: nil,
-            width: 2,
-            height: 1,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ))
+        let context = try #require(
+            CGContext(
+                data: nil,
+                width: 2,
+                height: 1,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ))
 
         context.clear(CGRect(x: 0, y: 0, width: 2, height: 1))
         context.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
@@ -122,20 +128,22 @@ struct AnimatedFrameRendererTests {
         let bytesPerPixel = 4
         let bytesPerRow = image.width * bytesPerPixel
         let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+        let bitmapInfo =
+            CGImageAlphaInfo.premultipliedLast.rawValue
             | CGBitmapInfo.byteOrder32Big.rawValue
         var bytes = Array(repeating: UInt8(0), count: image.height * bytesPerRow)
 
         try bytes.withUnsafeMutableBytes { pointer in
-            let context = try #require(CGContext(
-                data: pointer.baseAddress,
-                width: image.width,
-                height: image.height,
-                bitsPerComponent: 8,
-                bytesPerRow: bytesPerRow,
-                space: colorSpace,
-                bitmapInfo: bitmapInfo
-            ))
+            let context = try #require(
+                CGContext(
+                    data: pointer.baseAddress,
+                    width: image.width,
+                    height: image.height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space: colorSpace,
+                    bitmapInfo: bitmapInfo
+                ))
             context.clear(CGRect(x: 0, y: 0, width: image.width, height: image.height))
             context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
         }
@@ -184,20 +192,22 @@ struct NativeGIFEncoderTests {
         let bytesPerPixel = 4
         let bytesPerRow = image.width * bytesPerPixel
         let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+        let bitmapInfo =
+            CGImageAlphaInfo.premultipliedLast.rawValue
             | CGBitmapInfo.byteOrder32Big.rawValue
         var bytes = Array(repeating: UInt8(0), count: image.height * bytesPerRow)
 
         try bytes.withUnsafeMutableBytes { pointer in
-            let context = try #require(CGContext(
-                data: pointer.baseAddress,
-                width: image.width,
-                height: image.height,
-                bitsPerComponent: 8,
-                bytesPerRow: bytesPerRow,
-                space: colorSpace,
-                bitmapInfo: bitmapInfo
-            ))
+            let context = try #require(
+                CGContext(
+                    data: pointer.baseAddress,
+                    width: image.width,
+                    height: image.height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space: colorSpace,
+                    bitmapInfo: bitmapInfo
+                ))
             context.clear(CGRect(x: 0, y: 0, width: image.width, height: image.height))
             context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
         }

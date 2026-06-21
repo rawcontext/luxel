@@ -15,11 +15,13 @@ public struct LastCaptureRecordingPlanner: Sendable {
             throw LastCaptureRecordingPlannerError.missingLastCapture
         }
 
-        guard let resolution = memory.resolvedTarget(
-            availableTargets: availableTargets,
-            fallbackWindow: fallbackWindow,
-            fallbackDisplay: fallbackDisplay
-        ) else {
+        guard
+            let resolution = memory.resolvedTarget(
+                availableTargets: availableTargets,
+                fallbackWindow: fallbackWindow,
+                fallbackDisplay: fallbackDisplay
+            )
+        else {
             throw LastCaptureRecordingPlannerError.targetUnavailable
         }
 

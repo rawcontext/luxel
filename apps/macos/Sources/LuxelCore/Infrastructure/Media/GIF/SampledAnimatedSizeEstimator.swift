@@ -145,12 +145,13 @@ extension SampledAnimatedSizeEstimator {
                 imageGenerator: imageGenerator
             )
             sampleFrames.append(frame)
-            sampleByteCounts.append(try encodedByteCount(
-                frames: [frame],
-                format: request.format,
-                frameDelay: schedule.frameDelay,
-                loopMode: loopMode
-            ))
+            sampleByteCounts.append(
+                try encodedByteCount(
+                    frames: [frame],
+                    format: request.format,
+                    frameDelay: schedule.frameDelay,
+                    loopMode: loopMode
+                ))
         }
 
         if sampleFrames.count == totalFrameCount {
@@ -218,13 +219,14 @@ extension SampledAnimatedSizeEstimator {
                 imageGenerator: imageGenerator
             )
             sampleFrames.append(frame)
-            sampleByteCounts.append(try gifEncodedByteCount(
-                frames: [frame],
-                outputPixelSize: outputPixelSize,
-                frameDelay: schedule.frameDelay,
-                options: options,
-                encoder: encoder
-            ))
+            sampleByteCounts.append(
+                try gifEncodedByteCount(
+                    frames: [frame],
+                    outputPixelSize: outputPixelSize,
+                    frameDelay: schedule.frameDelay,
+                    options: options,
+                    encoder: encoder
+                ))
         }
 
         if sampleFrames.count == totalFrameCount {
@@ -249,7 +251,8 @@ extension SampledAnimatedSizeEstimator {
             encoder: encoder
         )
         let model = try SampledAnimatedEstimateModel(
-            totalFrameCount: try outputFrameCount(baseFrameCount: totalFrameCount, loopMode: options.loopMode),
+            totalFrameCount: try outputFrameCount(
+                baseFrameCount: totalFrameCount, loopMode: options.loopMode),
             sampleByteCounts: sampleByteCounts,
             adjacentPairs: adjacentPairs
         )
@@ -303,11 +306,12 @@ extension SampledAnimatedSizeEstimator {
                 frameDelay: frameDelay,
                 loopMode: loopMode
             )
-            pairs.append(SampledAnimatedAdjacentPairSize(
-                firstBytes: firstBytes,
-                secondBytes: secondBytes,
-                combinedBytes: combinedBytes
-            ))
+            pairs.append(
+                SampledAnimatedAdjacentPairSize(
+                    firstBytes: firstBytes,
+                    secondBytes: secondBytes,
+                    combinedBytes: combinedBytes
+                ))
         }
 
         return pairs
@@ -365,11 +369,12 @@ extension SampledAnimatedSizeEstimator {
                 options: options,
                 encoder: encoder
             )
-            pairs.append(SampledAnimatedAdjacentPairSize(
-                firstBytes: firstBytes,
-                secondBytes: secondBytes,
-                combinedBytes: combinedBytes
-            ))
+            pairs.append(
+                SampledAnimatedAdjacentPairSize(
+                    firstBytes: firstBytes,
+                    secondBytes: secondBytes,
+                    combinedBytes: combinedBytes
+                ))
         }
 
         return pairs

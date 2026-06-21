@@ -131,9 +131,11 @@ struct RecordingScheduleTests {
         )
 
         #expect(pausedClock.elapsedRecordedTime(at: start.addingTimeInterval(80)) == 50)
-        #expect(pausedClock.remainingRecordedTime(for: schedule, at: start.addingTimeInterval(80)) == 10)
+        #expect(
+            pausedClock.remainingRecordedTime(for: schedule, at: start.addingTimeInterval(80)) == 10)
         #expect(pausedClock.timerFireDate(for: schedule, at: start.addingTimeInterval(80)) == nil)
-        #expect(resumedClock.timerFireDate(for: schedule, at: resumedAt) == resumedAt.addingTimeInterval(10))
+        #expect(
+            resumedClock.timerFireDate(for: schedule, at: resumedAt) == resumedAt.addingTimeInterval(10))
     }
 
     @Test("recording clock fires immediately once recorded duration reaches limit")

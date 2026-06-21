@@ -23,7 +23,8 @@ public struct NotchSurfaceStatusPresentation: Equatable, Sendable {
         case .floatingHUD(.notchDisabled):
             showsStatus = true
             statusText = "Floating HUD Fallback"
-            detailText = "The notch surface is disabled, so recording controls will use the fallback surface."
+            detailText =
+                "The notch surface is disabled, so recording controls will use the fallback surface."
         case .floatingHUD(.noNotchedDisplay):
             showsStatus = true
             statusText = "Floating HUD Fallback"

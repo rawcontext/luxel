@@ -42,10 +42,12 @@ public struct AVFoundationRecordingSegmentComposer {
             throw RecordingSegmentComposerError.emptyComposition
         }
 
-        guard let exportSession = AVAssetExportSession(
-            asset: composition,
-            presetName: AVAssetExportPresetHighestQuality
-        ) else {
+        guard
+            let exportSession = AVAssetExportSession(
+                asset: composition,
+                presetName: AVAssetExportPresetHighestQuality
+            )
+        else {
             throw RecordingSegmentComposerError.unsupportedPreset(AVAssetExportPresetHighestQuality)
         }
 
@@ -53,10 +55,15 @@ public struct AVFoundationRecordingSegmentComposer {
             throw RecordingSegmentComposerError.unsupportedOutputFileType(AVFileType.mp4.rawValue)
         }
 
-        let replacementFileURL = outputFileURL
+        let replacementFileURL =
+            outputFileURL
             .deletingLastPathComponent()
-            .appending(path: ".\(outputFileURL.deletingPathExtension().lastPathComponent)-merged-\(UUID().uuidString)")
-            .appendingPathExtension(outputFileURL.pathExtension.isEmpty ? "mp4" : outputFileURL.pathExtension)
+            .appending(
+                path:
+                    ".\(outputFileURL.deletingPathExtension().lastPathComponent)-merged-\(UUID().uuidString)"
+            )
+            .appendingPathExtension(
+                outputFileURL.pathExtension.isEmpty ? "mp4" : outputFileURL.pathExtension)
 
         try? fileManager.removeItem(at: replacementFileURL)
 

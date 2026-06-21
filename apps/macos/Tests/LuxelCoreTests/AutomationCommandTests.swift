@@ -6,17 +6,22 @@ import Testing
 struct AutomationCommandTests {
     @Test("parser reads record URL with display preset countdown and callbacks")
     func parserReadsRecordURLWithDisplayPresetCountdownAndCallbacks() throws {
-        let url = try #require(URL(
-            string: "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3&x-success=luxel-callback://done"
-        ))
+        let url = try #require(
+            URL(
+                string:
+                    "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3&x-success=luxel-callback://done"
+            ))
 
         let invocation = try AutomationCommandParser.parse(url)
 
-        #expect(invocation.command == .record(AutomationRecordingOptions(
-            target: .display(.main),
-            presetName: "Quick GIF",
-            countdownSeconds: 3
-        )))
+        #expect(
+            invocation.command
+                == .record(
+                    AutomationRecordingOptions(
+                        target: .display(.main),
+                        presetName: "Quick GIF",
+                        countdownSeconds: 3
+                    )))
         #expect(invocation.callbacks.success == URL(string: "luxel-callback://done"))
         #expect(invocation.callbacks.error == nil)
     }
@@ -24,12 +29,13 @@ struct AutomationCommandTests {
     @Test("URL builder composes automation invocations")
     func urlBuilderComposesAutomationInvocations() throws {
         let invocation = AutomationInvocation(
-            command: .record(AutomationRecordingOptions(
-                target: .display(.main),
-                presetName: "Quick GIF",
-                countdownSeconds: 3,
-                outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
-            )),
+            command: .record(
+                AutomationRecordingOptions(
+                    target: .display(.main),
+                    presetName: "Quick GIF",
+                    countdownSeconds: 3,
+                    outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
+                )),
             callbacks: AutomationCallbacks(
                 success: URL(string: "luxel-callback://done"),
                 error: URL(string: "luxel-callback://failed")
@@ -38,64 +44,79 @@ struct AutomationCommandTests {
 
         let url = AutomationInvocationURLBuilder.url(for: invocation)
 
-        #expect(url.absoluteString == [
-            "luxel://record?target=display&display=main&preset=Quick%20GIF",
-            "countdown=3",
-            "saveTo=/tmp/Luxel%20Exports",
-            "x-success=luxel-callback://done",
-            "x-error=luxel-callback://failed"
-        ].joined(separator: "&"))
+        #expect(
+            url.absoluteString
+                == [
+                    "luxel://record?target=display&display=main&preset=Quick%20GIF",
+                    "countdown=3",
+                    "saveTo=/tmp/Luxel%20Exports",
+                    "x-success=luxel-callback://done",
+                    "x-error=luxel-callback://failed"
+                ].joined(separator: "&"))
         #expect(try AutomationCommandParser.parse(url) == invocation)
     }
 
     @Test("URL builder composes simple commands")
     func urlBuilderComposesSimpleCommands() throws {
-        #expect(AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .stop)).absoluteString == "luxel://stop")
         #expect(
-            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .clip(seconds: 30))).absoluteString
+            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .stop)).absoluteString
+                == "luxel://stop")
+        #expect(
+            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .clip(seconds: 30)))
+                .absoluteString
                 == "luxel://clip?seconds=30"
         )
         #expect(
-            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .preferences(.presets))).absoluteString
+            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .preferences(.presets)))
+                .absoluteString
                 == "luxel://preferences?pane=presets"
         )
         #expect(
-            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .latest(reveal: true))).absoluteString
+            AutomationInvocationURLBuilder.url(for: AutomationInvocation(command: .latest(reveal: true)))
+                .absoluteString
                 == "luxel://latest?reveal=true"
         )
     }
 
     @Test("parser reads last-area recording URL")
     func parserReadsLastAreaRecordingURL() throws {
-        let url = try #require(URL(string: "luxel://record?target=lastArea&saveTo=file:///tmp/Luxel%20Exports"))
+        let url = try #require(
+            URL(string: "luxel://record?target=lastArea&saveTo=file:///tmp/Luxel%20Exports"))
 
         let invocation = try AutomationCommandParser.parse(url)
 
-        #expect(invocation.command == .record(AutomationRecordingOptions(
-            target: .lastArea,
-            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
-        )))
+        #expect(
+            invocation.command
+                == .record(
+                    AutomationRecordingOptions(
+                        target: .lastArea,
+                        outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
+                    )))
     }
 
-    @Test("parser reads screenshot URL with active window and format")
-    func parserReadsScreenshotURLWithActiveWindowAndFormat() throws {
-        let url = try #require(URL(string: "luxel://screenshot?target=activeWindow&format=heic"))
+    @Test("parser rejects removed still image URL action")
+    func parserRejectsRemovedStillImageURLAction() throws {
+        let action = ["screen", "shot"].joined()
+        let url = try #require(URL(string: "luxel://\(action)?target=activeWindow&format=heic"))
 
-        let invocation = try AutomationCommandParser.parse(url)
-
-        #expect(invocation.command == .screenshot(AutomationScreenshotOptions(
-            target: .activeWindow,
-            format: .heic
-        )))
+        #expect(throws: AutomationCommandParseError.unknownAction(action)) {
+            _ = try AutomationCommandParser.parse(url)
+        }
     }
 
     @Test("parser reads stop toggle clip and preferences URLs")
     func parserReadsSimpleCommandURLs() throws {
-        #expect(try AutomationCommandParser.parse(#require(URL(string: "luxel://stop"))).command == .stop)
-        #expect(try AutomationCommandParser.parse(#require(URL(string: "luxel://toggle"))).command == .toggle(nil))
-        #expect(try AutomationCommandParser.parse(#require(URL(string: "luxel://clip?seconds=30"))).command == .clip(seconds: 30))
         #expect(
-            try AutomationCommandParser.parse(#require(URL(string: "luxel://preferences?pane=presets"))).command
+            try AutomationCommandParser.parse(#require(URL(string: "luxel://stop"))).command == .stop)
+        #expect(
+            try AutomationCommandParser.parse(#require(URL(string: "luxel://toggle"))).command
+                == .toggle(nil))
+        #expect(
+            try AutomationCommandParser.parse(#require(URL(string: "luxel://clip?seconds=30"))).command
+                == .clip(seconds: 30))
+        #expect(
+            try AutomationCommandParser.parse(#require(URL(string: "luxel://preferences?pane=presets")))
+                .command
                 == .preferences(.presets)
         )
         #expect(
@@ -123,11 +144,13 @@ struct AutomationCommandTests {
         }
 
         #expect(throws: AutomationCommandParseError.invalidParameter("countdown")) {
-            _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://record?target=lastArea&countdown=-1")))
+            _ = try AutomationCommandParser.parse(
+                #require(URL(string: "luxel://record?target=lastArea&countdown=-1")))
         }
 
         #expect(throws: AutomationCommandParseError.invalidParameter("countdown")) {
-            _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://record?target=lastArea&countdown=61")))
+            _ = try AutomationCommandParser.parse(
+                #require(URL(string: "luxel://record?target=lastArea&countdown=61")))
         }
 
         #expect(throws: AutomationCommandParseError.invalidParameter("reveal")) {
@@ -135,20 +158,24 @@ struct AutomationCommandTests {
         }
 
         #expect(throws: AutomationCommandParseError.invalidParameter("saveTo")) {
-            _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://record?target=lastArea&saveTo=relative")))
+            _ = try AutomationCommandParser.parse(
+                #require(URL(string: "luxel://record?target=lastArea&saveTo=relative")))
         }
     }
 
     @Test("parser rejects duplicate parameters and file callbacks")
     func parserRejectsDuplicateParametersAndFileCallbacks() throws {
         #expect(throws: AutomationCommandParseError.duplicateParameter("target")) {
-            _ = try AutomationCommandParser.parse(#require(URL(string: "luxel://record?target=lastArea&target=activeWindow")))
+            _ = try AutomationCommandParser.parse(
+                #require(URL(string: "luxel://record?target=lastArea&target=activeWindow")))
         }
 
         #expect(throws: AutomationCommandParseError.invalidCallbackURL("x-success")) {
-            _ = try AutomationCommandParser.parse(#require(URL(
-                string: "luxel://stop?x-success=file:///tmp/output.json"
-            )))
+            _ = try AutomationCommandParser.parse(
+                #require(
+                    URL(
+                        string: "luxel://stop?x-success=file:///tmp/output.json"
+                    )))
         }
     }
 
@@ -182,48 +209,58 @@ struct AutomationCommandTests {
     func policyAllowsSafeCommandsByDefault() {
         let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))
 
-        #expect(AutomationPolicy.evaluate(
-            command: .preferences(.presets),
-            settings: settings,
-            context: AutomationPolicyContext()
-        ) == .allow)
-        #expect(AutomationPolicy.evaluate(
-            command: .stop,
-            settings: settings,
-            context: AutomationPolicyContext()
-        ) == .allow)
-        #expect(AutomationPolicy.evaluate(
-            command: .latest(reveal: false),
-            settings: settings,
-            context: AutomationPolicyContext()
-        ) == .allow)
-        #expect(AutomationPolicy.evaluate(
-            command: .toggle(nil),
-            settings: settings,
-            context: AutomationPolicyContext(hasActiveRecording: true)
-        ) == .allow)
+        #expect(
+            AutomationPolicy.evaluate(
+                command: .preferences(.presets),
+                settings: settings,
+                context: AutomationPolicyContext()
+            ) == .allow)
+        #expect(
+            AutomationPolicy.evaluate(
+                command: .stop,
+                settings: settings,
+                context: AutomationPolicyContext()
+            ) == .allow)
+        #expect(
+            AutomationPolicy.evaluate(
+                command: .latest(reveal: false),
+                settings: settings,
+                context: AutomationPolicyContext()
+            ) == .allow)
+        #expect(
+            AutomationPolicy.evaluate(
+                command: .toggle(nil),
+                settings: settings,
+                context: AutomationPolicyContext(hasActiveRecording: true)
+            ) == .allow)
     }
 
     @Test("policy confirms ungranted start commands by default")
     func policyConfirmsUngrantedStartCommandsByDefault() {
         let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))
 
-        #expect(AutomationPolicy.evaluate(
-            command: .record(AutomationRecordingOptions(target: .lastArea)),
-            settings: settings,
-            context: AutomationPolicyContext()
-        ) == .confirm(AutomationPolicyPrompt(
-            title: "Allow Automation Request?",
-            message: "Another app wants to start a screen recording."
-        )))
-        #expect(AutomationPolicy.evaluate(
-            command: .toggle(nil),
-            settings: settings,
-            context: AutomationPolicyContext(hasActiveRecording: false)
-        ) == .confirm(AutomationPolicyPrompt(
-            title: "Allow Automation Request?",
-            message: "Another app wants to toggle recording."
-        )))
+        #expect(
+            AutomationPolicy.evaluate(
+                command: .record(AutomationRecordingOptions(target: .lastArea)),
+                settings: settings,
+                context: AutomationPolicyContext()
+            )
+            == .confirm(
+                AutomationPolicyPrompt(
+                    title: "Allow Automation Request?",
+                    message: "Another app wants to start a screen recording."
+                )))
+        #expect(
+            AutomationPolicy.evaluate(
+                command: .toggle(nil),
+                settings: settings,
+                context: AutomationPolicyContext(hasActiveRecording: false)
+            )
+            == .confirm(
+                AutomationPolicyPrompt(
+                    title: "Allow Automation Request?",
+                    message: "Another app wants to toggle recording."
+                )))
     }
 
     @Test("policy confirms ungranted named callers")
@@ -239,10 +276,13 @@ struct AutomationCommandTests {
             )
         )
 
-        #expect(decision == .confirm(AutomationPolicyPrompt(
-            title: "Allow Automation Request?",
-            message: "Terminal wants to start a screen recording."
-        )))
+        #expect(
+            decision
+                == .confirm(
+                    AutomationPolicyPrompt(
+                        title: "Allow Automation Request?",
+                        message: "Terminal wants to start a screen recording."
+                    )))
     }
 
     @Test("policy allows granted callers")
@@ -253,7 +293,7 @@ struct AutomationCommandTests {
         )
 
         let decision = AutomationPolicy.evaluate(
-            command: .screenshot(AutomationScreenshotOptions(target: .activeWindow)),
+            command: .record(AutomationRecordingOptions(target: .activeWindow)),
             settings: settings,
             context: AutomationPolicyContext(callerID: "com.example.terminal")
         )

@@ -101,7 +101,8 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         )
     }
 
-    private static func countingDownContent(remaining: TimeInterval) -> RecordingSessionPresentationContent {
+    private static func countingDownContent(remaining: TimeInterval)
+    -> RecordingSessionPresentationContent {
         let countdownText = Self.countdownText(remaining)
         return RecordingSessionPresentationContent(
             menuBarTitle: Self.countdownMenuBarText(remaining),
@@ -114,7 +115,8 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         )
     }
 
-    private static func recordingContent(timing: RecordingSessionTiming) -> RecordingSessionPresentationContent {
+    private static func recordingContent(timing: RecordingSessionTiming)
+    -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: ""),
             menuBarSystemImage: "record.circle",
@@ -130,7 +132,8 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         )
     }
 
-    private static func pausingContent(timing: RecordingSessionTiming) -> RecordingSessionPresentationContent {
+    private static func pausingContent(timing: RecordingSessionTiming)
+    -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: "●"),
             menuBarSystemImage: "pause.circle",
@@ -143,7 +146,8 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         )
     }
 
-    private static func pausedContent(timing: RecordingSessionTiming) -> RecordingSessionPresentationContent {
+    private static func pausedContent(timing: RecordingSessionTiming)
+    -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: ""),
             menuBarSystemImage: "pause.circle.fill",
@@ -158,7 +162,8 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         )
     }
 
-    private static func resumingContent(timing: RecordingSessionTiming) -> RecordingSessionPresentationContent {
+    private static func resumingContent(timing: RecordingSessionTiming)
+    -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: "‖"),
             menuBarSystemImage: "play.circle",
@@ -182,7 +187,8 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         )
     }
 
-    private static func exportingContent(snapshot: ExportProgressSnapshot) -> RecordingSessionPresentationContent {
+    private static func exportingContent(snapshot: ExportProgressSnapshot)
+    -> RecordingSessionPresentationContent {
         let progress = Int((snapshot.progress * 100).rounded())
         return RecordingSessionPresentationContent(
             menuBarTitle: "\(progress)%",
@@ -263,11 +269,12 @@ private struct RecordingSessionTiming {
     }
 
     func menuBarTitle(prefix: String) -> String {
-        let text = if displaysTimerTime {
-            remainingText.map { "−\($0)" } ?? "−0:00"
-        } else {
-            displaysElapsedTime ? (elapsedText ?? "0:00") : ""
-        }
+        let text =
+            if displaysTimerTime {
+                remainingText.map { "−\($0)" } ?? "−0:00"
+            } else {
+                displaysElapsedTime ? (elapsedText ?? "0:00") : ""
+            }
 
         guard !prefix.isEmpty else {
             return text
@@ -297,8 +304,8 @@ private struct RecordingSessionTiming {
     }
 }
 
-private extension RecordingSessionPresentationState {
-    var elapsed: TimeInterval? {
+extension RecordingSessionPresentationState {
+    fileprivate var elapsed: TimeInterval? {
         switch self {
         case .recording(let elapsed, _),
              .pausing(let elapsed, _),
@@ -310,7 +317,7 @@ private extension RecordingSessionPresentationState {
         }
     }
 
-    var remaining: TimeInterval? {
+    fileprivate var remaining: TimeInterval? {
         switch self {
         case .recording(_, let remaining),
              .pausing(_, let remaining),

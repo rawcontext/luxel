@@ -52,10 +52,12 @@ struct CaptureSelectionDraftTests {
         let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
 
         #expect(selection == (try CaptureRect(x: 0, y: 0, width: 1440, height: 900)))
-        #expect(try draft.captureTarget == .area(
-            displayID: DisplayID(7),
-            rect: CaptureRect(x: 0, y: 0, width: 1440, height: 900)
-        ))
+        #expect(
+            try draft.captureTarget
+                == .area(
+                    displayID: DisplayID(7),
+                    rect: CaptureRect(x: 0, y: 0, width: 1440, height: 900)
+                ))
     }
 
     @Test("draft converts top-left selection to ScreenCaptureKit recording target")
@@ -66,10 +68,12 @@ struct CaptureSelectionDraftTests {
         let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
 
         #expect(try draft.pixelSize == PixelSize(width: 640, height: 360))
-        #expect(try draft.captureTarget == .area(
-            displayID: DisplayID(42),
-            rect: CaptureRect(x: 100, y: 600, width: 640, height: 360)
-        ))
+        #expect(
+            try draft.captureTarget
+                == .area(
+                    displayID: DisplayID(42),
+                    rect: CaptureRect(x: 100, y: 600, width: 640, height: 360)
+                ))
     }
 
     @Test("resize bottom-right expands selection")

@@ -5,6 +5,6 @@ public protocol UserNotifier: Sendable {
     func notifyRecordingAutoStopped(duration: TimeInterval) async throws
 }
 
-public extension UserNotifier {
-    func notifyRecordingAutoStopped(duration: TimeInterval) async throws {}
+extension UserNotifier {
+    public func notifyRecordingAutoStopped(duration: TimeInterval) async throws {}
 }

@@ -13,16 +13,18 @@ struct AVAssetReaderAudioPeakAnalyzerTests {
         }
         let analyzer = AVAssetReaderAudioPeakAnalyzer()
 
-        let firstHalfPeaks = try await analyzer.measurePeaks(AudioPeakAnalysisRequest(
-            inputFileURL: fileURL,
-            timeRange: TimeRange(start: 0, end: 0.5),
-            audioTracks: [.system]
-        ))
-        let secondHalfPeaks = try await analyzer.measurePeaks(AudioPeakAnalysisRequest(
-            inputFileURL: fileURL,
-            timeRange: TimeRange(start: 0.5, end: 1),
-            audioTracks: [.system, .microphone, .system]
-        ))
+        let firstHalfPeaks = try await analyzer.measurePeaks(
+            AudioPeakAnalysisRequest(
+                inputFileURL: fileURL,
+                timeRange: TimeRange(start: 0, end: 0.5),
+                audioTracks: [.system]
+            ))
+        let secondHalfPeaks = try await analyzer.measurePeaks(
+            AudioPeakAnalysisRequest(
+                inputFileURL: fileURL,
+                timeRange: TimeRange(start: 0.5, end: 1),
+                audioTracks: [.system, .microphone, .system]
+            ))
 
         #expect(isApproximately(firstHalfPeaks[.system], 0.25))
         #expect(isApproximately(secondHalfPeaks[.system], 0.75))
@@ -34,11 +36,12 @@ struct AVAssetReaderAudioPeakAnalyzerTests {
     func analyzerReturnsZerosWhenMediaHasNoAudioTracks() async throws {
         let analyzer = AVAssetReaderAudioPeakAnalyzer()
 
-        let peaks = try await analyzer.measurePeaks(AudioPeakAnalysisRequest(
-            inputFileURL: try fixtureURL("input.mp4"),
-            timeRange: TimeRange(start: 0, end: 0.5),
-            audioTracks: [.system]
-        ))
+        let peaks = try await analyzer.measurePeaks(
+            AudioPeakAnalysisRequest(
+                inputFileURL: try fixtureURL("input.mp4"),
+                timeRange: TimeRange(start: 0, end: 0.5),
+                audioTracks: [.system]
+            ))
 
         #expect(peaks == [.system: 0])
     }
@@ -47,11 +50,12 @@ struct AVAssetReaderAudioPeakAnalyzerTests {
     func analyzerIgnoresEmptyTrackRequests() async throws {
         let analyzer = AVAssetReaderAudioPeakAnalyzer()
 
-        let peaks = try await analyzer.measurePeaks(AudioPeakAnalysisRequest(
-            inputFileURL: URL(fileURLWithPath: "/tmp/missing.wav"),
-            timeRange: TimeRange(start: 0, end: 1),
-            audioTracks: []
-        ))
+        let peaks = try await analyzer.measurePeaks(
+            AudioPeakAnalysisRequest(
+                inputFileURL: URL(fileURLWithPath: "/tmp/missing.wav"),
+                timeRange: TimeRange(start: 0, end: 1),
+                audioTracks: []
+            ))
 
         #expect(peaks.isEmpty)
     }
@@ -62,14 +66,16 @@ struct AVAssetReaderAudioPeakAnalyzerTests {
             .appendingPathExtension("wav")
         let sampleRate = 48_000.0
         let frameCount = AVAudioFrameCount(sampleRate)
-        let format = try #require(AVAudioFormat(
-            standardFormatWithSampleRate: sampleRate,
-            channels: 1
-        ))
-        let buffer = try #require(AVAudioPCMBuffer(
-            pcmFormat: format,
-            frameCapacity: frameCount
-        ))
+        let format = try #require(
+            AVAudioFormat(
+                standardFormatWithSampleRate: sampleRate,
+                channels: 1
+            ))
+        let buffer = try #require(
+            AVAudioPCMBuffer(
+                pcmFormat: format,
+                frameCapacity: frameCount
+            ))
         buffer.frameLength = frameCount
         let samples = try #require(buffer.floatChannelData?[0])
 

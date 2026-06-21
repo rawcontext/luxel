@@ -1,8 +1,8 @@
 import Foundation
 
-public extension AppSettings {
+extension AppSettings {
     @discardableResult
-    mutating func addCaptureSizePreset(id: UUID = UUID()) throws -> CaptureSizePreset {
+    public mutating func addCaptureSizePreset(id: UUID = UUID()) throws -> CaptureSizePreset {
         let preset = try CaptureSizePreset(
             id: id,
             name: userSizePresets.uniquePresetName(base: "New Size"),
@@ -13,7 +13,8 @@ public extension AppSettings {
     }
 
     @discardableResult
-    mutating func duplicateCaptureSizePreset(id: UUID, newID: UUID = UUID()) throws -> CaptureSizePreset {
+    public mutating func duplicateCaptureSizePreset(id: UUID, newID: UUID = UUID()) throws
+    -> CaptureSizePreset {
         guard let preset = userSizePresets.first(where: { $0.id == id }) else {
             throw CaptureSizePresetSettingsError.presetNotFound(id)
         }
@@ -27,7 +28,7 @@ public extension AppSettings {
         return copy
     }
 
-    mutating func deleteCaptureSizePreset(id: UUID) {
+    public mutating func deleteCaptureSizePreset(id: UUID) {
         userSizePresets.removeAll { $0.id == id }
     }
 }
@@ -36,8 +37,8 @@ public enum CaptureSizePresetSettingsError: Error, Equatable {
     case presetNotFound(UUID)
 }
 
-private extension [CaptureSizePreset] {
-    func uniquePresetName(base: String) -> String {
+extension [CaptureSizePreset] {
+    fileprivate func uniquePresetName(base: String) -> String {
         let names = Set(map(\.name))
         guard names.contains(base) else {
             return base

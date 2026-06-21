@@ -43,7 +43,8 @@ extension LuxelMenuModel {
     func presentCameraPreviewForRecording(_ request: RecordingRequest) async {
         guard let camera = request.camera,
               camera.isEnabled,
-              let cameraDeviceID = camera.deviceID else {
+              let cameraDeviceID = camera.deviceID
+        else {
             cameraPreviewPanelController.close()
             return
         }

@@ -13,9 +13,11 @@ public final class AppKitPointerDisplayProvider: PointerDisplayProvider {
     }
 }
 
-private extension NSScreen {
-    var displayID: DisplayID? {
-        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+extension NSScreen {
+    fileprivate var displayID: DisplayID? {
+        guard
+            let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else {
             return nil
         }
 

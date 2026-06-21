@@ -277,7 +277,8 @@ public enum SpotlightIntervalResolver {
         }
 
         if let start = activeStart, recordingDuration > start {
-            intervals.append(SpotlightInterval(timeRange: try TimeRange(start: start, end: recordingDuration)))
+            intervals.append(
+                SpotlightInterval(timeRange: try TimeRange(start: start, end: recordingDuration)))
         }
 
         return intervals

@@ -20,7 +20,8 @@ final class LuxelShortcutController: @unchecked Sendable {
     ) {
         removeMonitors()
 
-        let nextRegistrations = enabled
+        let nextRegistrations =
+            enabled
             ? nextRegistrations.compactMap { registration -> ShortcutAction? in
                 guard let shortcut = AppKeyboardShortcut(rawValue: registration.rawShortcut) else {
                     return nil
@@ -38,19 +39,23 @@ final class LuxelShortcutController: @unchecked Sendable {
             return
         }
 
-        if let localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
-            guard self?.handle(event) == true else {
-                return event
-            }
+        if let localMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: .keyDown,
+            handler: { [weak self] event in
+                guard self?.handle(event) == true else {
+                    return event
+                }
 
-            return nil
-        }) {
+                return nil
+            }) {
             monitors.append(localMonitor)
         }
 
-        if let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown, handler: { [weak self] event in
-            _ = self?.handle(event)
-        }) {
+        if let globalMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: .keyDown,
+            handler: { [weak self] event in
+                _ = self?.handle(event)
+            }) {
             monitors.append(globalMonitor)
         }
     }
@@ -69,7 +74,8 @@ final class LuxelShortcutController: @unchecked Sendable {
         let currentRegistrations = registrations
         lock.unlock()
 
-        guard let registration = currentRegistrations.first(where: { event.matches($0.shortcut) }) else {
+        guard let registration = currentRegistrations.first(where: { event.matches($0.shortcut) })
+        else {
             return false
         }
 
@@ -87,17 +93,18 @@ final class LuxelShortcutController: @unchecked Sendable {
     }
 }
 
-private extension NSEvent {
-    func matches(_ shortcut: AppKeyboardShortcut) -> Bool {
+extension NSEvent {
+    fileprivate func matches(_ shortcut: AppKeyboardShortcut) -> Bool {
         guard type == .keyDown,
-              charactersIgnoringModifiers?.lowercased() == shortcut.key else {
+              charactersIgnoringModifiers?.lowercased() == shortcut.key
+        else {
             return false
         }
 
         return Set(appShortcutModifiers) == Set(shortcut.modifiers)
     }
 
-    var appShortcutModifiers: [AppKeyboardShortcutModifier] {
+    fileprivate var appShortcutModifiers: [AppKeyboardShortcutModifier] {
         var modifiers: [AppKeyboardShortcutModifier] = []
 
         if modifierFlags.contains(.command) {

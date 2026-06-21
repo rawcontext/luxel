@@ -39,10 +39,11 @@ struct GIFContainerWriterTests {
         #expect(parsed.graphicControls.map(\.delay) == [5, 7])
         #expect(parsed.graphicControls.map(\.transparentColorIndex) == [0, 0])
         #expect(parsed.graphicControls.map(\.disposal) == [1, 2])
-        #expect(parsed.imageDescriptors == [
-            GIFImageDescriptor(x: 0, y: 0, width: 2, height: 2),
-            GIFImageDescriptor(x: 1, y: 0, width: 1, height: 1)
-        ])
+        #expect(
+            parsed.imageDescriptors == [
+                GIFImageDescriptor(x: 0, y: 0, width: 2, height: 2),
+                GIFImageDescriptor(x: 1, y: 0, width: 1, height: 1)
+            ])
     }
 
     @Test("writer rejects invalid frame shape palette indexes and delay counts")
@@ -108,7 +109,8 @@ struct GIFContainerWriterTests {
         try #require(bytes.count >= 13)
         let packed = bytes[10]
         let hasGlobalColorTable = (packed & 0b1000_0000) != 0
-        let globalColorTableSize = hasGlobalColorTable
+        let globalColorTableSize =
+            hasGlobalColorTable
             ? 3 * (1 << (Int(packed & 0b0000_0111) + 1))
             : 0
         var offset = 13 + globalColorTableSize
@@ -122,18 +124,20 @@ struct GIFContainerWriterTests {
                 let label = bytes[offset + 1]
                 if label == 0xF9 {
                     let packed = bytes[offset + 3]
-                    graphicControls.append(GIFGraphicControl(
-                        disposal: Int((packed >> 2) & 0b0000_0111),
-                        delay: readUInt16(bytes, offset + 4),
-                        transparentColorIndex: bytes[offset + 6]
-                    ))
+                    graphicControls.append(
+                        GIFGraphicControl(
+                            disposal: Int((packed >> 2) & 0b0000_0111),
+                            delay: readUInt16(bytes, offset + 4),
+                            transparentColorIndex: bytes[offset + 6]
+                        ))
                     offset += 8
                 } else if label == 0xFF {
                     let blockSize = Int(bytes[offset + 2])
-                    let application = String(
-                        bytes: bytes[(offset + 3)..<(offset + 3 + blockSize)],
-                        encoding: .utf8
-                    ) ?? ""
+                    let application =
+                        String(
+                            bytes: bytes[(offset + 3)..<(offset + 3 + blockSize)],
+                            encoding: .utf8
+                        ) ?? ""
                     offset += 3 + blockSize
                     if application == "NETSCAPE2.0",
                        bytes[offset] == 3,
@@ -147,12 +151,13 @@ struct GIFContainerWriterTests {
                 }
             case 0x2C:
                 let packed = bytes[offset + 9]
-                imageDescriptors.append(GIFImageDescriptor(
-                    x: readUInt16(bytes, offset + 1),
-                    y: readUInt16(bytes, offset + 3),
-                    width: readUInt16(bytes, offset + 5),
-                    height: readUInt16(bytes, offset + 7)
-                ))
+                imageDescriptors.append(
+                    GIFImageDescriptor(
+                        x: readUInt16(bytes, offset + 1),
+                        y: readUInt16(bytes, offset + 3),
+                        width: readUInt16(bytes, offset + 5),
+                        height: readUInt16(bytes, offset + 7)
+                    ))
                 offset += 10
                 if (packed & 0b1000_0000) != 0 {
                     offset += 3 * (1 << (Int(packed & 0b0000_0111) + 1))

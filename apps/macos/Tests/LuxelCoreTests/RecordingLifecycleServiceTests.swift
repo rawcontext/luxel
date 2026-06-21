@@ -132,9 +132,10 @@ extension RecordingLifecycleServiceTests {
         #expect(recording.fileURL == finalURL)
         #expect(store.activeRecording == nil)
         #expect(store.recordings == [recording])
-        #expect(fileSystem.movedFiles == [
-            RecordingOutputMove(sourceURL: stagingURL, destinationURL: finalURL)
-        ])
+        #expect(
+            fileSystem.movedFiles == [
+                RecordingOutputMove(sourceURL: stagingURL, destinationURL: finalURL)
+            ])
     }
 
     @Test("stop keeps staged recording when final move fails")
@@ -190,9 +191,11 @@ extension RecordingLifecycleServiceTests {
             )
         )
 
-        await #expect(throws: RecordingLifecycleError.outputFinalizationFailed(
-            "No recording output was produced. Try recording again."
-        )) {
+        await #expect(
+            throws: RecordingLifecycleError.outputFinalizationFailed(
+                "No recording output was produced. Try recording again."
+            )
+        ) {
             try await service.stopRecording()
         }
         #expect(store.activeRecording == nil)
@@ -209,7 +212,8 @@ extension RecordingLifecycleServiceTests {
         let recorder = SpyCaptureRecorder()
         let history = makeHistory(store: store, fileSystem: fileSystem)
         let service = RecordingLifecycleService(recorder: recorder, history: history)
-        history.setCurrentRecording(fileURL: fileURL, name: "Active", options: RecordingOptions(frameRate: 30))
+        history.setCurrentRecording(
+            fileURL: fileURL, name: "Active", options: RecordingOptions(frameRate: 30))
 
         let recording = try await service.stopRecording(recordingName: "Finished")
 
@@ -496,7 +500,8 @@ extension RecordingLifecycleServiceTests {
     private func makeService(
         store: InMemoryRecordingHistoryStore,
         recorder: SpyCaptureRecorder,
-        dateProvider: any DateProvider = FixedDateProvider(date: Date(timeIntervalSince1970: 1_595_348_846)),
+        dateProvider: any DateProvider = FixedDateProvider(
+            date: Date(timeIntervalSince1970: 1_595_348_846)),
         autoStopScheduler: any RecordingAutoStopScheduler = ManualAutoStopScheduler(),
         countdownSleeper: any RecordingCountdownSleeper = SpyCountdownSleeper(),
         userNotifier: (any UserNotifier)? = nil
@@ -513,8 +518,11 @@ extension RecordingLifecycleServiceTests {
 
     private func makeHistory(
         store: InMemoryRecordingHistoryStore,
-        fileSystem: any FileSystem = StubFileSystem(existingFiles: [URL(fileURLWithPath: "/tmp/luxel.mp4")]),
-        dateProvider: any DateProvider = FixedDateProvider(date: Date(timeIntervalSince1970: 1_595_348_846))
+        fileSystem: any FileSystem = StubFileSystem(existingFiles: [
+            URL(fileURLWithPath: "/tmp/luxel.mp4")
+        ]),
+        dateProvider: any DateProvider = FixedDateProvider(
+            date: Date(timeIntervalSince1970: 1_595_348_846))
     ) -> RecordingHistoryService {
         RecordingHistoryService(
             store: store,
@@ -672,10 +680,11 @@ private final class RecordingOutputFileSystem: FileSystem, @unchecked Sendable {
 
         existingFiles.remove(sourceURL)
         existingFiles.insert(destinationURL)
-        movedFiles.append(RecordingOutputMove(
-            sourceURL: sourceURL,
-            destinationURL: destinationURL
-        ))
+        movedFiles.append(
+            RecordingOutputMove(
+                sourceURL: sourceURL,
+                destinationURL: destinationURL
+            ))
     }
 
     func writeData(_ data: Data, to url: URL) throws {}

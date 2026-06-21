@@ -15,21 +15,25 @@ struct AnimatedFrameRenderer: Sendable {
             cameraTransform: cameraTransform
         )
         let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
-        guard let context = CGContext(
-            data: nil,
-            width: outputPixelSize.width,
-            height: outputPixelSize.height,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else {
+        guard
+            let context = CGContext(
+                data: nil,
+                width: outputPixelSize.width,
+                height: outputPixelSize.height,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
+        else {
             throw AnimatedFrameRendererError.cannotCreateFrameContext
         }
 
         context.clear(CGRect(origin: .zero, size: outputSize))
         context.interpolationQuality = .high
-        context.draw(drawableImage, in: drawRect(for: drawableImage, outputSize: outputSize, shouldCrop: shouldCrop))
+        context.draw(
+            drawableImage,
+            in: drawRect(for: drawableImage, outputSize: outputSize, shouldCrop: shouldCrop))
 
         guard let renderedImage = context.makeImage() else {
             throw AnimatedFrameRendererError.cannotRenderFrame
@@ -55,7 +59,8 @@ struct AnimatedFrameRenderer: Sendable {
         let bytesPerRow = outputPixelSize.width * bytesPerPixel
         let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
         let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+        let bitmapInfo =
+            CGImageAlphaInfo.premultipliedLast.rawValue
             | CGBitmapInfo.byteOrder32Big.rawValue
         var bytes = Array(
             repeating: UInt8(0),
@@ -63,15 +68,17 @@ struct AnimatedFrameRenderer: Sendable {
         )
 
         try bytes.withUnsafeMutableBytes { pointer in
-            guard let context = CGContext(
-                data: pointer.baseAddress,
-                width: outputPixelSize.width,
-                height: outputPixelSize.height,
-                bitsPerComponent: 8,
-                bytesPerRow: bytesPerRow,
-                space: colorSpace,
-                bitmapInfo: bitmapInfo
-            ) else {
+            guard
+                let context = CGContext(
+                    data: pointer.baseAddress,
+                    width: outputPixelSize.width,
+                    height: outputPixelSize.height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space: colorSpace,
+                    bitmapInfo: bitmapInfo
+                )
+            else {
                 throw AnimatedFrameRendererError.cannotCreateFrameContext
             }
 
@@ -88,12 +95,13 @@ struct AnimatedFrameRenderer: Sendable {
         pixels.reserveCapacity(outputPixelSize.width * outputPixelSize.height)
         for offset in stride(from: 0, to: bytes.count, by: bytesPerPixel) {
             let alpha = bytes[offset + 3]
-            pixels.append(GIFRGBAPixel(
-                red: Self.unpremultipliedComponent(bytes[offset], alpha: alpha),
-                green: Self.unpremultipliedComponent(bytes[offset + 1], alpha: alpha),
-                blue: Self.unpremultipliedComponent(bytes[offset + 2], alpha: alpha),
-                alpha: alpha
-            ))
+            pixels.append(
+                GIFRGBAPixel(
+                    red: Self.unpremultipliedComponent(bytes[offset], alpha: alpha),
+                    green: Self.unpremultipliedComponent(bytes[offset + 1], alpha: alpha),
+                    blue: Self.unpremultipliedComponent(bytes[offset + 2], alpha: alpha),
+                    alpha: alpha
+                ))
         }
 
         return try GIFFrameBitmap(pixelSize: outputPixelSize, pixels: pixels)
@@ -140,7 +148,8 @@ struct AnimatedFrameRenderer: Sendable {
         guard !clampedRect.isNull,
               clampedRect.width > 0,
               clampedRect.height > 0,
-              let croppedImage = image.cropping(to: clampedRect) else {
+              let croppedImage = image.cropping(to: clampedRect)
+        else {
             throw AnimatedFrameRendererError.cannotCropFrame
         }
 

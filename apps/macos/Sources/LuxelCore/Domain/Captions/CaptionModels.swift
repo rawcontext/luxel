@@ -85,16 +85,18 @@ public struct CaptionTrackEditor: Equatable, Sendable {
         }
 
         var cues = track.cues
-        cues.replaceSubrange(index...index, with: [
-            try CaptionCue(
-                timeRange: TimeRange(start: cue.timeRange.start, end: splitTime),
-                text: firstText
-            ),
-            try CaptionCue(
-                timeRange: TimeRange(start: splitTime, end: cue.timeRange.end),
-                text: secondText
-            )
-        ])
+        cues.replaceSubrange(
+            index...index,
+            with: [
+                try CaptionCue(
+                    timeRange: TimeRange(start: cue.timeRange.start, end: splitTime),
+                    text: firstText
+                ),
+                try CaptionCue(
+                    timeRange: TimeRange(start: splitTime, end: cue.timeRange.end),
+                    text: secondText
+                )
+            ])
         return try makeTrack(cues: cues)
     }
 
@@ -103,12 +105,14 @@ public struct CaptionTrackEditor: Equatable, Sendable {
         let second = try cue(at: index + 1)
 
         var cues = track.cues
-        cues.replaceSubrange(index...(index + 1), with: [
-            try CaptionCue(
-                timeRange: TimeRange(start: first.timeRange.start, end: second.timeRange.end),
-                text: [first.text, second.text].joined(separator: "\n")
-            )
-        ])
+        cues.replaceSubrange(
+            index...(index + 1),
+            with: [
+                try CaptionCue(
+                    timeRange: TimeRange(start: first.timeRange.start, end: second.timeRange.end),
+                    text: [first.text, second.text].joined(separator: "\n")
+                )
+            ])
         return try makeTrack(cues: cues)
     }
 

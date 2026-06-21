@@ -23,7 +23,8 @@ public struct KeystrokeTimelineRecordingService: Sendable {
         self.sidecarPersistence = sidecarPersistence
     }
 
-    public func recordTimeline(_ request: KeystrokeTimelineRecordingRequest) async throws -> KeystrokeTimeline {
+    public func recordTimeline(_ request: KeystrokeTimelineRecordingRequest) async throws
+    -> KeystrokeTimeline {
         let mapper = try MediaTimeMapper(
             recordingDuration: request.recordingDuration,
             pauses: request.pauses
@@ -71,26 +72,28 @@ private struct KeystrokeTimelineRecordingBuilder {
                 return
             }
 
-            events.append(try KeystrokeEvent(
-                time: mediaTime,
-                kind: .keyDown,
-                keyCode: keyCode,
-                characters: characters,
-                modifiers: modifiers,
-                isRepeat: isRepeat
-            ))
+            events.append(
+                try KeystrokeEvent(
+                    time: mediaTime,
+                    kind: .keyDown,
+                    keyCode: keyCode,
+                    characters: characters,
+                    modifiers: modifiers,
+                    isRepeat: isRepeat
+                ))
 
         case .flagsChanged(let wallTime, let keyCode, let modifiers):
             guard let mediaTime = mapper.mediaTime(forWallTime: wallTime) else {
                 return
             }
 
-            events.append(try KeystrokeEvent(
-                time: mediaTime,
-                kind: .flagsChanged,
-                keyCode: keyCode,
-                modifiers: modifiers
-            ))
+            events.append(
+                try KeystrokeEvent(
+                    time: mediaTime,
+                    kind: .flagsChanged,
+                    keyCode: keyCode,
+                    modifiers: modifiers
+                ))
 
         case .pauseStarted(let wallTime, let cause):
             guard let mediaTime = mapper.mediaTime(forWallTime: wallTime) else {
@@ -102,7 +105,8 @@ private struct KeystrokeTimelineRecordingBuilder {
         case .pauseEnded(let wallTime, let cause):
             guard let mediaTime = mapper.mediaTime(forWallTime: wallTime),
                   var starts = pauseStarts[cause],
-                  !starts.isEmpty else {
+                  !starts.isEmpty
+            else {
                 return
             }
 
@@ -112,10 +116,11 @@ private struct KeystrokeTimelineRecordingBuilder {
                 return
             }
 
-            pauses.append(KeystrokePauseInterval(
-                timeRange: try TimeRange(start: start, end: mediaTime),
-                cause: cause
-            ))
+            pauses.append(
+                KeystrokePauseInterval(
+                    timeRange: try TimeRange(start: start, end: mediaTime),
+                    cause: cause
+                ))
         }
     }
 

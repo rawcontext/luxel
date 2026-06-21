@@ -3,6 +3,7 @@ import CoreMedia
 import CoreVideo
 import ScreenCaptureKit
 import Testing
+
 @testable import LuxelCore
 
 @Suite("ScreenCaptureKit recording configuration")

@@ -64,28 +64,31 @@ struct JSONRecordingHistoryStoreTests {
 
         let storeURL = directory.appending(path: "recording-history.json")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try Data("""
-        {
-          "activeRecording": null,
-          "recordings": [
-            {
-              "date": "1970-01-01T00:00:01Z",
-              "fileURL": "file:///tmp/legacy.mp4",
-              "name": "Legacy"
-            }
-          ]
-        }
-        """.utf8).write(to: storeURL)
+        try Data(
+            """
+      {
+        "activeRecording": null,
+        "recordings": [
+          {
+            "date": "1970-01-01T00:00:01Z",
+            "fileURL": "file:///tmp/legacy.mp4",
+            "name": "Legacy"
+          }
+        ]
+      }
+      """.utf8
+        ).write(to: storeURL)
 
         let store = try JSONRecordingHistoryStore(fileURL: storeURL)
 
-        #expect(store.recordings == [
-            PastRecording(
-                fileURL: URL(fileURLWithPath: "/tmp/legacy.mp4"),
-                name: "Legacy",
-                date: Date(timeIntervalSince1970: 1)
-            )
-        ])
+        #expect(
+            store.recordings == [
+                PastRecording(
+                    fileURL: URL(fileURLWithPath: "/tmp/legacy.mp4"),
+                    name: "Legacy",
+                    date: Date(timeIntervalSince1970: 1)
+                )
+            ])
     }
 
     @Test("loads legacy past recordings without kind as recordings")
@@ -95,33 +98,83 @@ struct JSONRecordingHistoryStoreTests {
 
         let storeURL = directory.appending(path: "recording-history.json")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try Data("""
-        {
-          "activeRecording": null,
-          "recordings": [
-            {
-              "date": "1970-01-01T00:00:01Z",
-              "fileURL": "file:///tmp/legacy-kind.mp4",
-              "name": "Legacy Kind",
-              "options": {
-                "frameRate": 30
-              }
+        try Data(
+            """
+      {
+        "activeRecording": null,
+        "recordings": [
+          {
+            "date": "1970-01-01T00:00:01Z",
+            "fileURL": "file:///tmp/legacy-kind.mp4",
+            "name": "Legacy Kind",
+            "options": {
+              "frameRate": 30
             }
-          ]
-        }
-        """.utf8).write(to: storeURL)
+          }
+        ]
+      }
+      """.utf8
+        ).write(to: storeURL)
 
         let store = try JSONRecordingHistoryStore(fileURL: storeURL)
 
-        #expect(store.recordings == [
-            PastRecording(
-                fileURL: URL(fileURLWithPath: "/tmp/legacy-kind.mp4"),
-                name: "Legacy Kind",
-                date: Date(timeIntervalSince1970: 1),
-                kind: .recording,
-                options: RecordingOptions(frameRate: 30)
-            )
-        ])
+        #expect(
+            store.recordings == [
+                PastRecording(
+                    fileURL: URL(fileURLWithPath: "/tmp/legacy-kind.mp4"),
+                    name: "Legacy Kind",
+                    date: Date(timeIntervalSince1970: 1),
+                    kind: .recording,
+                    options: RecordingOptions(frameRate: 30)
+                )
+            ])
+    }
+
+    @Test("drops legacy non-recording past rows")
+    func dropsLegacyNonRecordingPastRows() throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let retiredKind = ["screen", "shot"].joined()
+        let storeURL = directory.appending(path: "recording-history.json")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try Data(
+            """
+      {
+        "activeRecording": null,
+        "recordings": [
+          {
+            "date": "1970-01-01T00:00:01Z",
+            "fileURL": "file:///tmp/legacy.mp4",
+            "kind": "recording",
+            "name": "Legacy",
+            "options": {
+              "frameRate": 30
+            }
+          },
+          {
+            "date": "1970-01-01T00:00:02Z",
+            "fileURL": "file:///tmp/legacy.png",
+            "kind": "\(retiredKind)",
+            "name": "Legacy Still"
+          }
+        ]
+      }
+      """.utf8
+        ).write(to: storeURL)
+
+        let store = try JSONRecordingHistoryStore(fileURL: storeURL)
+
+        #expect(
+            store.recordings == [
+                PastRecording(
+                    fileURL: URL(fileURLWithPath: "/tmp/legacy.mp4"),
+                    name: "Legacy",
+                    date: Date(timeIntervalSince1970: 1),
+                    kind: .recording,
+                    options: RecordingOptions(frameRate: 30)
+                )
+            ])
     }
 
     private func temporaryDirectory() -> URL {

@@ -11,13 +11,13 @@ public protocol FileSystem: Sendable {
     func trashItem(at url: URL) throws
 }
 
-public extension FileSystem {
-    func moveFile(from sourceURL: URL, to destinationURL: URL) throws {
+extension FileSystem {
+    public func moveFile(from sourceURL: URL, to destinationURL: URL) throws {
         try copyFile(from: sourceURL, to: destinationURL)
         try removeFile(at: sourceURL)
     }
 
-    func readData(at url: URL) throws -> Data {
+    public func readData(at url: URL) throws -> Data {
         throw FileSystemError.unsupportedRead(url)
     }
 }

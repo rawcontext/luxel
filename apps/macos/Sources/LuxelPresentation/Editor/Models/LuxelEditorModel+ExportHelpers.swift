@@ -8,7 +8,8 @@ extension LuxelEditorModel {
         previewAudioMixTask = nil
 
         guard let source,
-              let playerItem = player.currentItem else {
+              let playerItem = player.currentItem
+        else {
             player.isMuted = true
             player.currentItem?.audioMix = nil
             return
@@ -52,7 +53,8 @@ extension LuxelEditorModel {
 
                 guard !Task.isCancelled,
                       self.currentPreviewAudioMixTaskID(source: source) == taskID,
-                      self.player.currentItem === playerItem else {
+                      self.player.currentItem === playerItem
+                else {
                     return
                 }
 
@@ -61,7 +63,8 @@ extension LuxelEditorModel {
             } catch is CancellationError {
             } catch {
                 guard !Task.isCancelled,
-                      self?.player.currentItem === playerItem else {
+                      self?.player.currentItem === playerItem
+                else {
                     return
                 }
 
@@ -111,7 +114,8 @@ extension LuxelEditorModel {
             return try GIFRenderOptions(loopMode: gifLoopMode)
         }
 
-        let resolvedQuality = quality.isAvailable(for: format)
+        let resolvedQuality =
+            quality.isAvailable(for: format)
             ? quality
             : ExportQuality.defaultQuality(for: format)
         return try GIFRenderOptions(

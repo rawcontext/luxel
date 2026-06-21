@@ -121,7 +121,8 @@ private enum AudioLevelCaptureSessionError: Error {
     case sessionConfigurationFailed
 }
 
-private final class AudioLevelSampleBufferDelegate: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
+private final class AudioLevelSampleBufferDelegate: NSObject,
+                                                    AVCaptureAudioDataOutputSampleBufferDelegate {
     private let continuation: AsyncStream<AudioLevelSample>.Continuation
 
     init(continuation: AsyncStream<AudioLevelSample>.Continuation) {

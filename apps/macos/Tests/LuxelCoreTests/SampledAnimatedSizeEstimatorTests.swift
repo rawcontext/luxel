@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import LuxelCore
 
 @Suite("Sampled animated size estimator")
@@ -124,21 +125,24 @@ struct SampledAnimatedSizeEstimatorTests {
     @Test("gif estimates preserve size and quality budgets")
     func gifEstimatesPreserveSizeAndQualityBudgets() async throws {
         let estimator = SampledAnimatedSizeEstimator()
-        let balancedLarge = try await estimator.estimate(try makeRequest(
-            format: .gif,
-            pixelSize: PixelSize(width: 160, height: 90),
-            quality: .balanced
-        ))
-        let balancedSmall = try await estimator.estimate(try makeRequest(
-            format: .gif,
-            pixelSize: PixelSize(width: 80, height: 45),
-            quality: .balanced
-        ))
-        let compactLarge = try await estimator.estimate(try makeRequest(
-            format: .gif,
-            pixelSize: PixelSize(width: 160, height: 90),
-            quality: .compact
-        ))
+        let balancedLarge = try await estimator.estimate(
+            try makeRequest(
+                format: .gif,
+                pixelSize: PixelSize(width: 160, height: 90),
+                quality: .balanced
+            ))
+        let balancedSmall = try await estimator.estimate(
+            try makeRequest(
+                format: .gif,
+                pixelSize: PixelSize(width: 80, height: 45),
+                quality: .balanced
+            ))
+        let compactLarge = try await estimator.estimate(
+            try makeRequest(
+                format: .gif,
+                pixelSize: PixelSize(width: 160, height: 90),
+                quality: .compact
+            ))
 
         #expect(balancedSmall.bytes < balancedLarge.bytes)
         #expect(compactLarge.bytes <= balancedLarge.bytes)

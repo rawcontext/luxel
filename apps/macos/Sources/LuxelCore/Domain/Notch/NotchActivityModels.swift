@@ -15,15 +15,15 @@ public enum NotchActivity: Equatable, Sendable {
     case processing
     case exporting(snapshot: ExportProgressSnapshot)
     case completed(artifact: NotchArtifact)
-    case screenshotCaptured(artifact: NotchArtifact)
     case error(NotchError)
     case nowPlaying(NotchNowPlayingSnapshot)
 
     public var isTransient: Bool {
         switch self {
-        case .completed, .screenshotCaptured, .error:
+        case .completed, .error:
             true
-        case .dormant, .idleHover, .arming, .recording, .paused, .replayBuffering, .processing, .exporting,
+        case .dormant, .idleHover, .arming, .recording, .paused, .replayBuffering, .processing,
+             .exporting,
              .nowPlaying:
             false
         }
@@ -33,7 +33,7 @@ public enum NotchActivity: Equatable, Sendable {
         switch self {
         case .error:
             110
-        case .completed, .screenshotCaptured:
+        case .completed:
             100
         case .exporting:
             90
@@ -63,7 +63,8 @@ public struct NotchReplayBufferCoverage: Codable, Equatable, Sendable {
 
     public init(coveredDuration: TimeInterval, requestedDuration: TimeInterval) throws {
         guard coveredDuration.isFinite, coveredDuration >= 0,
-              requestedDuration.isFinite, requestedDuration > 0 else {
+              requestedDuration.isFinite, requestedDuration > 0
+        else {
             throw NotchActivityError.invalidReplayCoverage
         }
 
@@ -86,7 +87,6 @@ public struct NotchReplayBufferCoverage: Codable, Equatable, Sendable {
 public enum NotchArtifactKind: String, Codable, Equatable, Sendable {
     case recording
     case export
-    case screenshot
 }
 
 public struct NotchArtifact: Codable, Equatable, Sendable {
@@ -135,7 +135,8 @@ public struct NotchNowPlayingSnapshot: Codable, Equatable, Sendable {
 
     public init(elapsed: TimeInterval, duration: TimeInterval) throws {
         guard elapsed.isFinite, elapsed >= 0,
-              duration.isFinite, duration > 0 else {
+              duration.isFinite, duration > 0
+        else {
             throw NotchActivityError.invalidPlaybackTime
         }
 

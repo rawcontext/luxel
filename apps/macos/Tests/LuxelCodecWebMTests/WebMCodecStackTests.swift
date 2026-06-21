@@ -44,7 +44,8 @@ struct WebMCodecStackTests {
         try assertCuesResolveToClusters(in: document)
 
         let info = try document.topLevelElement(WebMTestID.info)
-        #expect(try document.unsigned(document.firstChild(WebMTestID.timestampScale, in: info)) == 1_000_000)
+        #expect(
+            try document.unsigned(document.firstChild(WebMTestID.timestampScale, in: info)) == 1_000_000)
         #expect(try document.double(document.firstChild(WebMTestID.duration, in: info)) > 0)
         #expect(Int(document.segment.size) == document.segment.payloadRange.count)
     }
@@ -97,15 +98,17 @@ struct WebMCodecStackTests {
         }
 
         let muxer = WebMMuxer()
-        try await muxer.begin(try CodecMuxerConfiguration(
-            outputFileURL: outputURL,
-            format: .webm,
-            tracks: [.video],
-            pixelSize: PixelSize(width: 64, height: 64)
-        ))
+        try await muxer.begin(
+            try CodecMuxerConfiguration(
+                outputFileURL: outputURL,
+                format: .webm,
+                tracks: [.video],
+                pixelSize: PixelSize(width: 64, height: 64)
+            ))
 
         for index in 0..<150 {
-            try await muxer.write(fakeVideoPacket(index: index, byteCount: 256, keyframeInterval: 60), to: .video)
+            try await muxer.write(
+                fakeVideoPacket(index: index, byteCount: 256, keyframeInterval: 60), to: .video)
         }
         try await muxer.finalize()
 
@@ -128,15 +131,17 @@ struct WebMCodecStackTests {
         }
 
         let muxer = WebMMuxer()
-        try await muxer.begin(try CodecMuxerConfiguration(
-            outputFileURL: outputURL,
-            format: .webm,
-            tracks: [.video],
-            pixelSize: PixelSize(width: 64, height: 64)
-        ))
+        try await muxer.begin(
+            try CodecMuxerConfiguration(
+                outputFileURL: outputURL,
+                format: .webm,
+                tracks: [.video],
+                pixelSize: PixelSize(width: 64, height: 64)
+            ))
 
         for index in 0..<10 {
-            try await muxer.write(fakeVideoPacket(index: index, byteCount: 350_000, keyframeInterval: 1), to: .video)
+            try await muxer.write(
+                fakeVideoPacket(index: index, byteCount: 350_000, keyframeInterval: 1), to: .video)
         }
         try await muxer.finalize()
 
@@ -145,7 +150,9 @@ struct WebMCodecStackTests {
 
         #expect(clusters.count >= 3)
         for cluster in clusters {
-            let simpleBlocks = try document.children(of: cluster).filter { $0.id == WebMTestID.simpleBlock }
+            let simpleBlocks = try document.children(of: cluster).filter {
+                $0.id == WebMTestID.simpleBlock
+            }
             #expect(!simpleBlocks.isEmpty)
             #expect(cluster.payloadRange.count <= 1_400_000)
         }
@@ -265,7 +272,8 @@ private func packageRootURL() throws -> URL {
     return url.deletingLastPathComponent()
 }
 
-private func fakeVideoPacket(index: Int, byteCount: Int, keyframeInterval: Int) throws -> EncodedPacket {
+private func fakeVideoPacket(index: Int, byteCount: Int, keyframeInterval: Int) throws
+-> EncodedPacket {
     try EncodedPacket(
         data: Data(repeating: UInt8(index % 255), count: byteCount),
         presentationTime: Double(index) / 30,
@@ -298,17 +306,20 @@ private func assertTracks(in document: WebMTestDocument, includeAudio: Bool) thr
     #expect(codecIDs.contains("V_VP9"))
     #expect(codecIDs.contains("A_OPUS") == includeAudio)
 
-    let videoTrack = try #require(trackEntries.first { trackEntry in
-        (try? document.string(document.firstChild(WebMTestID.codecID, in: trackEntry))) == "V_VP9"
-    })
+    let videoTrack = try #require(
+        trackEntries.first { trackEntry in
+            (try? document.string(document.firstChild(WebMTestID.codecID, in: trackEntry))) == "V_VP9"
+        })
     let video = try document.firstChild(WebMTestID.video, in: videoTrack)
     _ = try document.firstChild(WebMTestID.colour, in: video)
 
     if includeAudio {
-        let audioTrack = try #require(trackEntries.first { trackEntry in
-            (try? document.string(document.firstChild(WebMTestID.codecID, in: trackEntry))) == "A_OPUS"
-        })
-        let codecPrivate = try document.binary(document.firstChild(WebMTestID.codecPrivate, in: audioTrack))
+        let audioTrack = try #require(
+            trackEntries.first { trackEntry in
+                (try? document.string(document.firstChild(WebMTestID.codecID, in: trackEntry))) == "A_OPUS"
+            })
+        let codecPrivate = try document.binary(
+            document.firstChild(WebMTestID.codecPrivate, in: audioTrack))
         #expect(codecPrivate.starts(with: Data("OpusHead".utf8)))
     }
 }
@@ -329,11 +340,13 @@ private func ffprobePath() -> String? {
 
 private func executablePath(named name: String) -> String? {
     let fileSystem = FileManager.default
-    let searchPaths = (ProcessInfo.processInfo.environment["PATH"] ?? "")
+    let searchPaths =
+        (ProcessInfo.processInfo.environment["PATH"] ?? "")
         .split(separator: ":")
         .map(String.init) + ["/opt/homebrew/bin", "/usr/local/bin"]
 
-    return searchPaths
+    return
+        searchPaths
         .map { URL(fileURLWithPath: $0).appending(path: name).path }
         .first { fileSystem.isExecutableFile(atPath: $0) }
 }
@@ -356,7 +369,8 @@ private func runFFProbe(ffprobe: String, fileURL: URL) throws -> String {
     try process.run()
     process.waitUntilExit()
 
-    let output = String(decoding: outputPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    let output = String(
+        decoding: outputPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
     _ = String(decoding: errorPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
     #expect(process.terminationStatus == 0)
     return output
@@ -402,7 +416,8 @@ private func runFFmpegPSNR(
     try process.run()
     process.waitUntilExit()
 
-    let output = String(decoding: outputPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    let output = String(
+        decoding: outputPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
     let error = String(decoding: errorPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
     #expect(process.terminationStatus == 0)
     return output + "\n" + error
@@ -509,7 +524,8 @@ private actor PatternWebMMediaSource: CodecMediaSource {
 private func makePatternFrame(index: Int, pixelSize: PixelSize) throws -> I420Frame {
     var yPlane = Data()
     yPlane.reserveCapacity(pixelSize.width * pixelSize.height)
-    yPlane.append(Data(repeating: UInt8(128 + (index % 2)), count: pixelSize.width * pixelSize.height))
+    yPlane.append(
+        Data(repeating: UInt8(128 + (index % 2)), count: pixelSize.width * pixelSize.height))
 
     let chromaWidth = pixelSize.width / 2
     let chromaHeight = pixelSize.height / 2

@@ -38,7 +38,8 @@ public enum AutomationPolicy {
         settings: AppSettings,
         context: AutomationPolicyContext
     ) -> AutomationPolicyDecision {
-        guard command.requiresAutomationPermission(hasActiveRecording: context.hasActiveRecording) else {
+        guard command.requiresAutomationPermission(hasActiveRecording: context.hasActiveRecording)
+        else {
             return .allow
         }
 

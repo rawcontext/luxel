@@ -1,3 +1,3 @@
 public protocol FrameGrabber: Sendable {
-    func grab(_ request: FrameGrabRequest) async throws -> ImageData
+    func grab(_ request: FrameGrabRequest) async throws -> FrameGrabImageData
 }

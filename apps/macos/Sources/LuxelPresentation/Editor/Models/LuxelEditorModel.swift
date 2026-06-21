@@ -96,8 +96,8 @@ public final class LuxelEditorModel {
         ),
         frameGrabService: FrameGrabService = FrameGrabService(
             frameGrabber: AVFoundationFrameGrabber(),
-            fileWriter: LocalScreenshotFileWriter(),
-            destinationClient: AppKitScreenshotDestinationClient()
+            fileWriter: LocalFrameGrabFileWriter(),
+            destinationClient: AppKitFrameGrabDestinationClient()
         ),
         audioPeakAnalyzer: any AudioPeakAnalyzer = AVAssetReaderAudioPeakAnalyzer(),
         fileSystem: any FileSystem = LocalFileSystem(),
@@ -264,7 +264,8 @@ extension LuxelEditorModel {
     var canNavigateToOlderRecording: Bool {
         guard !isExporting,
               !isLoadingSource,
-              let recordingNavigationIndex else {
+              let recordingNavigationIndex
+        else {
             return false
         }
 
@@ -274,7 +275,8 @@ extension LuxelEditorModel {
     var canNavigateToNewerRecording: Bool {
         guard !isExporting,
               !isLoadingSource,
-              let recordingNavigationIndex else {
+              let recordingNavigationIndex
+        else {
             return false
         }
 
@@ -290,7 +292,8 @@ extension LuxelEditorModel {
     }
 
     var showsExportProgressPanel: Bool {
-        isExporting || exportProgress != nil || exportedURL != nil || status == .canceled || isRecoverableExportFailure
+        isExporting || exportProgress != nil || exportedURL != nil || status == .canceled
+            || isRecoverableExportFailure
     }
 
     var exportPanelTitle: String {
@@ -340,7 +343,7 @@ extension LuxelEditorModel {
         case .copyingFrame:
             "doc.on.clipboard"
         case .savingFrame:
-            "photo.badge.arrow.down"
+            "square.and.arrow.down"
         case .copiedFrame, .savedFrame:
             "checkmark.circle"
         case .canceled:
@@ -394,7 +397,8 @@ extension LuxelEditorModel {
             return nil
         }
 
-        let formatted = ByteCountFormatter.string(fromByteCount: exportEstimate.bytes, countStyle: .file)
+        let formatted = ByteCountFormatter.string(
+            fromByteCount: exportEstimate.bytes, countStyle: .file)
 
         switch exportEstimate.confidence {
         case .exact:

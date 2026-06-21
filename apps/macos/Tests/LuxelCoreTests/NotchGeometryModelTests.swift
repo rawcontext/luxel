@@ -50,7 +50,8 @@ struct NotchGeometryModelTests {
 
     @Test("selector prefers notch geometry when available")
     func selectorPrefersNotchGeometryWhenAvailable() throws {
-        let externalNotchedDisplay = try builtInNotchedDisplay(displayID: DisplayID(2), isBuiltIn: false)
+        let externalNotchedDisplay = try builtInNotchedDisplay(
+            displayID: DisplayID(2), isBuiltIn: false)
         let builtInDisplay = try builtInNotchedDisplay(displayID: DisplayID(1))
 
         let selection = RecordingSurfaceSelector.select(from: [externalNotchedDisplay, builtInDisplay])

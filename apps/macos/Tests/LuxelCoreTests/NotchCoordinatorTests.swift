@@ -29,10 +29,11 @@ struct NotchCoordinatorTests {
         #expect(update.presentationState == .expanded)
         #expect(update.viewModel == NotchActivityPresentation.viewModel(for: recording))
         #expect(update.motion == .standard)
-        #expect(await presenter.commands() == [
-            .acquire(geometry),
-            .present(update)
-        ])
+        #expect(
+            await presenter.commands() == [
+                .acquire(geometry),
+                .present(update)
+            ])
     }
 
     @Test("present uses reduced motion when requested")
@@ -62,12 +63,13 @@ struct NotchCoordinatorTests {
             recordingActionToReplace: .recordArea
         )
 
-        #expect(result.update?.viewModel.actions.map(\.id) == [
-            .recordFullscreen,
-            .stopRecording,
-            .screenshot,
-            .openSettings
-        ])
+        #expect(
+            result.update?.viewModel.actions.map(\.id) == [
+                .recordFullscreen,
+                .stopRecording,
+                .recordAudioOnly,
+                .openSettings
+            ])
     }
 
     @Test("present releases presenter when notch is unavailable")
@@ -126,11 +128,12 @@ struct NotchCoordinatorTests {
         let fallbackResult = try #require(await results.next())
         #expect(fallbackResult.selection == .floatingHUD(.noNotchedDisplay))
         #expect(fallbackResult.update == nil)
-        #expect(await presenter.commands() == [
-            .acquire(geometry),
-            .present(notchedUpdate),
-            .release
-        ])
+        #expect(
+            await presenter.commands() == [
+                .acquire(geometry),
+                .present(notchedUpdate),
+                .release
+            ])
 
         observation.cancel()
         displayUpdates.continuation.finish()

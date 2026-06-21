@@ -11,11 +11,15 @@ struct AutomationShortcutInvocationTests {
             countdownSeconds: 3
         )
 
-        #expect(invocation == AutomationInvocation(command: .record(AutomationRecordingOptions(
-            target: .display(.main),
-            presetName: "Quick GIF",
-            countdownSeconds: 3
-        ))))
+        #expect(
+            invocation
+                == AutomationInvocation(
+                    command: .record(
+                        AutomationRecordingOptions(
+                            target: .display(.main),
+                            presetName: "Quick GIF",
+                            countdownSeconds: 3
+                        ))))
         #expect(
             AutomationInvocationURLBuilder.url(for: invocation).absoluteString
                 == "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3"
@@ -32,11 +36,15 @@ struct AutomationShortcutInvocationTests {
         )
 
         #expect(stopInvocation == AutomationInvocation(command: .toggle(nil)))
-        #expect(startInvocation == AutomationInvocation(command: .toggle(AutomationRecordingOptions(
-            target: .activeWindow,
-            presetName: nil,
-            countdownSeconds: 0
-        ))))
+        #expect(
+            startInvocation
+                == AutomationInvocation(
+                    command: .toggle(
+                        AutomationRecordingOptions(
+                            target: .activeWindow,
+                            presetName: nil,
+                            countdownSeconds: 0
+                        ))))
         #expect(
             AutomationInvocationURLBuilder.url(for: startInvocation).absoluteString
                 == "luxel://toggle?target=activeWindow&countdown=0"
@@ -45,7 +53,8 @@ struct AutomationShortcutInvocationTests {
 
     @Test("safe shortcut commands map to stop and latest recording")
     func safeShortcutCommandsMapToStopAndLatestRecording() {
-        #expect(AutomationShortcutInvocationBuilder.stopRecording() == AutomationInvocation(command: .stop))
+        #expect(
+            AutomationShortcutInvocationBuilder.stopRecording() == AutomationInvocation(command: .stop))
         #expect(
             AutomationShortcutInvocationBuilder.latestRecording(reveal: true)
                 == AutomationInvocation(command: .latest(reveal: true))
@@ -65,20 +74,4 @@ struct AutomationShortcutInvocationTests {
         )
     }
 
-    @Test("capture screenshot maps shortcut target and format")
-    func captureScreenshotMapsShortcutTargetAndFormat() {
-        let invocation = AutomationShortcutInvocationBuilder.captureScreenshot(
-            target: .activeWindow,
-            format: .heic
-        )
-
-        #expect(invocation == AutomationInvocation(command: .screenshot(AutomationScreenshotOptions(
-            target: .activeWindow,
-            format: .heic
-        ))))
-        #expect(
-            AutomationInvocationURLBuilder.url(for: invocation).absoluteString
-                == "luxel://screenshot?target=activeWindow&format=heic"
-        )
-    }
 }

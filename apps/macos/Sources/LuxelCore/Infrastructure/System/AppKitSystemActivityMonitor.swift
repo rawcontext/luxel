@@ -2,7 +2,8 @@ import AppKit
 import IOKit.ps
 
 public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecked Sendable {
-    public typealias PowerSourceObserverFactory = @Sendable (@escaping @Sendable () -> Void) -> @Sendable () -> Void
+    public typealias PowerSourceObserverFactory =
+        @Sendable (@escaping @Sendable () -> Void) -> @Sendable () -> Void
 
     private let workspaceNotificationCenter: NotificationCenter
     private let applicationNotificationCenter: NotificationCenter
@@ -26,8 +27,10 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
         applicationNotificationCenter: NotificationCenter,
         screensDidSleepNotification: Notification.Name = NSWorkspace.screensDidSleepNotification,
         screensDidWakeNotification: Notification.Name = NSWorkspace.screensDidWakeNotification,
-        sessionDidResignActiveNotification: Notification.Name = NSWorkspace.sessionDidResignActiveNotification,
-        sessionDidBecomeActiveNotification: Notification.Name = NSWorkspace.sessionDidBecomeActiveNotification,
+        sessionDidResignActiveNotification: Notification.Name = NSWorkspace
+            .sessionDidResignActiveNotification,
+        sessionDidBecomeActiveNotification: Notification.Name = NSWorkspace
+            .sessionDidBecomeActiveNotification,
         displayChangeNotification: Notification.Name = NSApplication
             .didChangeScreenParametersNotification,
         isOnBatteryPower: @escaping @Sendable () -> Bool = AppKitSystemActivityMonitor.isOnBatteryPower,
@@ -124,16 +127,19 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
     ) -> @Sendable () -> Void {
         let box = PowerSourceCallbackBox(onChange: onChange)
         let context = Unmanaged.passRetained(box).toOpaque()
-        guard let runLoopSource = IOPSNotificationCreateRunLoopSource({ context in
-            guard let context else {
-                return
-            }
+        guard
+            let runLoopSource = IOPSNotificationCreateRunLoopSource(
+                { context in
+                    guard let context else {
+                        return
+                    }
 
-            Unmanaged<PowerSourceCallbackBox>
-                .fromOpaque(context)
-                .takeUnretainedValue()
-                .onChange()
-        }, context)?.takeRetainedValue() else {
+                    Unmanaged<PowerSourceCallbackBox>
+                        .fromOpaque(context)
+                        .takeUnretainedValue()
+                        .onChange()
+                }, context)?.takeRetainedValue()
+        else {
             Unmanaged<PowerSourceCallbackBox>.fromOpaque(context).release()
             return {}
         }

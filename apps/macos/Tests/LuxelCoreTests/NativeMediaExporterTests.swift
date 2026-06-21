@@ -99,14 +99,16 @@ struct NativeMediaExporterTests {
     private func writeSilentAudioFixture(to fileURL: URL) throws {
         let sampleRate = 44_100.0
         let frameCount = AVAudioFrameCount(sampleRate / 2)
-        let pcmFormat = try #require(AVAudioFormat(
-            standardFormatWithSampleRate: sampleRate,
-            channels: 1
-        ))
-        let buffer = try #require(AVAudioPCMBuffer(
-            pcmFormat: pcmFormat,
-            frameCapacity: frameCount
-        ))
+        let pcmFormat = try #require(
+            AVAudioFormat(
+                standardFormatWithSampleRate: sampleRate,
+                channels: 1
+            ))
+        let buffer = try #require(
+            AVAudioPCMBuffer(
+                pcmFormat: pcmFormat,
+                frameCapacity: frameCount
+            ))
         buffer.frameLength = frameCount
 
         let file = try AVAudioFile(

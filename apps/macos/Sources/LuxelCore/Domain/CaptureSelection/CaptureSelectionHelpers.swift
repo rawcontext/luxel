@@ -61,10 +61,12 @@ public enum CaptureSelectionBuilder {
         width = min(width, display.width)
         height = min(height, display.height)
 
-        let originX = growsLeft
+        let originX =
+            growsLeft
             ? max(0, clampedStart.xCoordinate - width)
             : min(clampedStart.xCoordinate, display.width - width)
-        let originY = growsUp
+        let originY =
+            growsUp
             ? max(0, clampedStart.yCoordinate - height)
             : min(clampedStart.yCoordinate, display.height - height)
 
@@ -97,8 +99,8 @@ public enum CaptureSelectionBuilder {
     }
 }
 
-private extension CapturePoint {
-    func clamped(to display: DisplayBounds) -> CapturePoint {
+extension CapturePoint {
+    fileprivate func clamped(to display: DisplayBounds) -> CapturePoint {
         CapturePoint(
             x: min(max(xCoordinate, 0), display.width),
             y: min(max(yCoordinate, 0), display.height)

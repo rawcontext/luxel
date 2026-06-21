@@ -12,18 +12,21 @@ public struct UpdateSettingsPresentation: Equatable, Sendable {
         updateCheckingAvailable: Bool = false
     ) {
         showsDeveloperIDUpdateControls = distribution.capabilities.includesSparkleUpdater
-        automaticInstallToggleEnabled = showsDeveloperIDUpdateControls
+        automaticInstallToggleEnabled =
+            showsDeveloperIDUpdateControls
             && preferences.automaticallyCheckForUpdates
         canCheckNow = showsDeveloperIDUpdateControls && updateCheckingAvailable
 
         if showsDeveloperIDUpdateControls {
             statusText = updateCheckingAvailable ? "Ready to Check" : "Update Checks Coming Soon"
-            networkPolicyText = if preferences.automaticallyCheckForUpdates {
-                "Luxel only touches the network to check for updates, and only if enabled."
-            } else {
-                "Automatic update checks are off; Luxel will not contact the update server."
-            }
-            checkNowHelp = updateCheckingAvailable
+            networkPolicyText =
+                if preferences.automaticallyCheckForUpdates {
+                    "Luxel only touches the network to check for updates, and only if enabled."
+                } else {
+                    "Automatic update checks are off; Luxel will not contact the update server."
+                }
+            checkNowHelp =
+                updateCheckingAvailable
                 ? "Check for a Luxel update now."
                 : "Update checks will be available when Sparkle is integrated."
         } else {

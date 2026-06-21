@@ -26,7 +26,8 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
 
         switch target {
         case .display(let displayID), .area(let displayID, _):
-            guard let display = content.displays.first(where: { $0.displayID == displayID.rawValue }) else {
+            guard let display = content.displays.first(where: { $0.displayID == displayID.rawValue })
+            else {
                 throw SCKContentFilterProviderError.displayUnavailable(displayID)
             }
 
@@ -52,7 +53,8 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
         guard activatesWindowTargetsBeforeCapture,
               let window = content.windows.first(where: { $0.windowID == windowID }),
               let processID = window.owningApplication?.processID,
-              await activateOwningApplicationIfNeeded(processID: processID) else {
+              await activateOwningApplicationIfNeeded(processID: processID)
+        else {
             return content
         }
 
@@ -64,7 +66,8 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
         await MainActor.run {
             guard processID != NSRunningApplication.current.processIdentifier,
                   let application = NSRunningApplication(processIdentifier: processID),
-                  !application.isActive else {
+                  !application.isActive
+            else {
                 return false
             }
 

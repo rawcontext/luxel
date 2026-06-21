@@ -42,8 +42,8 @@ public protocol MediaExporter: Sendable {
     ) async throws -> ExportedMedia
 }
 
-public extension MediaExporter {
-    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
+extension MediaExporter {
+    public func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
         try await export(request, to: outputFileURL, progress: nil)
     }
 }

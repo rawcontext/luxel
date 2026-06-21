@@ -100,10 +100,12 @@ extension LuxelMenuModel {
         let latencySpan = LuxelRecordingLatencyTelemetry.begin(entryPoint: entryPoint)
         await refreshCaptureTargets()
 
-        guard let windowTarget = activeWindowCaptureTargetResolver.resolve(
-            from: captureTargets,
-            orderedWindowIDs: activeWindowCatalog.orderedActiveWindowIDs()
-        ) else {
+        guard
+            let windowTarget = activeWindowCaptureTargetResolver.resolve(
+                from: captureTargets,
+                orderedWindowIDs: activeWindowCatalog.orderedActiveWindowIDs()
+            )
+        else {
             recordingState = .failed("No active window target available")
             LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "no-active-window-target")
             return
@@ -232,7 +234,7 @@ extension LuxelMenuModel {
         )
     }
 
-    func startAudioOnlyRecording() async {
+    func startAudioOnlyRecording(notchRecordingActionID: NotchActivityActionID? = nil) async {
         guard canBeginRecordingStart else {
             return
         }
@@ -245,6 +247,7 @@ extension LuxelMenuModel {
             return
         }
 
+        activeNotchRecordingActionID = notchRecordingActionID
         recordingState = .starting
 
         do {
@@ -286,7 +289,8 @@ extension LuxelMenuModel {
     ) async {
         guard canBeginRecordingStart else {
             if let latencySpan {
-                LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "start-already-in-progress")
+                LuxelRecordingLatencyTelemetry.finishFailed(
+                    latencySpan, reason: "start-already-in-progress")
             }
             return
         }
@@ -324,10 +328,11 @@ extension LuxelMenuModel {
             return request
         }
 
-        return try request.replacingSchedule(recordingSchedule(
-            countdownSeconds: countdownSeconds,
-            maxRecordedDuration: request.schedule?.maxRecordedDuration
-        ))
+        return try request.replacingSchedule(
+            recordingSchedule(
+                countdownSeconds: countdownSeconds,
+                maxRecordedDuration: request.schedule?.maxRecordedDuration
+            ))
     }
 
     private func startRecording(
@@ -338,7 +343,8 @@ extension LuxelMenuModel {
     ) async {
         guard canBeginRecordingStart else {
             if let latencySpan {
-                LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "start-already-in-progress")
+                LuxelRecordingLatencyTelemetry.finishFailed(
+                    latencySpan, reason: "start-already-in-progress")
             }
             return
         }
@@ -416,9 +422,9 @@ extension LuxelMenuModel {
     func stopRecording() async -> RecordingStopAction? {
         luxelRecordingLogger.info(
             """
-            Stop recording requested recording_state=\(self.recordingState.loggingDescription, privacy: .public) \
-            has_active_recording=\(self.hasActiveRecording, privacy: .public)
-            """
+      Stop recording requested recording_state=\(self.recordingState.loggingDescription, privacy: .public) \
+      has_active_recording=\(self.hasActiveRecording, privacy: .public)
+      """
         )
 
         if case .countingDown = recordingState {
@@ -439,10 +445,10 @@ extension LuxelMenuModel {
         setCameraPreviewHoverControlsEnabled(false)
         luxelRecordingLogger.info(
             """
-            Stop recording transitioned to stopping previous_state=\(previousRecordingState.loggingDescription, privacy: .public) \
-            active_recording=\(activeRecording?.name ?? "none", privacy: .private) \
-            capture_kind=\(captureKind.loggingDescription, privacy: .public)
-            """
+      Stop recording transitioned to stopping previous_state=\(previousRecordingState.loggingDescription, privacy: .public) \
+      active_recording=\(activeRecording?.name ?? "none", privacy: .private) \
+      capture_kind=\(captureKind.loggingDescription, privacy: .public)
+      """
         )
 
         do {
@@ -463,9 +469,9 @@ extension LuxelMenuModel {
             refreshRecentRecordings()
             luxelRecordingLogger.info(
                 """
-                Screen recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private) \
-                capture_kind=\(captureKind.loggingDescription, privacy: .public)
-                """
+        Screen recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private) \
+        capture_kind=\(captureKind.loggingDescription, privacy: .public)
+        """
             )
 
             switch captureKind {
@@ -496,12 +502,12 @@ extension LuxelMenuModel {
             syncCameraPreviewHoverControls()
             luxelRecordingLogger.error(
                 """
-                Stop recording failed previous_state=\(previousRecordingState.loggingDescription, privacy: .public) \
-                restored_state=\(self.recordingState.loggingDescription, privacy: .public) \
-                error_domain=\(nsError.domain, privacy: .public) \
-                error_code=\(nsError.code, privacy: .public) \
-                message=\(message, privacy: .public)
-                """
+        Stop recording failed previous_state=\(previousRecordingState.loggingDescription, privacy: .public) \
+        restored_state=\(self.recordingState.loggingDescription, privacy: .public) \
+        error_domain=\(nsError.domain, privacy: .public) \
+        error_code=\(nsError.code, privacy: .public) \
+        message=\(message, privacy: .public)
+        """
             )
             return nil
         }
@@ -541,9 +547,11 @@ extension LuxelMenuModel {
 
         refreshRecentRecordings()
 
-        guard let recording = recentRecordings.first(where: { recording in
-            recording.fileURL == fileURL || recording.primaryMediaURL == fileURL
-        }) else {
+        guard
+            let recording = recentRecordings.first(where: { recording in
+                recording.fileURL == fileURL || recording.primaryMediaURL == fileURL
+            })
+        else {
             return
         }
 
@@ -617,8 +625,8 @@ extension LuxelMenuModel {
     }
 }
 
-private extension Error {
-    var isTerminalRecordingStopFailure: Bool {
+extension Error {
+    fileprivate var isTerminalRecordingStopFailure: Bool {
         guard let lifecycleError = self as? RecordingLifecycleError else {
             return false
         }
@@ -631,8 +639,8 @@ private extension Error {
     }
 }
 
-private extension QuickCaptureKind {
-    var loggingDescription: String {
+extension QuickCaptureKind {
+    fileprivate var loggingDescription: String {
         switch self {
         case .standard:
             "standard"

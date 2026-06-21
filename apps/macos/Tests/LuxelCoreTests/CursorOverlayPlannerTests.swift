@@ -195,34 +195,35 @@ struct CursorOverlayPlannerTests {
     func plannerRejectsDuplicateImageIDsFromDecodedSidecars() throws {
         let timeline = try JSONDecoder().decode(
             CursorTimeline.self,
-            from: Data("""
+            from: Data(
+                """
+        {
+          "schemaVersion": 1,
+          "samples": [
             {
-              "schemaVersion": 1,
-              "samples": [
-                {
-                  "time": 0,
-                  "position": { "x": 0, "y": 0 },
-                  "cursorImageID": "arrow"
-                }
-              ],
-              "clicks": [],
-              "spotlightToggles": [],
-              "cursorImages": [
-                {
-                  "id": "arrow",
-                  "pngData": "AQ==",
-                  "hotspot": { "x": 1, "y": 1 },
-                  "scale": 2
-                },
-                {
-                  "id": "arrow",
-                  "pngData": "Ag==",
-                  "hotspot": { "x": 1, "y": 1 },
-                  "scale": 2
-                }
-              ]
+              "time": 0,
+              "position": { "x": 0, "y": 0 },
+              "cursorImageID": "arrow"
             }
-            """.utf8)
+          ],
+          "clicks": [],
+          "spotlightToggles": [],
+          "cursorImages": [
+            {
+              "id": "arrow",
+              "pngData": "AQ==",
+              "hotspot": { "x": 1, "y": 1 },
+              "scale": 2
+            },
+            {
+              "id": "arrow",
+              "pngData": "Ag==",
+              "hotspot": { "x": 1, "y": 1 },
+              "scale": 2
+            }
+          ]
+        }
+        """.utf8)
         )
 
         #expect(throws: CursorEffectModelError.duplicateCursorImageID) {
@@ -248,7 +249,8 @@ struct CursorOverlayPlannerTests {
         )
     }
 
-    private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws -> CursorSample {
+    private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws
+    -> CursorSample {
         try CursorSample(
             time: time,
             position: CursorPoint(x: xCoordinate, y: yCoordinate),

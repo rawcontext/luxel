@@ -20,7 +20,8 @@ struct CodecAdapterRegistryTests {
         ])
 
         #expect(registry.availability.registeredExternalFormats == [.webm, .av1])
-        #expect(registry.availability.availableExportFormats == [.mp4, .hevc, .gif, .apng, .webm, .av1])
+        #expect(
+            registry.availability.availableExportFormats == [.mp4, .hevc, .gif, .apng, .webm, .av1])
     }
 
     @Test("registration rejects Apple-native formats and duplicates")
@@ -48,8 +49,10 @@ struct CodecAdapterRegistryTests {
         ])
         let exporter = registry.mediaExporter(nativeExporter: nativeExporter)
 
-        _ = try await exporter.export(makeRequest(format: .mp4), to: URL(fileURLWithPath: "/tmp/native.mp4"))
-        _ = try await exporter.export(makeRequest(format: .webm), to: URL(fileURLWithPath: "/tmp/external.webm"))
+        _ = try await exporter.export(
+            makeRequest(format: .mp4), to: URL(fileURLWithPath: "/tmp/native.mp4"))
+        _ = try await exporter.export(
+            makeRequest(format: .webm), to: URL(fileURLWithPath: "/tmp/external.webm"))
 
         #expect(await nativeExporter.requestedFormats() == [.mp4])
         #expect(await externalExporter.requestedFormats() == [.webm])
@@ -84,7 +87,8 @@ struct CodecAdapterRegistryTests {
         let estimator = registry.exportSizeEstimator(nativeEstimator: StubExportSizeEstimator())
 
         await #expect(throws: CodecAdapterRegistryError.unregisteredExternalFormat(.webm)) {
-            _ = try await exporter.export(makeRequest(format: .webm), to: URL(fileURLWithPath: "/tmp/out.webm"))
+            _ = try await exporter.export(
+                makeRequest(format: .webm), to: URL(fileURLWithPath: "/tmp/out.webm"))
         }
 
         await #expect(throws: CodecAdapterRegistryError.unregisteredExternalFormat(.av1)) {

@@ -21,8 +21,6 @@ public enum AutomationInvocationURLBuilder {
             "stop"
         case .toggle:
             "toggle"
-        case .screenshot:
-            "screenshot"
         case .clip:
             "clip"
         case .preferences:
@@ -40,8 +38,6 @@ public enum AutomationInvocationURLBuilder {
             []
         case .toggle(let options):
             options.map(recordingQueryItems(for:)) ?? []
-        case .screenshot(let options):
-            screenshotQueryItems(for: options)
         case .clip(let seconds):
             seconds.map { [URLQueryItem(name: "seconds", value: String($0))] } ?? []
         case .preferences(let pane):
@@ -61,14 +57,6 @@ public enum AutomationInvocationURLBuilder {
         }
         if let outputDirectory = options.outputDirectory {
             items.append(URLQueryItem(name: "saveTo", value: outputDirectory.path))
-        }
-        return items
-    }
-
-    private static func screenshotQueryItems(for options: AutomationScreenshotOptions) -> [URLQueryItem] {
-        var items = captureTargetQueryItems(for: options.target)
-        if let format = options.format {
-            items.append(URLQueryItem(name: "format", value: format.rawValue))
         }
         return items
     }
@@ -101,8 +89,8 @@ public enum AutomationInvocationURLBuilder {
     }
 }
 
-private extension AutomationDisplayTarget {
-    var queryValue: String {
+extension AutomationDisplayTarget {
+    fileprivate var queryValue: String {
         switch self {
         case .main:
             "main"

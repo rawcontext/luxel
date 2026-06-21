@@ -83,7 +83,8 @@ public struct BundleManifest: Codable, Equatable, Sendable {
         guard !fileName.isEmpty,
               !fileName.contains("/"),
               fileName != ".",
-              fileName != ".." else {
+              fileName != ".."
+        else {
             throw RecordingBundleError.invalidBundleFileName
         }
     }
@@ -125,9 +126,10 @@ public struct RecordingBundle: Equatable, Sendable {
     }
 
     public var sidecars: [SidecarKind: URL] {
-        Dictionary(uniqueKeysWithValues: manifest.sidecars.map { sidecar in
-            (sidecar.kind, rootURL.appendingPathComponent(sidecar.fileName))
-        })
+        Dictionary(
+            uniqueKeysWithValues: manifest.sidecars.map { sidecar in
+                (sidecar.kind, rootURL.appendingPathComponent(sidecar.fileName))
+            })
     }
 
     public func sidecarURL(for kind: SidecarKind) -> URL? {

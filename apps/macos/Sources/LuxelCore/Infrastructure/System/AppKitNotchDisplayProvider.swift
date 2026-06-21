@@ -64,7 +64,8 @@ public final class AppKitNotchDisplayProvider: NotchDisplayProvider {
     ) -> NotchDisplayDescriptor? {
         guard let displayID,
               let frame = notchRect(from: frame),
-              let safeAreaInsets = notchInsets(from: safeAreaInsets) else {
+              let safeAreaInsets = notchInsets(from: safeAreaInsets)
+        else {
             return nil
         }
 
@@ -98,9 +99,11 @@ public final class AppKitNotchDisplayProvider: NotchDisplayProvider {
     }
 }
 
-private extension NSScreen {
-    var displayID: CGDirectDisplayID? {
-        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+extension NSScreen {
+    fileprivate var displayID: CGDirectDisplayID? {
+        guard
+            let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else {
             return nil
         }
 

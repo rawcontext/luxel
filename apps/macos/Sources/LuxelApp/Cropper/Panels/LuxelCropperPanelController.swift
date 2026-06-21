@@ -9,7 +9,6 @@ final class LuxelCropperPanelController {
     private let targetService: CaptureTargetService
     private let audioLevelMonitorFactory: () -> any AudioLevelMonitor
     private let exclusionRegistry: CaptureExclusionRegistry
-    private let loupeImageProvider: any CropperLoupeImageProvider
     private var panels: [NSPanel] = []
     private var exclusionRegistrationID: UUID?
     private var audioLevelModel: LuxelAudioLevelModel?
@@ -20,20 +19,16 @@ final class LuxelCropperPanelController {
             catalog: CachedCaptureTargetCatalog(upstream: ScreenCaptureKitCaptureTargetCatalog())
         ),
         exclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry(),
-        loupeImageProvider: (any CropperLoupeImageProvider)? = nil,
         audioLevelMonitorFactory: @escaping () -> any AudioLevelMonitor = {
             AVCaptureAudioLevelMonitor()
         }
     ) {
         self.targetService = targetService
         self.exclusionRegistry = exclusionRegistry
-        self.loupeImageProvider = loupeImageProvider
-            ?? ScreenCaptureKitCropperLoupeImageProvider(exclusionRegistry: exclusionRegistry)
         self.audioLevelMonitorFactory = audioLevelMonitorFactory
     }
 
     func show(
-        initialMode: LuxelCropperMode = .video,
         countdownDuration: TimeInterval? = nil,
         stopAfterDuration: TimeInterval? = nil,
         audioLevelConfiguration: CropperAudioLevelConfiguration? = nil,
@@ -42,13 +37,15 @@ final class LuxelCropperPanelController {
             devices: [],
             previewStyle: CameraPreviewStyle()
         ),
-        quickRecordingConfiguration: CropperQuickRecordingConfiguration = CropperQuickRecordingConfiguration(
-            activePresetID: nil,
-            presets: []
-        ),
-        selectionPresetConfiguration: CropperSelectionPresetConfiguration = CropperSelectionPresetConfiguration(
-            sizePresets: CaptureSizePreset.builtInDefaults
-        ),
+        quickRecordingConfiguration: CropperQuickRecordingConfiguration =
+            CropperQuickRecordingConfiguration(
+                activePresetID: nil,
+                presets: []
+            ),
+        selectionPresetConfiguration: CropperSelectionPresetConfiguration =
+            CropperSelectionPresetConfiguration(
+                sizePresets: CaptureSizePreset.builtInDefaults
+            ),
         restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled,
         recordAudio: Bool = false,
         loupeAlwaysOn: Bool = false,
@@ -60,7 +57,6 @@ final class LuxelCropperPanelController {
         onCameraSelectionChange: @escaping @MainActor (String?) -> Void = { _ in },
         onCameraPreviewStyleChange: @escaping @MainActor (CameraPreviewStyle) -> Void = { _ in },
         onNotificationReminderDismiss: @escaping @MainActor () -> Void = {},
-        onCaptureScreenshot: @escaping @MainActor (CaptureSelectionDraft) -> Void = { _ in },
         onQuickSelect: @escaping @MainActor (CaptureSelectionDraft, UUID) -> Void = { _, _ in },
         onSelect: @escaping @MainActor (CaptureSelectionDraft) -> Void
     ) {
@@ -71,7 +67,6 @@ final class LuxelCropperPanelController {
                 let displays = try await targetService.availableDisplays()
                 let targets = try await targetService.availableTargets()
                 let presentation = CropperPanelPresentation(
-                    initialMode: initialMode,
                     countdownDuration: countdownDuration,
                     stopAfterDuration: stopAfterDuration,
                     audioLevelConfiguration: audioLevelConfiguration,
@@ -89,7 +84,6 @@ final class LuxelCropperPanelController {
                     onCameraSelectionChange: onCameraSelectionChange,
                     onCameraPreviewStyleChange: onCameraPreviewStyleChange,
                     onNotificationReminderDismiss: onNotificationReminderDismiss,
-                    onCaptureScreenshot: onCaptureScreenshot,
                     onQuickSelect: onQuickSelect,
                     onSelect: onSelect
                 )
@@ -141,17 +135,18 @@ final class LuxelCropperPanelController {
 
         for screen in NSScreen.screens {
             guard let displayID = screen.displayID,
-                  let display = displaysByID[displayID] else {
+                  let display = displaysByID[displayID]
+            else {
                 continue
             }
 
             let model = LuxelCropperModel(
                 display: display,
-                mode: presentation.initialMode,
                 countdownDuration: presentation.countdownDuration,
                 stopAfterDuration: presentation.stopAfterDuration,
                 selectionPresetConfiguration: presentation.selectionPresetConfiguration,
-                initialSelection: presentation.restoreSelectionConfiguration.selection(for: display, targets: targets),
+                initialSelection: presentation.restoreSelectionConfiguration.selection(
+                    for: display, targets: targets),
                 windowSnapFrames: CaptureWindowSnapFrameResolver.windowFrames(
                     on: display,
                     from: targets
@@ -159,7 +154,6 @@ final class LuxelCropperPanelController {
                 recordAudio: presentation.recordAudio,
                 canRecordAudio: sharedAudioLevelModel != nil,
                 loupeAlwaysOn: presentation.loupeAlwaysOn,
-                loupeImageProvider: loupeImageProvider,
                 dimOtherDisplays: presentation.dimOtherDisplays,
                 displayFocus: displayFocus,
                 onCountdownDurationChange: presentation.onCountdownDurationChange,
@@ -204,10 +198,6 @@ final class LuxelCropperPanelController {
                     onQuickSelect: { [weak self] draft, presetID in
                         self?.close()
                         presentation.onQuickSelect(draft, presetID)
-                    },
-                    onCaptureScreenshot: { [weak self] draft in
-                        self?.close()
-                        presentation.onCaptureScreenshot(draft)
                     }
                 )
             )
@@ -225,13 +215,15 @@ final class LuxelCropperPanelController {
     }
 
     private func registerPanelsForCaptureExclusion() async {
-        let windowIDs = panels
+        let windowIDs =
+            panels
             .map(\.windowNumber)
             .filter { $0 > 0 }
             .map(UInt32.init)
 
         if let exclusionRegistrationID {
-            await exclusionRegistry.register(windowIDs: windowIDs, registrationID: exclusionRegistrationID)
+            await exclusionRegistry.register(
+                windowIDs: windowIDs, registrationID: exclusionRegistrationID)
         } else {
             exclusionRegistrationID = await exclusionRegistry.register(windowIDs: windowIDs)
         }
@@ -257,7 +249,6 @@ final class LuxelCropperPanelController {
 }
 
 private struct CropperPanelPresentation {
-    let initialMode: LuxelCropperMode
     let countdownDuration: TimeInterval?
     let stopAfterDuration: TimeInterval?
     let audioLevelConfiguration: CropperAudioLevelConfiguration?
@@ -275,7 +266,6 @@ private struct CropperPanelPresentation {
     let onCameraSelectionChange: @MainActor (String?) -> Void
     let onCameraPreviewStyleChange: @MainActor (CameraPreviewStyle) -> Void
     let onNotificationReminderDismiss: @MainActor () -> Void
-    let onCaptureScreenshot: @MainActor (CaptureSelectionDraft) -> Void
     let onQuickSelect: @MainActor (CaptureSelectionDraft, UUID) -> Void
     let onSelect: @MainActor (CaptureSelectionDraft) -> Void
 }
@@ -305,9 +295,11 @@ private final class LuxelCropperPanel: NSPanel {
     }
 }
 
-private extension NSScreen {
-    var displayID: DisplayID? {
-        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+extension NSScreen {
+    fileprivate var displayID: DisplayID? {
+        guard
+            let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else {
             return nil
         }
 

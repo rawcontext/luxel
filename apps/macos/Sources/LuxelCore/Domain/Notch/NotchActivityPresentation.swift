@@ -63,7 +63,7 @@ public enum NotchActivityActionID: String, Codable, Equatable, Sendable {
     case recordArea
     case recordWindow
     case recordFullscreen
-    case screenshot
+    case recordAudioOnly
     case quickGIF
     case openSettings
     case cancel
@@ -121,8 +121,6 @@ public enum NotchActivityPresentation {
             exportingViewModel(snapshot: snapshot)
         case .completed(let artifact):
             completedViewModel(artifact: artifact)
-        case .screenshotCaptured(let artifact):
-            screenshotCapturedViewModel(artifact: artifact)
         case .error(let error):
             errorViewModel(error: error)
         case .nowPlaying(let snapshot):
@@ -154,7 +152,7 @@ public enum NotchActivityPresentation {
         [
             action(.recordFullscreen, "Record Screen", "rectangle.dashed"),
             action(.recordArea, "Record Area", "viewfinder"),
-            action(.screenshot, "Screenshot", "camera"),
+            action(.recordAudioOnly, "Record Audio", "waveform"),
             action(.openSettings, "Settings", "gearshape")
         ]
     }
@@ -215,7 +213,8 @@ public enum NotchActivityPresentation {
     ) -> [NotchActivityActionDescriptor] {
         let fallbackActionID = NotchActivityActionID.recordFullscreen
         let requestedActionID = actionID ?? fallbackActionID
-        let replacementActionID = idleHoverActions.contains { $0.id == requestedActionID }
+        let replacementActionID =
+            idleHoverActions.contains { $0.id == requestedActionID }
             ? requestedActionID
             : fallbackActionID
         let stopAction = action(.stopRecording, "Stop Recording", "stop.fill", role: .destructive)
@@ -284,24 +283,6 @@ public enum NotchActivityPresentation {
         )
     }
 
-    private static func screenshotCapturedViewModel(
-        artifact: NotchArtifact
-    ) -> NotchActivityViewModel {
-        NotchActivityViewModel(
-            collapsedTitle: "Screenshot",
-            collapsedSystemImage: "camera.fill",
-            expandedTitle: "Screenshot Captured",
-            expandedDetail: artifact.fileURL.lastPathComponent,
-            artifact: artifact,
-            actions: [
-                action(.copy, "Copy", "doc.on.doc"),
-                action(.save, "Save", "square.and.arrow.down"),
-                action(.openInPreview, "Open in Preview", "eye")
-            ],
-            accessibilityLabel: "Luxel screenshot captured"
-        )
-    }
-
     private static func errorViewModel(error: NotchError) -> NotchActivityViewModel {
         let actions = error.recoveryAction.map { [actionDescriptor(for: $0)] } ?? []
         return NotchActivityViewModel(
@@ -314,7 +295,8 @@ public enum NotchActivityPresentation {
         )
     }
 
-    private static func nowPlayingViewModel(snapshot: NotchNowPlayingSnapshot) -> NotchActivityViewModel {
+    private static func nowPlayingViewModel(snapshot: NotchNowPlayingSnapshot)
+    -> NotchActivityViewModel {
         let elapsed = elapsedTimeText(snapshot.elapsed)
         let duration = elapsedTimeText(snapshot.duration)
         return NotchActivityViewModel(
@@ -401,8 +383,6 @@ public enum NotchActivityPresentation {
             "Recording Ready"
         case .export:
             "Export Ready"
-        case .screenshot:
-            "Screenshot Ready"
         }
     }
 }

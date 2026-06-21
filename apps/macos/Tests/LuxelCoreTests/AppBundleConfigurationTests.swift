@@ -11,12 +11,14 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundleDisplayName"] as? String == "Luxel")
         #expect(plist["CFBundleExecutable"] as? String == "Luxel")
         #expect(plist["CFBundleIdentifier"] as? String == "media.luxel.app")
-        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.3")
+        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.4")
         #expect(plist["CFBundleVersion"] as? String == "1")
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
         #expect(plist["LSMinimumSystemVersion"] as? String == "26.0")
         #expect(plist["LSUIElement"] as? Bool == true)
-        #expect(plist["NSHumanReadableCopyright"] as? String == "Copyright © 2026 Context. All rights reserved.")
+        #expect(
+            plist["NSHumanReadableCopyright"] as? String
+                == "Copyright © 2026 Context. All rights reserved.")
         let urlTypes = try #require(plist["CFBundleURLTypes"] as? [[String: Any]])
         let luxelURLType = try #require(urlTypes.first)
         #expect(luxelURLType["CFBundleURLName"] as? String == "media.luxel.app.url")
@@ -72,10 +74,12 @@ struct AppBundleConfigurationTests {
         let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
         let script = try String(contentsOf: scriptURL, encoding: .utf8)
 
-        #expect(script.contains("APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-media.luxel.app.dev}\""))
+        #expect(
+            script.contains("APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-media.luxel.app.dev}\""))
         #expect(script.contains("APP_DISPLAY_NAME=\"${APP_DISPLAY_NAME:-Luxel Dev}\""))
         #expect(script.contains("APP_URL_SCHEME=\"${APP_URL_SCHEME:-luxel-dev}\""))
-        #expect(script.contains("APP_PATH=\"${APP_PATH:-${PACKAGE_ROOT}/dist/${APP_DISPLAY_NAME}.app}\""))
+        #expect(
+            script.contains("APP_PATH=\"${APP_PATH:-${PACKAGE_ROOT}/dist/${APP_DISPLAY_NAME}.app}\""))
         #expect(script.contains("Set :CFBundleIdentifier ${APP_BUNDLE_IDENTIFIER}"))
         #expect(script.contains("Set :CFBundleDisplayName ${APP_DISPLAY_NAME}"))
         #expect(script.contains("Set :CFBundleName ${APP_DISPLAY_NAME}"))
@@ -128,7 +132,8 @@ struct AppBundleConfigurationTests {
 
     @Test("distribution split check covers default and Mac App Store builds")
     func distributionSplitCheckCoversDefaultAndMacAppStoreBuilds() throws {
-        let scriptURL = try packageRootURL().appending(path: "Scripts/check-app-distribution-build-split.sh")
+        let scriptURL = try packageRootURL().appending(
+            path: "Scripts/check-app-distribution-build-split.sh")
         let script = try String(contentsOf: scriptURL, encoding: .utf8)
 
         #expect(script.contains("swift test --filter AppDistributionTests"))

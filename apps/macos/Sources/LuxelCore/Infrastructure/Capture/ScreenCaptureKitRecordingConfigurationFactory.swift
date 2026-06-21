@@ -13,7 +13,8 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         pointPixelScale: Float
     ) -> RecordingRequest {
         guard case .window = request.target,
-              let pixelSize = nativePixelSize(contentRect: contentRect, pointPixelScale: pointPixelScale) else {
+              let pixelSize = nativePixelSize(contentRect: contentRect, pointPixelScale: pointPixelScale)
+        else {
             return request
         }
 

@@ -60,11 +60,12 @@ struct LuxelStartRecordingIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        try LuxelAppIntentURLOpener.open(AutomationShortcutInvocationBuilder.startRecording(
-            target: target.domainValue,
-            presetName: presetName,
-            countdownSeconds: countdownSeconds
-        ))
+        try LuxelAppIntentURLOpener.open(
+            AutomationShortcutInvocationBuilder.startRecording(
+                target: target.domainValue,
+                presetName: presetName,
+                countdownSeconds: countdownSeconds
+            ))
         return .result()
     }
 }
@@ -83,7 +84,8 @@ struct LuxelStopRecordingIntent: AppIntent {
 
 struct LuxelToggleRecordingIntent: AppIntent {
     static let title: LocalizedStringResource = "Toggle Recording"
-    static let description = IntentDescription("Stops the active recording, or starts one with the selected target.")
+    static let description = IntentDescription(
+        "Stops the active recording, or starts one with the selected target.")
     static let openAppWhenRun = true
 
     @Parameter(title: "Target")
@@ -113,37 +115,13 @@ struct LuxelToggleRecordingIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        try LuxelAppIntentURLOpener.open(AutomationShortcutInvocationBuilder.toggleRecording(
-            target: target?.domainValue,
-            presetName: presetName,
-            countdownSeconds: countdownSeconds
-        ))
+        try LuxelAppIntentURLOpener.open(
+            AutomationShortcutInvocationBuilder.toggleRecording(
+                target: target?.domainValue,
+                presetName: presetName,
+                countdownSeconds: countdownSeconds
+            ))
         return .result()
-    }
-}
-
-enum LuxelShortcutScreenshotFormat: String, AppEnum {
-    case png
-    case jpeg
-    case heic
-
-    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Screenshot Format"
-
-    static let caseDisplayRepresentations: [LuxelShortcutScreenshotFormat: DisplayRepresentation] = [
-        .png: "PNG",
-        .jpeg: "JPEG",
-        .heic: "HEIC"
-    ]
-
-    var domainValue: ScreenshotFormat {
-        switch self {
-        case .png:
-            .png
-        case .jpeg:
-            .jpeg
-        case .heic:
-            .heic
-        }
     }
 }
 
@@ -206,40 +184,6 @@ struct LuxelRecordingEntity: AppEntity, Identifiable {
     }
 }
 
-struct LuxelCaptureScreenshotIntent: AppIntent {
-    static let title: LocalizedStringResource = "Capture Screenshot"
-    static let description = IntentDescription("Captures a screenshot with Luxel.")
-    static let openAppWhenRun = true
-
-    @Parameter(title: "Target")
-    var target: LuxelShortcutCaptureTarget
-
-    @Parameter(title: "Format")
-    var format: LuxelShortcutScreenshotFormat?
-
-    init() {
-        target = .mainDisplay
-        format = nil
-    }
-
-    init(
-        target: LuxelShortcutCaptureTarget = .mainDisplay,
-        format: LuxelShortcutScreenshotFormat? = nil
-    ) {
-        self.target = target
-        self.format = format
-    }
-
-    @MainActor
-    func perform() async throws -> some IntentResult {
-        try LuxelAppIntentURLOpener.open(AutomationShortcutInvocationBuilder.captureScreenshot(
-            target: target.domainValue,
-            format: format?.domainValue
-        ))
-        return .result()
-    }
-}
-
 struct LuxelClipReplayBufferIntent: AppIntent {
     static let title: LocalizedStringResource = "Clip Replay Buffer"
     static let description = IntentDescription("Clips Luxel's replay buffer.")
@@ -258,9 +202,10 @@ struct LuxelClipReplayBufferIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        try LuxelAppIntentURLOpener.open(AutomationShortcutInvocationBuilder.clipReplayBuffer(
-            seconds: seconds
-        ))
+        try LuxelAppIntentURLOpener.open(
+            AutomationShortcutInvocationBuilder.clipReplayBuffer(
+                seconds: seconds
+            ))
         return .result()
     }
 }
@@ -283,9 +228,10 @@ struct LuxelOpenLatestRecordingIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        try LuxelAppIntentURLOpener.open(AutomationShortcutInvocationBuilder.latestRecording(
-            reveal: revealInFinder
-        ))
+        try LuxelAppIntentURLOpener.open(
+            AutomationShortcutInvocationBuilder.latestRecording(
+                reveal: revealInFinder
+            ))
         return .result()
     }
 }
@@ -320,16 +266,6 @@ struct LuxelAppShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Toggle Recording",
             systemImageName: "record.circle"
-        )
-
-        AppShortcut(
-            intent: LuxelCaptureScreenshotIntent(),
-            phrases: [
-                "Capture a screenshot with \(.applicationName)",
-                "Take a screenshot with \(.applicationName)"
-            ],
-            shortTitle: "Capture Screenshot",
-            systemImageName: "camera"
         )
 
         AppShortcut(

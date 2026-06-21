@@ -12,7 +12,8 @@ public struct NotchScreenRect: Codable, Equatable, Sendable {
               width.isFinite,
               height.isFinite,
               width > 0,
-              height > 0 else {
+              height > 0
+        else {
             throw NotchGeometryError.invalidRect
         }
 
@@ -35,10 +36,7 @@ public struct NotchScreenRect: Codable, Equatable, Sendable {
     }
 
     public func contains(_ rect: NotchScreenRect) -> Bool {
-        rect.minX >= minX &&
-            rect.maxX <= maxX &&
-            rect.minY >= minY &&
-            rect.maxY <= maxY
+        rect.minX >= minX && rect.maxX <= maxX && rect.minY >= minY && rect.maxY <= maxY
     }
 }
 
@@ -102,19 +100,22 @@ public struct NotchGeometry: Codable, Equatable, Sendable {
               display.safeAreaInsets.top > 0,
               let leftArea = display.auxiliaryTopLeftArea,
               let rightArea = display.auxiliaryTopRightArea,
-              leftArea.maxX < rightArea.minX else {
+              leftArea.maxX < rightArea.minX
+        else {
             return nil
         }
 
         let housingY = min(leftArea.minY, rightArea.minY)
         let housingMaxY = max(leftArea.maxY, rightArea.maxY)
 
-        guard let housingRect = try? NotchScreenRect(
-            x: leftArea.maxX,
-            y: housingY,
-            width: rightArea.minX - leftArea.maxX,
-            height: housingMaxY - housingY
-        ), display.frame.contains(housingRect) else {
+        guard
+            let housingRect = try? NotchScreenRect(
+                x: leftArea.maxX,
+                y: housingY,
+                width: rightArea.minX - leftArea.maxX,
+                height: housingMaxY - housingY
+            ), display.frame.contains(housingRect)
+        else {
             return nil
         }
 

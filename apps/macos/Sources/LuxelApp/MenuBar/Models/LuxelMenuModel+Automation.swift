@@ -141,9 +141,6 @@ extension LuxelMenuModel {
                 )
             }
             return .accepted
-        case .screenshot(let options):
-            let target = try await resolveAutomationTarget(options.target).target
-            return try await captureAutomationScreenshot(target: target, format: options.format)
         case .clip(let seconds):
             return try await clipAutomationReplayBuffer(
                 seconds: seconds,
@@ -168,7 +165,8 @@ extension LuxelMenuModel {
             throw LuxelAutomationError.replayBufferUnavailable
         }
 
-        let recording = try await replayBufferClipService.clip(lastSeconds: seconds.map(TimeInterval.init))
+        let recording = try await replayBufferClipService.clip(
+            lastSeconds: seconds.map(TimeInterval.init))
         refreshRecentRecordings()
 
         switch settings.replayClipDestination {
@@ -262,31 +260,37 @@ extension LuxelMenuModel {
 
             return AutomationResolvedCaptureTarget(option: displayTarget)
         case .display(.id(let id)):
-            guard let displayTarget = captureTargets.first(where: { option in
-                guard case .display(let displayID) = option.target else {
-                    return false
-                }
+            guard
+                let displayTarget = captureTargets.first(where: { option in
+                    guard case .display(let displayID) = option.target else {
+                        return false
+                    }
 
-                return String(displayID.rawValue) == id || option.id == id || option.id == "display-\(id)"
-            }) else {
+                    return String(displayID.rawValue) == id || option.id == id || option.id == "display-\(id)"
+                })
+            else {
                 throw LuxelAutomationError.targetUnavailable
             }
 
             return AutomationResolvedCaptureTarget(option: displayTarget)
         case .activeWindow:
-            guard let windowTarget = activeWindowCaptureTargetResolver.resolve(
-                from: captureTargets,
-                orderedWindowIDs: activeWindowCatalog.orderedActiveWindowIDs()
-            ) else {
+            guard
+                let windowTarget = activeWindowCaptureTargetResolver.resolve(
+                    from: captureTargets,
+                    orderedWindowIDs: activeWindowCatalog.orderedActiveWindowIDs()
+                )
+            else {
                 throw LuxelAutomationError.targetUnavailable
             }
 
             return AutomationResolvedCaptureTarget(option: windowTarget)
         case .lastArea:
-            guard let resolution = settings.lastCaptureMemory?.resolvedTarget(
-                availableTargets: captureTargets,
-                fallbackDisplay: lastCaptureFallbackDisplay
-            ) else {
+            guard
+                let resolution = settings.lastCaptureMemory?.resolvedTarget(
+                    availableTargets: captureTargets,
+                    fallbackDisplay: lastCaptureFallbackDisplay
+                )
+            else {
                 throw LuxelAutomationError.targetUnavailable
             }
 
@@ -302,9 +306,11 @@ extension LuxelMenuModel {
             return nil
         }
 
-        guard let preset = settings.exportPresets.first(where: {
-            $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
-        }) else {
+        guard
+            let preset = settings.exportPresets.first(where: {
+                $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+            })
+        else {
             throw LuxelAutomationError.presetUnavailable(name)
         }
 
@@ -350,10 +356,12 @@ private enum LuxelAutomationURLCaller {
 }
 
 private final class LuxelAutomationCommandExecutor: AutomationCommandExecutor, @unchecked Sendable {
-    private let execute: @MainActor @Sendable (AutomationCommand) async throws -> AutomationExecutionResult
+    private let execute:
+        @MainActor @Sendable (AutomationCommand) async throws -> AutomationExecutionResult
 
     init(
-        execute: @escaping @MainActor @Sendable (AutomationCommand) async throws -> AutomationExecutionResult
+        execute:
+            @escaping @MainActor @Sendable (AutomationCommand) async throws -> AutomationExecutionResult
     ) {
         self.execute = execute
     }
@@ -368,10 +376,6 @@ private final class LuxelAutomationCommandExecutor: AutomationCommandExecutor, @
 
     func toggle(_ options: AutomationRecordingOptions?) async throws -> AutomationExecutionResult {
         try await execute(.toggle(options))
-    }
-
-    func captureScreenshot(_ options: AutomationScreenshotOptions) async throws -> AutomationExecutionResult {
-        try await execute(.screenshot(options))
     }
 
     func clipReplayBuffer(seconds: Int?) async throws -> AutomationExecutionResult {

@@ -160,10 +160,12 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
         from sourceVideoTrack: AVAssetTrack,
         sourceTimeRange: CMTimeRange
     ) throws -> AVMutableCompositionTrack {
-        guard let videoTrack = composition.addMutableTrack(
-            withMediaType: .video,
-            preferredTrackID: kCMPersistentTrackID_Invalid
-        ) else {
+        guard
+            let videoTrack = composition.addMutableTrack(
+                withMediaType: .video,
+                preferredTrackID: kCMPersistentTrackID_Invalid
+            )
+        else {
             throw AVAssetReaderVideoCodecMediaSourceError.cannotCreateVideoTrack
         }
 
@@ -219,10 +221,12 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
         from sourceAudioTrack: AVAssetTrack,
         sourceTimeRange: CMTimeRange
     ) throws -> AVMutableCompositionTrack {
-        guard let audioTrack = composition.addMutableTrack(
-            withMediaType: .audio,
-            preferredTrackID: kCMPersistentTrackID_Invalid
-        ) else {
+        guard
+            let audioTrack = composition.addMutableTrack(
+                withMediaType: .audio,
+                preferredTrackID: kCMPersistentTrackID_Invalid
+            )
+        else {
             throw AVAssetReaderCodecMediaSourceError.cannotCreateAudioTrack
         }
 
@@ -381,8 +385,8 @@ public enum AVAssetReaderCodecMediaSourceError: Error, Equatable {
     case audioDataCopyFailed(OSStatus)
 }
 
-private extension AVAssetReader {
-    var errorDescription: String {
+extension AVAssetReader {
+    fileprivate var errorDescription: String {
         error.map(String.init(describing:)) ?? "Unknown AVAssetReader error"
     }
 }

@@ -36,7 +36,8 @@ public final class QuickExportService {
 
         let exported = try await withOutputDirectoryAccess(
             outputDirectory: outputDirectory(for: preset, recordingsDirectory: recordingsDirectory),
-            bookmark: outputDirectoryBookmark(for: preset, recordingsDirectoryBookmark: recordingsDirectoryBookmark)
+            bookmark: outputDirectoryBookmark(
+                for: preset, recordingsDirectoryBookmark: recordingsDirectoryBookmark)
         ) { outputDirectory in
             let exported = try await exportService.export(
                 request,

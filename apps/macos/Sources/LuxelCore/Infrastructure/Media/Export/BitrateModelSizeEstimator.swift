@@ -14,12 +14,14 @@ public struct BitrateModelSizeEstimator: ExportSizeEstimator, Sendable {
             return try ExportEstimate(bytes: bytes, confidence: .modeled)
         }
 
-        guard let videoBitsPerPixel = request.resolvedQuality.videoBitsPerPixel(for: request.format) else {
+        guard let videoBitsPerPixel = request.resolvedQuality.videoBitsPerPixel(for: request.format)
+        else {
             throw BitrateModelSizeEstimatorError.unsupportedFormat(request.format)
         }
 
         let outputPixelSize = try request.outputPixelSize
-        let pixelRate = Double(outputPixelSize.width * outputPixelSize.height * request.frameRate.framesPerSecond)
+        let pixelRate = Double(
+            outputPixelSize.width * outputPixelSize.height * request.frameRate.framesPerSecond)
         let videoBitsPerSecond = pixelRate * videoBitsPerPixel
         let audioBits = request.outputShouldMute ? 0 : Double(audioBitsPerSecond)
         let totalBits = (videoBitsPerSecond + audioBits) * request.outputDuration

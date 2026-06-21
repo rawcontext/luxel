@@ -128,7 +128,8 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
     private func yieldActivation(to sourceApplication: NSRunningApplication?) {
         guard let sourceApplication,
               sourceApplication.processIdentifier != NSRunningApplication.current.processIdentifier,
-              !sourceApplication.isTerminated else {
+              !sourceApplication.isTerminated
+        else {
             return
         }
 
@@ -162,7 +163,8 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
     private func refreshEditorMenusIfNeeded() {
         guard NSApplication.shared.activationPolicy() == .regular,
-              editorWindow?.isVisible == true || settingsWindow?.isVisible == true else {
+              editorWindow?.isVisible == true || settingsWindow?.isVisible == true
+        else {
             return
         }
 
@@ -203,7 +205,8 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
     private func restoreAccessoryActivationPolicyIfNoManagedWindowsVisible() {
         guard editorWindow?.isVisible != true,
-              settingsWindow?.isVisible != true else {
+              settingsWindow?.isVisible != true
+        else {
             return
         }
 

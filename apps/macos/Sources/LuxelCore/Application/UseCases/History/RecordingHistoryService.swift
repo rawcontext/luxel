@@ -76,28 +76,15 @@ public final class RecordingHistoryService: Sendable {
     }
 
     @discardableResult
-    public func addScreenshot(fileURL: URL, name: String? = nil) -> PastRecording? {
-        let now = dateProvider.now()
-        let screenshotName = name ?? RecordingName.timestamped(now: now, calendar: calendar).value
-        let screenshot = PastRecording(
-            fileURL: fileURL,
-            name: screenshotName,
-            date: now,
-            kind: .screenshot
-        )
-
-        let recordings = addRecording(screenshot)
-        return recordings.first == screenshot ? screenshot : nil
-    }
-
-    @discardableResult
     public func addReplayClip(fileURL: URL, name: String? = nil) -> PastRecording? {
         let now = dateProvider.now()
-        let replayName = name ?? RecordingName.timestamped(
-            title: "Luxel Replay",
-            now: now,
-            calendar: calendar
-        ).value
+        let replayName =
+            name
+            ?? RecordingName.timestamped(
+                title: "Luxel Replay",
+                now: now,
+                calendar: calendar
+            ).value
         let recording = PastRecording(
             fileURL: fileURL,
             name: replayName,
@@ -118,7 +105,8 @@ public final class RecordingHistoryService: Sendable {
         let validRecordings = getPastRecordings()
 
         guard fileSystem.fileExists(at: exportedMedia.fileURL),
-              let recordingIndex = validRecordings.firstIndex(where: { $0.fileURL == recording.fileURL }) else {
+              let recordingIndex = validRecordings.firstIndex(where: { $0.fileURL == recording.fileURL })
+        else {
             return validRecordings
         }
 
@@ -218,16 +206,17 @@ public final class RecordingHistoryService: Sendable {
             let recording = recordingByDroppingMissingSidecars(activeRecording.pastRecording)
             addRecording(recording)
             result = .playable(recording)
-        case let .corrupt(reason):
+        case .corrupt(let reason):
             switch corruptRecordingClassifier.recoveryKind(for: reason) {
             case .knownRepairable:
                 result = .knownCorrupt(fileURL: mediaURL, reason: reason)
             case .unknown:
-                diagnosticClient.recordCorruptRecording(CorruptRecordingDiagnostic(
-                    fileURL: mediaURL,
-                    reason: reason,
-                    recordedAt: dateProvider.now()
-                ))
+                diagnosticClient.recordCorruptRecording(
+                    CorruptRecordingDiagnostic(
+                        fileURL: mediaURL,
+                        reason: reason,
+                        recordedAt: dateProvider.now()
+                    ))
                 result = .unknownCorrupt(fileURL: mediaURL, reason: reason)
             }
         }
@@ -280,11 +269,12 @@ public final class RecordingHistoryService: Sendable {
     }
 
     private func recordMissingSidecar(at fileURL: URL) {
-        diagnosticClient.recordCorruptRecording(CorruptRecordingDiagnostic(
-            fileURL: fileURL,
-            reason: "Missing bundle sidecar",
-            recordedAt: dateProvider.now()
-        ))
+        diagnosticClient.recordCorruptRecording(
+            CorruptRecordingDiagnostic(
+                fileURL: fileURL,
+                reason: "Missing bundle sidecar",
+                recordedAt: dateProvider.now()
+            ))
     }
 
     private func persistManifest(_ manifest: BundleManifest, for rootURL: URL) throws {

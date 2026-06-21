@@ -1,8 +1,9 @@
-import Foundation
 import AVFAudio
 import CoreMedia
-@testable import LuxelCore
+import Foundation
 import Testing
+
+@testable import LuxelCore
 
 @Suite("AVFoundation media metadata reader")
 struct AVFoundationMediaMetadataReaderTests {
@@ -37,9 +38,13 @@ struct AVFoundationMediaMetadataReaderTests {
 
     @Test("reader classifies alpha-capable video media subtypes")
     func readerClassifiesAlphaCapableVideoMediaSubtypes() {
-        #expect(AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_HEVCWithAlpha))
-        #expect(AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_AppleProRes4444))
-        #expect(AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_AppleProRes4444XQ))
+        #expect(
+            AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_HEVCWithAlpha))
+        #expect(
+            AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_AppleProRes4444))
+        #expect(
+            AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_AppleProRes4444XQ)
+        )
         #expect(!AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_H264))
         #expect(!AVFoundationMediaMetadataReader.mediaSubTypeSupportsAlpha(kCMVideoCodecType_HEVC))
     }
@@ -113,14 +118,16 @@ struct AVFoundationMediaMetadataReaderTests {
     private func writeSilentAudioFixture(to fileURL: URL) throws {
         let sampleRate = 44_100.0
         let frameCount = AVAudioFrameCount(sampleRate / 4)
-        let pcmFormat = try #require(AVAudioFormat(
-            standardFormatWithSampleRate: sampleRate,
-            channels: 1
-        ))
-        let buffer = try #require(AVAudioPCMBuffer(
-            pcmFormat: pcmFormat,
-            frameCapacity: frameCount
-        ))
+        let pcmFormat = try #require(
+            AVAudioFormat(
+                standardFormatWithSampleRate: sampleRate,
+                channels: 1
+            ))
+        let buffer = try #require(
+            AVAudioPCMBuffer(
+                pcmFormat: pcmFormat,
+                frameCapacity: frameCount
+            ))
         buffer.frameLength = frameCount
 
         let file = try AVAudioFile(

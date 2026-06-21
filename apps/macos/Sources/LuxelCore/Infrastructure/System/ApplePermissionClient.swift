@@ -1,6 +1,6 @@
-import AppKit
-import AVFoundation
 import AVFAudio
+import AVFoundation
+import AppKit
 import CoreGraphics
 import Foundation
 
@@ -47,8 +47,8 @@ public struct ApplePermissionClient: PermissionClient {
     }
 }
 
-private extension AVAudioApplication.recordPermission {
-    var permissionStatus: PermissionStatus {
+extension AVAudioApplication.recordPermission {
+    fileprivate var permissionStatus: PermissionStatus {
         switch self {
         case .undetermined:
             .notDetermined
@@ -62,8 +62,8 @@ private extension AVAudioApplication.recordPermission {
     }
 }
 
-private extension AVAuthorizationStatus {
-    var permissionStatus: PermissionStatus {
+extension AVAuthorizationStatus {
+    fileprivate var permissionStatus: PermissionStatus {
         switch self {
         case .notDetermined:
             .notDetermined
@@ -79,8 +79,8 @@ private extension AVAuthorizationStatus {
     }
 }
 
-private extension SystemPermission {
-    var systemSettingsURLString: String {
+extension SystemPermission {
+    fileprivate var systemSettingsURLString: String {
         switch self {
         case .screenRecording:
             "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"

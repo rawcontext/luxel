@@ -159,7 +159,8 @@ private final class AudioOnlyCaptureSession: @unchecked Sendable {
     }
 }
 
-private final class AudioWriterDelegate: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate, @unchecked Sendable {
+private final class AudioWriterDelegate: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate,
+                                         @unchecked Sendable {
     private let lock = NSLock()
     private let writer: AVAssetWriter
     private let writerInput: AVAssetWriterInput
@@ -217,16 +218,19 @@ private final class AudioWriterDelegate: NSObject, AVCaptureAudioDataOutputSampl
             case .completed:
                 continuation.resume()
             case .failed, .cancelled:
-                let message = writer.error.map(String.init(describing:)) ?? String(describing: writer.status)
+                let message =
+                    writer.error.map(String.init(describing:)) ?? String(describing: writer.status)
                 continuation.resume(throwing: AVFoundationAudioOnlyRecorderError.finishFailed(message))
             case .unknown, .writing:
-                continuation.resume(throwing: AVFoundationAudioOnlyRecorderError.finishFailed(
-                    String(describing: writer.status)
-                ))
+                continuation.resume(
+                    throwing: AVFoundationAudioOnlyRecorderError.finishFailed(
+                        String(describing: writer.status)
+                    ))
             @unknown default:
-                continuation.resume(throwing: AVFoundationAudioOnlyRecorderError.finishFailed(
-                    String(describing: writer.status)
-                ))
+                continuation.resume(
+                    throwing: AVFoundationAudioOnlyRecorderError.finishFailed(
+                        String(describing: writer.status)
+                    ))
             }
         }
     }

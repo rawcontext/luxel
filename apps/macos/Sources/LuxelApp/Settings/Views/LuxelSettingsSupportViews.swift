@@ -3,7 +3,6 @@ import SwiftUI
 enum LuxelSettingsPane: CaseIterable, Identifiable {
     case recording
     case output
-    case screenshots
     case presets
     case shortcuts
     case notch
@@ -20,8 +19,6 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Recording"
         case .output:
             "Output"
-        case .screenshots:
-            "Screenshots"
         case .presets:
             "Presets"
         case .shortcuts:
@@ -41,8 +38,6 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Capture, audio, and camera controls for new recordings."
         case .output:
             "Where recordings go and how exports behave."
-        case .screenshots:
-            "Screenshot format, destinations, thumbnail behavior, and shortcuts."
         case .presets:
             "Reusable export presets and cropper size presets."
         case .shortcuts:
@@ -62,8 +57,6 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "record.circle"
         case .output:
             "tray.and.arrow.down"
-        case .screenshots:
-            "camera.viewfinder"
         case .presets:
             "slider.horizontal.3"
         case .shortcuts:
@@ -134,7 +127,9 @@ struct SettingsGlassCard<Content: View>: View {
         } else {
             content
                 .padding(padding)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .background(
+                    .regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                )
                 .overlay {
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .stroke(.white.opacity(0.12), lineWidth: 1)

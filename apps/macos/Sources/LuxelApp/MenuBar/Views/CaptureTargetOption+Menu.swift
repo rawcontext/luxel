@@ -53,7 +53,9 @@ extension CaptureTargetOption {
         }
 
         guard let bundleIdentifier = owningApplicationBundleIdentifier,
-              let applicationURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) else {
+              let applicationURL = NSWorkspace.shared.urlForApplication(
+                withBundleIdentifier: bundleIdentifier)
+        else {
             return nil
         }
 

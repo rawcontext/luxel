@@ -62,13 +62,14 @@ struct AudioMixResolutionServiceTests {
 
         #expect(isApproximately(gains[.system], AudioMixPlan.normalizationTargetPeak / 0.4))
         #expect(isApproximately(gains[.microphone], 0))
-        #expect(await analyzer.requests() == [
-            AudioPeakAnalysisRequest(
-                inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
-                timeRange: timeRange,
-                audioTracks: [.system]
-            )
-        ])
+        #expect(
+            await analyzer.requests() == [
+                AudioPeakAnalysisRequest(
+                    inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
+                    timeRange: timeRange,
+                    audioTracks: [.system]
+                )
+            ])
     }
 
     @Test("normalization skips unavailable mix tracks")

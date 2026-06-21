@@ -110,7 +110,8 @@ public struct CameraOverlayPlan: Codable, Equatable, Sendable {
             guard originX >= 0,
                   originY >= 0,
                   originX + overlayWidth <= outputSize.width,
-                  originY + overlayHeight <= outputSize.height else {
+                  originY + overlayHeight <= outputSize.height
+            else {
                 throw WebcamOverlayModelError.overlayOutsideFrame
             }
 
@@ -141,18 +142,20 @@ public enum CameraOverlayAnchor: String, Codable, CaseIterable, Equatable, Senda
         outputSize: PixelSize
     ) throws -> CaptureRect {
         let margin = max(16, Int((Double(outputSize.width) * 0.03).rounded()))
-        let originX = switch self {
-        case .topLeft, .bottomLeft:
-            margin
-        case .topRight, .bottomRight:
-            outputSize.width - overlayWidth - margin
-        }
-        let originY = switch self {
-        case .topLeft, .topRight:
-            margin
-        case .bottomLeft, .bottomRight:
-            outputSize.height - overlayHeight - margin
-        }
+        let originX =
+            switch self {
+            case .topLeft, .bottomLeft:
+                margin
+            case .topRight, .bottomRight:
+                outputSize.width - overlayWidth - margin
+            }
+        let originY =
+            switch self {
+            case .topLeft, .topRight:
+                margin
+            case .bottomLeft, .bottomRight:
+                outputSize.height - overlayHeight - margin
+            }
 
         guard originX >= 0, originY >= 0 else {
             throw WebcamOverlayModelError.overlayOutsideFrame
@@ -175,7 +178,8 @@ public struct NormalizedPoint: Codable, Equatable, Sendable {
         guard xCoordinate.isFinite,
               yCoordinate.isFinite,
               (0...1).contains(xCoordinate),
-              (0...1).contains(yCoordinate) else {
+              (0...1).contains(yCoordinate)
+        else {
             throw WebcamOverlayModelError.invalidNormalizedPoint
         }
 

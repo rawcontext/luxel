@@ -18,7 +18,9 @@ struct NotchActivityModelTests {
             .recording(elapsed: 12, audioLevel: AudioLevelSample(rms: 0.3, peak: 0.6), muted: false)
         ])
 
-        #expect(activity == .recording(elapsed: 12, audioLevel: AudioLevelSample(rms: 0.3, peak: 0.6), muted: false))
+        #expect(
+            activity
+                == .recording(elapsed: 12, audioLevel: AudioLevelSample(rms: 0.3, peak: 0.6), muted: false))
     }
 
     @Test("resolver prioritizes export and transient completion above steady recording")
@@ -49,7 +51,8 @@ struct NotchActivityModelTests {
         )
 
         let activity = NotchActivityResolver.resolve([
-            .completed(artifact: NotchArtifact(fileURL: URL(filePath: "/tmp/Luxel.mp4"), kind: .recording)),
+            .completed(
+                artifact: NotchArtifact(fileURL: URL(filePath: "/tmp/Luxel.mp4"), kind: .recording)),
             .error(error)
         ])
 
@@ -59,7 +62,7 @@ struct NotchActivityModelTests {
     @Test("transient activities yield to the previous steady activity")
     func transientActivitiesYieldToPreviousSteadyActivity() throws {
         let completed = NotchActivity.completed(
-            artifact: NotchArtifact(fileURL: URL(filePath: "/tmp/Luxel.png"), kind: .screenshot)
+            artifact: NotchArtifact(fileURL: URL(filePath: "/tmp/Luxel.mp4"), kind: .recording)
         )
         let recording = NotchActivity.recording(elapsed: 42, audioLevel: .silent, muted: false)
 

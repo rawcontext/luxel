@@ -23,10 +23,11 @@ struct CursorSidecarPersistenceServiceTests {
         ]
 
         #expect(updatedBundle.manifest.sidecars == expectedSidecars)
-        #expect(fileSystem.writtenData.map(\.url) == [
-            rootURL.appendingPathComponent("cursor.json"),
-            rootURL.appendingPathComponent("bundle.json")
-        ])
+        #expect(
+            fileSystem.writtenData.map(\.url) == [
+                rootURL.appendingPathComponent("cursor.json"),
+                rootURL.appendingPathComponent("bundle.json")
+            ])
 
         let cursorDocument = try JSONDecoder().decode(
             CursorSidecarDocument.self,
@@ -54,9 +55,10 @@ struct CursorSidecarPersistenceServiceTests {
         let updatedBundle = try service.save(sampleTimeline(), in: bundle)
 
         #expect(updatedBundle == bundle)
-        #expect(fileSystem.writtenData.map(\.url) == [
-            rootURL.appendingPathComponent("pointer-events.json")
-        ])
+        #expect(
+            fileSystem.writtenData.map(\.url) == [
+                rootURL.appendingPathComponent("pointer-events.json")
+            ])
     }
 
     @Test("load returns nil without cursor sidecar")
@@ -92,18 +94,19 @@ struct CursorSidecarPersistenceServiceTests {
 
     @Test("sidecar document rejects unsupported schema versions")
     func sidecarDocumentRejectsUnsupportedSchemaVersions() throws {
-        let data = Data("""
-        {
-          "schemaVersion": 2,
-          "timeline": {
-            "schemaVersion": 1,
-            "samples": [],
-            "clicks": [],
-            "spotlightToggles": [],
-            "cursorImages": []
-          }
+        let data = Data(
+            """
+      {
+        "schemaVersion": 2,
+        "timeline": {
+          "schemaVersion": 1,
+          "samples": [],
+          "clicks": [],
+          "spotlightToggles": [],
+          "cursorImages": []
         }
-        """.utf8)
+      }
+      """.utf8)
 
         #expect(throws: CursorEffectModelError.unsupportedSidecarSchemaVersion) {
             _ = try JSONDecoder().decode(CursorSidecarDocument.self, from: data)

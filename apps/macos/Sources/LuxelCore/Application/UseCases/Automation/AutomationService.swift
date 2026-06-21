@@ -24,7 +24,8 @@ public final class AutomationService: Sendable {
         settings: AppSettings,
         context: AutomationPolicyContext
     ) async throws -> AutomationServiceResult {
-        switch AutomationPolicy.evaluate(command: invocation.command, settings: settings, context: context) {
+        switch AutomationPolicy.evaluate(
+            command: invocation.command, settings: settings, context: context) {
         case .allow:
             return .executed(try await execute(invocation.command))
         case .confirm(let prompt):
@@ -34,7 +35,8 @@ public final class AutomationService: Sendable {
         }
     }
 
-    public func executeConfirmed(_ invocation: AutomationInvocation) async throws -> AutomationExecutionResult {
+    public func executeConfirmed(_ invocation: AutomationInvocation) async throws
+    -> AutomationExecutionResult {
         try await execute(invocation.command)
     }
 
@@ -46,8 +48,6 @@ public final class AutomationService: Sendable {
             try await executor.stop()
         case .toggle(let options):
             try await executor.toggle(options)
-        case .screenshot(let options):
-            try await executor.captureScreenshot(options)
         case .clip(let seconds):
             try await executor.clipReplayBuffer(seconds: seconds)
         case .preferences(let pane):

@@ -111,7 +111,8 @@ enum LuxelCompositionRoot {
                 fileSystem: LocalFileSystem()
             ),
             exportSizeEstimationService: ExportSizeEstimationService(
-                estimator: codecAdapterRegistry.exportSizeEstimator(nativeEstimator: NativeExportSizeEstimator())
+                estimator: codecAdapterRegistry.exportSizeEstimator(
+                    nativeEstimator: NativeExportSizeEstimator())
             ),
             codecAvailability: codecAdapterRegistry.availability,
             directoryAccessService: bookmarkedDirectoryAccessService(),
@@ -120,7 +121,8 @@ enum LuxelCompositionRoot {
     }
 
     @MainActor
-    static func quickExportService(fileWorkflowService: ExportedFileWorkflowService) -> QuickExportService {
+    static func quickExportService(fileWorkflowService: ExportedFileWorkflowService)
+    -> QuickExportService {
         let codecAdapterRegistry = codecAdapterRegistry()
 
         return QuickExportService(
@@ -135,18 +137,9 @@ enum LuxelCompositionRoot {
         )
     }
 
-    @MainActor
-    static func screenshotCaptureService(history: RecordingHistoryService) -> ScreenshotCaptureService {
-        ScreenshotCaptureService(
-            capturer: ScreenCaptureKitStillCapturer(),
-            fileWriter: LocalScreenshotFileWriter(),
-            destinationClient: AppKitScreenshotDestinationClient(),
-            history: history
-        )
-    }
-
     static var defaultRecordingsDirectory: URL {
-        let moviesDirectory = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
+        let moviesDirectory =
+            FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Movies")
 
         return moviesDirectory.appending(path: "Luxel")
@@ -171,9 +164,11 @@ enum LuxelCompositionRoot {
     }
 
     private static var applicationSupportDirectory: URL {
-        let applicationSupportDirectory = FileManager.default
+        let applicationSupportDirectory =
+            FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
-            .first ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Library/Application Support")
+            .first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Library/Application Support")
 
         return applicationSupportDirectory
     }

@@ -69,12 +69,14 @@ public struct GIFContainerWriter: Sendable {
     ) throws {
         for frame in frames {
             guard frame.rect.originX + frame.rect.width <= pixelSize.width,
-                  frame.rect.originY + frame.rect.height <= pixelSize.height else {
+                  frame.rect.originY + frame.rect.height <= pixelSize.height
+            else {
                 throw GIFContainerWriterError.frameRectOutOfBounds
             }
 
             guard Int(frame.transparentColorIndex) < paletteSize,
-                  frame.colorIndexes.allSatisfy({ Int($0) < paletteSize }) else {
+                  frame.colorIndexes.allSatisfy({ Int($0) < paletteSize })
+            else {
                 throw GIFContainerWriterError.colorIndexOutOfPalette
             }
         }
@@ -252,9 +254,10 @@ private struct GIFLZWEncoder {
     }
 
     private static func initialDictionary(clearCode: Int) -> [[UInt8]: Int] {
-        Dictionary(uniqueKeysWithValues: (0..<clearCode).map { code in
-            ([UInt8(code)], code)
-        })
+        Dictionary(
+            uniqueKeysWithValues: (0..<clearCode).map { code in
+                ([UInt8(code)], code)
+            })
     }
 }
 
@@ -283,16 +286,16 @@ private struct GIFLZWBitPacker {
     }
 }
 
-private extension Data {
-    mutating func appendASCII(_ string: String) {
+extension Data {
+    fileprivate mutating func appendASCII(_ string: String) {
         append(contentsOf: string.utf8)
     }
 
-    mutating func appendByte(_ byte: UInt8) {
+    fileprivate mutating func appendByte(_ byte: UInt8) {
         append(byte)
     }
 
-    mutating func appendUInt16LittleEndian(_ value: Int) throws {
+    fileprivate mutating func appendUInt16LittleEndian(_ value: Int) throws {
         guard (0...Int(UInt16.max)).contains(value) else {
             throw GIFContainerWriterError.invalidUInt16
         }
@@ -301,7 +304,7 @@ private extension Data {
         appendByte(UInt8((value >> 8) & 0xFF))
     }
 
-    mutating func appendSubblocks(_ data: Data) {
+    fileprivate mutating func appendSubblocks(_ data: Data) {
         var offset = 0
         while offset < data.count {
             let count = Swift.min(255, data.count - offset)

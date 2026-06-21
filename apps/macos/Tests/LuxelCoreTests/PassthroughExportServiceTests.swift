@@ -10,7 +10,8 @@ struct PassthroughExportServiceTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let sourceURL = directory.appending(path: "source.mp4")
-        let outputURL = directory
+        let outputURL =
+            directory
             .appending(path: "exports", directoryHint: .isDirectory)
             .appending(path: "source Original.mp4")
         let bytes = Data([0, 1, 2, 3, 5, 8, 13, 21])
@@ -18,10 +19,11 @@ struct PassthroughExportServiceTests {
         try bytes.write(to: sourceURL)
 
         let service = PassthroughExportService(fileSystem: LocalFileSystem())
-        let result = try await service.export(PassthroughExportRequest(
-            inputFileURL: sourceURL,
-            outputFileURL: outputURL
-        ))
+        let result = try await service.export(
+            PassthroughExportRequest(
+                inputFileURL: sourceURL,
+                outputFileURL: outputURL
+            ))
 
         #expect(result.fileURL == outputURL)
         #expect(try Data(contentsOf: outputURL) == bytes)
@@ -38,10 +40,11 @@ struct PassthroughExportServiceTests {
         try bytes.write(to: sourceURL)
 
         let service = PassthroughExportService(fileSystem: LocalFileSystem())
-        let result = try await service.export(PassthroughExportRequest(
-            inputFileURL: sourceURL,
-            outputFileURL: sourceURL
-        ))
+        let result = try await service.export(
+            PassthroughExportRequest(
+                inputFileURL: sourceURL,
+                outputFileURL: sourceURL
+            ))
 
         #expect(result.fileURL == sourceURL)
         #expect(try Data(contentsOf: sourceURL) == bytes)

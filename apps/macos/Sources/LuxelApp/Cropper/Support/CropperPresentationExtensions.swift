@@ -1,43 +1,17 @@
 import CoreGraphics
 import LuxelCore
 
-extension LuxelCropperMode {
-    var toolbarLabel: String {
-        switch self {
-        case .video:
-            "Video"
-        case .photo:
-            "Photo"
-        }
-    }
-}
-
 extension LuxelCropperModel {
     var primaryActionTitle: String {
-        switch mode {
-        case .video:
-            "Record"
-        case .photo:
-            "Capture"
-        }
+        "Record"
     }
 
     var primaryActionSystemImage: String {
-        switch mode {
-        case .video:
-            "record.circle"
-        case .photo:
-            "camera"
-        }
+        "record.circle"
     }
 
     var primaryActionHelp: String {
-        switch mode {
-        case .video:
-            "Record the selected area."
-        case .photo:
-            "Capture the selected area as a screenshot."
-        }
+        "Record the selected area."
     }
 }
 

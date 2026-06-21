@@ -7,7 +7,8 @@ public struct KeystrokeSidecarPersistenceService: Sendable {
         self.fileSystem = fileSystem
     }
 
-    public func save(_ timeline: KeystrokeTimeline, in bundle: RecordingBundle) throws -> RecordingBundle {
+    public func save(_ timeline: KeystrokeTimeline, in bundle: RecordingBundle) throws
+    -> RecordingBundle {
         let resolvedBundle = try bundleWithKeystrokeSidecar(bundle)
         let sidecarURL = keystrokeSidecarURL(in: resolvedBundle)
         let document = try KeystrokeSidecarDocument(timeline: timeline)

@@ -113,7 +113,8 @@ public final class ReplayBufferService: @unchecked Sendable {
         }
 
         let currentReasons = systemActivityMonitor.currentPauseReasons
-        for reason in ReplayBufferPauseReason.systemActivityPriority where currentReasons.contains(reason) {
+        for reason in ReplayBufferPauseReason.systemActivityPriority
+        where currentReasons.contains(reason) {
             try await setPauseReason(reason, isActive: true)
         }
     }
@@ -141,8 +142,8 @@ public enum ReplayBufferServiceError: Error, Equatable {
     case notArmed
 }
 
-private extension ReplayBufferPauseReason {
-    static let systemActivityPriority: [ReplayBufferPauseReason] = [
+extension ReplayBufferPauseReason {
+    fileprivate static let systemActivityPriority: [ReplayBufferPauseReason] = [
         .locked,
         .displaySleep,
         .battery,

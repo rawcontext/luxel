@@ -3,7 +3,9 @@ import LuxelCore
 
 extension LuxelStatusItemController {
     func symbolImage(named name: String, accessibilityLabel: String) -> NSImage? {
-        guard let baseImage = NSImage(systemSymbolName: name, accessibilityDescription: accessibilityLabel) else {
+        guard
+            let baseImage = NSImage(systemSymbolName: name, accessibilityDescription: accessibilityLabel)
+        else {
             return nil
         }
 
@@ -48,10 +50,11 @@ extension LuxelStatusItemController {
 
         let attributedText = countdownAttributedText(text)
         let textSize = attributedText.size()
-        attributedText.draw(at: NSPoint(
-            x: (width - textSize.width) / 2,
-            y: (iconSize.height - textSize.height) / 2
-        ))
+        attributedText.draw(
+            at: NSPoint(
+                x: (width - textSize.width) / 2,
+                y: (iconSize.height - textSize.height) / 2
+            ))
 
         image.unlockFocus()
         image.isTemplate = true

@@ -109,11 +109,12 @@ final class LuxelMenuPanelContentView: NSView {
         super.layout()
 
         maskLayer.frame = bounds
-        maskLayer.path = LuxelMenuPanelPath.bezierPath(
-            in: bounds,
-            arrowCenterX: arrowCenterX,
-            arrowHeight: arrowHeight
-        ).cgPath
+        maskLayer.path =
+            LuxelMenuPanelPath.bezierPath(
+                in: bounds,
+                arrowCenterX: arrowCenterX,
+                arrowHeight: arrowHeight
+            ).cgPath
     }
 }
 

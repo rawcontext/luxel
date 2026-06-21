@@ -13,10 +13,12 @@ public struct AVFoundationPassthroughExporter: PassthroughExporter, Sendable {
         let outputFileType = try outputFileType(for: request.outputFileURL)
         let asset = AVURLAsset(url: request.inputFileURL)
 
-        guard let exportSession = AVAssetExportSession(
-            asset: asset,
-            presetName: AVAssetExportPresetPassthrough
-        ) else {
+        guard
+            let exportSession = AVAssetExportSession(
+                asset: asset,
+                presetName: AVAssetExportPresetPassthrough
+            )
+        else {
             throw AVFoundationPassthroughExporterError.unsupportedPreset(AVAssetExportPresetPassthrough)
         }
 

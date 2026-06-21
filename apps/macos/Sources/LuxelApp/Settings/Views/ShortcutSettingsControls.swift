@@ -309,7 +309,8 @@ private struct LuxelShortcutSettingsRow: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: 30, height: 30)
-                .background(.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(
+                    .primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
@@ -439,19 +440,20 @@ private final class ShortcutRecorderNSView: NSView {
     }
 }
 
-private extension NSEvent {
-    var luxelShortcut: AppKeyboardShortcut? {
+extension NSEvent {
+    fileprivate var luxelShortcut: AppKeyboardShortcut? {
         guard let rawKey = charactersIgnoringModifiers?.lowercased(),
               rawKey.count == 1,
               let scalar = rawKey.unicodeScalars.first,
-              CharacterSet.alphanumerics.contains(scalar) else {
+              CharacterSet.alphanumerics.contains(scalar)
+        else {
             return nil
         }
 
         return try? AppKeyboardShortcut(key: rawKey, modifiers: luxelShortcutModifiers)
     }
 
-    var luxelShortcutModifiers: [AppKeyboardShortcutModifier] {
+    fileprivate var luxelShortcutModifiers: [AppKeyboardShortcutModifier] {
         var modifiers: [AppKeyboardShortcutModifier] = []
 
         if modifierFlags.contains(.command) {

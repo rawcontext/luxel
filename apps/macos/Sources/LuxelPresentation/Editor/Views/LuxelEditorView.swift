@@ -233,9 +233,11 @@ extension LuxelEditorView {
                 }
             }
         } label: {
-            Label(model.selectedFormatSummary, systemImage: model.hasAudioOnlySource ? "waveform" : "video")
-                .lineLimit(1)
-                .frame(maxWidth: .infinity)
+            Label(
+                model.selectedFormatSummary, systemImage: model.hasAudioOnlySource ? "waveform" : "video"
+            )
+            .lineLimit(1)
+            .frame(maxWidth: .infinity)
         }
         .menuStyle(.button)
     }
@@ -487,7 +489,8 @@ extension LuxelEditorView {
                 timelineSliderRow(
                     "Start",
                     value: model.formatTime(model.trimStart),
-                    slider: Slider(value: trimStartSelection, in: 0...max(model.duration, model.minimumTrimDuration))
+                    slider: Slider(
+                        value: trimStartSelection, in: 0...max(model.duration, model.minimumTrimDuration))
                 )
 
                 timelineSliderRow(
@@ -655,7 +658,7 @@ extension LuxelEditorView {
             .font(.caption)
             .foregroundStyle(statusTint)
             .lineLimit(2)
-        .padding(.horizontal, 4)
+            .padding(.horizontal, 4)
     }
 
     private func integerStepperField(
@@ -672,9 +675,11 @@ extension LuxelEditorView {
                 .multilineTextAlignment(.trailing)
                 .monospacedDigit()
         } onIncrement: {
-            value.wrappedValue = min(range.upperBound, value.wrappedValue + currentStep(step, shiftedStep))
+            value.wrappedValue = min(
+                range.upperBound, value.wrappedValue + currentStep(step, shiftedStep))
         } onDecrement: {
-            value.wrappedValue = max(range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep))
+            value.wrappedValue = max(
+                range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep))
         }
         .help(unitHelp)
     }
@@ -693,9 +698,11 @@ extension LuxelEditorView {
                 .multilineTextAlignment(.trailing)
                 .monospacedDigit()
         } onIncrement: {
-            value.wrappedValue = roundedSpeed(min(range.upperBound, value.wrappedValue + currentStep(step, shiftedStep)))
+            value.wrappedValue = roundedSpeed(
+                min(range.upperBound, value.wrappedValue + currentStep(step, shiftedStep)))
         } onDecrement: {
-            value.wrappedValue = roundedSpeed(max(range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep)))
+            value.wrappedValue = roundedSpeed(
+                max(range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep)))
         }
         .help(unitHelp)
     }
@@ -938,75 +945,5 @@ extension LuxelEditorView {
         case .diffusion:
             "Diffusion"
         }
-    }
-}
-
-private struct EditorDisclosureCard<Content: View>: View {
-    @State private var isExpanded = false
-
-    private let title: String
-    private let content: Content
-
-    init(
-        _ title: String,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.title = title
-        self.content = content()
-    }
-
-    var body: some View {
-        cardContainer
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private var cardContainer: some View {
-        if #available(macOS 26.0, *) {
-            cardContent
-                .glassEffect(in: .rect(cornerRadius: 8))
-        } else {
-            cardContent
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-        }
-    }
-
-    private var cardContent: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    SectionLabel(title)
-
-                    Spacer(minLength: 8)
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                }
-                .padding(.top, 16)
-                .padding(.horizontal, 16)
-                .padding(.bottom, isExpanded ? 12 : 16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            if isExpanded {
-                Divider()
-                    .padding(.horizontal, 16)
-
-                content
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 16)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

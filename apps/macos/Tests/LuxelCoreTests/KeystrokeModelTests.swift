@@ -172,15 +172,16 @@ struct KeystrokeModelTests {
     @Test("chip planner coalesces typing caps text and splits after gaps")
     func chipPlannerCoalescesTypingCapsTextAndSplitsAfterGaps() throws {
         let letters = Array("abcdefghijklmnopqrstuvwxyz")
-        let events = try letters.enumerated().map { index, character in
-            try keyDown(
-                time: TimeInterval(index) / 10,
-                keyCode: index,
-                characters: String(character)
-            )
-        } + [
-            keyDown(time: 4, keyCode: 18, characters: "!", modifiers: [.shift])
-        ]
+        let events =
+            try letters.enumerated().map { index, character in
+                try keyDown(
+                    time: TimeInterval(index) / 10,
+                    keyCode: index,
+                    characters: String(character)
+                )
+            } + [
+                keyDown(time: 4, keyCode: 18, characters: "!", modifiers: [.shift])
+            ]
         let timeline = try KeystrokeTimeline(events: events)
 
         let chips = try KeystrokeChipPlanner().plannedChips(for: timeline)

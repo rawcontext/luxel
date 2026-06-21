@@ -78,12 +78,11 @@ public enum AutomationCommandParser {
         case "stop":
             return .stop
         case "toggle":
-            let options = query.value(for: "target") == nil
+            let options =
+                query.value(for: "target") == nil
                 ? nil
                 : try recordingOptions(query: query, targetRequired: true)
             return .toggle(options)
-        case "screenshot":
-            return .screenshot(try screenshotOptions(query: query))
         case "clip":
             return .clip(seconds: try optionalPositiveInteger("seconds", in: query))
         case "preferences":
@@ -109,15 +108,6 @@ public enum AutomationCommandParser {
             countdownSeconds: try optionalCountdownInteger(in: query),
             outputDirectory: try optionalOutputDirectory(in: query)
         )
-    }
-
-    private static func screenshotOptions(query: AutomationQuery) throws -> AutomationScreenshotOptions {
-        let format = try screenshotFormat(in: query)
-        guard let target = try captureTarget(in: query, required: true) else {
-            throw AutomationCommandParseError.missingParameter("target")
-        }
-
-        return AutomationScreenshotOptions(target: target, format: format)
     }
 
     private static func captureTarget(
@@ -148,19 +138,8 @@ public enum AutomationCommandParser {
         }
     }
 
-    private static func screenshotFormat(in query: AutomationQuery) throws -> ScreenshotFormat? {
-        guard let format = query.value(for: "format") else {
-            return nil
-        }
-
-        guard let screenshotFormat = ScreenshotFormat(rawValue: format.lowercased()) else {
-            throw AutomationCommandParseError.invalidParameter("format")
-        }
-
-        return screenshotFormat
-    }
-
-    private static func preferencesPane(in query: AutomationQuery) throws -> AutomationPreferencesPane? {
+    private static func preferencesPane(in query: AutomationQuery) throws
+    -> AutomationPreferencesPane? {
         guard let pane = query.value(for: "pane") else {
             return nil
         }
@@ -262,7 +241,8 @@ public enum AutomationCommandParser {
         guard let url = URL(string: value),
               let scheme = url.scheme?.lowercased(),
               !url.isFileURL,
-              scheme != "file" else {
+              scheme != "file"
+        else {
             throw AutomationCommandParseError.invalidCallbackURL(name)
         }
 

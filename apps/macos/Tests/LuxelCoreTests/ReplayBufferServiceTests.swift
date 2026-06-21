@@ -13,10 +13,11 @@ struct ReplayBufferServiceTests {
         try await service.arm(configuration: configuration)
         try await service.disarm()
 
-        #expect(engine.commands() == [
-            .arm(configuration),
-            .disarm
-        ])
+        #expect(
+            engine.commands() == [
+                .arm(configuration),
+                .disarm
+            ])
     }
 
     @Test("recording activity pauses and resumes when buffer was active")
@@ -29,11 +30,12 @@ struct ReplayBufferServiceTests {
         try await service.recordingDidStart()
         try await service.recordingDidStop()
 
-        #expect(engine.commands() == [
-            .arm(configuration),
-            .pause(.recordingActive),
-            .resume
-        ])
+        #expect(
+            engine.commands() == [
+                .arm(configuration),
+                .pause(.recordingActive),
+                .resume
+            ])
     }
 
     @Test("user pause survives recording activity")
@@ -48,11 +50,12 @@ struct ReplayBufferServiceTests {
         try await service.recordingDidStop()
         try await service.resumeByUser()
 
-        #expect(engine.commands() == [
-            .arm(configuration),
-            .pause(.user),
-            .resume
-        ])
+        #expect(
+            engine.commands() == [
+                .arm(configuration),
+                .pause(.user),
+                .resume
+            ])
     }
 
     @Test("recording pause temporarily overrides lower priority system pause")
@@ -67,13 +70,14 @@ struct ReplayBufferServiceTests {
         try await service.recordingDidStop()
         try await service.resumeSystemReason(.battery)
 
-        #expect(engine.commands() == [
-            .arm(configuration),
-            .pause(.battery),
-            .pause(.recordingActive),
-            .pause(.battery),
-            .resume
-        ])
+        #expect(
+            engine.commands() == [
+                .arm(configuration),
+                .pause(.battery),
+                .pause(.recordingActive),
+                .pause(.battery),
+                .resume
+            ])
     }
 
     @Test("clip delegates requested and default durations")
@@ -88,11 +92,12 @@ struct ReplayBufferServiceTests {
 
         #expect(defaultClip == URL(fileURLWithPath: "/tmp/replay-60.mp4"))
         #expect(requestedClip == URL(fileURLWithPath: "/tmp/replay-15.mp4"))
-        #expect(engine.commands() == [
-            .arm(configuration),
-            .clip(60),
-            .clip(15)
-        ])
+        #expect(
+            engine.commands() == [
+                .arm(configuration),
+                .clip(60),
+                .clip(15)
+            ])
     }
 
     @Test("service rejects unarmed and invalid clip requests")
@@ -135,10 +140,11 @@ struct ReplayBufferServiceTests {
 
         try await service.arm(configuration: configuration)
 
-        #expect(engine.commands() == [
-            .arm(configuration),
-            .pause(.battery)
-        ])
+        #expect(
+            engine.commands() == [
+                .arm(configuration),
+                .pause(.battery)
+            ])
     }
 
     @Test("system activity stream pauses resumes and restarts display changes")
@@ -155,13 +161,14 @@ struct ReplayBufferServiceTests {
         events.continuation.yield(.displayConfigurationChanged)
 
         let commands = await engine.waitForCommands(count: 5)
-        #expect(commands == [
-            .arm(configuration),
-            .pause(.locked),
-            .resume,
-            .pause(.displayChanged),
-            .resume
-        ])
+        #expect(
+            commands == [
+                .arm(configuration),
+                .pause(.locked),
+                .resume,
+                .pause(.displayChanged),
+                .resume
+            ])
     }
 
     private func replayConfiguration(length: TimeInterval) throws -> ReplayBufferConfiguration {

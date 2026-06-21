@@ -47,9 +47,6 @@ extension SettingsTests {
         #expect(settings.audioOnlyRecordingShortcut == "")
         #expect(settings.quickRecordLastShortcut == "")
         #expect(settings.clipReplayBufferShortcut == "")
-        #expect(settings.captureScreenshotShortcut == "")
-        #expect(settings.screenshotActiveWindowShortcut == "")
-        #expect(settings.screenshotFullscreenShortcut == "")
         #expect(settings.updatePreferences == .defaults)
         #expect(settings.updatePreferences.automaticallyCheckForUpdates)
         #expect(!settings.updatePreferences.automaticallyDownloadAndInstall)
@@ -67,10 +64,6 @@ extension SettingsTests {
         #expect(settings.userSizePresets == CaptureSizePreset.builtInDefaults)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)
-        #expect(settings.screenshotFormat == .png)
-        #expect(settings.screenshotDestinations == [.clipboard, .file])
-        #expect(settings.screenshotShowThumbnail)
-        #expect(settings.screenshotBackdrop == .opaque)
         #expect(settings.confirmDiscard)
         #expect(settings.defaultCountdown == nil)
         #expect(settings.lastStopAfter == nil)
@@ -78,33 +71,34 @@ extension SettingsTests {
 
     @Test("decoding settings removes retired built-in cropper size presets")
     func decodingSettingsRemovesRetiredBuiltInCropperSizePresets() throws {
-        let data = Data("""
-        {
-            "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-            "userSizePresets": [
-                {
-                    "id": "00000000-0000-0000-0000-000000000701",
-                    "name": "1280x720",
-                    "pixelSize": { "width": 1280, "height": 720 }
-                },
-                {
-                    "id": "00000000-0000-0000-0000-000000000704",
-                    "name": "X/Twitter 1280x720",
-                    "pixelSize": { "width": 1280, "height": 720 }
-                },
-                {
-                    "id": "00000000-0000-0000-0000-000000000705",
-                    "name": "App Store Preview 1920x1080",
-                    "pixelSize": { "width": 1920, "height": 1080 }
-                },
-                {
-                    "id": "00000000-0000-0000-0000-000000000806",
-                    "name": "Custom X/Twitter",
-                    "pixelSize": { "width": 1280, "height": 720 }
-                }
-            ]
-        }
-        """.utf8)
+        let data = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "userSizePresets": [
+              {
+                  "id": "00000000-0000-0000-0000-000000000701",
+                  "name": "1280x720",
+                  "pixelSize": { "width": 1280, "height": 720 }
+              },
+              {
+                  "id": "00000000-0000-0000-0000-000000000704",
+                  "name": "X/Twitter 1280x720",
+                  "pixelSize": { "width": 1280, "height": 720 }
+              },
+              {
+                  "id": "00000000-0000-0000-0000-000000000705",
+                  "name": "App Store Preview 1920x1080",
+                  "pixelSize": { "width": 1920, "height": 1080 }
+              },
+              {
+                  "id": "00000000-0000-0000-0000-000000000806",
+                  "name": "Custom X/Twitter",
+                  "pixelSize": { "width": 1280, "height": 720 }
+              }
+          ]
+      }
+      """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -158,13 +152,14 @@ extension SettingsTests {
 
     @Test("typed recording frame rate wins over legacy boolean when decoding")
     func typedRecordingFrameRateWinsOverLegacyBooleanWhenDecoding() throws {
-        let data = Data("""
-        {
-            "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-            "record60FPS": true,
-            "recordingFrameRate": { "framesPerSecond": 24 }
-        }
-        """.utf8)
+        let data = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "record60FPS": true,
+          "recordingFrameRate": { "framesPerSecond": 24 }
+      }
+      """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -174,12 +169,13 @@ extension SettingsTests {
 
     @Test("legacy record audio setting enables both audio sources")
     func legacyRecordAudioSettingEnablesBothAudioSources() throws {
-        let data = Data("""
-        {
-            "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-            "recordAudio": true
-        }
-        """.utf8)
+        let data = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "recordAudio": true
+      }
+      """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -189,13 +185,14 @@ extension SettingsTests {
 
     @Test("system and microphone audio settings decode independently")
     func systemAndMicrophoneAudioSettingsDecodeIndependently() throws {
-        let data = Data("""
-        {
-            "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-            "recordSystemAudio": true,
-            "recordAudio": false
-        }
-        """.utf8)
+        let data = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "recordSystemAudio": true,
+          "recordAudio": false
+      }
+      """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -219,10 +216,12 @@ extension SettingsTests {
         )
 
         #expect(settings.autoCollapseSeconds == 0)
-        #expect(settings.surfacePreferences == NotchSurfacePreferences(
-            isEnabled: false,
-            fallbackToFloatingHUDWhenUnavailable: false
-        ))
+        #expect(
+            settings.surfacePreferences
+                == NotchSurfacePreferences(
+                    isEnabled: false,
+                    fallbackToFloatingHUDWhenUnavailable: false
+                ))
     }
 
     @Test("notch surface settings replacement preserves untouched values")
@@ -263,12 +262,14 @@ extension SettingsTests {
             cameraPreviewStyle: previewStyle
         )
 
-        #expect(settings.cameraRecordingOptions == CameraRecordingOptions(
-            deviceID: "camera-1",
-            isEnabled: true,
-            recordsSeparateTrack: false,
-            previewStyle: previewStyle
-        ))
+        #expect(
+            settings.cameraRecordingOptions
+                == CameraRecordingOptions(
+                    deviceID: "camera-1",
+                    isEnabled: true,
+                    recordsSeparateTrack: false,
+                    previewStyle: previewStyle
+                ))
 
         let emptyDeviceSettings = AppSettings(recordingsDirectory: directory, cameraDeviceID: "")
         #expect(emptyDeviceSettings.cameraDeviceID == nil)
@@ -396,7 +397,8 @@ extension SettingsTests {
     @Test("duplicating a missing export preset throws")
     func duplicatingMissingExportPresetThrows() {
         let missingID = UUID(uuidString: "00000000-0000-0000-0000-000000000506")!
-        var settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/Users/example/Movies/Luxel"))
+        var settings = AppSettings.defaults(
+            recordingsDirectory: URL(fileURLWithPath: "/Users/example/Movies/Luxel"))
 
         #expect(throws: ExportPresetSettingsError.presetNotFound(missingID)) {
             _ = try settings.duplicateExportPreset(id: missingID)
@@ -476,7 +478,8 @@ extension SettingsTests {
     @Test("duplicating a missing capture size preset throws")
     func duplicatingMissingCaptureSizePresetThrows() {
         let missingID = UUID(uuidString: "00000000-0000-0000-0000-000000000899")!
-        var settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/Users/example/Movies/Luxel"))
+        var settings = AppSettings.defaults(
+            recordingsDirectory: URL(fileURLWithPath: "/Users/example/Movies/Luxel"))
 
         #expect(throws: CaptureSizePresetSettingsError.presetNotFound(missingID)) {
             _ = try settings.duplicateCaptureSizePreset(id: missingID)

@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import LuxelCore
 import Testing
+
 @testable import LuxelPresentation
 
 extension LuxelEditorModelTests {
@@ -12,8 +13,8 @@ extension LuxelEditorModelTests {
         fileSystem: any FileSystem = StubFileSystem(),
         fileActionClient: any ExportedFileActionClient = StubExportedFileActionClient(),
         frameGrabber: any FrameGrabber = StubFrameGrabber(),
-        screenshotFileWriter: SpyScreenshotFileWriter = SpyScreenshotFileWriter(),
-        screenshotDestinationClient: SpyScreenshotDestinationClient = SpyScreenshotDestinationClient(),
+        frameGrabFileWriter: SpyFrameGrabFileWriter = SpyFrameGrabFileWriter(),
+        frameGrabDestinationClient: SpyFrameGrabDestinationClient = SpyFrameGrabDestinationClient(),
         audioPeakAnalyzer: any AudioPeakAnalyzer = SpyAudioPeakAnalyzer(),
         codecAvailability: CodecAvailability = .none,
         directoryAccessService: BookmarkedDirectoryAccessService? = nil,
@@ -39,8 +40,8 @@ extension LuxelEditorModelTests {
             ),
             frameGrabService: FrameGrabService(
                 frameGrabber: frameGrabber,
-                fileWriter: screenshotFileWriter,
-                destinationClient: screenshotDestinationClient
+                fileWriter: frameGrabFileWriter,
+                destinationClient: frameGrabDestinationClient
             ),
             audioPeakAnalyzer: audioPeakAnalyzer,
             fileSystem: fileSystem,
@@ -61,10 +62,9 @@ extension LuxelEditorModelTests {
         )
     }
 
-    func frameImageData() throws -> ImageData {
-        try ImageData(
+    func frameImageData() throws -> FrameGrabImageData {
+        try FrameGrabImageData(
             data: Data([0x89, 0x50, 0x4e, 0x47]),
-            format: .png,
             pixelSize: PixelSize(width: 2, height: 2)
         )
     }
@@ -81,7 +81,9 @@ extension LuxelEditorModelTests {
         return try #require(model.player.currentItem?.audioMix)
     }
 
-    func previewAudioVolumeRamp(for inputParameters: AVAudioMixInputParameters) -> (start: Float, end: Float)? {
+    func previewAudioVolumeRamp(for inputParameters: AVAudioMixInputParameters) -> (
+        start: Float, end: Float
+    )? {
         var startVolume: Float = 0
         var endVolume: Float = 0
         var timeRange = CMTimeRange.invalid
@@ -161,10 +163,11 @@ final class SpyErrorReporter: ErrorReporter {
     private(set) var records: [Record] = []
 
     func record(_ error: any Error, context: String) {
-        records.append(Record(
-            context: context,
-            description: String(describing: error)
-        ))
+        records.append(
+            Record(
+                context: context,
+                description: String(describing: error)
+            ))
     }
 }
 
@@ -247,53 +250,47 @@ struct StubPassthroughExporter: PassthroughExporter {
 }
 
 final class SpyFrameGrabber: FrameGrabber, @unchecked Sendable {
-    private let imageData: ImageData
+    private let imageData: FrameGrabImageData
     private(set) var requests: [FrameGrabRequest] = []
 
-    init(imageData: ImageData) {
+    init(imageData: FrameGrabImageData) {
         self.imageData = imageData
     }
 
-    func grab(_ request: FrameGrabRequest) async throws -> ImageData {
+    func grab(_ request: FrameGrabRequest) async throws -> FrameGrabImageData {
         requests.append(request)
         return imageData
     }
 }
 
 struct StubFrameGrabber: FrameGrabber {
-    func grab(_ request: FrameGrabRequest) async throws -> ImageData {
-        try ImageData(
+    func grab(_ request: FrameGrabRequest) async throws -> FrameGrabImageData {
+        try FrameGrabImageData(
             data: Data([0x89, 0x50, 0x4e, 0x47]),
-            format: .png,
             pixelSize: PixelSize(width: 1, height: 1)
         )
     }
 }
 
-final class SpyScreenshotFileWriter: ScreenshotFileWriter, @unchecked Sendable {
+final class SpyFrameGrabFileWriter: FrameGrabFileWriter, @unchecked Sendable {
     struct Write: Equatable {
-        let imageData: ImageData
+        let imageData: FrameGrabImageData
         let fileURL: URL
     }
 
     private(set) var writes: [Write] = []
 
-    func write(_ imageData: ImageData, to fileURL: URL) throws {
+    func write(_ imageData: FrameGrabImageData, to fileURL: URL) throws {
         writes.append(Write(imageData: imageData, fileURL: fileURL))
     }
 }
 
 @MainActor
-final class SpyScreenshotDestinationClient: ScreenshotDestinationClient {
-    private(set) var copiedImages: [ImageData] = []
-    private(set) var openedURLs: [URL] = []
+final class SpyFrameGrabDestinationClient: FrameGrabDestinationClient {
+    private(set) var copiedImages: [FrameGrabImageData] = []
 
-    func copyImageToPasteboard(_ imageData: ImageData) throws {
+    func copyImageToPasteboard(_ imageData: FrameGrabImageData) throws {
         copiedImages.append(imageData)
-    }
-
-    func openWithDefaultApp(_ fileURL: URL) throws {
-        openedURLs.append(fileURL)
     }
 }
 

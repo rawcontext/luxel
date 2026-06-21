@@ -20,8 +20,10 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
     private var segmentFileURLs: [URL] = []
 
     public init(
-        contentFilterProvider: any ScreenCaptureKitContentFilterProvider = ShareableContentFilterProvider(),
-        configurationFactory: ScreenRecordingConfigurationFactory = ScreenRecordingConfigurationFactory(),
+        contentFilterProvider: any ScreenCaptureKitContentFilterProvider =
+            ShareableContentFilterProvider(),
+        configurationFactory: ScreenRecordingConfigurationFactory =
+            ScreenRecordingConfigurationFactory(),
         segmentComposer: AVFoundationRecordingSegmentComposer = AVFoundationRecordingSegmentComposer(),
         fileManager: FileManager = .default,
         audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)? = nil
@@ -65,7 +67,8 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
         self.segmentFileURLs = []
 
         do {
-            try await outputWriter.startSegment(for: resolvedRequest, outputFileURL: resolvedRequest.outputFileURL)
+            try await outputWriter.startSegment(
+                for: resolvedRequest, outputFileURL: resolvedRequest.outputFileURL)
             try addStreamOutputs(to: stream, writer: outputWriter, for: resolvedRequest)
             try await startStreamCapture(stream)
             isStreamCapturing = true
@@ -147,7 +150,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
 
 }
 
-private extension ScreenCaptureKitRecorder {
+extension ScreenCaptureKitRecorder {
     private func prepareContentFilter(for target: CaptureTarget) async throws -> SCContentFilter {
         let completion = ScreenCaptureKitContentFilterCompletion()
         let providerTask = Task { [contentFilterProvider] in
@@ -191,11 +194,13 @@ private extension ScreenCaptureKitRecorder {
         try stream.addStreamOutput(writer, type: .screen, sampleHandlerQueue: writer.sampleHandlerQueue)
 
         if request.audio.capturesSystemAudio {
-            try stream.addStreamOutput(writer, type: .audio, sampleHandlerQueue: writer.sampleHandlerQueue)
+            try stream.addStreamOutput(
+                writer, type: .audio, sampleHandlerQueue: writer.sampleHandlerQueue)
         }
 
         if request.audio.capturesMicrophone {
-            try stream.addStreamOutput(writer, type: .microphone, sampleHandlerQueue: writer.sampleHandlerQueue)
+            try stream.addStreamOutput(
+                writer, type: .microphone, sampleHandlerQueue: writer.sampleHandlerQueue)
         }
     }
 
@@ -386,7 +391,8 @@ private extension ScreenCaptureKitRecorder {
 
         try fileManager.createDirectory(at: segmentsDirectory, withIntermediateDirectories: true)
 
-        return segmentsDirectory
+        return
+            segmentsDirectory
             .appending(path: UUID().uuidString)
             .appendingPathExtension("mp4")
     }

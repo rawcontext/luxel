@@ -1,5 +1,5 @@
-import AppKit
 import AVFoundation
+import AppKit
 import LuxelCore
 
 @MainActor
@@ -17,7 +17,8 @@ final class CameraPreviewPanelController {
         placements: [DisplayID: CameraPreviewPlacement] = [:],
         snapRect: NSRect? = nil,
         showsHoverControls: Bool = true,
-        onPlacementChange: @escaping @MainActor (DisplayID, CameraPreviewPlacement) -> Void = { _, _ in },
+        onPlacementChange: @escaping @MainActor (DisplayID, CameraPreviewPlacement) -> Void = { _, _ in
+        },
         onClose: @escaping @MainActor () -> Void = {}
     ) {
         let preferredDisplayID = panel.flatMap { Self.screen(containing: $0.frame)?.displayID }
@@ -157,7 +158,8 @@ final class CameraPreviewPanelController {
     }
 
     private func panelFrame(size: CGSize, preferredDisplayID: DisplayID?) -> NSRect {
-        let screen = snapRect.flatMap(Self.screen(containing:))
+        let screen =
+            snapRect.flatMap(Self.screen(containing:))
             ?? preferredDisplayID.flatMap(Self.screen(displayID:))
             ?? NSScreen.main
             ?? NSScreen.screens.first
@@ -329,7 +331,8 @@ private final class CameraPreviewPanelView: NSView {
         super.init(frame: .zero)
         wantsLayer = true
         previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.transform = style.isMirrored ? CATransform3DMakeScale(-1, 1, 1) : CATransform3DIdentity
+        previewLayer.transform =
+            style.isMirrored ? CATransform3DMakeScale(-1, 1, 1) : CATransform3DIdentity
         layer?.addSublayer(previewLayer)
         configureGlassBorderLayers()
         layer?.addSublayer(glassBorderLayer)
@@ -401,7 +404,8 @@ private final class CameraPreviewPanelView: NSView {
     override func mouseDragged(with event: NSEvent) {
         guard let window,
               let dragStartPoint,
-              let dragStartFrame else {
+              let dragStartFrame
+        else {
             return
         }
 
@@ -410,10 +414,11 @@ private final class CameraPreviewPanelView: NSView {
             x: point.x - dragStartPoint.x,
             y: point.y - dragStartPoint.y
         )
-        window.setFrameOrigin(NSPoint(
-            x: dragStartFrame.origin.x + delta.x,
-            y: dragStartFrame.origin.y + delta.y
-        ))
+        window.setFrameOrigin(
+            NSPoint(
+                x: dragStartFrame.origin.x + delta.x,
+                y: dragStartFrame.origin.y + delta.y
+            ))
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -430,7 +435,8 @@ private final class CameraPreviewPanelView: NSView {
     private func configureCloseButton() {
         closeButton.bezelStyle = .circular
         closeButton.imagePosition = .imageOnly
-        closeButton.image = NSImage(systemSymbolName: "xmark", accessibilityDescription: "Close Camera Preview")
+        closeButton.image = NSImage(
+            systemSymbolName: "xmark", accessibilityDescription: "Close Camera Preview")
         closeButton.contentTintColor = .white
         closeButton.target = self
         closeButton.action = #selector(closePreview)
@@ -477,24 +483,24 @@ private final class CameraPreviewPanelView: NSView {
     }
 }
 
-private extension NSPoint {
-    func distance(to other: NSPoint) -> CGFloat {
+extension NSPoint {
+    fileprivate func distance(to other: NSPoint) -> CGFloat {
         hypot(x - other.x, y - other.y)
     }
 }
 
-private extension CameraPreviewPlacement {
-    init(point: NSPoint) throws {
+extension CameraPreviewPlacement {
+    fileprivate init(point: NSPoint) throws {
         try self.init(x: Double(point.x), y: Double(point.y))
     }
 
-    var point: NSPoint {
+    fileprivate var point: NSPoint {
         NSPoint(x: xPosition, y: yPosition)
     }
 }
 
-private extension CameraPreviewSize {
-    var panelSize: CGSize {
+extension CameraPreviewSize {
+    fileprivate var panelSize: CGSize {
         switch self {
         case .small:
             CGSize(width: 168, height: 168)
@@ -506,8 +512,8 @@ private extension CameraPreviewSize {
     }
 }
 
-private extension CameraOverlayShape {
-    func cornerRadius(for size: CGSize) -> CGFloat {
+extension CameraOverlayShape {
+    fileprivate func cornerRadius(for size: CGSize) -> CGFloat {
         switch self {
         case .circle:
             min(size.width, size.height) * 0.18
@@ -517,9 +523,11 @@ private extension CameraOverlayShape {
     }
 }
 
-private extension NSScreen {
-    var displayID: DisplayID? {
-        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+extension NSScreen {
+    fileprivate var displayID: DisplayID? {
+        guard
+            let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else {
             return nil
         }
 

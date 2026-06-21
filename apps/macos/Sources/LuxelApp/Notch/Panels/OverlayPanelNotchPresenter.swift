@@ -5,7 +5,7 @@ import SwiftUI
 @MainActor
 final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     fileprivate static let panelSize = NSSize(width: 536, height: 188)
-    fileprivate static let expandedHeight: CGFloat = 58
+    fileprivate static let expandedHeight: CGFloat = 52
     private static let collapsedHoverHorizontalOutset: CGFloat = 12
     private static let collapsedHoverHeight: CGFloat = 14
     private static let edgeMargin: CGFloat = 8
@@ -66,13 +66,10 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
         installMouseMonitorsIfNeeded()
         panel.setFrame(Self.panelFrame(for: update.geometry), display: true)
         panel.ignoresMouseEvents = update.activity == .dormant
-        let shouldMorphIn = !update.motion.reducesMotion &&
-            update.activity != .dormant &&
-            update.presentationState == .expanded &&
-            (
-                previousUpdate?.presentationState != .expanded ||
-                !panel.isVisible
-            )
+        let shouldMorphIn =
+            !update.motion.reducesMotion && update.activity != .dormant
+            && update.presentationState == .expanded
+            && (previousUpdate?.presentationState != .expanded || !panel.isVisible)
 
         if update.activity == .dormant {
             cancelMorphIn()
@@ -98,7 +95,8 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
                     guard !Task.isCancelled,
                           self?.morphInGeneration == generation,
                           let panel = self?.panel,
-                          let update = self?.currentUpdate else {
+                          let update = self?.currentUpdate
+                    else {
                         return
                     }
 
@@ -228,14 +226,16 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
             return
         }
 
-        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: Self.mouseMonitorEventMask) { [weak self] event in
+        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: Self.mouseMonitorEventMask) {
+            [weak self] event in
             let isMouseDown = event.isMouseDown
             Task { @MainActor in
                 self?.handleMouseEvent(isMouseDown: isMouseDown)
             }
             return event
         }
-        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: Self.mouseMonitorEventMask) { [weak self] event in
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: Self.mouseMonitorEventMask) {
+            [weak self] event in
             let isMouseDown = event.isMouseDown
             Task { @MainActor in
                 self?.handleMouseEvent(isMouseDown: isMouseDown)
@@ -301,7 +301,8 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     private func completePendingHoverExit() {
         hoverExitTask = nil
         guard isHovering,
-              !hoverRects.contains(where: { $0.contains(NSEvent.mouseLocation) }) else {
+              !hoverRects.contains(where: { $0.contains(NSEvent.mouseLocation) })
+        else {
             return
         }
 
@@ -324,7 +325,8 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     private func collapseExpandedNotchIfNeeded(at location: NSPoint) {
         guard currentUpdate?.presentationState == .expanded,
               let currentGeometry,
-              !Self.expandedSurfaceHitRect(for: currentGeometry).contains(location) else {
+              !Self.expandedSurfaceHitRect(for: currentGeometry).contains(location)
+        else {
             return
         }
 
@@ -391,8 +393,8 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
     }
 }
 
-private extension NSEvent {
-    var isMouseDown: Bool {
+extension NSEvent {
+    fileprivate var isMouseDown: Bool {
         switch type {
         case .leftMouseDown, .rightMouseDown, .otherMouseDown:
             true
@@ -438,6 +440,7 @@ private struct FlatTopIslandShape: Shape {
 
 private struct NotchSurfaceView: View {
     private static let appleNotchCornerRadius: CGFloat = 8
+    private static let expandedActionTopInset: CGFloat = 8
     private static let pureBlack = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
     private static let stopActionRed = Color(.sRGB, red: 0.72, green: 0.10, blue: 0.13, opacity: 1)
 
@@ -456,7 +459,10 @@ private struct NotchSurfaceView: View {
                     .transition(.asymmetric(insertion: .identity, removal: .opacity))
             }
         }
-        .frame(width: OverlayPanelNotchPresenter.panelSize.width, height: OverlayPanelNotchPresenter.panelSize.height)
+        .frame(
+            width: OverlayPanelNotchPresenter.panelSize.width,
+            height: OverlayPanelNotchPresenter.panelSize.height
+        )
         .ignoresSafeArea(.all)
         .animation(shellAnimation, value: phase)
         .animation(animation, value: update.presentationState)
@@ -480,7 +486,8 @@ private struct NotchSurfaceView: View {
             return .easeInOut(duration: update.motion.contentFadeDuration)
         }
 
-        return .timingCurve(0.16, 0.92, 0.24, 1, duration: min(update.motion.geometryMorphDuration, 0.22))
+        return .timingCurve(
+            0.16, 0.92, 0.24, 1, duration: min(update.motion.geometryMorphDuration, 0.22))
     }
 
     private var contentAnimation: Animation? {
@@ -493,8 +500,8 @@ private struct NotchSurfaceView: View {
 
     private var islandSurface: some View {
         expandedSurface
-        .padding(.top, 2)
-        .shadow(color: .black.opacity(0.5), radius: 22, y: 10)
+            .padding(.top, 2)
+            .shadow(color: .black.opacity(0.5), radius: 22, y: 10)
     }
 
     private var expandedSurface: some View {
@@ -508,10 +515,11 @@ private struct NotchSurfaceView: View {
 
             actionControls(buttonSize: 28, iconSize: 12, spacing: 5)
                 .frame(width: expandedWidth, height: expandedHeight, alignment: .center)
+                .padding(.top, Self.expandedActionTopInset)
                 .opacity(update.viewModel.actions.isEmpty ? 0 : 1)
-            .opacity(phase == .settled ? 1 : 0)
-            .scaleEffect(phase == .seed ? 0.92 : 1, anchor: .top)
-            .animation(contentAnimation, value: phase)
+                .opacity(phase == .settled ? 1 : 0)
+                .scaleEffect(phase == .seed ? 0.92 : 1, anchor: .top)
+                .animation(contentAnimation, value: phase)
         }
         .frame(width: expandedWidth, height: expandedHeight, alignment: .topLeading)
         .scaleEffect(
@@ -542,8 +550,12 @@ private struct NotchSurfaceView: View {
         iconSize: CGFloat = 14,
         spacing: CGFloat = 9
     ) -> some View {
-        HStack(spacing: spacing) {
-            ForEach(update.viewModel.actions, id: \.id) { action in
+        return HStack(spacing: 0) {
+            Spacer(minLength: spacing)
+
+            ForEach(update.viewModel.actions.indices, id: \.self) { index in
+                let action = update.viewModel.actions[index]
+
                 Button {
                     onAction(action.id)
                 } label: {
@@ -564,7 +576,14 @@ private struct NotchSurfaceView: View {
                         hoveredActionID = nil
                     }
                 }
+
+                if index < update.viewModel.actions.count - 1 {
+                    Spacer(minLength: spacing)
+                    Spacer(minLength: spacing)
+                }
             }
+
+            Spacer(minLength: spacing)
         }
         .frame(maxWidth: .infinity, alignment: .center)
     }
@@ -648,8 +667,8 @@ private struct NotchSurfaceView: View {
     }
 }
 
-private extension NotchScreenRect {
-    var nsRect: NSRect {
+extension NotchScreenRect {
+    fileprivate var nsRect: NSRect {
         NSRect(
             x: originX,
             y: originY,

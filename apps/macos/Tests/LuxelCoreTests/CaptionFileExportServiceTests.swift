@@ -17,29 +17,31 @@ struct CaptionFileExportServiceTests {
         let service = CaptionFileExportService(fileSystem: fileSystem)
         let fileURL = URL(fileURLWithPath: "/tmp/captions.srt")
 
-        let exported = try service.export(CaptionFileExportRequest(
-            track: sampleTrack(),
-            format: .srt,
-            outputFileURL: fileURL
-        ))
+        let exported = try service.export(
+            CaptionFileExportRequest(
+                track: sampleTrack(),
+                format: .srt,
+                outputFileURL: fileURL
+            ))
 
         #expect(exported == ExportedCaptionFile(fileURL: fileURL, format: .srt))
-        #expect(fileSystem.writes == [
-            WrittenData(
-                text: """
-                1
-                00:00:01,200 --> 00:00:03,400
-                Hello
-                world
+        #expect(
+            fileSystem.writes == [
+                WrittenData(
+                    text: """
+            1
+            00:00:01,200 --> 00:00:03,400
+            Hello
+            world
 
-                2
-                01:01:01,005 --> 01:01:02,500
-                Done
+            2
+            01:01:01,005 --> 01:01:02,500
+            Done
 
-                """,
-                fileURL: fileURL
-            )
-        ])
+            """,
+                    fileURL: fileURL
+                )
+            ])
     }
 
     @Test("service writes VTT captions")
@@ -48,28 +50,30 @@ struct CaptionFileExportServiceTests {
         let service = CaptionFileExportService(fileSystem: fileSystem)
         let fileURL = URL(fileURLWithPath: "/tmp/captions.vtt")
 
-        _ = try service.export(CaptionFileExportRequest(
-            track: sampleTrack(),
-            format: .vtt,
-            outputFileURL: fileURL
-        ))
+        _ = try service.export(
+            CaptionFileExportRequest(
+                track: sampleTrack(),
+                format: .vtt,
+                outputFileURL: fileURL
+            ))
 
-        #expect(fileSystem.writes == [
-            WrittenData(
-                text: """
-                WEBVTT
+        #expect(
+            fileSystem.writes == [
+                WrittenData(
+                    text: """
+            WEBVTT
 
-                00:00:01.200 --> 00:00:03.400
-                Hello
-                world
+            00:00:01.200 --> 00:00:03.400
+            Hello
+            world
 
-                01:01:01.005 --> 01:01:02.500
-                Done
+            01:01:01.005 --> 01:01:02.500
+            Done
 
-                """,
-                fileURL: fileURL
-            )
-        ])
+            """,
+                    fileURL: fileURL
+                )
+            ])
     }
 
     @Test("service writes plain text captions")
@@ -78,24 +82,26 @@ struct CaptionFileExportServiceTests {
         let service = CaptionFileExportService(fileSystem: fileSystem)
         let fileURL = URL(fileURLWithPath: "/tmp/captions.txt")
 
-        _ = try service.export(CaptionFileExportRequest(
-            track: sampleTrack(),
-            format: .plainText,
-            outputFileURL: fileURL
-        ))
+        _ = try service.export(
+            CaptionFileExportRequest(
+                track: sampleTrack(),
+                format: .plainText,
+                outputFileURL: fileURL
+            ))
 
-        #expect(fileSystem.writes == [
-            WrittenData(
-                text: """
-                Hello
-                world
+        #expect(
+            fileSystem.writes == [
+                WrittenData(
+                    text: """
+            Hello
+            world
 
-                Done
+            Done
 
-                """,
-                fileURL: fileURL
-            )
-        ])
+            """,
+                    fileURL: fileURL
+                )
+            ])
     }
 
     @Test("service maps captions for trimmed speed-adjusted export")
@@ -104,28 +110,30 @@ struct CaptionFileExportServiceTests {
         let service = CaptionFileExportService(fileSystem: fileSystem)
         let fileURL = URL(fileURLWithPath: "/tmp/captions.srt")
 
-        _ = try service.export(CaptionFileExportRequest(
-            track: sampleTrack(),
-            format: .srt,
-            outputFileURL: fileURL,
-            timeMapper: CaptionExportTimeMapper(
-                trimRange: TimeRange(start: 2.2, end: 4.2),
-                speed: PlaybackSpeed(2)
-            )
-        ))
+        _ = try service.export(
+            CaptionFileExportRequest(
+                track: sampleTrack(),
+                format: .srt,
+                outputFileURL: fileURL,
+                timeMapper: CaptionExportTimeMapper(
+                    trimRange: TimeRange(start: 2.2, end: 4.2),
+                    speed: PlaybackSpeed(2)
+                )
+            ))
 
-        #expect(fileSystem.writes == [
-            WrittenData(
-                text: """
-                1
-                00:00:00,000 --> 00:00:00,600
-                Hello
-                world
+        #expect(
+            fileSystem.writes == [
+                WrittenData(
+                    text: """
+            1
+            00:00:00,000 --> 00:00:00,600
+            Hello
+            world
 
-                """,
-                fileURL: fileURL
-            )
-        ])
+            """,
+                    fileURL: fileURL
+                )
+            ])
     }
 
     @Test("service writes empty caption tracks")
@@ -134,27 +142,31 @@ struct CaptionFileExportServiceTests {
         let fileSystem = SpyFileSystem()
         let service = CaptionFileExportService(fileSystem: fileSystem)
 
-        _ = try service.export(CaptionFileExportRequest(
-            track: track,
-            format: .srt,
-            outputFileURL: URL(fileURLWithPath: "/tmp/empty.srt")
-        ))
-        _ = try service.export(CaptionFileExportRequest(
-            track: track,
-            format: .vtt,
-            outputFileURL: URL(fileURLWithPath: "/tmp/empty.vtt")
-        ))
-        _ = try service.export(CaptionFileExportRequest(
-            track: track,
-            format: .plainText,
-            outputFileURL: URL(fileURLWithPath: "/tmp/empty.txt")
-        ))
+        _ = try service.export(
+            CaptionFileExportRequest(
+                track: track,
+                format: .srt,
+                outputFileURL: URL(fileURLWithPath: "/tmp/empty.srt")
+            ))
+        _ = try service.export(
+            CaptionFileExportRequest(
+                track: track,
+                format: .vtt,
+                outputFileURL: URL(fileURLWithPath: "/tmp/empty.vtt")
+            ))
+        _ = try service.export(
+            CaptionFileExportRequest(
+                track: track,
+                format: .plainText,
+                outputFileURL: URL(fileURLWithPath: "/tmp/empty.txt")
+            ))
 
-        #expect(fileSystem.writes == [
-            WrittenData(text: "", fileURL: URL(fileURLWithPath: "/tmp/empty.srt")),
-            WrittenData(text: "WEBVTT\n", fileURL: URL(fileURLWithPath: "/tmp/empty.vtt")),
-            WrittenData(text: "", fileURL: URL(fileURLWithPath: "/tmp/empty.txt"))
-        ])
+        #expect(
+            fileSystem.writes == [
+                WrittenData(text: "", fileURL: URL(fileURLWithPath: "/tmp/empty.srt")),
+                WrittenData(text: "WEBVTT\n", fileURL: URL(fileURLWithPath: "/tmp/empty.vtt")),
+                WrittenData(text: "", fileURL: URL(fileURLWithPath: "/tmp/empty.txt"))
+            ])
     }
 
     private func sampleTrack() throws -> CaptionTrack {

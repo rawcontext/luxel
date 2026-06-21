@@ -34,7 +34,8 @@ struct NotchSurfaceStatusPresentationTests {
 
         #expect(presentation.statusText == "Menu Bar Only")
         #expect(
-            presentation.detailText == "No built-in notched display is detected, and floating HUD fallback is off."
+            presentation.detailText
+                == "No built-in notched display is detected, and floating HUD fallback is off."
         )
         #expect(presentation.selection == .menuBarOnly(.noNotchedDisplay))
         #expect(presentation.showsStatus)
@@ -49,7 +50,8 @@ struct NotchSurfaceStatusPresentationTests {
 
         #expect(presentation.statusText == "Floating HUD Fallback")
         #expect(
-            presentation.detailText == "The notch surface is disabled, so recording controls will use the fallback surface."
+            presentation.detailText
+                == "The notch surface is disabled, so recording controls will use the fallback surface."
         )
         #expect(presentation.selection == .floatingHUD(.notchDisabled))
         #expect(presentation.showsStatus)

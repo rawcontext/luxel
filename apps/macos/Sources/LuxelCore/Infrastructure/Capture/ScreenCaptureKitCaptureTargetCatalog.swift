@@ -21,14 +21,16 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
 
     public func snapshot() async throws -> CaptureTargetCatalogSnapshot {
         let content = try await SCShareableContent.current
-        let displayItems = try content.displays.enumerated().map { index, display -> (
-            bounds: DisplayBounds,
-            target: CaptureTargetOption
-        ) in
+        let displayItems = try content.displays.enumerated().map {
+            index, display -> (
+                bounds: DisplayBounds,
+                target: CaptureTargetOption
+            ) in
             let bounds = try displayBounds(for: display)
             return (bounds, try displayTarget(for: bounds, index: index))
         }
-        let windowTargets = menuFilter.visibleTargets(from: try content.windows.compactMap(windowTarget))
+        let windowTargets = menuFilter.visibleTargets(
+            from: try content.windows.compactMap(windowTarget))
 
         return CaptureTargetCatalogSnapshot(
             displays: displayItems.map(\.bounds),
@@ -69,7 +71,8 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
         let owningApplication = window.owningApplication
         let appName = owningApplication?.applicationName.trimmingCharacters(in: .whitespacesAndNewlines)
         let windowTitle = window.title?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let title = nonEmpty(windowTitle)
+        let title =
+            nonEmpty(windowTitle)
             ?? nonEmpty(appName)
             ?? "Window \(window.windowID)"
 

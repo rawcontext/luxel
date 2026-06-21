@@ -116,10 +116,12 @@ public final class RecordingLifecycleService: Sendable {
             throw RecordingLifecycleError.outputFinalizationFailed(error.recordingLifecycleDescription)
         }
 
-        guard let recording = history.stopCurrentRecording(
-            finalFileURL: finalizationResult?.fileURL,
-            recordingName: recordingName
-        ) else {
+        guard
+            let recording = history.stopCurrentRecording(
+                finalFileURL: finalizationResult?.fileURL,
+                recordingName: recordingName
+            )
+        else {
             await clearStoppedRecordingState()
             throw RecordingLifecycleError.noActiveRecording
         }
@@ -168,7 +170,8 @@ public final class RecordingLifecycleService: Sendable {
 
     private func runCountdownIfNeeded(_ schedule: RecordingSchedule?) async throws {
         guard let countdown = schedule?.countdown,
-              countdown > 0 else {
+              countdown > 0
+        else {
             return
         }
 
@@ -220,8 +223,8 @@ extension RecordingLifecycleError: LocalizedError {
     }
 }
 
-private extension Error {
-    var recordingLifecycleDescription: String {
+extension Error {
+    fileprivate var recordingLifecycleDescription: String {
         if let errorDescription = (self as? LocalizedError)?.errorDescription, !errorDescription.isEmpty {
             return errorDescription
         }
@@ -275,7 +278,8 @@ private actor RecordingLifecycleAutoStopState {
     private var task: (any RecordingAutoStopTask)?
     private var isStopping = false
 
-    func start(schedule: RecordingSchedule, startedAt: Date, now: Date) -> RecordingLifecycleAutoStopTiming? {
+    func start(schedule: RecordingSchedule, startedAt: Date, now: Date)
+    -> RecordingLifecycleAutoStopTiming? {
         clearStoredState()
 
         guard schedule.maxRecordedDuration != nil else {
@@ -354,7 +358,8 @@ private actor RecordingLifecycleAutoStopState {
               let maxRecordedDuration = schedule.maxRecordedDuration,
               let clock,
               clock.isRecording(at: now),
-              let remaining = clock.remainingRecordedTime(for: schedule, at: now) else {
+              let remaining = clock.remainingRecordedTime(for: schedule, at: now)
+        else {
             return nil
         }
 

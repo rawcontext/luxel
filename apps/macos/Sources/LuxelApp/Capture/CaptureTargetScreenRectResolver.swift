@@ -19,7 +19,9 @@ enum CaptureTargetScreenRectResolver {
             return displayFrame(displayID: displayID, availableTargets: availableTargets)?.screenFrame
 
         case .area(let displayID, let rect):
-            guard let displayFrame = displayFrame(displayID: displayID, availableTargets: availableTargets) else {
+            guard
+                let displayFrame = displayFrame(displayID: displayID, availableTargets: availableTargets)
+            else {
                 return nil
             }
 
@@ -28,7 +30,8 @@ enum CaptureTargetScreenRectResolver {
         case .window(let id):
             guard let windowTarget = availableTargets.first(where: { $0.target == .window(id: id) }),
                   let windowFrame = windowTarget.frame,
-                  let displayFrame = displayFrame(containing: windowFrame, availableTargets: availableTargets) else {
+                  let displayFrame = displayFrame(containing: windowFrame, availableTargets: availableTargets)
+            else {
                 return nil
             }
 
@@ -41,7 +44,8 @@ enum CaptureTargetScreenRectResolver {
         availableTargets: [CaptureTargetOption]
     ) -> CaptureTargetDisplayScreenFrame? {
         guard let screen = NSScreen.screens.first(where: { $0.displayID == displayID }),
-              let target = availableTargets.first(where: { $0.target == .display(displayID) }) else {
+              let target = availableTargets.first(where: { $0.target == .display(displayID) })
+        else {
             return nil
         }
 
@@ -59,19 +63,22 @@ enum CaptureTargetScreenRectResolver {
         let centerX = rect.originX + rect.width / 2
         let centerY = rect.originY + rect.height / 2
 
-        guard let displayTarget = availableTargets.first(where: { target in
-            guard case .display(let displayID) = target.target,
-                  let frame = target.frame else {
-                return false
-            }
+        guard
+            let displayTarget = availableTargets.first(where: { target in
+                guard case .display(let displayID) = target.target,
+                      let frame = target.frame
+                else {
+                    return false
+                }
 
-            return centerX >= frame.originX
-                && centerX <= frame.originX + frame.width
-                && centerY >= frame.originY
-                && centerY <= frame.originY + frame.height
-                && NSScreen.screens.contains(where: { $0.displayID == displayID })
-        }),
-        case .display(let displayID) = displayTarget.target else {
+                return centerX >= frame.originX
+                    && centerX <= frame.originX + frame.width
+                    && centerY >= frame.originY
+                    && centerY <= frame.originY + frame.height
+                    && NSScreen.screens.contains(where: { $0.displayID == displayID })
+            }),
+            case .display(let displayID) = displayTarget.target
+        else {
             return nil
         }
 
@@ -123,9 +130,11 @@ private struct CaptureTargetDisplayScreenFrame {
     }
 }
 
-private extension NSScreen {
-    var displayID: DisplayID? {
-        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+extension NSScreen {
+    fileprivate var displayID: DisplayID? {
+        guard
+            let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+        else {
             return nil
         }
 

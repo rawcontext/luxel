@@ -23,9 +23,10 @@ public struct AudioLevelSample: Equatable, Sendable {
             return .silent
         }
 
-        let rms = sqrt(samples.reduce(0) { total, sample in
-            total + (sample.rms * sample.rms)
-        })
+        let rms = sqrt(
+            samples.reduce(0) { total, sample in
+                total + (sample.rms * sample.rms)
+            })
         let peak = samples.reduce(0) { total, sample in
             total + sample.peak
         }
@@ -51,8 +52,8 @@ public struct AudioLevelSample: Equatable, Sendable {
     }
 }
 
-private extension [Double] {
-    func average() -> Double {
+extension [Double] {
+    fileprivate func average() -> Double {
         guard !isEmpty else {
             return 0
         }

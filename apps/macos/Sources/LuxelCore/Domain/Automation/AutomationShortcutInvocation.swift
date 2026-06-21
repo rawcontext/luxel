@@ -23,11 +23,13 @@ public enum AutomationShortcutInvocationBuilder {
         presetName: String? = nil,
         countdownSeconds: Int? = nil
     ) -> AutomationInvocation {
-        AutomationInvocation(command: .record(AutomationRecordingOptions(
-            target: target.automationTarget,
-            presetName: nonEmpty(presetName),
-            countdownSeconds: countdownSeconds
-        )))
+        AutomationInvocation(
+            command: .record(
+                AutomationRecordingOptions(
+                    target: target.automationTarget,
+                    presetName: nonEmpty(presetName),
+                    countdownSeconds: countdownSeconds
+                )))
     }
 
     public static func toggleRecording(
@@ -35,13 +37,15 @@ public enum AutomationShortcutInvocationBuilder {
         presetName: String? = nil,
         countdownSeconds: Int? = nil
     ) -> AutomationInvocation {
-        AutomationInvocation(command: .toggle(target.map {
-            AutomationRecordingOptions(
-                target: $0.automationTarget,
-                presetName: nonEmpty(presetName),
-                countdownSeconds: countdownSeconds
-            )
-        }))
+        AutomationInvocation(
+            command: .toggle(
+                target.map {
+                    AutomationRecordingOptions(
+                        target: $0.automationTarget,
+                        presetName: nonEmpty(presetName),
+                        countdownSeconds: countdownSeconds
+                    )
+                }))
     }
 
     public static func stopRecording() -> AutomationInvocation {
@@ -54,16 +58,6 @@ public enum AutomationShortcutInvocationBuilder {
 
     public static func latestRecording(reveal: Bool = false) -> AutomationInvocation {
         AutomationInvocation(command: .latest(reveal: reveal))
-    }
-
-    public static func captureScreenshot(
-        target: AutomationShortcutCaptureTarget,
-        format: ScreenshotFormat? = nil
-    ) -> AutomationInvocation {
-        AutomationInvocation(command: .screenshot(AutomationScreenshotOptions(
-            target: target.automationTarget,
-            format: format
-        )))
     }
 
     private static func nonEmpty(_ value: String?) -> String? {

@@ -67,15 +67,16 @@ public struct GIFColorPalette: Codable, Equatable, Sendable {
 
     public func nearestColorIndex(for pixel: GIFRGBAPixel) -> UInt8 {
         let target = GIFPaletteColor(pixel: pixel)
-        let bestIndex = colors.indices.min { lhs, rhs in
-            let leftDistance = squaredDistance(from: target, to: colors[lhs])
-            let rightDistance = squaredDistance(from: target, to: colors[rhs])
-            if leftDistance == rightDistance {
-                return lhs < rhs
-            }
+        let bestIndex =
+            colors.indices.min { lhs, rhs in
+                let leftDistance = squaredDistance(from: target, to: colors[lhs])
+                let rightDistance = squaredDistance(from: target, to: colors[rhs])
+                if leftDistance == rightDistance {
+                    return lhs < rhs
+                }
 
-            return leftDistance < rightDistance
-        } ?? 0
+                return leftDistance < rightDistance
+            } ?? 0
 
         return UInt8(bestIndex)
     }
@@ -135,23 +136,26 @@ public struct MedianCutPaletteBuilder: Sendable {
             transparentAlphaThreshold: transparentAlphaThreshold
         )
         guard !weightedColors.isEmpty else {
-            return try GIFColorPalette(colors: normalizedPaletteColors(
-                [.black],
-                maxColorCount: maxColorCount
-            ))
+            return try GIFColorPalette(
+                colors: normalizedPaletteColors(
+                    [.black],
+                    maxColorCount: maxColorCount
+                ))
         }
 
         if weightedColors.count <= maxColorCount {
-            return try GIFColorPalette(colors: normalizedPaletteColors(
-                weightedColors.map(\.color),
-                maxColorCount: maxColorCount
-            ))
+            return try GIFColorPalette(
+                colors: normalizedPaletteColors(
+                    weightedColors.map(\.color),
+                    maxColorCount: maxColorCount
+                ))
         }
 
         var boxes = [MedianCutColorBox(colors: weightedColors)]
         while boxes.count < maxColorCount {
             guard let boxIndex = boxes.bestSplittableBoxIndex(),
-                  let splitBoxes = boxes[boxIndex].split() else {
+                  let splitBoxes = boxes[boxIndex].split()
+            else {
                 break
             }
 
@@ -160,10 +164,11 @@ public struct MedianCutPaletteBuilder: Sendable {
             boxes.append(splitBoxes.right)
         }
 
-        return try GIFColorPalette(colors: normalizedPaletteColors(
-            boxes.map(\.averageColor),
-            maxColorCount: maxColorCount
-        ))
+        return try GIFColorPalette(
+            colors: normalizedPaletteColors(
+                boxes.map(\.averageColor),
+                maxColorCount: maxColorCount
+            ))
     }
 
     private func weightedSampledColors(
@@ -182,7 +187,8 @@ public struct MedianCutPaletteBuilder: Sendable {
             }
         }
 
-        return counts
+        return
+            counts
             .map { WeightedGIFColor(color: $0.key, count: $0.value) }
             .sorted { lhs, rhs in
                 Self.sortsBefore(lhs.color, rhs.color)
@@ -201,9 +207,11 @@ public struct MedianCutPaletteBuilder: Sendable {
         pixels.reserveCapacity(sampledWidth * sampledHeight)
 
         for sampleRow in 0..<sampledHeight {
-            let sourceRow = min(frame.pixelSize.height - 1, sampleRow * frame.pixelSize.height / sampledHeight)
+            let sourceRow = min(
+                frame.pixelSize.height - 1, sampleRow * frame.pixelSize.height / sampledHeight)
             for sampleColumn in 0..<sampledWidth {
-                let sourceColumn = min(frame.pixelSize.width - 1, sampleColumn * frame.pixelSize.width / sampledWidth)
+                let sourceColumn = min(
+                    frame.pixelSize.width - 1, sampleColumn * frame.pixelSize.width / sampledWidth)
                 pixels.append(frame.pixels[sourceRow * frame.pixelSize.width + sourceColumn])
             }
         }

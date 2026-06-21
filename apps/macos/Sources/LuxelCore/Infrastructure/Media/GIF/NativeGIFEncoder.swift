@@ -24,9 +24,10 @@ struct NativeGIFEncoder: Sendable {
             maxColorCount: min(options.paletteSize, 255),
             transparentAlphaThreshold: alphaTransparencyThreshold
         )
-        let palette = try GIFColorPalette(colors: [
-            GIFPaletteColor(red: 0, green: 0, blue: 0)
-        ] + sourcePalette.colors)
+        let palette = try GIFColorPalette(
+            colors: [
+                GIFPaletteColor(red: 0, green: 0, blue: 0)
+            ] + sourcePalette.colors)
         let indexedFrames = try GIFFrameIndexer()
             .indexedFrames(
                 from: frames,
@@ -66,13 +67,14 @@ struct NativeGIFEncoder: Sendable {
         deltas.reserveCapacity(bitmaps.count)
 
         for (bitmap, indexedFrame) in zip(bitmaps, indexedFrames) {
-            deltas.append(try differ.delta(
-                from: previousFrame,
-                to: bitmap,
-                indexedFrame: indexedFrame,
-                transparentColorIndex: transparentColorIndex,
-                lossyTolerance: lossyTolerance
-            ))
+            deltas.append(
+                try differ.delta(
+                    from: previousFrame,
+                    to: bitmap,
+                    indexedFrame: indexedFrame,
+                    transparentColorIndex: transparentColorIndex,
+                    lossyTolerance: lossyTolerance
+                ))
             previousFrame = bitmap
         }
 

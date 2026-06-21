@@ -261,7 +261,8 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
 
     @objc private func shareExportedFile() {
         guard let exportedURL = model.exportedURL,
-              let contentView = NSApplication.shared.keyWindow?.contentView else {
+              let contentView = NSApplication.shared.keyWindow?.contentView
+        else {
             return
         }
 

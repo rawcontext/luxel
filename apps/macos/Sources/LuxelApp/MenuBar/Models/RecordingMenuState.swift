@@ -178,7 +178,8 @@ extension RecordingMenuState {
         }
     }
 
-    private func remainingRecordedTime(for recording: ActiveRecording, elapsed: TimeInterval) -> TimeInterval? {
+    private func remainingRecordedTime(for recording: ActiveRecording, elapsed: TimeInterval)
+    -> TimeInterval? {
         guard let maxRecordedDuration = recording.options.schedule?.maxRecordedDuration else {
             return nil
         }

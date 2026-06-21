@@ -1,5 +1,5 @@
-import AVFoundation
 import AVFAudio
+import AVFoundation
 import AudioToolbox
 import CoreGraphics
 import CoreMedia
@@ -155,7 +155,8 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         progress: MediaExportProgressHandler?
     ) async throws {
         guard let outputFileType = plan.outputFileType else {
-            throw AVFoundationMediaExporterError.unsupportedOutputFileType(requestedOutputFileTypeName(plan: plan))
+            throw AVFoundationMediaExporterError.unsupportedOutputFileType(
+                requestedOutputFileTypeName(plan: plan))
         }
 
         try? FileManager.default.removeItem(at: plan.outputFileURL)
@@ -213,10 +214,12 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         from sourceVideoTrack: AVAssetTrack,
         sourceTimeRange: CMTimeRange
     ) throws -> AVMutableCompositionTrack {
-        guard let videoTrack = composition.addMutableTrack(
-            withMediaType: .video,
-            preferredTrackID: kCMPersistentTrackID_Invalid
-        ) else {
+        guard
+            let videoTrack = composition.addMutableTrack(
+                withMediaType: .video,
+                preferredTrackID: kCMPersistentTrackID_Invalid
+            )
+        else {
             throw AVFoundationMediaExporterError.cannotCreateVideoTrack
         }
 
@@ -232,10 +235,12 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         var audioTracks: [AVMutableCompositionTrack] = []
 
         for sourceAudioTrack in try await asset.loadTracks(withMediaType: .audio) {
-            guard let audioTrack = composition.addMutableTrack(
-                withMediaType: .audio,
-                preferredTrackID: kCMPersistentTrackID_Invalid
-            ) else {
+            guard
+                let audioTrack = composition.addMutableTrack(
+                    withMediaType: .audio,
+                    preferredTrackID: kCMPersistentTrackID_Invalid
+                )
+            else {
                 throw AVFoundationMediaExporterError.cannotCreateAudioTrack
             }
 
@@ -255,9 +260,11 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         }
 
         let sourceAudioTracks: [AudioTrackKind] = [.system]
-        let mixPlan = request.audioMix ?? AudioMixPlan(
-            tracks: sourceAudioTracks.map { AudioTrackMix(kind: $0) }
-        )
+        let mixPlan =
+            request.audioMix
+            ?? AudioMixPlan(
+                tracks: sourceAudioTracks.map { AudioTrackMix(kind: $0) }
+            )
         let systemGain = try await resolvedSystemGain(
             for: mixPlan,
             request: request,
@@ -298,11 +305,12 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
             return mixPlan.mix(for: .system).gain
         }
 
-        let measuredPeaks = try await AVAssetReaderAudioPeakAnalyzer().measurePeaks(AudioPeakAnalysisRequest(
-            inputFileURL: request.inputFileURL,
-            timeRange: request.timeRange,
-            audioTracks: audibleTracks
-        ))
+        let measuredPeaks = try await AVAssetReaderAudioPeakAnalyzer().measurePeaks(
+            AudioPeakAnalysisRequest(
+                inputFileURL: request.inputFileURL,
+                timeRange: request.timeRange,
+                audioTracks: audibleTracks
+            ))
         return mixPlan.resolvedGains(measuredPeaks: measuredPeaks)[.system]
             ?? mixPlan.mix(for: .system).gain
     }
@@ -312,10 +320,12 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         plan: AVFoundationExportPlan
     ) throws -> AVAssetExportSession {
         guard let outputFileType = plan.outputFileType else {
-            throw AVFoundationMediaExporterError.unsupportedOutputFileType(requestedOutputFileTypeName(plan: plan))
+            throw AVFoundationMediaExporterError.unsupportedOutputFileType(
+                requestedOutputFileTypeName(plan: plan))
         }
 
-        guard let exportSession = AVAssetExportSession(asset: composition, presetName: plan.presetName) else {
+        guard let exportSession = AVAssetExportSession(asset: composition, presetName: plan.presetName)
+        else {
             throw AVFoundationMediaExporterError.unsupportedPreset(plan.presetName)
         }
 
@@ -332,11 +342,11 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
 
 }
 
-private extension AVFoundationMediaExporter {
-    static let audioProcessingSampleRate = 48_000.0
-    static let audioProcessingChannelCount: AVAudioChannelCount = 2
+extension AVFoundationMediaExporter {
+    fileprivate static let audioProcessingSampleRate = 48_000.0
+    fileprivate static let audioProcessingChannelCount: AVAudioChannelCount = 2
 
-    static var audioProcessingFormat: AVAudioFormat {
+    fileprivate static var audioProcessingFormat: AVAudioFormat {
         AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: audioProcessingSampleRate,
@@ -345,7 +355,7 @@ private extension AVFoundationMediaExporter {
         )!
     }
 
-    static var audioReaderOutputSettings: [String: Any] {
+    fileprivate static var audioReaderOutputSettings: [String: Any] {
         [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVSampleRateKey: audioProcessingSampleRate,
@@ -357,7 +367,7 @@ private extension AVFoundationMediaExporter {
         ]
     }
 
-    func runAudioOnlyExport(
+    fileprivate func runAudioOnlyExport(
         composition: AVMutableComposition,
         audioTracks: [AVMutableCompositionTrack],
         timeRange: CMTimeRange,
@@ -393,7 +403,8 @@ private extension AVFoundationMediaExporter {
             let totalDuration = max(timeRange.duration.seconds, .leastNonzeroMagnitude)
 
             guard reader.startReading() else {
-                throw AVFoundationMediaExporterError.audioReaderFailed(reader.error?.localizedDescription ?? "Unknown reader failure")
+                throw AVFoundationMediaExporterError.audioReaderFailed(
+                    reader.error?.localizedDescription ?? "Unknown reader failure")
             }
 
             await progress?(0)
@@ -408,7 +419,8 @@ private extension AVFoundationMediaExporter {
                 let buffer = try audioPCMBuffer(from: sampleBuffer, format: processingFormat)
                 try outputFile.write(from: buffer)
 
-                let sampleEnd = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+                let sampleEnd =
+                    CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
                     + CMSampleBufferGetDuration(sampleBuffer)
                 if sampleEnd.isNumeric {
                     await progress?(min(max(sampleEnd.seconds / totalDuration, 0), 0.99))
@@ -419,7 +431,8 @@ private extension AVFoundationMediaExporter {
             case .completed:
                 await progress?(1)
             case .failed:
-                throw AVFoundationMediaExporterError.audioReaderFailed(reader.error?.localizedDescription ?? "Unknown reader failure")
+                throw AVFoundationMediaExporterError.audioReaderFailed(
+                    reader.error?.localizedDescription ?? "Unknown reader failure")
             case .cancelled:
                 throw CancellationError()
             case .unknown, .reading:
@@ -433,7 +446,7 @@ private extension AVFoundationMediaExporter {
         }
     }
 
-    func audioOutputSettings(for format: ExportFormat) throws -> [String: Any] {
+    fileprivate func audioOutputSettings(for format: ExportFormat) throws -> [String: Any] {
         switch format {
         case .m4a:
             [
@@ -470,7 +483,7 @@ private extension AVFoundationMediaExporter {
         }
     }
 
-    func audioPCMBuffer(
+    fileprivate func audioPCMBuffer(
         from sampleBuffer: CMSampleBuffer,
         format: AVAudioFormat
     ) throws -> AVAudioPCMBuffer {

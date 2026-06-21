@@ -65,9 +65,10 @@ struct ExportedFileWorkflowServiceTests {
 
         #expect(didOpen)
         #expect(client.applicationSelectionURLs == [fileURL])
-        #expect(client.openedWithApplications == [
-            ApplicationOpen(fileURL: fileURL, applicationURL: appURL)
-        ])
+        #expect(
+            client.openedWithApplications == [
+                ApplicationOpen(fileURL: fileURL, applicationURL: appURL)
+            ])
     }
 
     @Test("openWithApplication does nothing when app selection is canceled")

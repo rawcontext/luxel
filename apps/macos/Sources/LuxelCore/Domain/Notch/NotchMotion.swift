@@ -73,7 +73,8 @@ public struct NotchMotion: Codable, Equatable, Sendable {
               hoverGraceDuration.isFinite, hoverGraceDuration >= 0,
               completionDwellDuration.isFinite, completionDwellDuration >= 0,
               recordingPulseFrequency.isFinite, recordingPulseFrequency >= 0,
-              waveformFrameRate.isFinite, waveformFrameRate >= 0 else {
+              waveformFrameRate.isFinite, waveformFrameRate >= 0
+        else {
             throw NotchMotionError.invalidTiming
         }
 

@@ -76,15 +76,6 @@ extension LuxelMenuModel {
         canUseRecordAgainButton && settings.quickExportPresetID != nil
     }
 
-    var canCaptureScreenshot: Bool {
-        switch recordingState {
-        case .idle, .failed:
-            captureCapabilities.screenshotAvailable
-        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
-            false
-        }
-    }
-
     var canSelectArea: Bool {
         switch recordingState {
         case .idle, .failed:
@@ -139,12 +130,13 @@ extension LuxelMenuModel {
     }
 
     func menuBarStatusPresentation(now: Date = Date()) -> RecordingSessionPresentation {
-        let state = switch recordingState {
-        case .countingDown, .recording, .pausing, .paused, .resuming, .stopping:
-            recordingState.presentationState(now: now)
-        case .idle, .starting, .exporting, .failed:
-            RecordingSessionPresentationState.idle
-        }
+        let state =
+            switch recordingState {
+            case .countingDown, .recording, .pausing, .paused, .resuming, .stopping:
+                recordingState.presentationState(now: now)
+            case .idle, .starting, .exporting, .failed:
+                RecordingSessionPresentationState.idle
+            }
 
         return RecordingSessionPresentation(
             state: state,

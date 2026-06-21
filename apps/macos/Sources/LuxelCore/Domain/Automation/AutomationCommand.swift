@@ -66,7 +66,6 @@ public enum AutomationCommand: Equatable, Sendable {
     case record(AutomationRecordingOptions)
     case stop
     case toggle(AutomationRecordingOptions?)
-    case screenshot(AutomationScreenshotOptions)
     case clip(seconds: Int?)
     case preferences(AutomationPreferencesPane?)
     case latest(reveal: Bool)
@@ -77,14 +76,14 @@ public enum AutomationCommand: Equatable, Sendable {
             false
         case .toggle:
             !hasActiveRecording
-        case .record, .screenshot, .clip:
+        case .record, .clip:
             true
         }
     }
 
     public func requiresStartConfirmation(hasActiveRecording: Bool) -> Bool {
         switch self {
-        case .record, .screenshot, .clip:
+        case .record, .clip:
             true
         case .toggle:
             !hasActiveRecording
@@ -101,8 +100,6 @@ public enum AutomationCommand: Equatable, Sendable {
             "stop recording"
         case .toggle:
             "toggle recording"
-        case .screenshot:
-            "capture a screenshot"
         case .clip:
             "clip the replay buffer"
         case .preferences:
@@ -132,16 +129,6 @@ public struct AutomationRecordingOptions: Equatable, Sendable {
     }
 }
 
-public struct AutomationScreenshotOptions: Equatable, Sendable {
-    public let target: AutomationCaptureTarget
-    public let format: ScreenshotFormat?
-
-    public init(target: AutomationCaptureTarget, format: ScreenshotFormat? = nil) {
-        self.target = target
-        self.format = format
-    }
-}
-
 public enum AutomationCaptureTarget: Equatable, Sendable {
     case display(AutomationDisplayTarget)
     case activeWindow
@@ -157,7 +144,6 @@ public enum AutomationPreferencesPane: String, CaseIterable, Equatable, Sendable
     case general
     case presets
     case shortcuts
-    case screenshots
     case updates
     case about
 }

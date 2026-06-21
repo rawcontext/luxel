@@ -62,9 +62,10 @@ public struct OrderedDitherer: Sendable {
                 let index = row * frame.pixelSize.width + column
                 let threshold = Self.bayer4x4[row % 4][column % 4]
                 let adjustment = (Double(threshold) - 7.5) * 16
-                colorIndexes.append(palette.nearestColorIndex(
-                    for: frame.pixels[index].adjustedRGB(by: adjustment)
-                ))
+                colorIndexes.append(
+                    palette.nearestColorIndex(
+                        for: frame.pixels[index].adjustedRGB(by: adjustment)
+                    ))
             }
         }
 
@@ -90,10 +91,16 @@ public struct FloydSteinbergDitherer: Sendable {
                 colorIndexes[index] = colorIndex
 
                 let error = workingPixels[index].error(from: paletteColor)
-                diffuse(error, factor: 7.0 / 16.0, x: column + 1, y: row, frame: frame, pixels: &workingPixels)
-                diffuse(error, factor: 3.0 / 16.0, x: column - 1, y: row + 1, frame: frame, pixels: &workingPixels)
-                diffuse(error, factor: 5.0 / 16.0, x: column, y: row + 1, frame: frame, pixels: &workingPixels)
-                diffuse(error, factor: 1.0 / 16.0, x: column + 1, y: row + 1, frame: frame, pixels: &workingPixels)
+                diffuse(
+                    error, factor: 7.0 / 16.0, x: column + 1, y: row, frame: frame, pixels: &workingPixels)
+                diffuse(
+                    error, factor: 3.0 / 16.0, x: column - 1, y: row + 1, frame: frame, pixels: &workingPixels
+                )
+                diffuse(
+                    error, factor: 5.0 / 16.0, x: column, y: row + 1, frame: frame, pixels: &workingPixels)
+                diffuse(
+                    error, factor: 1.0 / 16.0, x: column + 1, y: row + 1, frame: frame, pixels: &workingPixels
+                )
             }
         }
 
@@ -265,8 +272,8 @@ private struct DitherWorkingPixel: Sendable {
     }
 }
 
-private extension GIFRGBAPixel {
-    func adjustedRGB(by adjustment: Double) -> GIFRGBAPixel {
+extension GIFRGBAPixel {
+    fileprivate func adjustedRGB(by adjustment: Double) -> GIFRGBAPixel {
         GIFRGBAPixel(
             red: clampToUInt8(Double(red) + adjustment),
             green: clampToUInt8(Double(green) + adjustment),

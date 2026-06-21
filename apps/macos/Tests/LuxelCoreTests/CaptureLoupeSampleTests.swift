@@ -21,7 +21,9 @@ struct CaptureLoupeSampleTests {
         #expect(sample.sourceRect == (try CaptureRect(x: 38, y: 28, width: 24, height: 24)))
         #expect(sample.overlayOrigin == CapturePoint(x: 60, y: 50))
         #expect(sample.quadrant == .bottomRight)
-        #expect(sample.readout == CaptureLoupeReadout(cursor: CapturePoint(x: 50, y: 40), selection: selection))
+        #expect(
+            sample.readout
+                == CaptureLoupeReadout(cursor: CapturePoint(x: 50, y: 40), selection: selection))
     }
 
     @Test("sample clamps source rect near display edges")

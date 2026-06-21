@@ -19,33 +19,11 @@ extension RecordingHistoryTests {
 
         let recordings = service.getPastRecordings()
 
-        #expect(recordings == [PastRecording(fileURL: existingURL, name: "Existing", date: Date(timeIntervalSince1970: 1))])
+        #expect(
+            recordings == [
+                PastRecording(fileURL: existingURL, name: "Existing", date: Date(timeIntervalSince1970: 1))
+            ])
         #expect(store.recordings == recordings)
-    }
-
-    @Test("getPastRecordings filters by history entry kind")
-    func getPastRecordingsFiltersByKind() {
-        let recordingURL = URL(fileURLWithPath: "/tmp/recording.mp4")
-        let screenshotURL = URL(fileURLWithPath: "/tmp/screenshot.png")
-        let recording = PastRecording(
-            fileURL: recordingURL,
-            name: "Recording",
-            date: Date(timeIntervalSince1970: 2),
-            kind: .recording
-        )
-        let screenshot = PastRecording(
-            fileURL: screenshotURL,
-            name: "Screenshot",
-            date: Date(timeIntervalSince1970: 1),
-            kind: .screenshot
-        )
-        let store = InMemoryRecordingHistoryStore(recordings: [recording, screenshot])
-        let service = makeService(store: store, existingFiles: [recordingURL, screenshotURL])
-
-        #expect(service.getPastRecordings(matching: .recordings) == [recording])
-        #expect(service.getPastRecordings(matching: .screenshots) == [screenshot])
-        #expect(service.getPastRecordings(matching: .all) == [recording, screenshot])
-        #expect(store.recordings == [recording, screenshot])
     }
 
     @Test("getPastRecordings keeps bundle root when primary media exists")
@@ -103,15 +81,17 @@ extension RecordingHistoryTests {
 
         let expected = recording.replacingBundleManifest(sanitizedManifest)
         #expect(recordings == [expected])
-        #expect(diagnosticClient.diagnostics == [
-            CorruptRecordingDiagnostic(
-                fileURL: rootURL.appendingPathComponent("cursor.json"),
-                reason: "Missing bundle sidecar",
-                recordedAt: Date(timeIntervalSince1970: 10)
-            )
-        ])
+        #expect(
+            diagnosticClient.diagnostics == [
+                CorruptRecordingDiagnostic(
+                    fileURL: rootURL.appendingPathComponent("cursor.json"),
+                    reason: "Missing bundle sidecar",
+                    recordedAt: Date(timeIntervalSince1970: 10)
+                )
+            ])
         #expect(fileSystem.writtenData.map(\.url) == [rootURL.appendingPathComponent("bundle.json")])
-        let persistedManifest = try JSONDecoder().decode(BundleManifest.self, from: try #require(fileSystem.writtenData.first?.data))
+        let persistedManifest = try JSONDecoder().decode(
+            BundleManifest.self, from: try #require(fileSystem.writtenData.first?.data))
         #expect(persistedManifest == sanitizedManifest)
     }
 
@@ -241,13 +221,14 @@ extension RecordingHistoryTests {
         )
         #expect(result == .playable(expected))
         #expect(store.recordings == [expected])
-        #expect(diagnosticClient.diagnostics == [
-            CorruptRecordingDiagnostic(
-                fileURL: rootURL.appendingPathComponent("captions.json"),
-                reason: "Missing bundle sidecar",
-                recordedAt: Date(timeIntervalSince1970: 500)
-            )
-        ])
+        #expect(
+            diagnosticClient.diagnostics == [
+                CorruptRecordingDiagnostic(
+                    fileURL: rootURL.appendingPathComponent("captions.json"),
+                    reason: "Missing bundle sidecar",
+                    recordedAt: Date(timeIntervalSince1970: 500)
+                )
+            ])
     }
 
     @Test("recoverActiveRecording identifies known corrupt active recording without adding history")
@@ -299,13 +280,14 @@ extension RecordingHistoryTests {
         let result = await service.recoverActiveRecording()
 
         #expect(result == .unknownCorrupt(fileURL: fileURL, reason: "unexpected decoder failure"))
-        #expect(diagnosticClient.diagnostics == [
-            CorruptRecordingDiagnostic(
-                fileURL: fileURL,
-                reason: "unexpected decoder failure",
-                recordedAt: now
-            )
-        ])
+        #expect(
+            diagnosticClient.diagnostics == [
+                CorruptRecordingDiagnostic(
+                    fileURL: fileURL,
+                    reason: "unexpected decoder failure",
+                    recordedAt: now
+                )
+            ])
         #expect(store.activeRecording == nil)
         #expect(store.recordings.isEmpty)
     }
@@ -321,12 +303,14 @@ extension RecordingHistoryTests {
 
         service.setCurrentRecording(fileURL: fileURL, options: RecordingOptions(frameRate: 30))
 
-        #expect(store.activeRecording == ActiveRecording(
-            fileURL: fileURL,
-            name: "Luxel 2020-07-21 at 11.27.26",
-            date: now,
-            options: RecordingOptions(frameRate: 30)
-        ))
+        #expect(
+            store.activeRecording
+                == ActiveRecording(
+                    fileURL: fileURL,
+                    name: "Luxel 2020-07-21 at 11.27.26",
+                    date: now,
+                    options: RecordingOptions(frameRate: 30)
+                ))
     }
 
     @Test("materializeRecordingBundle creates directory and manifest file")
@@ -349,7 +333,8 @@ extension RecordingHistoryTests {
         #expect(bundle.sidecarURL(for: .camera) == rootURL.appendingPathComponent("camera.mov"))
         #expect(bundle.sidecarURL(for: .captions) == rootURL.appendingPathComponent("captions.json"))
 
-        let persistedManifest = try JSONDecoder().decode(BundleManifest.self, from: try #require(fileSystem.writtenData.first?.data))
+        let persistedManifest = try JSONDecoder().decode(
+            BundleManifest.self, from: try #require(fileSystem.writtenData.first?.data))
         #expect(persistedManifest == bundle.manifest)
     }
 
@@ -370,14 +355,15 @@ extension RecordingHistoryTests {
         service.stopCurrentRecording(recordingName: "Renamed")
 
         #expect(store.activeRecording == nil)
-        #expect(store.recordings == [
-            PastRecording(
-                fileURL: fileURL,
-                name: "Renamed",
-                date: stopDate,
-                options: activeRecording.options
-            )
-        ])
+        #expect(
+            store.recordings == [
+                PastRecording(
+                    fileURL: fileURL,
+                    name: "Renamed",
+                    date: stopDate,
+                    options: activeRecording.options
+                )
+            ])
     }
 
     @Test("cleanPastRecordings removes existing files and clears history")
@@ -402,7 +388,8 @@ extension RecordingHistoryTests {
         let keptURL = URL(fileURLWithPath: "/tmp/kept.mp4")
         let discardedURL = URL(fileURLWithPath: "/tmp/discarded.mp4")
         let kept = PastRecording(fileURL: keptURL, name: "Kept", date: Date(timeIntervalSince1970: 1))
-        let discarded = PastRecording(fileURL: discardedURL, name: "Discarded", date: Date(timeIntervalSince1970: 2))
+        let discarded = PastRecording(
+            fileURL: discardedURL, name: "Discarded", date: Date(timeIntervalSince1970: 2))
         let fileSystem = FakeFileSystem(existingFiles: [keptURL, discardedURL])
         let store = InMemoryRecordingHistoryStore(recordings: [discarded, kept])
         let service = makeService(store: store, fileSystem: fileSystem)
@@ -417,7 +404,8 @@ extension RecordingHistoryTests {
     @Test("discardRecording keeps history entry when trash fails")
     func discardRecordingKeepsHistoryWhenTrashFails() throws {
         let fileURL = URL(fileURLWithPath: "/tmp/discarded.mp4")
-        let recording = PastRecording(fileURL: fileURL, name: "Discarded", date: Date(timeIntervalSince1970: 2))
+        let recording = PastRecording(
+            fileURL: fileURL, name: "Discarded", date: Date(timeIntervalSince1970: 2))
         let fileSystem = FakeFileSystem(existingFiles: [fileURL], trashError: StubError.trashFailed)
         let store = InMemoryRecordingHistoryStore(recordings: [recording])
         let service = makeService(store: store, fileSystem: fileSystem)
@@ -437,50 +425,14 @@ extension RecordingHistoryTests {
         let store = InMemoryRecordingHistoryStore()
         let service = makeService(store: store, existingFiles: [fileURL])
 
-        let missing = PastRecording(fileURL: missingURL, name: "Missing", date: Date(timeIntervalSince1970: 1))
-        let existing = PastRecording(fileURL: fileURL, name: "Existing", date: Date(timeIntervalSince1970: 2))
+        let missing = PastRecording(
+            fileURL: missingURL, name: "Missing", date: Date(timeIntervalSince1970: 1))
+        let existing = PastRecording(
+            fileURL: fileURL, name: "Existing", date: Date(timeIntervalSince1970: 2))
 
         #expect(service.addRecording(missing).isEmpty)
         #expect(service.addRecording(existing) == [existing])
         #expect(store.recordings == [existing])
-    }
-
-    @Test("addScreenshot stores screenshot history entry")
-    func addScreenshotStoresScreenshotHistoryEntry() throws {
-        let fileURL = URL(fileURLWithPath: "/tmp/screenshot.png")
-        let now = try #require(ISO8601DateFormatter().date(from: "2020-07-21T15:27:26Z"))
-        let store = InMemoryRecordingHistoryStore()
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = try #require(TimeZone(secondsFromGMT: -4 * 60 * 60))
-        let service = makeService(
-            store: store,
-            existingFiles: [fileURL],
-            now: now,
-            calendar: calendar
-        )
-
-        let screenshot = service.addScreenshot(fileURL: fileURL)
-
-        let expected = PastRecording(
-            fileURL: fileURL,
-            name: "Luxel 2020-07-21 at 11.27.26",
-            date: now,
-            kind: .screenshot
-        )
-        #expect(screenshot == expected)
-        #expect(store.recordings == [expected])
-    }
-
-    @Test("addScreenshot skips missing files")
-    func addScreenshotSkipsMissingFiles() {
-        let fileURL = URL(fileURLWithPath: "/tmp/missing-screenshot.png")
-        let store = InMemoryRecordingHistoryStore()
-        let service = makeService(store: store)
-
-        let screenshot = service.addScreenshot(fileURL: fileURL, name: "Missing")
-
-        #expect(screenshot == nil)
-        #expect(store.recordings.isEmpty)
     }
 
     @Test("addReplayClip stores timestamped recording history entry")
@@ -587,9 +539,10 @@ extension RecordingHistoryTests {
 
         let recordings = service.getPastRecordings()
 
-        #expect(recordings == [
-            recording.filteringExports { $0.fileURL == existingExportURL }
-        ])
+        #expect(
+            recordings == [
+                recording.filteringExports { $0.fileURL == existingExportURL }
+            ])
         #expect(store.recordings == recordings)
     }
 

@@ -6,7 +6,8 @@ enum CMSampleBufferAudioLevelSampler {
     static func sample(from sampleBuffer: CMSampleBuffer) -> AudioLevelSample? {
         guard
             let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer),
-            let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription)?.pointee,
+            let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription)?
+                .pointee,
             streamDescription.mFormatID == kAudioFormatLinearPCM,
             (streamDescription.mFormatFlags & kAudioFormatFlagIsBigEndian) == 0
         else {
@@ -69,9 +70,11 @@ enum CMSampleBufferAudioLevelSampler {
 
             let sampleCount = Int(buffer.mDataByteSize) / bytesPerSample
             if isFloat {
-                addFloatingPointSamples(data, sampleCount: sampleCount, bytesPerSample: bytesPerSample, to: &accumulator)
+                addFloatingPointSamples(
+                    data, sampleCount: sampleCount, bytesPerSample: bytesPerSample, to: &accumulator)
             } else if isSignedInteger {
-                addSignedIntegerSamples(data, sampleCount: sampleCount, bytesPerSample: bytesPerSample, to: &accumulator)
+                addSignedIntegerSamples(
+                    data, sampleCount: sampleCount, bytesPerSample: bytesPerSample, to: &accumulator)
             }
         }
 
@@ -116,7 +119,8 @@ enum CMSampleBufferAudioLevelSampler {
             let samples = data.assumingMemoryBound(to: UInt8.self)
             for index in 0..<sampleCount {
                 let offset = index * 3
-                var value = Int32(samples[offset])
+                var value =
+                    Int32(samples[offset])
                     | (Int32(samples[offset + 1]) << 8)
                     | (Int32(samples[offset + 2]) << 16)
                 if value & 0x80_0000 != 0 {

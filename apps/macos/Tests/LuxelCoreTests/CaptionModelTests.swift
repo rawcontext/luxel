@@ -152,7 +152,8 @@ struct CaptionModelTests {
 
         let text = SRTCaptionSerializer.serialize(track)
 
-        #expect(text == """
+        #expect(
+            text == """
         1
         00:00:01,200 --> 00:00:03,400
         Hello
@@ -171,7 +172,8 @@ struct CaptionModelTests {
 
         let text = VTTCaptionSerializer.serialize(track)
 
-        #expect(text == """
+        #expect(
+            text == """
         WEBVTT
 
         00:00:01.200 --> 00:00:03.400
@@ -190,7 +192,8 @@ struct CaptionModelTests {
 
         let text = PlainTextCaptionSerializer.serialize(track)
 
-        #expect(text == """
+        #expect(
+            text == """
         Hello
         world
 
@@ -240,12 +243,13 @@ struct CaptionModelTests {
 
     @Test("cue builder segments sentences and wraps caption lines")
     func cueBuilderSegmentsSentencesAndWrapsCaptionLines() throws {
-        let builder = CaptionCueBuilder(configuration: try CaptionCueBuilderConfiguration(
-            maxCharactersPerLine: 18,
-            minimumDuration: 0.8,
-            maximumDuration: 6,
-            speechPauseThreshold: 0.6
-        ))
+        let builder = CaptionCueBuilder(
+            configuration: try CaptionCueBuilderConfiguration(
+                maxCharactersPerLine: 18,
+                minimumDuration: 0.8,
+                maximumDuration: 6,
+                speechPauseThreshold: 0.6
+            ))
 
         let cues = try builder.buildCues(from: [
             word(start: 0, duration: 0.4, text: "Hello"),
@@ -256,21 +260,23 @@ struct CaptionModelTests {
             word(start: 2.45, duration: 0.3, text: "nicely")
         ])
 
-        #expect(cues.map(\.text) == [
-            "Hello world.",
-            "Another caption\nwraps nicely"
-        ])
+        #expect(
+            cues.map(\.text) == [
+                "Hello world.",
+                "Another caption\nwraps nicely"
+            ])
         #expect(cues[0].timeRange == (try TimeRange(start: 0, end: 0.9)))
         #expect(cues[1].timeRange == (try TimeRange(start: 1.4, end: 2.75)))
     }
 
     @Test("cue builder snaps to speech pauses and keeps low confidence words")
     func cueBuilderSnapsToSpeechPausesAndKeepsLowConfidenceWords() throws {
-        let builder = CaptionCueBuilder(configuration: try CaptionCueBuilderConfiguration(
-            minimumDuration: 0.8,
-            maximumDuration: 6,
-            speechPauseThreshold: 0.6
-        ))
+        let builder = CaptionCueBuilder(
+            configuration: try CaptionCueBuilderConfiguration(
+                minimumDuration: 0.8,
+                maximumDuration: 6,
+                speechPauseThreshold: 0.6
+            ))
 
         let cues = try builder.buildCues(from: [
             word(start: 0, duration: 0.4, text: "quiet"),
@@ -279,10 +285,11 @@ struct CaptionModelTests {
             word(start: 2.2, duration: 0.35, text: "word")
         ])
 
-        #expect(cues.map(\.text) == [
-            "quiet pause",
-            "uncertain word"
-        ])
+        #expect(
+            cues.map(\.text) == [
+                "quiet pause",
+                "uncertain word"
+            ])
         #expect(cues[0].timeRange.start == 0)
         #expect(abs(cues[0].timeRange.end - 0.85) < 0.000_001)
         #expect(cues[1].timeRange == (try TimeRange(start: 1.8, end: 2.6)))
@@ -298,12 +305,13 @@ struct CaptionModelTests {
 
     @Test("cue builder enforces maximum duration and validates recognized words")
     func cueBuilderEnforcesMaximumDurationAndValidatesRecognizedWords() throws {
-        let builder = CaptionCueBuilder(configuration: try CaptionCueBuilderConfiguration(
-            maxCharactersPerLine: 64,
-            minimumDuration: 0.8,
-            maximumDuration: 2,
-            speechPauseThreshold: 1
-        ))
+        let builder = CaptionCueBuilder(
+            configuration: try CaptionCueBuilderConfiguration(
+                maxCharactersPerLine: 64,
+                minimumDuration: 0.8,
+                maximumDuration: 2,
+                speechPauseThreshold: 1
+            ))
 
         let cues = try builder.buildCues(from: [
             word(start: 0, duration: 0.4, text: "one"),
@@ -313,10 +321,11 @@ struct CaptionModelTests {
             word(start: 2, duration: 0.4, text: "five")
         ])
 
-        #expect(cues.map(\.text) == [
-            "one two three four",
-            "five"
-        ])
+        #expect(
+            cues.map(\.text) == [
+                "one two three four",
+                "five"
+            ])
         #expect(cues[0].timeRange == (try TimeRange(start: 0, end: 1.9)))
         #expect(cues[1].timeRange == (try TimeRange(start: 2, end: 2.8)))
 

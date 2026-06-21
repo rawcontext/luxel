@@ -32,8 +32,8 @@ public enum CodecAvailabilityError: Error, Equatable {
     case unsupportedExternalFormat(ExportFormat)
 }
 
-private extension Sequence where Element == ExportFormat {
-    func sortedForExportMenu() -> [ExportFormat] {
+extension Sequence where Element == ExportFormat {
+    fileprivate func sortedForExportMenu() -> [ExportFormat] {
         ExportFormat.appleNativeV1Formats.filter { contains($0) }
             + ExportFormat.externalNativeCodecFormats.filter { contains($0) }
     }

@@ -43,12 +43,37 @@ struct AVFoundationExportPlanFactoryTests {
 
     @Test("audio exports map to native audio plans")
     func audioExportsMapToNativeAudioPlans() throws {
-        let expectations: [(format: ExportFormat, presetName: String, outputFileType: AVFileType?, quality: ExportQuality)] = [
-            (.m4a, AVAssetExportPresetAppleM4A, .m4a, .balanced),
-            (.alac, AVAssetExportPresetPassthrough, .m4a, .lossless),
-            (.wav, AVAssetExportPresetPassthrough, .wav, .lossless),
-            (.caf, AVAssetExportPresetPassthrough, .caf, .lossless),
-            (.flac, AVAssetExportPresetPassthrough, nil, .lossless)
+        let expectations: [AudioPlanExpectation] = [
+            AudioPlanExpectation(
+                format: .m4a,
+                presetName: AVAssetExportPresetAppleM4A,
+                outputFileType: .m4a,
+                quality: .balanced
+            ),
+            AudioPlanExpectation(
+                format: .alac,
+                presetName: AVAssetExportPresetPassthrough,
+                outputFileType: .m4a,
+                quality: .lossless
+            ),
+            AudioPlanExpectation(
+                format: .wav,
+                presetName: AVAssetExportPresetPassthrough,
+                outputFileType: .wav,
+                quality: .lossless
+            ),
+            AudioPlanExpectation(
+                format: .caf,
+                presetName: AVAssetExportPresetPassthrough,
+                outputFileType: .caf,
+                quality: .lossless
+            ),
+            AudioPlanExpectation(
+                format: .flac,
+                presetName: AVAssetExportPresetPassthrough,
+                outputFileType: nil,
+                quality: .lossless
+            )
         ]
 
         for expectation in expectations {
@@ -122,4 +147,11 @@ struct AVFoundationExportPlanFactoryTests {
             quality: quality
         )
     }
+}
+
+private struct AudioPlanExpectation {
+    let format: ExportFormat
+    let presetName: String
+    let outputFileType: AVFileType?
+    let quality: ExportQuality
 }

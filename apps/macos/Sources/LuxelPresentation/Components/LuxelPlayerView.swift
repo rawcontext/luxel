@@ -24,7 +24,8 @@ struct LuxelPlayerView: NSViewRepresentable {
 
     private func updateBackground(for view: AVPlayerView) {
         view.wantsLayer = true
-        view.layer?.backgroundColor = usesAlphaBackground
+        view.layer?.backgroundColor =
+            usesAlphaBackground
             ? NSColor.clear.cgColor
             : NSColor.black.cgColor
     }

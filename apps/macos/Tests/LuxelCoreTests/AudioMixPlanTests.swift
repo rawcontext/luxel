@@ -49,10 +49,11 @@ struct AudioMixPlanTests {
             AudioTrackMix(kind: .microphone, volume: 1.5, isMuted: true)
         ])
 
-        #expect(plan.resolvedGains() == [
-            .system: 0.5,
-            .microphone: 0
-        ])
+        #expect(
+            plan.resolvedGains() == [
+                .system: 0.5,
+                .microphone: 0
+            ])
     }
 
     @Test("peak normalization targets minus one dBFS")

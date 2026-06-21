@@ -7,7 +7,8 @@ import Testing
 struct QuickExportServiceTests {
     @Test("clipboard preset exports to recordings directory and copies result")
     func clipboardPresetExportsToRecordingsDirectoryAndCopiesResult() async throws {
-        let metadataReader = SpyMetadataReader(source: try makeSource(width: 1920, height: 1080, frameRate: 60))
+        let metadataReader = SpyMetadataReader(
+            source: try makeSource(width: 1920, height: 1080, frameRate: 60))
         let exporter = SpyMediaExporter(reportedProgress: [0.3, 0.8])
         let progress = ProgressRecorder()
         let client = FakeExportedFileActionClient()
@@ -40,13 +41,14 @@ struct QuickExportServiceTests {
         #expect(result.postAction == .copyToClipboard)
         #expect(client.copiedFileURLs == [expectedOutputURL])
         #expect(client.revealedURLs.isEmpty)
-        #expect(await progress.snapshots() == [
-            .preparing(format: .gif),
-            .exporting(format: .gif, progress: 0),
-            .exporting(format: .gif, progress: 0.3),
-            .exporting(format: .gif, progress: 0.8),
-            .completed(format: .gif)
-        ])
+        #expect(
+            await progress.snapshots() == [
+                .preparing(format: .gif),
+                .exporting(format: .gif, progress: 0),
+                .exporting(format: .gif, progress: 0.3),
+                .exporting(format: .gif, progress: 0.8),
+                .completed(format: .gif)
+            ])
     }
 
     @Test("folder preset exports to configured folder and reveals result")
@@ -119,7 +121,8 @@ struct QuickExportServiceTests {
             recordingsDirectoryBookmark: bookmark
         )
 
-        let expectedOutputURL = URL(fileURLWithPath: "/tmp/resolved-recordings/Luxel Clip Quick GIF.gif")
+        let expectedOutputURL = URL(
+            fileURLWithPath: "/tmp/resolved-recordings/Luxel Clip Quick GIF.gif")
         #expect(await exporter.capturedExport()?.outputFileURL == expectedOutputURL)
         #expect(result.exportedMedia.fileURL == expectedOutputURL)
         #expect(access.startedURLs == [URL(fileURLWithPath: "/tmp/resolved-recordings")])
@@ -158,9 +161,10 @@ struct QuickExportServiceTests {
 
         let expectedOutputURL = URL(fileURLWithPath: "/tmp/recordings/Luxel Clip Notify MP4.mp4")
         #expect(result.postAction == .notifyWithThumbnail)
-        #expect(await notifier.notifications() == [
-            ExportNotification(fileURL: expectedOutputURL, presetName: "Notify MP4")
-        ])
+        #expect(
+            await notifier.notifications() == [
+                ExportNotification(fileURL: expectedOutputURL, presetName: "Notify MP4")
+            ])
     }
 
     @Test("missing preset fails before reading metadata or exporting")

@@ -148,7 +148,8 @@ extension GIFEngineModelTests {
         #expect(try bitmap.linearIndex(x: 0, y: 1) == 2)
         #expect(try indexed.colorIndex(x: 1, y: 1) == 3)
         #expect(throws: GIFEngineModelError.invalidFrameBuffer) {
-            _ = try GIFFrameBitmap(pixelSize: pixelSize, pixels: [GIFRGBAPixel(red: 0, green: 0, blue: 0)])
+            _ = try GIFFrameBitmap(
+                pixelSize: pixelSize, pixels: [GIFRGBAPixel(red: 0, green: 0, blue: 0)])
         }
         #expect(throws: GIFEngineModelError.invalidFrameBuffer) {
             _ = try GIFIndexedFrame(pixelSize: pixelSize, colorIndexes: [0, 1])
@@ -172,12 +173,13 @@ extension GIFEngineModelTests {
 
         let palette = try MedianCutPaletteBuilder().palette(from: [frame], maxColorCount: 4)
 
-        #expect(Set(palette.colors) == [
-            GIFPaletteColor(red: 0, green: 0, blue: 255),
-            GIFPaletteColor(red: 0, green: 255, blue: 0),
-            GIFPaletteColor(red: 255, green: 0, blue: 0),
-            GIFPaletteColor(red: 255, green: 255, blue: 255)
-        ])
+        #expect(
+            Set(palette.colors) == [
+                GIFPaletteColor(red: 0, green: 0, blue: 255),
+                GIFPaletteColor(red: 0, green: 255, blue: 0),
+                GIFPaletteColor(red: 255, green: 0, blue: 0),
+                GIFPaletteColor(red: 255, green: 255, blue: 255)
+            ])
     }
 
     @Test("median cut palette ignores transparent pixels when requested")
@@ -204,11 +206,12 @@ extension GIFEngineModelTests {
     func medianCutPaletteCapsOutputAndIsDeterministic() throws {
         var pixels: [GIFRGBAPixel] = []
         for value in 0..<16 {
-            pixels.append(GIFRGBAPixel(
-                red: UInt8(value * 16),
-                green: UInt8(255 - value * 12),
-                blue: UInt8(value * 8)
-            ))
+            pixels.append(
+                GIFRGBAPixel(
+                    red: UInt8(value * 16),
+                    green: UInt8(255 - value * 12),
+                    blue: UInt8(value * 8)
+                ))
         }
         let frame = try GIFFrameBitmap(
             pixelSize: PixelSize(width: 4, height: 4),
@@ -225,15 +228,17 @@ extension GIFEngineModelTests {
 
     @Test("palette pads single colors and finds nearest indexes")
     func palettePadsSingleColorsAndFindsNearestIndexes() throws {
-        let frame = try solidBitmap(width: 2, height: 2, color: GIFRGBAPixel(red: 10, green: 20, blue: 30))
+        let frame = try solidBitmap(
+            width: 2, height: 2, color: GIFRGBAPixel(red: 10, green: 20, blue: 30))
 
         let palette = try MedianCutPaletteBuilder().palette(from: [frame], maxColorCount: 8)
         let nearest = palette.nearestColorIndex(for: GIFRGBAPixel(red: 12, green: 19, blue: 28))
 
-        #expect(palette.colors == [
-            GIFPaletteColor(red: 0, green: 0, blue: 0),
-            GIFPaletteColor(red: 10, green: 20, blue: 30)
-        ])
+        #expect(
+            palette.colors == [
+                GIFPaletteColor(red: 0, green: 0, blue: 0),
+                GIFPaletteColor(red: 10, green: 20, blue: 30)
+            ])
         #expect(nearest == 1)
     }
 
@@ -274,16 +279,18 @@ extension GIFEngineModelTests {
     @Test("ordered ditherer emits stable Bayer pattern")
     func orderedDithererEmitsStableBayerPattern() throws {
         let palette = try blackWhitePalette()
-        let frame = try solidBitmap(width: 4, height: 4, color: GIFRGBAPixel(red: 128, green: 128, blue: 128))
+        let frame = try solidBitmap(
+            width: 4, height: 4, color: GIFRGBAPixel(red: 128, green: 128, blue: 128))
 
         let indexed = try OrderedDitherer().indexedFrame(from: frame, palette: palette)
 
-        #expect(indexed.colorIndexes == [
-            0, 1, 0, 1,
-            1, 0, 1, 0,
-            0, 1, 0, 1,
-            1, 0, 1, 0
-        ])
+        #expect(
+            indexed.colorIndexes == [
+                0, 1, 0, 1,
+                1, 0, 1, 0,
+                0, 1, 0, 1,
+                1, 0, 1, 0
+            ])
     }
 
     @Test("floyd steinberg ditherer diffuses quantization error")
@@ -313,7 +320,8 @@ extension GIFEngineModelTests {
                 GIFRGBAPixel(red: 255, green: 255, blue: 255)
             ]
         )
-        let highErrorFrame = try solidBitmap(width: 2, height: 1, color: GIFRGBAPixel(red: 96, green: 96, blue: 96))
+        let highErrorFrame = try solidBitmap(
+            width: 2, height: 1, color: GIFRGBAPixel(red: 96, green: 96, blue: 96))
         let heuristic = GIFDitheringHeuristic()
 
         #expect(try heuristic.meanQuantizationError(for: [exactFrame], palette: palette) == 0)
@@ -345,9 +353,12 @@ extension GIFEngineModelTests {
         let indexer = GIFFrameIndexer()
 
         let exactAuto = try indexer.indexedFrame(from: exactFrame, palette: palette, dithering: .auto)
-        let highErrorAuto = try indexer.indexedFrame(from: highErrorFrame, palette: palette, dithering: .auto)
-        let highErrorNone = try indexer.indexedFrame(from: highErrorFrame, palette: palette, dithering: .none)
-        let highErrorDiffusion = try indexer.indexedFrame(from: highErrorFrame, palette: palette, dithering: .diffusion)
+        let highErrorAuto = try indexer.indexedFrame(
+            from: highErrorFrame, palette: palette, dithering: .auto)
+        let highErrorNone = try indexer.indexedFrame(
+            from: highErrorFrame, palette: palette, dithering: .none)
+        let highErrorDiffusion = try indexer.indexedFrame(
+            from: highErrorFrame, palette: palette, dithering: .diffusion)
         let sharedAuto = try indexer.indexedFrames(
             from: [exactFrame, highErrorFrame],
             palette: palette,
@@ -366,12 +377,15 @@ extension GIFEngineModelTests {
 
     @Test("frame differ emits full first frame and transparent static deltas")
     func frameDifferEmitsFullFirstFrameAndTransparentStaticDeltas() throws {
-        let bitmap = try solidBitmap(width: 3, height: 2, color: GIFRGBAPixel(red: 10, green: 20, blue: 30))
+        let bitmap = try solidBitmap(
+            width: 3, height: 2, color: GIFRGBAPixel(red: 10, green: 20, blue: 30))
         let indexed = try indexedFrame(width: 3, height: 2, indexes: [1, 2, 3, 4, 5, 6])
         let differ = GIFFrameDiffer()
 
-        let first = try differ.delta(from: nil, to: bitmap, indexedFrame: indexed, transparentColorIndex: 0)
-        let repeated = try differ.delta(from: bitmap, to: bitmap, indexedFrame: indexed, transparentColorIndex: 0)
+        let first = try differ.delta(
+            from: nil, to: bitmap, indexedFrame: indexed, transparentColorIndex: 0)
+        let repeated = try differ.delta(
+            from: bitmap, to: bitmap, indexedFrame: indexed, transparentColorIndex: 0)
 
         #expect(first.rect == (try GIFPixelRect(x: 0, y: 0, width: 3, height: 2)))
         #expect(first.colorIndexes == [1, 2, 3, 4, 5, 6])
@@ -385,7 +399,8 @@ extension GIFEngineModelTests {
 
     @Test("frame differ crops moving regions to changed bounds")
     func frameDifferCropsMovingRegionsToChangedBounds() throws {
-        let previous = try solidBitmap(width: 4, height: 3, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
+        let previous = try solidBitmap(
+            width: 4, height: 3, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
         let current = try bitmap(
             width: 4,
             height: 3,
@@ -411,7 +426,8 @@ extension GIFEngineModelTests {
 
     @Test("frame differ applies lossy tolerance before differencing")
     func frameDifferAppliesLossyToleranceBeforeDifferencing() throws {
-        let previous = try solidBitmap(width: 2, height: 1, color: GIFRGBAPixel(red: 10, green: 10, blue: 10))
+        let previous = try solidBitmap(
+            width: 2, height: 1, color: GIFRGBAPixel(red: 10, green: 10, blue: 10))
         let current = try bitmap(
             width: 2,
             height: 1,
@@ -446,8 +462,10 @@ extension GIFEngineModelTests {
 
     @Test("frame differ rejects invalid geometry and mismatched frames")
     func frameDifferRejectsInvalidGeometryAndMismatchedFrames() throws {
-        let previous = try solidBitmap(width: 2, height: 2, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
-        let current = try solidBitmap(width: 3, height: 2, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
+        let previous = try solidBitmap(
+            width: 2, height: 2, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
+        let current = try solidBitmap(
+            width: 3, height: 2, color: GIFRGBAPixel(red: 0, green: 0, blue: 0))
         let indexed = try indexedFrame(width: 3, height: 2, indexes: [0, 1, 2, 3, 4, 5])
         let wrongIndexed = try indexedFrame(width: 2, height: 2, indexes: [0, 1, 2, 3])
 
@@ -458,7 +476,8 @@ extension GIFEngineModelTests {
             _ = try GIFFrameDiffer().delta(from: nil, to: current, indexedFrame: wrongIndexed)
         }
         #expect(throws: GIFEngineModelError.invalidLossyTolerance) {
-            _ = try GIFFrameDiffer().delta(from: nil, to: current, indexedFrame: indexed, lossyTolerance: 33)
+            _ = try GIFFrameDiffer().delta(
+                from: nil, to: current, indexedFrame: indexed, lossyTolerance: 33)
         }
         #expect(throws: GIFEngineModelError.invalidPixelRect) {
             _ = try GIFPixelRect(x: 0, y: 0, width: 0, height: 1)

@@ -13,11 +13,13 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
         guard minimumWidth > 0,
               minimumHeight > 0,
               minimumWidth <= display.width,
-              minimumHeight <= display.height else {
+              minimumHeight <= display.height
+        else {
             throw CaptureModelError.invalidDimensions
         }
 
-        _ = try CaptureCoordinateMapper.recordingRect(fromTopLeftSelection: topLeftSelection, in: display)
+        _ = try CaptureCoordinateMapper.recordingRect(
+            fromTopLeftSelection: topLeftSelection, in: display)
         self.display = display
         self.topLeftSelection = topLeftSelection
         self.minimumWidth = minimumWidth
@@ -45,11 +47,12 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
         by delta: CaptureResizeDelta,
         lockingAspectRatio: Bool = false
     ) throws -> CaptureSelectionDraft {
-        let rect = if lockingAspectRatio, handle.isCorner {
-            try aspectLockedResize(dragging: handle, by: delta)
-        } else {
-            try freeformResize(dragging: handle, by: delta)
-        }
+        let rect =
+            if lockingAspectRatio, handle.isCorner {
+                try aspectLockedResize(dragging: handle, by: delta)
+            } else {
+                try freeformResize(dragging: handle, by: delta)
+            }
 
         return try CaptureSelectionDraft(
             display: display,
@@ -113,11 +116,13 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
         )
     }
 
-    public func applyingAspectRatioPreset(_ preset: CaptureAspectRatioPreset) throws -> CaptureSelectionDraft {
+    public func applyingAspectRatioPreset(_ preset: CaptureAspectRatioPreset) throws
+    -> CaptureSelectionDraft {
         try applyingAspectRatio(preset.aspectRatio)
     }
 
-    public func applyingAspectRatio(_ aspectRatio: CaptureAspectRatio?) throws -> CaptureSelectionDraft {
+    public func applyingAspectRatio(_ aspectRatio: CaptureAspectRatio?) throws
+    -> CaptureSelectionDraft {
         guard let aspectRatio else {
             return self
         }
@@ -277,6 +282,7 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
             maximum: display.height - resolvedHeight
         )
 
-        return try replacingSelection(x: originX, y: originY, width: resolvedWidth, height: resolvedHeight)
+        return try replacingSelection(
+            x: originX, y: originY, width: resolvedWidth, height: resolvedHeight)
     }
 }

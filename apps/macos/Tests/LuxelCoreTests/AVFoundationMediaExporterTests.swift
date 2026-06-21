@@ -1,5 +1,5 @@
-import AVFoundation
 import AVFAudio
+import AVFoundation
 import AppKit
 import CoreMedia
 import Foundation
@@ -155,7 +155,8 @@ extension AVFoundationMediaExporterTests {
         _ = try await AVFoundationMediaExporter().export(baselineRequest, to: baselineURL)
         _ = try await AVFoundationMediaExporter().export(quietRequest, to: quietURL)
 
-        let baselinePeak = try await audioPeak(at: baselineURL, duration: baselineRequest.outputDuration)
+        let baselinePeak = try await audioPeak(
+            at: baselineURL, duration: baselineRequest.outputDuration)
         let quietPeak = try await audioPeak(at: quietURL, duration: quietRequest.outputDuration)
 
         #expect(baselinePeak > 0.01)
@@ -258,7 +259,8 @@ extension AVFoundationMediaExporterTests {
         _ = try await AVFoundationMediaExporter().export(request, to: outputURL)
         let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: outputURL)
         let formatDescription = try await firstVideoFormatDescription(at: outputURL)
-        let extensions = try #require(CMFormatDescriptionGetExtensions(formatDescription) as? [String: Any])
+        let extensions = try #require(
+            CMFormatDescriptionGetExtensions(formatDescription) as? [String: Any])
         let boxTypes = try topLevelBoxTypes(at: outputURL)
         let expectedPixelSize = try PixelSize(width: 322, height: 182)
 
@@ -266,9 +268,15 @@ extension AVFoundationMediaExporterTests {
         #expect(CMFormatDescriptionGetMediaSubType(formatDescription) == kCMVideoCodecType_H264)
         #expect(try h264ProfileIDC(formatDescription: formatDescription) == 100)
         #expect(extensions[kCMFormatDescriptionExtension_PixelAspectRatio as String] == nil)
-        #expect(extensions[kCMFormatDescriptionExtension_ColorPrimaries as String] as? String == kCMFormatDescriptionColorPrimaries_ITU_R_709_2 as String)
-        #expect(extensions[kCMFormatDescriptionExtension_TransferFunction as String] as? String == kCMFormatDescriptionTransferFunction_ITU_R_709_2 as String)
-        #expect(extensions[kCMFormatDescriptionExtension_YCbCrMatrix as String] as? String == kCMFormatDescriptionYCbCrMatrix_ITU_R_709_2 as String)
+        #expect(
+            extensions[kCMFormatDescriptionExtension_ColorPrimaries as String] as? String
+                == kCMFormatDescriptionColorPrimaries_ITU_R_709_2 as String)
+        #expect(
+            extensions[kCMFormatDescriptionExtension_TransferFunction as String] as? String
+                == kCMFormatDescriptionTransferFunction_ITU_R_709_2 as String)
+        #expect(
+            extensions[kCMFormatDescriptionExtension_YCbCrMatrix as String] as? String
+                == kCMFormatDescriptionYCbCrMatrix_ITU_R_709_2 as String)
         #expect(try boxIndex("moov", in: boxTypes) < boxIndex("mdat", in: boxTypes))
     }
 
@@ -339,7 +347,8 @@ extension AVFoundationMediaExporterTests {
 
         guard status == noErr,
               let parameterSetPointer,
-              parameterSetSize > 1 else {
+              parameterSetSize > 1
+        else {
             throw AVFoundationMediaExporterTestError.missingH264ParameterSet
         }
 
@@ -434,7 +443,8 @@ extension AVFoundationMediaExporterTests {
             let pixelBuffer = try splitColorPixelBuffer(width: width, height: height)
             let time = CMTime(value: CMTimeValue(frameIndex), timescale: frameRate)
             guard adaptor.append(pixelBuffer, withPresentationTime: time) else {
-                throw AVFoundationMediaExporterTestError.writerAppendFailed(writer.error?.localizedDescription)
+                throw AVFoundationMediaExporterTestError.writerAppendFailed(
+                    writer.error?.localizedDescription)
             }
         }
 
@@ -457,7 +467,8 @@ extension AVFoundationMediaExporterTests {
         )
 
         guard status == kCVReturnSuccess,
-              let pixelBuffer else {
+              let pixelBuffer
+        else {
             throw AVFoundationMediaExporterTestError.pixelBufferCreateFailed(status)
         }
 
@@ -492,7 +503,8 @@ extension AVFoundationMediaExporterTests {
     private func finishWriting(_ writer: AVAssetWriter) async throws {
         await writer.finishWriting()
         guard writer.status == .completed else {
-            throw AVFoundationMediaExporterTestError.writerFinishFailed(writer.error?.localizedDescription)
+            throw AVFoundationMediaExporterTestError.writerFinishFailed(
+                writer.error?.localizedDescription)
         }
     }
 
@@ -520,11 +532,12 @@ extension AVFoundationMediaExporterTests {
     }
 
     private func audioPeak(at fileURL: URL, duration: TimeInterval) async throws -> Double {
-        let peaks = try await AVAssetReaderAudioPeakAnalyzer().measurePeaks(AudioPeakAnalysisRequest(
-            inputFileURL: fileURL,
-            timeRange: TimeRange(start: 0, end: duration),
-            audioTracks: [.system]
-        ))
+        let peaks = try await AVAssetReaderAudioPeakAnalyzer().measurePeaks(
+            AudioPeakAnalysisRequest(
+                inputFileURL: fileURL,
+                timeRange: TimeRange(start: 0, end: duration),
+                audioTracks: [.system]
+            ))
 
         return try #require(peaks[.system])
     }
@@ -532,14 +545,16 @@ extension AVFoundationMediaExporterTests {
     private func writeSilentAudioFixture(to fileURL: URL, duration: TimeInterval) throws {
         let sampleRate = 44_100.0
         let frameCount = AVAudioFrameCount(sampleRate * duration)
-        let pcmFormat = try #require(AVAudioFormat(
-            standardFormatWithSampleRate: sampleRate,
-            channels: 1
-        ))
-        let buffer = try #require(AVAudioPCMBuffer(
-            pcmFormat: pcmFormat,
-            frameCapacity: frameCount
-        ))
+        let pcmFormat = try #require(
+            AVAudioFormat(
+                standardFormatWithSampleRate: sampleRate,
+                channels: 1
+            ))
+        let buffer = try #require(
+            AVAudioPCMBuffer(
+                pcmFormat: pcmFormat,
+                frameCapacity: frameCount
+            ))
         buffer.frameLength = frameCount
 
         let file = try AVAudioFile(

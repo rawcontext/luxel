@@ -41,56 +41,50 @@ struct LuxelSettingsView: View {
 extension LuxelSettingsView {
     var body: some View {
         settingsShell
-        .background {
-            LuxelShortcutInstaller(
-                model: model,
-                cropperPanelController: cropperPanelController,
-                shortcutController: shortcutController
-            ) { fileURL in
-                openRecording(fileURL)
+            .background {
+                LuxelShortcutInstaller(
+                    model: model,
+                    cropperPanelController: cropperPanelController,
+                    shortcutController: shortcutController
+                ) { fileURL in
+                    openRecording(fileURL)
+                }
             }
-        }
-        .task {
-            await model.refreshPermissions()
-            model.refreshAudioInputDevices()
-            model.refreshCameraDevices()
-            await model.watchAudioInputDeviceUpdates()
-        }
-        .task {
-            model.refreshNotchDisplays()
-            await model.watchNotchDisplayUpdates()
-        }
-        .onAppear {
-            NSApplication.shared.activate(ignoringOtherApps: true)
-        }
-        .onChange(of: model.settings) {
-            model.saveSettings()
-            Task {
-                await model.refreshNotchSurface()
+            .task {
+                await model.refreshPermissions()
+                model.refreshAudioInputDevices()
+                model.refreshCameraDevices()
+                await model.watchAudioInputDeviceUpdates()
             }
-        }
-        .onChange(of: model.settings.screenshotFormat) {
-            if model.settings.screenshotBackdrop.usesAlpha,
-               !model.settings.screenshotFormat.supportsAlpha {
-                model.settings.screenshotBackdrop = .opaque
+            .task {
+                model.refreshNotchDisplays()
+                await model.watchNotchDisplayUpdates()
             }
-        }
-        .onChange(of: model.settings.enableShortcuts) {
-            if !model.settings.enableShortcuts {
-                editingShortcutCommandID = nil
+            .onAppear {
+                NSApplication.shared.activate(ignoringOtherApps: true)
             }
-        }
-        .onChange(of: selectedPane) {
-            if selectedPane != .shortcuts {
-                editingShortcutCommandID = nil
+            .onChange(of: model.settings) {
+                model.saveSettings()
+                Task {
+                    await model.refreshNotchSurface()
+                }
             }
-        }
-        .onChange(of: model.launchAtLogin) {
-            model.setLaunchAtLogin(model.launchAtLogin)
-        }
-        .sheet(isPresented: $isShowingAcknowledgements) {
-            CodecAcknowledgementsView(text: CodecAcknowledgementsResource.bundledText())
-        }
+            .onChange(of: model.settings.enableShortcuts) {
+                if !model.settings.enableShortcuts {
+                    editingShortcutCommandID = nil
+                }
+            }
+            .onChange(of: selectedPane) {
+                if selectedPane != .shortcuts {
+                    editingShortcutCommandID = nil
+                }
+            }
+            .onChange(of: model.launchAtLogin) {
+                model.setLaunchAtLogin(model.launchAtLogin)
+            }
+            .sheet(isPresented: $isShowingAcknowledgements) {
+                CodecAcknowledgementsView(text: CodecAcknowledgementsResource.bundledText())
+            }
     }
 
     @ViewBuilder
@@ -185,8 +179,6 @@ extension LuxelSettingsView {
             recordingSettingsForm
         case .output:
             outputSettingsForm
-        case .screenshots:
-            screenshotSettingsForm
         case .presets:
             presetSettingsForm
         case .shortcuts:
@@ -296,7 +288,9 @@ extension LuxelSettingsView {
                         Image(systemName: "folder")
                     }
                 }
-                .help("Choose where new recordings are saved. Current: \(model.settings.recordingsDirectory.path)")
+                .help(
+                    "Choose where new recordings are saved. Current: \(model.settings.recordingsDirectory.path)"
+                )
             }
 
             Toggle("Loop Exports", isOn: $model.settings.loopExports)
@@ -308,42 +302,6 @@ extension LuxelSettingsView {
         } footer: {
             Text("Choose where Luxel saves recordings and how the editor behaves after export.")
         }
-    }
-
-    @ViewBuilder
-    private var screenshotSettingsForm: some View {
-        Section {
-            Picker("Format", selection: $model.settings.screenshotFormat) {
-                ForEach(ScreenshotFormat.allCases, id: \.self) { format in
-                    Text(format.settingsLabel).tag(format)
-                }
-            }
-            .pickerStyle(.menu)
-            .help("Choose the default screenshot file format.")
-
-            Picker("Window Backdrop", selection: $model.settings.screenshotBackdrop) {
-                ForEach(CaptureBackdrop.allCases, id: \.self) { backdrop in
-                    Text(backdrop.settingsLabel)
-                        .tag(backdrop)
-                        .disabled(backdrop.usesAlpha && !model.settings.screenshotFormat.supportsAlpha)
-                }
-            }
-            .pickerStyle(.menu)
-            .help("Choose the background used behind window screenshots.")
-
-            ForEach(ScreenshotDestination.allCases, id: \.self) { destination in
-                Toggle(destination.settingsLabel, isOn: screenshotDestinationBinding(destination))
-                    .help(screenshotDestinationHelp(destination))
-            }
-
-            Toggle("Show Thumbnail", isOn: $model.settings.screenshotShowThumbnail)
-                .help("Show a small preview after capturing a screenshot.")
-        } header: {
-            Text("Capture")
-        } footer: {
-            Text("At least one screenshot destination stays enabled.")
-        }
-
     }
 
     @ViewBuilder
@@ -366,7 +324,7 @@ extension LuxelSettingsView {
     private var shortcutSettingsForm: some View {
         Section {
             Toggle("Keyboard Shortcuts", isOn: $model.settings.enableShortcuts)
-                .help("Enable Luxel's global recording and screenshot shortcuts.")
+                .help("Enable Luxel's global recording shortcuts.")
         } header: {
             Text("Keyboard")
         }
@@ -530,15 +488,18 @@ extension LuxelSettingsView {
                 .help("Shows the current update availability.")
 
             if updatePresentation.showsDeveloperIDUpdateControls {
-                Toggle("Check Automatically", isOn: $model.settings.updatePreferences.automaticallyCheckForUpdates)
-                    .help("Let Luxel periodically check for updates.")
+                Toggle(
+                    "Check Automatically",
+                    isOn: $model.settings.updatePreferences.automaticallyCheckForUpdates
+                )
+                .help("Let Luxel periodically check for updates.")
 
                 Toggle(
                     "Install Automatically",
                     isOn: $model.settings.updatePreferences.automaticallyDownloadAndInstall
                 )
-                    .disabled(!updatePresentation.automaticInstallToggleEnabled)
-                    .help("Download and install updates without asking.")
+                .disabled(!updatePresentation.automaticInstallToggleEnabled)
+                .help("Download and install updates without asking.")
 
                 Picker("Channel", selection: $model.settings.updatePreferences.channel) {
                     ForEach(UpdateChannel.allCases) { channel in
@@ -548,7 +509,8 @@ extension LuxelSettingsView {
                 .pickerStyle(.menu)
                 .help("Choose which update channel Luxel checks.")
 
-                Button {} label: {
+                Button {
+                } label: {
                     Label("Check Now", systemImage: "arrow.clockwise")
                 }
                 .disabled(!updatePresentation.canCheckNow)
@@ -583,7 +545,8 @@ extension LuxelSettingsView {
 
     private var unavailableCameraDeviceID: String? {
         guard let cameraDeviceID = model.settings.cameraDeviceID,
-              !model.cameraDevices.contains(where: { $0.id == cameraDeviceID }) else {
+              !model.cameraDevices.contains(where: { $0.id == cameraDeviceID })
+        else {
             return nil
         }
 
@@ -653,30 +616,6 @@ extension LuxelSettingsView {
                 presets: AppKeyboardShortcutPresets.quickRecordLast
             ),
             shortcutCommand(
-                id: "screenshot",
-                title: "Screenshot",
-                detail: "Capture a screenshot with the default target.",
-                group: "Screenshots",
-                selection: $model.settings.captureScreenshotShortcut,
-                presets: AppKeyboardShortcutPresets.captureScreenshot
-            ),
-            shortcutCommand(
-                id: "screenshot-active-window",
-                title: "Screenshot Active Window",
-                detail: "Capture the frontmost window.",
-                group: "Screenshots",
-                selection: $model.settings.screenshotActiveWindowShortcut,
-                presets: AppKeyboardShortcutPresets.screenshotActiveWindow
-            ),
-            shortcutCommand(
-                id: "screenshot-fullscreen",
-                title: "Screenshot Fullscreen",
-                detail: "Capture the current display.",
-                group: "Screenshots",
-                selection: $model.settings.screenshotFullscreenShortcut,
-                presets: AppKeyboardShortcutPresets.screenshotFullscreen
-            ),
-            shortcutCommand(
                 id: "clip-replay-buffer",
                 title: "Clip Replay Buffer",
                 detail: "Save the recent replay buffer.",
@@ -740,7 +679,8 @@ extension LuxelSettingsView {
         Binding {
             model.settings.replayBufferConfiguration != nil
         } set: { isEnabled in
-            model.settings.replayBufferConfiguration = isEnabled ? ReplayBufferConfiguration.defaults : nil
+            model.settings.replayBufferConfiguration =
+                isEnabled ? ReplayBufferConfiguration.defaults : nil
         }
     }
 
@@ -854,7 +794,8 @@ extension LuxelSettingsView {
             model.settings.audioInputDeviceID ?? AudioInputDeviceID.systemDefault
         } set: { deviceID in
             model.settings.audioInputDeviceID = deviceID
-            model.settings.audioInputDeviceName = model.audioInputDevices
+            model.settings.audioInputDeviceName =
+                model.audioInputDevices
                 .first { $0.id == deviceID }?
                 .name
         }
@@ -904,15 +845,18 @@ extension LuxelSettingsView {
         frameRate: Int? = nil,
         includeSystemAudio: Bool? = nil
     ) {
-        let configuration = model.settings.replayBufferConfiguration ?? ReplayBufferConfiguration.defaults
-        guard let updatedFrameRate = try? FrameRate(frameRate ?? configuration.frameRate.framesPerSecond),
-              let updatedConfiguration = try? ReplayBufferConfiguration(
+        let configuration =
+            model.settings.replayBufferConfiguration ?? ReplayBufferConfiguration.defaults
+        guard
+            let updatedFrameRate = try? FrameRate(frameRate ?? configuration.frameRate.framesPerSecond),
+            let updatedConfiguration = try? ReplayBufferConfiguration(
                 bufferLength: bufferLength ?? configuration.bufferLength,
                 source: configuration.source,
                 frameRate: updatedFrameRate,
                 includeSystemAudio: includeSystemAudio ?? configuration.includeSystemAudio,
                 quality: configuration.quality
-              ) else {
+            )
+        else {
             return
         }
 
@@ -946,33 +890,6 @@ extension LuxelSettingsView {
             "10 Seconds"
         default:
             "\(Int(seconds)) Seconds"
-        }
-    }
-
-    private func screenshotDestinationBinding(_ destination: ScreenshotDestination) -> Binding<Bool> {
-        Binding {
-            model.settings.screenshotDestinations.contains(destination)
-        } set: { isEnabled in
-            if isEnabled {
-                guard !model.settings.screenshotDestinations.contains(destination) else {
-                    return
-                }
-
-                model.settings.screenshotDestinations.append(destination)
-            } else if model.settings.screenshotDestinations.count > 1 {
-                model.settings.screenshotDestinations.removeAll { $0 == destination }
-            }
-        }
-    }
-
-    private func screenshotDestinationHelp(_ destination: ScreenshotDestination) -> String {
-        switch destination {
-        case .clipboard:
-            "Copy each screenshot to the Clipboard."
-        case .file:
-            "Save each screenshot as a file."
-        case .preview:
-            "Open each screenshot in Preview."
         }
     }
 

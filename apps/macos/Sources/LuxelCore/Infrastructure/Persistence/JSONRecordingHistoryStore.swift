@@ -4,6 +4,28 @@ public final class JSONRecordingHistoryStore: RecordingHistoryStore, @unchecked 
     private struct Snapshot: Codable {
         var activeRecording: ActiveRecording?
         var recordings: [PastRecording]
+
+        init(activeRecording: ActiveRecording?, recordings: [PastRecording]) {
+            self.activeRecording = activeRecording
+            self.recordings = recordings
+        }
+
+        init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            activeRecording = try container.decodeIfPresent(
+                ActiveRecording.self, forKey: .activeRecording)
+            recordings =
+                try container.decodeIfPresent([LossyPastRecording].self, forKey: .recordings)?
+                .compactMap(\.value) ?? []
+        }
+    }
+
+    private struct LossyPastRecording: Decodable {
+        let value: PastRecording?
+
+        init(from decoder: any Decoder) throws {
+            value = try? PastRecording(from: decoder)
+        }
     }
 
     private let fileURL: URL

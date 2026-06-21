@@ -40,7 +40,8 @@ enum CodecAcknowledgementsResource {
     static func bundledText(bundle: Bundle = .main) -> String {
         guard let url = bundle.url(forResource: "ThirdPartyLicenses", withExtension: "md"),
               let text = try? String(contentsOf: url, encoding: .utf8),
-              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
             return "No third-party codec acknowledgements are bundled."
         }
 

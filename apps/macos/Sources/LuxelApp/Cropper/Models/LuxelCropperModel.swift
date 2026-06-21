@@ -13,12 +13,13 @@ struct CropperQuickRecordingConfiguration {
 
     init(activePresetID: UUID?, presets: [ExportPreset]) {
         self.presets = presets
-        self.activePresetID = if let activePresetID,
-                                 presets.contains(where: { $0.id == activePresetID }) {
-            activePresetID
-        } else {
-            nil
-        }
+        self.activePresetID =
+            if let activePresetID,
+               presets.contains(where: { $0.id == activePresetID }) {
+                activePresetID
+            } else {
+                nil
+            }
     }
 }
 
@@ -79,27 +80,12 @@ struct CropperCameraConfiguration {
     }
 }
 
-enum LuxelCropperMode: String, CaseIterable, Identifiable, Sendable {
-    case video
-    case photo
-
-    var id: Self { self }
-}
-
-enum CropperLoupeImageStatus: Equatable {
-    case idle
-    case loading
-    case ready
-    case unavailable
-}
-
 private struct CropperUndoState: Equatable, Sendable {
     let selection: CaptureRect?
     let aspectRatioPreset: CaptureAspectRatioPreset
     let customAspectRatio: CaptureAspectRatio?
     let customAspectRatioWidthText: String
     let customAspectRatioHeightText: String
-    let mode: LuxelCropperMode
 }
 
 @MainActor
@@ -133,7 +119,6 @@ final class LuxelAudioLevelModel {
 final class LuxelCropperModel {
     let display: DisplayBounds
     var selection: CaptureRect?
-    var mode: LuxelCropperMode
     var aspectRatioPreset: CaptureAspectRatioPreset = .free
     var customAspectRatio: CaptureAspectRatio?
     var customAspectRatioWidthText = "3"
@@ -145,12 +130,9 @@ final class LuxelCropperModel {
     var customStopAfterText: String
     var recordsAudio: Bool
     var errorMessage: String?
-    var loupeImage: CGImage?
-    var loupeImageStatus: CropperLoupeImageStatus = .idle
     @ObservationIgnored private let onCountdownDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored private let onStopAfterDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored private let onRecordAudioChange: (Bool) -> Void
-    @ObservationIgnored private let loupeImageProvider: (any CropperLoupeImageProvider)?
     @ObservationIgnored let sizePresets: [CaptureSizePreset]
     @ObservationIgnored let windowSnapFrames: [CaptureRect]
     let canRecordAudio: Bool
@@ -163,24 +145,20 @@ final class LuxelCropperModel {
     @ObservationIgnored private var selectionDragID = 0
     @ObservationIgnored private var resizeDragID = 0
     @ObservationIgnored private var moveDragID = 0
-    @ObservationIgnored private var loupeImageTask: Task<Void, Never>?
-    @ObservationIgnored private var loupeImageGeneration = 0
-    @ObservationIgnored private var loupeImageSourceRect: CaptureRect?
 
     init(
         display: DisplayBounds,
-        mode: LuxelCropperMode = .video,
         countdownDuration: TimeInterval? = nil,
         stopAfterDuration: TimeInterval? = nil,
-        selectionPresetConfiguration: CropperSelectionPresetConfiguration = CropperSelectionPresetConfiguration(
-            sizePresets: CaptureSizePreset.builtInDefaults
-        ),
+        selectionPresetConfiguration: CropperSelectionPresetConfiguration =
+            CropperSelectionPresetConfiguration(
+                sizePresets: CaptureSizePreset.builtInDefaults
+            ),
         initialSelection: CaptureRect? = nil,
         windowSnapFrames: [CaptureRect] = [],
         recordAudio: Bool = false,
         canRecordAudio: Bool = false,
         loupeAlwaysOn: Bool = false,
-        loupeImageProvider: (any CropperLoupeImageProvider)? = nil,
         dimOtherDisplays: Bool = false,
         displayFocus: CropperDisplayFocus = CropperDisplayFocus(),
         onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
@@ -191,7 +169,6 @@ final class LuxelCropperModel {
 
         self.display = display
         self.selection = resolvedInitialSelection
-        self.mode = mode
         self.countdownDuration = countdownDuration
         self.stopAfterDuration = stopAfterDuration
         self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
@@ -200,7 +177,6 @@ final class LuxelCropperModel {
         self.windowSnapFrames = windowSnapFrames
         self.canRecordAudio = canRecordAudio
         self.loupeAlwaysOn = loupeAlwaysOn
-        self.loupeImageProvider = loupeImageProvider
         self.dimOtherDisplays = dimOtherDisplays
         self.displayFocus = displayFocus
         self.onCountdownDurationChange = onCountdownDurationChange
@@ -209,14 +185,14 @@ final class LuxelCropperModel {
         if resolvedInitialSelection != nil {
             displayFocus.activate(display.id)
         }
-        self.selectionUndoStack = UndoStack(initialState: CropperUndoState(
-            selection: resolvedInitialSelection,
-            aspectRatioPreset: .free,
-            customAspectRatio: nil,
-            customAspectRatioWidthText: "3",
-            customAspectRatioHeightText: "2",
-            mode: mode
-        ))
+        self.selectionUndoStack = UndoStack(
+            initialState: CropperUndoState(
+                selection: resolvedInitialSelection,
+                aspectRatioPreset: .free,
+                customAspectRatio: nil,
+                customAspectRatioWidthText: "3",
+                customAspectRatioHeightText: "2"
+            ))
     }
 }
 
@@ -313,15 +289,6 @@ extension LuxelCropperModel {
 
     func setCustomAspectRatioHeightText(_ text: String) {
         customAspectRatioHeightText = text
-    }
-
-    func setMode(_ mode: LuxelCropperMode) {
-        guard self.mode != mode else {
-            return
-        }
-
-        self.mode = mode
-        pushUndoState()
     }
 
     func applyCustomStopAfterDuration() -> Bool {
@@ -545,7 +512,8 @@ extension LuxelCropperModel {
 
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
-            self.selection = try draft.moved(by: CaptureResizeDelta(x: deltaX, y: deltaY)).topLeftSelection
+            self.selection = try draft.moved(by: CaptureResizeDelta(x: deltaX, y: deltaY))
+                .topLeftSelection
             activateDisplay()
             pushUndoState()
             errorMessage = nil
@@ -561,7 +529,8 @@ extension LuxelCropperModel {
 
         do {
             let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
-            self.selection = try draft.resized(by: CaptureResizeDelta(x: width, y: height)).topLeftSelection
+            self.selection = try draft.resized(by: CaptureResizeDelta(x: width, y: height))
+                .topLeftSelection
             activateDisplay()
             pushUndoState()
             errorMessage = nil
@@ -641,8 +610,7 @@ extension LuxelCropperModel {
             aspectRatioPreset: aspectRatioPreset,
             customAspectRatio: customAspectRatio,
             customAspectRatioWidthText: customAspectRatioWidthText,
-            customAspectRatioHeightText: customAspectRatioHeightText,
-            mode: mode
+            customAspectRatioHeightText: customAspectRatioHeightText
         )
     }
 
@@ -656,7 +624,6 @@ extension LuxelCropperModel {
         customAspectRatio = state.customAspectRatio
         customAspectRatioWidthText = state.customAspectRatioWidthText
         customAspectRatioHeightText = state.customAspectRatioHeightText
-        mode = state.mode
         updateDisplayFocusForCurrentSelection()
         errorMessage = nil
     }
@@ -680,73 +647,29 @@ extension LuxelCropperModel {
         isRequested: Bool
     ) {
         guard shouldShowLoupe(isRequested: isRequested),
-              let overlayPixelSize = loupeOverlayPixelSize(viewSize: viewSize, overlaySize: overlaySize) else {
+              let overlayPixelSize = loupeOverlayPixelSize(viewSize: viewSize, overlaySize: overlaySize)
+        else {
             clearLoupe()
             return
         }
 
-        guard let sample = try? CaptureLoupeSampleResolver.sample(
-            cursor: cursor,
-            display: display,
-            selection: selection,
-            overlaySize: overlayPixelSize
-        ) else {
+        guard
+            let sample = try? CaptureLoupeSampleResolver.sample(
+                cursor: cursor,
+                display: display,
+                selection: selection,
+                overlaySize: overlayPixelSize
+            )
+        else {
             clearLoupe()
             return
         }
 
         loupeSample = sample
-        updateLoupeImage(for: sample)
-    }
-
-    private func updateLoupeImage(for sample: CaptureLoupeSample) {
-        guard let loupeImageProvider else {
-            loupeImage = nil
-            loupeImageSourceRect = nil
-            loupeImageStatus = .unavailable
-            return
-        }
-
-        guard sample.sourceRect != loupeImageSourceRect else {
-            return
-        }
-
-        loupeImageSourceRect = sample.sourceRect
-        loupeImageStatus = loupeImage == nil ? .loading : .ready
-        loupeImageGeneration += 1
-        let generation = loupeImageGeneration
-        let provider = loupeImageProvider
-        loupeImageTask?.cancel()
-        loupeImageTask = Task { @MainActor [weak self, display, sample, provider] in
-            do {
-                let image = try await provider.image(for: sample, display: display)
-                guard !Task.isCancelled,
-                      self?.loupeImageGeneration == generation else {
-                    return
-                }
-
-                self?.loupeImage = image
-                self?.loupeImageStatus = .ready
-            } catch {
-                guard !Task.isCancelled,
-                      self?.loupeImageGeneration == generation else {
-                    return
-                }
-
-                self?.loupeImage = nil
-                self?.loupeImageStatus = .unavailable
-            }
-        }
     }
 
     private func clearLoupe() {
-        loupeImageTask?.cancel()
-        loupeImageTask = nil
-        loupeImageGeneration += 1
         loupeSample = nil
-        loupeImage = nil
-        loupeImageSourceRect = nil
-        loupeImageStatus = .idle
     }
 
     private func shouldShowLoupe(isRequested: Bool) -> Bool {
@@ -757,13 +680,15 @@ extension LuxelCropperModel {
         guard viewSize.width > 0,
               viewSize.height > 0,
               overlaySize.width > 0,
-              overlaySize.height > 0 else {
+              overlaySize.height > 0
+        else {
             return nil
         }
 
         return try? PixelSize(
             width: max(1, Int((overlaySize.width / viewSize.width * Double(display.width)).rounded(.up))),
-            height: max(1, Int((overlaySize.height / viewSize.height * Double(display.height)).rounded(.up)))
+            height: max(
+                1, Int((overlaySize.height / viewSize.height * Double(display.height)).rounded(.up)))
         )
     }
 
@@ -813,9 +738,11 @@ extension LuxelCropperModel {
         return "\(minutes) min"
     }
 
-    private static func validInitialSelection(_ selection: CaptureRect?, display: DisplayBounds) -> CaptureRect? {
+    private static func validInitialSelection(_ selection: CaptureRect?, display: DisplayBounds)
+    -> CaptureRect? {
         guard let selection,
-              (try? CaptureSelectionDraft(display: display, topLeftSelection: selection)) != nil else {
+              (try? CaptureSelectionDraft(display: display, topLeftSelection: selection)) != nil
+        else {
             return nil
         }
 
@@ -824,7 +751,8 @@ extension LuxelCropperModel {
 
     private static func parseCustomAspectRatioComponent(_ text: String) throws -> Int {
         guard let value = Int(text.trimmingCharacters(in: .whitespacesAndNewlines)),
-              value > 0 else {
+              value > 0
+        else {
             throw CaptureModelError.invalidDimensions
         }
 
@@ -832,8 +760,8 @@ extension LuxelCropperModel {
     }
 }
 
-private extension CaptureResizeHandle {
-    var isCropperCorner: Bool {
+extension CaptureResizeHandle {
+    fileprivate var isCropperCorner: Bool {
         switch self {
         case .topLeft, .topRight, .bottomLeft, .bottomRight:
             true
@@ -842,7 +770,7 @@ private extension CaptureResizeHandle {
         }
     }
 
-    func cursorPoint(in selection: CaptureRect?) -> CapturePoint {
+    fileprivate func cursorPoint(in selection: CaptureRect?) -> CapturePoint {
         guard let selection else {
             return CapturePoint(x: 0, y: 0)
         }

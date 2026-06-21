@@ -56,7 +56,9 @@ extension LuxelMenuModel {
         )
     }
 
-    func makeAudioRecordingRequest() throws -> (request: AudioRecordingRequest, noticeMessage: String?) {
+    func makeAudioRecordingRequest() throws -> (
+        request: AudioRecordingRequest, noticeMessage: String?
+    ) {
         let resolution = resolveSelectedAudioInputDevice()
 
         return (
@@ -120,9 +122,12 @@ extension LuxelMenuModel {
         )
     }
 
-    private func recordingAudioModeWithAvailableSources(_ audio: RecordingAudioMode) -> RecordingAudioMode {
-        switch (audio.capturesSystemAudio && captureCapabilities.systemAudioTrackAvailable,
-                audio.capturesMicrophone && captureCapabilities.microphoneTrackAvailable) {
+    private func recordingAudioModeWithAvailableSources(_ audio: RecordingAudioMode)
+    -> RecordingAudioMode {
+        switch (
+            audio.capturesSystemAudio && captureCapabilities.systemAudioTrackAvailable,
+            audio.capturesMicrophone && captureCapabilities.microphoneTrackAvailable
+        ) {
         case (true, true):
             .systemAndMicrophone(deviceID: audio.microphoneDeviceID)
         case (true, false):

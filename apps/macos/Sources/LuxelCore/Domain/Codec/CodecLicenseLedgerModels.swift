@@ -72,10 +72,11 @@ public struct CodecLicenseGate: Equatable, Sendable {
 
         for dependency in dependencies where dependency.use == .shippedLibrary {
             if policy.decision(for: dependency) == .denied {
-                violations.append(.deniedShippedDependency(
-                    dependencyID: dependency.id,
-                    license: dependency.license
-                ))
+                violations.append(
+                    .deniedShippedDependency(
+                        dependencyID: dependency.id,
+                        license: dependency.license
+                    ))
                 continue
             }
 
@@ -94,11 +95,12 @@ public struct CodecLicenseGate: Equatable, Sendable {
             }
 
             if entry.license != dependency.license {
-                violations.append(.licenseMismatch(
-                    dependencyID: dependency.id,
-                    expected: dependency.license,
-                    actual: entry.license
-                ))
+                violations.append(
+                    .licenseMismatch(
+                        dependencyID: dependency.id,
+                        expected: dependency.license,
+                        actual: entry.license
+                    ))
             }
 
             if entry.copyrightNotice.isBlank {
@@ -114,8 +116,8 @@ public struct CodecLicenseGate: Equatable, Sendable {
     }
 }
 
-private extension String {
-    var isBlank: Bool {
+extension String {
+    fileprivate var isBlank: Bool {
         allSatisfy(\.isWhitespace)
     }
 }

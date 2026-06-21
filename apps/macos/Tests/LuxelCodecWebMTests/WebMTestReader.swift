@@ -166,12 +166,13 @@ private struct EBMLTestParser {
                 throw WebMTestReaderError.invalidPayloadRange
             }
 
-            elements.append(WebMTestElement(
-                id: id.value,
-                headerRange: offset..<payloadStart,
-                payloadRange: payloadStart..<payloadEnd,
-                size: size.value
-            ))
+            elements.append(
+                WebMTestElement(
+                    id: id.value,
+                    headerRange: offset..<payloadStart,
+                    payloadRange: payloadStart..<payloadEnd,
+                    size: size.value
+                ))
             offset = payloadEnd
         }
 

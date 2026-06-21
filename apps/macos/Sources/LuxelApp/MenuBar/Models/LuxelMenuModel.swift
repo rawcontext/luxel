@@ -57,17 +57,14 @@ final class LuxelMenuModel {
     @ObservationIgnored let replayBufferClipService: ReplayBufferClipService?
     @ObservationIgnored var recordingStartTask: Task<ActiveRecording, any Error>?
     @ObservationIgnored var quickExportTask: Task<QuickExportResult, any Error>?
-    @ObservationIgnored let screenshotCaptureService: ScreenshotCaptureService
     @ObservationIgnored let permissionGuidanceService: PermissionGuidanceService
     @ObservationIgnored let lastCaptureRecordingPlanner: LastCaptureRecordingPlanner
-    @ObservationIgnored let screenshotCapturePlanner: ScreenshotCapturePlanner
     @ObservationIgnored let activeWindowCatalog: any ActiveWindowCatalog
     @ObservationIgnored let activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver
     @ObservationIgnored let pointerDisplayProvider: any PointerDisplayProvider
     @ObservationIgnored let notchDisplayProvider: any NotchDisplayProvider
     @ObservationIgnored let notchCoordinator: NotchCoordinator
     @ObservationIgnored let fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver
-    @ObservationIgnored let screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter
     @ObservationIgnored let commandLineToolInstallService: CommandLineToolInstallService
     @ObservationIgnored let errorReporter: any ErrorReporter
     @ObservationIgnored var notchPresentationState: NotchPresentationState = .collapsed
@@ -79,7 +76,8 @@ final class LuxelMenuModel {
         launchAtLoginService: LaunchAtLoginService = LaunchAtLoginService(
             client: SMAppServiceLaunchAtLoginClient()
         ),
-        recordingHistoryService: RecordingHistoryService = LuxelCompositionRoot.recordingHistoryService(),
+        recordingHistoryService: RecordingHistoryService =
+            LuxelCompositionRoot.recordingHistoryService(),
         captureTargetService: CaptureTargetService = CaptureTargetService(
             catalog: ScreenCaptureKitCaptureTargetCatalog()
         ),
@@ -100,22 +98,23 @@ final class LuxelMenuModel {
             client: AppKitExportedFileActionClient()
         ),
         bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker = AppKitBookmarkedDirectoryPicker(),
-        directoryAccessService: BookmarkedDirectoryAccessService = LuxelCompositionRoot
+        directoryAccessService: BookmarkedDirectoryAccessService =
+            LuxelCompositionRoot
             .bookmarkedDirectoryAccessService(),
         quickExportService: QuickExportService? = nil,
         replayBufferClipService: ReplayBufferClipService? = nil,
-        screenshotCaptureService: ScreenshotCaptureService? = nil,
         permissionGuidanceService: PermissionGuidanceService = PermissionGuidanceService(),
         lastCaptureRecordingPlanner: LastCaptureRecordingPlanner = LastCaptureRecordingPlanner(),
-        screenshotCapturePlanner: ScreenshotCapturePlanner = ScreenshotCapturePlanner(),
         activeWindowCatalog: any ActiveWindowCatalog = CoreGraphicsActiveWindowCatalog(),
-        activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver = ActiveWindowCaptureTargetResolver(),
+        activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver =
+            ActiveWindowCaptureTargetResolver(),
         pointerDisplayProvider: any PointerDisplayProvider = AppKitPointerDisplayProvider(),
         notchDisplayProvider: any NotchDisplayProvider = AppKitNotchDisplayProvider(),
         notchPresenter: (any NotchPresenter)? = nil,
-        fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver = FullscreenCaptureTargetResolver(),
-        screenshotThumbnailPresenter: any ScreenshotThumbnailPresenter = AppKitScreenshotThumbnailPresenter(),
-        commandLineToolInstallService: CommandLineToolInstallService = LuxelCompositionRoot
+        fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver =
+            FullscreenCaptureTargetResolver(),
+        commandLineToolInstallService: CommandLineToolInstallService =
+            LuxelCompositionRoot
             .commandLineToolInstallService(),
         errorReporter: any ErrorReporter = NoopErrorReporter(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
@@ -141,44 +140,44 @@ final class LuxelMenuModel {
         self.fileWorkflowService = fileWorkflowService
         self.bookmarkedDirectoryPicker = bookmarkedDirectoryPicker
         self.directoryAccessService = directoryAccessService
-        self.quickExportService = quickExportService
+        self.quickExportService =
+            quickExportService
             ?? LuxelCompositionRoot.quickExportService(fileWorkflowService: fileWorkflowService)
         self.replayBufferClipService = replayBufferClipService
-        self.screenshotCaptureService = screenshotCaptureService
-            ?? LuxelCompositionRoot.screenshotCaptureService(history: recordingHistoryService)
         self.permissionGuidanceService = permissionGuidanceService
         self.lastCaptureRecordingPlanner = lastCaptureRecordingPlanner
-        self.screenshotCapturePlanner = screenshotCapturePlanner
         self.activeWindowCatalog = activeWindowCatalog
         self.activeWindowCaptureTargetResolver = activeWindowCaptureTargetResolver
         self.pointerDisplayProvider = pointerDisplayProvider
         self.notchDisplayProvider = notchDisplayProvider
-        let resolvedNotchPresenter = notchPresenter
+        let resolvedNotchPresenter =
+            notchPresenter
             ?? OverlayPanelNotchPresenter(exclusionRegistry: captureExclusionRegistry)
         self.notchCoordinator = NotchCoordinator(presenter: resolvedNotchPresenter)
         self.fullscreenCaptureTargetResolver = fullscreenCaptureTargetResolver
-        self.screenshotThumbnailPresenter = screenshotThumbnailPresenter
         self.commandLineToolInstallService = commandLineToolInstallService
         self.errorReporter = errorReporter
         self.appMetadata = appMetadata
         let recordingOutputFinalizer = LuxelCompositionRoot.recordingOutputFinalizer()
         self.recordingLifecycleService = RecordingLifecycleService(
-            recorder: recorder ?? LuxelCompositionRoot.captureRecorder(
-                exclusionRegistry: captureExclusionRegistry,
-                audioLevelHandler: { sample in
-                    recordingAudioLevelBroadcaster.publish(sample)
-                }
-            ),
+            recorder: recorder
+                ?? LuxelCompositionRoot.captureRecorder(
+                    exclusionRegistry: captureExclusionRegistry,
+                    audioLevelHandler: { sample in
+                        recordingAudioLevelBroadcaster.publish(sample)
+                    }
+                ),
             history: recordingHistoryService,
             userNotifier: UserNotificationsNotifier(),
             outputFinalizer: recordingOutputFinalizer
         )
         self.audioRecordingLifecycleService = AudioRecordingLifecycleService(
-            recorder: audioRecorder ?? LuxelCompositionRoot.audioRecorder(
-                audioLevelHandler: { sample in
-                    recordingAudioLevelBroadcaster.publish(sample)
-                }
-            ),
+            recorder: audioRecorder
+                ?? LuxelCompositionRoot.audioRecorder(
+                    audioLevelHandler: { sample in
+                        recordingAudioLevelBroadcaster.publish(sample)
+                    }
+                ),
             history: recordingHistoryService,
             outputFinalizer: recordingOutputFinalizer
         )

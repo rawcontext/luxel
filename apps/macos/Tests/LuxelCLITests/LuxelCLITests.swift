@@ -18,15 +18,18 @@ struct LuxelCLITests {
 
         let invocation = try command.invocation
 
-        #expect(invocation == AutomationInvocation(
-            command: .record(AutomationRecordingOptions(
-                target: .display(.main),
-                presetName: "Quick GIF",
-                countdownSeconds: 3,
-                outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
-            )),
-            callbacks: AutomationCallbacks(success: URL(string: "luxel-callback://done"))
-        ))
+        #expect(
+            invocation
+                == AutomationInvocation(
+                    command: .record(
+                        AutomationRecordingOptions(
+                            target: .display(.main),
+                            presetName: "Quick GIF",
+                            countdownSeconds: 3,
+                            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
+                        )),
+                    callbacks: AutomationCallbacks(success: URL(string: "luxel-callback://done"))
+                ))
         #expect(
             AutomationInvocationURLBuilder.url(for: invocation).absoluteString
                 == "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3&saveTo=/tmp/Luxel%20Exports&x-success=luxel-callback://done"
@@ -49,12 +52,16 @@ struct LuxelCLITests {
             "--save-to", "/tmp/Luxel Exports"
         ])
 
-        #expect(try command.invocation == AutomationInvocation(command: .toggle(AutomationRecordingOptions(
-            target: .lastArea,
-            presetName: "Quick GIF",
-            countdownSeconds: 5,
-            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
-        ))))
+        #expect(
+            try command.invocation
+                == AutomationInvocation(
+                    command: .toggle(
+                        AutomationRecordingOptions(
+                            target: .lastArea,
+                            presetName: "Quick GIF",
+                            countdownSeconds: 5,
+                            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
+                        ))))
     }
 
     @Test("record command accepts file URL save destination")
@@ -64,23 +71,14 @@ struct LuxelCLITests {
             "--save-to", "file:///tmp/Luxel%20Exports"
         ])
 
-        #expect(try command.invocation == AutomationInvocation(command: .record(AutomationRecordingOptions(
-            target: .lastArea,
-            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
-        ))))
-    }
-
-    @Test("screenshot command maps active window and format")
-    func screenshotCommandMapsActiveWindowAndFormat() throws {
-        let command = try LuxelScreenshotCommand.parse([
-            "--window-active",
-            "--format", "heic"
-        ])
-
-        #expect(try command.invocation == AutomationInvocation(command: .screenshot(AutomationScreenshotOptions(
-            target: .activeWindow,
-            format: .heic
-        ))))
+        #expect(
+            try command.invocation
+                == AutomationInvocation(
+                    command: .record(
+                        AutomationRecordingOptions(
+                            target: .lastArea,
+                            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
+                        ))))
     }
 
     @Test("clip latest and preferences commands map URL-backed actions")
@@ -90,10 +88,12 @@ struct LuxelCLITests {
         let preferences = try LuxelPreferencesCommand.parse(["--pane", "presets"])
 
         #expect(try clip.invocation == AutomationInvocation(command: .clip(seconds: 30)))
-        #expect(try latest.invocation == AutomationInvocation(
-            command: .latest(reveal: true),
-            callbacks: AutomationCallbacks(success: URL(string: "luxel-callback://done"))
-        ))
+        #expect(
+            try latest.invocation
+                == AutomationInvocation(
+                    command: .latest(reveal: true),
+                    callbacks: AutomationCallbacks(success: URL(string: "luxel-callback://done"))
+                ))
         #expect(
             try AutomationInvocationURLBuilder.url(for: latest.invocation).absoluteString
                 == "luxel://latest?reveal=true&x-success=luxel-callback://done"
@@ -129,7 +129,9 @@ struct LuxelCLITests {
         }
 
         #expect(throws: LuxelCLIError.invalidOutputDirectory) {
-            let command = try LuxelRecordCommand.parse(["--last-area", "--save-to", "https://example.com"])
+            let command = try LuxelRecordCommand.parse([
+                "--last-area", "--save-to", "https://example.com"
+            ])
             _ = try command.invocation
         }
 

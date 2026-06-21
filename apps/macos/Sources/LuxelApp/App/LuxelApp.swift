@@ -18,7 +18,8 @@ struct LuxelApp: App {
 
         let errorReporter = LuxelCompositionRoot.errorReporter()
         let captureTargetCatalog = LuxelCompositionRoot.captureTargetCatalog()
-        let captureTargetService = LuxelCompositionRoot.captureTargetService(catalog: captureTargetCatalog)
+        let captureTargetService = LuxelCompositionRoot.captureTargetService(
+            catalog: captureTargetCatalog)
         let captureExclusionRegistry = CaptureExclusionRegistry()
         let model = LuxelMenuModel(
             captureTargetService: captureTargetService,
@@ -43,13 +44,14 @@ struct LuxelApp: App {
         _cropperPanelController = State(initialValue: cropperPanelController)
         _shortcutController = State(initialValue: shortcutController)
         _windowPresenter = State(initialValue: windowPresenter)
-        _statusItemController = State(initialValue: LuxelStatusItemController(
-            model: model,
-            editorModel: editorModel,
-            cropperPanelController: cropperPanelController,
-            shortcutController: shortcutController,
-            windowPresenter: windowPresenter
-        ))
+        _statusItemController = State(
+            initialValue: LuxelStatusItemController(
+                model: model,
+                editorModel: editorModel,
+                cropperPanelController: cropperPanelController,
+                shortcutController: shortcutController,
+                windowPresenter: windowPresenter
+            ))
     }
 
     var body: some Scene {

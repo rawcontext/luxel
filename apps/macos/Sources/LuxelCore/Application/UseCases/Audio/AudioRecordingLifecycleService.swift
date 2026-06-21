@@ -54,10 +54,12 @@ public final class AudioRecordingLifecycleService: Sendable {
             throw RecordingLifecycleError.outputFinalizationFailed(error.recordingLifecycleDescription)
         }
 
-        guard let recording = history.stopCurrentRecording(
-            finalFileURL: finalizationResult?.fileURL,
-            recordingName: recordingName
-        ) else {
+        guard
+            let recording = history.stopCurrentRecording(
+                finalFileURL: finalizationResult?.fileURL,
+                recordingName: recordingName
+            )
+        else {
             await outputState.clear()
             throw RecordingLifecycleError.noActiveRecording
         }
@@ -77,8 +79,8 @@ public final class AudioRecordingLifecycleService: Sendable {
     }
 }
 
-private extension Error {
-    var recordingLifecycleDescription: String {
+extension Error {
+    fileprivate var recordingLifecycleDescription: String {
         if let errorDescription = (self as? LocalizedError)?.errorDescription, !errorDescription.isEmpty {
             return errorDescription
         }

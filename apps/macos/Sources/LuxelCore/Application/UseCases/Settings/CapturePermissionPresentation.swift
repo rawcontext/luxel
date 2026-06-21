@@ -76,7 +76,6 @@ public struct CaptureCapabilityState: Equatable, Sendable {
     public let camera: CaptureSourcePermissionPresentation
     public let screenRecordingAvailable: Bool
     public let areaRecordingAvailable: Bool
-    public let screenshotAvailable: Bool
     public let audioOnlyRecordingAvailable: Bool
     public let recordAgainAvailable: Bool
     public let systemAudioTrackAvailable: Bool
@@ -110,7 +109,6 @@ public struct CaptureCapabilityState: Equatable, Sendable {
         let hasScreenAccess = screen.isReady
         screenRecordingAvailable = hasScreenAccess && hasSelectedCaptureTarget
         areaRecordingAvailable = hasScreenAccess
-        screenshotAvailable = hasScreenAccess && hasSelectedCaptureTarget
         systemAudioTrackAvailable = systemAudio.isReady
         microphoneTrackAvailable = microphone.isReady
         audioOnlyRecordingAvailable = systemAudioTrackAvailable || microphoneTrackAvailable
@@ -118,7 +116,8 @@ public struct CaptureCapabilityState: Equatable, Sendable {
         cameraOverlayAvailable = camera.isReady
     }
 
-    public func presentation(for source: CapturePermissionSource) -> CaptureSourcePermissionPresentation {
+    public func presentation(for source: CapturePermissionSource)
+    -> CaptureSourcePermissionPresentation {
         switch source {
         case .screenPixels:
             screen
@@ -180,7 +179,8 @@ public struct CaptureCapabilityState: Equatable, Sendable {
                 source: .systemAudio,
                 phase: .offByUser,
                 title: "System sound is off",
-                message: "System sound uses macOS Screen & System Audio Recording. Microphone uses a separate permission.",
+                message:
+                    "System sound uses macOS Screen & System Audio Recording. Microphone uses a separate permission.",
                 actionTitle: "Enable System Sound",
                 systemImage: "speaker.slash.fill",
                 statusTitle: "Off"

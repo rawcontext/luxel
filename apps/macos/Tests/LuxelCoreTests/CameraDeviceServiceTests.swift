@@ -8,11 +8,12 @@ struct CameraDeviceServiceTests {
         let builtIn = CameraDeviceOption(id: "built-in", name: "FaceTime HD", kind: .builtIn)
         let external = CameraDeviceOption(id: "external", name: "USB Camera", kind: .external)
         let continuity = CameraDeviceOption(id: "continuity", name: "iPhone Camera", kind: .continuity)
-        let service = CameraDeviceService(catalog: FakeCameraDeviceCatalog(devices: [
-            builtIn,
-            external,
-            continuity
-        ]))
+        let service = CameraDeviceService(
+            catalog: FakeCameraDeviceCatalog(devices: [
+                builtIn,
+                external,
+                continuity
+            ]))
 
         #expect(service.availableCameraDevices() == [builtIn, external, continuity])
     }
@@ -20,11 +21,12 @@ struct CameraDeviceServiceTests {
     @Test("availableCameraDevices excludes Desk View and duplicate device IDs")
     func availableCameraDevicesExcludesDeskViewAndDuplicateDeviceIDs() {
         let builtIn = CameraDeviceOption(id: "built-in", name: "FaceTime HD", kind: .builtIn)
-        let service = CameraDeviceService(catalog: FakeCameraDeviceCatalog(devices: [
-            CameraDeviceOption(id: "desk-view", name: "Desk View", kind: .deskView),
-            builtIn,
-            CameraDeviceOption(id: "built-in", name: "FaceTime HD Duplicate", kind: .builtIn)
-        ]))
+        let service = CameraDeviceService(
+            catalog: FakeCameraDeviceCatalog(devices: [
+                CameraDeviceOption(id: "desk-view", name: "Desk View", kind: .deskView),
+                builtIn,
+                CameraDeviceOption(id: "built-in", name: "FaceTime HD Duplicate", kind: .builtIn)
+            ]))
 
         #expect(service.availableCameraDevices() == [builtIn])
     }
@@ -35,7 +37,8 @@ struct CameraDeviceServiceTests {
         let external = CameraDeviceOption(id: "external", name: "USB Camera", kind: .external)
         let service = CameraDeviceService(catalog: FakeCameraDeviceCatalog(devices: []))
 
-        #expect(service.selectedCameraDevice(selectedID: "external", in: [builtIn, external]) == external)
+        #expect(
+            service.selectedCameraDevice(selectedID: "external", in: [builtIn, external]) == external)
         #expect(service.selectedCameraDevice(selectedID: nil, in: [builtIn, external]) == nil)
         #expect(service.selectedCameraDevice(selectedID: "missing", in: [builtIn, external]) == nil)
     }

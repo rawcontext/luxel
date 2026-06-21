@@ -54,49 +54,47 @@ struct AppKeyboardShortcutTests {
 
     @Test("capture presets expose native shortcut choices")
     func capturePresetsExposeNativeShortcutChoices() {
-        #expect(AppKeyboardShortcutPresets.capture.map(\.rawValue) == [
-            "command+control+option+r"
-        ])
-        #expect(AppKeyboardShortcutPresets.toggleRecording.map(\.rawValue) == [
-            "command+control+option+t"
-        ])
-        #expect(AppKeyboardShortcutPresets.recordActiveWindow.map(\.rawValue) == [
-            "command+control+option+shift+w"
-        ])
-        #expect(AppKeyboardShortcutPresets.recordFullscreen.map(\.rawValue) == [
-            "command+control+option+shift+f"
-        ])
-        #expect(AppKeyboardShortcutPresets.audioOnlyRecording.map(\.rawValue) == [
-            "command+control+option+a"
-        ])
-        #expect(AppKeyboardShortcutPresets.quickRecordLast.map(\.rawValue) == [
-            "command+control+option+q"
-        ])
-        #expect(AppKeyboardShortcutPresets.clipReplayBuffer.map(\.rawValue) == [
-            "command+control+option+c"
-        ])
-        #expect(AppKeyboardShortcutPresets.captureScreenshot.map(\.rawValue) == [
-            "command+control+option+s"
-        ])
-        #expect(AppKeyboardShortcutPresets.screenshotActiveWindow.map(\.rawValue) == [
-            "command+control+option+w"
-        ])
-        #expect(AppKeyboardShortcutPresets.screenshotFullscreen.map(\.rawValue) == [
-            "command+control+option+f"
-        ])
+        #expect(
+            AppKeyboardShortcutPresets.capture.map(\.rawValue) == [
+                "command+control+option+r"
+            ])
+        #expect(
+            AppKeyboardShortcutPresets.toggleRecording.map(\.rawValue) == [
+                "command+control+option+t"
+            ])
+        #expect(
+            AppKeyboardShortcutPresets.recordActiveWindow.map(\.rawValue) == [
+                "command+control+option+shift+w"
+            ])
+        #expect(
+            AppKeyboardShortcutPresets.recordFullscreen.map(\.rawValue) == [
+                "command+control+option+shift+f"
+            ])
+        #expect(
+            AppKeyboardShortcutPresets.audioOnlyRecording.map(\.rawValue) == [
+                "command+control+option+a"
+            ])
+        #expect(
+            AppKeyboardShortcutPresets.quickRecordLast.map(\.rawValue) == [
+                "command+control+option+q"
+            ])
+        #expect(
+            AppKeyboardShortcutPresets.clipReplayBuffer.map(\.rawValue) == [
+                "command+control+option+c"
+            ])
     }
 
-    @Test("conflict detector warns for macOS screenshot shortcuts")
-    func conflictDetectorWarnsForSystemScreenshotShortcuts() throws {
+    @Test("conflict detector warns for macOS capture shortcuts")
+    func conflictDetectorWarnsForSystemCaptureShortcuts() throws {
         let detector = AppKeyboardShortcutConflictDetector()
 
-        let screenshotAppConflict = try #require(detector.conflict(forRawValue: "shift + command + 5"))
+        let captureControlConflict = try #require(detector.conflict(forRawValue: "shift + command + 5"))
         let clipboardConflict = try #require(detector.conflict(forRawValue: "command+control+shift+4"))
 
-        #expect(screenshotAppConflict.shortcut.rawValue == "command+shift+5")
-        #expect(screenshotAppConflict.systemAction == "macOS Screenshot")
+        #expect(captureControlConflict.shortcut.rawValue == "command+shift+5")
+        #expect(captureControlConflict.systemAction == "macOS capture controls")
         #expect(clipboardConflict.shortcut.rawValue == "command+control+shift+4")
-        #expect(clipboardConflict.systemAction == "macOS selection screenshot to Clipboard")
+        #expect(clipboardConflict.systemAction == "macOS selection capture to Clipboard")
     }
 
     @Test("conflict detector ignores empty invalid and Luxel default shortcuts")

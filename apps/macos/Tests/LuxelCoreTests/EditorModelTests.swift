@@ -41,7 +41,8 @@ struct EditorModelTests {
             lossyTolerance: 4
         )
         let cursorOptions = try CursorRenderOptions(sizeMultiplier: 1.5, clickStyle: .filledPulse)
-        let keystrokeOptions = try KeystrokeRenderOptions(anchor: .topRight, size: .large, displayDuration: 2)
+        let keystrokeOptions = try KeystrokeRenderOptions(
+            anchor: .topRight, size: .large, displayDuration: 2)
         let captionOptions = CaptionRenderOptions(burnIn: true, position: .top, size: .large)
         let cameraOverlay = try CameraOverlayPlan(
             placement: .normalizedPoint(try NormalizedPoint(x: 0.25, y: 0.3)),
@@ -113,14 +114,15 @@ struct EditorModelTests {
         let encoder = JSONEncoder()
         let sourceData = try encoder.encode(source)
         let sourceJSON = try #require(String(data: sourceData, encoding: .utf8))
-        let data = Data("""
-        {
-          "source": \(sourceJSON),
-          "format": "mp4",
-          "shouldMute": false,
-          "shouldCrop": false
-        }
-        """.utf8)
+        let data = Data(
+            """
+      {
+        "source": \(sourceJSON),
+        "format": "mp4",
+        "shouldMute": false,
+        "shouldCrop": false
+      }
+      """.utf8)
 
         let draft = try JSONDecoder().decode(EditorExportDraft.self, from: data)
 
@@ -147,20 +149,21 @@ struct EditorModelTests {
 
     @Test("source media decodes missing alpha as false")
     func sourceMediaDecodesMissingAlphaAsFalse() throws {
-        let data = Data("""
-        {
-          "fileURL": "file:///tmp/source.mp4",
-          "duration": 12.5,
-          "pixelSize": {
-            "width": 1280,
-            "height": 720
-          },
-          "nominalFrameRate": {
-            "framesPerSecond": 30
-          },
-          "hasAudio": true
-        }
-        """.utf8)
+        let data = Data(
+            """
+      {
+        "fileURL": "file:///tmp/source.mp4",
+        "duration": 12.5,
+        "pixelSize": {
+          "width": 1280,
+          "height": 720
+        },
+        "nominalFrameRate": {
+          "framesPerSecond": 30
+        },
+        "hasAudio": true
+      }
+      """.utf8)
 
         let source = try JSONDecoder().decode(SourceMedia.self, from: data)
 

@@ -35,7 +35,6 @@ struct LuxelCropperView: View {
     let onCancel: () -> Void
     let onSelect: (CaptureSelectionDraft) -> Void
     let onQuickSelect: (CaptureSelectionDraft, UUID) -> Void
-    let onCaptureScreenshot: (CaptureSelectionDraft) -> Void
 }
 
 extension LuxelCropperView {
@@ -58,14 +57,12 @@ extension LuxelCropperView {
 
                 if let loupeSample = model.loupeSample, !model.isDimmedByOtherDisplay {
                     CropperLoupeView(
-                        sample: loupeSample,
-                        image: model.loupeImage,
-                        imageStatus: model.loupeImageStatus
+                        sample: loupeSample
                     )
-                        .frame(width: Self.loupeSize.width, height: Self.loupeSize.height)
-                        .position(loupePosition(for: loupeSample, viewSize: geometry.size))
-                        .allowsHitTesting(false)
-                        .transition(.opacity)
+                    .frame(width: Self.loupeSize.width, height: Self.loupeSize.height)
+                    .position(loupePosition(for: loupeSample, viewSize: geometry.size))
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
                 }
 
                 if !model.isDimmedByOtherDisplay {
@@ -92,7 +89,8 @@ extension LuxelCropperView {
                     }
                     .onEnded { value in
                         handleDragEnded(
-                            target: activeDragTarget ?? dragTarget(for: value.startLocation, viewSize: geometry.size)
+                            target: activeDragTarget
+                                ?? dragTarget(for: value.startLocation, viewSize: geometry.size)
                         )
                         activeDragTarget = nil
                     }
@@ -134,7 +132,7 @@ extension LuxelCropperView {
 
     private var cropperOverlayControls: some View {
         ZStack {
-            if showsNotificationReminder, model.mode == .video {
+            if shouldShowNotificationReminder {
                 VStack {
                     notificationReminderPanel
                         .padding(.top, 28)
@@ -153,26 +151,16 @@ extension LuxelCropperView {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
+    private var shouldShowNotificationReminder: Bool {
+        showsNotificationReminder && model.canRecordSelection
+    }
+
     private var cropperControls: some View {
         GlassPanel {
             VStack(alignment: .leading, spacing: 7) {
                 toolbarControl(selectionSummaryHelp) {
                     selectionGeometryControls
                 }
-
-                toolbarControl("Switch between recording video and capturing a screenshot.") {
-                    Picker("Mode", selection: cropperMode) {
-                        ForEach(LuxelCropperMode.allCases) { mode in
-                            Text(mode.toolbarLabel).tag(mode)
-                        }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.segmented)
-                    .controlSize(.small)
-                    .frame(width: Self.toolbarButtonWidth)
-                }
-
-                Divider()
 
                 toolbarControl("Select the full current display or apply a saved size preset.") {
                     HStack(spacing: Self.toolbarControlSpacing) {
@@ -185,27 +173,25 @@ extension LuxelCropperView {
                     aspectRatioMenu(width: Self.toolbarButtonWidth)
                 }
 
-                if model.mode == .video {
-                    Divider()
+                Divider()
 
-                    toolbarControl("\(recordAudioHelp) \(cameraMenuHelp)") {
-                        HStack(spacing: Self.toolbarControlSpacing) {
-                            recordAudioToggle
-                            cameraMenu
-                        }
+                toolbarControl("\(recordAudioHelp) \(cameraMenuHelp)") {
+                    HStack(spacing: Self.toolbarControlSpacing) {
+                        recordAudioToggle
+                        cameraMenu
                     }
+                }
 
-                    toolbarControl("Delay recording after pressing Record. Current: \(model.countdownSummary).") {
-                        HStack(spacing: Self.toolbarControlSpacing) {
-                            countdownMenu(width: Self.toolbarPairedButtonWidth)
-                            stopAfterMenu(width: Self.toolbarPairedButtonWidth)
-                        }
+                toolbarControl("Delay recording after pressing Record. Current: \(model.countdownSummary).") {
+                    HStack(spacing: Self.toolbarControlSpacing) {
+                        countdownMenu(width: Self.toolbarPairedButtonWidth)
+                        stopAfterMenu(width: Self.toolbarPairedButtonWidth)
                     }
+                }
 
-                    if model.recordsAudio, let audioLevelModel {
-                        toolbarControl("Shows the current microphone input level.") {
-                            CropperAudioLevelMeter(model: audioLevelModel)
-                        }
+                if model.recordsAudio, let audioLevelModel {
+                    toolbarControl("Shows the current microphone input level.") {
+                        CropperAudioLevelMeter(model: audioLevelModel)
                     }
                 }
 
@@ -262,7 +248,8 @@ extension LuxelCropperView {
         }
     }
 
-    private func toolbarMenuLabel(_ title: String, systemImage: String? = nil, width: CGFloat) -> some View {
+    private func toolbarMenuLabel(_ title: String, systemImage: String? = nil, width: CGFloat)
+    -> some View {
         HStack(spacing: systemImage == nil ? 4 : 6) {
             if let systemImage {
                 Image(systemName: systemImage)
@@ -632,29 +619,27 @@ extension LuxelCropperView {
         .frame(width: Self.toolbarPairedButtonWidth)
         .help(primaryActionHelp)
         .contextMenu {
-            if model.mode == .video {
-                Button {
-                    commitSelection()
-                } label: {
-                    Label("Record", systemImage: "record.circle")
-                }
-                .help("Record the selected area.")
+            Button {
+                commitSelection()
+            } label: {
+                Label("Record", systemImage: "record.circle")
+            }
+            .help("Record the selected area.")
 
-                if !quickRecordingConfiguration.presets.isEmpty {
-                    Menu {
-                        ForEach(quickRecordingConfiguration.presets) { preset in
-                            Button {
-                                commitSelection(quickPresetID: preset.id)
-                            } label: {
-                                Label(preset.name, systemImage: quickPresetSystemImage(for: preset))
-                            }
-                            .help("Record with the \(preset.name) quick export preset.")
+            if !quickRecordingConfiguration.presets.isEmpty {
+                Menu {
+                    ForEach(quickRecordingConfiguration.presets) { preset in
+                        Button {
+                            commitSelection(quickPresetID: preset.id)
+                        } label: {
+                            Label(preset.name, systemImage: quickPresetSystemImage(for: preset))
                         }
-                    } label: {
-                        Label("Quick Record", systemImage: "bolt.circle")
+                        .help("Record with the \(preset.name) quick export preset.")
                     }
-                    .help("Record with a quick export preset.")
+                } label: {
+                    Label("Quick Record", systemImage: "bolt.circle")
                 }
+                .help("Record with a quick export preset.")
             }
         }
     }
@@ -759,7 +744,7 @@ extension LuxelCropperView {
         let rect = model.viewRect(for: selection, in: viewSize)
 
         for handle in Self.resizeHandleHitTestingOrder
-            where handleHitRect(handle, in: rect, viewSize: viewSize).contains(point) {
+        where handleHitRect(handle, in: rect, viewSize: viewSize).contains(point) {
             return .resize(handle)
         }
 
@@ -795,7 +780,8 @@ extension LuxelCropperView {
         let verticalInset = min(Self.resizeHandleHitSize.height / 2, viewSize.height / 2)
 
         return CGPoint(
-            x: min(max(position.x, horizontalInset), max(horizontalInset, viewSize.width - horizontalInset)),
+            x: min(
+                max(position.x, horizontalInset), max(horizontalInset, viewSize.width - horizontalInset)),
             y: min(max(position.y, verticalInset), max(verticalInset, viewSize.height - verticalInset))
         )
     }
@@ -855,18 +841,19 @@ extension LuxelCropperView {
 
         let flags = NSEvent.modifierFlags
         let step = flags.contains(.shift) ? 10 : 1
-        let delta: CaptureResizeDelta = switch direction {
-        case .up:
-            CaptureResizeDelta(x: 0, y: -step)
-        case .down:
-            CaptureResizeDelta(x: 0, y: step)
-        case .left:
-            CaptureResizeDelta(x: -step, y: 0)
-        case .right:
-            CaptureResizeDelta(x: step, y: 0)
-        @unknown default:
-            CaptureResizeDelta(x: 0, y: 0)
-        }
+        let delta: CaptureResizeDelta =
+            switch direction {
+            case .up:
+                CaptureResizeDelta(x: 0, y: -step)
+            case .down:
+                CaptureResizeDelta(x: 0, y: step)
+            case .left:
+                CaptureResizeDelta(x: -step, y: 0)
+            case .right:
+                CaptureResizeDelta(x: step, y: 0)
+            @unknown default:
+                CaptureResizeDelta(x: 0, y: 0)
+            }
 
         if flags.contains(.option) {
             model.resizeSelectionBy(width: delta.deltaX, height: delta.deltaY)

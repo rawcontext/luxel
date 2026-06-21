@@ -38,8 +38,8 @@ public struct ZoomExportTimeMapper: Equatable, Sendable {
     }
 }
 
-private extension [ZoomBlockDraft] {
-    var activeBlocks: [ZoomBlock] {
+extension [ZoomBlockDraft] {
+    fileprivate var activeBlocks: [ZoomBlock] {
         compactMap { draft in
             draft.state == .deleted ? nil : draft.block
         }
@@ -172,7 +172,8 @@ public struct ZoomBlockDraftCollection: Codable, Equatable, Sendable {
         try ZoomBlockDraftCollection(drafts.map { try $0.accepting() })
     }
 
-    public func replacingBlock(id: ZoomBlockDraftID, with block: ZoomBlock) throws -> ZoomBlockDraftCollection {
+    public func replacingBlock(id: ZoomBlockDraftID, with block: ZoomBlock) throws
+    -> ZoomBlockDraftCollection {
         try replacingDraft(id: id) { draft in
             try draft.replacingBlock(block)
         }
@@ -254,7 +255,8 @@ public struct ZoomProposalTuning: Codable, Equatable, Sendable {
               dwellDurationThreshold > 0,
               dwellMovementTolerance.isFinite,
               dwellMovementTolerance >= 0,
-              maxProposals > 0 else {
+              maxProposals > 0
+        else {
             throw ZoomPanModelError.invalidProposalTuning
         }
 

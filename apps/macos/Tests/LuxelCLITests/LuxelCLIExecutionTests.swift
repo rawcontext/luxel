@@ -25,9 +25,10 @@ struct LuxelCLIExecutionTests {
             output: { output.append($0) }
         )
 
-        #expect(opener.openedURLs.map(\.absoluteString) == [
-            "luxel://latest?reveal=true&x-success=http://127.0.0.1:49152/success&x-error=http://127.0.0.1:49152/error"
-        ])
+        #expect(
+            opener.openedURLs.map(\.absoluteString) == [
+                "luxel://latest?reveal=true&x-success=http://127.0.0.1:49152/success&x-error=http://127.0.0.1:49152/error"
+            ])
         #expect(output == ["/tmp/latest.mp4"])
         #expect(receiver.didCancel)
     }
@@ -114,10 +115,11 @@ struct LuxelCLIExecutionTests {
         }
 
         let successURL = try #require(receiver.callbacks.success)
-        var components = try #require(URLComponents(
-            url: successURL,
-            resolvingAgainstBaseURL: false
-        ))
+        var components = try #require(
+            URLComponents(
+                url: successURL,
+                resolvingAgainstBaseURL: false
+            ))
         components.queryItems = [URLQueryItem(name: "filePath", value: "/tmp/Luxel Recording.mp4")]
         let callbackURL = try #require(components.url)
 
@@ -135,10 +137,11 @@ struct LuxelCLIExecutionTests {
         }
 
         let successURL = try #require(receiver.callbacks.success)
-        var components = try #require(URLComponents(
-            url: successURL,
-            resolvingAgainstBaseURL: false
-        ))
+        var components = try #require(
+            URLComponents(
+                url: successURL,
+                resolvingAgainstBaseURL: false
+            ))
         components.queryItems = [
             URLQueryItem(name: "filePath", value: "/tmp/first.mp4"),
             URLQueryItem(name: "filePath", value: "/tmp/second.mp4")

@@ -2,20 +2,20 @@ import Foundation
 
 public struct FrameGrabJob: Equatable, Sendable {
     public let request: FrameGrabRequest
-    public let destinations: [ScreenshotDestination]
+    public let destinations: [FrameGrabDestination]
     public let outputFileURL: URL?
 
     public init(
         request: FrameGrabRequest,
-        destinations: [ScreenshotDestination],
+        destinations: [FrameGrabDestination],
         outputFileURL: URL? = nil
     ) throws {
         guard !destinations.isEmpty else {
-            throw ScreenshotModelError.emptyScreenshotDestinations
+            throw FrameGrabError.emptyFrameGrabDestinations
         }
 
         if destinations.contains(where: \.requiresFileURL), outputFileURL == nil {
-            throw ScreenshotModelError.fileDestinationRequiresOutputURL
+            throw FrameGrabError.fileDestinationRequiresOutputURL
         }
 
         self.request = request
@@ -25,22 +25,22 @@ public struct FrameGrabJob: Equatable, Sendable {
 }
 
 public struct FrameGrabResult: Equatable, Sendable {
-    public let imageData: ImageData
-    public let completedDestinations: [ScreenshotDestination]
-    public let failedDestinations: [ScreenshotDestination]
+    public let imageData: FrameGrabImageData
+    public let completedDestinations: [FrameGrabDestination]
+    public let failedDestinations: [FrameGrabDestination]
     public let fileURL: URL?
 }
 
 @MainActor
 public final class FrameGrabService {
     private let frameGrabber: any FrameGrabber
-    private let fileWriter: any ScreenshotFileWriter
-    private let destinationClient: any ScreenshotDestinationClient
+    private let fileWriter: any FrameGrabFileWriter
+    private let destinationClient: any FrameGrabDestinationClient
 
     public init(
         frameGrabber: any FrameGrabber,
-        fileWriter: any ScreenshotFileWriter,
-        destinationClient: any ScreenshotDestinationClient
+        fileWriter: any FrameGrabFileWriter,
+        destinationClient: any FrameGrabDestinationClient
     ) {
         self.frameGrabber = frameGrabber
         self.fileWriter = fileWriter
@@ -49,8 +49,8 @@ public final class FrameGrabService {
 
     public func grab(_ job: FrameGrabJob) async throws -> FrameGrabResult {
         let imageData = try await frameGrabber.grab(job.request)
-        var completedDestinations: [ScreenshotDestination] = []
-        var failedDestinations: [ScreenshotDestination] = []
+        var completedDestinations: [FrameGrabDestination] = []
+        var failedDestinations: [FrameGrabDestination] = []
         var didWriteFile = false
 
         for destination in job.destinations {
@@ -60,9 +60,6 @@ public final class FrameGrabService {
                     try destinationClient.copyImageToPasteboard(imageData)
                 case .file:
                     try writeFileIfNeeded(imageData, to: job.outputFileURL, didWriteFile: &didWriteFile)
-                case .preview:
-                    try writeFileIfNeeded(imageData, to: job.outputFileURL, didWriteFile: &didWriteFile)
-                    try destinationClient.openWithDefaultApp(requiredFileURL(from: job.outputFileURL))
                 }
 
                 completedDestinations.append(destination)
@@ -80,7 +77,7 @@ public final class FrameGrabService {
     }
 
     private func writeFileIfNeeded(
-        _ imageData: ImageData,
+        _ imageData: FrameGrabImageData,
         to fileURL: URL?,
         didWriteFile: inout Bool
     ) throws {
@@ -94,7 +91,7 @@ public final class FrameGrabService {
 
     private func requiredFileURL(from fileURL: URL?) throws -> URL {
         guard let fileURL else {
-            throw ScreenshotModelError.fileDestinationRequiresOutputURL
+            throw FrameGrabError.fileDestinationRequiresOutputURL
         }
 
         return fileURL
