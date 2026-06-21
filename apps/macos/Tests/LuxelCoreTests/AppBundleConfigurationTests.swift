@@ -67,6 +67,22 @@ struct AppBundleConfigurationTests {
         #expect(script.contains("ThirdPartyLicenses.md"))
     }
 
+    @Test("local build script uses a development app identity by default")
+    func localBuildScriptUsesDevelopmentAppIdentityByDefault() throws {
+        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
+        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+        #expect(script.contains("APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-media.luxel.app.dev}\""))
+        #expect(script.contains("APP_DISPLAY_NAME=\"${APP_DISPLAY_NAME:-Luxel Dev}\""))
+        #expect(script.contains("APP_URL_SCHEME=\"${APP_URL_SCHEME:-luxel-dev}\""))
+        #expect(script.contains("APP_PATH=\"${APP_PATH:-${PACKAGE_ROOT}/dist/${APP_DISPLAY_NAME}.app}\""))
+        #expect(script.contains("Set :CFBundleIdentifier ${APP_BUNDLE_IDENTIFIER}"))
+        #expect(script.contains("Set :CFBundleDisplayName ${APP_DISPLAY_NAME}"))
+        #expect(script.contains("Set :CFBundleName ${APP_DISPLAY_NAME}"))
+        #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLName ${APP_BUNDLE_IDENTIFIER}.url"))
+        #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 ${APP_URL_SCHEME}"))
+    }
+
     @Test("build script bundles Firebase app config when present")
     func buildScriptBundlesFirebaseAppConfigWhenPresent() throws {
         let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")

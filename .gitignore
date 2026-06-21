@@ -1,6 +1,7 @@
 docs/Luxel
 .build/
 apps/macos/.build/
+apps/macos/dist/
 apps/web/.astro/
 apps/web/.turbo/
 apps/web/dist/

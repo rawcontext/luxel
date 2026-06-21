@@ -80,7 +80,9 @@ final class LuxelStatusItemController: NSObject {
 
 private extension LuxelStatusItemController {
     private func configureStatusItem() {
-        statusItem.autosaveName = NSStatusItem.AutosaveName("media.luxel.app.statusItem")
+        let autosaveIdentifier = Bundle.main.bundleIdentifier
+            .map { "\($0).statusItem" } ?? "media.luxel.app.statusItem"
+        statusItem.autosaveName = NSStatusItem.AutosaveName(autosaveIdentifier)
 
         guard let button = statusItem.button else {
             return
