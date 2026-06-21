@@ -13,15 +13,24 @@ struct PermissionClientTests {
 
     @Test("screen recording guidance opens screen and system audio settings after denial")
     func screenRecordingGuidanceOpensScreenAndSystemAudioSettingsAfterDenial() {
+        let notDetermined = PermissionGuidanceService().guidance(
+            for: .screenRecording,
+            status: .notDetermined
+        )
         let guidance = PermissionGuidanceService().guidance(
             for: .screenRecording,
             status: .denied
         )
 
+        #expect(notDetermined.actionTitle == "Open System Settings")
+        #expect(notDetermined.action == .openSettings)
+        #expect(notDetermined.message.contains("Screen & System Audio Recording"))
+        #expect(notDetermined.message.contains("click +"))
         #expect(guidance.title == "Screen capture is off")
         #expect(guidance.actionTitle == "Open System Settings")
         #expect(guidance.action == .openSettings)
         #expect(guidance.message.contains("Screen & System Audio Recording"))
+        #expect(guidance.message.contains("click +"))
     }
 
     @Test("microphone guidance requests before denial and opens settings after denial")
@@ -60,8 +69,16 @@ struct PermissionClientTests {
 
     @Test("system audio guidance uses screen and system audio recovery")
     func systemAudioGuidanceUsesScreenAndSystemAudioRecovery() {
-        let state = CaptureCapabilityState(
+        let deniedState = CaptureCapabilityState(
             screenRecordingStatus: .denied,
+            microphoneStatus: .authorized,
+            cameraStatus: .authorized,
+            recordsSystemAudio: true,
+            recordsMicrophone: true,
+            hasCameraSelection: false
+        )
+        let notDeterminedState = CaptureCapabilityState(
+            screenRecordingStatus: .notDetermined,
             microphoneStatus: .authorized,
             cameraStatus: .authorized,
             recordsSystemAudio: true,
@@ -70,7 +87,7 @@ struct PermissionClientTests {
         )
         let guidance = PermissionGuidanceService().guidance(
             for: .systemAudio,
-            presentation: state.systemAudio,
+            presentation: deniedState.systemAudio,
             status: .denied
         )
 
@@ -78,6 +95,18 @@ struct PermissionClientTests {
         #expect(guidance.actionTitle == "Open System Settings")
         #expect(guidance.action == .openSettings)
         #expect(guidance.message.contains("Screen & System Audio Recording"))
+        #expect(guidance.message.contains("click +"))
+
+        let notDeterminedGuidance = PermissionGuidanceService().guidance(
+            for: .systemAudio,
+            presentation: notDeterminedState.systemAudio,
+            status: .notDetermined
+        )
+
+        #expect(notDeterminedGuidance.actionTitle == "Open System Settings")
+        #expect(notDeterminedGuidance.action == .openSettings)
+        #expect(notDeterminedGuidance.message.contains("Screen & System Audio Recording"))
+        #expect(notDeterminedGuidance.message.contains("click +"))
     }
 
     @Test("authorized system audio off state enables only system audio source")

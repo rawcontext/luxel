@@ -82,15 +82,15 @@ extension ArchitectureTests {
         }
     }
 
-    @Test("screen permission status check does not touch ScreenCaptureKit")
-    func screenPermissionStatusCheckDoesNotTouchScreenCaptureKit() throws {
+    @Test("screen permission checks avoid native prompt APIs")
+    func screenPermissionChecksAvoidNativePromptAPIs() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(path: "Sources/LuxelCore/Infrastructure/System/ApplePermissionClient.swift"),
             encoding: .utf8
         )
 
         #expect(source.contains("CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined"))
-        #expect(source.contains("CGRequestScreenCaptureAccess()"))
+        #expect(!source.contains("CGRequestScreenCaptureAccess"))
         #expect(!source.contains("import ScreenCaptureKit"))
         #expect(!source.contains("SCShareableContent.current"))
     }
@@ -200,6 +200,22 @@ extension ArchitectureTests {
         #expect(!settingsSource.contains("isPresented: permissionPromptPresented"))
     }
 
+    @Test("screen recording permission action opens settings without native prompt")
+    func screenRecordingPermissionActionOpensSettingsWithoutNativePrompt() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Permissions.swift"),
+            encoding: .utf8
+        )
+        let handlerRange = try #require(source.range(of: "func performPermissionAction"))
+        let nextRange = try #require(source[handlerRange.upperBound...].range(of: "func sourcePermissionPresentation"))
+        let handlerSource = String(source[handlerRange.lowerBound..<nextRange.lowerBound])
+
+        #expect(handlerSource.contains("if prompt.permission == .screenRecording"))
+        #expect(handlerSource.contains("await permissionClient.openSettings(for: prompt.permission)"))
+        #expect(handlerSource.contains("permissionStatus(for: prompt.permission) != .authorized"))
+        #expect(!handlerSource.contains("_ = await permissionClient.request(prompt.permission)\n        case .openSettings"))
+    }
+
     @Test("menu bar status is owned by one AppKit status item")
     func menuBarStatusIsOwnedByOneAppKitStatusItem() throws {
         let sourceDirectory = try packageRootURL().appending(path: "Sources/LuxelApp")
@@ -241,7 +257,8 @@ extension ArchitectureTests {
         #expect(source.contains("button.sendAction(on: [.leftMouseDown])"))
         #expect(source.contains("configureStatusItemButton(button)"))
         #expect(source.contains("statusItem.autosaveName"))
-        #expect(source.contains("media.luxel.app.statusItem"))
+        #expect(source.contains("Bundle.main.bundleIdentifier"))
+        #expect(source.contains(".statusItem"))
         #expect(source.contains("if model.hasActiveRecording"))
         #expect(source.contains("stopRecordingFromStatusItem()"))
         #expect(source.contains("setStatusItemLength(activeStatusItemWidth"))

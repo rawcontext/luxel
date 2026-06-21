@@ -39,7 +39,13 @@ extension LuxelMenuModel {
         switch prompt.guidance.action {
         case .request:
             try? await Task.sleep(nanoseconds: 200_000_000)
-            _ = await permissionClient.request(prompt.permission)
+            if prompt.permission == .screenRecording {
+                if permissionStatus(for: prompt.permission) != .authorized {
+                    await permissionClient.openSettings(for: prompt.permission)
+                }
+            } else {
+                _ = await permissionClient.request(prompt.permission)
+            }
         case .openSettings:
             try? await Task.sleep(nanoseconds: 200_000_000)
             await permissionClient.openSettings(for: prompt.permission)
@@ -50,6 +56,7 @@ extension LuxelMenuModel {
         await refreshPermissions()
 
         if prompt.guidance.action == .request,
+           prompt.permission != .screenRecording,
            permissionStatus(for: prompt.permission) != .authorized {
             await permissionClient.openSettings(for: prompt.permission)
         }

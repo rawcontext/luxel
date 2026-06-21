@@ -114,6 +114,8 @@ struct CapturePermissionPresentationTests {
 
         #expect(state.screen.phase == .needsGrant)
         #expect(state.systemAudio.phase == .needsGrant)
+        #expect(state.screen.message.contains("click +"))
+        #expect(state.systemAudio.message.contains("click +"))
         #expect(state.microphone.phase == .needsGrant)
         #expect(state.camera.phase == .needsGrant)
         #expect(!state.screenRecordingAvailable)

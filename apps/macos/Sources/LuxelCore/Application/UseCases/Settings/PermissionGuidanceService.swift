@@ -67,14 +67,15 @@ public struct PermissionGuidanceService: Sendable {
             PermissionGuidance(
                 title: "Screen capture is off",
                 message: "macOS needs approval before Luxel can record your screen or system sound. "
-                    + "Turn Luxel on in Screen & System Audio Recording, then return here.",
-                actionTitle: "Continue",
-                action: .request
+                    + "In Screen & System Audio Recording, click + and add Luxel if it is not listed, then turn it on.",
+                actionTitle: "Open System Settings",
+                action: .openSettings
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
                 title: "Screen capture is off",
-                message: "Turn Luxel on in Screen & System Audio Recording, then return here.",
+                message: "Turn Luxel on in Screen & System Audio Recording. "
+                    + "If Luxel is not listed, click + and add the app.",
                 actionTitle: "Open System Settings",
                 action: .openSettings
             )
@@ -105,9 +106,10 @@ public struct PermissionGuidanceService: Sendable {
             case .notDetermined:
                 PermissionGuidance(
                     title: presentation.title,
-                    message: "System sound uses macOS Screen & System Audio Recording.",
-                    actionTitle: "Continue",
-                    action: .request
+                    message: "System sound uses macOS Screen & System Audio Recording. "
+                        + "If Luxel is not listed, click + and add the app.",
+                    actionTitle: "Open System Settings",
+                    action: .openSettings
                 )
             case .authorized:
                 PermissionGuidance(
@@ -119,7 +121,8 @@ public struct PermissionGuidanceService: Sendable {
             case .denied, .restricted, .unknown:
                 PermissionGuidance(
                     title: presentation.title,
-                    message: "Turn Luxel on for system audio in Screen & System Audio Recording.",
+                    message: "Turn Luxel on for system audio in Screen & System Audio Recording. "
+                        + "If Luxel is not listed, click + and add the app.",
                     actionTitle: "Open System Settings",
                     action: .openSettings
                 )

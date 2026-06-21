@@ -150,7 +150,8 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             source: .screenPixels,
             phase: .needsGrant,
             title: "Screen capture is off",
-            message: "macOS needs approval before Luxel can record your screen or system sound.",
+            message: "macOS needs approval before Luxel can record your screen or system sound. "
+                + "If Luxel is not listed, click + and add the app.",
             actionTitle: "Enable Capture",
             systemImage: "display",
             statusTitle: "Required"
@@ -166,7 +167,8 @@ public struct CaptureCapabilityState: Equatable, Sendable {
                 source: .systemAudio,
                 phase: .needsGrant,
                 title: "System sound is off",
-                message: "Turn Luxel on for system audio in Screen & System Audio Recording.",
+                message: "Turn Luxel on for system audio in Screen & System Audio Recording. "
+                    + "If Luxel is not listed, click + and add the app.",
                 actionTitle: "Enable System Sound",
                 systemImage: "speaker.slash.fill",
                 statusTitle: "Required"
