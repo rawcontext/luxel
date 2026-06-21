@@ -69,6 +69,27 @@ struct AVFoundationMediaMetadataReaderTests {
         #expect(result == .playable)
     }
 
+    @Test("reader loads audio-only source metadata")
+    func readerLoadsAudioOnlySourceMetadata() async throws {
+        let reader = AVFoundationMediaMetadataReader()
+        let fileURL = FileManager.default.temporaryDirectory
+            .appending(path: UUID().uuidString)
+            .appendingPathExtension("m4a")
+        defer {
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+        try writeSilentAudioFixture(to: fileURL)
+
+        let source = try await reader.readSourceMedia(at: fileURL)
+
+        #expect(!source.hasVideo)
+        #expect(source.isAudioOnly)
+        #expect(source.hasAudio)
+        #expect(source.audioTracks == [.system])
+        #expect(source.duration > 0.20)
+        #expect(source.duration < 0.30)
+    }
+
     @Test("probe reports corrupt recordings")
     func probeReportsCorruptRecordings() async throws {
         let reader = AVFoundationMediaMetadataReader()

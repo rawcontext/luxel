@@ -255,7 +255,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
             typeIdentifier = UTType.gif.identifier
         case .apng:
             typeIdentifier = UTType.png.identifier
-        case .av1, .hevc, .mp4, .webm:
+        case .av1, .hevc, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
             throw ImageIOAnimatedMediaExporterError.unsupportedFormat(format)
         }
 
@@ -284,7 +284,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
             ]
         case .apng:
             destinationPNGProperties(loopMode: loopMode)
-        case .av1, .hevc, .mp4, .webm:
+        case .av1, .hevc, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
             [:]
         }
     }
@@ -320,7 +320,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
                     kCGImagePropertyAPNGUnclampedDelayTime: frameDelay
                 ]
             ]
-        case .av1, .hevc, .mp4, .webm:
+        case .av1, .hevc, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
             [:]
         }
     }

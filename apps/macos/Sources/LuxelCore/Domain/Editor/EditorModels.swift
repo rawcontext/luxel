@@ -3,12 +3,16 @@ import Foundation
 public struct SourceMedia: Codable, Equatable, Sendable {
     public let fileURL: URL
     public let duration: TimeInterval
+    public let hasVideo: Bool
     public let pixelSize: PixelSize
     public let nominalFrameRate: FrameRate
     public let audioTracks: [AudioTrackKind]
     public let hasAlpha: Bool
     public var hasAudio: Bool {
         !audioTracks.isEmpty
+    }
+    public var isAudioOnly: Bool {
+        !hasVideo && hasAudio
     }
 
     public init(
@@ -17,6 +21,7 @@ public struct SourceMedia: Codable, Equatable, Sendable {
         pixelSize: PixelSize,
         nominalFrameRate: FrameRate,
         hasAudio: Bool,
+        hasVideo: Bool = true,
         hasAlpha: Bool = false,
         audioTracks: [AudioTrackKind]? = nil
     ) throws {
@@ -26,15 +31,33 @@ public struct SourceMedia: Codable, Equatable, Sendable {
 
         self.fileURL = fileURL
         self.duration = duration
+        self.hasVideo = hasVideo
         self.pixelSize = pixelSize
         self.nominalFrameRate = nominalFrameRate
         self.audioTracks = audioTracks ?? Self.defaultAudioTracks(hasAudio: hasAudio)
         self.hasAlpha = hasAlpha
     }
 
+    public static func audioOnly(
+        fileURL: URL,
+        duration: TimeInterval,
+        audioTracks: [AudioTrackKind] = [.system]
+    ) throws -> SourceMedia {
+        try SourceMedia(
+            fileURL: fileURL,
+            duration: duration,
+            pixelSize: PixelSize(width: 1, height: 1),
+            nominalFrameRate: FrameRate(1),
+            hasAudio: !audioTracks.isEmpty,
+            hasVideo: false,
+            audioTracks: audioTracks
+        )
+    }
+
     private enum CodingKeys: String, CodingKey {
         case fileURL
         case duration
+        case hasVideo
         case pixelSize
         case nominalFrameRate
         case hasAudio
@@ -55,6 +78,7 @@ public struct SourceMedia: Codable, Equatable, Sendable {
             pixelSize: container.decode(PixelSize.self, forKey: .pixelSize),
             nominalFrameRate: container.decode(FrameRate.self, forKey: .nominalFrameRate),
             hasAudio: hasAudio,
+            hasVideo: container.decodeIfPresent(Bool.self, forKey: .hasVideo) ?? true,
             hasAlpha: container.decodeIfPresent(Bool.self, forKey: .hasAlpha) ?? false,
             audioTracks: audioTracks
         )
@@ -65,6 +89,7 @@ public struct SourceMedia: Codable, Equatable, Sendable {
 
         try container.encode(fileURL, forKey: .fileURL)
         try container.encode(duration, forKey: .duration)
+        try container.encode(hasVideo, forKey: .hasVideo)
         try container.encode(pixelSize, forKey: .pixelSize)
         try container.encode(nominalFrameRate, forKey: .nominalFrameRate)
         try container.encode(hasAudio, forKey: .hasAudio)

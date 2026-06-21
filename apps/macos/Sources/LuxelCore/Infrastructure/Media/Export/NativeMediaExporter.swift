@@ -22,7 +22,7 @@ public struct NativeMediaExporter: MediaExporter, Sendable {
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
         switch request.format {
-        case .mp4, .hevc:
+        case .mp4, .hevc, .m4a, .alac, .wav, .caf, .flac:
             try await avFoundationExporter.export(request, to: outputFileURL, progress: progress)
         case .gif, .apng:
             try await animatedExporter.export(request, to: outputFileURL, progress: progress)

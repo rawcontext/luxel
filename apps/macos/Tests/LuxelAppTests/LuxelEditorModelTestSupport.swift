@@ -170,13 +170,19 @@ final class SpyErrorReporter: ErrorReporter {
 
 struct StubMetadataReader: MediaMetadataReader {
     let hasAlpha: Bool
+    let source: SourceMedia?
 
-    init(hasAlpha: Bool = false) {
+    init(hasAlpha: Bool = false, source: SourceMedia? = nil) {
         self.hasAlpha = hasAlpha
+        self.source = source
     }
 
     func readSourceMedia(at fileURL: URL) async throws -> SourceMedia {
-        try SourceMedia(
+        if let source {
+            return source
+        }
+
+        return try SourceMedia(
             fileURL: fileURL,
             duration: 12,
             pixelSize: PixelSize(width: 1280, height: 720),

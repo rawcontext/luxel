@@ -7,7 +7,7 @@ struct ExportModelTests {
 }
 
 extension ExportModelTests {
-    @Test("video formats map to expected extensions and display names")
+    @Test("formats map to expected extensions and display names")
     func formatMetadata() {
         #expect(ExportFormat.mp4.fileExtension == "mp4")
         #expect(ExportFormat.hevc.fileExtension == "mp4")
@@ -15,6 +15,11 @@ extension ExportModelTests {
         #expect(ExportFormat.webm.fileExtension == "webm")
         #expect(ExportFormat.gif.fileExtension == "gif")
         #expect(ExportFormat.apng.fileExtension == "apng")
+        #expect(ExportFormat.m4a.fileExtension == "m4a")
+        #expect(ExportFormat.alac.fileExtension == "m4a")
+        #expect(ExportFormat.wav.fileExtension == "wav")
+        #expect(ExportFormat.caf.fileExtension == "caf")
+        #expect(ExportFormat.flac.fileExtension == "flac")
 
         #expect(ExportFormat.mp4.prettyName == "MP4 (H264)")
         #expect(ExportFormat.hevc.prettyName == "MP4 (H265)")
@@ -22,6 +27,11 @@ extension ExportModelTests {
         #expect(ExportFormat.webm.prettyName == "WebM (VP9)")
         #expect(ExportFormat.gif.prettyName == "GIF")
         #expect(ExportFormat.apng.prettyName == "APNG")
+        #expect(ExportFormat.m4a.prettyName == "M4A (AAC)")
+        #expect(ExportFormat.alac.prettyName == "M4A (Apple Lossless)")
+        #expect(ExportFormat.wav.prettyName == "WAV")
+        #expect(ExportFormat.caf.prettyName == "CAF")
+        #expect(ExportFormat.flac.prettyName == "FLAC")
     }
 
     @Test("quality exposes format availability and labels")
@@ -42,6 +52,18 @@ extension ExportModelTests {
         #expect(ExportQuality.defaultQuality(for: .apng) == .lossless)
         #expect(ExportQuality.lossless.isAvailable(for: .apng))
         #expect(!ExportQuality.balanced.isAvailable(for: .apng))
+
+        #expect(ExportQuality.availableQualities(for: .m4a) == [.balanced])
+        #expect(ExportQuality.defaultQuality(for: .m4a) == .balanced)
+        #expect(ExportQuality.balanced.isAvailable(for: .m4a))
+        #expect(!ExportQuality.high.isAvailable(for: .m4a))
+
+        for format in [ExportFormat.alac, .wav, .caf, .flac] {
+            #expect(ExportQuality.availableQualities(for: format) == [.lossless])
+            #expect(ExportQuality.defaultQuality(for: format) == .lossless)
+            #expect(ExportQuality.lossless.isAvailable(for: format))
+            #expect(!ExportQuality.balanced.isAvailable(for: format))
+        }
     }
 
     @Test("quality maps video bitrates for apple native movie formats")
@@ -56,7 +78,7 @@ extension ExportModelTests {
         #expect(ExportQuality.high.videoBitsPerPixel(for: .hevc) == 0.15)
         #expect(ExportQuality.lossless.videoBitsPerPixel(for: .hevc) == nil)
 
-        for format in [ExportFormat.gif, .apng, .webm, .av1] {
+        for format in [ExportFormat.gif, .apng, .webm, .av1, .m4a, .alac, .wav, .caf, .flac] {
             #expect(ExportQuality.balanced.videoBitsPerPixel(for: format) == nil)
         }
     }
@@ -229,6 +251,7 @@ extension ExportModelTests {
     func v1AppleNativeFormatsExcludeDeferredNativeCodecFormats() {
         #expect(ExportFormat.appleNativeV1Formats == [.mp4, .hevc, .gif, .apng])
         #expect(ExportFormat.externalNativeCodecFormats == [.webm, .av1])
+        #expect(ExportFormat.audioOnlyFormats == [.m4a, .alac, .wav, .caf, .flac])
 
         for format in ExportFormat.appleNativeV1Formats {
             #expect(format.isAppleNativeV1Format)
@@ -238,6 +261,11 @@ extension ExportModelTests {
         for format in [ExportFormat.webm, .av1] {
             #expect(!format.isAppleNativeV1Format)
             #expect(format.requiresExternalNativeCodec)
+        }
+
+        for format in ExportFormat.audioOnlyFormats {
+            #expect(format.isAudioOnlyFormat)
+            #expect(!format.requiresExternalNativeCodec)
         }
     }
 
@@ -250,9 +278,9 @@ extension ExportModelTests {
         }
     }
 
-    @Test("animated image exports preserve requested odd dimensions")
+    @Test("non-video exports preserve requested odd dimensions")
     func animatedExportsPreserveOddDimensions() throws {
-        for format in [ExportFormat.gif, .apng] {
+        for format in [ExportFormat.gif, .apng] + ExportFormat.audioOnlyFormats {
             let request = try makeRequest(format: format, width: 469, height: 839)
 
             #expect(try request.outputPixelSize == PixelSize(width: 469, height: 839))

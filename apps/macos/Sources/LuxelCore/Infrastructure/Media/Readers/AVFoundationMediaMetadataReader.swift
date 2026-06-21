@@ -15,8 +15,17 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
         }
 
         let videoTracks = try await asset.loadTracks(withMediaType: .video)
+        let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+        guard !videoTracks.isEmpty || !audioTracks.isEmpty else {
+            throw AVFoundationMediaMetadataReaderError.missingMediaTracks
+        }
+
         guard let videoTrack = videoTracks.first else {
-            throw AVFoundationMediaMetadataReaderError.missingVideoTrack
+            return try SourceMedia.audioOnly(
+                fileURL: fileURL,
+                duration: durationSeconds,
+                audioTracks: [.system]
+            )
         }
 
         let naturalSize = try await videoTrack.load(.naturalSize)
@@ -32,7 +41,6 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
             throw AVFoundationMediaMetadataReaderError.invalidFrameRate
         }
 
-        let audioTracks = try await asset.loadTracks(withMediaType: .audio)
         let hasAlpha = try await hasAlphaChannel(in: videoTrack)
 
         return try SourceMedia(
@@ -98,10 +106,25 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
     }
 }
 
-public enum AVFoundationMediaMetadataReaderError: Error, Equatable {
+public enum AVFoundationMediaMetadataReaderError: LocalizedError, Equatable {
     case invalidDuration
     case missingVideoTrack
     case missingMediaTracks
     case invalidNaturalSize
     case invalidFrameRate
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidDuration:
+            "The recording duration could not be read."
+        case .missingVideoTrack:
+            "No video track was found in the recording."
+        case .missingMediaTracks:
+            "No playable audio or video tracks were found."
+        case .invalidNaturalSize:
+            "The recording video size could not be read."
+        case .invalidFrameRate:
+            "The recording frame rate could not be read."
+        }
+    }
 }

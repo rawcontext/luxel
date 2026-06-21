@@ -50,7 +50,7 @@ public final class LuxelEditorModel {
     var outputDirectoryBookmark: BookmarkedDirectory?
     var recordingNavigationURLs: [URL] = []
     var recordingNavigationIndex: Int?
-    let supportedFormats: [ExportFormat]
+    let configuredSupportedFormats: [ExportFormat]
     var exportProgress: ExportProgressSnapshot?
     var exportJobs: [ExportJobSnapshot] = []
     var exportEstimate: ExportEstimate?
@@ -116,7 +116,7 @@ public final class LuxelEditorModel {
         self.audioMixResolutionService = AudioMixResolutionService(analyzer: audioPeakAnalyzer)
         self.fileSystem = fileSystem
         self.directoryAccessService = directoryAccessService
-        self.supportedFormats = codecAvailability.availableExportFormats
+        self.configuredSupportedFormats = codecAvailability.availableExportFormats
         self.exportMemoryByFormat = exportMemory
         self.onExportMemoryChange = onExportMemoryChange
         self.errorReporter = errorReporter
@@ -132,6 +132,22 @@ extension LuxelEditorModel {
         source != nil
     }
 
+    var hasVideoSource: Bool {
+        source?.hasVideo == true
+    }
+
+    var hasAudioOnlySource: Bool {
+        source?.isAudioOnly == true
+    }
+
+    var supportedFormats: [ExportFormat] {
+        if hasAudioOnlySource {
+            return ExportFormat.audioOnlyFormats
+        }
+
+        return configuredSupportedFormats
+    }
+
     var duration: TimeInterval {
         source?.duration ?? 1
     }
@@ -142,6 +158,10 @@ extension LuxelEditorModel {
 
     var canIncludeAudio: Bool {
         source?.hasAudio == true && !format.dropsAudio
+    }
+
+    var canToggleAudioInclusion: Bool {
+        canIncludeAudio && !hasAudioOnlySource
     }
 
     var maximumFrameRate: Int {
@@ -230,7 +250,7 @@ extension LuxelEditorModel {
     }
 
     var canGrabFrame: Bool {
-        hasSource && !isExporting && !isGrabbingFrame && player.rate == 0
+        hasVideoSource && !isExporting && !isGrabbingFrame && player.rate == 0
     }
 
     var canCancelExport: Bool {
@@ -409,7 +429,7 @@ extension LuxelEditorModel {
     }
 
     var usesAlphaPreviewBackground: Bool {
-        source?.hasAlpha == true
+        hasVideoSource && source?.hasAlpha == true
     }
 
     var sourceSummary: String {
@@ -419,11 +439,17 @@ extension LuxelEditorModel {
 
         var parts = [
             source.fileURL.lastPathComponent,
-            formatTime(source.duration),
-            "\(source.pixelSize.width)x\(source.pixelSize.height)",
-            source.hasAudio ? "audio" : "no audio"
+            formatTime(source.duration)
         ]
-        if source.hasAlpha {
+
+        if source.hasVideo {
+            parts.append("\(source.pixelSize.width)x\(source.pixelSize.height)")
+            parts.append(source.hasAudio ? "audio" : "no audio")
+        } else {
+            parts.append("audio")
+        }
+
+        if source.hasVideo, source.hasAlpha {
             parts.append("alpha")
         }
 
@@ -502,13 +528,14 @@ extension LuxelEditorModel {
         do {
             let media = try await metadataReader.readSourceMedia(at: fileURL)
             source = media
+            applySupportedFormatForSource()
             trimStart = 0
             trimEnd = media.duration
             playbackSpeed = .normal
             applySizePreset(.original)
             applyFrameRate(Self.defaultFrameRate)
             applyExportMemory(for: format)
-            shouldMute = !media.hasAudio || format.dropsAudio
+            shouldMute = media.isAudioOnly ? false : !media.hasAudio || format.dropsAudio
             let item = AVPlayerItem(url: fileURL)
             item.audioTimePitchAlgorithm = .timeDomain
             player.replaceCurrentItem(with: item)
@@ -659,6 +686,12 @@ extension LuxelEditorModel {
     }
 
     func setIncludesAudio(_ includesAudio: Bool) {
+        if hasAudioOnlySource {
+            shouldMute = false
+            schedulePreviewAudioMixUpdate()
+            return
+        }
+
         shouldMute = !includesAudio
         schedulePreviewAudioMixUpdate()
         recordEditorDraftChange()

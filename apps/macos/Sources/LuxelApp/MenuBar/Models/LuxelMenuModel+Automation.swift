@@ -202,7 +202,7 @@ extension LuxelMenuModel {
             throw LuxelAutomationError.noRecentRecording
         }
 
-        if reveal || recording.options.isAudioOnly {
+        if reveal {
             fileWorkflowService.revealInFinder(recording.fileURL)
         } else {
             openRecording(recording.primaryMediaURL)

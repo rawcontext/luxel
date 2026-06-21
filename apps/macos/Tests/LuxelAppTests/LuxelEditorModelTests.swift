@@ -74,6 +74,41 @@ extension LuxelEditorModelTests {
         #expect(!model.sourceSummary.contains("alpha"))
     }
 
+    @Test("opening audio-only source selects m4a export")
+    func openingAudioOnlySourceSelectsM4AExport() async throws {
+        let exporter = SpyMediaExporter()
+        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
+        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
+        let model = makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            exporter: exporter
+        )
+
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(model.source?.isAudioOnly == true)
+        #expect(model.supportedFormats == ExportFormat.audioOnlyFormats)
+        #expect(model.format == .m4a)
+        #expect(model.selectedFormats == [.m4a])
+        #expect(model.includesAudio)
+        #expect(!model.canToggleAudioInclusion)
+        #expect(!model.canGrabFrame)
+        #expect(!model.sourceSummary.contains("1x1"))
+
+        model.setIncludesAudio(false)
+        #expect(model.includesAudio)
+
+        model.startExport()
+        while model.isExporting {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let captured = await exporter.capturedExports()
+        #expect(captured.first?.request.format == .m4a)
+        #expect(captured.first?.request.outputShouldMute == false)
+        #expect(captured.first?.request.shouldCrop == false)
+    }
+
     @Test("opening a new recording resets editor undo history")
     func openingNewRecordingResetsEditorUndoHistory() async throws {
         let model = makeModel()

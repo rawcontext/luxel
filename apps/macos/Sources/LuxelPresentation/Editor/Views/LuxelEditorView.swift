@@ -33,12 +33,22 @@ extension LuxelEditorView {
                     .fill(.black)
             }
 
-            if model.hasSource {
+            if model.hasVideoSource {
                 LuxelPlayerView(
                     player: model.player,
                     usesAlphaBackground: model.usesAlphaPreviewBackground
                 )
                 .background(model.usesAlphaPreviewBackground ? .clear : .black)
+            } else if model.hasAudioOnlySource {
+                LuxelPlayerView(
+                    player: model.player,
+                    usesAlphaBackground: false
+                )
+                .background(.black)
+
+                ContentUnavailableView("Audio Recording", systemImage: "waveform")
+                    .foregroundStyle(.secondary)
+                    .allowsHitTesting(false)
             } else {
                 ContentUnavailableView("No Recording", systemImage: "film")
                     .foregroundStyle(.secondary)
@@ -138,10 +148,14 @@ extension LuxelEditorView {
 
                 LazyVGrid(columns: metadataColumns, alignment: .leading, spacing: 8) {
                     metadataField("Length", model.formatTime(source.duration))
-                    metadataField("Dimensions", "\(source.pixelSize.width)x\(source.pixelSize.height)")
+                    if source.hasVideo {
+                        metadataField("Dimensions", "\(source.pixelSize.width)x\(source.pixelSize.height)")
+                    } else {
+                        metadataField("Type", "Audio")
+                    }
                     metadataField("Audio", source.hasAudio ? "Yes" : "No")
 
-                    if source.hasAlpha {
+                    if source.hasVideo, source.hasAlpha {
                         metadataField("Alpha", "Yes")
                     }
                 }
@@ -219,7 +233,7 @@ extension LuxelEditorView {
                 }
             }
         } label: {
-            Label(model.selectedFormatSummary, systemImage: "video")
+            Label(model.selectedFormatSummary, systemImage: model.hasAudioOnlySource ? "waveform" : "video")
                 .lineLimit(1)
                 .frame(maxWidth: .infinity)
         }
@@ -246,7 +260,7 @@ extension LuxelEditorView {
     private var audioExportControls: some View {
         VStack(alignment: .leading, spacing: 10) {
             Toggle("Include Audio", isOn: includeAudioSelection)
-                .disabled(!model.canIncludeAudio)
+                .disabled(!model.canToggleAudioInclusion)
 
             if model.includesAudio {
                 VStack(alignment: .leading, spacing: 8) {
@@ -495,55 +509,59 @@ extension LuxelEditorView {
     private var outputControls: some View {
         editorDisclosureCard("Output") {
             VStack(alignment: .leading, spacing: 14) {
-                controlRow("Size") {
-                    Picker("Size", selection: sizePresetSelection) {
-                        Text("Custom").tag(EditorSizePreset?.none)
-                        ForEach(LuxelEditorModel.sizePresets, id: \.self) { preset in
-                            Text(preset.label).tag(EditorSizePreset?.some(preset))
+                if model.hasVideoSource {
+                    controlRow("Size") {
+                        Picker("Size", selection: sizePresetSelection) {
+                            Text("Custom").tag(EditorSizePreset?.none)
+                            ForEach(LuxelEditorModel.sizePresets, id: \.self) { preset in
+                                Text(preset.label).tag(EditorSizePreset?.some(preset))
+                            }
                         }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                    .labelsHidden()
-                    .pickerStyle(.menu)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                }
 
-                controlRow("Fit") {
-                    Toggle("Crop to Fill", isOn: shouldCropSelection)
-                }
+                    controlRow("Fit") {
+                        Toggle("Crop to Fill", isOn: shouldCropSelection)
+                    }
 
-                Divider()
+                    Divider()
 
-                controlRow("Width") {
-                    integerStepperField(
-                        "Width",
-                        value: outputWidthSelection,
-                        range: 1...8192,
-                        unitHelp: "Pixels",
-                        step: 2,
-                        shiftedStep: 100
-                    )
-                }
+                    controlRow("Width") {
+                        integerStepperField(
+                            "Width",
+                            value: outputWidthSelection,
+                            range: 1...8192,
+                            unitHelp: "Pixels",
+                            step: 2,
+                            shiftedStep: 100
+                        )
+                    }
 
-                controlRow("Height") {
-                    integerStepperField(
-                        "Height",
-                        value: outputHeightSelection,
-                        range: 1...8192,
-                        unitHelp: "Pixels",
-                        step: 2,
-                        shiftedStep: 100
-                    )
-                }
+                    controlRow("Height") {
+                        integerStepperField(
+                            "Height",
+                            value: outputHeightSelection,
+                            range: 1...8192,
+                            unitHelp: "Pixels",
+                            step: 2,
+                            shiftedStep: 100
+                        )
+                    }
 
-                controlRow("Frame Rate") {
-                    integerStepperField(
-                        "Frame Rate",
-                        value: frameRateSelection,
-                        range: 1...model.maximumFrameRate,
-                        unitHelp: "Frames per second",
-                        step: 1,
-                        shiftedStep: 10
-                    )
+                    controlRow("Frame Rate") {
+                        integerStepperField(
+                            "Frame Rate",
+                            value: frameRateSelection,
+                            range: 1...model.maximumFrameRate,
+                            unitHelp: "Frames per second",
+                            step: 1,
+                            shiftedStep: 10
+                        )
+                    }
+
+                    Divider()
                 }
 
                 controlRow("Speed") {

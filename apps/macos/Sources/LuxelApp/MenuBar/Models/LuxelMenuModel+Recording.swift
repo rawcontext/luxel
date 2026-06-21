@@ -454,7 +454,7 @@ extension LuxelMenuModel {
                 luxelRecordingLogger.info(
                     "Audio recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private)"
                 )
-                return .audioRecorded(recording.fileURL)
+                return .openEditor(recording.fileURL)
             }
 
             let recording = try await recordingLifecycleService.stopRecording()

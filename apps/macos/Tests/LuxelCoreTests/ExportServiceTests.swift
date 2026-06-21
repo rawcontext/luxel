@@ -150,6 +150,28 @@ struct ExportServiceTests {
         ])
     }
 
+    @Test("batch export names audio formats distinctly")
+    func batchExportNamesAudioFormatsDistinctly() async throws {
+        let exporter = SpyMediaExporter()
+        let service = ExportService(exporter: exporter)
+        let batch = try ExportBatch(ExportFormat.audioOnlyFormats.map { try makeRequest(format: $0) })
+
+        _ = try await service.runBatch(
+            batch,
+            to: URL(fileURLWithPath: "/tmp/exports"),
+            defaultName: "Luxel Clip"
+        )
+
+        let captured = await exporter.capturedExports()
+        #expect(captured.map(\.outputFileURL.path) == [
+            "/tmp/exports/Luxel Clip M4A AAC.m4a",
+            "/tmp/exports/Luxel Clip M4A ALAC.m4a",
+            "/tmp/exports/Luxel Clip WAV.wav",
+            "/tmp/exports/Luxel Clip CAF.caf",
+            "/tmp/exports/Luxel Clip FLAC.flac"
+        ])
+    }
+
     @Test("batch cancellation keeps completed output and removes in-flight output")
     func batchCancellationKeepsCompletedOutputAndRemovesInFlightOutput() async throws {
         let exporter = CancellableBatchMediaExporter()

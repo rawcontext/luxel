@@ -1,4 +1,5 @@
 import AVFoundation
+import AVFAudio
 import AppKit
 import CoreMedia
 import Foundation
@@ -161,6 +162,46 @@ extension AVFoundationMediaExporterTests {
         #expect(quietPeak < baselinePeak * 0.4)
     }
 
+    @Test("native audio exports trim audio-only source")
+    func nativeAudioExportsTrimAudioOnlySource() async throws {
+        let inputURL = temporaryOutputURL(fileExtension: "m4a")
+        defer { try? FileManager.default.removeItem(at: inputURL) }
+        try writeSilentAudioFixture(to: inputURL, duration: 1)
+        let expectations: [(format: ExportFormat, codecType: FourCharCode)] = [
+            (.m4a, kAudioFormatMPEG4AAC),
+            (.alac, kAudioFormatAppleLossless),
+            (.wav, kAudioFormatLinearPCM),
+            (.caf, kAudioFormatLinearPCM),
+            (.flac, kAudioFormatFLAC)
+        ]
+
+        for expectation in expectations {
+            let outputURL = temporaryOutputURL(fileExtension: expectation.format.fileExtension)
+            defer { try? FileManager.default.removeItem(at: outputURL) }
+            let request = try ExportRequest(
+                inputFileURL: inputURL,
+                format: expectation.format,
+                pixelSize: PixelSize(width: 1, height: 1),
+                frameRate: FrameRate(1),
+                timeRange: TimeRange(start: 0, end: 0.4),
+                shouldMute: false,
+                shouldCrop: false
+            )
+
+            let exported = try await AVFoundationMediaExporter().export(request, to: outputURL)
+            let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: outputURL)
+            let codecType = try await audioCodecType(at: outputURL)
+
+            #expect(exported.fileURL == outputURL)
+            #expect(exported.format == expectation.format)
+            #expect(!exported.shouldMute)
+            #expect(source.isAudioOnly)
+            #expect(source.duration > 0.35)
+            #expect(source.duration < 0.45)
+            #expect(codecType == expectation.codecType)
+        }
+    }
+
     @Test("mp4 export applies zoom blocks to video composition")
     func mp4ExportAppliesZoomBlocksToVideoComposition() async throws {
         let inputURL = temporaryOutputURL(fileExtension: "mp4")
@@ -264,6 +305,14 @@ extension AVFoundationMediaExporterTests {
 
     private func videoCodecType(at fileURL: URL) async throws -> CMVideoCodecType {
         CMFormatDescriptionGetMediaSubType(try await firstVideoFormatDescription(at: fileURL))
+    }
+
+    private func audioCodecType(at fileURL: URL) async throws -> FourCharCode {
+        let asset = AVURLAsset(url: fileURL)
+        let audioTrack = try #require(try await asset.loadTracks(withMediaType: .audio).first)
+        let formatDescription = try #require(try await audioTrack.load(.formatDescriptions).first)
+
+        return CMFormatDescriptionGetMediaSubType(formatDescription)
     }
 
     private func firstVideoFormatDescription(at fileURL: URL) async throws -> CMFormatDescription {
@@ -478,6 +527,31 @@ extension AVFoundationMediaExporterTests {
         ))
 
         return try #require(peaks[.system])
+    }
+
+    private func writeSilentAudioFixture(to fileURL: URL, duration: TimeInterval) throws {
+        let sampleRate = 44_100.0
+        let frameCount = AVAudioFrameCount(sampleRate * duration)
+        let pcmFormat = try #require(AVAudioFormat(
+            standardFormatWithSampleRate: sampleRate,
+            channels: 1
+        ))
+        let buffer = try #require(AVAudioPCMBuffer(
+            pcmFormat: pcmFormat,
+            frameCapacity: frameCount
+        ))
+        buffer.frameLength = frameCount
+
+        let file = try AVAudioFile(
+            forWriting: fileURL,
+            settings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: sampleRate,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderBitRateKey: 64_000
+            ]
+        )
+        try file.write(from: buffer)
     }
 
     private func packageRootURL() throws -> URL {

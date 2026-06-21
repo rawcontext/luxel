@@ -7,19 +7,29 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
     case webm
     case apng
     case av1
+    case m4a
+    case alac
+    case wav
+    case caf
+    case flac
 
     public static let appleNativeV1Formats: [ExportFormat] = [.mp4, .hevc, .gif, .apng]
     public static let externalNativeCodecFormats: [ExportFormat] = [.webm, .av1]
+    public static let audioOnlyFormats: [ExportFormat] = [.m4a, .alac, .wav, .caf, .flac]
 
     public var isAppleNativeV1Format: Bool {
         Self.appleNativeV1Formats.contains(self)
+    }
+
+    public var isAudioOnlyFormat: Bool {
+        Self.audioOnlyFormats.contains(self)
     }
 
     public var requiresExternalNativeCodec: Bool {
         switch self {
         case .webm, .av1:
             true
-        case .gif, .hevc, .mp4, .apng:
+        case .gif, .hevc, .mp4, .apng, .m4a, .alac, .wav, .caf, .flac:
             false
         }
     }
@@ -34,6 +44,14 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
             "webm"
         case .apng:
             "apng"
+        case .m4a, .alac:
+            "m4a"
+        case .wav:
+            "wav"
+        case .caf:
+            "caf"
+        case .flac:
+            "flac"
         }
     }
 
@@ -51,6 +69,16 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
             "WebM (VP9)"
         case .apng:
             "APNG"
+        case .m4a:
+            "M4A (AAC)"
+        case .alac:
+            "M4A (Apple Lossless)"
+        case .wav:
+            "WAV"
+        case .caf:
+            "CAF"
+        case .flac:
+            "FLAC"
         }
     }
 
@@ -58,7 +86,7 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
         switch self {
         case .gif, .apng:
             true
-        case .av1, .hevc, .mp4, .webm:
+        case .av1, .hevc, .mp4, .webm, .m4a, .alac, .wav, .caf, .flac:
             false
         }
     }
@@ -67,7 +95,7 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
         switch self {
         case .av1, .hevc, .mp4, .webm:
             true
-        case .gif, .apng:
+        case .gif, .apng, .m4a, .alac, .wav, .caf, .flac:
             false
         }
     }
@@ -98,6 +126,10 @@ public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, S
             [.compact, .balanced, .high]
         case .apng:
             [.lossless]
+        case .m4a:
+            [.balanced]
+        case .alac, .wav, .caf, .flac:
+            [.lossless]
         }
     }
 
@@ -108,6 +140,10 @@ public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, S
     public static func defaultQuality(for format: ExportFormat) -> ExportQuality {
         switch format {
         case .apng:
+            .lossless
+        case .m4a:
+            .balanced
+        case .alac, .wav, .caf, .flac:
             .lossless
         case .mp4, .hevc, .gif, .webm, .av1:
             .balanced
@@ -138,7 +174,7 @@ public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, S
             case .lossless:
                 nil
             }
-        case .gif, .apng, .webm, .av1:
+        case .gif, .apng, .webm, .av1, .m4a, .alac, .wav, .caf, .flac:
             nil
         }
     }

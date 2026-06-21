@@ -65,6 +65,10 @@ public struct PastRecording: Codable, Equatable, Sendable {
         bundle?.primaryURL ?? fileURL
     }
 
+    public var isVideoRecording: Bool {
+        kind == .recording && !options.isAudioOnly
+    }
+
     public func addingExport(_ export: RecordingExport) -> PastRecording {
         PastRecording(
             fileURL: fileURL,

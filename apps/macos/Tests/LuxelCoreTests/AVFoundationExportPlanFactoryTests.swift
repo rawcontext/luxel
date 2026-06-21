@@ -41,6 +41,30 @@ struct AVFoundationExportPlanFactoryTests {
         #expect(plan.quality == .balanced)
     }
 
+    @Test("audio exports map to native audio plans")
+    func audioExportsMapToNativeAudioPlans() throws {
+        let expectations: [(format: ExportFormat, presetName: String, outputFileType: AVFileType?, quality: ExportQuality)] = [
+            (.m4a, AVAssetExportPresetAppleM4A, .m4a, .balanced),
+            (.alac, AVAssetExportPresetPassthrough, .m4a, .lossless),
+            (.wav, AVAssetExportPresetPassthrough, .wav, .lossless),
+            (.caf, AVAssetExportPresetPassthrough, .caf, .lossless),
+            (.flac, AVAssetExportPresetPassthrough, nil, .lossless)
+        ]
+
+        for expectation in expectations {
+            let request = try makeRequest(format: expectation.format, width: 1, height: 1)
+
+            let plan = try AVFoundationExportPlanFactory().makePlan(
+                for: request,
+                outputFileURL: URL(fileURLWithPath: "/tmp/output.\(expectation.format.fileExtension)")
+            )
+
+            #expect(plan.presetName == expectation.presetName)
+            #expect(plan.outputFileType == expectation.outputFileType)
+            #expect(plan.quality == expectation.quality)
+        }
+    }
+
     @Test("compact mp4 export maps to medium quality preset")
     func compactMP4ExportMapsToMediumQualityPreset() throws {
         let request = try makeRequest(format: .mp4, quality: .compact)

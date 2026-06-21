@@ -1,3 +1,4 @@
+import AVFAudio
 import Foundation
 import ImageIO
 import LuxelCore
@@ -30,6 +31,32 @@ struct NativeMediaExporterTests {
         #expect(CGImageSourceGetCount(imageSource) == 2)
 
         try? FileManager.default.removeItem(at: outputURL)
+    }
+
+    @Test("router exports audio-only formats through native AVFoundation path")
+    func routerExportsAudioOnlyFormatsThroughNativeAVFoundationPath() async throws {
+        let inputURL = temporaryOutputURL(fileExtension: "m4a")
+        defer { try? FileManager.default.removeItem(at: inputURL) }
+        try writeSilentAudioFixture(to: inputURL)
+
+        for format in ExportFormat.audioOnlyFormats {
+            let outputURL = temporaryOutputURL(fileExtension: format.fileExtension)
+            defer { try? FileManager.default.removeItem(at: outputURL) }
+            let request = try ExportRequest(
+                inputFileURL: inputURL,
+                format: format,
+                pixelSize: PixelSize(width: 1, height: 1),
+                frameRate: FrameRate(1),
+                timeRange: TimeRange(start: 0, end: 0.2),
+                shouldMute: false,
+                shouldCrop: false
+            )
+
+            let exported = try await NativeMediaExporter().export(request, to: outputURL)
+
+            #expect(exported.format == format)
+            #expect(FileManager.default.fileExists(atPath: outputURL.path))
+        }
     }
 
     @Test("router rejects formats without native encoders")
@@ -67,6 +94,31 @@ struct NativeMediaExporterTests {
         FileManager.default.temporaryDirectory
             .appending(path: "luxel-native-export-\(UUID().uuidString)")
             .appendingPathExtension(fileExtension)
+    }
+
+    private func writeSilentAudioFixture(to fileURL: URL) throws {
+        let sampleRate = 44_100.0
+        let frameCount = AVAudioFrameCount(sampleRate / 2)
+        let pcmFormat = try #require(AVAudioFormat(
+            standardFormatWithSampleRate: sampleRate,
+            channels: 1
+        ))
+        let buffer = try #require(AVAudioPCMBuffer(
+            pcmFormat: pcmFormat,
+            frameCapacity: frameCount
+        ))
+        buffer.frameLength = frameCount
+
+        let file = try AVAudioFile(
+            forWriting: fileURL,
+            settings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: sampleRate,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderBitRateKey: 64_000
+            ]
+        )
+        try file.write(from: buffer)
     }
 
     private func packageRootURL() throws -> URL {

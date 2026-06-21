@@ -59,6 +59,26 @@ struct BitrateModelSizeEstimatorTests {
         #expect(estimate == expected)
     }
 
+    @Test("estimates audio-only bytes by native format")
+    func estimatesAudioOnlyBytesByNativeFormat() async throws {
+        let expectations: [(format: ExportFormat, bytes: Int64)] = [
+            (.m4a, 16_000),
+            (.alac, 96_000),
+            (.wav, 192_000),
+            (.caf, 192_000),
+            (.flac, 96_000)
+        ]
+
+        for expectation in expectations {
+            let request = try makeRequest(format: expectation.format, timeRange: TimeRange(start: 0, end: 1))
+
+            let estimate = try await BitrateModelSizeEstimator().estimate(request)
+            let expected = try ExportEstimate(bytes: expectation.bytes, confidence: .modeled)
+
+            #expect(estimate == expected)
+        }
+    }
+
     @Test("rounds video dimensions before estimating")
     func roundsVideoDimensionsBeforeEstimating() async throws {
         let request = try makeRequest(

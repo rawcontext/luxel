@@ -106,6 +106,16 @@ public struct ExportService: Sendable {
             "WebM"
         case .apng:
             "APNG"
+        case .m4a:
+            "M4A AAC"
+        case .alac:
+            "M4A ALAC"
+        case .wav:
+            "WAV"
+        case .caf:
+            "CAF"
+        case .flac:
+            "FLAC"
         }
     }
 

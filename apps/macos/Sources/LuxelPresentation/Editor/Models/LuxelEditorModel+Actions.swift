@@ -604,7 +604,7 @@ extension LuxelEditorModel {
 
     private static func isNavigableRecordingURL(_ url: URL) -> Bool {
         switch url.pathExtension.lowercased() {
-        case "m4v", "mov", "mp4":
+        case "caf", "flac", "m4a", "m4v", "mov", "mp4", "wav":
             true
         default:
             false
@@ -767,6 +767,18 @@ extension LuxelEditorModel {
         }
     }
 
+    func applySupportedFormatForSource() {
+        let fallbackFormat = supportedFormats.first ?? .mp4
+        if !supportedFormats.contains(format) {
+            format = fallbackFormat
+        }
+
+        selectedFormats = supportedFormats.filter(selectedFormats.contains)
+        if selectedFormats.isEmpty || !selectedFormats.contains(format) {
+            selectedFormats = [format]
+        }
+    }
+
     func applyGIFOptions(_ options: GIFRenderOptions) {
         gifDithering = options.dithering
 
@@ -843,6 +855,9 @@ extension LuxelEditorModel {
         gifLoopCount = min(max(state.gifLoopCount, 1), 100)
         gifDithering = state.gifDithering
         shouldMute = state.shouldMute
+        if hasAudioOnlySource {
+            shouldMute = false
+        }
         if !canIncludeAudio {
             shouldMute = true
         }
@@ -875,9 +890,9 @@ extension LuxelEditorModel {
             trimRange: TimeRange(start: trimStart, end: trimEnd),
             pixelSize: PixelSize(width: outputWidth, height: outputHeight),
             frameRate: FrameRate(frameRate),
-            shouldMute: shouldMute,
+            shouldMute: hasAudioOnlySource ? false : shouldMute,
             audioMix: currentAudioMixPlan(),
-            shouldCrop: shouldCrop,
+            shouldCrop: hasVideoSource && shouldCrop,
             quality: quality,
             speed: playbackSpeed,
             gifOptions: try currentGIFOptions(for: format)
@@ -891,9 +906,9 @@ extension LuxelEditorModel {
             pixelSize: PixelSize(width: outputWidth, height: outputHeight),
             frameRate: FrameRate(frameRate),
             timeRange: TimeRange(start: trimStart, end: trimEnd),
-            shouldMute: shouldMute,
+            shouldMute: source.isAudioOnly ? false : shouldMute,
             audioMix: currentAudioMixPlan(),
-            shouldCrop: shouldCrop,
+            shouldCrop: source.hasVideo && shouldCrop,
             quality: quality,
             speed: playbackSpeed,
             gifOptions: try currentGIFOptions(for: format)

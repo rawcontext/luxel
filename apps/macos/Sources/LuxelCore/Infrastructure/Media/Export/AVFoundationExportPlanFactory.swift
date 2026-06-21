@@ -6,7 +6,7 @@ public struct AVFoundationExportPlan {
     public let inputFileURL: URL
     public let outputFileURL: URL
     public let presetName: String
-    public let outputFileType: AVFileType
+    public let outputFileType: AVFileType?
     public let timeRange: CMTimeRange
     public let outputPixelSize: PixelSize
     public let shouldMute: Bool
@@ -16,7 +16,7 @@ public struct AVFoundationExportPlan {
         inputFileURL: URL,
         outputFileURL: URL,
         presetName: String,
-        outputFileType: AVFileType,
+        outputFileType: AVFileType?,
         timeRange: CMTimeRange,
         outputPixelSize: PixelSize,
         shouldMute: Bool,
@@ -57,6 +57,10 @@ public struct AVFoundationExportPlanFactory: Sendable {
 
     private func presetName(for format: ExportFormat, quality: ExportQuality) throws -> String {
         switch format {
+        case .m4a:
+            AVAssetExportPresetAppleM4A
+        case .alac, .wav, .caf, .flac:
+            AVAssetExportPresetPassthrough
         case .mp4:
             switch quality {
             case .compact:
@@ -71,8 +75,18 @@ public struct AVFoundationExportPlanFactory: Sendable {
         }
     }
 
-    private func outputFileType(for format: ExportFormat) throws -> AVFileType {
+    private func outputFileType(for format: ExportFormat) throws -> AVFileType? {
         switch format {
+        case .m4a:
+            .m4a
+        case .alac:
+            .m4a
+        case .wav:
+            .wav
+        case .caf:
+            .caf
+        case .flac:
+            nil
         case .mp4, .hevc:
             .mp4
         case .av1, .webm, .gif, .apng:
