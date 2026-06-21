@@ -419,6 +419,21 @@ extension ArchitectureTests {
         #expect(viewSource.contains("flags.contains(.command)"))
     }
 
+    @Test("cropper keeps active aspect ratio while drawing and resizing selections")
+    func cropperKeepsActiveAspectRatioWhileDrawingAndResizingSelections() throws {
+        let packageRoot = try packageRootURL()
+        let modelSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
+            encoding: .utf8
+        )
+        let activeAspectRatioUses =
+            modelSource.components(separatedBy: "aspectRatio: activeAspectRatio").count - 1
+
+        #expect(activeAspectRatioUses >= 2)
+        #expect(modelSource.contains("lockingAspectRatio: lockingAspectRatio"))
+    }
+
     @Test("cropper restores last area selection when enabled")
     func cropperRestoresLastAreaSelectionWhenEnabled() throws {
         let packageRoot = try packageRootURL()

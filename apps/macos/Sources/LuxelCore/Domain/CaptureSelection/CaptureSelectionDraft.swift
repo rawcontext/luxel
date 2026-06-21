@@ -45,11 +45,22 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
     public func resized(
         dragging handle: CaptureResizeHandle,
         by delta: CaptureResizeDelta,
-        lockingAspectRatio: Bool = false
+        lockingAspectRatio: Bool = false,
+        aspectRatio: CaptureAspectRatio? = nil
     ) throws -> CaptureSelectionDraft {
         let rect =
-            if lockingAspectRatio, handle.isCorner {
-                try aspectLockedResize(dragging: handle, by: delta)
+            if let aspectRatio {
+                try aspectLockedResize(
+                    dragging: handle,
+                    by: delta,
+                    ratio: aspectRatio.value
+                )
+            } else if lockingAspectRatio {
+                try aspectLockedResize(
+                    dragging: handle,
+                    by: delta,
+                    ratio: Double(topLeftSelection.width) / Double(topLeftSelection.height)
+                )
             } else {
                 try freeformResize(dragging: handle, by: delta)
             }
@@ -191,9 +202,13 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
 
     private func aspectLockedResize(
         dragging handle: CaptureResizeHandle,
-        by delta: CaptureResizeDelta
+        by delta: CaptureResizeDelta,
+        ratio: Double
     ) throws -> CaptureRect {
-        let ratio = Double(topLeftSelection.width) / Double(topLeftSelection.height)
+        guard handle.isCorner else {
+            return try aspectLockedSideResize(dragging: handle, by: delta, ratio: ratio)
+        }
+
         let left = topLeftSelection.originX
         let top = topLeftSelection.originY
         let right = topLeftSelection.originX + topLeftSelection.width
@@ -222,6 +237,67 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
         )
 
         let originX = handle.movesLeftEdge ? right - width : left
+        let originY = handle.movesTopEdge ? bottom - height : top
+        return try CaptureRect(x: originX, y: originY, width: width, height: height)
+    }
+
+    private func aspectLockedSideResize(
+        dragging handle: CaptureResizeHandle,
+        by delta: CaptureResizeDelta,
+        ratio: Double
+    ) throws -> CaptureRect {
+        let left = topLeftSelection.originX
+        let top = topLeftSelection.originY
+        let right = topLeftSelection.originX + topLeftSelection.width
+        let bottom = topLeftSelection.originY + topLeftSelection.height
+        let centerX = Double(left) + Double(topLeftSelection.width) / 2
+        let centerY = Double(top) + Double(topLeftSelection.height) / 2
+
+        if handle.movesLeftEdge || handle.movesRightEdge {
+            let maxWidth = handle.movesLeftEdge ? right : display.width - left
+            var width =
+                handle.movesLeftEdge
+                ? right - (left + delta.deltaX)
+                : right + delta.deltaX - left
+            var height = Int((Double(width) / ratio).rounded())
+
+            (width, height) = clampAspectLockedSize(
+                width: width,
+                height: height,
+                ratio: ratio,
+                maxWidth: maxWidth,
+                maxHeight: display.height
+            )
+
+            let originX = handle.movesLeftEdge ? right - width : left
+            let originY = clamp(
+                Int((centerY - Double(height) / 2).rounded()),
+                minimum: 0,
+                maximum: display.height - height
+            )
+            return try CaptureRect(x: originX, y: originY, width: width, height: height)
+        }
+
+        let maxHeight = handle.movesTopEdge ? bottom : display.height - top
+        var height =
+            handle.movesTopEdge
+            ? bottom - (top + delta.deltaY)
+            : bottom + delta.deltaY - top
+        var width = Int((Double(height) * ratio).rounded())
+
+        (width, height) = clampAspectLockedSize(
+            width: width,
+            height: height,
+            ratio: ratio,
+            maxWidth: display.width,
+            maxHeight: maxHeight
+        )
+
+        let originX = clamp(
+            Int((centerX - Double(width) / 2).rounded()),
+            minimum: 0,
+            maximum: display.width - width
+        )
         let originY = handle.movesTopEdge ? bottom - height : top
         return try CaptureRect(x: originX, y: originY, width: width, height: height)
     }

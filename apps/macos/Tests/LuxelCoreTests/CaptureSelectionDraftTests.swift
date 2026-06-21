@@ -159,6 +159,40 @@ struct CaptureSelectionDraftTests {
         #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 100, width: 480, height: 270)))
     }
 
+    @Test("requested aspect ratio corner resize uses requested ratio")
+    func requestedAspectRatioCornerResizeUsesRequestedRatio() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 200)
+        )
+
+        let resized = try draft.resized(
+            dragging: .bottomRight,
+            by: CaptureResizeDelta(x: 160, y: 10),
+            aspectRatio: .widescreen16x9
+        )
+
+        #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 100, width: 480, height: 270)))
+    }
+
+    @Test("requested aspect ratio side resize preserves ratio")
+    func requestedAspectRatioSideResizePreservesRatio() throws {
+        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
+        let draft = try CaptureSelectionDraft(
+            display: display,
+            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 200)
+        )
+
+        let resized = try draft.resized(
+            dragging: .right,
+            by: CaptureResizeDelta(x: 80, y: 90),
+            aspectRatio: .widescreen16x9
+        )
+
+        #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 88, width: 400, height: 225)))
+    }
+
     @Test("exact selection replacement clamps to display and minimum size")
     func exactSelectionReplacementClampsToDisplayAndMinimumSize() throws {
         let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)

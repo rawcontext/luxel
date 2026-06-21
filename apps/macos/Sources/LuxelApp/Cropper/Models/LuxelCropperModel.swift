@@ -398,7 +398,8 @@ extension LuxelCropperModel {
             self.selection = try draft.resized(
                 dragging: handle,
                 by: captureDelta(from: translation, viewSize: viewSize),
-                lockingAspectRatio: lockingAspectRatio && handle.isCropperCorner
+                lockingAspectRatio: lockingAspectRatio,
+                aspectRatio: activeAspectRatio
             ).topLeftSelection
             activateDisplay()
             updateLoupe(
@@ -731,15 +732,6 @@ extension LuxelCropperModel {
 }
 
 extension CaptureResizeHandle {
-    fileprivate var isCropperCorner: Bool {
-        switch self {
-        case .topLeft, .topRight, .bottomLeft, .bottomRight:
-            true
-        case .top, .left, .right, .bottom:
-            false
-        }
-    }
-
     fileprivate func cursorPoint(in selection: CaptureRect?) -> CapturePoint {
         guard let selection else {
             return CapturePoint(x: 0, y: 0)
