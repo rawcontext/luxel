@@ -103,6 +103,41 @@ public enum TranscriptSegmentationValidator {
         )
     }
 
+    public static func makeTranscript(
+        spans: [TimedTranscriptSpan],
+        turnSpanIDs: [[String]],
+        localeIdentifier: String
+    ) throws -> TurnSegmentedTranscript {
+        let spansByID = Dictionary(uniqueKeysWithValues: spans.map { ($0.id, $0) })
+        let candidates = try turnSpanIDs.enumerated().map { index, spanIDs in
+            guard !spanIDs.isEmpty else {
+                throw TranscriptModelError.invalidTurn
+            }
+
+            let turnSpans = try spanIDs.map { spanID in
+                guard let span = spansByID[spanID] else {
+                    throw TranscriptModelError.missingSpan(spanID)
+                }
+                return span
+            }
+
+            return TranscriptTurnCandidate(
+                id: "turn-\(index)",
+                spanIDs: spanIDs,
+                start: turnSpans[0].start,
+                end: turnSpans[turnSpans.count - 1].end,
+                text: joinedText(turnSpans),
+                source: commonSource(for: turnSpans)
+            )
+        }
+
+        return try makeTranscript(
+            spans: spans,
+            candidates: candidates,
+            localeIdentifier: localeIdentifier
+        )
+    }
+
     public static func validate(transcript: TurnSegmentedTranscript) throws {
         try validate(spans: transcript.spans, turns: transcript.turns)
     }

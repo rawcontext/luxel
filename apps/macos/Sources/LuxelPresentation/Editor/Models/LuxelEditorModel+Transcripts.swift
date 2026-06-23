@@ -7,18 +7,91 @@ private let transcriptLogger = Logger(subsystem: "media.luxel.app", category: "t
 
 extension LuxelEditorModel {
     func seekToTranscriptTurn(_ turn: TranscriptTurn) {
-        currentPlaybackTime = turn.start
+        seekToTranscriptTime(turn.start)
+    }
+
+    func seekToTranscriptSpan(_ span: TimedTranscriptSpan) {
+        seekToTranscriptTime(span.start)
+    }
+
+    private func seekToTranscriptTime(_ time: TimeInterval) {
+        currentPlaybackTime = time
         player.seek(
-            to: CMTime(seconds: turn.start, preferredTimescale: 600),
+            to: CMTime(seconds: time, preferredTimescale: 600),
             toleranceBefore: .zero,
             toleranceAfter: .zero
         )
     }
 
+    func enableSpeechRecognition() {
+        guard hasAudioOnlySource,
+              let source,
+              let speechRecognitionAuthorizationService,
+              speechRecognitionAuthorizationState == .notDetermined
+                || speechRecognitionAuthorizationState == .denied
+        else {
+            return
+        }
+
+        let sourceURL = source.fileURL
+        speechRecognitionAuthorizationTask?.cancel()
+        speechRecognitionAuthorizationTask = Task {
+            [weak self, speechRecognitionAuthorizationService] in
+            let authorizationState = await speechRecognitionAuthorizationService.requestAuthorization()
+            await MainActor.run {
+                guard !Task.isCancelled,
+                      self?.source?.fileURL == sourceURL
+                else {
+                    return
+                }
+
+                self?.speechRecognitionAuthorizationTask = nil
+                self?.speechRecognitionAuthorizationState = authorizationState
+                if authorizationState == .authorized {
+                    self?.scheduleTranscriptExtraction(
+                        sourceContext: self?.transcriptSourceContext ?? .unknown)
+                }
+            }
+        }
+    }
+
+    func prepareTranscriptExtraction(sourceContext: TranscriptSourceContext) {
+        transcriptSourceContext = sourceContext
+        guard hasAudioOnlySource,
+              let source,
+              audioTranscriptService != nil,
+              let speechRecognitionAuthorizationService
+        else {
+            return
+        }
+
+        let sourceURL = source.fileURL
+        speechRecognitionAuthorizationTask?.cancel()
+        speechRecognitionAuthorizationTask = Task {
+            [weak self, speechRecognitionAuthorizationService] in
+            let authorizationState =
+                await speechRecognitionAuthorizationService.currentAuthorizationState()
+            await MainActor.run {
+                guard !Task.isCancelled,
+                      self?.source?.fileURL == sourceURL
+                else {
+                    return
+                }
+
+                self?.speechRecognitionAuthorizationTask = nil
+                self?.speechRecognitionAuthorizationState = authorizationState
+                if authorizationState == .authorized {
+                    self?.scheduleTranscriptExtraction(sourceContext: sourceContext)
+                }
+            }
+        }
+    }
+
     func scheduleTranscriptExtraction(sourceContext: TranscriptSourceContext) {
         guard hasAudioOnlySource,
               let source,
-              let audioTranscriptService
+              let audioTranscriptService,
+              speechRecognitionAuthorizationState == .authorized
         else {
             return
         }

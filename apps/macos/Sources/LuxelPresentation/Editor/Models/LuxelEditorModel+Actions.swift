@@ -548,8 +548,15 @@ extension LuxelEditorModel {
         frameGrabTask = nil
         previewAudioMixTask?.cancel()
         previewAudioMixTask = nil
+        speechRecognitionAuthorizationTask?.cancel()
+        speechRecognitionAuthorizationTask = nil
+        transcriptTask?.cancel()
+        transcriptTask = nil
+        transcript = nil
+        speechRecognitionAuthorizationState = nil
         player.pause()
         playbackRequested = false
+        currentPlaybackTime = 0
         player.replaceCurrentItem(with: nil)
         resetEditorUndoStack()
     }

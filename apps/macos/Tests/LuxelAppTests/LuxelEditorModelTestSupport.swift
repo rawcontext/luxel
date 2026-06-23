@@ -17,6 +17,8 @@ extension LuxelEditorModelTests {
         frameGrabDestinationClient: SpyFrameGrabDestinationClient = SpyFrameGrabDestinationClient(),
         audioPeakAnalyzer: any AudioPeakAnalyzer = SpyAudioPeakAnalyzer(),
         audioTranscriptService: (any AudioTranscriptService)? = nil,
+        speechRecognitionAuthorizationService: (any SpeechRecognitionAuthorizationService)? =
+            StubSpeechRecognitionAuthorizationService(state: .authorized),
         codecAvailability: CodecAvailability = .none,
         directoryAccessService: BookmarkedDirectoryAccessService? = nil,
         exportMemory: [ExportFormat: ExportMemory] = [:],
@@ -46,6 +48,7 @@ extension LuxelEditorModelTests {
             ),
             audioPeakAnalyzer: audioPeakAnalyzer,
             audioTranscriptService: audioTranscriptService,
+            speechRecognitionAuthorizationService: speechRecognitionAuthorizationService,
             fileSystem: fileSystem,
             codecAvailability: codecAvailability,
             directoryAccessService: directoryAccessService,
@@ -398,6 +401,34 @@ actor SpyAudioTranscriptService: AudioTranscriptService {
 
     func requests() -> [AudioTranscriptRequest] {
         capturedRequests
+    }
+}
+
+actor StubSpeechRecognitionAuthorizationService: SpeechRecognitionAuthorizationService {
+    private var state: SpeechRecognitionAuthorizationState
+    private let requestedState: SpeechRecognitionAuthorizationState
+    private var requestCount = 0
+
+    init(
+        state: SpeechRecognitionAuthorizationState,
+        requestedState: SpeechRecognitionAuthorizationState? = nil
+    ) {
+        self.state = state
+        self.requestedState = requestedState ?? state
+    }
+
+    func currentAuthorizationState() async -> SpeechRecognitionAuthorizationState {
+        state
+    }
+
+    func requestAuthorization() async -> SpeechRecognitionAuthorizationState {
+        requestCount += 1
+        state = requestedState
+        return state
+    }
+
+    func requests() -> Int {
+        requestCount
     }
 }
 

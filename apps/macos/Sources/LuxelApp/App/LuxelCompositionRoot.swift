@@ -115,6 +115,7 @@ enum LuxelCompositionRoot {
                     nativeEstimator: NativeExportSizeEstimator())
             ),
             audioTranscriptService: localAudioTranscriptService(),
+            speechRecognitionAuthorizationService: AppleSpeechRecognitionAuthorizationService(),
             codecAvailability: codecAdapterRegistry.availability,
             directoryAccessService: bookmarkedDirectoryAccessService(),
             errorReporter: errorReporter

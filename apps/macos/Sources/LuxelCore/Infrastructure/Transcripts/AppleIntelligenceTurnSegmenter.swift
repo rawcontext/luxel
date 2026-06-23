@@ -59,14 +59,14 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
             options: GenerationOptions(
                 sampling: .greedy,
                 temperature: 0,
-                maximumResponseTokens: max(512, spans.count * 32)
+                maximumResponseTokens: max(128, spans.count * 12)
             )
         )
 
         do {
             let transcript = try TranscriptSegmentationValidator.makeTranscript(
                 spans: spans,
-                candidates: response.content.turns.map(Self.candidate(from:)),
+                turnSpanIDs: response.content.turns.map(\.spanIDs),
                 localeIdentifier: locale.identifier
             )
             return transcript.turns
@@ -84,35 +84,6 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
         }
     }
 
-    private static func candidate(from turn: GeneratedTranscriptTurn) throws
-    -> TranscriptTurnCandidate {
-        TranscriptTurnCandidate(
-            id: turn.id,
-            spanIDs: turn.spanIDs,
-            start: turn.start,
-            end: turn.end,
-            text: turn.text,
-            source: try sourceLabel(from: turn.source)
-        )
-    }
-
-    private static func sourceLabel(from source: String?) throws -> TranscriptSourceLabel? {
-        guard let source else {
-            return nil
-        }
-
-        switch source.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
-        case "", "unknown", "none", "nil":
-            return nil
-        case "system", "system audio":
-            return .system
-        case "microphone", "mic":
-            return .microphone
-        default:
-            throw TranscriptModelError.inventedSource(source)
-        }
-    }
-
     private static func prompt(
         for spans: [TimedTranscriptSpan],
         locale: Locale,
@@ -123,7 +94,7 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
             ? """
 
       Your previous response failed validation. This time preserve every span id exactly once,
-      keep the text exact, and do not invent sources.
+      return only ordered span id groups. The app will reconstruct exact text, timing, and source.
 
       """
             : ""
@@ -132,7 +103,7 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
             return
                 """
         [id=\(span.id) start=\(formatTime(span.start)) end=\(formatTime(span.end)) \
-        source=\(source)] \(sanitized(span.text))
+        source=\(source)] \(retrying ? "" : sanitized(span.text))
         """
         }.joined(separator: "\n")
 
@@ -157,12 +128,11 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
     If source is missing or unknown, leave the turn source empty unless every span in the turn has the
     same known source.
 
-    Preserve the transcript exactly:
-    - Do not add, remove, rewrite, summarize, translate, censor, normalize, or correct words.
+    Group the transcript exactly:
     - Keep spans in their original order.
     - Every input span id must appear in exactly one output turn.
-    - Turn text must be the exact joined text of its span ids, using normal single spaces between spans.
-    - Do not create speaker names.
+    - Do not create speaker names, speaker ids, source labels, text, timing, summaries, or corrections.
+    - Return only turn ids and ordered span id lists.
 
     Create a new turn when one or more of these strongly suggests a conversational boundary:
     - The source label changes between adjacent spans.
@@ -180,9 +150,8 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
         """
     You repair transcript turn segmentation output. Follow these constraints exactly:
     - Use every input span id exactly once in original order.
-    - Do not change transcript text.
-    - Use only source values from the input: system, microphone, or nil.
-    - Do not infer speakers or names.
+    - Return only turn ids and ordered span id lists.
+    - Do not infer speakers, names, text, timing, or source labels.
     - Prefer fewer turns when uncertain.
     """
     }
@@ -236,12 +205,7 @@ private struct GeneratedTurnSegmentedTranscript {
 
 @Generable
 private struct GeneratedTranscriptTurn {
-    let id: String
     let spanIDs: [String]
-    let start: Double
-    let end: Double
-    let text: String
-    let source: String?
 }
 
 public enum AppleIntelligenceTurnSegmentationError: Error, Equatable, Sendable {

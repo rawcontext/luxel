@@ -48,6 +48,28 @@ struct TranscriptModelTests {
         }
     }
 
+    @Test("validator reconstructs exact turns from generated span id groups")
+    func validatorReconstructsTurnsFromSpanIDGroups() throws {
+        let spans = try sampleSpans(source: .microphone)
+        let transcript = try TranscriptSegmentationValidator.makeTranscript(
+            spans: spans,
+            turnSpanIDs: [["span-0", "span-1"]],
+            localeIdentifier: "en_US"
+        )
+
+        #expect(
+            transcript.turns == [
+                try TranscriptTurn(
+                    id: "turn-0",
+                    spanIDs: ["span-0", "span-1"],
+                    start: 0,
+                    end: 0.9,
+                    text: "Hello there",
+                    source: .microphone
+                )
+            ])
+    }
+
     @Test("validator rejects duplicate reordered missing and invented source spans")
     func validatorRejectsInvalidCoverageAndSources() throws {
         let spans = try sampleSpans(source: .system)

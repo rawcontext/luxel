@@ -4,6 +4,17 @@ public protocol AudioTranscriptService: Sendable {
     func transcript(for request: AudioTranscriptRequest) async throws -> TurnSegmentedTranscript?
 }
 
+public enum SpeechRecognitionAuthorizationState: Equatable, Sendable {
+    case notDetermined
+    case authorized
+    case denied
+}
+
+public protocol SpeechRecognitionAuthorizationService: Sendable {
+    func currentAuthorizationState() async -> SpeechRecognitionAuthorizationState
+    func requestAuthorization() async -> SpeechRecognitionAuthorizationState
+}
+
 public struct AudioTranscriptRequest: Equatable, Sendable {
     public let audioURL: URL
     public let locale: Locale

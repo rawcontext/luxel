@@ -5,13 +5,26 @@ import Speech
 
 public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
     private let temporaryDirectory: URL
+    private let speechAuthorizationStatus: @Sendable () async -> SFSpeechRecognizerAuthorizationStatus
 
     public init(temporaryDirectory: URL = FileManager.default.temporaryDirectory) {
+        self.init(
+            temporaryDirectory: temporaryDirectory,
+            speechAuthorizationStatus: Self.currentSpeechAuthorization
+        )
+    }
+
+    public init(
+        temporaryDirectory: URL = FileManager.default.temporaryDirectory,
+        speechAuthorizationStatus: @escaping @Sendable () async -> SFSpeechRecognizerAuthorizationStatus
+    ) {
         self.temporaryDirectory = temporaryDirectory
+        self.speechAuthorizationStatus = speechAuthorizationStatus
     }
 
     public func transcribe(_ request: TimedSpeechTranscriptionRequest) async throws
     -> [TimedTranscriptSpan] {
+        try await ensureSpeechAuthorization()
         guard Speech.SpeechTranscriber.isAvailable else {
             throw AppleSpeechTranscriptError.unavailable
         }
@@ -61,6 +74,16 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
             collectionTask.cancel()
             throw error
         }
+    }
+
+    private func ensureSpeechAuthorization() async throws {
+        guard await speechAuthorizationStatus() == .authorized else {
+            throw AppleSpeechTranscriptError.authorizationDenied
+        }
+    }
+
+    private static func currentSpeechAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
+        SFSpeechRecognizer.authorizationStatus()
     }
 
     private func ensureAssetsInstalled(for modules: [any Speech.SpeechModule]) async throws {
@@ -216,6 +239,7 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
 }
 
 public enum AppleSpeechTranscriptError: Error, Equatable, Sendable {
+    case authorizationDenied
     case unavailable
     case unsupportedLocale
     case assetsUnavailable

@@ -48,6 +48,9 @@ struct LuxelEditorModelTranscriptTests {
 
         model.seekToTranscriptTurn(visibleTranscript.turns[0])
         #expect(model.currentPlaybackTime == 0)
+
+        model.seekToTranscriptSpan(visibleTranscript.spans[1])
+        #expect(model.currentPlaybackTime == 0.5)
     }
 
     @Test("opening video source does not request transcript")
@@ -65,5 +68,101 @@ struct LuxelEditorModelTranscriptTests {
 
         #expect(model.visibleTranscript == nil)
         #expect(await transcriptService.requests().isEmpty)
+    }
+
+    @Test("speech prompt appears until the user enables recognition")
+    func speechPromptAppearsUntilUserEnablesRecognition() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
+        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
+        let transcriptService = SpyAudioTranscriptService(
+            transcript: try helper.sampleTranscript(source: .microphone))
+        let authorizationService = StubSpeechRecognitionAuthorizationService(
+            state: .notDetermined,
+            requestedState: .authorized
+        )
+        let model = helper.makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            audioTranscriptService: transcriptService,
+            speechRecognitionAuthorizationService: authorizationService
+        )
+
+        await model.open(
+            fileURL: sourceURL,
+            outputDirectory: URL(fileURLWithPath: "/tmp"),
+            transcriptSourceContext: TranscriptSourceContext(
+                recordingAudioMode: .microphone(deviceID: "mic-1"))
+        )
+
+        try await waitForSpeechRecognitionPrompt(model)
+        #expect(await transcriptService.requests().isEmpty)
+
+        model.enableSpeechRecognition()
+
+        let visibleTranscript = try await helper.waitForTranscript(model)
+        #expect(visibleTranscript.turns.first?.source == .microphone)
+        #expect(!model.shouldShowSpeechRecognitionPrompt)
+        #expect(await authorizationService.requests() == 1)
+        #expect(await transcriptService.requests().count == 1)
+    }
+
+    @Test("speech prompt remains visible after recognition is denied")
+    func speechPromptRemainsVisibleAfterRecognitionIsDenied() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
+        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
+        let transcriptService = SpyAudioTranscriptService(
+            transcript: try helper.sampleTranscript(source: .microphone))
+        let authorizationService = StubSpeechRecognitionAuthorizationService(
+            state: .notDetermined,
+            requestedState: .denied
+        )
+        let model = helper.makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            audioTranscriptService: transcriptService,
+            speechRecognitionAuthorizationService: authorizationService
+        )
+
+        await model.open(
+            fileURL: sourceURL,
+            outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
+
+        try await waitForSpeechRecognitionPrompt(model)
+        model.enableSpeechRecognition()
+        try await waitForSpeechRecognitionState(.denied, model: model)
+
+        #expect(model.speechRecognitionAuthorizationState == .denied)
+        #expect(model.shouldShowSpeechRecognitionPrompt)
+        #expect(model.visibleTranscript == nil)
+        #expect(await authorizationService.requests() == 1)
+        #expect(await transcriptService.requests().isEmpty)
+    }
+
+    private func waitForSpeechRecognitionPrompt(_ model: LuxelEditorModel) async throws {
+        for _ in 0..<100 {
+            if model.shouldShowSpeechRecognitionPrompt {
+                return
+            }
+
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(model.shouldShowSpeechRecognitionPrompt)
+    }
+
+    private func waitForSpeechRecognitionState(
+        _ state: SpeechRecognitionAuthorizationState,
+        model: LuxelEditorModel
+    ) async throws {
+        for _ in 0..<100 {
+            if model.speechRecognitionAuthorizationState == state {
+                return
+            }
+
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(model.speechRecognitionAuthorizationState == state)
     }
 }

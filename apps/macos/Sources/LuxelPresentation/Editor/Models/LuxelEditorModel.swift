@@ -51,6 +51,7 @@ public final class LuxelEditorModel {
     var recordingNavigationURLs: [URL] = []
     var recordingNavigationIndex: Int?
     var transcript: TurnSegmentedTranscript?
+    var speechRecognitionAuthorizationState: SpeechRecognitionAuthorizationState?
     var currentPlaybackTime: TimeInterval = 0
     let configuredSupportedFormats: [ExportFormat]
     var exportProgress: ExportProgressSnapshot?
@@ -68,6 +69,8 @@ public final class LuxelEditorModel {
     @ObservationIgnored let frameGrabService: FrameGrabService
     @ObservationIgnored let audioMixResolutionService: AudioMixResolutionService
     @ObservationIgnored let audioTranscriptService: (any AudioTranscriptService)?
+    @ObservationIgnored let speechRecognitionAuthorizationService:
+        (any SpeechRecognitionAuthorizationService)?
     @ObservationIgnored let fileSystem: any FileSystem
     @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService?
     @ObservationIgnored var playbackRequested = false
@@ -76,6 +79,8 @@ public final class LuxelEditorModel {
     @ObservationIgnored var frameGrabTask: Task<Void, Never>?
     @ObservationIgnored var previewAudioMixTask: Task<Void, Never>?
     @ObservationIgnored var transcriptTask: Task<Void, Never>?
+    @ObservationIgnored var speechRecognitionAuthorizationTask: Task<Void, Never>?
+    @ObservationIgnored var transcriptSourceContext: TranscriptSourceContext = .unknown
     @ObservationIgnored var exportMemoryByFormat: [ExportFormat: ExportMemory]
     @ObservationIgnored var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
     @ObservationIgnored var onConfirmDiscardChange: (@MainActor (Bool) -> Void)?
@@ -105,6 +110,8 @@ public final class LuxelEditorModel {
         ),
         audioPeakAnalyzer: any AudioPeakAnalyzer = AVAssetReaderAudioPeakAnalyzer(),
         audioTranscriptService: (any AudioTranscriptService)? = nil,
+        speechRecognitionAuthorizationService:
+            (any SpeechRecognitionAuthorizationService)? = nil,
         fileSystem: any FileSystem = LocalFileSystem(),
         codecAvailability: CodecAvailability = .none,
         directoryAccessService: BookmarkedDirectoryAccessService? = nil,
@@ -120,6 +127,7 @@ public final class LuxelEditorModel {
         self.frameGrabService = frameGrabService
         self.audioMixResolutionService = AudioMixResolutionService(analyzer: audioPeakAnalyzer)
         self.audioTranscriptService = audioTranscriptService
+        self.speechRecognitionAuthorizationService = speechRecognitionAuthorizationService
         self.fileSystem = fileSystem
         self.directoryAccessService = directoryAccessService
         self.configuredSupportedFormats = codecAvailability.availableExportFormats
@@ -148,6 +156,14 @@ extension LuxelEditorModel {
 
     var visibleTranscript: TurnSegmentedTranscript? {
         hasAudioOnlySource ? transcript : nil
+    }
+
+    var shouldShowSpeechRecognitionPrompt: Bool {
+        hasAudioOnlySource
+            && audioTranscriptService != nil
+            && speechRecognitionAuthorizationService != nil
+            && (speechRecognitionAuthorizationState == .notDetermined
+                    || speechRecognitionAuthorizationState == .denied)
     }
 
     var supportedFormats: [ExportFormat] {
@@ -551,9 +567,13 @@ extension LuxelEditorModel {
         frameGrabTask = nil
         previewAudioMixTask?.cancel()
         previewAudioMixTask = nil
+        speechRecognitionAuthorizationTask?.cancel()
+        speechRecognitionAuthorizationTask = nil
         transcriptTask?.cancel()
         transcriptTask = nil
         transcript = nil
+        speechRecognitionAuthorizationState = nil
+        self.transcriptSourceContext = transcriptSourceContext
         currentPlaybackTime = 0
 
         do {
@@ -573,14 +593,17 @@ extension LuxelEditorModel {
             schedulePreviewAudioMixUpdate()
             status = .ready
             resetEditorUndoStack()
-            scheduleTranscriptExtraction(sourceContext: transcriptSourceContext)
+            prepareTranscriptExtraction(sourceContext: transcriptSourceContext)
         } catch {
             source = nil
             previewAudioMixTask?.cancel()
             previewAudioMixTask = nil
+            speechRecognitionAuthorizationTask?.cancel()
+            speechRecognitionAuthorizationTask = nil
             transcriptTask?.cancel()
             transcriptTask = nil
             transcript = nil
+            speechRecognitionAuthorizationState = nil
             player.replaceCurrentItem(with: nil)
             status = .failed(errorMessage(error))
             resetEditorUndoStack()

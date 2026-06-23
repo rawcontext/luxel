@@ -192,7 +192,9 @@ extension LuxelEditorView {
                 .lineLimit(lineLimit)
                 .truncationMode(.middle)
                 .monospacedDigit()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var exportControls: some View {
@@ -305,28 +307,46 @@ extension LuxelEditorView {
                     .monospacedDigit()
             }
 
-            HStack(spacing: 8) {
-                Button {
-                    model.saveOriginal()
-                } label: {
-                    exportActionLabel("Save Original", systemImage: "doc.on.doc")
-                }
-                .buttonStyle(.bordered)
-                .disabled(!model.canSaveOriginal)
-
-                Button {
-                    model.startExport()
-                } label: {
-                    exportActionLabel(
-                        model.isExporting ? "Exporting" : "Export",
-                        systemImage: "square.and.arrow.down"
-                    )
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!model.canExport)
-            }
-            .controlSize(.large)
+            exportActionButtons
         }
+    }
+
+    private var exportActionButtons: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                saveOriginalButton
+                exportButton
+            }
+
+            VStack(spacing: 8) {
+                saveOriginalButton
+                exportButton
+            }
+        }
+        .controlSize(.large)
+    }
+
+    private var saveOriginalButton: some View {
+        Button {
+            model.saveOriginal()
+        } label: {
+            exportActionLabel("Save Original", systemImage: "doc.on.doc")
+        }
+        .buttonStyle(.bordered)
+        .disabled(!model.canSaveOriginal)
+    }
+
+    private var exportButton: some View {
+        Button {
+            model.startExport()
+        } label: {
+            exportActionLabel(
+                model.isExporting ? "Exporting" : "Export",
+                systemImage: "square.and.arrow.down"
+            )
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(!model.canExport)
     }
 
     private func exportActionLabel(
@@ -336,7 +356,7 @@ extension LuxelEditorView {
         Label(title, systemImage: systemImage)
             .lineLimit(1)
             .minimumScaleFactor(0.82)
-            .frame(maxWidth: .infinity)
+            .frame(minWidth: 0, maxWidth: .infinity)
     }
 
     private var gifControls: some View {
