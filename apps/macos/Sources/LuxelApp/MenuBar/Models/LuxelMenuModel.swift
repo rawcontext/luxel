@@ -181,7 +181,9 @@ final class LuxelMenuModel {
             history: recordingHistoryService,
             outputFinalizer: recordingOutputFinalizer
         )
-        self.settings = (try? settingsStore.load()) ?? LuxelCompositionRoot.defaultSettings
-        self.launchAtLogin = launchAtLoginService.isEnabled()
+        let loadedSettings = (try? settingsStore.load()) ?? LuxelCompositionRoot.defaultSettings
+        self.settings = loadedSettings
+        self.launchAtLogin = loadedSettings.launchAtLogin
+        reconcileLaunchAtLoginWithSettings()
     }
 }

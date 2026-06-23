@@ -450,6 +450,10 @@ extension LuxelSettingsView {
         Section("Menu Bar") {
             Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
                 .help("Show elapsed recording time in the menu bar.")
+            if model.settings.notchSurfaceSettings.isEnabled {
+                Toggle("Hide Menu Bar Icon", isOn: $model.settings.hideMenuBarIcon)
+                    .help("Hide Luxel from the menu bar while the notch surface is enabled.")
+            }
             Toggle("Remind About Notifications", isOn: $model.settings.notificationReminder)
                 .help("Remind you to silence notifications before recording.")
         }

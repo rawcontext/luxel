@@ -52,6 +52,8 @@ extension SettingsTests {
         #expect(!settings.updatePreferences.automaticallyDownloadAndInstall)
         #expect(settings.updatePreferences.channel == .stable)
         #expect(settings.showTimeInMenuBar)
+        #expect(!settings.hideMenuBarIcon)
+        #expect(settings.launchAtLogin)
         #expect(settings.notificationReminder)
         #expect(settings.allowURLAutomation)
         #expect(settings.urlAutomationGrants.isEmpty)
@@ -249,6 +251,36 @@ extension SettingsTests {
         #expect(throws: NotchSurfaceSettingsError.invalidAutoCollapseSeconds) {
             _ = try settings.replacing(autoCollapseSeconds: .infinity)
         }
+    }
+
+    @Test("menu bar icon hiding requires notch surface enabled")
+    func menuBarIconHidingRequiresNotchSurfaceEnabled() throws {
+        let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
+        var settings = AppSettings(recordingsDirectory: directory, hideMenuBarIcon: true)
+
+        #expect(settings.hideMenuBarIcon)
+
+        settings.notchSurfaceSettings = try settings.notchSurfaceSettings.replacing(isEnabled: false)
+
+        #expect(!settings.hideMenuBarIcon)
+    }
+
+    @Test("decoding menu bar icon hiding respects notch surface state")
+    func decodingMenuBarIconHidingRespectsNotchSurfaceState() throws {
+        let data = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "hideMenuBarIcon": true,
+          "notchSurfaceSettings": {
+              "isEnabled": false
+          }
+      }
+      """.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(!settings.hideMenuBarIcon)
     }
 
     @Test("camera recording options derive from camera settings")

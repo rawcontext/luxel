@@ -71,12 +71,28 @@ extension LuxelMenuModel {
         settings.perFormatExportMemory[format] = memory
         saveSettings()
     }
+
+    func reconcileLaunchAtLoginWithSettings() {
+        applyLaunchAtLogin(settings.launchAtLogin)
+    }
+
     func setLaunchAtLogin(_ enabled: Bool) {
+        applyLaunchAtLogin(enabled)
+    }
+
+    private func applyLaunchAtLogin(_ enabled: Bool) {
         do {
-            try launchAtLoginService.setEnabled(enabled)
-            launchAtLogin = launchAtLoginService.isEnabled()
+            if launchAtLoginService.isEnabled() != enabled {
+                try launchAtLoginService.setEnabled(enabled)
+            }
         } catch {
-            launchAtLogin = launchAtLoginService.isEnabled()
+        }
+
+        let resolved = launchAtLoginService.isEnabled()
+        launchAtLogin = resolved
+        if settings.launchAtLogin != resolved {
+            settings.launchAtLogin = resolved
+            saveSettings()
         }
     }
 }

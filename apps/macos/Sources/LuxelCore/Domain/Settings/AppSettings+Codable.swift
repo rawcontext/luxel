@@ -37,6 +37,8 @@ extension AppSettings {
         case clipReplayBufferShortcut
         case updatePreferences
         case showTimeInMenuBar
+        case hideMenuBarIcon
+        case launchAtLogin
         case notificationReminder
         case allowURLAutomation
         case urlAutomationGrants
@@ -120,6 +122,8 @@ extension AppSettings {
         let general = try Self.decodeGeneralSettings(from: container)
         updatePreferences = general.updatePreferences
         showTimeInMenuBar = general.showTimeInMenuBar
+        hideMenuBarIcon = general.hideMenuBarIcon && notchSurfaceSettings.isEnabled
+        launchAtLogin = general.launchAtLogin
         notificationReminder = general.notificationReminder
         allowURLAutomation = true
         urlAutomationGrants = general.urlAutomationGrants
@@ -244,6 +248,9 @@ extension AppSettings {
                 UpdatePreferences.self, forKey: .updatePreferences) ?? .defaults,
             showTimeInMenuBar: container.decodeIfPresent(Bool.self, forKey: .showTimeInMenuBar)
                 ?? true,
+            hideMenuBarIcon: container.decodeIfPresent(Bool.self, forKey: .hideMenuBarIcon)
+                ?? false,
+            launchAtLogin: container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true,
             notificationReminder: container.decodeIfPresent(Bool.self, forKey: .notificationReminder)
                 ?? true,
             urlAutomationGrants: container.decodeIfPresent(
@@ -376,6 +383,8 @@ private struct ShortcutSettings {
 private struct GeneralSettings {
     let updatePreferences: UpdatePreferences
     let showTimeInMenuBar: Bool
+    let hideMenuBarIcon: Bool
+    let launchAtLogin: Bool
     let notificationReminder: Bool
     let urlAutomationGrants: [String]
     let exportPresets: [ExportPreset]

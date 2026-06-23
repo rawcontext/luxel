@@ -79,6 +79,8 @@ struct UserDefaultsSettingsStoreTests {
                 channel: .beta
             ),
             showTimeInMenuBar: false,
+            hideMenuBarIcon: false,
+            launchAtLogin: false,
             notificationReminder: false,
             allowURLAutomation: true,
             urlAutomationGrants: ["com.example.terminal"],
@@ -247,6 +249,8 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.clipReplayBufferShortcut == "")
         #expect(settings.updatePreferences == .defaults)
         #expect(settings.showTimeInMenuBar)
+        #expect(!settings.hideMenuBarIcon)
+        #expect(settings.launchAtLogin)
         #expect(settings.notificationReminder)
         #expect(settings.allowURLAutomation)
         #expect(settings.urlAutomationGrants.isEmpty)

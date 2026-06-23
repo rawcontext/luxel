@@ -87,7 +87,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var replayBufferConfiguration: ReplayBufferConfiguration?
     public var replayBufferResumeOnLaunch: Bool
     public var replayClipDestination: ReplayClipDestination
-    public var notchSurfaceSettings: NotchSurfaceSettings
+    public var notchSurfaceSettings: NotchSurfaceSettings {
+        didSet {
+            if !notchSurfaceSettings.isEnabled {
+                hideMenuBarIcon = false
+            }
+        }
+    }
     public var enableShortcuts: Bool
     public var triggerCropperShortcut: String
     public var toggleRecordingShortcut: String
@@ -98,6 +104,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var clipReplayBufferShortcut: String
     public var updatePreferences: UpdatePreferences
     public var showTimeInMenuBar: Bool
+    public var hideMenuBarIcon: Bool
+    public var launchAtLogin: Bool
     public var notificationReminder: Bool
     public var allowURLAutomation: Bool
     public var urlAutomationGrants: [String]
@@ -169,6 +177,8 @@ extension AppSettings {
         clipReplayBufferShortcut: String = "",
         updatePreferences: UpdatePreferences = .defaults,
         showTimeInMenuBar: Bool = true,
+        hideMenuBarIcon: Bool = false,
+        launchAtLogin: Bool = true,
         notificationReminder: Bool = true,
         allowURLAutomation: Bool = true,
         urlAutomationGrants: [String] = [],
@@ -229,6 +239,8 @@ extension AppSettings {
         self.clipReplayBufferShortcut = clipReplayBufferShortcut
         self.updatePreferences = updatePreferences
         self.showTimeInMenuBar = showTimeInMenuBar
+        self.hideMenuBarIcon = hideMenuBarIcon && notchSurfaceSettings.isEnabled
+        self.launchAtLogin = launchAtLogin
         self.notificationReminder = notificationReminder
         self.allowURLAutomation = true
         self.urlAutomationGrants = urlAutomationGrants

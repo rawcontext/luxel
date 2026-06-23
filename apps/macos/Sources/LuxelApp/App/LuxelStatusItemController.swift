@@ -198,6 +198,14 @@ extension LuxelStatusItemController {
     private func refreshStatusItem() {
         refreshRecordingAudioLevelMonitoring()
 
+        let shouldShowStatusItem = shouldShowMenuBarIcon
+        setStatusItemVisible(shouldShowStatusItem)
+        if !shouldShowStatusItem {
+            stopRecordingAnimation()
+            refreshStatusItemPanels()
+            return
+        }
+
         let presentation = model.menuBarStatusPresentation()
         statusItem.button?.toolTip = presentation.accessibilityLabel
         statusItem.button?.setAccessibilityLabel(presentation.accessibilityLabel)
@@ -227,6 +235,31 @@ extension LuxelStatusItemController {
             )
         }
 
+        refreshStatusItemPanels()
+    }
+
+    private var shouldShowMenuBarIcon: Bool {
+        !model.settings.hideMenuBarIcon || !model.settings.notchSurfaceSettings.isEnabled
+    }
+
+    private func setStatusItemVisible(_ isVisible: Bool) {
+        guard statusItem.isVisible != isVisible else {
+            return
+        }
+
+        statusItem.isVisible = isVisible
+        currentImageKey = nil
+
+        if isVisible {
+            if let button = statusItem.button {
+                configureStatusItemButton(button)
+            }
+        } else {
+            closePopover()
+        }
+    }
+
+    private func refreshStatusItemPanels() {
         quickExportProgressPanelController.update(progress: model.quickExportProgress) { [weak model] in
             model?.cancelQuickExport()
         }
