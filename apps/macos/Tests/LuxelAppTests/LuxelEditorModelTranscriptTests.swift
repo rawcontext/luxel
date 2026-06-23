@@ -53,6 +53,61 @@ struct LuxelEditorModelTranscriptTests {
         #expect(model.currentPlaybackTime == 0.5)
     }
 
+    @Test("transcript progress appears while local extraction is active")
+    func transcriptProgressAppearsWhileExtractionIsActive() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
+        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 92)
+        let transcriptService = SpyAudioTranscriptService(
+            transcript: try helper.sampleTranscript(source: .microphone),
+            delay: .milliseconds(150)
+        )
+        let model = helper.makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            audioTranscriptService: transcriptService
+        )
+
+        await model.open(
+            fileURL: sourceURL,
+            outputDirectory: URL(fileURLWithPath: "/tmp"),
+            transcriptSourceContext: TranscriptSourceContext(
+                recordingAudioMode: .microphone(deviceID: "mic-1"))
+        )
+
+        try await waitForTranscriptProgress(true, model: model)
+        #expect(model.visibleTranscript == nil)
+
+        _ = try await helper.waitForTranscript(model)
+        #expect(!model.shouldShowTranscriptProgress)
+        #expect(!model.isTranscriptExtractionActive)
+    }
+
+    @Test("transcript progress hides after extraction failure")
+    func transcriptProgressHidesAfterExtractionFailure() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
+        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 92)
+        let transcriptService = SpyAudioTranscriptService(
+            error: TranscriptModelError.invalidTranscript,
+            delay: .milliseconds(100)
+        )
+        let model = helper.makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            audioTranscriptService: transcriptService
+        )
+
+        await model.open(
+            fileURL: sourceURL,
+            outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
+
+        try await waitForTranscriptProgress(true, model: model)
+        try await waitForTranscriptProgress(false, model: model)
+
+        #expect(model.visibleTranscript == nil)
+        #expect(!model.isTranscriptExtractionActive)
+    }
+
     @Test("opening video source does not request transcript")
     func openingVideoSourceDoesNotRequestTranscript() async throws {
         let helper = LuxelEditorModelTests()
@@ -149,6 +204,18 @@ struct LuxelEditorModelTranscriptTests {
         }
 
         #expect(model.shouldShowSpeechRecognitionPrompt)
+    }
+
+    private func waitForTranscriptProgress(_ expected: Bool, model: LuxelEditorModel) async throws {
+        for _ in 0..<100 {
+            if model.shouldShowTranscriptProgress == expected {
+                return
+            }
+
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(model.shouldShowTranscriptProgress == expected)
     }
 
     private func waitForSpeechRecognitionState(

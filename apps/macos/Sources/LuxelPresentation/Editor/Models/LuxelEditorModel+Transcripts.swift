@@ -98,6 +98,7 @@ extension LuxelEditorModel {
 
         let sourceURL = source.fileURL
         transcriptTask?.cancel()
+        isTranscriptExtractionActive = true
         transcriptTask = Task { [weak self, audioTranscriptService] in
             do {
                 let transcript = try await audioTranscriptService.transcript(
@@ -115,6 +116,7 @@ extension LuxelEditorModel {
                     }
 
                     self?.transcript = transcript
+                    self?.isTranscriptExtractionActive = false
                     self?.transcriptTask = nil
                 }
             } catch {
@@ -127,6 +129,7 @@ extension LuxelEditorModel {
                     }
 
                     self?.transcript = nil
+                    self?.isTranscriptExtractionActive = false
                     self?.transcriptTask = nil
                 }
             }

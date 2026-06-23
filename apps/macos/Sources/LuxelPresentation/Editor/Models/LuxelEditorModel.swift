@@ -51,6 +51,7 @@ public final class LuxelEditorModel {
     var recordingNavigationURLs: [URL] = []
     var recordingNavigationIndex: Int?
     var transcript: TurnSegmentedTranscript?
+    var isTranscriptExtractionActive = false
     var speechRecognitionAuthorizationState: SpeechRecognitionAuthorizationState?
     var currentPlaybackTime: TimeInterval = 0
     let configuredSupportedFormats: [ExportFormat]
@@ -164,6 +165,13 @@ extension LuxelEditorModel {
             && speechRecognitionAuthorizationService != nil
             && (speechRecognitionAuthorizationState == .notDetermined
                     || speechRecognitionAuthorizationState == .denied)
+    }
+
+    var shouldShowTranscriptProgress: Bool {
+        hasAudioOnlySource
+            && isTranscriptExtractionActive
+            && visibleTranscript == nil
+            && !shouldShowSpeechRecognitionPrompt
     }
 
     var supportedFormats: [ExportFormat] {
@@ -572,6 +580,7 @@ extension LuxelEditorModel {
         transcriptTask?.cancel()
         transcriptTask = nil
         transcript = nil
+        isTranscriptExtractionActive = false
         speechRecognitionAuthorizationState = nil
         self.transcriptSourceContext = transcriptSourceContext
         currentPlaybackTime = 0
@@ -603,6 +612,7 @@ extension LuxelEditorModel {
             transcriptTask?.cancel()
             transcriptTask = nil
             transcript = nil
+            isTranscriptExtractionActive = false
             speechRecognitionAuthorizationState = nil
             player.replaceCurrentItem(with: nil)
             status = .failed(errorMessage(error))

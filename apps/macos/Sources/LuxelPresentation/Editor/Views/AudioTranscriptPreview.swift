@@ -8,6 +8,7 @@ struct AudioTranscriptPreview: View {
         static let transcriptCardMaxWidth: CGFloat = 640
         static let transcriptHorizontalPadding: CGFloat = 24
         static let transcriptTopPadding: CGFloat = 86
+        static let progressCardMaxWidth: CGFloat = 360
     }
 
     @Bindable var model: LuxelEditorModel
@@ -15,6 +16,8 @@ struct AudioTranscriptPreview: View {
     var body: some View {
         if model.shouldShowSpeechRecognitionPrompt {
             speechRecognitionPrompt
+        } else if model.shouldShowTranscriptProgress {
+            transcriptProgress
         } else if let transcript = model.visibleTranscript {
             VStack {
                 transcriptCard(transcript)
@@ -26,6 +29,37 @@ struct AudioTranscriptPreview: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .allowsHitTesting(true)
         }
+    }
+
+    private var transcriptProgress: some View {
+        VStack {
+            HStack(spacing: 10) {
+                ProgressView()
+                    .controlSize(.small)
+
+                Text("Transcribing audio...")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .frame(maxWidth: Layout.progressCardMaxWidth)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.white.opacity(0.12), lineWidth: 1)
+            }
+            .padding(.horizontal, Layout.transcriptHorizontalPadding)
+            .padding(.top, Layout.transcriptTopPadding)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Transcribing audio")
     }
 
     private var speechRecognitionPrompt: some View {

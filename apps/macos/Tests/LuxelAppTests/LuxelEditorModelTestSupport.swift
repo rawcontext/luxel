@@ -380,18 +380,24 @@ actor SpyAudioPeakAnalyzer: AudioPeakAnalyzer {
 actor SpyAudioTranscriptService: AudioTranscriptService {
     private let transcriptResult: TurnSegmentedTranscript?
     private let transcriptError: (any Error)?
+    private let delay: Duration?
     private var capturedRequests: [AudioTranscriptRequest] = []
 
     init(
         transcript: TurnSegmentedTranscript? = nil,
-        error: (any Error)? = nil
+        error: (any Error)? = nil,
+        delay: Duration? = nil
     ) {
         self.transcriptResult = transcript
         self.transcriptError = error
+        self.delay = delay
     }
 
     func transcript(for request: AudioTranscriptRequest) async throws -> TurnSegmentedTranscript? {
         capturedRequests.append(request)
+        if let delay {
+            try await Task.sleep(for: delay)
+        }
         if let transcriptError {
             throw transcriptError
         }

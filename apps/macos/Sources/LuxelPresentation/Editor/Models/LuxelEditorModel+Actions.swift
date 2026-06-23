@@ -553,6 +553,7 @@ extension LuxelEditorModel {
         transcriptTask?.cancel()
         transcriptTask = nil
         transcript = nil
+        isTranscriptExtractionActive = false
         speechRecognitionAuthorizationState = nil
         player.pause()
         playbackRequested = false

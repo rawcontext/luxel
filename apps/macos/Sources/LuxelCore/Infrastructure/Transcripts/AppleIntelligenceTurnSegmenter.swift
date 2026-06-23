@@ -2,6 +2,9 @@ import Foundation
 import FoundationModels
 
 public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
+    private static let maximumChunkSpanCount = 80
+    private static let maximumChunkCharacterCount = 4_000
+
     public init() {}
 
     public func segment(
@@ -53,15 +56,27 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
             model: model,
             instructions: retrying ? Self.retryInstructions : Self.instructions
         )
-        let response = try await session.respond(
-            to: Self.prompt(for: spans, locale: locale, retrying: retrying),
-            generating: GeneratedTurnSegmentedTranscript.self,
-            options: GenerationOptions(
-                sampling: .greedy,
-                temperature: 0,
-                maximumResponseTokens: max(128, spans.count * 12)
+
+        let response: LanguageModelSession.Response<GeneratedTurnSegmentedTranscript>
+        do {
+            response = try await session.respond(
+                to: Self.prompt(for: spans, locale: locale, retrying: retrying),
+                generating: GeneratedTurnSegmentedTranscript.self,
+                options: GenerationOptions(
+                    sampling: .greedy,
+                    temperature: 0,
+                    maximumResponseTokens: max(256, spans.count * 24)
+                )
             )
-        )
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            guard spans.count > 1 else {
+                throw error
+            }
+
+            return try await segmentSplitChunk(spans, locale: locale, model: model)
+        }
 
         do {
             let transcript = try TranscriptSegmentationValidator.makeTranscript(
@@ -82,6 +97,29 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
                 retrying: true
             )
         }
+    }
+
+    private func segmentSplitChunk(
+        _ spans: [TimedTranscriptSpan],
+        locale: Locale,
+        model: SystemLanguageModel
+    ) async throws -> [TranscriptTurn] {
+        let splitIndex = Self.splitIndex(for: spans)
+        let leadingSpans = Array(spans[..<splitIndex])
+        let trailingSpans = Array(spans[splitIndex...])
+        let leadingTurns = try await segmentChunk(
+            leadingSpans,
+            locale: locale,
+            model: model,
+            retrying: false
+        )
+        let trailingTurns = try await segmentChunk(
+            trailingSpans,
+            locale: locale,
+            model: model,
+            retrying: false
+        )
+        return leadingTurns + trailingTurns
     }
 
     private static func prompt(
@@ -164,8 +202,8 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
         for span in spans {
             let projectedCharacterCount = currentCharacterCount + span.text.count
             if !current.isEmpty,
-               current.count >= 220 || projectedCharacterCount > 10_000,
-               shouldBreakBefore(span, after: current[current.count - 1]) {
+               current.count >= maximumChunkSpanCount
+                || projectedCharacterCount > maximumChunkCharacterCount {
                 chunks.append(current)
                 current = []
                 currentCharacterCount = 0
@@ -182,11 +220,36 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
         return chunks
     }
 
-    private static func shouldBreakBefore(
-        _ span: TimedTranscriptSpan,
-        after previousSpan: TimedTranscriptSpan
-    ) -> Bool {
-        span.start - previousSpan.end >= 1.2 || span.source != previousSpan.source
+    private static func splitIndex(for spans: [TimedTranscriptSpan]) -> Int {
+        let midpoint = spans.count / 2
+        guard spans.count > 2 else {
+            return 1
+        }
+
+        if let naturalSplitIndex = spans.indices.dropFirst().min(by: { lhs, rhs in
+            let lhsScore = splitScore(before: lhs, midpoint: midpoint, spans: spans)
+            let rhsScore = splitScore(before: rhs, midpoint: midpoint, spans: spans)
+            return lhsScore < rhsScore
+        }) {
+            return naturalSplitIndex
+        }
+
+        return midpoint
+    }
+
+    private static func splitScore(
+        before index: Int,
+        midpoint: Int,
+        spans: [TimedTranscriptSpan]
+    ) -> Double {
+        let previousSpan = spans[index - 1]
+        let span = spans[index]
+        let distancePenalty = Double(abs(index - midpoint))
+        let boundaryBonus =
+            span.start - previousSpan.end >= 1.2 || span.source != previousSpan.source
+            ? -1_000.0
+            : 0
+        return distancePenalty + boundaryBonus
     }
 
     private static func sanitized(_ text: String) -> String {
