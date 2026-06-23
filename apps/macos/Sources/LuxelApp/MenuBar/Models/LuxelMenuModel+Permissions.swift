@@ -79,7 +79,12 @@ extension LuxelMenuModel {
             }
         case .camera:
             if cameraStatus == .authorized {
-                await enableDefaultCameraSource()
+                if settings.cameraDeviceID == nil {
+                    await enableDefaultCameraSource()
+                } else {
+                    refreshCameraDevices()
+                    closeCameraPreviewOutsideRecording()
+                }
             } else {
                 closeCameraPreviewOutsideRecording()
             }

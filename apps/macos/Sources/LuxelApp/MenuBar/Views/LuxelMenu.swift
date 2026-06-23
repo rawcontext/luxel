@@ -248,6 +248,7 @@ extension LuxelMenu {
             recordSystemAudioFooterToggle
             recordMicrophoneFooterToggle
             cameraFooterToggle
+            cameraFooterPicker
 
             recentFooterControl
                 .layoutPriority(1)
@@ -649,6 +650,7 @@ extension LuxelMenu {
 
     private func refreshMenuState() async {
         model.refreshRecentRecordings()
+        model.refreshCameraDevices()
         await model.refreshPermissions()
         await model.refreshCaptureTargets()
     }

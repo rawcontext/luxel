@@ -302,6 +302,18 @@ extension LuxelSettingsView {
         } footer: {
             Text("Choose where Luxel saves recordings and how the editor behaves after export.")
         }
+
+        Section {
+            Toggle(
+                "Segment Transcript Turns",
+                isOn: $model.settings.transcriptTurnSegmentationEnabled
+            )
+            .help("Use Apple Intelligence to group audio transcripts into display turns.")
+        } header: {
+            Text("Transcripts")
+        } footer: {
+            Text("Turn this off for faster raw transcripts on long audio recordings.")
+        }
     }
 
     @ViewBuilder

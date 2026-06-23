@@ -94,17 +94,20 @@ final class CameraPreviewPanelController {
             return
         }
 
+        let constraintRect = constraintRect(for: panel.frame)
+        let size = Self.constrainedPanelSize(panel.frame.size, in: constraintRect)
         let origin = Self.constrainedOrigin(
             panel.frame.origin,
-            size: panel.frame.size,
-            in: constraintRect(for: panel.frame)
+            size: size,
+            in: constraintRect
         )
-        guard origin != panel.frame.origin else {
+        let frame = NSRect(origin: origin, size: size)
+        guard frame != panel.frame else {
             return
         }
 
-        panel.setFrameOrigin(origin)
-        rememberPanelOrigin(frame: NSRect(origin: origin, size: panel.frame.size))
+        panel.setFrame(frame, display: true)
+        rememberPanelOrigin(frame: frame)
     }
 
     private static func makeSession(device: AVCaptureDevice) throws -> AVCaptureSession {
@@ -165,6 +168,7 @@ final class CameraPreviewPanelController {
             ?? NSScreen.screens.first
         let displayID = screen?.displayID
         let constraintRect = snapRect ?? screen?.visibleFrame ?? .zero
+        let size = Self.constrainedPanelSize(size, in: constraintRect)
 
         if let displayID,
            let origin = panelOriginsByDisplayID[displayID] {
@@ -281,6 +285,21 @@ final class CameraPreviewPanelController {
             x: min(max(origin.x, rect.minX), maxX),
             y: min(max(origin.y, rect.minY), maxY)
         )
+    }
+
+    private static func constrainedPanelSize(_ size: CGSize, in rect: NSRect) -> CGSize {
+        guard rect.width > 0, rect.height > 0 else {
+            return size
+        }
+
+        let maxSide = min(rect.width, rect.height)
+        let preferredSide = min(size.width, size.height)
+        guard preferredSide > maxSide else {
+            return size
+        }
+
+        let side = max(1, maxSide)
+        return CGSize(width: side, height: side)
     }
 
     private static let edgeMargin: CGFloat = 28

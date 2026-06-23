@@ -19,6 +19,7 @@ extension AppSettings {
         case audioInputDeviceID
         case audioInputDeviceName
         case audioOnlyFormat
+        case transcriptTurnSegmentationEnabled
         case cameraDeviceID
         case cameraSeparateTrack
         case cameraPreviewStyle
@@ -101,6 +102,9 @@ extension AppSettings {
         audioInputDeviceID = audioInput.id
         audioInputDeviceName = audioInput.name
         audioOnlyFormat = recording.audioOnlyFormat
+        transcriptTurnSegmentationEnabled =
+            try container.decodeIfPresent(Bool.self, forKey: .transcriptTurnSegmentationEnabled)
+            ?? false
         let capture = try Self.decodeCaptureSurfaceSettings(from: container)
         cameraDeviceID = capture.cameraDeviceID
         cameraSeparateTrack = capture.cameraSeparateTrack

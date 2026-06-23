@@ -4,6 +4,11 @@ public protocol AudioTranscriptService: Sendable {
     func transcript(for request: AudioTranscriptRequest) async throws -> TurnSegmentedTranscript?
 }
 
+public enum TranscriptTurnSegmentationMode: String, Codable, Equatable, Sendable {
+    case semantic
+    case raw
+}
+
 public enum SpeechRecognitionAuthorizationState: Equatable, Sendable {
     case notDetermined
     case authorized
@@ -19,15 +24,29 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
     public let audioURL: URL
     public let locale: Locale
     public let sourceContext: TranscriptSourceContext
+    public let turnSegmentationMode: TranscriptTurnSegmentationMode
 
     public init(
         audioURL: URL,
         locale: Locale = .current,
-        sourceContext: TranscriptSourceContext = .unknown
+        sourceContext: TranscriptSourceContext = .unknown,
+        turnSegmentationMode: TranscriptTurnSegmentationMode = .semantic
     ) {
         self.audioURL = audioURL
         self.locale = locale
         self.sourceContext = sourceContext
+        self.turnSegmentationMode = turnSegmentationMode
+    }
+
+    public func replacingTurnSegmentationMode(
+        _ turnSegmentationMode: TranscriptTurnSegmentationMode
+    ) -> AudioTranscriptRequest {
+        AudioTranscriptRequest(
+            audioURL: audioURL,
+            locale: locale,
+            sourceContext: sourceContext,
+            turnSegmentationMode: turnSegmentationMode
+        )
     }
 }
 

@@ -588,36 +588,43 @@ extension LuxelEditorModel {
                 options: [.skipsHiddenFiles]
             )) ?? []
 
-        let recordingURLs = directoryURLs.compactMap { url -> (url: URL, date: Date)? in
-            guard isNavigableRecordingURL(url),
-                  let values = try? url.resourceValues(forKeys: [
-                    .creationDateKey,
-                    .contentModificationDateKey,
-                    .isRegularFileKey
-                  ]),
-                  values.isRegularFile == true
-            else {
-                return nil
+        let recordingURLs =
+            (directoryURLs.compactMap(recordingNavigationCandidate)
+                + [
+                    recordingNavigationCandidate(for: selectedFileURL)
+                        ?? (selectedFileURL.standardizedFileURL, .distantPast)
+                ])
+            .sorted { lhs, rhs in
+                if lhs.date == rhs.date {
+                    return lhs.url.lastPathComponent > rhs.url.lastPathComponent
+                }
+
+                return lhs.date > rhs.date
             }
+            .map(\.url)
 
-            let date =
-                [
-                    values.creationDate,
-                    values.contentModificationDate
-                ].compactMap(\.self).max() ?? .distantPast
+        return uniqueNavigationURLs(recordingURLs)
+    }
 
-            return (url.standardizedFileURL, date)
+    private static func recordingNavigationCandidate(for url: URL) -> (url: URL, date: Date)? {
+        guard isNavigableRecordingURL(url),
+              let values = try? url.resourceValues(forKeys: [
+                .creationDateKey,
+                .contentModificationDateKey,
+                .isRegularFileKey
+              ]),
+              values.isRegularFile == true
+        else {
+            return nil
         }
-        .sorted { lhs, rhs in
-            if lhs.date == rhs.date {
-                return lhs.url.lastPathComponent > rhs.url.lastPathComponent
-            }
 
-            return lhs.date > rhs.date
-        }
-        .map(\.url)
+        let date =
+            [
+                values.creationDate,
+                values.contentModificationDate
+            ].compactMap(\.self).max() ?? .distantPast
 
-        return uniqueNavigationURLs(recordingURLs + [selectedFileURL])
+        return (url.standardizedFileURL, date)
     }
 
     private static func isNavigableRecordingURL(_ url: URL) -> Bool {

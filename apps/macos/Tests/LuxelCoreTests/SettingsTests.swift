@@ -29,6 +29,7 @@ extension SettingsTests {
         #expect(settings.audioInputDeviceID == "SYSTEM_DEFAULT")
         #expect(settings.audioInputDeviceName == "System Default")
         #expect(settings.audioOnlyFormat == .aac)
+        #expect(!settings.transcriptTurnSegmentationEnabled)
         #expect(settings.cameraDeviceID == nil)
         #expect(settings.cameraSeparateTrack)
         #expect(settings.cameraPreviewStyle == CameraPreviewStyle())
@@ -69,6 +70,30 @@ extension SettingsTests {
         #expect(settings.confirmDiscard)
         #expect(settings.defaultCountdown == nil)
         #expect(settings.lastStopAfter == nil)
+    }
+
+    @Test("transcript turn segmentation setting defaults off and decodes explicit override")
+    func transcriptTurnSegmentationSettingDecodesOverride() throws {
+        let missingData = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+      }
+      """.utf8)
+        let enabledData = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "transcriptTurnSegmentationEnabled": true
+      }
+      """.utf8)
+
+        #expect(
+            !(try JSONDecoder().decode(AppSettings.self, from: missingData)
+                .transcriptTurnSegmentationEnabled))
+        #expect(
+            try JSONDecoder().decode(AppSettings.self, from: enabledData)
+                .transcriptTurnSegmentationEnabled)
     }
 
     @Test("decoding settings removes retired built-in cropper size presets")

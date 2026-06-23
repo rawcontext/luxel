@@ -32,12 +32,19 @@ struct ApplicationSupportTranscriptCacheTests {
             locale: Locale(identifier: "en_US"),
             sourceContext: .unknown
         )
+        let rawRequest = AudioTranscriptRequest(
+            audioURL: sourceURL,
+            locale: Locale(identifier: "en_US"),
+            sourceContext: TranscriptSourceContext(recordingAudioMode: .microphone(deviceID: nil)),
+            turnSegmentationMode: .raw
+        )
         let transcript = try sampleTranscript(source: .microphone)
 
         try cache.save(transcript, for: microphoneRequest)
 
         #expect(try cache.load(for: microphoneRequest) == transcript)
         #expect(try cache.load(for: unknownRequest) == nil)
+        #expect(try cache.load(for: rawRequest) == nil)
     }
 
     private func sampleTranscript(source: TranscriptSourceLabel?) throws -> TurnSegmentedTranscript {

@@ -84,20 +84,20 @@ extension LuxelEditorView {
                 recordingNavigationButton(
                     title: "Back",
                     systemImage: "chevron.left",
-                    isEnabled: model.canNavigateToOlderRecording
-                ) {
-                    await model.navigateToOlderRecording()
-                }
-                .help("Open older recording")
-
-                recordingNavigationButton(
-                    title: "Forward",
-                    systemImage: "chevron.right",
                     isEnabled: model.canNavigateToNewerRecording
                 ) {
                     await model.navigateToNewerRecording()
                 }
                 .help("Open newer recording")
+
+                recordingNavigationButton(
+                    title: "Forward",
+                    systemImage: "chevron.right",
+                    isEnabled: model.canNavigateToOlderRecording
+                ) {
+                    await model.navigateToOlderRecording()
+                }
+                .help("Open older recording")
             }
         }
         .controlSize(.small)

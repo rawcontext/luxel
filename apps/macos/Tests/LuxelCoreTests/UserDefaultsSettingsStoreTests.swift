@@ -58,6 +58,7 @@ struct UserDefaultsSettingsStoreTests {
             audioInputDeviceID: "mic-1",
             audioInputDeviceName: "Studio Mic",
             audioOnlyFormat: .alac,
+            transcriptTurnSegmentationEnabled: false,
             cameraDeviceID: "camera-1",
             cameraSeparateTrack: false,
             cameraPreviewStyle: CameraPreviewStyle(shape: .roundedRect, size: .large, isMirrored: false),
@@ -229,6 +230,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.audioInputDeviceID == "device-1")
         #expect(settings.audioInputDeviceName == nil)
         #expect(settings.audioOnlyFormat == .aac)
+        #expect(!settings.transcriptTurnSegmentationEnabled)
         #expect(settings.cameraDeviceID == nil)
         #expect(settings.cameraSeparateTrack)
         #expect(settings.cameraPreviewStyle == CameraPreviewStyle())

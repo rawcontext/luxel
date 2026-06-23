@@ -52,6 +52,29 @@ struct LocalAudioTranscriptServiceTests {
         #expect(await transcriber.requests.isEmpty)
     }
 
+    @Test("service can return raw transcript without semantic turn segmentation")
+    func serviceCanReturnRawTranscriptWithoutSemanticTurnSegmentation() async throws {
+        let cache = MemoryTranscriptCache()
+        let transcriber = SpyTimedSpeechTranscriber()
+        let service = LocalAudioTranscriptService(
+            transcriber: transcriber,
+            turnSegmenter: FailingTranscriptTurnSegmenter(),
+            turnSegmentationMode: { .raw },
+            cache: cache,
+            audioTrackInspector: StubAudioTrackInspector(audioTrackCount: 1)
+        )
+
+        let transcript = try await service.transcript(
+            for: AudioTranscriptRequest(
+                audioURL: URL(fileURLWithPath: "/tmp/raw.m4a"),
+                locale: Locale(identifier: "en_US"),
+                sourceContext: TranscriptSourceContext(recordingAudioMode: .microphone(deviceID: nil))
+            ))
+
+        #expect(transcript?.turns.map(\.text) == ["Microphone"])
+        #expect(cache.savedRequests.map(\.turnSegmentationMode) == [.raw])
+    }
+
     private func sampleTranscript(source: TranscriptSourceLabel?) throws -> TurnSegmentedTranscript {
         let span = try TimedTranscriptSpan(
             id: "span-0",
@@ -121,9 +144,19 @@ private struct EchoTranscriptTurnSegmenter: TranscriptTurnSegmenter {
     }
 }
 
+private struct FailingTranscriptTurnSegmenter: TranscriptTurnSegmenter {
+    func segment(
+        spans: [TimedTranscriptSpan],
+        locale: Locale
+    ) async throws -> TurnSegmentedTranscript {
+        throw TranscriptModelError.invalidTranscript
+    }
+}
+
 private final class MemoryTranscriptCache: TranscriptCache, @unchecked Sendable {
     private let cachedTranscript: TurnSegmentedTranscript?
     private(set) var savedTranscripts: [TurnSegmentedTranscript] = []
+    private(set) var savedRequests: [AudioTranscriptRequest] = []
 
     init(cachedTranscript: TurnSegmentedTranscript? = nil) {
         self.cachedTranscript = cachedTranscript
@@ -135,6 +168,7 @@ private final class MemoryTranscriptCache: TranscriptCache, @unchecked Sendable 
 
     func save(_ transcript: TurnSegmentedTranscript, for request: AudioTranscriptRequest) throws {
         savedTranscripts.append(transcript)
+        savedRequests.append(request)
     }
 }
 

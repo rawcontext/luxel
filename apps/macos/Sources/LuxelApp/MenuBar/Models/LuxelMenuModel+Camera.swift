@@ -15,7 +15,7 @@ extension LuxelMenuModel {
         )
     }
 
-    func setCameraDeviceFromCropper(_ cameraDeviceID: String?) async {
+    func setCameraDevice(_ cameraDeviceID: String?) async {
         settings.cameraDeviceID = cameraDeviceID
         saveSettings()
 
@@ -32,6 +32,10 @@ extension LuxelMenuModel {
         }
 
         closeCameraPreviewOutsideRecording()
+    }
+
+    func setCameraDeviceFromCropper(_ cameraDeviceID: String?) async {
+        await setCameraDevice(cameraDeviceID)
     }
 
     func setCameraPreviewStyleFromCropper(_ style: CameraPreviewStyle) async {

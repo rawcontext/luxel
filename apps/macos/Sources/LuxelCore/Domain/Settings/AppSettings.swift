@@ -80,6 +80,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var audioInputDeviceID: String?
     public var audioInputDeviceName: String?
     public var audioOnlyFormat: AudioRecordingFormat
+    public var transcriptTurnSegmentationEnabled: Bool
     public var cameraDeviceID: String?
     public var cameraSeparateTrack: Bool
     public var cameraPreviewStyle: CameraPreviewStyle
@@ -159,6 +160,7 @@ extension AppSettings {
         audioInputDeviceID: String? = AudioInputDeviceID.systemDefault,
         audioInputDeviceName: String? = AudioInputDeviceOption.systemDefault.name,
         audioOnlyFormat: AudioRecordingFormat = .aac,
+        transcriptTurnSegmentationEnabled: Bool = false,
         cameraDeviceID: String? = nil,
         cameraSeparateTrack: Bool = true,
         cameraPreviewStyle: CameraPreviewStyle = CameraPreviewStyle(),
@@ -221,6 +223,7 @@ extension AppSettings {
         self.audioInputDeviceID = audioInputDeviceID
         self.audioInputDeviceName = audioInputDeviceName
         self.audioOnlyFormat = audioOnlyFormat
+        self.transcriptTurnSegmentationEnabled = transcriptTurnSegmentationEnabled
         self.cameraDeviceID = cameraDeviceID.flatMap(Self.nonEmpty)
         self.cameraSeparateTrack = cameraSeparateTrack
         self.cameraPreviewStyle = cameraPreviewStyle

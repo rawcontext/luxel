@@ -68,7 +68,8 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
             "\(size?.int64Value ?? 0)",
             "\(modificationDate?.timeIntervalSince1970 ?? 0)",
             request.locale.identifier,
-            request.sourceContext.cacheIdentifier
+            request.sourceContext.cacheIdentifier,
+            request.turnSegmentationMode.rawValue
         ].joined(separator: "|")
 
         return stableFNV1aHash(rawKey)

@@ -123,9 +123,14 @@ enum LuxelCompositionRoot {
     }
 
     static func localAudioTranscriptService() -> LocalAudioTranscriptService {
-        LocalAudioTranscriptService(
+        let settingsStore = settingsStore()
+        return LocalAudioTranscriptService(
             transcriber: AppleSpeechTranscriptExtractor(),
             turnSegmenter: AppleIntelligenceTurnSegmenter(),
+            turnSegmentationMode: {
+                let settings = (try? settingsStore.load()) ?? defaultSettings
+                return settings.transcriptTurnSegmentationEnabled ? .semantic : .raw
+            },
             cache: ApplicationSupportTranscriptCache(cacheDirectory: transcriptCacheDirectory),
             audioTrackInspector: AVFoundationAudioTrackInspector()
         )
