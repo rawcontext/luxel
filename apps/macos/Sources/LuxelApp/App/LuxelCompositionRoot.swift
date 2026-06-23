@@ -114,9 +114,19 @@ enum LuxelCompositionRoot {
                 estimator: codecAdapterRegistry.exportSizeEstimator(
                     nativeEstimator: NativeExportSizeEstimator())
             ),
+            audioTranscriptService: localAudioTranscriptService(),
             codecAvailability: codecAdapterRegistry.availability,
             directoryAccessService: bookmarkedDirectoryAccessService(),
             errorReporter: errorReporter
+        )
+    }
+
+    static func localAudioTranscriptService() -> LocalAudioTranscriptService {
+        LocalAudioTranscriptService(
+            transcriber: AppleSpeechTranscriptExtractor(),
+            turnSegmenter: AppleIntelligenceTurnSegmenter(),
+            cache: ApplicationSupportTranscriptCache(cacheDirectory: transcriptCacheDirectory),
+            audioTrackInspector: AVFoundationAudioTrackInspector()
         )
     }
 
@@ -161,6 +171,12 @@ enum LuxelCompositionRoot {
         applicationSupportDirectory
             .appending(path: "Luxel")
             .appending(path: "corrupt-recordings.jsonl")
+    }
+
+    private static var transcriptCacheDirectory: URL {
+        applicationSupportDirectory
+            .appending(path: "Luxel")
+            .appending(path: "Transcripts", directoryHint: .isDirectory)
     }
 
     private static var applicationSupportDirectory: URL {

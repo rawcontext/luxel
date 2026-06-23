@@ -674,6 +674,8 @@ extension LuxelEditorModel {
     }
 
     func handlePlaybackTime(_ currentTime: TimeInterval) {
+        currentPlaybackTime = currentTime
+
         guard playbackRequested else {
             return
         }

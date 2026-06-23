@@ -16,6 +16,7 @@ extension LuxelEditorModelTests {
         frameGrabFileWriter: SpyFrameGrabFileWriter = SpyFrameGrabFileWriter(),
         frameGrabDestinationClient: SpyFrameGrabDestinationClient = SpyFrameGrabDestinationClient(),
         audioPeakAnalyzer: any AudioPeakAnalyzer = SpyAudioPeakAnalyzer(),
+        audioTranscriptService: (any AudioTranscriptService)? = nil,
         codecAvailability: CodecAvailability = .none,
         directoryAccessService: BookmarkedDirectoryAccessService? = nil,
         exportMemory: [ExportFormat: ExportMemory] = [:],
@@ -44,6 +45,7 @@ extension LuxelEditorModelTests {
                 destinationClient: frameGrabDestinationClient
             ),
             audioPeakAnalyzer: audioPeakAnalyzer,
+            audioTranscriptService: audioTranscriptService,
             fileSystem: fileSystem,
             codecAvailability: codecAvailability,
             directoryAccessService: directoryAccessService,
@@ -79,6 +81,54 @@ extension LuxelEditorModelTests {
         }
 
         return try #require(model.player.currentItem?.audioMix)
+    }
+
+    func waitForTranscript(_ model: LuxelEditorModel) async throws -> TurnSegmentedTranscript {
+        for _ in 0..<100 {
+            if let transcript = model.visibleTranscript {
+                return transcript
+            }
+
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        return try #require(model.visibleTranscript)
+    }
+
+    func sampleTranscript(source: TranscriptSourceLabel?) throws -> TurnSegmentedTranscript {
+        let spans = [
+            try TimedTranscriptSpan(
+                id: "span-0",
+                text: "Hello",
+                start: 0,
+                end: 0.5,
+                confidence: 0.9,
+                source: source
+            ),
+            try TimedTranscriptSpan(
+                id: "span-1",
+                text: "world",
+                start: 0.5,
+                end: 1,
+                confidence: 0.9,
+                source: source
+            )
+        ]
+
+        return try TurnSegmentedTranscript(
+            spans: spans,
+            turns: [
+                try TranscriptTurn(
+                    id: "turn-0",
+                    spanIDs: spans.map(\.id),
+                    start: 0,
+                    end: 1,
+                    text: "Hello world",
+                    source: source
+                )
+            ],
+            localeIdentifier: "en_US"
+        )
     }
 
     func previewAudioVolumeRamp(for inputParameters: AVAudioMixInputParameters) -> (
@@ -320,6 +370,33 @@ actor SpyAudioPeakAnalyzer: AudioPeakAnalyzer {
     }
 
     func requests() -> [AudioPeakAnalysisRequest] {
+        capturedRequests
+    }
+}
+
+actor SpyAudioTranscriptService: AudioTranscriptService {
+    private let transcriptResult: TurnSegmentedTranscript?
+    private let transcriptError: (any Error)?
+    private var capturedRequests: [AudioTranscriptRequest] = []
+
+    init(
+        transcript: TurnSegmentedTranscript? = nil,
+        error: (any Error)? = nil
+    ) {
+        self.transcriptResult = transcript
+        self.transcriptError = error
+    }
+
+    func transcript(for request: AudioTranscriptRequest) async throws -> TurnSegmentedTranscript? {
+        capturedRequests.append(request)
+        if let transcriptError {
+            throw transcriptError
+        }
+
+        return transcriptResult
+    }
+
+    func requests() -> [AudioTranscriptRequest] {
         capturedRequests
     }
 }

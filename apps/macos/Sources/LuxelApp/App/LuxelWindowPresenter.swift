@@ -45,7 +45,8 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
             await editorModel.open(
                 fileURL: fileURL,
                 outputDirectory: model.settings.recordingsDirectory,
-                outputDirectoryBookmark: model.settings.recordingsDirectoryBookmark
+                outputDirectoryBookmark: model.settings.recordingsDirectoryBookmark,
+                transcriptSourceContext: model.transcriptSourceContext(for: fileURL)
             )
         }
     }

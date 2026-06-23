@@ -905,7 +905,8 @@ extension LuxelSettingsView {
             await editorModel.open(
                 fileURL: url,
                 outputDirectory: model.settings.recordingsDirectory,
-                outputDirectoryBookmark: model.settings.recordingsDirectoryBookmark
+                outputDirectoryBookmark: model.settings.recordingsDirectoryBookmark,
+                transcriptSourceContext: model.transcriptSourceContext(for: url)
             )
         }
     }

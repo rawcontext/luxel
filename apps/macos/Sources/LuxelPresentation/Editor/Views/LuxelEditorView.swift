@@ -58,6 +58,8 @@ extension LuxelEditorView {
                 ProgressView()
                     .controlSize(.large)
             }
+
+            AudioTranscriptPreview(model: model)
         }
         .frame(minWidth: 560, maxWidth: .infinity, maxHeight: .infinity)
         .overlay(alignment: .topLeading) {

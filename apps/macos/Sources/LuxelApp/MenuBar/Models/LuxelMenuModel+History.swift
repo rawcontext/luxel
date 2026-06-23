@@ -88,6 +88,21 @@ extension LuxelMenuModel {
         }
     }
 
+    func transcriptSourceContext(for mediaURL: URL) -> TranscriptSourceContext {
+        let standardizedURL = mediaURL.standardizedFileURL
+        let recordings = recentRecordings + recordingHistoryService.getPastRecordings()
+        guard
+            let recording = recordings.first(where: { recording in
+                recording.fileURL.standardizedFileURL == standardizedURL
+                    || recording.primaryMediaURL.standardizedFileURL == standardizedURL
+            })
+        else {
+            return .unknown
+        }
+
+        return TranscriptSourceContext(recordingAudioMode: recording.options.audio)
+    }
+
     func openRecordingsFolder() {
         withRecordingsDirectoryAccess { directory in
             fileWorkflowService.openWithDefaultApp(directory)

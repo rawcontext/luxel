@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.5</string>
+	<string>1.0.6</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -45,6 +45,8 @@
 	<string>Luxel records microphone audio only when you enable microphone capture for a screen recording.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Luxel uses your camera only when you enable camera preview or camera-track recording.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Luxel uses on-device speech recognition to transcribe audio recordings in the export editor.</string>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Luxel captures your screen only when you start a recording.</string>
 	<key>NSPrincipalClass</key>

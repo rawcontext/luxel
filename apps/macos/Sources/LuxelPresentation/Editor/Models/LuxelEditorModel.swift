@@ -50,6 +50,8 @@ public final class LuxelEditorModel {
     var outputDirectoryBookmark: BookmarkedDirectory?
     var recordingNavigationURLs: [URL] = []
     var recordingNavigationIndex: Int?
+    var transcript: TurnSegmentedTranscript?
+    var currentPlaybackTime: TimeInterval = 0
     let configuredSupportedFormats: [ExportFormat]
     var exportProgress: ExportProgressSnapshot?
     var exportJobs: [ExportJobSnapshot] = []
@@ -65,6 +67,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored let fileWorkflowService: ExportedFileWorkflowService
     @ObservationIgnored let frameGrabService: FrameGrabService
     @ObservationIgnored let audioMixResolutionService: AudioMixResolutionService
+    @ObservationIgnored let audioTranscriptService: (any AudioTranscriptService)?
     @ObservationIgnored let fileSystem: any FileSystem
     @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService?
     @ObservationIgnored var playbackRequested = false
@@ -72,6 +75,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored var exportTask: Task<Void, Never>?
     @ObservationIgnored var frameGrabTask: Task<Void, Never>?
     @ObservationIgnored var previewAudioMixTask: Task<Void, Never>?
+    @ObservationIgnored var transcriptTask: Task<Void, Never>?
     @ObservationIgnored var exportMemoryByFormat: [ExportFormat: ExportMemory]
     @ObservationIgnored var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
     @ObservationIgnored var onConfirmDiscardChange: (@MainActor (Bool) -> Void)?
@@ -100,6 +104,7 @@ public final class LuxelEditorModel {
             destinationClient: AppKitFrameGrabDestinationClient()
         ),
         audioPeakAnalyzer: any AudioPeakAnalyzer = AVAssetReaderAudioPeakAnalyzer(),
+        audioTranscriptService: (any AudioTranscriptService)? = nil,
         fileSystem: any FileSystem = LocalFileSystem(),
         codecAvailability: CodecAvailability = .none,
         directoryAccessService: BookmarkedDirectoryAccessService? = nil,
@@ -114,6 +119,7 @@ public final class LuxelEditorModel {
         self.fileWorkflowService = fileWorkflowService
         self.frameGrabService = frameGrabService
         self.audioMixResolutionService = AudioMixResolutionService(analyzer: audioPeakAnalyzer)
+        self.audioTranscriptService = audioTranscriptService
         self.fileSystem = fileSystem
         self.directoryAccessService = directoryAccessService
         self.configuredSupportedFormats = codecAvailability.availableExportFormats
@@ -138,6 +144,10 @@ extension LuxelEditorModel {
 
     var hasAudioOnlySource: Bool {
         source?.isAudioOnly == true
+    }
+
+    var visibleTranscript: TurnSegmentedTranscript? {
+        hasAudioOnlySource ? transcript : nil
     }
 
     var supportedFormats: [ExportFormat] {
@@ -219,6 +229,18 @@ extension LuxelEditorModel {
 
     var outputDurationSummary: String {
         formatTime(max(minimumTrimDuration, trimEnd - trimStart) / playbackSpeed.value)
+    }
+
+    var activeTranscriptTurnID: String? {
+        visibleTranscript?.turns.first {
+            $0.start <= currentPlaybackTime && currentPlaybackTime < $0.end
+        }?.id
+    }
+
+    var activeTranscriptSpanID: String? {
+        visibleTranscript?.spans.first {
+            $0.start <= currentPlaybackTime && currentPlaybackTime < $0.end
+        }?.id
     }
 
     var isExporting: Bool {
@@ -512,7 +534,8 @@ extension LuxelEditorModel {
     public func open(
         fileURL: URL,
         outputDirectory: URL,
-        outputDirectoryBookmark: BookmarkedDirectory? = nil
+        outputDirectoryBookmark: BookmarkedDirectory? = nil,
+        transcriptSourceContext: TranscriptSourceContext = .unknown
     ) async {
         self.outputDirectory = outputDirectory
         self.outputDirectoryBookmark = outputDirectoryBookmark
@@ -528,6 +551,10 @@ extension LuxelEditorModel {
         frameGrabTask = nil
         previewAudioMixTask?.cancel()
         previewAudioMixTask = nil
+        transcriptTask?.cancel()
+        transcriptTask = nil
+        transcript = nil
+        currentPlaybackTime = 0
 
         do {
             let media = try await metadataReader.readSourceMedia(at: fileURL)
@@ -546,10 +573,14 @@ extension LuxelEditorModel {
             schedulePreviewAudioMixUpdate()
             status = .ready
             resetEditorUndoStack()
+            scheduleTranscriptExtraction(sourceContext: transcriptSourceContext)
         } catch {
             source = nil
             previewAudioMixTask?.cancel()
             previewAudioMixTask = nil
+            transcriptTask?.cancel()
+            transcriptTask = nil
+            transcript = nil
             player.replaceCurrentItem(with: nil)
             status = .failed(errorMessage(error))
             resetEditorUndoStack()
