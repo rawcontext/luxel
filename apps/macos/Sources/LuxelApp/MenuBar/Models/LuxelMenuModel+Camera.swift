@@ -102,6 +102,10 @@ extension LuxelMenuModel {
         cameraPreviewPanelController.close()
     }
 
+    func closeCameraPreviewForRecordingStop() async {
+        await cameraPreviewPanelController.closeAndWaitForSessionStop()
+    }
+
     func closeCameraPreviewOutsideRecording() {
         switch recordingState {
         case .idle, .failed, .exporting:

@@ -197,6 +197,7 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         microphoneAudioInput?.markAsFinished()
 
         let finishCompletion = RecordingWriterFinishCompletion(
+            segment: self,
             writer: writer,
             outputFileURL: outputFileURL,
             continuation: continuation
@@ -400,34 +401,40 @@ private struct RecordingAudioLevelMixer {
 }
 
 private final class RecordingWriterFinishCompletion: @unchecked Sendable {
+    private let segment: RecordingWriterSegment
     private let writer: AVAssetWriter
     private let outputFileURL: URL
     private let continuation: CheckedContinuation<URL?, any Error>
 
     init(
+        segment: RecordingWriterSegment,
         writer: AVAssetWriter,
         outputFileURL: URL,
         continuation: CheckedContinuation<URL?, any Error>
     ) {
+        self.segment = segment
         self.writer = writer
         self.outputFileURL = outputFileURL
         self.continuation = continuation
     }
 
     func resume() {
-        switch writer.status {
-        case .completed:
-            continuation.resume(returning: outputFileURL)
-        case .failed, .cancelled:
-            let error =
-                writer.error ?? ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status))
-            continuation.resume(throwing: error)
-        case .unknown, .writing:
-            continuation.resume(
-                throwing: ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status)))
-        @unknown default:
-            continuation.resume(
-                throwing: ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status)))
+        withExtendedLifetime(segment) {
+            switch writer.status {
+            case .completed:
+                continuation.resume(returning: outputFileURL)
+            case .failed, .cancelled:
+                let error =
+                    writer.error
+                    ?? ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status))
+                continuation.resume(throwing: error)
+            case .unknown, .writing:
+                continuation.resume(
+                    throwing: ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status)))
+            @unknown default:
+                continuation.resume(
+                    throwing: ScreenCaptureKitRecorderError.stopFailed(String(describing: writer.status)))
+            }
         }
     }
 }

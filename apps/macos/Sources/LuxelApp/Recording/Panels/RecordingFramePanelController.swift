@@ -38,12 +38,12 @@ final class RecordingFramePanelController {
     func close() async {
         let registrationID = exclusionRegistrationID
         let registry = exclusionRegistry
+        let window = window
 
         exclusionRegistrationID = nil
         exclusionRegistry = nil
+        self.window = nil
         window?.orderOut(nil)
-        window?.close()
-        window = nil
 
         if let registrationID {
             await registry?.unregister(registrationID)
@@ -64,6 +64,7 @@ final class RecordingFramePanelController {
         window.hasShadow = false
         window.ignoresMouseEvents = true
         window.hidesOnDeactivate = false
+        window.isReleasedWhenClosed = false
         window.contentView = RecordingAreaFrameView(frame: NSRect(origin: .zero, size: frame.size))
         return window
     }

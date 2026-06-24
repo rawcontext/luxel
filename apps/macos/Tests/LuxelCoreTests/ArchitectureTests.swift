@@ -289,7 +289,8 @@ extension ArchitectureTests {
         )
 
         #expect(source.contains("button.action = #selector(handleStatusItemClick)"))
-        #expect(source.contains("button.sendAction(on: [.leftMouseDown])"))
+        #expect(source.contains("button.sendAction(on: [.leftMouseUp])"))
+        #expect(!source.contains("button.sendAction(on: [.leftMouseDown])"))
         #expect(source.contains("configureStatusItemButton(button)"))
         #expect(source.contains("statusItem.autosaveName"))
         #expect(source.contains("Bundle.main.bundleIdentifier"))
@@ -305,6 +306,9 @@ extension ArchitectureTests {
         #expect(source.contains("makeActiveRecordingFrame"))
         #expect(source.contains("watchAudioLevels(onlyWhenRecording: true)"))
         #expect(source.contains("handleStatusItemStopWatchdog()"))
+        #expect(source.contains("DispatchQueue.main.async { [weak self]"))
+        #expect(source.contains("Task { @MainActor [weak self]"))
+        #expect(source.contains("startStatusItemStopTask()"))
         #expect(source.contains("recoverInterruptedRecording()"))
         #expect(source.contains("windowPresenter.openEditor(fileURL: fileURL)"))
     }
@@ -321,6 +325,8 @@ extension ArchitectureTests {
         #expect(!source.contains("RecordingFrameDrawingView"))
         #expect(!source.contains("NSColor.red"))
         #expect(!source.contains("path.stroke()"))
+        #expect(source.contains("window.isReleasedWhenClosed = false"))
+        #expect(!source.contains("window?.close()"))
     }
 
     @Test("screen recorder avoids system recording output status item")
@@ -356,6 +362,19 @@ extension ArchitectureTests {
         #expect(writerSource.contains("[[AnyHashable: Any]]"))
         #expect(writerSource.contains("AnyHashable(SCStreamFrameInfo.status.rawValue)"))
         #expect(writerSource.contains("NSNumber"))
+    }
+
+    @Test("screen recorder retains writer segment through finish completion")
+    func screenRecorderRetainsWriterSegmentThroughFinishCompletion() throws {
+        let writerSource = try String(
+            contentsOf: packageRootURL().appending(
+                path: "Sources/LuxelCore/Infrastructure/Capture/ScreenCaptureKitRecordingWriter.swift"),
+            encoding: .utf8
+        )
+
+        #expect(writerSource.contains("RecordingWriterFinishCompletion(\n            segment: self"))
+        #expect(writerSource.contains("private let segment: RecordingWriterSegment"))
+        #expect(writerSource.contains("withExtendedLifetime(segment)"))
     }
 
     @Test("cropper supports local selection undo and redo")
@@ -630,6 +649,15 @@ extension ArchitectureTests {
             cameraSource.range(
                 of: "func presentCameraPreviewForRecording(_ request: RecordingRequest) async")
         )
+        let stopRecordingRange = try #require(recordingSource.range(of: "func stopRecording() async"))
+        let stopRecorderRange = try #require(
+            recordingSource[stopRecordingRange.lowerBound...].range(
+                of: "recordingLifecycleService.stopRecording()")
+        )
+        let stopCameraRange = try #require(
+            recordingSource[stopRecordingRange.lowerBound...].range(
+                of: "await closeCameraPreviewForRecordingStop()")
+        )
         let recordingCameraHelperSource = String(cameraSource[recordingCameraHelperRange.lowerBound...])
         let cameraPreviewPresentCallCount =
             cameraSource
@@ -637,6 +665,7 @@ extension ArchitectureTests {
             .count - 1
 
         #expect(recorderStartRange.lowerBound < cameraStartRange.lowerBound)
+        #expect(stopCameraRange.lowerBound < stopRecorderRange.lowerBound)
         #expect(recordingSource.contains("closeCameraPreviewForFinishedRecording()"))
         #expect(
             cameraSource.contains(

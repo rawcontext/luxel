@@ -98,7 +98,7 @@ extension LuxelStatusItemController {
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
         button.setButtonType(.momentaryChange)
-        button.sendAction(on: [.leftMouseDown])
+        button.sendAction(on: [.leftMouseUp])
         Self.logger.debug("Status item button configured")
     }
 
@@ -793,6 +793,27 @@ extension LuxelStatusItemController {
         statusItemStopTask?.cancel()
         statusItemStopWatchdogTask?.cancel()
 
+        DispatchQueue.main.async { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.startStatusItemStopTask()
+            }
+        }
+        statusItemStopWatchdogTask = Task { @MainActor [weak self, statusItemStopWatchdogDelay] in
+            do {
+                try await Task.sleep(for: statusItemStopWatchdogDelay)
+            } catch {
+                return
+            }
+
+            self?.handleStatusItemStopWatchdog()
+        }
+    }
+
+    private func startStatusItemStopTask() {
+        guard isHandlingStatusItemStop else {
+            return
+        }
+
         statusItemStopTask = Task { @MainActor [weak self] in
             guard let self else {
                 return
@@ -816,15 +837,6 @@ extension LuxelStatusItemController {
         """
             )
             handleStatusItemStopAction(stopAction)
-        }
-        statusItemStopWatchdogTask = Task { @MainActor [weak self, statusItemStopWatchdogDelay] in
-            do {
-                try await Task.sleep(for: statusItemStopWatchdogDelay)
-            } catch {
-                return
-            }
-
-            self?.handleStatusItemStopWatchdog()
         }
     }
 

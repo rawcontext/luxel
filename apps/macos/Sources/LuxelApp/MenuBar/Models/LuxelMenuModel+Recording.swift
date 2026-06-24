@@ -463,9 +463,18 @@ extension LuxelMenuModel {
                 return .openEditor(recording.fileURL)
             }
 
+            luxelRecordingLogger.info("Stop recording closing camera preview")
+            await closeCameraPreviewForRecordingStop()
+            luxelRecordingLogger.info("Stop recording camera preview closed")
+            luxelRecordingLogger.info("Stop recording stopping screen recorder")
             let recording = try await recordingLifecycleService.stopRecording()
+            luxelRecordingLogger.info("Stop recording screen recorder stopped")
+            luxelRecordingLogger.info("Stop recording closing recording frame")
             await recordingFramePanelController.close()
+            luxelRecordingLogger.info("Stop recording recording frame closed")
+            luxelRecordingLogger.info("Stop recording closing finished camera preview")
             closeCameraPreviewForFinishedRecording()
+            luxelRecordingLogger.info("Stop recording finished camera preview closed")
             refreshRecentRecordings()
             luxelRecordingLogger.info(
                 """

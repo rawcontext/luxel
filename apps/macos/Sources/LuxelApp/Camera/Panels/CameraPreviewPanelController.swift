@@ -64,21 +64,43 @@ final class CameraPreviewPanelController {
     }
 
     func close() {
+        guard let session = closePanelAndTakeSession() else {
+            return
+        }
+
+        let sessionHandle = CameraCaptureSessionHandle(session)
+        sessionQueue.async { [sessionHandle] in
+            sessionHandle.stopRunningIfNeeded()
+        }
+    }
+
+    func closeAndWaitForSessionStop() async {
+        guard let session = closePanelAndTakeSession() else {
+            return
+        }
+
+        await stopSession(session)
+    }
+
+    private func closePanelAndTakeSession() -> AVCaptureSession? {
         rememberPanelOrigin()
+        (panel?.contentView as? CameraPreviewPanelView)?.detachPreviewSession()
         panel?.close()
         panel = nil
         snapRect = nil
         onPlacementChange = nil
 
-        guard let session else {
-            return
-        }
-
+        let session = session
         self.session = nil
+        return session
+    }
+
+    private func stopSession(_ session: AVCaptureSession) async {
         let sessionHandle = CameraCaptureSessionHandle(session)
-        sessionQueue.async { [sessionHandle] in
-            if sessionHandle.session.isRunning {
-                sessionHandle.session.stopRunning()
+        await withCheckedContinuation { continuation in
+            sessionQueue.async { [sessionHandle] in
+                sessionHandle.stopRunningIfNeeded()
+                continuation.resume()
             }
         }
     }
@@ -316,6 +338,12 @@ private struct CameraCaptureSessionHandle: @unchecked Sendable {
     init(_ session: AVCaptureSession) {
         self.session = session
     }
+
+    func stopRunningIfNeeded() {
+        if session.isRunning {
+            session.stopRunning()
+        }
+    }
 }
 
 private final class CameraPreviewPanelView: NSView {
@@ -413,6 +441,10 @@ private final class CameraPreviewPanelView: NSView {
     func setHoverControlsEnabled(_ isEnabled: Bool) {
         showsHoverControls = isEnabled
         updateHoverControls()
+    }
+
+    func detachPreviewSession() {
+        previewLayer.session = nil
     }
 
     override func mouseDown(with event: NSEvent) {
