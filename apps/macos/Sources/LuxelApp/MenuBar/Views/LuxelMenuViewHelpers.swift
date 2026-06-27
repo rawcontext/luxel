@@ -113,8 +113,8 @@ private struct LuxelMenuControlBackground: ViewModifier {
 }
 
 private enum LuxelMenuGlassContrast {
-    static let sectionOpacity = 0.18
-    static let controlOpacity = 0.16
-    static let hoverOpacity = 0.20
-    static let pressedOpacity = 0.24
+    static let sectionOpacity = 0.42
+    static let controlOpacity = 0.46
+    static let hoverOpacity = 0.52
+    static let pressedOpacity = 0.58
 }
