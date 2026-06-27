@@ -3,7 +3,7 @@ import LuxelCore
 
 struct ExportEstimateTaskID: Equatable, Hashable {
     let sourceFileURL: URL
-    let format: ExportFormat
+    let formats: [ExportFormat]
     let trimStart: TimeInterval
     let trimEnd: TimeInterval
     let outputWidth: Int

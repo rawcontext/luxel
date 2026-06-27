@@ -16,15 +16,58 @@ extension LuxelEditorModel {
 
     private func seekToTranscriptTime(_ time: TimeInterval) {
         currentPlaybackTime = time
+        let shouldStartPlayback = !playbackRequested
         player.seek(
             to: CMTime(seconds: time, preferredTimescale: 600),
             toleranceBefore: .zero,
             toleranceAfter: .zero
-        )
+        ) { [weak self] finished in
+            guard finished, shouldStartPlayback else {
+                return
+            }
+
+            Task { @MainActor in
+                self?.startPlayback()
+            }
+        }
+    }
+
+    func toggleTranscriptPanel() {
+        if isTranscriptPanelVisible, hasVideoSource {
+            hideTranscriptPanel()
+        } else {
+            showTranscriptPanel()
+        }
+    }
+
+    func showTranscriptPanel() {
+        guard canTranscribeSource else {
+            return
+        }
+
+        isTranscriptPanelVisible = true
+        guard transcript == nil, !isTranscriptExtractionActive else {
+            return
+        }
+
+        if speechRecognitionAuthorizationState == .authorized {
+            scheduleTranscriptExtraction(sourceContext: transcriptSourceContext)
+        } else {
+            prepareTranscriptExtraction(sourceContext: transcriptSourceContext)
+        }
+    }
+
+    func hideTranscriptPanel() {
+        guard hasVideoSource else {
+            return
+        }
+
+        isTranscriptPanelVisible = false
     }
 
     func enableSpeechRecognition() {
-        guard hasAudioOnlySource,
+        guard canTranscribeSource,
+              isTranscriptPanelVisible,
               let source,
               let speechRecognitionAuthorizationService,
               speechRecognitionAuthorizationState == .notDetermined
@@ -57,9 +100,8 @@ extension LuxelEditorModel {
 
     func prepareTranscriptExtraction(sourceContext: TranscriptSourceContext) {
         transcriptSourceContext = sourceContext
-        guard hasAudioOnlySource,
+        guard canTranscribeSource,
               let source,
-              audioTranscriptService != nil,
               let speechRecognitionAuthorizationService
         else {
             return
@@ -88,7 +130,7 @@ extension LuxelEditorModel {
     }
 
     func scheduleTranscriptExtraction(sourceContext: TranscriptSourceContext) {
-        guard hasAudioOnlySource,
+        guard canTranscribeSource,
               let source,
               let audioTranscriptService,
               speechRecognitionAuthorizationState == .authorized
@@ -99,6 +141,7 @@ extension LuxelEditorModel {
         let sourceURL = source.fileURL
         transcriptTask?.cancel()
         isTranscriptExtractionActive = true
+        transcriptExtractionStartedAt = Date()
         transcriptTask = Task { [weak self, audioTranscriptService] in
             do {
                 let transcript = try await audioTranscriptService.transcript(
@@ -117,6 +160,7 @@ extension LuxelEditorModel {
 
                     self?.transcript = transcript
                     self?.isTranscriptExtractionActive = false
+                    self?.transcriptExtractionStartedAt = nil
                     self?.transcriptTask = nil
                 }
             } catch {
@@ -130,6 +174,7 @@ extension LuxelEditorModel {
 
                     self?.transcript = nil
                     self?.isTranscriptExtractionActive = false
+                    self?.transcriptExtractionStartedAt = nil
                     self?.transcriptTask = nil
                 }
             }

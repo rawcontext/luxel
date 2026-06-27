@@ -67,6 +67,7 @@ extension SettingsTests {
         #expect(settings.userSizePresets == CaptureSizePreset.builtInDefaults)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)
+        #expect(settings.lastSelectedExportFormat == nil)
         #expect(settings.confirmDiscard)
         #expect(settings.defaultCountdown == nil)
         #expect(settings.lastStopAfter == nil)

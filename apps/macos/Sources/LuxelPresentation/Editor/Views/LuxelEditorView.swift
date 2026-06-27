@@ -4,6 +4,9 @@ import SwiftUI
 
 public struct LuxelEditorView: View {
     @Bindable var model: LuxelEditorModel
+    @State private var editableFileName = ""
+    @State private var isEditingFileName = false
+    @FocusState private var isFileNameFocused: Bool
 
     public init(model: LuxelEditorModel) {
         self.model = model
@@ -65,6 +68,9 @@ extension LuxelEditorView {
         .overlay(alignment: .topLeading) {
             recordingNavigationControls
         }
+        .overlay(alignment: .topTrailing) {
+            transcriptPreviewControls
+        }
         .contextMenu {
             Button("Copy Frame") {
                 model.copyCurrentFrame()
@@ -102,6 +108,37 @@ extension LuxelEditorView {
         }
         .controlSize(.small)
         .padding(12)
+    }
+
+    @ViewBuilder
+    private var transcriptPreviewControls: some View {
+        if model.canShowVideoTranscriptToggle {
+            GlassEffectContainer(spacing: 6) {
+                Button {
+                    model.toggleTranscriptPanel()
+                } label: {
+                    Label(transcriptPreviewButtonTitle, systemImage: "text.quote")
+                        .labelStyle(.titleAndIcon)
+                        .padding(.horizontal, 4)
+                }
+                .buttonStyle(.glass)
+                .controlSize(.small)
+                .help(transcriptPreviewButtonHelp)
+            }
+            .padding(12)
+        }
+    }
+
+    private var transcriptPreviewButtonTitle: String {
+        if model.isTranscriptExtractionActive {
+            return "Transcribing"
+        }
+
+        return "Transcript"
+    }
+
+    private var transcriptPreviewButtonHelp: String {
+        model.isTranscriptPanelVisible ? "Hide transcript" : "Show transcript"
     }
 
     private func recordingNavigationButton(
@@ -146,7 +183,7 @@ extension LuxelEditorView {
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             if let source = model.source {
-                metadataField("Filename", source.fileURL.lastPathComponent, lineLimit: 2)
+                editableFilenameField(source)
 
                 LazyVGrid(columns: metadataColumns, alignment: .leading, spacing: 8) {
                     metadataField("Length", model.formatTime(source.duration))
@@ -176,6 +213,56 @@ extension LuxelEditorView {
         ]
     }
 
+    private func editableFilenameField(_ source: SourceMedia) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Filename")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+
+            if isEditingFileName {
+                TextField("Filename", text: $editableFileName)
+                    .textFieldStyle(.plain)
+                    .font(.caption)
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                    .focused($isFileNameFocused)
+                    .onSubmit {
+                        commitFileNameEdit(source)
+                    }
+                    .onExitCommand {
+                        cancelFileNameEdit(source)
+                    }
+            } else {
+                Button {
+                    beginFileNameEdit(source)
+                } label: {
+                    Text(source.fileURL.lastPathComponent)
+                        .font(.caption)
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                        .monospacedDigit()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Rename recording")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            syncEditableFileName(with: source)
+        }
+        .onChange(of: source.fileURL) { _, _ in
+            syncEditableFileName(with: source)
+        }
+        .onChange(of: isFileNameFocused) { _, isFocused in
+            if isEditingFileName, !isFocused {
+                commitFileNameEdit(source)
+            }
+        }
+    }
+
     private func metadataField(
         _ label: String,
         _ value: String,
@@ -195,6 +282,37 @@ extension LuxelEditorView {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func beginFileNameEdit(_ source: SourceMedia) {
+        editableFileName = source.fileURL.lastPathComponent
+        isEditingFileName = true
+        isFileNameFocused = true
+    }
+
+    private func cancelFileNameEdit(_ source: SourceMedia) {
+        isEditingFileName = false
+        syncEditableFileName(with: source)
+        isFileNameFocused = false
+    }
+
+    private func commitFileNameEdit(_ source: SourceMedia) {
+        guard isEditingFileName else {
+            return
+        }
+
+        model.renameSourceFile(to: editableFileName)
+        isEditingFileName = false
+        syncEditableFileName(with: model.source ?? source)
+        isFileNameFocused = false
+    }
+
+    private func syncEditableFileName(with source: SourceMedia) {
+        guard !isEditingFileName else {
+            return
+        }
+
+        editableFileName = source.fileURL.lastPathComponent
     }
 
     private var exportControls: some View {
@@ -233,7 +351,7 @@ extension LuxelEditorView {
         Menu {
             ForEach(model.supportedFormats, id: \.self) { format in
                 Toggle(isOn: formatSelectionBinding(format)) {
-                    Text(format.prettyName)
+                    Text(formatMenuTitle(for: format))
                 }
             }
         } label: {
@@ -244,6 +362,11 @@ extension LuxelEditorView {
             .frame(maxWidth: .infinity)
         }
         .menuStyle(.button)
+    }
+
+    private func formatMenuTitle(for format: ExportFormat) -> String {
+        let estimate = model.exportEstimateSummary(for: format) ?? "—"
+        return "\(format.prettyName)  \(estimate)"
     }
 
     private var qualityPicker: some View {
@@ -299,16 +422,7 @@ extension LuxelEditorView {
     }
 
     private var exportActions: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if let exportEstimateSummary = model.exportEstimateSummary {
-                Text(exportEstimateSummary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
-
-            exportActionButtons
-        }
+        exportActionButtons
     }
 
     private var exportActionButtons: some View {

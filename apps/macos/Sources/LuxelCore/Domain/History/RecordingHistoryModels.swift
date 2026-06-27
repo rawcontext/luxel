@@ -101,6 +101,22 @@ public struct PastRecording: Codable, Equatable, Sendable {
         )
     }
 
+    public func replacingFileURL(
+        _ fileURL: URL,
+        name: String? = nil,
+        bundleManifest: BundleManifest? = nil
+    ) -> PastRecording {
+        PastRecording(
+            fileURL: fileURL,
+            name: name ?? self.name,
+            date: date,
+            kind: kind,
+            options: options,
+            exports: exports,
+            bundleManifest: bundleManifest ?? self.bundleManifest
+        )
+    }
+
     private enum CodingKeys: String, CodingKey {
         case fileURL
         case name

@@ -52,13 +52,30 @@ public final class LuxelEditorModel {
     var recordingNavigationIndex: Int?
     var transcript: TurnSegmentedTranscript?
     var isTranscriptExtractionActive = false
+    var isTranscriptPanelVisible = false
+    var transcriptExtractionStartedAt: Date?
     var speechRecognitionAuthorizationState: SpeechRecognitionAuthorizationState?
     var currentPlaybackTime: TimeInterval = 0
     let configuredSupportedFormats: [ExportFormat]
     var exportProgress: ExportProgressSnapshot?
     var exportJobs: [ExportJobSnapshot] = []
-    var exportEstimate: ExportEstimate?
-    var isEstimatingExportSize = false
+    var exportEstimatesByFormat: [ExportFormat: ExportEstimate] = [:]
+    var estimatingExportSizeFormats: Set<ExportFormat> = []
+    var exportEstimate: ExportEstimate? {
+        get {
+            exportEstimatesByFormat[format]
+        }
+        set {
+            if let newValue {
+                exportEstimatesByFormat[format] = newValue
+            } else {
+                exportEstimatesByFormat.removeValue(forKey: format)
+            }
+        }
+    }
+    var isEstimatingExportSize: Bool {
+        !estimatingExportSizeFormats.isEmpty
+    }
     var editorUndoStack = UndoStack(initialState: EditorDraftState.defaults)
 
     @ObservationIgnored var player = AVPlayer()
@@ -83,9 +100,12 @@ public final class LuxelEditorModel {
     @ObservationIgnored var speechRecognitionAuthorizationTask: Task<Void, Never>?
     @ObservationIgnored var transcriptSourceContext: TranscriptSourceContext = .unknown
     @ObservationIgnored var exportMemoryByFormat: [ExportFormat: ExportMemory]
+    @ObservationIgnored var lastSelectedExportFormat: ExportFormat?
     @ObservationIgnored var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
+    @ObservationIgnored var onLastSelectedExportFormatChange: (@MainActor (ExportFormat) -> Void)?
     @ObservationIgnored var onConfirmDiscardChange: (@MainActor (Bool) -> Void)?
     @ObservationIgnored var onDiscardRecording: (@MainActor (URL) -> Void)?
+    @ObservationIgnored var onSourceFileRenamed: (@MainActor (URL, URL) throws -> Void)?
     @ObservationIgnored let errorReporter: any ErrorReporter
 
     public init(
@@ -117,7 +137,9 @@ public final class LuxelEditorModel {
         codecAvailability: CodecAvailability = .none,
         directoryAccessService: BookmarkedDirectoryAccessService? = nil,
         exportMemory: [ExportFormat: ExportMemory] = [:],
+        lastSelectedExportFormat: ExportFormat? = nil,
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil,
+        onLastSelectedExportFormatChange: (@MainActor (ExportFormat) -> Void)? = nil,
         errorReporter: any ErrorReporter = NoopErrorReporter()
     ) {
         self.metadataReader = metadataReader
@@ -133,8 +155,16 @@ public final class LuxelEditorModel {
         self.directoryAccessService = directoryAccessService
         self.configuredSupportedFormats = codecAvailability.availableExportFormats
         self.exportMemoryByFormat = exportMemory
+        self.lastSelectedExportFormat = lastSelectedExportFormat
         self.onExportMemoryChange = onExportMemoryChange
+        self.onLastSelectedExportFormatChange = onLastSelectedExportFormatChange
         self.errorReporter = errorReporter
+        let initialFormat = Self.preferredVideoExportFormat(
+            from: self.configuredSupportedFormats,
+            lastSelectedExportFormat: lastSelectedExportFormat
+        )
+        format = initialFormat
+        selectedFormats = [initialFormat]
         player.actionAtItemEnd = .none
         installPlaybackLoopObserver()
     }
@@ -155,20 +185,34 @@ extension LuxelEditorModel {
         source?.isAudioOnly == true
     }
 
+    var canTranscribeSource: Bool {
+        source?.hasAudio == true
+            && audioTranscriptService != nil
+            && speechRecognitionAuthorizationService != nil
+    }
+
+    var canShowVideoTranscriptToggle: Bool {
+        hasVideoSource && canTranscribeSource
+    }
+
+    var canCloseTranscriptPanel: Bool {
+        hasVideoSource && isTranscriptPanelVisible
+    }
+
     var visibleTranscript: TurnSegmentedTranscript? {
-        hasAudioOnlySource ? transcript : nil
+        isTranscriptPanelVisible && canTranscribeSource ? transcript : nil
     }
 
     var shouldShowSpeechRecognitionPrompt: Bool {
-        hasAudioOnlySource
-            && audioTranscriptService != nil
-            && speechRecognitionAuthorizationService != nil
+        isTranscriptPanelVisible
+            && canTranscribeSource
             && (speechRecognitionAuthorizationState == .notDetermined
                     || speechRecognitionAuthorizationState == .denied)
     }
 
     var shouldShowTranscriptProgress: Bool {
-        hasAudioOnlySource
+        isTranscriptPanelVisible
+            && canTranscribeSource
             && isTranscriptExtractionActive
             && visibleTranscript == nil
             && !shouldShowSpeechRecognitionPrompt
@@ -418,7 +462,7 @@ extension LuxelEditorModel {
 
         return ExportEstimateTaskID(
             sourceFileURL: source.fileURL,
-            format: format,
+            formats: supportedFormats,
             trimStart: trimStart,
             trimEnd: trimEnd,
             outputWidth: outputWidth,
@@ -426,20 +470,24 @@ extension LuxelEditorModel {
             frameRate: frameRate,
             playbackSpeed: playbackSpeed.value,
             quality: quality,
-            gifLoopModeKind: format == .gif ? gifLoopModeKind : nil,
-            gifLoopCount: format == .gif ? gifLoopCount : nil,
-            gifDithering: format == .gif ? gifDithering : nil,
+            gifLoopModeKind: gifLoopModeKind,
+            gifLoopCount: gifLoopCount,
+            gifDithering: gifDithering,
             shouldMute: shouldMute,
             shouldCrop: shouldCrop
         )
     }
 
     var exportEstimateSummary: String? {
-        if isEstimatingExportSize {
+        exportEstimateSummary(for: format)
+    }
+
+    func exportEstimateSummary(for format: ExportFormat) -> String? {
+        if estimatingExportSizeFormats.contains(format) {
             return "Estimating..."
         }
 
-        guard let exportEstimate else {
+        guard let exportEstimate = exportEstimatesByFormat[format] else {
             return nil
         }
 
@@ -567,8 +615,8 @@ extension LuxelEditorModel {
         status = .loading(fileURL.lastPathComponent)
         exportProgress = nil
         exportJobs = []
-        exportEstimate = nil
-        isEstimatingExportSize = false
+        exportEstimatesByFormat = [:]
+        estimatingExportSizeFormats = []
         player.pause()
         playbackRequested = false
         frameGrabTask?.cancel()
@@ -581,6 +629,8 @@ extension LuxelEditorModel {
         transcriptTask = nil
         transcript = nil
         isTranscriptExtractionActive = false
+        isTranscriptPanelVisible = false
+        transcriptExtractionStartedAt = nil
         speechRecognitionAuthorizationState = nil
         self.transcriptSourceContext = transcriptSourceContext
         currentPlaybackTime = 0
@@ -602,7 +652,10 @@ extension LuxelEditorModel {
             schedulePreviewAudioMixUpdate()
             status = .ready
             resetEditorUndoStack()
-            prepareTranscriptExtraction(sourceContext: transcriptSourceContext)
+            isTranscriptPanelVisible = media.isAudioOnly
+            if media.isAudioOnly {
+                prepareTranscriptExtraction(sourceContext: transcriptSourceContext)
+            }
         } catch {
             source = nil
             previewAudioMixTask?.cancel()
@@ -613,6 +666,8 @@ extension LuxelEditorModel {
             transcriptTask = nil
             transcript = nil
             isTranscriptExtractionActive = false
+            isTranscriptPanelVisible = false
+            transcriptExtractionStartedAt = nil
             speechRecognitionAuthorizationState = nil
             player.replaceCurrentItem(with: nil)
             status = .failed(errorMessage(error))
@@ -630,6 +685,17 @@ extension LuxelEditorModel {
         resetEditorUndoStack()
     }
 
+    public func configureLastSelectedExportFormat(
+        _ format: ExportFormat?,
+        onChange: (@MainActor (ExportFormat) -> Void)? = nil
+    ) {
+        lastSelectedExportFormat = format
+        onLastSelectedExportFormatChange = onChange
+        applySupportedFormatForSource()
+        applyExportMemory(for: self.format)
+        resetEditorUndoStack()
+    }
+
     public func configureDiscard(
         confirmDiscard: Bool,
         onDiscard: (@MainActor (URL) -> Void)? = nil,
@@ -638,6 +704,12 @@ extension LuxelEditorModel {
         self.confirmDiscard = confirmDiscard
         self.onDiscardRecording = onDiscard
         self.onConfirmDiscardChange = onConfirmDiscardChange
+    }
+
+    public func configureSourceFileRename(
+        onRename: (@MainActor (URL, URL) throws -> Void)? = nil
+    ) {
+        onSourceFileRenamed = onRename
     }
 
     func setConfirmDiscard(_ confirmDiscard: Bool) {
@@ -652,8 +724,8 @@ extension LuxelEditorModel {
     public func reportImportFailure(_ error: Error) {
         source = nil
         exportProgress = nil
-        exportEstimate = nil
-        isEstimatingExportSize = false
+        exportEstimatesByFormat = [:]
+        estimatingExportSizeFormats = []
         previewAudioMixTask?.cancel()
         previewAudioMixTask = nil
         player.replaceCurrentItem(with: nil)
@@ -669,6 +741,7 @@ extension LuxelEditorModel {
         format = nextFormat
         selectedFormats = [nextFormat]
         applyExportMemory(for: nextFormat)
+        rememberLastSelectedExportFormat(nextFormat)
 
         if !canIncludeAudio {
             shouldMute = true
@@ -684,6 +757,7 @@ extension LuxelEditorModel {
             return
         }
 
+        let previousFormat = format
         if isSelected {
             if !selectedFormats.contains(nextFormat) {
                 selectedFormats.append(nextFormat)
@@ -691,6 +765,7 @@ extension LuxelEditorModel {
             }
             format = nextFormat
             applyExportMemory(for: nextFormat)
+            rememberLastSelectedExportFormat(nextFormat)
         } else {
             guard selectedFormats.count > 1 else {
                 return
@@ -700,6 +775,9 @@ extension LuxelEditorModel {
             if format == nextFormat, let replacement = selectedFormats.first {
                 format = replacement
                 applyExportMemory(for: replacement)
+            }
+            if format != previousFormat {
+                rememberLastSelectedExportFormat(format)
             }
         }
 
@@ -865,10 +943,18 @@ extension LuxelEditorModel {
             player.pause()
             playbackRequested = false
         } else {
-            seekPlaybackIntoTrimRangeIfNeeded()
-            player.rate = Float(playbackSpeed.value)
-            playbackRequested = true
+            startPlayback()
         }
+    }
+
+    func startPlayback() {
+        guard hasSource else {
+            return
+        }
+
+        seekPlaybackIntoTrimRangeIfNeeded()
+        player.rate = Float(playbackSpeed.value)
+        playbackRequested = true
     }
 
 }

@@ -119,6 +119,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var userSizePresets: [CaptureSizePreset]
     public var lastCaptureMemory: LastCaptureMemory?
     public var perFormatExportMemory: [ExportFormat: ExportMemory]
+    public var lastSelectedExportFormat: ExportFormat?
     public var confirmDiscard: Bool
     public var defaultCountdown: TimeInterval?
     public var lastStopAfter: TimeInterval?
@@ -193,6 +194,7 @@ extension AppSettings {
         userSizePresets: [CaptureSizePreset] = CaptureSizePreset.builtInDefaults,
         lastCaptureMemory: LastCaptureMemory? = nil,
         perFormatExportMemory: [ExportFormat: ExportMemory] = [:],
+        lastSelectedExportFormat: ExportFormat? = nil,
         confirmDiscard: Bool = true,
         defaultCountdown: TimeInterval? = nil,
         lastStopAfter: TimeInterval? = nil
@@ -256,6 +258,7 @@ extension AppSettings {
         self.userSizePresets = Self.removingRemovedBuiltInSizePresets(from: userSizePresets)
         self.lastCaptureMemory = lastCaptureMemory
         self.perFormatExportMemory = perFormatExportMemory
+        self.lastSelectedExportFormat = lastSelectedExportFormat
         self.confirmDiscard = confirmDiscard
         self.defaultCountdown = defaultCountdown
         self.lastStopAfter = lastStopAfter

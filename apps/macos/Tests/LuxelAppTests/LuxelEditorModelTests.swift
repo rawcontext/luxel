@@ -413,10 +413,11 @@ extension LuxelEditorModelTests {
         let expectedRange = try TimeRange(start: 2, end: 8)
         let expectedPixelSize = try PixelSize(width: 640, height: 360)
         let expectedFrameRate = try FrameRate(24)
-        let captured = await estimator.request()
+        let captured = await estimator.request(for: .hevc)
 
         #expect(model.exportEstimate == expectedEstimate)
-        #expect(model.exportEstimateSummary == "~ 1.5 MB")
+        #expect(model.exportEstimateSummary(for: .hevc) == "~ 1.5 MB")
+        #expect(Set(model.exportEstimatesByFormat.keys) == Set(model.supportedFormats))
         #expect(captured?.format == .hevc)
         #expect(captured?.timeRange == expectedRange)
         #expect(captured?.pixelSize == expectedPixelSize)
@@ -440,7 +441,7 @@ extension LuxelEditorModelTests {
         model.setGIFDithering(.diffusion)
         await model.refreshExportEstimate()
 
-        let captured = await estimator.request()
+        let captured = await estimator.request(for: .gif)
         let expectedOptions = try GIFRenderOptions(
             quality: .compact,
             loopMode: .bounce,
@@ -463,7 +464,7 @@ extension LuxelEditorModelTests {
         model.setGIFLoopModeKind(.bounce)
         await model.refreshExportEstimate()
 
-        let captured = await estimator.request()
+        let captured = await estimator.request(for: .apng)
         let expectedOptions = try GIFRenderOptions(loopMode: .bounce)
 
         #expect(captured?.format == .apng)
@@ -497,7 +498,7 @@ extension LuxelEditorModelTests {
 
         model.setFormatSelection(.mp4, isSelected: false)
         #expect(model.selectedFormats == [.mp4])
-        #expect(model.selectedFormatSummary == "MP4 (H264)")
+        #expect(model.selectedFormatSummary == "MP4 (H.264)")
 
         model.setFormatSelection(.gif, isSelected: true)
         #expect(model.selectedFormats == [.mp4, .gif])
@@ -513,7 +514,7 @@ extension LuxelEditorModelTests {
     func codecAvailabilityGatesEditorFormats() async throws {
         let defaultModel = makeModel()
 
-        #expect(defaultModel.supportedFormats == [.mp4, .hevc, .gif, .apng])
+        #expect(defaultModel.supportedFormats == [.hevc, .mp4, .proRes422, .proRes4444, .gif, .apng])
         defaultModel.setFormat(.webm)
         #expect(defaultModel.format == .mp4)
         #expect(defaultModel.selectedFormats == [.mp4])
@@ -524,10 +525,94 @@ extension LuxelEditorModelTests {
             codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm])
         )
 
-        #expect(codecModel.supportedFormats == [.mp4, .hevc, .gif, .apng, .webm])
-        codecModel.setFormatSelection(.webm, isSelected: true)
+        #expect(
+            codecModel.supportedFormats == [.webm, .hevc, .mp4, .proRes422, .proRes4444, .gif, .apng])
         #expect(codecModel.format == .webm)
-        #expect(codecModel.selectedFormats == [.mp4, .webm])
+        #expect(codecModel.selectedFormats == [.webm])
+
+        codecModel.setFormatSelection(.mp4, isSelected: true)
+        #expect(codecModel.format == .mp4)
+        #expect(codecModel.selectedFormats == [.webm, .mp4])
+    }
+
+    @Test("remembered export format overrides default WebM selection")
+    func rememberedExportFormatOverridesDefaultWebMSelection() async throws {
+        let model = makeModel(
+            codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm]),
+            lastSelectedExportFormat: .hevc
+        )
+
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(model.format == .hevc)
+        #expect(model.selectedFormats == [.hevc])
+    }
+
+    @Test("unsupported remembered export format falls back to WebM")
+    func unsupportedRememberedExportFormatFallsBackToWebM() async throws {
+        let model = makeModel(
+            codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm]),
+            lastSelectedExportFormat: .av1
+        )
+
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
+
+        #expect(model.format == .webm)
+        #expect(model.selectedFormats == [.webm])
+    }
+
+    @Test("format changes remember last selected export format")
+    func formatChangesRememberLastSelectedExportFormat() async throws {
+        var rememberedFormats: [ExportFormat] = []
+        let model = makeModel(
+            codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm]),
+            onLastSelectedExportFormatChange: { format in
+                rememberedFormats.append(format)
+            }
+        )
+
+        await model.open(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.setFormat(.hevc)
+        model.setFormatSelection(.gif, isSelected: true)
+        model.setFormatSelection(.gif, isSelected: false)
+
+        #expect(rememberedFormats == [.hevc, .gif, .hevc])
+        #expect(model.format == .hevc)
+        #expect(model.selectedFormats == [.hevc])
+    }
+
+    @Test("renaming source file moves file and updates loaded source")
+    func renamingSourceFileMovesFileAndUpdatesLoadedSource() async throws {
+        let directory = try temporaryDirectory()
+        defer {
+            try? FileManager.default.removeItem(at: directory)
+        }
+        let sourceURL = directory.appending(path: "Original.mp4").standardizedFileURL
+        try Data([0]).write(to: sourceURL)
+        let model = makeModel(fileSystem: LocalFileSystem())
+        var renamedFrom: URL?
+        var renamedTo: URL?
+        model.configureSourceFileRename { oldURL, newURL in
+            renamedFrom = oldURL
+            renamedTo = newURL
+        }
+
+        await model.open(fileURL: sourceURL, outputDirectory: directory)
+        model.renameSourceFile(to: "Renamed")
+
+        let renamedURL = directory.appending(path: "Renamed.mp4").standardizedFileURL
+        #expect(model.source?.fileURL == renamedURL)
+        #expect(model.status == .ready)
+        #expect(renamedFrom?.standardizedFileURL == sourceURL)
+        #expect(renamedTo?.standardizedFileURL == renamedURL)
+        #expect(!FileManager.default.fileExists(atPath: sourceURL.path))
+        #expect(FileManager.default.fileExists(atPath: renamedURL.path))
     }
 
     @Test("export memory seeds controls when opening and changing formats")

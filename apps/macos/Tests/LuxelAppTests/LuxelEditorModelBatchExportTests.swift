@@ -40,38 +40,38 @@ extension LuxelEditorModelTests {
             dithering: .diffusion
         )
 
-        #expect(captured.map(\.request.format) == [.mp4, .hevc, .gif])
+        #expect(captured.map(\.request.format) == [.hevc, .mp4, .gif])
         #expect(captured[0].request.gifOptions == nil)
         #expect(captured[1].request.gifOptions == nil)
         #expect(captured[2].request.gifOptions == expectedGIFOptions)
         #expect(
             captured.map(\.outputFileURL.path) == [
-                "/tmp/source Export/source Export H264.mp4",
-                "/tmp/source Export/source Export H265.mp4",
+                "/tmp/source Export/source Export HEVC.mp4",
+                "/tmp/source Export/source Export H.264.mp4",
                 "/tmp/source Export/source Export GIF.gif"
             ])
         #expect(fileSystem.createdDirectories == [batchDirectory])
         #expect(
             model.status
                 == .exportedBatch([
-                    URL(fileURLWithPath: "/tmp/source Export/source Export H264.mp4"),
-                    URL(fileURLWithPath: "/tmp/source Export/source Export H265.mp4"),
+                    URL(fileURLWithPath: "/tmp/source Export/source Export HEVC.mp4"),
+                    URL(fileURLWithPath: "/tmp/source Export/source Export H.264.mp4"),
                     URL(fileURLWithPath: "/tmp/source Export/source Export GIF.gif")
                 ]))
         #expect(model.exportPanelMessage == "3 files exported")
         #expect(model.exportProgressValue == 1)
         #expect(!model.canRetryExport)
         #expect(model.exportedOpenURL == batchDirectory)
-        #expect(model.exportJobs.map(\.format) == [.mp4, .hevc, .gif])
+        #expect(model.exportJobs.map(\.format) == [.hevc, .mp4, .gif])
         #expect(model.exportJobs.map(\.statusSummary) == ["Complete", "Complete", "Complete"])
         #expect(
             model.exportJobs.compactMap(\.fileURL).map(\.path) == [
-                "/tmp/source Export/source Export H264.mp4",
-                "/tmp/source Export/source Export H265.mp4",
+                "/tmp/source Export/source Export HEVC.mp4",
+                "/tmp/source Export/source Export H.264.mp4",
                 "/tmp/source Export/source Export GIF.gif"
             ])
         model.openExportedFile()
         #expect(fileActionClient.openedURLs == [batchDirectory])
-        #expect(rememberedFormats == [.mp4, .hevc, .gif])
+        #expect(rememberedFormats == [.hevc, .mp4, .gif])
     }
 }

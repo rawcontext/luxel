@@ -38,33 +38,50 @@ extension LuxelEditorModel {
 
     func refreshExportEstimate() async {
         guard let source else {
-            exportEstimate = nil
-            isEstimatingExportSize = false
+            exportEstimatesByFormat = [:]
+            estimatingExportSizeFormats = []
             return
         }
 
         let taskID = exportEstimateTaskID
-        isEstimatingExportSize = true
+        let formats = supportedFormats
+        exportEstimatesByFormat = [:]
+        estimatingExportSizeFormats = Set(formats)
         defer {
             if exportEstimateTaskID == taskID {
-                isEstimatingExportSize = false
+                estimatingExportSizeFormats = []
             }
         }
 
         do {
-            try await Task.sleep(for: .milliseconds(300))
-            let draft = try makeExportDraft(source: source)
-            let estimate = try await exportSizeEstimationService.estimate(draft)
+            for format in formats {
+                guard !Task.isCancelled, exportEstimateTaskID == taskID else {
+                    return
+                }
 
-            guard !Task.isCancelled, exportEstimateTaskID == taskID else {
-                return
+                do {
+                    let request = try makeExportRequest(source: source, format: format)
+                    let estimate = try await exportSizeEstimationService.estimate(request)
+                    guard !Task.isCancelled, exportEstimateTaskID == taskID else {
+                        return
+                    }
+
+                    exportEstimatesByFormat[format] = estimate
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    guard !Task.isCancelled, exportEstimateTaskID == taskID else {
+                        return
+                    }
+
+                    exportEstimatesByFormat.removeValue(forKey: format)
+                }
+                estimatingExportSizeFormats.remove(format)
             }
-
-            exportEstimate = estimate
         } catch is CancellationError {
             return
         } catch {
-            exportEstimate = nil
+            exportEstimatesByFormat = [:]
         }
     }
 
@@ -246,6 +263,52 @@ extension LuxelEditorModel {
         }
     }
 
+    func renameSourceFile(to proposedFileName: String) {
+        guard let source else {
+            return
+        }
+
+        do {
+            let destinationURL = try renamedSourceURL(
+                for: source.fileURL,
+                proposedFileName: proposedFileName
+            )
+            guard destinationURL.standardizedFileURL != source.fileURL.standardizedFileURL else {
+                return
+            }
+            guard !fileSystem.fileExists(at: destinationURL) else {
+                throw EditorSourceRenameError.destinationExists(destinationURL)
+            }
+
+            let currentTime = currentFrameTime
+            let wasPlaying = playbackRequested
+            try withSourceDirectoryAccess(for: source.fileURL) {
+                try fileSystem.moveFile(from: source.fileURL, to: destinationURL)
+            }
+
+            let renamedSource = try source.replacingFileURL(destinationURL)
+            self.source = renamedSource
+            refreshRecordingNavigation(selectedFileURL: destinationURL, outputDirectory: outputDirectory)
+
+            let item = AVPlayerItem(url: destinationURL)
+            item.audioTimePitchAlgorithm = .timeDomain
+            player.replaceCurrentItem(with: item)
+            player.seek(
+                to: CMTime(seconds: currentTime, preferredTimescale: 600),
+                toleranceBefore: .zero,
+                toleranceAfter: .zero
+            )
+            schedulePreviewAudioMixUpdate()
+            if wasPlaying {
+                startPlayback()
+            }
+            try onSourceFileRenamed?(source.fileURL, destinationURL)
+            status = .ready
+        } catch {
+            status = .failed(errorMessage(error))
+        }
+    }
+
     @discardableResult
     func discardRecording() -> Bool {
         guard canDiscard, let source else {
@@ -351,6 +414,14 @@ extension LuxelEditorModel {
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    func transcriptExtractionElapsedTime(at date: Date) -> String? {
+        guard let transcriptExtractionStartedAt else {
+            return nil
+        }
+
+        return formatTime(max(0, date.timeIntervalSince(transcriptExtractionStartedAt)))
     }
 
     func defaultExportName(for fileURL: URL) -> String {
@@ -542,8 +613,8 @@ extension LuxelEditorModel {
         recordingNavigationIndex = nil
         exportProgress = nil
         exportJobs = []
-        exportEstimate = nil
-        isEstimatingExportSize = false
+        exportEstimatesByFormat = [:]
+        estimatingExportSizeFormats = []
         frameGrabTask?.cancel()
         frameGrabTask = nil
         previewAudioMixTask?.cancel()
@@ -554,6 +625,7 @@ extension LuxelEditorModel {
         transcriptTask = nil
         transcript = nil
         isTranscriptExtractionActive = false
+        transcriptExtractionStartedAt = nil
         speechRecognitionAuthorizationState = nil
         player.pause()
         playbackRequested = false
@@ -798,15 +870,8 @@ extension LuxelEditorModel {
     }
 
     func applySupportedFormatForSource() {
-        let fallbackFormat = supportedFormats.first ?? .mp4
-        if !supportedFormats.contains(format) {
-            format = fallbackFormat
-        }
-
-        selectedFormats = supportedFormats.filter(selectedFormats.contains)
-        if selectedFormats.isEmpty || !selectedFormats.contains(format) {
-            selectedFormats = [format]
-        }
+        format = preferredExportFormatForSource()
+        selectedFormats = [format]
     }
 
     func applyGIFOptions(_ options: GIFRenderOptions) {
@@ -915,6 +980,99 @@ extension LuxelEditorModel {
         onExportMemoryChange?(format, memory)
     }
 
+    func rememberLastSelectedExportFormat(_ format: ExportFormat) {
+        guard lastSelectedExportFormat != format else {
+            return
+        }
+
+        lastSelectedExportFormat = format
+        onLastSelectedExportFormatChange?(format)
+    }
+
+    func preferredExportFormatForSource() -> ExportFormat {
+        if hasAudioOnlySource {
+            if let lastSelectedExportFormat,
+               supportedFormats.contains(lastSelectedExportFormat) {
+                return lastSelectedExportFormat
+            }
+            return supportedFormats.first ?? .m4a
+        }
+
+        return Self.preferredVideoExportFormat(
+            from: supportedFormats,
+            lastSelectedExportFormat: lastSelectedExportFormat
+        )
+    }
+
+    static func preferredVideoExportFormat(
+        from supportedFormats: [ExportFormat],
+        lastSelectedExportFormat: ExportFormat?
+    ) -> ExportFormat {
+        if let lastSelectedExportFormat,
+           supportedFormats.contains(lastSelectedExportFormat) {
+            return lastSelectedExportFormat
+        }
+        if supportedFormats.contains(.webm) {
+            return .webm
+        }
+        if supportedFormats.contains(.mp4) {
+            return .mp4
+        }
+
+        return supportedFormats.first ?? .mp4
+    }
+
+    private func renamedSourceURL(
+        for sourceURL: URL,
+        proposedFileName: String
+    ) throws -> URL {
+        var fileName = proposedFileName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !fileName.isEmpty else {
+            throw EditorSourceRenameError.emptyFileName
+        }
+        guard !fileName.contains("/"),
+              !fileName.contains("\u{0}"),
+              fileName != ".",
+              fileName != ".."
+        else {
+            throw EditorSourceRenameError.invalidFileName
+        }
+
+        if URL(fileURLWithPath: fileName).pathExtension.isEmpty,
+           !sourceURL.pathExtension.isEmpty {
+            fileName += ".\(sourceURL.pathExtension)"
+        }
+
+        return
+            sourceURL
+            .deletingLastPathComponent()
+            .appendingPathComponent(fileName)
+            .standardizedFileURL
+    }
+
+    private func withSourceDirectoryAccess<Result: Sendable>(
+        for sourceURL: URL,
+        operation: () throws -> Result
+    ) throws -> Result {
+        guard let outputDirectoryBookmark, let directoryAccessService else {
+            return try operation()
+        }
+
+        let outputDirectoryPath = outputDirectory.standardizedFileURL.path
+        guard sourceURL.standardizedFileURL.path.hasPrefix(outputDirectoryPath) else {
+            return try operation()
+        }
+
+        let result = try directoryAccessService.withAccess(to: outputDirectoryBookmark) { _ in
+            try operation()
+        }
+        guard let value = result.value else {
+            throw EditorDirectoryAccessError.revoked(result.directory.url)
+        }
+
+        return value
+    }
+
     func makeExportDraft(source: SourceMedia) throws -> EditorExportDraft {
         try EditorExportDraft(
             source: source,
@@ -962,4 +1120,21 @@ extension LuxelEditorModel {
         )
     }
 
+}
+
+private enum EditorSourceRenameError: LocalizedError, Equatable {
+    case emptyFileName
+    case invalidFileName
+    case destinationExists(URL)
+
+    var errorDescription: String? {
+        switch self {
+        case .emptyFileName:
+            "Filename cannot be empty."
+        case .invalidFileName:
+            "Filename contains invalid characters."
+        case .destinationExists(let url):
+            "\(url.lastPathComponent) already exists."
+        }
+    }
 }

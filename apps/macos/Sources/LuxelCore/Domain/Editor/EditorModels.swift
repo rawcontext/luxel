@@ -54,6 +54,19 @@ public struct SourceMedia: Codable, Equatable, Sendable {
         )
     }
 
+    public func replacingFileURL(_ fileURL: URL) throws -> SourceMedia {
+        try SourceMedia(
+            fileURL: fileURL,
+            duration: duration,
+            pixelSize: pixelSize,
+            nominalFrameRate: nominalFrameRate,
+            hasAudio: hasAudio,
+            hasVideo: hasVideo,
+            hasAlpha: hasAlpha,
+            audioTracks: audioTracks
+        )
+    }
+
     private enum CodingKeys: String, CodingKey {
         case fileURL
         case duration

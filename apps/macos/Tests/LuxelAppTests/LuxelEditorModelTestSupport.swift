@@ -22,7 +22,9 @@ extension LuxelEditorModelTests {
         codecAvailability: CodecAvailability = .none,
         directoryAccessService: BookmarkedDirectoryAccessService? = nil,
         exportMemory: [ExportFormat: ExportMemory] = [:],
+        lastSelectedExportFormat: ExportFormat? = nil,
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil,
+        onLastSelectedExportFormatChange: (@MainActor (ExportFormat) -> Void)? = nil,
         errorReporter: any ErrorReporter = NoopErrorReporter()
     ) -> LuxelEditorModel {
         LuxelEditorModel(
@@ -53,7 +55,9 @@ extension LuxelEditorModelTests {
             codecAvailability: codecAvailability,
             directoryAccessService: directoryAccessService,
             exportMemory: exportMemory,
+            lastSelectedExportFormat: lastSelectedExportFormat,
             onExportMemoryChange: onExportMemoryChange,
+            onLastSelectedExportFormatChange: onLastSelectedExportFormatChange,
             errorReporter: errorReporter
         )
     }
@@ -359,6 +363,18 @@ struct StubFailingExportSizeEstimator: ExportSizeEstimator {
     }
 }
 
+struct DelayedFormatExportSizeEstimator: ExportSizeEstimator {
+    let delayedFormat: ExportFormat
+
+    func estimate(_ request: ExportRequest) async throws -> ExportEstimate {
+        if request.format == delayedFormat {
+            try await Task.sleep(for: .milliseconds(500))
+        }
+
+        return try ExportEstimate(bytes: 1_500_000, confidence: .modeled)
+    }
+}
+
 actor SpyAudioPeakAnalyzer: AudioPeakAnalyzer {
     private var capturedRequests: [AudioPeakAnalysisRequest] = []
     private let peaks: [AudioTrackKind: Double]
@@ -439,15 +455,23 @@ actor StubSpeechRecognitionAuthorizationService: SpeechRecognitionAuthorizationS
 }
 
 actor SpyExportSizeEstimator: ExportSizeEstimator {
-    private var capturedRequest: ExportRequest?
+    private var capturedRequests: [ExportRequest] = []
 
     func estimate(_ request: ExportRequest) async throws -> ExportEstimate {
-        capturedRequest = request
+        capturedRequests.append(request)
         return try ExportEstimate(bytes: 1_500_000, confidence: .modeled)
     }
 
     func request() -> ExportRequest? {
-        capturedRequest
+        capturedRequests.last
+    }
+
+    func request(for format: ExportFormat) -> ExportRequest? {
+        capturedRequests.last { $0.format == format }
+    }
+
+    func requests() -> [ExportRequest] {
+        capturedRequests
     }
 }
 

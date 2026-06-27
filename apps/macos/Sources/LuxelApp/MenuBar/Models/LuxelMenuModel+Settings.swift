@@ -27,6 +27,10 @@ extension LuxelMenuModel {
             [weak self] format, memory in
             self?.rememberExportMemory(memory, for: format)
         }
+        editorModel.configureLastSelectedExportFormat(settings.lastSelectedExportFormat) {
+            [weak self] format in
+            self?.rememberLastSelectedExportFormat(format)
+        }
         editorModel.configureDiscard(
             confirmDiscard: settings.confirmDiscard,
             onDiscard: { [weak self] _ in
@@ -37,6 +41,10 @@ extension LuxelMenuModel {
                 self?.saveSettings()
             }
         )
+        editorModel.configureSourceFileRename { [weak self] oldURL, newURL in
+            try self?.recordingHistoryService.renameRecordingSource(from: oldURL, to: newURL)
+            self?.refreshRecentRecordings()
+        }
     }
 
     func chooseRecordingsDirectory() {
@@ -69,6 +77,11 @@ extension LuxelMenuModel {
 
     private func rememberExportMemory(_ memory: ExportMemory, for format: ExportFormat) {
         settings.perFormatExportMemory[format] = memory
+        saveSettings()
+    }
+
+    private func rememberLastSelectedExportFormat(_ format: ExportFormat) {
+        settings.lastSelectedExportFormat = format
         saveSettings()
     }
 

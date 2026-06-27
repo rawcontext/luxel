@@ -94,6 +94,7 @@ struct UserDefaultsSettingsStoreTests {
             userSizePresets: [sizePreset],
             lastCaptureMemory: try persistedLastCaptureMemory(presetID: presetID),
             perFormatExportMemory: try persistedExportMemory(),
+            lastSelectedExportFormat: .webm,
             confirmDiscard: false,
             defaultCountdown: 5,
             lastStopAfter: 60
@@ -265,6 +266,7 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.userSizePresets == CaptureSizePreset.builtInDefaults)
         #expect(settings.lastCaptureMemory == nil)
         #expect(settings.perFormatExportMemory.isEmpty)
+        #expect(settings.lastSelectedExportFormat == nil)
         #expect(settings.confirmDiscard)
         #expect(settings.defaultCountdown == nil)
         #expect(settings.lastStopAfter == nil)

@@ -122,6 +122,75 @@ struct LuxelEditorModelTranscriptTests {
         try await Task.sleep(for: .milliseconds(20))
 
         #expect(model.visibleTranscript == nil)
+        #expect(!model.isTranscriptPanelVisible)
+        #expect(model.canShowVideoTranscriptToggle)
+        #expect(await transcriptService.requests().isEmpty)
+    }
+
+    @Test("opening video transcript panel extracts and exposes transcript")
+    func openingVideoTranscriptPanelExtractsTranscript() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
+        let transcript = try helper.sampleTranscript(source: .system)
+        let transcriptService = SpyAudioTranscriptService(transcript: transcript)
+        let model = helper.makeModel(audioTranscriptService: transcriptService)
+
+        await model.open(
+            fileURL: sourceURL,
+            outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
+
+        #expect(model.visibleTranscript == nil)
+        #expect(await transcriptService.requests().isEmpty)
+
+        model.showTranscriptPanel()
+
+        let visibleTranscript = try await helper.waitForTranscript(model)
+        #expect(visibleTranscript.turns.first?.text == "Hello world")
+        #expect(model.isTranscriptPanelVisible)
+        #expect(
+            await transcriptService.requests() == [
+                AudioTranscriptRequest(
+                    audioURL: sourceURL,
+                    locale: .current,
+                    sourceContext: .unknown
+                )
+            ])
+
+        model.hideTranscriptPanel()
+        #expect(model.visibleTranscript == nil)
+        model.showTranscriptPanel()
+        #expect(model.visibleTranscript?.turns.first?.text == "Hello world")
+        #expect(await transcriptService.requests().count == 1)
+    }
+
+    @Test("video without audio does not expose transcript controls")
+    func videoWithoutAudioDoesNotExposeTranscriptControls() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/silent-video.mp4")
+        let source = try SourceMedia(
+            fileURL: sourceURL,
+            duration: 12,
+            pixelSize: PixelSize(width: 1280, height: 720),
+            nominalFrameRate: FrameRate(30),
+            hasAudio: false
+        )
+        let transcriptService = SpyAudioTranscriptService(
+            transcript: try helper.sampleTranscript(source: nil))
+        let model = helper.makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            audioTranscriptService: transcriptService
+        )
+
+        await model.open(
+            fileURL: sourceURL,
+            outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
+
+        #expect(!model.canShowVideoTranscriptToggle)
+        model.showTranscriptPanel()
+        try await Task.sleep(for: .milliseconds(20))
+        #expect(!model.isTranscriptPanelVisible)
         #expect(await transcriptService.requests().isEmpty)
     }
 

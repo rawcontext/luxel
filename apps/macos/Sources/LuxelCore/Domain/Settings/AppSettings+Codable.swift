@@ -52,6 +52,7 @@ extension AppSettings {
         case userSizePresets
         case lastCaptureMemory
         case perFormatExportMemory
+        case lastSelectedExportFormat
         case confirmDiscard
         case defaultCountdown
         case lastStopAfter
@@ -140,6 +141,7 @@ extension AppSettings {
         userSizePresets = general.userSizePresets
         lastCaptureMemory = general.lastCaptureMemory
         perFormatExportMemory = general.perFormatExportMemory
+        lastSelectedExportFormat = general.lastSelectedExportFormat
         confirmDiscard = general.confirmDiscard
         defaultCountdown = general.defaultCountdown
         lastStopAfter = general.lastStopAfter
@@ -278,6 +280,10 @@ extension AppSettings {
                 [ExportFormat: ExportMemory].self,
                 forKey: .perFormatExportMemory
             ) ?? [:],
+            lastSelectedExportFormat: container.decodeIfPresent(
+                ExportFormat.self,
+                forKey: .lastSelectedExportFormat
+            ),
             confirmDiscard: container.decodeIfPresent(Bool.self, forKey: .confirmDiscard) ?? true,
             defaultCountdown: container.decodeIfPresent(TimeInterval.self, forKey: .defaultCountdown),
             lastStopAfter: container.decodeIfPresent(TimeInterval.self, forKey: .lastStopAfter)
@@ -400,6 +406,7 @@ private struct GeneralSettings {
     let userSizePresets: [CaptureSizePreset]
     let lastCaptureMemory: LastCaptureMemory?
     let perFormatExportMemory: [ExportFormat: ExportMemory]
+    let lastSelectedExportFormat: ExportFormat?
     let confirmDiscard: Bool
     let defaultCountdown: TimeInterval?
     let lastStopAfter: TimeInterval?

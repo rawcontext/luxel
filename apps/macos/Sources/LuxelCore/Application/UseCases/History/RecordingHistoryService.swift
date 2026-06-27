@@ -194,6 +194,60 @@ public final class RecordingHistoryService: Sendable {
     }
 
     @discardableResult
+    public func renameRecordingSource(
+        from oldSourceURL: URL,
+        to newSourceURL: URL
+    ) throws -> [PastRecording] {
+        let oldSourceURL = oldSourceURL.standardizedFileURL
+        let newSourceURL = newSourceURL.standardizedFileURL
+        let renamedDisplayName = newSourceURL.deletingPathExtension().lastPathComponent
+        var didRename = false
+
+        let recordings = try store.recordings.map { recording in
+            if recording.fileURL.standardizedFileURL == oldSourceURL, recording.bundle == nil {
+                didRename = true
+                return recording.replacingFileURL(
+                    newSourceURL,
+                    name: renamedDisplayName
+                )
+            }
+
+            guard let bundle = recording.bundle,
+                  bundle.primaryURL.standardizedFileURL == oldSourceURL,
+                  newSourceURL.deletingLastPathComponent().standardizedFileURL
+                    == bundle.rootURL.standardizedFileURL
+            else {
+                return recording
+            }
+
+            let manifest = try BundleManifest(
+                schemaVersion: bundle.manifest.schemaVersion,
+                primaryFileName: newSourceURL.lastPathComponent,
+                sidecars: bundle.manifest.sidecars
+            )
+            try persistManifest(manifest, for: bundle.rootURL)
+            didRename = true
+            return recording.replacingFileURL(
+                recording.fileURL,
+                name: renamedDisplayName,
+                bundleManifest: manifest
+            )
+        }
+
+        if didRename {
+            store.recordings = recordings.compactMap { recording in
+                guard recordingExists(recording) else {
+                    return nil
+                }
+
+                return recordingByDroppingMissingSidecars(recording)
+            }
+        }
+
+        return getPastRecordings()
+    }
+
+    @discardableResult
     public func recoverActiveRecording() async -> RecordingRecoveryResult {
         guard let activeRecording = store.activeRecording else {
             return .none
