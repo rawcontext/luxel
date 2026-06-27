@@ -293,8 +293,9 @@ const troubleshooting = [
             <article>
               <h3>Quick exports</h3>
               <p>
-                Export presets can turn a capture into a GIF, MP4, HEVC MP4, APNG,
-                or preset destination without manually opening every export control.
+                Export presets can turn a capture into a GIF, MP4, HEVC MP4,
+                ProRes MOV, APNG, or preset destination without manually opening
+                every export control.
               </p>
             </article>
             <article>
@@ -464,12 +465,20 @@ const troubleshooting = [
                 </thead>
                 <tbody>
                   <tr>
-                    <td>MP4 (H264)</td>
-                    <td>Apple-native video export with Compact, Balanced, or High quality.</td>
+                    <td>MP4 (H.264)</td>
+                    <td>Most-compatible Apple-native video export with Compact, Balanced, or High quality.</td>
                   </tr>
                   <tr>
-                    <td>MP4 (H265)</td>
-                    <td>HEVC export with Compact, Balanced, or High quality.</td>
+                    <td>MP4 (HEVC)</td>
+                    <td>Smaller-file HEVC export with Compact, Balanced, or High quality.</td>
+                  </tr>
+                  <tr>
+                    <td>MOV (ProRes 422)</td>
+                    <td>Apple-native editing/master export with fixed High quality and LPCM audio.</td>
+                  </tr>
+                  <tr>
+                    <td>MOV (ProRes 4444)</td>
+                    <td>Apple-native high-fidelity ProRes export with fixed High quality and LPCM audio.</td>
                   </tr>
                   <tr>
                     <td>GIF</td>
@@ -486,7 +495,7 @@ const troubleshooting = [
                 </tbody>
               </table>
               <p class="tip">
-                MP4, HEVC, and WebM exports use even pixel dimensions.
+                MP4, MOV, and WebM exports use even pixel dimensions.
               </p>
             </article>
 
@@ -518,7 +527,7 @@ const troubleshooting = [
                 <li>Record a display, window, or area.</li>
                 <li>Stop to open the editor.</li>
                 <li>Trim the range, choose size, frame rate, and speed.</li>
-                <li>Export as MP4, HEVC, GIF, APNG, or WebM.</li>
+                <li>Export as MP4, HEVC, ProRes MOV, GIF, APNG, or WebM.</li>
                 <li>Use Copy Path, Share, or Reveal in Finder from the exported file menu.</li>
               </ol>
             </article>
@@ -769,7 +778,7 @@ luxel://latest?reveal=true</code></pre>
               <h3>Can I export audio in GIF or APNG?</h3>
               <p>
                 No. GIF and APNG are animated image formats in Luxel and drop audio.
-                Use MP4, HEVC MP4, or WebM when audio is required.
+                Use MP4, HEVC MP4, ProRes MOV, or WebM when audio is required.
               </p>
             </article>
             <article>

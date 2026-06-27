@@ -41,6 +41,27 @@ struct AVFoundationExportPlanFactoryTests {
         #expect(plan.quality == .balanced)
     }
 
+    @Test("ProRes exports map to QuickTime movie plans")
+    func proResExportsMapToQuickTimeMoviePlans() throws {
+        let expectations: [(format: ExportFormat, presetName: String)] = [
+            (.proRes422, AVAssetExportPresetAppleProRes422LPCM),
+            (.proRes4444, AVAssetExportPresetAppleProRes4444LPCM)
+        ]
+
+        for expectation in expectations {
+            let request = try makeRequest(format: expectation.format)
+
+            let plan = try AVFoundationExportPlanFactory().makePlan(
+                for: request,
+                outputFileURL: URL(fileURLWithPath: "/tmp/output.mov")
+            )
+
+            #expect(plan.presetName == expectation.presetName)
+            #expect(plan.outputFileType == .mov)
+            #expect(plan.quality == .high)
+        }
+    }
+
     @Test("audio exports map to native audio plans")
     func audioExportsMapToNativeAudioPlans() throws {
         let expectations: [AudioPlanExpectation] = [

@@ -7,14 +7,21 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
     case webm
     case apng
     case av1
+    case proRes422 = "prores422"
+    case proRes4444 = "prores4444"
     case m4a
     case alac
     case wav
     case caf
     case flac
 
-    public static let appleNativeV1Formats: [ExportFormat] = [.mp4, .hevc, .gif, .apng]
+    public static let appleNativeV1Formats: [ExportFormat] = [
+        .hevc, .mp4, .proRes422, .proRes4444, .gif, .apng
+    ]
     public static let externalNativeCodecFormats: [ExportFormat] = [.webm, .av1]
+    public static let videoExportMenuFormats: [ExportFormat] = [
+        .av1, .webm, .hevc, .mp4, .proRes422, .proRes4444, .gif, .apng
+    ]
     public static let audioOnlyFormats: [ExportFormat] = [.m4a, .alac, .wav, .caf, .flac]
 
     public var isAppleNativeV1Format: Bool {
@@ -29,7 +36,7 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
         switch self {
         case .webm, .av1:
             true
-        case .gif, .hevc, .mp4, .apng, .m4a, .alac, .wav, .caf, .flac:
+        case .gif, .hevc, .mp4, .proRes422, .proRes4444, .apng, .m4a, .alac, .wav, .caf, .flac:
             false
         }
     }
@@ -38,6 +45,8 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
         switch self {
         case .av1, .hevc, .mp4:
             "mp4"
+        case .proRes422, .proRes4444:
+            "mov"
         case .gif:
             "gif"
         case .webm:
@@ -60,11 +69,15 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
         case .gif:
             "GIF"
         case .hevc:
-            "MP4 (H265)"
+            "MP4 (HEVC)"
         case .mp4:
-            "MP4 (H264)"
+            "MP4 (H.264)"
         case .av1:
             "MP4 (AV1)"
+        case .proRes422:
+            "MOV (ProRes 422)"
+        case .proRes4444:
+            "MOV (ProRes 4444)"
         case .webm:
             "WebM (VP9)"
         case .apng:
@@ -86,14 +99,14 @@ public enum ExportFormat: String, Codable, CaseIterable, Equatable, Hashable, Se
         switch self {
         case .gif, .apng:
             true
-        case .av1, .hevc, .mp4, .webm, .m4a, .alac, .wav, .caf, .flac:
+        case .av1, .hevc, .mp4, .proRes422, .proRes4444, .webm, .m4a, .alac, .wav, .caf, .flac:
             false
         }
     }
 
     public var requiresEvenPixelDimensions: Bool {
         switch self {
-        case .av1, .hevc, .mp4, .webm:
+        case .av1, .hevc, .mp4, .proRes422, .proRes4444, .webm:
             true
         case .gif, .apng, .m4a, .alac, .wav, .caf, .flac:
             false
@@ -124,6 +137,8 @@ public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, S
         switch format {
         case .mp4, .hevc, .gif, .webm, .av1:
             [.compact, .balanced, .high]
+        case .proRes422, .proRes4444:
+            [.high]
         case .apng:
             [.lossless]
         case .m4a:
@@ -145,6 +160,8 @@ public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, S
             .balanced
         case .alac, .wav, .caf, .flac:
             .lossless
+        case .proRes422, .proRes4444:
+            .high
         case .mp4, .hevc, .gif, .webm, .av1:
             .balanced
         }
@@ -172,6 +189,20 @@ public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, S
             case .high:
                 0.15
             case .lossless:
+                nil
+            }
+        case .proRes422:
+            switch self {
+            case .high:
+                2.35
+            case .compact, .balanced, .lossless:
+                nil
+            }
+        case .proRes4444:
+            switch self {
+            case .high:
+                5.30
+            case .compact, .balanced, .lossless:
                 nil
             }
         case .gif, .apng, .webm, .av1, .m4a, .alac, .wav, .caf, .flac:

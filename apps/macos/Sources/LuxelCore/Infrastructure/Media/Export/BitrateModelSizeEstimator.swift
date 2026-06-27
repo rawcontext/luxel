@@ -38,7 +38,7 @@ public struct BitrateModelSizeEstimator: ExportSizeEstimator, Sendable {
             768_000
         case .wav, .caf:
             1_536_000
-        case .mp4, .hevc, .gif, .webm, .apng, .av1:
+        case .mp4, .hevc, .proRes422, .proRes4444, .gif, .webm, .apng, .av1:
             audioBitsPerSecond
         }
     }

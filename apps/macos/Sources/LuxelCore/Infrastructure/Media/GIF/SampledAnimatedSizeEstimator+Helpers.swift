@@ -185,7 +185,7 @@ extension SampledAnimatedSizeEstimator {
             UTType.gif.identifier
         case .apng:
             UTType.png.identifier
-        case .av1, .hevc, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
+        case .av1, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
             throw SampledAnimatedSizeEstimatorError.unsupportedFormat(format)
         }
     }
@@ -203,7 +203,7 @@ extension SampledAnimatedSizeEstimator {
             ]
         case .apng:
             destinationPNGProperties(loopMode: loopMode)
-        case .av1, .hevc, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
+        case .av1, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
             [:]
         }
     }
@@ -239,7 +239,7 @@ extension SampledAnimatedSizeEstimator {
                     kCGImagePropertyAPNGUnclampedDelayTime: frameDelay
                 ]
             ]
-        case .av1, .hevc, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
+        case .av1, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
             [:]
         }
     }
@@ -262,7 +262,7 @@ extension SampledAnimatedSizeEstimator {
             request.gifOptions?.loopMode ?? .forever
         case .apng:
             request.gifOptions?.loopMode ?? .forever
-        case .av1, .hevc, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
+        case .av1, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
             .forever
         }
     }

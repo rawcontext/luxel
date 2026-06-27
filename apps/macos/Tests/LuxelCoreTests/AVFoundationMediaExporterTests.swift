@@ -69,6 +69,36 @@ extension AVFoundationMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
+    @Test("ProRes exports write requested codecs")
+    func proResExportsWriteRequestedCodecs() async throws {
+        let expectations: [(format: ExportFormat, codecType: CMVideoCodecType)] = [
+            (.proRes422, kCMVideoCodecType_AppleProRes422),
+            (.proRes4444, kCMVideoCodecType_AppleProRes4444)
+        ]
+
+        for expectation in expectations {
+            let outputURL = temporaryOutputURL(fileExtension: expectation.format.fileExtension)
+            let request = try ExportRequest(
+                inputFileURL: fixtureURL("input.mp4"),
+                format: expectation.format,
+                pixelSize: PixelSize(width: 320, height: 180),
+                frameRate: FrameRate(30),
+                timeRange: TimeRange(start: 1, end: 1.2),
+                shouldMute: true,
+                shouldCrop: false
+            )
+
+            let exported = try await AVFoundationMediaExporter().export(request, to: outputURL)
+            let codecType = try await videoCodecType(at: outputURL)
+
+            #expect(exported.format == expectation.format)
+            #expect(exported.fileURL.pathExtension == "mov")
+            #expect(codecType == expectation.codecType)
+
+            try? FileManager.default.removeItem(at: outputURL)
+        }
+    }
+
     @Test("muted mp4 export omits audio tracks")
     func mutedMP4ExportOmitsAudioTracks() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")

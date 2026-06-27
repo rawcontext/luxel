@@ -13,6 +13,8 @@ extension ExportModelTests {
         #expect(ExportFormat.hevc.fileExtension == "mp4")
         #expect(ExportFormat.av1.fileExtension == "mp4")
         #expect(ExportFormat.webm.fileExtension == "webm")
+        #expect(ExportFormat.proRes422.fileExtension == "mov")
+        #expect(ExportFormat.proRes4444.fileExtension == "mov")
         #expect(ExportFormat.gif.fileExtension == "gif")
         #expect(ExportFormat.apng.fileExtension == "apng")
         #expect(ExportFormat.m4a.fileExtension == "m4a")
@@ -21,10 +23,12 @@ extension ExportModelTests {
         #expect(ExportFormat.caf.fileExtension == "caf")
         #expect(ExportFormat.flac.fileExtension == "flac")
 
-        #expect(ExportFormat.mp4.prettyName == "MP4 (H264)")
-        #expect(ExportFormat.hevc.prettyName == "MP4 (H265)")
+        #expect(ExportFormat.mp4.prettyName == "MP4 (H.264)")
+        #expect(ExportFormat.hevc.prettyName == "MP4 (HEVC)")
         #expect(ExportFormat.av1.prettyName == "MP4 (AV1)")
         #expect(ExportFormat.webm.prettyName == "WebM (VP9)")
+        #expect(ExportFormat.proRes422.prettyName == "MOV (ProRes 422)")
+        #expect(ExportFormat.proRes4444.prettyName == "MOV (ProRes 4444)")
         #expect(ExportFormat.gif.prettyName == "GIF")
         #expect(ExportFormat.apng.prettyName == "APNG")
         #expect(ExportFormat.m4a.prettyName == "M4A (AAC)")
@@ -46,6 +50,13 @@ extension ExportModelTests {
             #expect(ExportQuality.defaultQuality(for: format) == .balanced)
             #expect(ExportQuality.high.isAvailable(for: format))
             #expect(!ExportQuality.lossless.isAvailable(for: format))
+        }
+
+        for format in [ExportFormat.proRes422, .proRes4444] {
+            #expect(ExportQuality.availableQualities(for: format) == [.high])
+            #expect(ExportQuality.defaultQuality(for: format) == .high)
+            #expect(ExportQuality.high.isAvailable(for: format))
+            #expect(!ExportQuality.balanced.isAvailable(for: format))
         }
 
         #expect(ExportQuality.availableQualities(for: .apng) == [.lossless])
@@ -77,6 +88,11 @@ extension ExportModelTests {
         #expect(ExportQuality.balanced.videoBitsPerPixel(for: .hevc) == 0.09)
         #expect(ExportQuality.high.videoBitsPerPixel(for: .hevc) == 0.15)
         #expect(ExportQuality.lossless.videoBitsPerPixel(for: .hevc) == nil)
+
+        #expect(ExportQuality.high.videoBitsPerPixel(for: .proRes422) == 2.35)
+        #expect(ExportQuality.high.videoBitsPerPixel(for: .proRes4444) == 5.30)
+        #expect(ExportQuality.balanced.videoBitsPerPixel(for: .proRes422) == nil)
+        #expect(ExportQuality.balanced.videoBitsPerPixel(for: .proRes4444) == nil)
 
         for format in [ExportFormat.gif, .apng, .webm, .av1, .m4a, .alac, .wav, .caf, .flac] {
             #expect(ExportQuality.balanced.videoBitsPerPixel(for: format) == nil)
@@ -250,7 +266,8 @@ extension ExportModelTests {
 
     @Test("v1 apple-native formats exclude deferred native codec formats")
     func v1AppleNativeFormatsExcludeDeferredNativeCodecFormats() {
-        #expect(ExportFormat.appleNativeV1Formats == [.mp4, .hevc, .gif, .apng])
+        #expect(
+            ExportFormat.appleNativeV1Formats == [.hevc, .mp4, .proRes422, .proRes4444, .gif, .apng])
         #expect(ExportFormat.externalNativeCodecFormats == [.webm, .av1])
         #expect(ExportFormat.audioOnlyFormats == [.m4a, .alac, .wav, .caf, .flac])
 
@@ -272,7 +289,7 @@ extension ExportModelTests {
 
     @Test("video exports round odd dimensions to even values")
     func videoExportsRoundDimensionsToEvenValues() throws {
-        for format in [ExportFormat.mp4, .hevc, .av1, .webm] {
+        for format in [ExportFormat.mp4, .hevc, .proRes422, .proRes4444, .av1, .webm] {
             let request = try makeRequest(format: format, width: 469, height: 839)
 
             #expect(try request.outputPixelSize == PixelSize(width: 470, height: 840))
@@ -325,13 +342,13 @@ extension ExportModelTests {
         let canceled = ExportProgressSnapshot.canceled(format: .hevc)
 
         #expect(preparing.phase == .preparing)
-        #expect(preparing.actionTitle == "Preparing MP4 (H264)")
+        #expect(preparing.actionTitle == "Preparing MP4 (H.264)")
         #expect(preparing.progress == 0)
         #expect(exporting.phase == .exporting)
         #expect(exporting.actionTitle == "Exporting GIF")
         #expect(exporting.progress == 1)
         #expect(canceled.phase == .canceled)
-        #expect(canceled.actionTitle == "Canceled MP4 (H265)")
+        #expect(canceled.actionTitle == "Canceled MP4 (HEVC)")
     }
 
     @Test("export batch requires one source and one time range")

@@ -19,7 +19,7 @@ public struct NativeExportSizeEstimator: ExportSizeEstimator, Sendable {
 
     public func estimate(_ request: ExportRequest) async throws -> ExportEstimate {
         switch request.format {
-        case .mp4, .hevc, .m4a, .alac, .wav, .caf, .flac:
+        case .mp4, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac:
             try await movieEstimator.estimate(request)
         case .gif, .apng:
             try await animatedEstimator.estimate(request)

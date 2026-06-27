@@ -7,7 +7,9 @@ struct CodecComplianceModelTests {
     @Test("codec availability defaults to Apple-native export formats")
     func codecAvailabilityDefaultsToAppleNativeExportFormats() {
         #expect(CodecAvailability.none.registeredExternalFormats.isEmpty)
-        #expect(CodecAvailability.none.availableExportFormats == [.mp4, .hevc, .gif, .apng])
+        #expect(
+            CodecAvailability.none.availableExportFormats
+                == [.hevc, .mp4, .proRes422, .proRes4444, .gif, .apng])
         #expect(CodecAvailability.none.supports(.mp4))
         #expect(!CodecAvailability.none.supports(.webm))
         #expect(!CodecAvailability.none.supports(.av1))
@@ -17,7 +19,9 @@ struct CodecComplianceModelTests {
     func codecAvailabilityAppendsRegisteredExternalFormatsInMenuOrder() throws {
         let availability = try CodecAvailability(registeredExternalFormats: [.av1, .webm])
 
-        #expect(availability.availableExportFormats == [.mp4, .hevc, .gif, .apng, .webm, .av1])
+        #expect(
+            availability.availableExportFormats
+                == [.av1, .webm, .hevc, .mp4, .proRes422, .proRes4444, .gif, .apng])
         #expect(availability.supports(.webm))
         #expect(availability.supports(.av1))
     }

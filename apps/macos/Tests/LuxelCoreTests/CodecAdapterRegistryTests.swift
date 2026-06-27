@@ -9,7 +9,9 @@ struct CodecAdapterRegistryTests {
         let registry = CodecAdapterRegistry.empty
 
         #expect(registry.availability == .none)
-        #expect(registry.availability.availableExportFormats == [.mp4, .hevc, .gif, .apng])
+        #expect(
+            registry.availability.availableExportFormats
+                == [.hevc, .mp4, .proRes422, .proRes4444, .gif, .apng])
     }
 
     @Test("registry exposes registered external formats in availability order")
@@ -21,7 +23,8 @@ struct CodecAdapterRegistryTests {
 
         #expect(registry.availability.registeredExternalFormats == [.webm, .av1])
         #expect(
-            registry.availability.availableExportFormats == [.mp4, .hevc, .gif, .apng, .webm, .av1])
+            registry.availability.availableExportFormats
+                == [.av1, .webm, .hevc, .mp4, .proRes422, .proRes4444, .gif, .apng])
     }
 
     @Test("registration rejects Apple-native formats and duplicates")

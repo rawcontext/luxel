@@ -19,6 +19,21 @@ struct NativeMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
+    @Test("router exports ProRes through native video path")
+    func routerExportsProResThroughNativeVideoPath() async throws {
+        for format in [ExportFormat.proRes422, .proRes4444] {
+            let outputURL = temporaryOutputURL(fileExtension: format.fileExtension)
+            let request = try makeRequest(format: format, pixelSize: PixelSize(width: 160, height: 90))
+
+            let exported = try await NativeMediaExporter().export(request, to: outputURL)
+
+            #expect(exported.format == format)
+            #expect(FileManager.default.fileExists(atPath: outputURL.path))
+
+            try? FileManager.default.removeItem(at: outputURL)
+        }
+    }
+
     @Test("router exports gif through animated image path")
     func routerExportsGIFThroughAnimatedImagePath() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "gif")

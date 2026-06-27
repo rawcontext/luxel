@@ -70,6 +70,10 @@ public struct AVFoundationExportPlanFactory: Sendable {
             }
         case .hevc:
             AVAssetExportPresetHEVCHighestQuality
+        case .proRes422:
+            AVAssetExportPresetAppleProRes422LPCM
+        case .proRes4444:
+            AVAssetExportPresetAppleProRes4444LPCM
         case .av1, .webm, .gif, .apng:
             throw AVFoundationExportPlanError.unsupportedFormat(format)
         }
@@ -89,6 +93,8 @@ public struct AVFoundationExportPlanFactory: Sendable {
             nil
         case .mp4, .hevc:
             .mp4
+        case .proRes422, .proRes4444:
+            .mov
         case .av1, .webm, .gif, .apng:
             throw AVFoundationExportPlanError.unsupportedFormat(format)
         }

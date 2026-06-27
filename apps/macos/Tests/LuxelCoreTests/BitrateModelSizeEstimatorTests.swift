@@ -59,6 +59,31 @@ struct BitrateModelSizeEstimatorTests {
         #expect(estimate == expected)
     }
 
+    @Test("estimates ProRes movie bytes")
+    func estimatesProResMovieBytes() async throws {
+        let expectations: [(format: ExportFormat, bytes: Int64)] = [
+            (.proRes422, 299_000),
+            (.proRes4444, 594_000)
+        ]
+
+        for expectation in expectations {
+            let request = try makeRequest(
+                format: expectation.format,
+                width: 100,
+                height: 200,
+                frameRate: 10,
+                timeRange: TimeRange(start: 1, end: 5),
+                quality: .high,
+                shouldMute: false
+            )
+
+            let estimate = try await BitrateModelSizeEstimator().estimate(request)
+            let expected = try ExportEstimate(bytes: expectation.bytes, confidence: .modeled)
+
+            #expect(estimate == expected)
+        }
+    }
+
     @Test("estimates audio-only bytes by native format")
     func estimatesAudioOnlyBytesByNativeFormat() async throws {
         let expectations: [(format: ExportFormat, bytes: Int64)] = [

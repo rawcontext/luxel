@@ -98,9 +98,13 @@ public struct ExportService: Sendable {
         case .gif:
             "GIF"
         case .hevc:
-            "H265"
+            "HEVC"
         case .mp4:
-            "H264"
+            "H.264"
+        case .proRes422:
+            "ProRes 422"
+        case .proRes4444:
+            "ProRes 4444"
         case .av1:
             "AV1"
         case .webm:

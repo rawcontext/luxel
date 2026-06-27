@@ -135,8 +135,8 @@ struct ExportServiceTests {
         #expect(captured.map(\.request.format) == [.mp4, .hevc, .gif])
         #expect(
             captured.map(\.outputFileURL.path) == [
-                "/tmp/exports/Luxel Clip H264.mp4",
-                "/tmp/exports/Luxel Clip H265.mp4",
+                "/tmp/exports/Luxel Clip H.264.mp4",
+                "/tmp/exports/Luxel Clip HEVC.mp4",
                 "/tmp/exports/Luxel Clip GIF.gif"
             ])
         #expect(snapshots.map(\.jobID) == [0, 0, 0, 1, 1, 1, 2, 2, 2])

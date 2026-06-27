@@ -478,7 +478,7 @@ extension AVFoundationMediaExporter {
                 AVSampleRateKey: Self.audioProcessingSampleRate,
                 AVNumberOfChannelsKey: Int(Self.audioProcessingChannelCount)
             ]
-        case .mp4, .hevc, .gif, .webm, .apng, .av1:
+        case .mp4, .hevc, .proRes422, .proRes4444, .gif, .webm, .apng, .av1:
             throw AVFoundationExportPlanError.unsupportedFormat(format)
         }
     }

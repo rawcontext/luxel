@@ -229,7 +229,7 @@ apps/macos/Sources/LuxelCodecWebM
 
 Current export format groups:
 
-- Apple-native video/animation: `mp4`, `hevc`, `gif`, `apng`
+- Apple-native video/animation: `mp4`, `hevc`, `prores422`, `prores4444`, `gif`, `apng`
 - External native codec formats: `webm`, `av1`
 - Audio-only formats: `m4a`, `alac`, `wav`, `caf`, `flac`
 

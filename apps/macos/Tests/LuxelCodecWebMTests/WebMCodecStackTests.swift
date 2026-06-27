@@ -87,7 +87,9 @@ struct WebMCodecStackTests {
             try WebMCodecAdapter.registration()
         ])
 
-        #expect(registry.availability.availableExportFormats == [.mp4, .hevc, .gif, .apng, .webm])
+        #expect(
+            registry.availability.availableExportFormats
+                == [.webm, .hevc, .mp4, .proRes422, .proRes4444, .gif, .apng])
     }
 
     @Test("muxer writes Cues and SeekHead entries that resolve to real segment positions")

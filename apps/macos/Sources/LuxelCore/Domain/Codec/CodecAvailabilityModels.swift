@@ -15,8 +15,9 @@ public struct CodecAvailability: Codable, Equatable, Sendable {
     public static let none = CodecAvailability(checkedExternalFormats: [])
 
     public var availableExportFormats: [ExportFormat] {
-        ExportFormat.appleNativeV1Formats
-            + ExportFormat.externalNativeCodecFormats.filter(registeredExternalFormats.contains)
+        ExportFormat.videoExportMenuFormats.filter { format in
+            format.isAppleNativeV1Format || registeredExternalFormats.contains(format)
+        }
     }
 
     public func supports(_ format: ExportFormat) -> Bool {
@@ -34,7 +35,6 @@ public enum CodecAvailabilityError: Error, Equatable {
 
 extension Sequence where Element == ExportFormat {
     fileprivate func sortedForExportMenu() -> [ExportFormat] {
-        ExportFormat.appleNativeV1Formats.filter { contains($0) }
-            + ExportFormat.externalNativeCodecFormats.filter { contains($0) }
+        ExportFormat.videoExportMenuFormats.filter { contains($0) }
     }
 }
