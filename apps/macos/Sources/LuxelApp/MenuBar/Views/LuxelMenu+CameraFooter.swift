@@ -8,15 +8,13 @@ extension LuxelMenu {
         } label: {
             Image(systemName: "chevron.down")
                 .labelStyle(.iconOnly)
-                .font(.caption.weight(.bold))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(
                     width: LuxelCameraFooterPickerLayout.buttonWidth,
                     height: LuxelCameraFooterPickerLayout.buttonHeight
                 )
-                .luxelMenuControlBackground(
-                    cornerRadius: LuxelCameraFooterPickerLayout.buttonCornerRadius
-                )
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .frame(height: LuxelCameraFooterPickerLayout.buttonHeight)
@@ -76,7 +74,6 @@ extension LuxelMenu {
 }
 
 private enum LuxelCameraFooterPickerLayout {
-    static let buttonWidth: CGFloat = 30
-    static let buttonHeight: CGFloat = 32
-    static let buttonCornerRadius: CGFloat = 11
+    static let buttonWidth: CGFloat = 31
+    static let buttonHeight: CGFloat = 34
 }

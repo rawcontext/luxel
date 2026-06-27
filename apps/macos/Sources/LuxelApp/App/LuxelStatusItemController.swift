@@ -36,7 +36,6 @@ final class LuxelStatusItemController: NSObject {
     private var applicationResignActiveObserver: NSObjectProtocol?
     private var menuPanel: NSPanel?
     private var menuHostingController: NSHostingController<AnyView>?
-    private var menuPanelContentView: LuxelMenuPanelContentView?
     private var pendingPopoverOpenTask: Task<Void, Never>?
     private var suppressNextPopoverOpenUntil: Date?
     private var activationSourceApplication: NSRunningApplication?
@@ -45,12 +44,11 @@ final class LuxelStatusItemController: NSObject {
     let iconSize = NSSize(width: 18, height: 18)
     let activeIconHeight: CGFloat = 24
     let activeIconMinWidth: CGFloat = 118
-    private let menuPanelWidth: CGFloat = 324
-    private let menuPanelFallbackHeight: CGFloat = 260
-    private let menuPanelMinimumHeight: CGFloat = 150
-    private let menuPanelFittingHeightPadding: CGFloat = 8
-    private let menuPanelArrowHeight: CGFloat = 10
-    private let menuPanelArrowHorizontalOffset: CGFloat = -4
+    private let menuPanelWidth: CGFloat = 320
+    private let menuPanelFallbackHeight: CGFloat = 250
+    private let menuPanelMinimumHeight: CGFloat = 130
+    private let menuPanelFittingHeightPadding: CGFloat = 10
+    private let menuPanelHorizontalOffset: CGFloat = -4
     private let statusItemStopWatchdogDelay: Duration = .seconds(8)
 
     init(
@@ -112,12 +110,9 @@ extension LuxelStatusItemController {
         menuHostingController = hostingController
     }
 
-    private func makeMenuRootView(arrowCenterX: CGFloat? = nil) -> AnyView {
+    private func makeMenuRootView() -> AnyView {
         AnyView(
-            LuxelMenuPanelChrome(
-                arrowCenterX: arrowCenterX ?? menuPanelWidth / 2,
-                arrowHeight: menuPanelArrowHeight
-            ) {
+            LuxelMenuPanelChrome {
                 LuxelMenu(
                     model: model,
                     editorModel: editorModel,
@@ -612,9 +607,7 @@ extension LuxelStatusItemController {
 
     private func showPopover(relativeTo button: NSStatusBarButton) {
         model.refreshRecentRecordings()
-        menuHostingController?.rootView = makeMenuRootView(
-            arrowCenterX: menuPanelContentView?.arrowCenterX ?? menuPanelWidth / 2
-        )
+        menuHostingController?.rootView = makeMenuRootView()
 
         let panel = menuPanel ?? makeMenuPanel()
         menuPanel = panel
@@ -645,10 +638,8 @@ extension LuxelStatusItemController {
         layoutStatusItemButton(button)
 
         let panelSize = fittedMenuPanelSize()
-        let placement = menuPanelPlacement(relativeTo: button, panelSize: panelSize)
-        menuPanelContentView?.arrowCenterX = placement.arrowCenterX
-        menuHostingController?.rootView = makeMenuRootView(arrowCenterX: placement.arrowCenterX)
-        panel.setFrame(placement.frame, display: display)
+        let frame = menuPanelFrame(relativeTo: button, panelSize: panelSize)
+        panel.setFrame(frame, display: display)
         panel.contentView?.layoutSubtreeIfNeeded()
     }
 
@@ -708,10 +699,8 @@ extension LuxelStatusItemController {
 
     private func makeMenuPanelContentView() -> NSView {
         let container = LuxelMenuPanelContentView(
-            frame: NSRect(origin: .zero, size: fallbackMenuPanelSize),
-            arrowHeight: menuPanelArrowHeight
+            frame: NSRect(origin: .zero, size: fallbackMenuPanelSize)
         )
-        menuPanelContentView = container
 
         if let hostingView = menuHostingController?.view {
             hostingView.frame = container.bounds
@@ -724,12 +713,12 @@ extension LuxelStatusItemController {
         return container
     }
 
-    private func menuPanelPlacement(
+    private func menuPanelFrame(
         relativeTo button: NSStatusBarButton,
         panelSize: NSSize
-    ) -> (frame: NSRect, arrowCenterX: CGFloat) {
+    ) -> NSRect {
         let buttonFrame = statusItemButtonFrame(relativeTo: button)
-        let anchorMidX = buttonFrame.midX + menuPanelArrowHorizontalOffset
+        let anchorMidX = buttonFrame.midX + menuPanelHorizontalOffset
         let screenFrame =
             button.window?.screen?.visibleFrame
             ?? NSScreen.main?.visibleFrame
@@ -742,10 +731,8 @@ extension LuxelStatusItemController {
         )
         let topY = buttonFrame.minY > 0 ? buttonFrame.minY : screenFrame.maxY
         let originY = topY - panelSize.height
-        let frame = NSRect(origin: NSPoint(x: originX, y: originY), size: panelSize)
-        let arrowCenterX = anchorMidX - frame.minX
 
-        return (frame, arrowCenterX)
+        return NSRect(origin: NSPoint(x: originX, y: originY), size: panelSize)
     }
 
     private func statusItemButtonFrame(relativeTo button: NSStatusBarButton) -> NSRect {

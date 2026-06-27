@@ -1,3 +1,4 @@
+import LuxelCore
 import SwiftUI
 
 struct LuxelCaptureTargetPicker: View {
@@ -5,25 +6,26 @@ struct LuxelCaptureTargetPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Text("Target")
-                    .font(.caption.weight(.semibold))
-                    .frame(width: 48, alignment: .leading)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .frame(width: 50, alignment: .leading)
 
                 if !model.captureTargets.isEmpty {
-                    Picker("Target", selection: $model.selectedCaptureTargetID) {
+                    Menu {
                         ForEach(model.captureTargets) { target in
-                            CaptureTargetMenuLabel(target: target)
-                                .tag(Optional(target.id))
+                            Button {
+                                model.selectedCaptureTargetID = target.id
+                                model.syncCameraPreviewSnapArea()
+                            } label: {
+                                CaptureTargetMenuLabel(target: target)
+                            }
                         }
+                    } label: {
+                        CaptureTargetPickerLabel(target: model.selectedCaptureTarget)
                     }
-                    .labelsHidden()
-                    .pickerStyle(.menu)
-                    .font(.subheadline.weight(.semibold))
-                    .controlSize(.small)
-                    .onChange(of: model.selectedCaptureTargetID) {
-                        model.syncCameraPreviewSnapArea()
-                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
                 } else {
                     Label("No target", systemImage: "display")
                         .foregroundStyle(.secondary)
@@ -31,10 +33,10 @@ struct LuxelCaptureTargetPicker: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .frame(minHeight: 34)
-            .luxelMenuSectionBackground(cornerRadius: 13)
+            .padding(.leading, 14)
+            .padding(.trailing, 8)
+            .frame(height: 38)
+            .luxelMenuSectionBackground(cornerRadius: 19)
 
             if let captureTargetStatusMessage = model.captureTargetStatusMessage {
                 Text(captureTargetStatusMessage)
@@ -43,5 +45,33 @@ struct LuxelCaptureTargetPicker: View {
                     .lineLimit(2)
             }
         }
+    }
+}
+
+private struct CaptureTargetPickerLabel: View {
+    let target: CaptureTargetOption?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if let target {
+                CaptureTargetMenuLabel(target: target)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .lineLimit(1)
+            } else {
+                Label("No target", systemImage: "display")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.system(size: 11, weight: .bold))
+        }
+        .foregroundStyle(.white.opacity(0.88))
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, minHeight: 28)
+        .luxelMenuControlBackground(cornerRadius: 14)
+        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

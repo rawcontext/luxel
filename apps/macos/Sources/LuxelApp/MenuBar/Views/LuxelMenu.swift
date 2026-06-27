@@ -8,14 +8,13 @@ import UniformTypeIdentifiers
 struct LuxelMenu: View {
     private static let contentWidth: CGFloat = 300
     private static let contentPadding: CGFloat = 6
-    private static let outerPadding: CGFloat = 2
-    private static let captureActionButtonHeight: CGFloat = 46
-    private static let captureActionButtonCornerRadius: CGFloat = 12
-    private static let footerButtonHeight: CGFloat = 32
-    private static let footerButtonCornerRadius: CGFloat = 11
-    private static let footerAudioButtonWidth: CGFloat = 38
-    private static let footerRecentFolderButtonWidth: CGFloat = 34
-    private static let footerMoreButtonWidth: CGFloat = 42
+    private static let moduleSpacing: CGFloat = 8
+    private static let captureActionButtonHeight: CGFloat = 56
+    private static let captureActionButtonCornerRadius: CGFloat = 17
+    private static let footerButtonHeight: CGFloat = 34
+    private static let footerButtonCornerRadius: CGFloat = 17
+    private static let footerButtonWidth: CGFloat = 34
+    private static let footerCameraControlWidth: CGFloat = 82
 
     @State private var isImportingRecording = false
 
@@ -29,8 +28,8 @@ struct LuxelMenu: View {
     let presentPermissionPrompt: @MainActor (CapturePermissionSource) -> Void
 
     var body: some View {
-        GlassEffectContainer(spacing: 8) {
-            VStack(alignment: .leading, spacing: 8) {
+        GlassEffectContainer(spacing: Self.moduleSpacing) {
+            VStack(alignment: .leading, spacing: Self.moduleSpacing) {
                 LuxelCaptureTargetPicker(model: model)
                 captureActionSelector
                 LuxelRecordingStatusMessages(model: model)
@@ -40,7 +39,6 @@ struct LuxelMenu: View {
             }
             .frame(width: Self.contentWidth, alignment: .leading)
             .padding(Self.contentPadding)
-            .padding(Self.outerPadding)
         }
         .fixedSize(horizontal: false, vertical: true)
         .background {
@@ -146,7 +144,7 @@ struct LuxelMenu: View {
 
 extension LuxelMenu {
     private var captureActionSelector: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 7) {
             captureActionButton(.screen)
             captureActionButton(.area)
             captureActionButton(.audio)
@@ -160,7 +158,8 @@ extension LuxelMenu {
         } label: {
             captureActionButtonLabel(action)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(LuxelMenuControlButtonStyle(cornerRadius: Self.captureActionButtonCornerRadius))
+        .frame(maxWidth: .infinity)
         .disabled(!canPerformCaptureAction(action) && !canRecoverCaptureAction(action))
     }
 
@@ -169,23 +168,20 @@ extension LuxelMenu {
         if canPerformCaptureAction(action) {
             captureActionButtonContent(action)
                 .foregroundStyle(.white)
-                .luxelMenuControlBackground(
-                    cornerRadius: Self.captureActionButtonCornerRadius, isActive: true)
         } else {
             captureActionButtonContent(action)
                 .foregroundStyle(.secondary)
-                .luxelMenuControlBackground(cornerRadius: Self.captureActionButtonCornerRadius)
                 .opacity(0.55)
         }
     }
 
     private func captureActionButtonContent(_ action: LuxelCaptureAction) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             Image(systemName: action.systemImage)
-                .font(.system(size: 17, weight: .medium))
+                .font(.system(size: 18, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
             Text(action.title)
-                .font(.caption.weight(.semibold))
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
         }
         .frame(maxWidth: .infinity, minHeight: Self.captureActionButtonHeight)
         .contentShape(
@@ -195,24 +191,24 @@ extension LuxelMenu {
     @ViewBuilder
     private var latestRecordingCard: some View {
         if let recording = model.recentRecordings.first {
-            HStack(spacing: 8) {
+            HStack(spacing: 12) {
                 Button {
                     openRecentRecording(recording)
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 12) {
                         RecentRecordingThumbnail(recording: recording)
 
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(recentRecordingTitle(for: recording))
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.86)
+                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.78)
 
                             RecentRecordingMetadataLabel(recording: recording)
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
-                                .minimumScaleFactor(0.85)
+                                .minimumScaleFactor(0.78)
                         }
                         .layoutPriority(1)
 
@@ -229,37 +225,35 @@ extension LuxelMenu {
                     revealRecentRecording(recording)
                 } label: {
                     Image(systemName: "folder")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
-                        .frame(width: 30, height: 30)
-                        .background(.white.opacity(0.16), in: Circle())
-                        .contentShape(Circle())
+                        .frame(width: 34, height: 34)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(LuxelMenuControlButtonStyle(cornerRadius: 17))
                 .help("Show in Finder")
             }
-            .padding(8)
-            .luxelMenuSectionBackground(cornerRadius: 15)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
+            .frame(minHeight: 68)
+            .luxelMenuSectionBackground(cornerRadius: 18)
         }
     }
 
     private var footerControls: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 7) {
             recordSystemAudioFooterToggle
             recordMicrophoneFooterToggle
-            cameraFooterToggle
-            cameraFooterPicker
-
-            recentFooterControl
-                .layoutPriority(1)
+            cameraFooterControl
+            recentHistoryFooterControl
+            recentFolderFooterControl
 
             Menu {
                 overflowMenuItems
             } label: {
-                Label("More", systemImage: "ellipsis")
-                    .labelStyle(.iconOnly)
-                    .font(.callout.weight(.semibold))
-                    .frame(width: Self.footerMoreButtonWidth, height: Self.footerButtonHeight)
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: Self.footerButtonWidth, height: Self.footerButtonHeight)
                     .luxelMenuControlBackground(cornerRadius: Self.footerButtonCornerRadius)
             }
             .buttonStyle(.plain)
@@ -268,43 +262,51 @@ extension LuxelMenu {
         .frame(maxWidth: .infinity)
     }
 
-    private var recentFooterControl: some View {
+    private var cameraFooterControl: some View {
         HStack(spacing: 0) {
-            Menu {
-                recentRecordingsMenuItems
-            } label: {
-                Label("Recent", systemImage: "clock")
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, minHeight: Self.footerButtonHeight)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(model.recentRecordings.isEmpty)
-            .help("Show recent recordings")
+            cameraFooterToggle(backgrounded: false)
+                .frame(width: 50, height: Self.footerButtonHeight)
 
             Rectangle()
-                .fill(.white.opacity(0.16))
+                .fill(.white.opacity(0.18))
                 .frame(width: 1, height: 18)
 
-            Button {
-                dismissMenu()
-                model.openRecordingsFolder()
-            } label: {
-                Image(systemName: "folder")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(width: Self.footerRecentFolderButtonWidth, height: Self.footerButtonHeight)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Open \(model.recordingsDirectorySummary)")
-            .accessibilityLabel("Open Luxel folder")
+            cameraFooterPicker
+                .frame(width: 31, height: Self.footerButtonHeight)
         }
-        .frame(
-            maxWidth: .infinity, minHeight: Self.footerButtonHeight, maxHeight: Self.footerButtonHeight
-        )
+        .frame(width: Self.footerCameraControlWidth, height: Self.footerButtonHeight)
         .luxelMenuControlBackground(cornerRadius: Self.footerButtonCornerRadius)
         .clipShape(RoundedRectangle(cornerRadius: Self.footerButtonCornerRadius, style: .continuous))
+    }
+
+    private var recentHistoryFooterControl: some View {
+        Menu {
+            recentRecordingsMenuItems
+        } label: {
+            Image(systemName: "clock")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(.white)
+                .frame(width: Self.footerButtonWidth, height: Self.footerButtonHeight)
+                .luxelMenuControlBackground(cornerRadius: Self.footerButtonCornerRadius)
+        }
+        .buttonStyle(.plain)
+        .disabled(model.recentRecordings.isEmpty)
+        .help("Show recent recordings")
+    }
+
+    private var recentFolderFooterControl: some View {
+        Button {
+            dismissMenu()
+            model.openRecordingsFolder()
+        } label: {
+            Image(systemName: "folder")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: Self.footerButtonWidth, height: Self.footerButtonHeight)
+        }
+        .buttonStyle(LuxelMenuControlButtonStyle(cornerRadius: Self.footerButtonCornerRadius))
+        .help("Open \(model.recordingsDirectorySummary)")
+        .accessibilityLabel("Open Luxel folder")
     }
 
     private var recordSystemAudioFooterToggle: some View {
@@ -337,13 +339,13 @@ extension LuxelMenu {
         .accessibilityValue(presentation.statusTitle)
     }
 
-    private var cameraFooterToggle: some View {
+    private func cameraFooterToggle(backgrounded: Bool) -> some View {
         let presentation = model.sourcePermissionPresentation(for: .camera)
 
         return Button {
             handleCameraFooterAction(presentation)
         } label: {
-            footerSourceIcon(presentation)
+            footerSourceIcon(presentation, backgrounded: backgrounded)
         }
         .buttonStyle(.plain)
         .frame(height: Self.footerButtonHeight)
@@ -352,17 +354,28 @@ extension LuxelMenu {
         .accessibilityValue(presentation.statusTitle)
     }
 
-    private func footerSourceIcon(_ presentation: CaptureSourcePermissionPresentation) -> some View {
-        Image(systemName: presentation.systemImage)
+    @ViewBuilder
+    private func footerSourceIcon(
+        _ presentation: CaptureSourcePermissionPresentation,
+        backgrounded: Bool = true
+    ) -> some View {
+        let icon = Image(systemName: presentation.systemImage)
             .labelStyle(.iconOnly)
-            .font(.callout.weight(.semibold))
-            .foregroundStyle(presentation.isReady ? .black : .white)
-            .frame(width: Self.footerAudioButtonWidth, height: Self.footerButtonHeight)
-            .luxelMenuControlBackground(
-                cornerRadius: Self.footerButtonCornerRadius,
-                idleOpacity: presentation.isReady ? 0.92 : 0.10,
-                hoverOpacity: presentation.isReady ? 0.96 : 0.16
-            )
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(presentation.isReady ? Color(nsColor: .controlAccentColor) : .white)
+            .frame(width: backgrounded ? Self.footerButtonWidth : 50, height: Self.footerButtonHeight)
+
+        if presentation.isReady, backgrounded {
+            icon
+                .luxelMenuLightControlBackground(cornerRadius: Self.footerButtonCornerRadius)
+        } else if backgrounded {
+            icon
+                .luxelMenuControlBackground(
+                    cornerRadius: Self.footerButtonCornerRadius
+                )
+        } else {
+            icon
+        }
     }
 
     @ViewBuilder
@@ -645,7 +658,7 @@ extension LuxelMenu {
     }
 
     private func recentRecordingTitle(for recording: PastRecording) -> String {
-        recording.name.replacingOccurrences(of: " at ", with: "\nat ")
+        recording.name.components(separatedBy: " at ").first ?? recording.name
     }
 
     private func refreshMenuState() async {
@@ -719,7 +732,7 @@ extension LuxelMenu {
 }
 
 private struct RecentRecordingThumbnail: View {
-    private static let size = CGSize(width: 58, height: 42)
+    private static let size = CGSize(width: 78, height: 49)
 
     @State private var thumbnail: NSImage?
 
@@ -730,14 +743,19 @@ private struct RecentRecordingThumbnail: View {
             thumbnailContent
 
             Image(systemName: badgeSystemImage)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
-                .padding(4)
-                .background(.black.opacity(0.56), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .frame(width: 22, height: 22)
+                .background(.black.opacity(0.56), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .stroke(.white.opacity(0.14), lineWidth: 1)
+                        .allowsHitTesting(false)
+                }
                 .padding(5)
         }
         .frame(width: Self.size.width, height: Self.size.height)
-        .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         .task(id: thumbnailRequest) {
             await loadThumbnail()
         }
@@ -758,7 +776,7 @@ private struct RecentRecordingThumbnail: View {
                     .fill(.white.opacity(0.08))
 
                 Image(systemName: placeholderSystemImage)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(.secondary)
             }
         }
@@ -947,5 +965,9 @@ private enum LuxelCaptureAction {
         case .audio:
             "waveform"
         }
+    }
+
+    var isProminent: Bool {
+        self == .screen
     }
 }
