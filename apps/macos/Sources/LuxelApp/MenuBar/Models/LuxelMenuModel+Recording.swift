@@ -175,29 +175,6 @@ extension LuxelMenuModel {
         }
     }
 
-    func startQuickRecordingFromSelectedTarget() async {
-        guard let presetID = settings.quickExportPresetID else {
-            recordingState = .failed("No quick export preset selected")
-            return
-        }
-
-        guard let selectedCaptureTarget else {
-            recordingState = .failed("No capture target selected")
-            return
-        }
-
-        let latencySpan = LuxelRecordingLatencyTelemetry.begin(
-            entryPoint: .quickRecordMenuButton,
-            target: selectedCaptureTarget.target
-        )
-        await startRecording(
-            target: selectedCaptureTarget.target,
-            pixelSize: selectedCaptureTarget.pixelSize,
-            captureKind: .quick(presetID: presetID),
-            latencySpan: latencySpan
-        )
-    }
-
     func startAutomationRecording(
         target: CaptureTarget,
         pixelSize: PixelSize,

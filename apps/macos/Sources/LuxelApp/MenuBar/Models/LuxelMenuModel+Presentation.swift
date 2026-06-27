@@ -45,15 +45,6 @@ extension LuxelMenuModel {
         !isRecordingAudioOnly && recordingPresentation().canUseSecondaryAction
     }
 
-    var canUseQuickRecordButton: Bool {
-        switch recordingState {
-        case .idle, .failed:
-            canStartRecording && settings.quickExportPresetID != nil
-        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
-            false
-        }
-    }
-
     var canUseAudioOnlyButton: Bool {
         switch recordingState {
         case .idle, .failed:

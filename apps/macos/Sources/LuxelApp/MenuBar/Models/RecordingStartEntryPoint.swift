@@ -1,6 +1,5 @@
 enum RecordingStartEntryPoint: String {
     case recordMenuButton = "record-menu-button"
-    case quickRecordMenuButton = "quick-record-menu-button"
     case recordAgainButton = "record-again-button"
     case quickRecordLastButton = "quick-record-last-button"
     case toggleRecordingShortcut = "toggle-recording-shortcut"

@@ -3,7 +3,6 @@ import AppKit
 import LuxelCore
 import LuxelPresentation
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct LuxelMenu: View {
     private static let contentWidth: CGFloat = 300
@@ -14,9 +13,8 @@ struct LuxelMenu: View {
     private static let footerButtonHeight: CGFloat = 34
     private static let footerButtonCornerRadius: CGFloat = 17
     private static let footerButtonWidth: CGFloat = 34
+    private static let footerMicrophoneControlWidth: CGFloat = 82
     private static let footerCameraControlWidth: CGFloat = 82
-
-    @State private var isImportingRecording = false
 
     @Bindable var model: LuxelMenuModel
     let editorModel: LuxelEditorModel
@@ -73,21 +71,8 @@ struct LuxelMenu: View {
         .task {
             await model.watchRecordingAutoStops(openRecording: openRecording)
         }
-        .fileImporter(
-            isPresented: $isImportingRecording,
-            allowedContentTypes: [.movie, .mpeg4Movie, .quickTimeMovie],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                guard let url = urls.first else {
-                    return
-                }
-
-                openRecording(url)
-            case .failure(let error):
-                editorModel.reportImportFailure(error)
-            }
+        .task {
+            await model.watchAudioInputDeviceUpdates()
         }
         .alert(
             Text(model.recoveryPrompt?.title ?? "Recording Recovery"),
@@ -242,10 +227,10 @@ extension LuxelMenu {
     private var footerControls: some View {
         HStack(spacing: 7) {
             recordSystemAudioFooterToggle
-            recordMicrophoneFooterToggle
+            microphoneFooterControl
             cameraFooterControl
-            recentHistoryFooterControl
-            recentFolderFooterControl
+
+            Spacer(minLength: 0)
 
             Menu {
                 overflowMenuItems
@@ -260,6 +245,23 @@ extension LuxelMenu {
             .frame(height: Self.footerButtonHeight)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var microphoneFooterControl: some View {
+        HStack(spacing: 0) {
+            recordMicrophoneFooterToggle(backgrounded: false)
+                .frame(width: 50, height: Self.footerButtonHeight)
+
+            Rectangle()
+                .fill(.white.opacity(0.18))
+                .frame(width: 1, height: 18)
+
+            microphoneFooterPicker
+                .frame(width: 31, height: Self.footerButtonHeight)
+        }
+        .frame(width: Self.footerMicrophoneControlWidth, height: Self.footerButtonHeight)
+        .luxelMenuControlBackground(cornerRadius: Self.footerButtonCornerRadius)
+        .clipShape(RoundedRectangle(cornerRadius: Self.footerButtonCornerRadius, style: .continuous))
     }
 
     private var cameraFooterControl: some View {
@@ -279,36 +281,6 @@ extension LuxelMenu {
         .clipShape(RoundedRectangle(cornerRadius: Self.footerButtonCornerRadius, style: .continuous))
     }
 
-    private var recentHistoryFooterControl: some View {
-        Menu {
-            recentRecordingsMenuItems
-        } label: {
-            Image(systemName: "clock")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.white)
-                .frame(width: Self.footerButtonWidth, height: Self.footerButtonHeight)
-                .luxelMenuControlBackground(cornerRadius: Self.footerButtonCornerRadius)
-        }
-        .buttonStyle(.plain)
-        .disabled(model.recentRecordings.isEmpty)
-        .help("Show recent recordings")
-    }
-
-    private var recentFolderFooterControl: some View {
-        Button {
-            dismissMenu()
-            model.openRecordingsFolder()
-        } label: {
-            Image(systemName: "folder")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: Self.footerButtonWidth, height: Self.footerButtonHeight)
-        }
-        .buttonStyle(LuxelMenuControlButtonStyle(cornerRadius: Self.footerButtonCornerRadius))
-        .help("Open \(model.recordingsDirectorySummary)")
-        .accessibilityLabel("Open Luxel folder")
-    }
-
     private var recordSystemAudioFooterToggle: some View {
         let presentation = model.sourcePermissionPresentation(for: .systemAudio)
 
@@ -317,22 +289,32 @@ extension LuxelMenu {
         } label: {
             footerSourceIcon(presentation)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            LuxelMenuControlButtonStyle(
+                cornerRadius: Self.footerButtonCornerRadius,
+                addsContrastBackground: true
+            )
+        )
         .frame(height: Self.footerButtonHeight)
         .help(presentation.message)
         .accessibilityLabel("System Audio")
         .accessibilityValue(presentation.statusTitle)
     }
 
-    private var recordMicrophoneFooterToggle: some View {
+    private func recordMicrophoneFooterToggle(backgrounded: Bool = true) -> some View {
         let presentation = model.sourcePermissionPresentation(for: .microphone)
 
         return Button {
             handleMicrophoneFooterAction(presentation)
         } label: {
-            footerSourceIcon(presentation)
+            footerSourceIcon(presentation, backgrounded: backgrounded)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            LuxelMenuControlButtonStyle(
+                cornerRadius: Self.footerButtonCornerRadius,
+                addsContrastBackground: backgrounded
+            )
+        )
         .frame(height: Self.footerButtonHeight)
         .help(presentation.message)
         .accessibilityLabel("Microphone")
@@ -347,7 +329,12 @@ extension LuxelMenu {
         } label: {
             footerSourceIcon(presentation, backgrounded: backgrounded)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            LuxelMenuControlButtonStyle(
+                cornerRadius: Self.footerButtonCornerRadius,
+                addsContrastBackground: backgrounded
+            )
+        )
         .frame(height: Self.footerButtonHeight)
         .help(presentation.message)
         .accessibilityLabel("Camera")
@@ -362,99 +349,15 @@ extension LuxelMenu {
         let icon = Image(systemName: presentation.systemImage)
             .labelStyle(.iconOnly)
             .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(presentation.isReady ? Color(nsColor: .controlAccentColor) : .white)
+            .foregroundStyle(.white)
             .frame(width: backgrounded ? Self.footerButtonWidth : 50, height: Self.footerButtonHeight)
+            .contentShape(Rectangle())
 
-        if presentation.isReady, backgrounded {
-            icon
-                .luxelMenuLightControlBackground(cornerRadius: Self.footerButtonCornerRadius)
-        } else if backgrounded {
-            icon
-                .luxelMenuControlBackground(
-                    cornerRadius: Self.footerButtonCornerRadius
-                )
-        } else {
-            icon
-        }
-    }
-
-    @ViewBuilder
-    private var recentRecordingsMenuItems: some View {
-        if model.recentRecordings.isEmpty {
-            Text("No recent items")
-        } else {
-            ForEach(Array(model.recentRecordings.prefix(8)), id: \.fileURL) { recording in
-                Button {
-                    openRecentRecording(recording)
-                } label: {
-                    Label(recording.name, systemImage: recentRecordingBadgeSystemImage(for: recording))
-                }
-                .help(recording.fileURL.path)
-            }
-        }
+        icon
     }
 
     @ViewBuilder
     private var overflowMenuItems: some View {
-        Button {
-            startAfterDismissingMenu {
-                await model.startQuickRecordingFromSelectedTarget()
-            }
-        } label: {
-            Label("Quick Record", systemImage: "bolt.circle")
-        }
-        .disabled(!model.canUseQuickRecordButton)
-
-        Menu {
-            Button {
-                startAfterDismissingMenu {
-                    showAreaCapturePicker()
-                }
-            } label: {
-                Label("Select Area", systemImage: "crop")
-            }
-            .disabled(!model.canSelectArea)
-
-            Button {
-                startAfterDismissingMenu {
-                    await model.startAudioOnlyRecording()
-                }
-            } label: {
-                Label("Record Audio Only", systemImage: "waveform")
-            }
-            .disabled(!model.canUseAudioOnlyButton)
-
-            Button {
-                startAfterDismissingMenu {
-                    await model.startQuickRecordingFromLastCapture()
-                }
-            } label: {
-                Label("Quick Record Last", systemImage: "bolt.circle")
-            }
-            .disabled(!model.canUseQuickRecordLastButton)
-        } label: {
-            Label("Advanced Capture", systemImage: "viewfinder")
-        }
-
-        Divider()
-
-        Button {
-            startAfterDismissingMenu {
-                await model.startRecordingFromLastCapture()
-            }
-        } label: {
-            Label("Record Again", systemImage: "arrow.clockwise")
-        }
-        .disabled(!model.canUseRecordAgainButton)
-
-        Button {
-            isImportingRecording = true
-        } label: {
-            Label("Open Recording", systemImage: "folder")
-        }
-
-        Divider()
-
         Button {
             openLuxelSettings()
         } label: {
@@ -645,14 +548,6 @@ extension LuxelMenu {
         model.revealRecording(recording)
     }
 
-    private func recentRecordingSystemImage(for recording: PastRecording) -> String {
-        recording.options.isAudioOnly ? "waveform" : "film"
-    }
-
-    private func recentRecordingBadgeSystemImage(for recording: PastRecording) -> String {
-        recording.options.isAudioOnly ? "waveform" : "film"
-    }
-
     private func recentRecordingOpenTitle(for recording: PastRecording) -> String {
         "Open in editor"
     }
@@ -663,6 +558,7 @@ extension LuxelMenu {
 
     private func refreshMenuState() async {
         model.refreshRecentRecordings()
+        model.refreshAudioInputDevices()
         model.refreshCameraDevices()
         await model.refreshPermissions()
         await model.refreshCaptureTargets()
@@ -965,9 +861,5 @@ private enum LuxelCaptureAction {
         case .audio:
             "waveform"
         }
-    }
-
-    var isProminent: Bool {
-        self == .screen
     }
 }

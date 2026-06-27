@@ -103,12 +103,6 @@ extension LuxelMenuModel {
         return TranscriptSourceContext(recordingAudioMode: recording.options.audio)
     }
 
-    func openRecordingsFolder() {
-        withRecordingsDirectoryAccess { directory in
-            fileWorkflowService.openWithDefaultApp(directory)
-        }
-    }
-
     private func withRecordingsDirectoryAccess(_ operation: (URL) -> Void) {
         guard let bookmark = settings.recordingsDirectoryBookmark else {
             operation(settings.recordingsDirectory)
