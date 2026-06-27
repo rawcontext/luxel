@@ -13,8 +13,10 @@ struct LuxelMenu: View {
     private static let footerButtonHeight: CGFloat = 34
     private static let footerButtonCornerRadius: CGFloat = 17
     private static let footerButtonWidth: CGFloat = 34
-    private static let footerMicrophoneControlWidth: CGFloat = 82
-    private static let footerCameraControlWidth: CGFloat = 82
+    private static let footerSplitPrimaryButtonWidth: CGFloat = 52
+    private static let footerSplitPickerButtonWidth: CGFloat = 36
+    private static let footerMicrophoneControlWidth: CGFloat = 88
+    private static let footerCameraControlWidth: CGFloat = 88
 
     @Bindable var model: LuxelMenuModel
     let editorModel: LuxelEditorModel
@@ -250,14 +252,10 @@ extension LuxelMenu {
     private var microphoneFooterControl: some View {
         HStack(spacing: 0) {
             recordMicrophoneFooterToggle(backgrounded: false)
-                .frame(width: 50, height: Self.footerButtonHeight)
-
-            Rectangle()
-                .fill(.white.opacity(0.18))
-                .frame(width: 1, height: 18)
+                .frame(width: Self.footerSplitPrimaryButtonWidth, height: Self.footerButtonHeight)
 
             microphoneFooterPicker
-                .frame(width: 31, height: Self.footerButtonHeight)
+                .frame(width: Self.footerSplitPickerButtonWidth, height: Self.footerButtonHeight)
         }
         .frame(width: Self.footerMicrophoneControlWidth, height: Self.footerButtonHeight)
         .luxelMenuControlBackground(cornerRadius: Self.footerButtonCornerRadius)
@@ -267,14 +265,10 @@ extension LuxelMenu {
     private var cameraFooterControl: some View {
         HStack(spacing: 0) {
             cameraFooterToggle(backgrounded: false)
-                .frame(width: 50, height: Self.footerButtonHeight)
-
-            Rectangle()
-                .fill(.white.opacity(0.18))
-                .frame(width: 1, height: 18)
+                .frame(width: Self.footerSplitPrimaryButtonWidth, height: Self.footerButtonHeight)
 
             cameraFooterPicker
-                .frame(width: 31, height: Self.footerButtonHeight)
+                .frame(width: Self.footerSplitPickerButtonWidth, height: Self.footerButtonHeight)
         }
         .frame(width: Self.footerCameraControlWidth, height: Self.footerButtonHeight)
         .luxelMenuControlBackground(cornerRadius: Self.footerButtonCornerRadius)

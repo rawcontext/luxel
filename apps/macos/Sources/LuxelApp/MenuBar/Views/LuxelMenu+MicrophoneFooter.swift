@@ -52,6 +52,6 @@ extension LuxelMenu {
 }
 
 private enum LuxelMicrophoneFooterPickerLayout {
-    static let buttonWidth: CGFloat = 31
+    static let buttonWidth: CGFloat = 36
     static let buttonHeight: CGFloat = 34
 }
