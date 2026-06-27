@@ -18,8 +18,10 @@ public final class AppKitBookmarkedDirectoryPicker: BookmarkedDirectoryPicker {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
-        panel.title = "Choose Recording Folder"
-        panel.prompt = "Choose"
+        panel.title = LuxelLocalization.string(
+            "panel.recordingFolder.title",
+            defaultValue: "Choose Recording Folder")
+        panel.prompt = LuxelLocalization.string("common.choose", defaultValue: "Choose")
 
         guard panel.runModal() == .OK, let url = panel.url else {
             return nil

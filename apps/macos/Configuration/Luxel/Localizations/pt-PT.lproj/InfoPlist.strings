@@ -1,0 +1,7 @@
+"CFBundleDisplayName" = "Luxel";
+"CFBundleName" = "Luxel";
+"NSCameraUsageDescription" = "O Luxel usa a câmara apenas quando ativa a pré-visualização da câmara ou a gravação da faixa de câmara.";
+"NSMicrophoneUsageDescription" = "O Luxel grava áudio do microfone apenas quando ativa a captura do microfone para uma gravação do ecrã.";
+"NSScreenCaptureUsageDescription" = "O Luxel captura o ecrã apenas quando inicia uma gravação.";
+"NSSpeechRecognitionUsageDescription" = "O Luxel usa reconhecimento de fala no dispositivo para transcrever gravações de áudio no editor de exportação.";
+"NSHumanReadableCopyright" = "Copyright © 2026 Context. Todos os direitos reservados.";

@@ -18,20 +18,41 @@ public struct UpdateSettingsPresentation: Equatable, Sendable {
         canCheckNow = showsDeveloperIDUpdateControls && updateCheckingAvailable
 
         if showsDeveloperIDUpdateControls {
-            statusText = updateCheckingAvailable ? "Ready to Check" : "Update Checks Coming Soon"
+            statusText =
+                updateCheckingAvailable
+                ? LuxelLocalization.string(
+                    "updates.status.readyToCheck",
+                    defaultValue: "Ready to Check")
+                : LuxelLocalization.string(
+                    "updates.status.comingSoon",
+                    defaultValue: "Update Checks Coming Soon")
             networkPolicyText =
                 if preferences.automaticallyCheckForUpdates {
-                    "Luxel only touches the network to check for updates, and only if enabled."
+                    LuxelLocalization.string(
+                        "updates.networkPolicy.enabled",
+                        defaultValue:
+                            "Luxel only touches the network to check for updates, and only if enabled.")
                 } else {
-                    "Automatic update checks are off; Luxel will not contact the update server."
+                    LuxelLocalization.string(
+                        "updates.networkPolicy.disabled",
+                        defaultValue:
+                            "Automatic update checks are off; Luxel will not contact the update server.")
                 }
             checkNowHelp =
                 updateCheckingAvailable
-                ? "Check for a Luxel update now."
-                : "Update checks will be available when Sparkle is integrated."
+                ? LuxelLocalization.string(
+                    "updates.checkNow.help",
+                    defaultValue: "Check for a Luxel update now.")
+                : LuxelLocalization.string(
+                    "updates.checkNow.unavailableHelp",
+                    defaultValue: "Update checks will be available when Sparkle is integrated.")
         } else {
-            statusText = "Updates Handled by the Mac App Store"
-            networkPolicyText = "This build does not include the Developer ID updater."
+            statusText = LuxelLocalization.string(
+                "updates.status.macAppStore",
+                defaultValue: "Updates Handled by the Mac App Store")
+            networkPolicyText = LuxelLocalization.string(
+                "updates.networkPolicy.macAppStore",
+                defaultValue: "This build does not include the Developer ID updater.")
             checkNowHelp = ""
         }
     }

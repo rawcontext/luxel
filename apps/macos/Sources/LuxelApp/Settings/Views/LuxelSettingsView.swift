@@ -483,7 +483,12 @@ extension LuxelSettingsView {
                     } label: {
                         Label("Install luxel", systemImage: "terminal")
                     }
-                    .help("Install to \(model.commandLineToolInstallService.defaultDestination.path)")
+                    .help(
+                        LuxelLocalization.format(
+                            "settings.commandLine.installDestinationHelp",
+                            defaultValue: "Install to %@",
+                            model.commandLineToolInstallService.defaultDestination.path)
+                    )
                 }
                 .help("Install the command line helper for terminal automation.")
 

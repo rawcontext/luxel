@@ -84,7 +84,8 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             menuBarTitle: "Luxel",
             menuBarSystemImage: "record.circle",
             accessibilityLabel: "Luxel",
-            primaryActionTitle: "Record",
+            primaryActionTitle: LuxelLocalization.string(
+                "recording.action.record", defaultValue: "Record"),
             primaryActionSystemImage: "record.circle.fill",
             canUsePrimaryAction: canStartRecording
         )
@@ -92,12 +93,17 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
 
     private static func startingContent() -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
-            menuBarTitle: "Starting",
+            menuBarTitle: LuxelLocalization.string("recording.state.starting", defaultValue: "Starting"),
             menuBarSystemImage: "record.circle",
-            accessibilityLabel: "Luxel starting recording",
-            primaryActionTitle: "Starting",
+            accessibilityLabel: LuxelLocalization.string(
+                "recording.accessibility.starting",
+                defaultValue: "Luxel starting recording"),
+            primaryActionTitle: LuxelLocalization.string(
+                "recording.state.starting", defaultValue: "Starting"),
             primaryActionSystemImage: "record.circle.fill",
-            statusMessage: "Starting recording"
+            statusMessage: LuxelLocalization.string(
+                "recording.status.starting",
+                defaultValue: "Starting recording")
         )
     }
 
@@ -107,11 +113,17 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         return RecordingSessionPresentationContent(
             menuBarTitle: Self.countdownMenuBarText(remaining),
             menuBarSystemImage: "",
-            accessibilityLabel: "Luxel recording starts in \(countdownText)",
-            primaryActionTitle: "Cancel",
+            accessibilityLabel: LuxelLocalization.format(
+                "recording.accessibility.countdown",
+                defaultValue: "Luxel recording starts in %@",
+                countdownText),
+            primaryActionTitle: LuxelLocalization.string("common.cancel", defaultValue: "Cancel"),
             primaryActionSystemImage: "xmark.circle.fill",
             canUsePrimaryAction: true,
-            statusMessage: "Recording starts in \(countdownText)"
+            statusMessage: LuxelLocalization.format(
+                "recording.status.countdown",
+                defaultValue: "Recording starts in %@",
+                countdownText)
         )
     }
 
@@ -121,14 +133,19 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             menuBarTitle: timing.menuBarTitle(prefix: ""),
             menuBarSystemImage: "record.circle",
             animatesMenuBarSystemImage: true,
-            accessibilityLabel: timing.accessibilityLabel(prefix: "Luxel recording"),
-            primaryActionTitle: "Stop",
+            accessibilityLabel: timing.accessibilityLabel(
+                prefix: LuxelLocalization.string(
+                    "recording.accessibility.recording",
+                    defaultValue: "Luxel recording")),
+            primaryActionTitle: LuxelLocalization.string("recording.action.stop", defaultValue: "Stop"),
             primaryActionSystemImage: "stop.circle.fill",
             canUsePrimaryAction: true,
-            secondaryActionTitle: "Pause",
+            secondaryActionTitle: LuxelLocalization.string(
+                "recording.action.pause", defaultValue: "Pause"),
             secondaryActionSystemImage: "pause.circle",
             canUseSecondaryAction: true,
-            statusMessage: "Recording"
+            statusMessage: LuxelLocalization.string(
+                "recording.state.recording", defaultValue: "Recording")
         )
     }
 
@@ -137,12 +154,17 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: "●"),
             menuBarSystemImage: "pause.circle",
-            accessibilityLabel: "Luxel pausing recording",
-            primaryActionTitle: "Stop",
+            accessibilityLabel: LuxelLocalization.string(
+                "recording.accessibility.pausing",
+                defaultValue: "Luxel pausing recording"),
+            primaryActionTitle: LuxelLocalization.string("recording.action.stop", defaultValue: "Stop"),
             primaryActionSystemImage: "stop.circle.fill",
-            secondaryActionTitle: "Pausing",
+            secondaryActionTitle: LuxelLocalization.string(
+                "recording.state.pausing", defaultValue: "Pausing"),
             secondaryActionSystemImage: "pause.circle",
-            statusMessage: "Pausing recording"
+            statusMessage: LuxelLocalization.string(
+                "recording.status.pausing",
+                defaultValue: "Pausing recording")
         )
     }
 
@@ -152,13 +174,14 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
             menuBarTitle: timing.menuBarTitle(prefix: ""),
             menuBarSystemImage: "pause.circle.fill",
             accessibilityLabel: timing.pausedAccessibilityLabel,
-            primaryActionTitle: "Stop",
+            primaryActionTitle: LuxelLocalization.string("recording.action.stop", defaultValue: "Stop"),
             primaryActionSystemImage: "stop.circle.fill",
             canUsePrimaryAction: true,
-            secondaryActionTitle: "Resume",
+            secondaryActionTitle: LuxelLocalization.string(
+                "recording.action.resume", defaultValue: "Resume"),
             secondaryActionSystemImage: "play.circle",
             canUseSecondaryAction: true,
-            statusMessage: "Paused"
+            statusMessage: LuxelLocalization.string("recording.state.paused", defaultValue: "Paused")
         )
     }
 
@@ -167,23 +190,33 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: "‖"),
             menuBarSystemImage: "play.circle",
-            accessibilityLabel: "Luxel resuming recording",
-            primaryActionTitle: "Stop",
+            accessibilityLabel: LuxelLocalization.string(
+                "recording.accessibility.resuming",
+                defaultValue: "Luxel resuming recording"),
+            primaryActionTitle: LuxelLocalization.string("recording.action.stop", defaultValue: "Stop"),
             primaryActionSystemImage: "stop.circle.fill",
-            secondaryActionTitle: "Resuming",
+            secondaryActionTitle: LuxelLocalization.string(
+                "recording.state.resuming", defaultValue: "Resuming"),
             secondaryActionSystemImage: "play.circle",
-            statusMessage: "Resuming recording"
+            statusMessage: LuxelLocalization.string(
+                "recording.status.resuming",
+                defaultValue: "Resuming recording")
         )
     }
 
     private static func stoppingContent() -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
-            menuBarTitle: "Stopping",
+            menuBarTitle: LuxelLocalization.string("recording.state.stopping", defaultValue: "Stopping"),
             menuBarSystemImage: "stop.circle.fill",
-            accessibilityLabel: "Luxel stopping recording",
-            primaryActionTitle: "Stopping",
+            accessibilityLabel: LuxelLocalization.string(
+                "recording.accessibility.stopping",
+                defaultValue: "Luxel stopping recording"),
+            primaryActionTitle: LuxelLocalization.string(
+                "recording.state.stopping", defaultValue: "Stopping"),
             primaryActionSystemImage: "stop.circle.fill",
-            statusMessage: "Finishing recording"
+            statusMessage: LuxelLocalization.string(
+                "recording.status.finishing",
+                defaultValue: "Finishing recording")
         )
     }
 
@@ -193,8 +226,12 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         return RecordingSessionPresentationContent(
             menuBarTitle: "\(progress)%",
             menuBarSystemImage: "square.and.arrow.up",
-            accessibilityLabel: "Luxel exporting, \(progress)% complete",
-            primaryActionTitle: "Exporting",
+            accessibilityLabel: LuxelLocalization.format(
+                "recording.accessibility.exporting",
+                defaultValue: "Luxel exporting, %d%% complete",
+                progress),
+            primaryActionTitle: LuxelLocalization.string(
+                "recording.state.exporting", defaultValue: "Exporting"),
             primaryActionSystemImage: "square.and.arrow.up",
             statusMessage: snapshot.actionTitle
         )
@@ -207,8 +244,11 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         RecordingSessionPresentationContent(
             menuBarTitle: "Luxel",
             menuBarSystemImage: "exclamationmark.triangle.fill",
-            accessibilityLabel: "Luxel recording failed",
-            primaryActionTitle: "Record",
+            accessibilityLabel: LuxelLocalization.string(
+                "recording.accessibility.failed",
+                defaultValue: "Luxel recording failed"),
+            primaryActionTitle: LuxelLocalization.string(
+                "recording.action.record", defaultValue: "Record"),
             primaryActionSystemImage: "record.circle.fill",
             canUsePrimaryAction: canStartRecording,
             statusMessage: message
@@ -229,7 +269,10 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
     }
 
     private static func countdownText(_ remaining: TimeInterval) -> String {
-        "\(max(0, Int(remaining.rounded(.up)))) s"
+        LuxelLocalization.format(
+            "recording.countdown.seconds",
+            defaultValue: "%d s",
+            max(0, Int(remaining.rounded(.up))))
     }
 
     private static func countdownMenuBarText(_ remaining: TimeInterval) -> String {
@@ -285,9 +328,17 @@ private struct RecordingSessionTiming {
 
     func accessibilityLabel(prefix: String) -> String {
         if displaysTimerTime {
-            "\(prefix), remaining \(remainingText ?? "0:00")"
+            LuxelLocalization.format(
+                "recording.accessibility.remaining",
+                defaultValue: "%@, remaining %@",
+                prefix,
+                remainingText ?? "0:00")
         } else if displaysElapsedTime {
-            "\(prefix), elapsed \(elapsedText ?? "0:00")"
+            LuxelLocalization.format(
+                "recording.accessibility.elapsed",
+                defaultValue: "%@, elapsed %@",
+                prefix,
+                elapsedText ?? "0:00")
         } else {
             prefix
         }
@@ -295,11 +346,19 @@ private struct RecordingSessionTiming {
 
     var pausedAccessibilityLabel: String {
         if displaysTimerTime {
-            "Luxel recording paused, remaining \(remainingText ?? "0:00")"
+            LuxelLocalization.format(
+                "recording.accessibility.pausedRemaining",
+                defaultValue: "Luxel recording paused, remaining %@",
+                remainingText ?? "0:00")
         } else if displaysElapsedTime {
-            "Luxel recording paused at \(elapsedText ?? "0:00")"
+            LuxelLocalization.format(
+                "recording.accessibility.pausedElapsed",
+                defaultValue: "Luxel recording paused at %@",
+                elapsedText ?? "0:00")
         } else {
-            "Luxel recording paused"
+            LuxelLocalization.string(
+                "recording.accessibility.paused",
+                defaultValue: "Luxel recording paused")
         }
     }
 }

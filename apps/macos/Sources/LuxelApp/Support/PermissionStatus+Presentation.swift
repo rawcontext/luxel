@@ -5,15 +5,15 @@ extension PermissionStatus {
     var title: String {
         switch self {
         case .notDetermined:
-            "Ask"
+            LuxelLocalization.string("permissionStatus.ask", defaultValue: "Ask")
         case .authorized:
-            "Allowed"
+            LuxelLocalization.string("permissionStatus.allowed", defaultValue: "Allowed")
         case .denied:
-            "Denied"
+            LuxelLocalization.string("permissionStatus.denied", defaultValue: "Denied")
         case .restricted:
-            "Restricted"
+            LuxelLocalization.string("permissionStatus.restricted", defaultValue: "Restricted")
         case .unknown:
-            "Unknown"
+            LuxelLocalization.string("permissionStatus.unknown", defaultValue: "Unknown")
         }
     }
 

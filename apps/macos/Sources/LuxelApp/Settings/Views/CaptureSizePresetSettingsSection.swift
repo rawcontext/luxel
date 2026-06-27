@@ -122,12 +122,22 @@ private struct CaptureSizePresetEditor: View {
             .help("Name this cropper size preset.")
 
         Stepper(value: width, in: 1...10_000, step: 10) {
-            Text("Width \(preset.pixelSize.width) px")
+            Text(
+                LuxelLocalization.format(
+                    "settings.captureSize.width",
+                    defaultValue: "Width %d px",
+                    preset.pixelSize.width)
+            )
         }
         .help("Set the preset width in pixels.")
 
         Stepper(value: height, in: 1...10_000, step: 10) {
-            Text("Height \(preset.pixelSize.height) px")
+            Text(
+                LuxelLocalization.format(
+                    "settings.captureSize.height",
+                    defaultValue: "Height %d px",
+                    preset.pixelSize.height)
+            )
         }
         .help("Set the preset height in pixels.")
     }

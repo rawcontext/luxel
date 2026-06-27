@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "Luxel",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v26)
     ],
@@ -38,7 +39,12 @@ let package = Package(
             ]
         ),
         .target(name: "LuxelPresentation", dependencies: ["LuxelCore"]),
-        .target(name: "LuxelCore"),
+        .target(
+            name: "LuxelCore",
+            resources: [
+                .process("Resources")
+            ]
+        ),
         .target(
             name: "LuxelCodecWebM",
             dependencies: [

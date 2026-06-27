@@ -161,7 +161,12 @@ private struct ExportPresetEditor: View {
 
         if case .maxWidth = preset.sizeRule {
             Stepper(value: maxWidth, in: 1...10_000, step: 10) {
-                Text("Max Width \(maxWidth.wrappedValue) px")
+                Text(
+                    LuxelLocalization.format(
+                        "settings.exportPreset.maxWidth",
+                        defaultValue: "Max Width %d px",
+                        maxWidth.wrappedValue)
+                )
             }
             .help("Set the maximum exported width in pixels.")
         }

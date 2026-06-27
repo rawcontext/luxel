@@ -10,8 +10,8 @@ public final class AppKitExportedFileActionClient: ExportedFileActionClient {
         let panel = NSSavePanel()
         panel.nameFieldStringValue = suggestedFileName
         panel.canCreateDirectories = true
-        panel.title = "Save Export"
-        panel.prompt = "Save"
+        panel.title = LuxelLocalization.string("panel.saveExport.title", defaultValue: "Save Export")
+        panel.prompt = LuxelLocalization.string("common.save", defaultValue: "Save")
 
         return panel.runModal() == .OK ? panel.url : nil
     }
@@ -23,8 +23,10 @@ public final class AppKitExportedFileActionClient: ExportedFileActionClient {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.canCreateDirectories = true
-        panel.title = "Choose Export Folder"
-        panel.prompt = "Choose"
+        panel.title = LuxelLocalization.string(
+            "panel.exportFolder.title",
+            defaultValue: "Choose Export Folder")
+        panel.prompt = LuxelLocalization.string("common.choose", defaultValue: "Choose")
 
         return panel.runModal() == .OK ? panel.url : nil
     }
@@ -36,9 +38,12 @@ public final class AppKitExportedFileActionClient: ExportedFileActionClient {
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [.applicationBundle]
-        panel.title = "Open With"
-        panel.message = "Choose an app to open \(fileURL.lastPathComponent)."
-        panel.prompt = "Open"
+        panel.title = LuxelLocalization.string("panel.openWith.title", defaultValue: "Open With")
+        panel.message = LuxelLocalization.format(
+            "panel.openWith.message",
+            defaultValue: "Choose an app to open %@.",
+            fileURL.lastPathComponent)
+        panel.prompt = LuxelLocalization.string("common.open", defaultValue: "Open")
 
         return panel.runModal() == .OK ? panel.url : nil
     }

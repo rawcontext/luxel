@@ -29,8 +29,14 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "Export Complete"
-        content.body = "\(presetName) saved \(fileURL.lastPathComponent)"
+        content.title = LuxelLocalization.string(
+            "notifications.exportComplete.title",
+            defaultValue: "Export Complete")
+        content.body = LuxelLocalization.format(
+            "notifications.exportComplete.body",
+            defaultValue: "%@ saved %@",
+            presetName,
+            fileURL.lastPathComponent)
         content.sound = .default
 
         let request = UNNotificationRequest(
@@ -56,8 +62,13 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "Recording Finished"
-        content.body = "Recording finished - \(Self.durationText(duration))"
+        content.title = LuxelLocalization.string(
+            "notifications.recordingFinished.title",
+            defaultValue: "Recording Finished")
+        content.body = LuxelLocalization.format(
+            "notifications.recordingFinished.body",
+            defaultValue: "Recording finished - %@",
+            Self.durationText(duration))
         content.sound = .default
 
         let request = UNNotificationRequest(

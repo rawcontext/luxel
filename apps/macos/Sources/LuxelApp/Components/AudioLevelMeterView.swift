@@ -14,7 +14,12 @@ struct AudioLevelMeterView: View {
         }
         .frame(height: 18, alignment: .center)
         .accessibilityLabel("Input Level")
-        .accessibilityValue("\(Int((sample.peak * 100).rounded())) percent")
+        .accessibilityValue(
+            LuxelLocalization.format(
+                "audio.inputLevel.percent",
+                defaultValue: "%d percent",
+                Int((sample.peak * 100).rounded()))
+        )
     }
 
     private func barHeight(for index: Int) -> CGFloat {

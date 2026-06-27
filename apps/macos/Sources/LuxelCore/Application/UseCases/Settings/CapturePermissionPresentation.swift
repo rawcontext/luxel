@@ -137,23 +137,34 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             return CaptureSourcePermissionPresentation(
                 source: .screenPixels,
                 phase: .ready,
-                title: "Screen capture ready",
-                message: "Luxel can record your screen and system sound.",
-                actionTitle: "OK",
+                title: LuxelLocalization.string(
+                    "permissions.screen.ready.title",
+                    defaultValue: "Screen capture ready"),
+                message: LuxelLocalization.string(
+                    "permissions.screen.ready.message",
+                    defaultValue: "Luxel can record your screen and system sound."),
+                actionTitle: LuxelLocalization.string("common.ok", defaultValue: "OK"),
                 systemImage: "display",
-                statusTitle: "Ready"
+                statusTitle: LuxelLocalization.string("status.ready", defaultValue: "Ready")
             )
         }
 
         return CaptureSourcePermissionPresentation(
             source: .screenPixels,
             phase: .needsGrant,
-            title: "Screen capture is off",
-            message: "macOS needs approval before Luxel can record your screen or system sound. "
-                + "If Luxel is not listed, click + and add the app.",
-            actionTitle: "Enable Capture",
+            title: LuxelLocalization.string(
+                "permissions.screen.off.title",
+                defaultValue: "Screen capture is off"),
+            message: LuxelLocalization.string(
+                "permissions.screen.off.message",
+                defaultValue:
+                    "macOS needs approval before Luxel can record your screen or system sound. If Luxel is not listed, click + and add the app."
+            ),
+            actionTitle: LuxelLocalization.string(
+                "permissions.screen.enable",
+                defaultValue: "Enable Capture"),
             systemImage: "display",
-            statusTitle: "Required"
+            statusTitle: LuxelLocalization.string("status.required", defaultValue: "Required")
         )
     }
 
@@ -165,12 +176,19 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             return CaptureSourcePermissionPresentation(
                 source: .systemAudio,
                 phase: .needsGrant,
-                title: "System sound is off",
-                message: "Turn Luxel on for system audio in Screen & System Audio Recording. "
-                    + "If Luxel is not listed, click + and add the app.",
-                actionTitle: "Enable System Sound",
+                title: LuxelLocalization.string(
+                    "permissions.systemAudio.off.title",
+                    defaultValue: "System sound is off"),
+                message: LuxelLocalization.string(
+                    "permissions.systemAudio.grant.message",
+                    defaultValue:
+                        "Turn Luxel on for system audio in Screen & System Audio Recording. If Luxel is not listed, click + and add the app."
+                ),
+                actionTitle: LuxelLocalization.string(
+                    "permissions.systemAudio.enable",
+                    defaultValue: "Enable System Sound"),
                 systemImage: "speaker.slash.fill",
-                statusTitle: "Required"
+                statusTitle: LuxelLocalization.string("status.required", defaultValue: "Required")
             )
         }
 
@@ -178,23 +196,34 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             return CaptureSourcePermissionPresentation(
                 source: .systemAudio,
                 phase: .offByUser,
-                title: "System sound is off",
-                message:
-                    "System sound uses macOS Screen & System Audio Recording. Microphone uses a separate permission.",
-                actionTitle: "Enable System Sound",
+                title: LuxelLocalization.string(
+                    "permissions.systemAudio.off.title",
+                    defaultValue: "System sound is off"),
+                message: LuxelLocalization.string(
+                    "permissions.systemAudio.off.message",
+                    defaultValue:
+                        "System sound uses macOS Screen & System Audio Recording. Microphone uses a separate permission."
+                ),
+                actionTitle: LuxelLocalization.string(
+                    "permissions.systemAudio.enable",
+                    defaultValue: "Enable System Sound"),
                 systemImage: "speaker.slash.fill",
-                statusTitle: "Off"
+                statusTitle: LuxelLocalization.string("status.off", defaultValue: "Off")
             )
         }
 
         return CaptureSourcePermissionPresentation(
             source: .systemAudio,
             phase: .ready,
-            title: "System sound on",
-            message: "System sound will be included with screen recordings.",
-            actionTitle: "Turn Off",
+            title: LuxelLocalization.string(
+                "permissions.systemAudio.ready.title",
+                defaultValue: "System sound on"),
+            message: LuxelLocalization.string(
+                "permissions.systemAudio.ready.message",
+                defaultValue: "System sound will be included with screen recordings."),
+            actionTitle: LuxelLocalization.string("common.turnOff", defaultValue: "Turn Off"),
             systemImage: "speaker.wave.2.fill",
-            statusTitle: "Ready"
+            statusTitle: LuxelLocalization.string("status.ready", defaultValue: "Ready")
         )
     }
 
@@ -206,11 +235,17 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             return CaptureSourcePermissionPresentation(
                 source: .microphone,
                 phase: .needsGrant,
-                title: "Microphone is off",
-                message: "Allow microphone access to add your voice to recordings.",
-                actionTitle: "Enable Mic",
+                title: LuxelLocalization.string(
+                    "permissions.microphone.off.title",
+                    defaultValue: "Microphone is off"),
+                message: LuxelLocalization.string(
+                    "permissions.microphone.grant.message",
+                    defaultValue: "Allow microphone access to add your voice to recordings."),
+                actionTitle: LuxelLocalization.string(
+                    "permissions.microphone.enable",
+                    defaultValue: "Enable Mic"),
                 systemImage: "mic.slash",
-                statusTitle: "Required"
+                statusTitle: LuxelLocalization.string("status.required", defaultValue: "Required")
             )
         }
 
@@ -218,22 +253,32 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             return CaptureSourcePermissionPresentation(
                 source: .microphone,
                 phase: .offByUser,
-                title: "Microphone is off",
-                message: "Enable microphone audio to add your voice to recordings.",
-                actionTitle: "Enable Mic",
+                title: LuxelLocalization.string(
+                    "permissions.microphone.off.title",
+                    defaultValue: "Microphone is off"),
+                message: LuxelLocalization.string(
+                    "permissions.microphone.off.message",
+                    defaultValue: "Enable microphone audio to add your voice to recordings."),
+                actionTitle: LuxelLocalization.string(
+                    "permissions.microphone.enable",
+                    defaultValue: "Enable Mic"),
                 systemImage: "mic.slash",
-                statusTitle: "Off"
+                statusTitle: LuxelLocalization.string("status.off", defaultValue: "Off")
             )
         }
 
         return CaptureSourcePermissionPresentation(
             source: .microphone,
             phase: .ready,
-            title: "Microphone on",
-            message: "Microphone audio will be included with recordings.",
-            actionTitle: "Turn Off",
+            title: LuxelLocalization.string(
+                "permissions.microphone.ready.title",
+                defaultValue: "Microphone on"),
+            message: LuxelLocalization.string(
+                "permissions.microphone.ready.message",
+                defaultValue: "Microphone audio will be included with recordings."),
+            actionTitle: LuxelLocalization.string("common.turnOff", defaultValue: "Turn Off"),
             systemImage: "mic.fill",
-            statusTitle: "Ready"
+            statusTitle: LuxelLocalization.string("status.ready", defaultValue: "Ready")
         )
     }
 
@@ -245,11 +290,17 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             return CaptureSourcePermissionPresentation(
                 source: .camera,
                 phase: .needsGrant,
-                title: "Camera is off",
-                message: "Allow camera access to add your camera overlay.",
-                actionTitle: "Enable Camera",
+                title: LuxelLocalization.string(
+                    "permissions.camera.off.title",
+                    defaultValue: "Camera is off"),
+                message: LuxelLocalization.string(
+                    "permissions.camera.grant.message",
+                    defaultValue: "Allow camera access to add your camera overlay."),
+                actionTitle: LuxelLocalization.string(
+                    "permissions.camera.enable",
+                    defaultValue: "Enable Camera"),
                 systemImage: "video.slash",
-                statusTitle: "Required"
+                statusTitle: LuxelLocalization.string("status.required", defaultValue: "Required")
             )
         }
 
@@ -257,22 +308,32 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             return CaptureSourcePermissionPresentation(
                 source: .camera,
                 phase: .offByUser,
-                title: "Camera is off",
-                message: "Choose a camera to add your camera overlay.",
-                actionTitle: "Choose Camera",
+                title: LuxelLocalization.string(
+                    "permissions.camera.off.title",
+                    defaultValue: "Camera is off"),
+                message: LuxelLocalization.string(
+                    "permissions.camera.off.message",
+                    defaultValue: "Choose a camera to add your camera overlay."),
+                actionTitle: LuxelLocalization.string(
+                    "permissions.camera.choose",
+                    defaultValue: "Choose Camera"),
                 systemImage: "video.slash",
-                statusTitle: "Off"
+                statusTitle: LuxelLocalization.string("status.off", defaultValue: "Off")
             )
         }
 
         return CaptureSourcePermissionPresentation(
             source: .camera,
             phase: .ready,
-            title: "Camera on",
-            message: "Camera overlay will be included with recordings.",
-            actionTitle: "Turn Off",
+            title: LuxelLocalization.string(
+                "permissions.camera.ready.title",
+                defaultValue: "Camera on"),
+            message: LuxelLocalization.string(
+                "permissions.camera.ready.message",
+                defaultValue: "Camera overlay will be included with recordings."),
+            actionTitle: LuxelLocalization.string("common.turnOff", defaultValue: "Turn Off"),
             systemImage: "video.fill",
-            statusTitle: "Ready"
+            statusTitle: LuxelLocalization.string("status.ready", defaultValue: "Ready")
         )
     }
 }

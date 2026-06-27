@@ -1,0 +1,7 @@
+"CFBundleDisplayName" = "Luxel";
+"CFBundleName" = "Luxel";
+"NSCameraUsageDescription" = "Luxel utilise votre caméra uniquement lorsque vous activez l’aperçu caméra ou l’enregistrement d’une piste caméra.";
+"NSMicrophoneUsageDescription" = "Luxel enregistre le son du microphone uniquement lorsque vous activez la capture du microphone pour un enregistrement d’écran.";
+"NSScreenCaptureUsageDescription" = "Luxel capture votre écran uniquement lorsque vous démarrez un enregistrement.";
+"NSSpeechRecognitionUsageDescription" = "Luxel utilise la reconnaissance vocale sur l’appareil pour transcrire les enregistrements audio dans l’éditeur d’exportation.";
+"NSHumanReadableCopyright" = "Copyright © 2026 Context. Tous droits réservés.";

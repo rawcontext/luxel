@@ -18,18 +18,18 @@ struct ExportJobSnapshot: Identifiable, Equatable {
         }
 
         guard let progress else {
-            return "Queued"
+            return LuxelLocalization.string("export.job.queued", defaultValue: "Queued")
         }
 
         switch progress.phase {
         case .preparing:
-            return "Preparing"
+            return LuxelLocalization.string("export.job.preparing", defaultValue: "Preparing")
         case .exporting:
             return "\(Int((progress.progress * 100).rounded()))%"
         case .completed:
-            return "Complete"
+            return LuxelLocalization.string("export.job.complete", defaultValue: "Complete")
         case .canceled:
-            return "Canceled"
+            return LuxelLocalization.string("export.job.canceled", defaultValue: "Canceled")
         }
     }
 }

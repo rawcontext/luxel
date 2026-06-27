@@ -381,7 +381,12 @@ extension LuxelCropperView {
                         Text(preset.title)
                     }
                 }
-                .help("Use the \(preset.title) aspect ratio for the selected area.")
+                .help(
+                    LuxelLocalization.format(
+                        "cropper.aspectRatioPreset.help",
+                        defaultValue: "Use the %@ aspect ratio for the selected area.",
+                        preset.title)
+                )
             }
 
             Divider()
@@ -409,7 +414,12 @@ extension LuxelCropperView {
         .menuStyle(.button)
         .buttonStyle(.plain)
         .frame(width: width)
-        .help("Constrain the selected area. Current: \(model.aspectRatioSummary).")
+        .help(
+            LuxelLocalization.format(
+                "cropper.aspectRatio.currentHelp",
+                defaultValue: "Constrain the selected area. Current: %@.",
+                model.aspectRatioSummary)
+        )
     }
 
     private func sizePresetMenu(width: CGFloat = Self.toolbarButtonWidth) -> some View {
@@ -420,7 +430,12 @@ extension LuxelCropperView {
                 } label: {
                     Text(preset.name)
                 }
-                .help("Apply the \(preset.name) size preset.")
+                .help(
+                    LuxelLocalization.format(
+                        "cropper.sizePreset.applyHelp",
+                        defaultValue: "Apply the %@ size preset.",
+                        preset.name)
+                )
             }
         } label: {
             toolbarMenuLabel("Size", systemImage: "arrow.up.left.and.arrow.down.right", width: width)
@@ -477,7 +492,12 @@ extension LuxelCropperView {
                                 Text(shape.settingsLabel)
                             }
                         }
-                        .help("Set the camera overlay shape to \(shape.settingsLabel).")
+                        .help(
+                            LuxelLocalization.format(
+                                "cameraOverlay.shape.optionHelp",
+                                defaultValue: "Set the camera overlay shape to %@.",
+                                shape.settingsLabel)
+                        )
                     }
                 } label: {
                     Label("Shape", systemImage: "circle")
@@ -495,7 +515,12 @@ extension LuxelCropperView {
                                 Text(size.settingsLabel)
                             }
                         }
-                        .help("Set the camera overlay size to \(size.settingsLabel).")
+                        .help(
+                            LuxelLocalization.format(
+                                "cameraOverlay.size.optionHelp",
+                                defaultValue: "Set the camera overlay size to %@.",
+                                size.settingsLabel)
+                        )
                     }
                 } label: {
                     Label("Size", systemImage: "arrow.up.left.and.arrow.down.right")
@@ -625,7 +650,12 @@ extension LuxelCropperView {
                         } label: {
                             Label(preset.name, systemImage: quickPresetSystemImage(for: preset))
                         }
-                        .help("Record with the \(preset.name) quick export preset.")
+                        .help(
+                            LuxelLocalization.format(
+                                "cropper.quickPreset.recordHelp",
+                                defaultValue: "Record with the %@ quick export preset.",
+                                preset.name)
+                        )
                     }
                 } label: {
                     Label("Quick Record", systemImage: "bolt.circle")

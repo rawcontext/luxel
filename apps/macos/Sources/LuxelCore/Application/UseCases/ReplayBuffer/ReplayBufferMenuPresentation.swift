@@ -15,10 +15,18 @@ public struct ReplayBufferMenuPresentation: Equatable, Sendable {
     ) {
         guard let configuration else {
             isVisible = false
-            statusText = "Replay Buffer Off"
-            statusDetail = "Enable in Settings"
-            clipActionTitle = "Clip Replay Buffer"
-            pauseActionTitle = "Pause Replay Buffer"
+            statusText = LuxelLocalization.string(
+                "replayBuffer.status.off",
+                defaultValue: "Replay Buffer Off")
+            statusDetail = LuxelLocalization.string(
+                "replayBuffer.detail.enableInSettings",
+                defaultValue: "Enable in Settings")
+            clipActionTitle = LuxelLocalization.string(
+                "replayBuffer.action.clip",
+                defaultValue: "Clip Replay Buffer")
+            pauseActionTitle = LuxelLocalization.string(
+                "replayBuffer.action.pause",
+                defaultValue: "Pause Replay Buffer")
             canClip = false
             canPause = false
             return
@@ -26,10 +34,26 @@ public struct ReplayBufferMenuPresentation: Equatable, Sendable {
 
         let durationText = Self.durationText(configuration.bufferLength)
         isVisible = true
-        statusText = engineAvailable ? "Replay Buffer Ready" : "Replay Buffer Engine Coming Soon"
-        statusDetail = "\(durationText) · \(configuration.frameRate.framesPerSecond) FPS"
-        clipActionTitle = "Clip Last \(durationText)"
-        pauseActionTitle = "Pause Replay Buffer"
+        statusText =
+            engineAvailable
+            ? LuxelLocalization.string(
+                "replayBuffer.status.ready",
+                defaultValue: "Replay Buffer Ready")
+            : LuxelLocalization.string(
+                "replayBuffer.status.engineComingSoon",
+                defaultValue: "Replay Buffer Engine Coming Soon")
+        statusDetail = LuxelLocalization.format(
+            "replayBuffer.detail.durationFPS",
+            defaultValue: "%@ · %d FPS",
+            durationText,
+            configuration.frameRate.framesPerSecond)
+        clipActionTitle = LuxelLocalization.format(
+            "replayBuffer.action.clipLast",
+            defaultValue: "Clip Last %@",
+            durationText)
+        pauseActionTitle = LuxelLocalization.string(
+            "replayBuffer.action.pause",
+            defaultValue: "Pause Replay Buffer")
         canClip = engineAvailable
         canPause = engineAvailable
     }
@@ -37,10 +61,18 @@ public struct ReplayBufferMenuPresentation: Equatable, Sendable {
     private static func durationText(_ seconds: TimeInterval) -> String {
         let roundedSeconds = Int(seconds.rounded())
         guard roundedSeconds >= 60, roundedSeconds.isMultiple(of: 60) else {
-            return "\(roundedSeconds) Seconds"
+            return LuxelLocalization.format(
+                "replayBuffer.duration.seconds",
+                defaultValue: "%d Seconds",
+                roundedSeconds)
         }
 
         let minutes = roundedSeconds / 60
-        return minutes == 1 ? "1 Minute" : "\(minutes) Minutes"
+        return minutes == 1
+            ? LuxelLocalization.string("replayBuffer.duration.oneMinute", defaultValue: "1 Minute")
+            : LuxelLocalization.format(
+                "replayBuffer.duration.minutes",
+                defaultValue: "%d Minutes",
+                minutes)
     }
 }

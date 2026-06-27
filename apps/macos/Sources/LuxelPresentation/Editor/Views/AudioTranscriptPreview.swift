@@ -657,7 +657,12 @@ private struct TranscriptSpanButton: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .help("Jump to \(formatTranscriptTime(span.start))")
+        .help(
+            LuxelLocalization.format(
+                "transcript.jumpToTime.help",
+                defaultValue: "Jump to %@",
+                formatTranscriptTime(span.start))
+        )
     }
 
     private var spanBackground: Color {

@@ -166,11 +166,20 @@ extension QuickExportError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .presetNotFound(let presetID):
-            "Quick export preset \(presetID) was not found."
+            LuxelLocalization.format(
+                "quickExport.error.presetNotFound",
+                defaultValue: "Quick export preset %@ was not found.",
+                presetID.uuidString)
         case .notifierUnavailable:
-            "Export notification delivery is unavailable."
+            LuxelLocalization.string(
+                "quickExport.error.notifierUnavailable",
+                defaultValue: "Export notification delivery is unavailable.")
         case .outputDirectoryAccessRevoked(let url):
-            "Luxel no longer has permission to save to \(url.lastPathComponent). Choose the recordings folder again."
+            LuxelLocalization.format(
+                "quickExport.error.outputDirectoryAccessRevoked",
+                defaultValue:
+                    "Luxel no longer has permission to save to %@. Choose the recordings folder again.",
+                url.lastPathComponent)
         }
     }
 }

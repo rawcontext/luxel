@@ -37,7 +37,12 @@ extension LuxelMenu {
                 Text(device.name)
             }
         }
-        .help("Use \(device.name) as the microphone input.")
+        .help(
+            LuxelLocalization.format(
+                "microphone.inputDevice.help",
+                defaultValue: "Use %@ as the microphone input.",
+                device.name)
+        )
     }
 
     private var microphoneFooterPickerAccessibilityValue: String {
