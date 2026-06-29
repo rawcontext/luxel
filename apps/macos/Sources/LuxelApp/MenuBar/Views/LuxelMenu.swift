@@ -132,47 +132,75 @@ struct LuxelMenu: View {
 extension LuxelMenu {
     private var captureActionSelector: some View {
         HStack(spacing: 7) {
-            captureActionButton(.screen)
-            captureActionButton(.area)
-            captureActionButton(.audio)
+            captureActionButton(.recordSource, title: "Record Source")
+            captureActionButton(.area, title: "Record Area")
+            captureActionButton(.audio, title: "Record Audio")
         }
         .frame(maxWidth: .infinity, minHeight: Self.captureActionButtonHeight)
     }
 
-    private func captureActionButton(_ action: LuxelCaptureAction) -> some View {
+    private func captureActionButton(
+        _ action: LuxelCaptureAction,
+        title: String,
+        accessibilityTitle: String? = nil
+    ) -> some View {
         Button {
             performCaptureAction(action)
         } label: {
-            captureActionButtonLabel(action)
+            captureActionButtonContent(
+                action,
+                title: title,
+                isAvailable: canPerformCaptureAction(action)
+            )
         }
         .buttonStyle(LuxelMenuControlButtonStyle(cornerRadius: Self.captureActionButtonCornerRadius))
         .frame(maxWidth: .infinity)
         .disabled(!canPerformCaptureAction(action) && !canRecoverCaptureAction(action))
+        .help(accessibilityTitle ?? title)
+        .accessibilityLabel(accessibilityTitle ?? title)
     }
 
-    @ViewBuilder
-    private func captureActionButtonLabel(_ action: LuxelCaptureAction) -> some View {
-        if canPerformCaptureAction(action) {
-            captureActionButtonContent(action)
-                .foregroundStyle(.white)
-        } else {
-            captureActionButtonContent(action)
-                .foregroundStyle(.secondary)
-                .opacity(0.55)
-        }
-    }
-
-    private func captureActionButtonContent(_ action: LuxelCaptureAction) -> some View {
+    private func captureActionButtonContent(
+        _ action: LuxelCaptureAction,
+        title: String,
+        isAvailable: Bool
+    ) -> some View {
         VStack(spacing: 6) {
-            Image(systemName: action.systemImage)
-                .font(.system(size: 18, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
-            Text(action.title)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+            captureActionIcon(action, isAvailable: isAvailable)
+
+            Text(title)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.white.opacity(isAvailable ? 1 : 0.55))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
         }
         .frame(maxWidth: .infinity, minHeight: Self.captureActionButtonHeight)
         .contentShape(
             RoundedRectangle(cornerRadius: Self.captureActionButtonCornerRadius, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func captureActionIcon(
+        _ action: LuxelCaptureAction,
+        isAvailable: Bool
+    ) -> some View {
+        if action == .recordSource {
+            if let selectedCaptureTarget = model.selectedCaptureTarget {
+                CaptureTargetMenuIcon(target: selectedCaptureTarget, size: 20)
+                    .foregroundStyle(Color.white.opacity(isAvailable ? 1 : 0.55))
+            } else {
+                Image(systemName: "display")
+                    .font(.system(size: 20, weight: .semibold))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(Color.white.opacity(isAvailable ? 1 : 0.55))
+            }
+        } else {
+            Image(systemName: action.systemImage)
+                .font(.system(size: 18, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(action.iconColor(isAvailable: isAvailable))
+        }
     }
 
     @ViewBuilder
@@ -371,7 +399,7 @@ extension LuxelMenu {
         }
 
         switch action {
-        case .screen:
+        case .recordSource:
             return model.canUseRecordButton
         case .area:
             return model.canSelectArea
@@ -387,7 +415,7 @@ extension LuxelMenu {
         }
 
         switch action {
-        case .screen:
+        case .recordSource:
             startAfterDismissingMenu {
                 await model.startRecordingFromSelectedTarget()
             }
@@ -404,7 +432,7 @@ extension LuxelMenu {
 
     private func canRecoverCaptureAction(_ action: LuxelCaptureAction) -> Bool {
         switch action {
-        case .screen, .area:
+        case .recordSource, .area:
             model.sourcePermissionPresentation(for: .screenPixels).needsSetup
         case .audio:
             audioCaptureRecoverySource() != nil
@@ -413,7 +441,7 @@ extension LuxelMenu {
 
     private func recoverCaptureAction(_ action: LuxelCaptureAction) {
         switch action {
-        case .screen, .area:
+        case .recordSource, .area:
             presentPermissionPrompt(.screenPixels)
         case .audio:
             if let source = audioCaptureRecoverySource() {
@@ -831,29 +859,29 @@ private struct RecentRecordingMetadataLabel: View {
 }
 
 private enum LuxelCaptureAction {
-    case screen
+    case recordSource
     case area
     case audio
 
-    var title: String {
-        switch self {
-        case .screen:
-            "Screen"
-        case .area:
-            "Area"
-        case .audio:
-            "Audio"
-        }
-    }
-
     var systemImage: String {
         switch self {
-        case .screen:
-            "rectangle.dashed"
+        case .recordSource:
+            "display"
         case .area:
             "viewfinder"
         case .audio:
             "waveform"
+        }
+    }
+
+    func iconColor(isAvailable: Bool) -> Color {
+        guard isAvailable else {
+            return .white.opacity(0.55)
+        }
+
+        switch self {
+        case .recordSource, .area, .audio:
+            return .white
         }
     }
 }

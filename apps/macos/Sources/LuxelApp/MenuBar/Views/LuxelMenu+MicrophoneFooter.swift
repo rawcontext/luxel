@@ -4,9 +4,15 @@ import SwiftUI
 extension LuxelMenu {
     var microphoneFooterPicker: some View {
         Menu {
-            ForEach(model.audioInputDevices) { device in
-                microphoneFooterDeviceButton(device)
+            Picker("Microphone", selection: microphoneFooterSelection) {
+                Text("Off").tag(Optional<String>.none)
+
+                ForEach(model.audioInputDevices) { device in
+                    Text(device.name)
+                        .tag(Optional(device.id))
+                }
             }
+            .pickerStyle(.inline)
         } label: {
             Image(systemName: "chevron.down")
                 .labelStyle(.iconOnly)
@@ -25,27 +31,33 @@ extension LuxelMenu {
         .accessibilityValue(microphoneFooterPickerAccessibilityValue)
     }
 
-    private func microphoneFooterDeviceButton(_ device: AudioInputDeviceOption) -> some View {
-        Button {
-            model.settings.audioInputDeviceID = device.id
-            model.settings.audioInputDeviceName = device.name
-            model.saveSettings()
-        } label: {
-            if selectedAudioInputDeviceID == device.id {
-                Label(device.name, systemImage: "checkmark")
-            } else {
-                Text(device.name)
+    private var microphoneFooterSelection: Binding<String?> {
+        Binding {
+            model.settings.recordAudio ? selectedAudioInputDeviceID : nil
+        } set: { selectedID in
+            guard let selectedID else {
+                model.settings.recordAudio = false
+                model.saveSettings()
+                return
+            }
+
+            if let device = model.audioInputDevices.first(where: { $0.id == selectedID }) {
+                model.settings.recordAudio = true
+                model.settings.audioInputDeviceID = device.id
+                model.settings.audioInputDeviceName = device.name
+                model.saveSettings()
             }
         }
-        .help(
-            LuxelLocalization.format(
-                "microphone.inputDevice.help",
-                defaultValue: "Use %@ as the microphone input.",
-                device.name)
-        )
     }
 
     private var microphoneFooterPickerAccessibilityValue: String {
+        guard model.settings.recordAudio else {
+            return LuxelLocalization.string(
+                "permissions.microphone.off.title",
+                defaultValue: "Microphone is off"
+            )
+        }
+
         return model.audioInputDevices.first { $0.id == selectedAudioInputDeviceID }?.name
             ?? model.settings.audioInputDeviceName
             ?? AudioInputDeviceOption.systemDefault.name

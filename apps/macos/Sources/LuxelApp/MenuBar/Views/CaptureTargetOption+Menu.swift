@@ -14,17 +14,19 @@ struct CaptureTargetMenuLabel: View {
     }
 }
 
-private struct CaptureTargetMenuIcon: View {
+struct CaptureTargetMenuIcon: View {
     let target: CaptureTargetOption
+    var size: CGFloat = 18
 
     var body: some View {
         if let appIcon = target.owningApplicationIcon {
             Image(nsImage: appIcon)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 18, height: 18)
+                .frame(width: size, height: size)
         } else {
             Image(systemName: target.systemImage)
+                .font(.system(size: size, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
         }
     }

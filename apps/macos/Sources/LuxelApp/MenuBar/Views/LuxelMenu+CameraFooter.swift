@@ -25,37 +25,33 @@ extension LuxelMenu {
 
     @ViewBuilder
     private var cameraFooterMenuItems: some View {
-        cameraFooterDeviceButton(title: "Off", deviceID: nil)
+        Picker("Camera", selection: cameraFooterSelection) {
+            Text("Off").tag(Optional<String>.none)
 
-        if let unavailableCameraDeviceID {
-            cameraFooterDeviceButton(title: "Unavailable Camera", deviceID: unavailableCameraDeviceID)
+            if let unavailableCameraDeviceID {
+                Text("Unavailable Camera").tag(Optional(unavailableCameraDeviceID))
+            }
+
+            ForEach(model.cameraDevices) { device in
+                Text(device.settingsLabel).tag(Optional(device.id))
+            }
         }
+        .pickerStyle(.inline)
 
         if model.cameraDevices.isEmpty {
             Divider()
             Text("No cameras found")
-        } else {
-            Divider()
-
-            ForEach(model.cameraDevices) { device in
-                cameraFooterDeviceButton(title: device.settingsLabel, deviceID: device.id)
-            }
         }
     }
 
-    private func cameraFooterDeviceButton(title: String, deviceID: String?) -> some View {
-        Button {
+    private var cameraFooterSelection: Binding<String?> {
+        Binding {
+            model.settings.cameraDeviceID
+        } set: { deviceID in
             Task {
                 await model.setCameraDevice(deviceID)
             }
-        } label: {
-            if model.settings.cameraDeviceID == deviceID {
-                Label(title, systemImage: "checkmark")
-            } else {
-                Text(title)
-            }
         }
-        .help(deviceID == nil ? "Turn off the camera overlay." : "Use \(title) as the camera overlay.")
     }
 
     private var cameraFooterPickerAccessibilityValue: String {

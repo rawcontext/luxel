@@ -7,27 +7,29 @@ struct LuxelCaptureTargetPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 10) {
-                Text("Target")
+                Text("Source")
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .frame(width: 50, alignment: .leading)
 
                 if !model.captureTargets.isEmpty {
                     Menu {
-                        ForEach(model.captureTargets) { target in
-                            Button {
-                                model.selectedCaptureTargetID = target.id
-                                model.syncCameraPreviewSnapArea()
-                            } label: {
-                                CaptureTargetMenuLabel(target: target)
-                            }
-                        }
+                        captureTargetMenuSection(
+                            "Displays",
+                            targets: captureTargets(kind: .display)
+                        )
+
+                        captureTargetMenuSection(
+                            "Apps & Windows",
+                            targets: captureTargets(kind: .window)
+                        )
                     } label: {
                         CaptureTargetPickerLabel(target: model.selectedCaptureTarget)
                     }
+                    .labelStyle(.titleAndIcon)
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
                 } else {
-                    Label("No target", systemImage: "display")
+                    Label("No source", systemImage: "display")
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -46,6 +48,39 @@ struct LuxelCaptureTargetPicker: View {
             }
         }
     }
+
+    @ViewBuilder
+    private func captureTargetMenuSection(
+        _ title: String,
+        targets: [CaptureTargetOption]
+    ) -> some View {
+        if !targets.isEmpty {
+            Section(title) {
+                ForEach(targets) { target in
+                    Toggle(isOn: captureTargetSelection(target)) {
+                        CaptureTargetMenuLabel(target: target)
+                    }
+                }
+            }
+        }
+    }
+
+    private func captureTargets(kind: CaptureTargetKind) -> [CaptureTargetOption] {
+        model.captureTargets.filter { $0.kind == kind }
+    }
+
+    private func captureTargetSelection(_ target: CaptureTargetOption) -> Binding<Bool> {
+        Binding {
+            target.id == model.selectedCaptureTargetID
+        } set: { isSelected in
+            guard isSelected else {
+                return
+            }
+
+            model.selectedCaptureTargetID = target.id
+            model.syncCameraPreviewSnapArea()
+        }
+    }
 }
 
 private struct CaptureTargetPickerLabel: View {
@@ -58,7 +93,7 @@ private struct CaptureTargetPickerLabel: View {
                     .font(.system(size: 12, weight: .medium, design: .rounded))
                     .lineLimit(1)
             } else {
-                Label("No target", systemImage: "display")
+                Label("No source", systemImage: "display")
                     .font(.system(size: 12, weight: .medium, design: .rounded))
                     .lineLimit(1)
             }
