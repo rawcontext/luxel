@@ -12,6 +12,7 @@ struct LuxelApp: App {
     @State private var shortcutController: LuxelShortcutController
     @State private var windowPresenter: LuxelWindowPresenter
     @State private var statusItemController: LuxelStatusItemController
+    @State private var aboutWindowPresenter: LuxelAboutWindowPresenter
 
     init() {
         LuxelSingleInstanceGuard.exitDuplicateInstanceIfNeeded()
@@ -32,6 +33,7 @@ struct LuxelApp: App {
             exclusionRegistry: captureExclusionRegistry
         )
         let shortcutController = LuxelShortcutController()
+        let aboutWindowPresenter = LuxelAboutWindowPresenter(metadata: model.appMetadata)
         let windowPresenter = LuxelWindowPresenter(
             model: model,
             editorModel: editorModel,
@@ -44,6 +46,7 @@ struct LuxelApp: App {
         _cropperPanelController = State(initialValue: cropperPanelController)
         _shortcutController = State(initialValue: shortcutController)
         _windowPresenter = State(initialValue: windowPresenter)
+        _aboutWindowPresenter = State(initialValue: aboutWindowPresenter)
         _statusItemController = State(
             initialValue: LuxelStatusItemController(
                 model: model,
@@ -59,6 +62,13 @@ struct LuxelApp: App {
             LuxelEditorView(model: editorModel)
         }
         .defaultLaunchBehavior(.suppressed)
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About \(model.appMetadata.displayName)") {
+                    aboutWindowPresenter.open()
+                }
+            }
+        }
 
         Settings {
             LuxelSettingsView(
