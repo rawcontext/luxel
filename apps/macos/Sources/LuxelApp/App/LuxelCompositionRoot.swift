@@ -6,9 +6,7 @@ import LuxelPresentation
 enum LuxelCompositionRoot {
     @MainActor
     static func errorReporter() -> any ErrorReporter {
-        let reporter = LuxelCrashReporter.shared
-        reporter.configure(appMetadata: appMetadata)
-        return reporter
+        NoopErrorReporter()
     }
 
     static var appMetadata: AppMetadata {

@@ -68,7 +68,7 @@ struct LocalizationTests {
             #"(?:(?:LocalizedStringResource|IntentDescription)\(\s*")([^"\\]*(?:\\.[^"\\]*)*)""#,
             #"(?:title|shortTitle):\s*"([^"\\]*(?:\\.[^"\\]*)*)""#
         ]
-        let patterns = try patternSources.map(NSRegularExpression.init(pattern:))
+        let patterns = try patternSources.map { try NSRegularExpression(pattern: $0) }
 
         var missing: [String] = []
         for root in sourceRoots {

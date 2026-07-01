@@ -133,7 +133,7 @@ Direct SwiftPM executable launches can change the code identity macOS sees for S
 
 - Builds `Luxel` and `luxel-cli`.
 - Creates `apps/macos/dist/Luxel Dev.app` by default.
-- Copies `Info.plist`, the app icon, third-party licenses, optional Firebase config, and the CLI install helper.
+- Copies `Info.plist`, the app icon, third-party licenses, and the CLI install helper.
 - Signs the bundle with the first available `Apple Development:` identity unless `SIGN_IDENTITY` is set.
 - Rejects ad-hoc signing.
 - Emits the final app path on success.

@@ -11,7 +11,7 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundleDisplayName"] as? String == "Luxel")
         #expect(plist["CFBundleExecutable"] as? String == "Luxel")
         #expect(plist["CFBundleIdentifier"] as? String == "media.luxel.app")
-        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.11")
+        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.12")
         #expect(plist["CFBundleVersion"] as? String == "1")
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
         #expect(plist["LSMinimumSystemVersion"] as? String == "26.0")
@@ -48,15 +48,15 @@ struct AppBundleConfigurationTests {
         #expect(entitlements["com.apple.security.get-task-allow"] == nil)
     }
 
-    @Test("Mac App Store entitlements allow sandboxed network client access")
-    func macAppStoreEntitlementsAllowSandboxedNetworkClientAccess() throws {
+    @Test("Mac App Store entitlements allow sandboxed local capture access")
+    func macAppStoreEntitlementsAllowSandboxedLocalCaptureAccess() throws {
         let entitlements = try readPlist("Configuration/Luxel/Luxel.MacAppStore.entitlements")
 
         #expect(entitlements["com.apple.security.app-sandbox"] as? Bool == true)
         #expect(entitlements["com.apple.security.assets.movies.read-write"] as? Bool == true)
         #expect(entitlements["com.apple.security.files.bookmarks.app-scope"] as? Bool == true)
         #expect(entitlements["com.apple.security.files.user-selected.read-write"] as? Bool == true)
-        #expect(entitlements["com.apple.security.network.client"] as? Bool == true)
+        #expect(entitlements["com.apple.security.network.client"] == nil)
     }
 
     @Test("build script bundles third-party license ledger as app resource")
@@ -85,28 +85,6 @@ struct AppBundleConfigurationTests {
         #expect(script.contains("Set :CFBundleName ${APP_DISPLAY_NAME}"))
         #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLName ${APP_BUNDLE_IDENTIFIER}.url"))
         #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 ${APP_URL_SCHEME}"))
-    }
-
-    @Test("build script bundles Firebase app config when present")
-    func buildScriptBundlesFirebaseAppConfigWhenPresent() throws {
-        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
-        let script = try String(contentsOf: scriptURL, encoding: .utf8)
-
-        #expect(script.contains("GOOGLE_SERVICE_INFO_PLIST"))
-        #expect(script.contains("GoogleService-Info.plist"))
-        #expect(script.contains("Contents/Resources/GoogleService-Info.plist"))
-    }
-
-    @Test("build script can upload Crashlytics dSYMs for release builds")
-    func buildScriptCanUploadCrashlyticsDSYMsForReleaseBuilds() throws {
-        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
-        let script = try String(contentsOf: scriptURL, encoding: .utf8)
-
-        #expect(script.contains("UPLOAD_CRASHLYTICS_SYMBOLS"))
-        #expect(script.contains("Crashlytics/upload-symbols"))
-        #expect(script.contains("--google-service-plist"))
-        #expect(script.contains("--platform mac"))
-        #expect(script.contains("${APP_NAME}.dSYM"))
     }
 
     @Test("build script bundles CLI executable and install helper")

@@ -6,7 +6,6 @@ CONFIGURATION="${CONFIGURATION:-release}"
 PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
 BASE_ENTITLEMENTS="${PACKAGE_ROOT}/Configuration/Luxel/Luxel.MacAppStore.entitlements"
-GOOGLE_SERVICE_INFO_PLIST="${GOOGLE_SERVICE_INFO_PLIST:-${PACKAGE_ROOT}/Configuration/Luxel/GoogleService-Info.plist}"
 THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 OUTPUT_DIR="${OUTPUT_DIR:-${PACKAGE_ROOT}/.build/mas}"
@@ -137,9 +136,6 @@ cp "${PROVISIONING_PROFILE}" "${APP_PATH}/Contents/embedded.provisionprofile"
 cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
 "${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
-if [[ -f "${GOOGLE_SERVICE_INFO_PLIST}" ]]; then
-	cp "${GOOGLE_SERVICE_INFO_PLIST}" "${APP_PATH}/Contents/Resources/GoogleService-Info.plist"
-fi
 
 chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 
