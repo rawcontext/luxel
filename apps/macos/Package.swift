@@ -30,6 +30,7 @@ let package = Package(
         .target(
             name: "LuxelCLI",
             dependencies: [
+                "LuxelCodecWebM",
                 "LuxelCore",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]

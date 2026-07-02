@@ -31,6 +31,29 @@ enum LuxelCompositionRoot {
         )
     }
 
+    static func replayBufferService(
+        settingsStore: any SettingsStore,
+        exclusionRegistry: CaptureExclusionRegistry
+    ) -> ReplayBufferService {
+        ReplayBufferService(
+            engine: replayBufferEngine(
+                settingsStore: settingsStore,
+                exclusionRegistry: exclusionRegistry
+            ),
+            systemActivityMonitor: AppKitSystemActivityMonitor()
+        )
+    }
+
+    static func replayBufferClipService(
+        replayBufferService: ReplayBufferService,
+        history: RecordingHistoryService
+    ) -> ReplayBufferClipService {
+        ReplayBufferClipService(
+            replayBufferService: replayBufferService,
+            history: history
+        )
+    }
+
     static func recordingHistoryStore() -> any RecordingHistoryStore {
         do {
             return try JSONRecordingHistoryStore(fileURL: recordingHistoryFileURL)
@@ -46,6 +69,19 @@ enum LuxelCompositionRoot {
         ScreenCaptureKitRecorder(
             contentFilterProvider: ShareableContentFilterProvider(exclusionRegistry: exclusionRegistry),
             audioLevelHandler: audioLevelHandler
+        )
+    }
+
+    static func replayBufferEngine(
+        settingsStore: any SettingsStore,
+        exclusionRegistry: CaptureExclusionRegistry
+    ) -> any ReplayBufferEngine {
+        SegmentedSCStreamReplayEngine(
+            contentFilterProvider: ShareableContentFilterProvider(exclusionRegistry: exclusionRegistry),
+            storageDirectory: replayBufferCacheDirectory,
+            clipDirectoryProvider: {
+                ((try? settingsStore.load()) ?? defaultSettings).recordingsDirectory
+            }
         )
     }
 
@@ -186,6 +222,12 @@ enum LuxelCompositionRoot {
             .appending(path: "Transcripts", directoryHint: .isDirectory)
     }
 
+    private static var replayBufferCacheDirectory: URL {
+        cachesDirectory
+            .appending(path: "Luxel")
+            .appending(path: "ReplayBuffer", directoryHint: .isDirectory)
+    }
+
     private static var applicationSupportDirectory: URL {
         let applicationSupportDirectory =
             FileManager.default
@@ -194,5 +236,15 @@ enum LuxelCompositionRoot {
             ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Library/Application Support")
 
         return applicationSupportDirectory
+    }
+
+    private static var cachesDirectory: URL {
+        let cachesDirectory =
+            FileManager.default
+            .urls(for: .cachesDirectory, in: .userDomainMask)
+            .first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Library/Caches")
+
+        return cachesDirectory
     }
 }

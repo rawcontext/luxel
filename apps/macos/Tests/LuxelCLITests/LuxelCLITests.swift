@@ -6,6 +6,24 @@ import Testing
 
 @Suite("Luxel CLI")
 struct LuxelCLITests {
+    @Test("root help advertises version and complete automation surface")
+    func rootHelpAdvertisesVersionAndCompleteAutomationSurface() {
+        let help = LuxelCLI.helpMessage()
+
+        #expect(help.contains("--version"))
+        #expect(help.contains("record"))
+        #expect(help.contains("stop"))
+        #expect(help.contains("toggle"))
+        #expect(help.contains("clip"))
+        #expect(help.contains("latest"))
+        #expect(help.contains("editor"))
+        #expect(help.contains("convert"))
+        #expect(help.contains("export"))
+        #expect(help.contains("transcribe"))
+        #expect(help.contains("preferences"))
+        #expect(!help.contains("completions"))
+    }
+
     @Test("record command maps display preset countdown and callbacks")
     func recordCommandMapsDisplayPresetCountdownAndCallbacks() throws {
         let command = try LuxelRecordCommand.parse([
@@ -139,5 +157,138 @@ struct LuxelCLITests {
             let command = try LuxelClipCommand.parse(["--seconds", "0"])
             _ = try command.invocation
         }
+    }
+
+    @Test("convert command maps headless editor export options")
+    func convertCommandMapsHeadlessEditorExportOptions() throws {
+        let command = try LuxelConvertCommand.parse([
+            "input.mp4",
+            "output.webm",
+            "--width", "1280",
+            "--height", "720",
+            "--fps", "30",
+            "--start", "2",
+            "--duration", "4",
+            "--speed", "2",
+            "--mute",
+            "--crop", "10,20,640,360",
+            "--quality", "high"
+        ])
+        let source = try SourceMedia(
+            fileURL: URL(fileURLWithPath: "/tmp/ignored.mp4"),
+            duration: 10,
+            pixelSize: PixelSize(width: 1920, height: 1080),
+            nominalFrameRate: FrameRate(60),
+            hasAudio: true
+        )
+
+        let request = try command.exportRequest(for: source)
+
+        #expect(request.inputFileURL.path.hasSuffix("/input.mp4"))
+        #expect(request.format == .webm)
+        #expect(request.pixelSize == (try PixelSize(width: 1280, height: 720)))
+        #expect(request.frameRate == (try FrameRate(30)))
+        #expect(request.timeRange == (try TimeRange(start: 2, end: 6)))
+        #expect(request.speed == (try PlaybackSpeed(2)))
+        #expect(request.shouldMute)
+        #expect(request.shouldCrop)
+        #expect(request.cropRect == (try CaptureRect(x: 10, y: 20, width: 640, height: 360)))
+        #expect(request.quality == .high)
+    }
+
+    @Test("convert command validates ambiguous formats and dimensions")
+    func convertCommandValidatesAmbiguousFormatsAndDimensions() throws {
+        let source = try SourceMedia(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            duration: 10,
+            pixelSize: PixelSize(width: 1920, height: 1080),
+            nominalFrameRate: FrameRate(60),
+            hasAudio: true
+        )
+
+        #expect(
+            throws: LuxelCLIError.invalidHeadlessExportOptions(
+                "Use --format prores422 or --format prores4444 for .mov output."
+            )
+        ) {
+            let command = try LuxelConvertCommand.parse(["input.mp4", "output.mov"])
+            _ = try command.exportRequest(for: source)
+        }
+
+        #expect(
+            throws: LuxelCLIError.invalidHeadlessExportOptions(
+                "Use both --width and --height, or neither."
+            )
+        ) {
+            let command = try LuxelConvertCommand.parse(["input.mp4", "output.mp4", "--width", "1280"])
+            _ = try command.exportRequest(for: source)
+        }
+
+        #expect(
+            throws: LuxelCLIError.invalidHeadlessExportOptions(
+                "--format webm requires .webm output."
+            )
+        ) {
+            let command = try LuxelConvertCommand.parse([
+                "input.mp4", "output.mp4", "--format", "webm"
+            ])
+            _ = try command.exportRequest(for: source)
+        }
+    }
+
+    @Test("explicit convert formats cover native and external exports without AV1")
+    func explicitConvertFormatsCoverNativeAndExternalExportsWithoutAV1() throws {
+        #expect(LuxelHeadlessExportFormat.allValueStrings.contains("webm"))
+        #expect(LuxelHeadlessExportFormat.allValueStrings.contains("prores422"))
+        #expect(LuxelHeadlessExportFormat.allValueStrings.contains("flac"))
+        #expect(!LuxelHeadlessExportFormat.allValueStrings.contains("av1"))
+    }
+
+    @Test("editor opener finds containing app bundle")
+    func editorOpenerFindsContainingAppBundle() {
+        let executableURL = URL(fileURLWithPath: "/Applications/Luxel.app/Contents/MacOS/luxel-cli")
+
+        #expect(
+            SystemLuxelEditorOpener.containingAppBundleURL(executableURL: executableURL)?
+                .path == "/Applications/Luxel.app"
+        )
+    }
+
+    @Test("transcript formatter emits turn text")
+    func transcriptFormatterEmitsTurnText() throws {
+        let firstSpan = try TimedTranscriptSpan(
+            id: "span-0",
+            text: "Hello",
+            start: 0,
+            end: 1
+        )
+        let secondSpan = try TimedTranscriptSpan(
+            id: "span-1",
+            text: "World",
+            start: 1,
+            end: 2
+        )
+        let transcript = try TurnSegmentedTranscript(
+            spans: [firstSpan, secondSpan],
+            turns: [
+                try TranscriptTurn(
+                    id: "turn-0",
+                    spanIDs: ["span-0"],
+                    start: 0,
+                    end: 1,
+                    text: "Hello"
+                ),
+                try TranscriptTurn(
+                    id: "turn-1",
+                    spanIDs: ["span-1"],
+                    start: 1,
+                    end: 2,
+                    text: "World"
+                )
+            ],
+            localeIdentifier: "en_US"
+        )
+
+        #expect(LuxelTranscriptFormatter.plainText(transcript) == "Hello\nWorld")
     }
 }

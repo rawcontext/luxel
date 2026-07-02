@@ -6,7 +6,7 @@ struct LuxelShortcutInstaller: View {
     let model: LuxelMenuModel
     let cropperPanelController: LuxelCropperPanelController
     let shortcutController: LuxelShortcutController
-    let openRecording: (URL) -> Void
+    let openRecording: @MainActor @Sendable (URL) -> Void
 
     var body: some View {
         Color.clear
@@ -35,6 +35,9 @@ struct LuxelShortcutInstaller: View {
             .onChange(of: model.settings.quickRecordLastShortcut) {
                 configureShortcut()
             }
+            .onChange(of: model.settings.clipReplayBufferShortcut) {
+                configureShortcut()
+            }
     }
 
     private func configureShortcut() {
@@ -51,7 +54,8 @@ struct LuxelShortcutInstaller: View {
             activeWindowRecordingShortcutRegistration(),
             fullscreenRecordingShortcutRegistration(),
             audioOnlyRecordingShortcutRegistration(),
-            quickRecordLastShortcutRegistration()
+            quickRecordLastShortcutRegistration(),
+            clipReplayBufferShortcutRegistration()
         ]
     }
 
@@ -136,6 +140,18 @@ struct LuxelShortcutInstaller: View {
 
             Task {
                 await model.startQuickRecordingFromLastCapture(entryPoint: .quickRecordLastShortcut)
+            }
+        }
+    }
+
+    private func clipReplayBufferShortcutRegistration() -> LuxelShortcutRegistration {
+        LuxelShortcutRegistration(rawShortcut: model.settings.clipReplayBufferShortcut) {
+            guard model.replayBufferMenuPresentation.canClip else {
+                return
+            }
+
+            Task {
+                await model.clipReplayBufferFromMenu(openRecording: openRecording)
             }
         }
     }

@@ -155,7 +155,10 @@ extension LuxelMenuModel {
     }
 
     var replayBufferMenuPresentation: ReplayBufferMenuPresentation {
-        ReplayBufferMenuPresentation(configuration: settings.replayBufferConfiguration)
+        ReplayBufferMenuPresentation(
+            configuration: settings.replayBufferConfiguration,
+            state: replayBufferState
+        )
     }
 
     var recordButtonTitle: String {

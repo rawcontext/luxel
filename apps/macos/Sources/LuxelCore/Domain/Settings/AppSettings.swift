@@ -86,7 +86,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var cameraPreviewStyle: CameraPreviewStyle
     public var cameraPreviewPlacements: [DisplayID: CameraPreviewPlacement]
     public var replayBufferConfiguration: ReplayBufferConfiguration?
+    public var replayBufferPreferredBufferLength: TimeInterval
     public var replayBufferResumeOnLaunch: Bool
+    public var replayBufferConsentAccepted: Bool
     public var replayClipDestination: ReplayClipDestination
     public var notchSurfaceSettings: NotchSurfaceSettings {
         didSet {
@@ -169,7 +171,9 @@ extension AppSettings {
         cameraPreviewStyle: CameraPreviewStyle = CameraPreviewStyle(),
         cameraPreviewPlacements: [DisplayID: CameraPreviewPlacement] = [:],
         replayBufferConfiguration: ReplayBufferConfiguration? = nil,
+        replayBufferPreferredBufferLength: TimeInterval? = nil,
         replayBufferResumeOnLaunch: Bool = false,
+        replayBufferConsentAccepted: Bool = false,
         replayClipDestination: ReplayClipDestination = .editor,
         notchSurfaceSettings: NotchSurfaceSettings = .defaults,
         enableShortcuts: Bool = true,
@@ -235,7 +239,12 @@ extension AppSettings {
         self.cameraPreviewStyle = cameraPreviewStyle
         self.cameraPreviewPlacements = cameraPreviewPlacements
         self.replayBufferConfiguration = replayBufferConfiguration
+        self.replayBufferPreferredBufferLength =
+            Self.supportedReplayBufferLength(
+                replayBufferPreferredBufferLength ?? replayBufferConfiguration?.bufferLength
+            ) ?? ReplayBufferConfiguration.defaults.bufferLength
         self.replayBufferResumeOnLaunch = replayBufferResumeOnLaunch
+        self.replayBufferConsentAccepted = replayBufferConsentAccepted
         self.replayClipDestination = replayClipDestination
         self.notchSurfaceSettings = notchSurfaceSettings
         self.enableShortcuts = enableShortcuts
@@ -274,5 +283,16 @@ extension AppSettings {
         from presets: [CaptureSizePreset]
     ) -> [CaptureSizePreset] {
         presets.filter { !CaptureSizePreset.removedBuiltInDefaultIDs.contains($0.id) }
+    }
+
+    static func supportedReplayBufferLength(_ bufferLength: TimeInterval?) -> TimeInterval? {
+        guard let bufferLength,
+              bufferLength.isFinite,
+              (10...600).contains(bufferLength)
+        else {
+            return nil
+        }
+
+        return bufferLength
     }
 }

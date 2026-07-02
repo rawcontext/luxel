@@ -77,6 +77,7 @@ public enum ReplayClipDestination: String, Codable, CaseIterable, Equatable, Ide
 
 public enum ReplayBufferState: Equatable, Sendable {
     case disarmed
+    case starting(since: Date)
     case buffering(since: Date)
     case paused(reason: ReplayBufferPauseReason)
     case clipping

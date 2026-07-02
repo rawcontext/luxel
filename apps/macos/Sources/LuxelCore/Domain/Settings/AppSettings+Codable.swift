@@ -25,7 +25,9 @@ extension AppSettings {
         case cameraPreviewStyle
         case cameraPreviewPlacements
         case replayBufferConfiguration
+        case replayBufferPreferredBufferLength
         case replayBufferResumeOnLaunch
+        case replayBufferConsentAccepted
         case replayClipDestination
         case notchSurfaceSettings
         case enableShortcuts
@@ -114,7 +116,9 @@ extension AppSettings {
         cameraPreviewStyle = capture.cameraPreviewStyle
         cameraPreviewPlacements = capture.cameraPreviewPlacements
         replayBufferConfiguration = capture.replayBufferConfiguration
+        replayBufferPreferredBufferLength = capture.replayBufferPreferredBufferLength
         replayBufferResumeOnLaunch = capture.replayBufferResumeOnLaunch
+        replayBufferConsentAccepted = capture.replayBufferConsentAccepted
         replayClipDestination = capture.replayClipDestination
         notchSurfaceSettings = capture.notchSurfaceSettings
         enableShortcuts = capture.enableShortcuts
@@ -196,7 +200,19 @@ extension AppSettings {
     private static func decodeCaptureSurfaceSettings(
         from container: AppSettingsDecoder
     ) throws -> CaptureSurfaceSettings {
-        try CaptureSurfaceSettings(
+        let replayBufferConfiguration = try container.decodeIfPresent(
+            ReplayBufferConfiguration.self,
+            forKey: .replayBufferConfiguration
+        )
+        let replayBufferPreferredBufferLength =
+            Self.supportedReplayBufferLength(
+                try container.decodeIfPresent(
+                    TimeInterval.self,
+                    forKey: .replayBufferPreferredBufferLength
+                ) ?? replayBufferConfiguration?.bufferLength
+            ) ?? ReplayBufferConfiguration.defaults.bufferLength
+
+        return try CaptureSurfaceSettings(
             cameraDeviceID: container.decodeIfPresent(String.self, forKey: .cameraDeviceID).flatMap(
                 Self.nonEmpty),
             cameraSeparateTrack: container.decodeIfPresent(Bool.self, forKey: .cameraSeparateTrack)
@@ -208,13 +224,15 @@ extension AppSettings {
                 [DisplayID: CameraPreviewPlacement].self,
                 forKey: .cameraPreviewPlacements
             ) ?? [:],
-            replayBufferConfiguration: container.decodeIfPresent(
-                ReplayBufferConfiguration.self,
-                forKey: .replayBufferConfiguration
-            ),
+            replayBufferConfiguration: replayBufferConfiguration,
+            replayBufferPreferredBufferLength: replayBufferPreferredBufferLength,
             replayBufferResumeOnLaunch: container.decodeIfPresent(
                 Bool.self,
                 forKey: .replayBufferResumeOnLaunch
+            ) ?? false,
+            replayBufferConsentAccepted: container.decodeIfPresent(
+                Bool.self,
+                forKey: .replayBufferConsentAccepted
             ) ?? false,
             replayClipDestination: container.decodeIfPresent(
                 ReplayClipDestination.self, forKey: .replayClipDestination)
@@ -386,7 +404,9 @@ private struct CaptureSurfaceSettings {
     let cameraPreviewStyle: CameraPreviewStyle
     let cameraPreviewPlacements: [DisplayID: CameraPreviewPlacement]
     let replayBufferConfiguration: ReplayBufferConfiguration?
+    let replayBufferPreferredBufferLength: TimeInterval
     let replayBufferResumeOnLaunch: Bool
+    let replayBufferConsentAccepted: Bool
     let replayClipDestination: ReplayClipDestination
     let notchSurfaceSettings: NotchSurfaceSettings
     let enableShortcuts: Bool

@@ -71,6 +71,42 @@ struct LuxelCLIExecutionTests {
         #expect(output == [#"{"errorMessage":"URL automation is disabled","status":"error"}"#])
     }
 
+    @Test("print URL mode writes automation URL without opening Luxel")
+    func printURLModeWritesAutomationURLWithoutOpeningLuxel() throws {
+        let opener = SpyLuxelURLOpener()
+        var output: [String] = []
+
+        try runLuxelCommand(
+            AutomationInvocation(command: .latest(reveal: true)),
+            execution: LuxelCommandExecutionArguments(
+                wait: false,
+                json: false,
+                printURL: true
+            ),
+            opener: opener,
+            output: { output.append($0) }
+        )
+
+        #expect(opener.openedURLs.isEmpty)
+        #expect(output == ["luxel://latest?reveal=true"])
+    }
+
+    @Test("print URL mode rejects result waiting")
+    func printURLModeRejectsResultWaiting() {
+        #expect(throws: LuxelCLIError.printURLResultConflict) {
+            try runLuxelCommand(
+                AutomationInvocation(command: .stop),
+                execution: LuxelCommandExecutionArguments(
+                    wait: true,
+                    json: false,
+                    printURL: true
+                ),
+                opener: SpyLuxelURLOpener(),
+                callbackReceiverFactory: { StubLuxelCallbackReceiver() }
+            )
+        }
+    }
+
     @Test("wait mode rejects explicit callbacks")
     func waitModeRejectsExplicitCallbacks() {
         #expect(throws: LuxelCLIError.callbackConflict) {

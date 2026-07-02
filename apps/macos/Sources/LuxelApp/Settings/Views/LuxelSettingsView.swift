@@ -192,8 +192,8 @@ extension LuxelSettingsView {
             shortcutSettingsForm
         case .notch:
             notchSettingsForm
-        case .experimental:
-            experimentalSettingsForm
+        case .replayBuffer:
+            replayBufferSettingsForm
         case .commandLine:
             commandLineToolSettingsForm
         case .system:
@@ -371,14 +371,12 @@ extension LuxelSettingsView {
     }
 
     @ViewBuilder
-    private var experimentalSettingsForm: some View {
+    private var replayBufferSettingsForm: some View {
         Section {
             let isConfigured = model.settings.replayBufferConfiguration != nil
 
-            LabeledContent("Status", value: "Engine Coming Soon")
-                .help("Replay buffer capture is not implemented yet.")
             Toggle("Enable Replay Buffer", isOn: replayBufferEnabled)
-                .help("Prepare settings for saving recent recording history.")
+                .help("Continuously keep recent screen video available for clipping.")
 
             Picker("Length", selection: replayBufferLengthSelection) {
                 ForEach(Self.replayBufferLengths, id: \.self) { seconds in
@@ -386,7 +384,7 @@ extension LuxelSettingsView {
                 }
             }
             .pickerStyle(.menu)
-            .disabled(!isConfigured)
+            .disabled(model.replayBufferState == .clipping)
             .help("Choose how much recent recording history to keep.")
 
             LabeledContent("Source", value: "Display with Cursor")
@@ -419,12 +417,11 @@ extension LuxelSettingsView {
             .help("Choose what happens after saving a replay clip.")
 
         } header: {
-            HStack(spacing: 6) {
-                Text("Replay Buffer")
-                ExperimentalBadge()
-            }
+            Text("Replay Buffer")
         } footer: {
-            Text("Replay buffer capture is not active until the engine lands.")
+            Text(
+                "Replay buffer uses screen capture permission and stays visible in the menu bar while active."
+            )
         }
 
     }
@@ -689,8 +686,7 @@ extension LuxelSettingsView {
         Binding {
             model.settings.replayBufferConfiguration != nil
         } set: { isEnabled in
-            model.settings.replayBufferConfiguration =
-                isEnabled ? ReplayBufferConfiguration.defaults : nil
+            model.setReplayBufferEnabled(isEnabled)
         }
     }
 
@@ -718,9 +714,9 @@ extension LuxelSettingsView {
     private var replayBufferLengthSelection: Binding<TimeInterval> {
         Binding {
             model.settings.replayBufferConfiguration?.bufferLength
-                ?? ReplayBufferConfiguration.defaults.bufferLength
+                ?? model.settings.replayBufferPreferredBufferLength
         } set: { bufferLength in
-            updateReplayBufferConfiguration(bufferLength: bufferLength)
+            model.setReplayBufferDuration(bufferLength)
         }
     }
 
@@ -870,7 +866,11 @@ extension LuxelSettingsView {
             return
         }
 
+        model.settings.replayBufferPreferredBufferLength = updatedConfiguration.bufferLength
         model.settings.replayBufferConfiguration = updatedConfiguration
+        Task {
+            await model.reconcileReplayBufferSettings()
+        }
     }
 
     private func replayBufferLengthLabel(_ seconds: TimeInterval) -> String {

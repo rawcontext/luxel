@@ -157,7 +157,7 @@ extension LuxelMenuModel {
         }
     }
 
-    private func clipAutomationReplayBuffer(
+    func clipAutomationReplayBuffer(
         seconds: Int?,
         openRecording: @escaping @MainActor (URL) -> Void
     ) async throws -> AutomationExecutionResult {

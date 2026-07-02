@@ -13,12 +13,19 @@ public struct LuxelCommandExecutionArguments: ParsableArguments {
     @Option(help: "Seconds to wait for a callback before failing.")
     public var timeout: Double = 120
 
+    @Flag(
+        name: [.customLong("print-url"), .customLong("dry-run")],
+        help: "Print the Luxel automation URL instead of opening it."
+    )
+    public var printURL = false
+
     public init() {}
 
-    public init(wait: Bool, json: Bool, timeout: Double = 120) {
+    public init(wait: Bool, json: Bool, timeout: Double = 120, printURL: Bool = false) {
         self.wait = wait
         self.json = json
         self.timeout = timeout
+        self.printURL = printURL
     }
 
     var requiresCallbackResult: Bool {
@@ -46,6 +53,15 @@ public func runLuxelCommand(
     },
     output: (String) -> Void = { print($0) }
 ) throws {
+    if execution.printURL {
+        guard !execution.requiresCallbackResult else {
+            throw LuxelCLIError.printURLResultConflict
+        }
+
+        output(AutomationInvocationURLBuilder.url(for: invocation).absoluteString)
+        return
+    }
+
     guard execution.requiresCallbackResult else {
         try opener.open(AutomationInvocationURLBuilder.url(for: invocation))
         return

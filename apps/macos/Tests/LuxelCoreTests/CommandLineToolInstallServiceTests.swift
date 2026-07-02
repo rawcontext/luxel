@@ -57,6 +57,81 @@ struct CommandLineToolInstallServiceTests {
         )
     }
 
+    @Test("bundled installer creates manpage symlink under local share")
+    func bundledInstallerCreatesManpageSymlinkUnderLocalShare() throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let bundledToolURL = directory.appending(path: "Luxel.app/Contents/MacOS/luxel-cli")
+        let bundledManPageURL = directory.appending(
+            path: "Luxel.app/Contents/Resources/man/man1/luxel.1")
+        let destination =
+            directory
+            .appending(path: ".local", directoryHint: .isDirectory)
+            .appending(path: "bin", directoryHint: .isDirectory)
+            .appending(path: "luxel")
+        let manPageDestination =
+            directory
+            .appending(path: ".local", directoryHint: .isDirectory)
+            .appending(path: "share", directoryHint: .isDirectory)
+            .appending(path: "man", directoryHint: .isDirectory)
+            .appending(path: "man1", directoryHint: .isDirectory)
+            .appending(path: "luxel.1")
+        try FileManager.default.createDirectory(
+            at: bundledToolURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createDirectory(
+            at: bundledManPageURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("#!/bin/sh\n".utf8).write(to: bundledToolURL)
+        try Data(".Dd July 1, 2026\n".utf8).write(to: bundledManPageURL)
+        let installer = BundledCommandLineToolInstaller(
+            bundledToolURL: bundledToolURL,
+            bundledManPageURL: bundledManPageURL
+        )
+
+        #expect(try installer.install(destination: destination) == destination)
+        #expect(
+            try FileManager.default.destinationOfSymbolicLink(atPath: manPageDestination.path)
+                == bundledManPageURL.path
+        )
+    }
+
+    @Test("bundled installer maps bin install to sibling share man directory")
+    func bundledInstallerMapsBinInstallToSiblingShareManDirectory() throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let bundledToolURL = directory.appending(path: "luxel-cli")
+        let bundledManPageURL = directory.appending(path: "luxel.1")
+        let destination =
+            directory
+            .appending(path: "usr", directoryHint: .isDirectory)
+            .appending(path: "local", directoryHint: .isDirectory)
+            .appending(path: "bin", directoryHint: .isDirectory)
+            .appending(path: "luxel")
+        let manPageDestination =
+            directory
+            .appending(path: "usr", directoryHint: .isDirectory)
+            .appending(path: "local", directoryHint: .isDirectory)
+            .appending(path: "share", directoryHint: .isDirectory)
+            .appending(path: "man", directoryHint: .isDirectory)
+            .appending(path: "man1", directoryHint: .isDirectory)
+            .appending(path: "luxel.1")
+        try Data("#!/bin/sh\n".utf8).write(to: bundledToolURL)
+        try Data(".Dd July 1, 2026\n".utf8).write(to: bundledManPageURL)
+        let installer = BundledCommandLineToolInstaller(
+            bundledToolURL: bundledToolURL,
+            bundledManPageURL: bundledManPageURL
+        )
+
+        #expect(try installer.install(destination: destination) == destination)
+        #expect(
+            try FileManager.default.destinationOfSymbolicLink(atPath: manPageDestination.path)
+                == bundledManPageURL.path
+        )
+    }
+
     @Test("bundled installer replaces stale symlink")
     func bundledInstallerReplacesStaleSymlink() throws {
         let directory = try temporaryDirectory()

@@ -157,7 +157,7 @@ The Swift package exports these products:
 | `LuxelCore` | Library | Domain models, application services, ports, and infrastructure adapters. |
 | `LuxelCodecWebM` | Library | VP9/WebM export through vendored libvpx/libopus artifacts and Swift muxing. |
 | `Luxel` | Executable | Menu bar app, editor window, settings, panels, shortcuts, app composition. |
-| `luxel-cli` | Executable | Command-line wrapper around Luxel URL automation. |
+| `luxel-cli` | Executable | Command-line wrapper around Luxel automation, editor, export, and transcript workflows. |
 
 Test targets:
 
@@ -187,7 +187,7 @@ Use these boundaries when adding or changing behavior:
 - `LuxelPresentation`: UI-facing editor models, commands, views, and reusable presentation support.
 - `LuxelApp`: App composition, SwiftUI/AppKit shell, menu bar, panels, settings, shortcuts, and concrete dependency wiring.
 - `LuxelCodecWebM`: Isolated native codec integration for WebM VP9.
-- `LuxelCLI`: ArgumentParser commands that open Luxel automation URLs.
+- `LuxelCLI`: ArgumentParser commands for URL automation, editor opening, headless export, and transcription.
 
 When a feature crosses these layers, test the lower layers first. Keep UI state out of domain models and keep framework objects behind ports.
 
@@ -242,23 +242,37 @@ The bundled CLI executable is `luxel-cli`, and the installed command name is `lu
 The CLI supports:
 
 ```text
+luxel --version
 luxel record
 luxel stop
 luxel toggle
 luxel clip
 luxel latest
+luxel editor
+luxel convert
+luxel export
+luxel transcribe
 luxel preferences
 ```
 
 Example commands:
 
 ```sh
+luxel --version
 luxel record --display main --countdown 3
 luxel record --active-window --preset "Default" --save-to ~/Movies/Luxel
 luxel toggle --last-area
 luxel stop
 luxel latest --reveal
 luxel preferences --pane shortcuts
+luxel record --last-area --print-url
+luxel editor ~/Movies/demo.mp4
+luxel convert demo.mp4 demo.webm
+luxel convert demo.mp4 demo.gif --start 2 --duration 5 --fps 15 --width 800 --height 450
+luxel convert demo.mp4 demo.mov --format prores422 --quality high
+luxel export request.json output.webm --overwrite --json
+luxel transcribe demo.m4a > demo.txt
+luxel transcribe demo.mp4 --output demo.json --json --overwrite
 ```
 
 The app also parses `luxel://` URLs:
@@ -273,6 +287,19 @@ luxel://preferences?pane=shortcuts
 ```
 
 Callbacks use `x-success` and `x-error` query parameters. Successful file results append `filePath`; recording starts append `recordingID`; failures append `errorMessage`.
+
+Use `--wait` for a plain callback result, `--json` for structured callback output, and
+`--timeout` to control callback waiting.
+`--print-url`/`--dry-run` prints the Luxel automation URL without opening it.
+`luxel convert` uses the same `EditorExportDraft`/`ExportRequest` model as the app
+for common headless edits such as trim, resize, frame rate, quality, speed, mute, and crop.
+`luxel export` accepts a full `ExportRequest` JSON document for export fields that do not have dedicated CLI flags.
+AV1 remains intentionally unavailable in the CLI until Luxel ships a registered native AV1 adapter.
+`luxel transcribe` uses local Apple Speech transcription and requires the same system
+speech availability and authorization as the app.
+The checked-in manual page lives at `apps/macos/Documentation/luxel.1`, is bundled into
+`Luxel.app/Contents/Resources/man/man1/luxel.1`, and is linked into `share/man/man1`
+when Luxel installs or repairs the CLI.
 
 ## Web App
 

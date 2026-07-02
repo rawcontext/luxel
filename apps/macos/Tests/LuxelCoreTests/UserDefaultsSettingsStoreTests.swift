@@ -64,7 +64,9 @@ struct UserDefaultsSettingsStoreTests {
             cameraPreviewStyle: CameraPreviewStyle(shape: .roundedRect, size: .large, isMirrored: false),
             cameraPreviewPlacements: try persistedCameraPreviewPlacements(),
             replayBufferConfiguration: try persistedReplayBufferConfiguration(),
+            replayBufferPreferredBufferLength: 120,
             replayBufferResumeOnLaunch: true,
+            replayBufferConsentAccepted: true,
             replayClipDestination: .quickExport,
             notchSurfaceSettings: try persistedNotchSurfaceSettings(),
             triggerCropperShortcut: "command+control+option+r",
@@ -247,7 +249,10 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.cameraPreviewPlacements.isEmpty)
         #expect(settings.cameraRecordingOptions == nil)
         #expect(settings.replayBufferConfiguration == nil)
+        #expect(
+            settings.replayBufferPreferredBufferLength == ReplayBufferConfiguration.defaults.bufferLength)
         #expect(!settings.replayBufferResumeOnLaunch)
+        #expect(!settings.replayBufferConsentAccepted)
         #expect(settings.replayClipDestination == .editor)
         #expect(settings.notchSurfaceSettings == .defaults)
         #expect(settings.notchSurfacePreferences == .defaults)

@@ -2,6 +2,10 @@ import Foundation
 import LuxelCore
 import Observation
 
+struct ReplayBufferConsentPrompt: Equatable {
+    let configuration: ReplayBufferConfiguration
+}
+
 @MainActor
 @Observable
 final class LuxelMenuModel {
@@ -28,9 +32,11 @@ final class LuxelMenuModel {
     }
     var recordingNoticeMessage: String?
     var recordingActionErrorMessage: String?
+    var replayBufferState: ReplayBufferState = .disarmed
     var quickExportProgress: QuickExportProgressPresentation?
     var recoveryState: RecordingRecoveryMenuState?
     var permissionPrompt: PermissionPrompt?
+    var replayBufferConsentPrompt: ReplayBufferConsentPrompt?
     var recoveryPrompt: RecoveryPrompt?
     var automationPrompt: AutomationURLPrompt?
     var commandLineToolInstallStatus: CommandLineToolInstallStatus?
@@ -54,6 +60,7 @@ final class LuxelMenuModel {
     @ObservationIgnored let bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker
     @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService
     @ObservationIgnored let quickExportService: QuickExportService
+    @ObservationIgnored let replayBufferService: ReplayBufferService?
     @ObservationIgnored let replayBufferClipService: ReplayBufferClipService?
     @ObservationIgnored var recordingStartTask: Task<ActiveRecording, any Error>?
     @ObservationIgnored var quickExportTask: Task<QuickExportResult, any Error>?
@@ -102,6 +109,7 @@ final class LuxelMenuModel {
             LuxelCompositionRoot
             .bookmarkedDirectoryAccessService(),
         quickExportService: QuickExportService? = nil,
+        replayBufferService: ReplayBufferService? = nil,
         replayBufferClipService: ReplayBufferClipService? = nil,
         permissionGuidanceService: PermissionGuidanceService = PermissionGuidanceService(),
         lastCaptureRecordingPlanner: LastCaptureRecordingPlanner = LastCaptureRecordingPlanner(),
@@ -143,7 +151,19 @@ final class LuxelMenuModel {
         self.quickExportService =
             quickExportService
             ?? LuxelCompositionRoot.quickExportService(fileWorkflowService: fileWorkflowService)
-        self.replayBufferClipService = replayBufferClipService
+        let resolvedReplayBufferService =
+            replayBufferService
+            ?? LuxelCompositionRoot.replayBufferService(
+                settingsStore: settingsStore,
+                exclusionRegistry: captureExclusionRegistry
+            )
+        self.replayBufferService = resolvedReplayBufferService
+        self.replayBufferClipService =
+            replayBufferClipService
+            ?? LuxelCompositionRoot.replayBufferClipService(
+                replayBufferService: resolvedReplayBufferService,
+                history: recordingHistoryService
+            )
         self.permissionGuidanceService = permissionGuidanceService
         self.lastCaptureRecordingPlanner = lastCaptureRecordingPlanner
         self.activeWindowCatalog = activeWindowCatalog
@@ -169,7 +189,8 @@ final class LuxelMenuModel {
                 ),
             history: recordingHistoryService,
             userNotifier: UserNotificationsNotifier(),
-            outputFinalizer: recordingOutputFinalizer
+            outputFinalizer: recordingOutputFinalizer,
+            replayBufferService: resolvedReplayBufferService
         )
         self.audioRecordingLifecycleService = AudioRecordingLifecycleService(
             recorder: audioRecorder

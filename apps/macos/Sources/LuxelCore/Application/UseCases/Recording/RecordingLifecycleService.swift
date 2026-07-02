@@ -8,6 +8,7 @@ public final class RecordingLifecycleService: Sendable {
     private let countdownSleeper: any RecordingCountdownSleeper
     private let userNotifier: (any UserNotifier)?
     private let outputFinalizer: any RecordingOutputFinalizer
+    private let replayBufferService: ReplayBufferService?
     private let autoStopState = RecordingLifecycleAutoStopState()
     private let autoStopEvents = RecordingLifecycleAutoStopEvents()
     private let outputState = RecordingLifecycleOutputState()
@@ -19,7 +20,8 @@ public final class RecordingLifecycleService: Sendable {
         autoStopScheduler: any RecordingAutoStopScheduler = TaskRecordingAutoStopScheduler(),
         countdownSleeper: any RecordingCountdownSleeper = TaskRecordingCountdownSleeper(),
         userNotifier: (any UserNotifier)? = nil,
-        outputFinalizer: any RecordingOutputFinalizer = PassthroughRecordingOutputFinalizer()
+        outputFinalizer: any RecordingOutputFinalizer = PassthroughRecordingOutputFinalizer(),
+        replayBufferService: ReplayBufferService? = nil
     ) {
         self.recorder = recorder
         self.history = history
@@ -28,6 +30,7 @@ public final class RecordingLifecycleService: Sendable {
         self.countdownSleeper = countdownSleeper
         self.userNotifier = userNotifier
         self.outputFinalizer = outputFinalizer
+        self.replayBufferService = replayBufferService
     }
 
     public var autoStoppedRecordings: AsyncStream<PastRecording> {
@@ -58,12 +61,14 @@ public final class RecordingLifecycleService: Sendable {
         let recorderRequest = request.replacingOutputFileURL(outputPlan.stagingFileURL)
 
         do {
+            try await replayBufferService?.recordingDidStart()
             try await runRecorderOperation { recorder in
                 try await recorder.startRecording(recorderRequest)
             }
             await startAutoStopIfNeeded(schedule: request.schedule, startedAt: activeRecording.date)
             return activeRecording.replacingFileURL(outputPlan.finalFileURL)
         } catch {
+            try? await replayBufferService?.recordingDidStop()
             await autoStopState.clear()
             await outputState.clear()
             history.clearCurrentRecording()
@@ -103,6 +108,7 @@ public final class RecordingLifecycleService: Sendable {
             try await runRecorderOperation { recorder in
                 try await recorder.stopRecording()
             }
+            try? await replayBufferService?.recordingDidStop()
         } catch {
             await finishStop(succeeded: false)
             throw error

@@ -7,6 +7,7 @@ PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
 ENTITLEMENTS="${ENTITLEMENTS:-${PACKAGE_ROOT}/Configuration/Luxel/Luxel.DeveloperID.entitlements}"
 THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
+CLI_MANPAGE="${PACKAGE_ROOT}/Documentation/luxel.1"
 STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 APP_BUNDLE_IDENTIFIER="${APP_BUNDLE_IDENTIFIER:-media.luxel.app.dev}"
@@ -54,6 +55,10 @@ cp "${INFO_PLIST}" "${APP_PATH}/Contents/Info.plist"
 cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 cp "${BIN_DIR}/luxel-cli" "${APP_PATH}/Contents/MacOS/luxel-cli"
 cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
+if [[ -f "${CLI_MANPAGE}" ]]; then
+	mkdir -p "${APP_PATH}/Contents/Resources/man/man1"
+	cp "${CLI_MANPAGE}" "${APP_PATH}/Contents/Resources/man/man1/luxel.1"
+fi
 "${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
 find "${BIN_DIR}" -maxdepth 1 -name '*.bundle' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
 find "${BIN_DIR}" -maxdepth 2 -name '*.lproj' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;

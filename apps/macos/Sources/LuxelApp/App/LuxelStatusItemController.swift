@@ -33,6 +33,7 @@ final class LuxelStatusItemController: NSObject {
     private var notchDisplayTask: Task<Void, Never>?
     private var notchInteractionTask: Task<Void, Never>?
     private var notchSurfaceRefreshTask: Task<Void, Never>?
+    private var replayBufferStateTask: Task<Void, Never>?
     private var applicationResignActiveObserver: NSObjectProtocol?
     private var menuPanel: NSPanel?
     private var menuHostingController: NSHostingController<AnyView>?
@@ -40,6 +41,7 @@ final class LuxelStatusItemController: NSObject {
     private var suppressNextPopoverOpenUntil: Date?
     private var activationSourceApplication: NSRunningApplication?
     private var isPresentingPermissionPrompt = false
+    private var isPresentingReplayBufferConsent = false
 
     let iconSize = NSSize(width: 18, height: 18)
     let activeIconHeight: CGFloat = 24
@@ -70,6 +72,7 @@ final class LuxelStatusItemController: NSObject {
         installPopoverDismissalObserver()
         installURLHandler()
         startStatusRefresh()
+        startReplayBuffer()
         startNotchSurface()
         refreshStatusItem()
         recoverInterruptedRecording()
@@ -190,6 +193,15 @@ extension LuxelStatusItemController {
         statusRefreshTimer = timer
     }
 
+    private func startReplayBuffer() {
+        replayBufferStateTask = Task { @MainActor [weak model] in
+            await model?.watchReplayBufferState()
+        }
+        Task { @MainActor [weak model] in
+            await model?.reconcileReplayBufferOnLaunch()
+        }
+    }
+
     private func refreshStatusItem() {
         refreshRecordingAudioLevelMonitoring()
 
@@ -258,6 +270,7 @@ extension LuxelStatusItemController {
         quickExportProgressPanelController.update(progress: model.quickExportProgress) { [weak model] in
             model?.cancelQuickExport()
         }
+        presentPendingReplayBufferConsentIfNeeded()
         presentPendingPermissionPromptIfNeeded()
         refreshNotchSurface()
     }
@@ -358,6 +371,46 @@ extension LuxelStatusItemController {
         presentPermissionPrompt(prompt)
     }
 
+    private func presentPendingReplayBufferConsentIfNeeded() {
+        guard !isPresentingReplayBufferConsent,
+              let prompt = model.replayBufferConsentPrompt
+        else {
+            return
+        }
+
+        presentReplayBufferConsent(prompt)
+    }
+
+    private func presentReplayBufferConsent(_ prompt: ReplayBufferConsentPrompt) {
+        guard !isPresentingReplayBufferConsent else {
+            model.replayBufferConsentPrompt = prompt
+            return
+        }
+
+        isPresentingReplayBufferConsent = true
+        model.replayBufferConsentPrompt = nil
+        closePopover()
+
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self else {
+                return
+            }
+
+            let accepted = runReplayBufferConsentAlert()
+            isPresentingReplayBufferConsent = false
+
+            if accepted {
+                model.replayBufferConsentPrompt = prompt
+                await model.approveReplayBufferConsent()
+            } else {
+                model.denyReplayBufferConsent()
+            }
+
+            presentPendingReplayBufferConsentIfNeeded()
+        }
+    }
+
     private func presentPermissionPrompt(for source: CapturePermissionSource) {
         presentPermissionPrompt(model.makePermissionPrompt(forSource: source))
     }
@@ -400,6 +453,28 @@ extension LuxelStatusItemController {
         alert.informativeText = prompt.guidance.message
 
         let primaryButton = alert.addButton(withTitle: prompt.guidance.actionTitle)
+        primaryButton.keyEquivalent = "\r"
+        primaryButton.keyEquivalentModifierMask = []
+
+        let cancelButton = alert.addButton(withTitle: "Cancel")
+        cancelButton.keyEquivalent = "\u{1b}"
+        cancelButton.keyEquivalentModifierMask = []
+
+        return alert.runModal() == .alertFirstButtonReturn
+    }
+
+    private func runReplayBufferConsentAlert() -> Bool {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = "Enable Replay Buffer?"
+        alert.informativeText =
+            """
+      Luxel will continuously capture your display in the background so it can save recent moments on demand. Clips are saved only when you choose Clip Replay Buffer.
+      """
+
+        let primaryButton = alert.addButton(withTitle: "Enable Replay Buffer")
         primaryButton.keyEquivalent = "\r"
         primaryButton.keyEquivalentModifierMask = []
 

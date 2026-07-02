@@ -6,7 +6,7 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
     case presets
     case shortcuts
     case notch
-    case experimental
+    case replayBuffer
     case commandLine
     case system
 
@@ -26,8 +26,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Shortcuts"
         case .notch:
             "Notch"
-        case .experimental:
-            "Experimental"
+        case .replayBuffer:
+            "Replay Buffer"
         case .commandLine:
             "Command Line"
         case .system:
@@ -47,8 +47,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Keyboard shortcuts and URL automation."
         case .notch:
             "Built-in notch display controls and fallback behavior."
-        case .experimental:
-            "Preview features that are still being built out."
+        case .replayBuffer:
+            "Always-on recent capture and clip behavior."
         case .commandLine:
             "Install and configure the luxel command-line tool."
         case .system:
@@ -68,8 +68,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "keyboard"
         case .notch:
             "laptopcomputer"
-        case .experimental:
-            "sparkles"
+        case .replayBuffer:
+            "gobackward"
         case .commandLine:
             "terminal"
         case .system:
@@ -77,17 +77,6 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
         }
     }
 
-}
-
-struct ExperimentalBadge: View {
-    var body: some View {
-        Text("Experimental")
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(.orange)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(.orange.opacity(0.14), in: Capsule())
-    }
 }
 
 struct SettingsSidebarSelectionBackground: View {

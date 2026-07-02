@@ -2,15 +2,22 @@ import Foundation
 
 public struct BundledCommandLineToolInstaller: CommandLineToolInstaller {
     public let bundledToolURL: URL?
+    public let bundledManPageURL: URL?
 
     public init(bundle: Bundle = .main) {
         bundledToolURL =
             bundle.url(forAuxiliaryExecutable: "luxel-cli")
             ?? bundle.url(forResource: "luxel-cli", withExtension: nil)
+        bundledManPageURL = bundle.url(
+            forResource: "luxel",
+            withExtension: "1",
+            subdirectory: "man/man1"
+        )
     }
 
-    public init(bundledToolURL: URL?) {
+    public init(bundledToolURL: URL?, bundledManPageURL: URL? = nil) {
         self.bundledToolURL = bundledToolURL
+        self.bundledManPageURL = bundledManPageURL
     }
 
     public func install(destination: URL) throws -> URL {
@@ -25,6 +32,45 @@ public struct BundledCommandLineToolInstaller: CommandLineToolInstaller {
             withIntermediateDirectories: true
         )
 
+        try replaceWithSymbolicLink(
+            at: destination,
+            target: bundledToolURL,
+            fileManager: fileManager
+        )
+
+        if let bundledManPageURL {
+            try installManPage(
+                bundledManPageURL,
+                commandDestination: destination,
+                fileManager: fileManager
+            )
+        }
+
+        return destination
+    }
+
+    private func installManPage(
+        _ bundledManPageURL: URL,
+        commandDestination: URL,
+        fileManager: FileManager
+    ) throws {
+        let destination = manPageDestination(forCommandDestination: commandDestination)
+        try fileManager.createDirectory(
+            at: destination.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try replaceWithSymbolicLink(
+            at: destination,
+            target: bundledManPageURL,
+            fileManager: fileManager
+        )
+    }
+
+    private func replaceWithSymbolicLink(
+        at destination: URL,
+        target: URL,
+        fileManager: FileManager
+    ) throws {
         if existingDestinationIsDirectory(destination, fileManager: fileManager) {
             throw CommandLineToolInstallerError.destinationIsDirectory(destination.path)
         }
@@ -35,10 +81,23 @@ public struct BundledCommandLineToolInstaller: CommandLineToolInstaller {
 
         try fileManager.createSymbolicLink(
             at: destination,
-            withDestinationURL: bundledToolURL
+            withDestinationURL: target
         )
+    }
 
-        return destination
+    private func manPageDestination(forCommandDestination destination: URL) -> URL {
+        let commandDirectory = destination.deletingLastPathComponent()
+        let installRoot =
+            commandDirectory.lastPathComponent == "bin"
+            ? commandDirectory.deletingLastPathComponent()
+            : commandDirectory
+
+        return
+            installRoot
+            .appending(path: "share", directoryHint: .isDirectory)
+            .appending(path: "man", directoryHint: .isDirectory)
+            .appending(path: "man1", directoryHint: .isDirectory)
+            .appending(path: "luxel.1")
     }
 
     private func existingDestinationIsDirectory(

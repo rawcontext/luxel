@@ -5,13 +5,22 @@ import LuxelCore
 public struct LuxelCLI: ParsableCommand {
     public static let configuration = CommandConfiguration(
         commandName: "luxel",
-        abstract: "Control Luxel from the command line.",
+        abstract: "Control Luxel recording, editor, export, and transcript workflows.",
+        discussion: """
+      Luxel exposes recording, replay buffer, latest recording, editor opening, \
+      headless export, transcription, settings, and callback handling through this CLI.
+      """,
+        version: LuxelCLIMetadata.versionSummary,
         subcommands: [
             LuxelRecordCommand.self,
             LuxelStopCommand.self,
             LuxelToggleCommand.self,
             LuxelClipCommand.self,
             LuxelLatestCommand.self,
+            LuxelEditorCommand.self,
+            LuxelConvertCommand.self,
+            LuxelExportCommand.self,
+            LuxelTranscribeCommand.self,
             LuxelPreferencesCommand.self
         ]
     )
@@ -51,8 +60,14 @@ public enum LuxelCLIError: LocalizedError, Equatable {
     case invalidCallbackTimeout
     case callbackTimedOut
     case invalidCallbackRequest
+    case printURLResultConflict
     case openFailed(Int32)
     case remoteFailure(String)
+    case fileNotFound(String)
+    case outputFileExists(String)
+    case invalidHeadlessExportOptions(String)
+    case speechRecognitionDenied
+    case transcriptUnavailable
 
     public var errorDescription: String? {
         switch self {
@@ -78,10 +93,22 @@ public enum LuxelCLIError: LocalizedError, Equatable {
             "Timed out waiting for Luxel to call back."
         case .invalidCallbackRequest:
             "Received an invalid callback request."
+        case .printURLResultConflict:
+            "--print-url cannot be combined with --wait or --json."
         case .openFailed(let status):
             "Failed to open Luxel URL (exit status \(status))."
         case .remoteFailure(let message):
             message
+        case .fileNotFound(let path):
+            "File not found: \(path)."
+        case .outputFileExists(let path):
+            "Output file already exists. Pass --overwrite to replace it: \(path)."
+        case .invalidHeadlessExportOptions(let message):
+            message
+        case .speechRecognitionDenied:
+            "Speech recognition authorization is required for transcription."
+        case .transcriptUnavailable:
+            "Transcription produced no text."
         }
     }
 }
@@ -100,7 +127,11 @@ public struct LuxelRecordCommand: ParsableCommand {
     @Option(help: "Seconds to wait before capture starts, from 0 to 60.")
     public var countdown: Int?
 
-    @Option(name: .customLong("save-to"), help: "Directory to save the recording to.")
+    @Option(
+        name: .customLong("save-to"),
+        help: "Directory to save the recording to.",
+        completion: .directory
+    )
     public var saveTo: String?
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
@@ -170,7 +201,11 @@ public struct LuxelToggleCommand: ParsableCommand {
     @Option(help: "Seconds to wait before capture starts, from 0 to 60.")
     public var countdown: Int?
 
-    @Option(name: .customLong("save-to"), help: "Directory to save a started recording to.")
+    @Option(
+        name: .customLong("save-to"),
+        help: "Directory to save a started recording to.",
+        completion: .directory
+    )
     public var saveTo: String?
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
@@ -293,7 +328,10 @@ public struct LuxelLatestCommand: ParsableCommand {
 }
 
 public struct LuxelCaptureTargetArguments: ParsableArguments {
-    @Option(help: "Display target. Use 'main' or a display identifier.")
+    @Option(
+        help: "Display target. Use 'main' or a display identifier.",
+        completion: .list(["main"])
+    )
     public var display: String?
 
     @Flag(

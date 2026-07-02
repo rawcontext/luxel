@@ -36,7 +36,10 @@ extension SettingsTests {
         #expect(settings.cameraPreviewPlacements.isEmpty)
         #expect(settings.cameraRecordingOptions == nil)
         #expect(settings.replayBufferConfiguration == nil)
+        #expect(
+            settings.replayBufferPreferredBufferLength == ReplayBufferConfiguration.defaults.bufferLength)
         #expect(!settings.replayBufferResumeOnLaunch)
+        #expect(!settings.replayBufferConsentAccepted)
         #expect(settings.replayClipDestination == .editor)
         #expect(settings.notchSurfaceSettings == .defaults)
         #expect(settings.notchSurfacePreferences == .defaults)
@@ -111,6 +114,44 @@ extension SettingsTests {
         #expect(
             try JSONDecoder().decode(AppSettings.self, from: enabledData)
                 .transcriptTurnSegmentationEnabled)
+    }
+
+    @Test("replay buffer preferred length decodes without enabling buffer")
+    func replayBufferPreferredLengthDecodesWithoutEnablingBuffer() throws {
+        let data = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "replayBufferPreferredBufferLength": 300
+      }
+      """.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(settings.replayBufferConfiguration == nil)
+        #expect(settings.replayBufferPreferredBufferLength == 300)
+    }
+
+    @Test("replay buffer preferred length falls back to configured buffer length")
+    func replayBufferPreferredLengthFallsBackToConfiguredBufferLength() throws {
+        let data = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "replayBufferConfiguration": {
+              "bufferLength": 120,
+              "source": { "displayWithCursor": {} },
+              "frameRate": { "framesPerSecond": 30 },
+              "includeSystemAudio": false,
+              "quality": "balanced"
+          }
+      }
+      """.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(settings.replayBufferConfiguration?.bufferLength == 120)
+        #expect(settings.replayBufferPreferredBufferLength == 120)
     }
 
     @Test("decoding settings removes retired built-in cropper size presets")

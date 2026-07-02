@@ -37,6 +37,35 @@ extension RecordingLifecycleServiceTests {
         #expect(store.activeRecording == nil)
     }
 
+    @Test("recording pauses and resumes replay buffer")
+    func recordingPausesAndResumesReplayBuffer() async throws {
+        let store = InMemoryRecordingHistoryStore()
+        let recorder = SpyCaptureRecorder()
+        let replayEngine = SpyRecordingLifecycleReplayEngine()
+        let replayBufferService = ReplayBufferService(engine: replayEngine)
+        let replayConfiguration = try ReplayBufferConfiguration(
+            bufferLength: 60,
+            source: .displayWithCursor,
+            frameRate: FrameRate(30)
+        )
+        try await replayBufferService.arm(configuration: replayConfiguration)
+        let service = makeService(
+            store: store,
+            recorder: recorder,
+            replayBufferService: replayBufferService
+        )
+
+        _ = try await service.startRecording(try makeRequest())
+        _ = try await service.stopRecording()
+
+        #expect(
+            replayEngine.commands() == [
+                .arm(replayConfiguration),
+                .pause(.recordingActive),
+                .resume
+            ])
+    }
+
     @Test("start waits for countdown before active recording snapshot")
     func startWaitsForCountdownBeforeActiveRecordingSnapshot() async throws {
         let store = InMemoryRecordingHistoryStore()
@@ -504,7 +533,8 @@ extension RecordingLifecycleServiceTests {
             date: Date(timeIntervalSince1970: 1_595_348_846)),
         autoStopScheduler: any RecordingAutoStopScheduler = ManualAutoStopScheduler(),
         countdownSleeper: any RecordingCountdownSleeper = SpyCountdownSleeper(),
-        userNotifier: (any UserNotifier)? = nil
+        userNotifier: (any UserNotifier)? = nil,
+        replayBufferService: ReplayBufferService? = nil
     ) -> RecordingLifecycleService {
         RecordingLifecycleService(
             recorder: recorder,
@@ -512,7 +542,8 @@ extension RecordingLifecycleServiceTests {
             dateProvider: dateProvider,
             autoStopScheduler: autoStopScheduler,
             countdownSleeper: countdownSleeper,
-            userNotifier: userNotifier
+            userNotifier: userNotifier,
+            replayBufferService: replayBufferService
         )
     }
 
@@ -613,6 +644,58 @@ private enum StubCaptureRecorderError: Error, Equatable {
     case pauseFailed
     case resumeFailed
     case stopFailed
+}
+
+private enum SpyRecordingLifecycleReplayCommand: Equatable {
+    case arm(ReplayBufferConfiguration)
+    case pause(ReplayBufferPauseReason)
+    case resume
+    case disarm
+    case clip(TimeInterval)
+}
+
+private final class SpyRecordingLifecycleReplayEngine: ReplayBufferEngine, @unchecked Sendable {
+    private let lock = NSLock()
+    private var recordedCommands: [SpyRecordingLifecycleReplayCommand] = []
+
+    var state: AsyncStream<ReplayBufferState> {
+        AsyncStream { continuation in
+            continuation.finish()
+        }
+    }
+
+    func arm(configuration: ReplayBufferConfiguration) async throws {
+        append(.arm(configuration))
+    }
+
+    func pause(reason: ReplayBufferPauseReason) async throws {
+        append(.pause(reason))
+    }
+
+    func resume() async throws {
+        append(.resume)
+    }
+
+    func disarm() async throws {
+        append(.disarm)
+    }
+
+    func clip(lastSeconds: TimeInterval) async throws -> URL {
+        append(.clip(lastSeconds))
+        return URL(fileURLWithPath: "/tmp/replay.mp4")
+    }
+
+    func commands() -> [SpyRecordingLifecycleReplayCommand] {
+        lock.withLock {
+            recordedCommands
+        }
+    }
+
+    private func append(_ command: SpyRecordingLifecycleReplayCommand) {
+        lock.withLock {
+            recordedCommands.append(command)
+        }
+    }
 }
 
 private final class SpyCountdownSleeper: RecordingCountdownSleeper, @unchecked Sendable {

@@ -33,7 +33,9 @@ struct LuxelMenu: View {
                 LuxelCaptureTargetPicker(model: model)
                 captureActionSelector
                 LuxelRecordingStatusMessages(model: model)
-                LuxelReplayBufferControls(model: model)
+                LuxelReplayBufferControls(model: model) { fileURL in
+                    openRecording(fileURL)
+                }
                 latestRecordingCard
                 footerControls
             }
