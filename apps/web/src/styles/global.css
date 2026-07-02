@@ -805,9 +805,10 @@
     grid-template-columns: minmax(0, 0.72fr) minmax(18rem, 0.64fr);
     gap: clamp(1.8rem, 5vw, 5rem);
     align-items: start;
-    width: min(calc(100% - 2.5rem), 96rem);
-    margin: clamp(3.5rem, 8vw, 7rem) auto 0;
-    padding: clamp(2rem, 5vw, 4rem) 0;
+    width: 100%;
+    margin-block-start: clamp(3.5rem, 8vw, 7rem);
+    padding-block: clamp(2rem, 5vw, 4rem);
+    padding-inline: max(1.25rem, calc((100% - 96rem) / 2));
     border-block: 1px solid rgb(255 255 255 / 0.14);
     background:
       linear-gradient(90deg, rgb(22 184 199 / 0.12), transparent 42%),
