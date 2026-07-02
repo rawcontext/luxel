@@ -23,6 +23,8 @@ the bundled executable inside the app is
 Headless exports use Luxel's
 .Cm ExportRequest
 model and the same native exporter stack as the app.
+Interactive terminal progress is written to standard error, leaving standard
+output available for file paths and JSON.
 AV1 is intentionally not exposed until Luxel ships a registered native AV1
 adapter.
 .Sh COMMANDS
@@ -147,6 +149,8 @@ or
 Replace an existing output file.
 .It Fl -json
 Print a JSON result instead of the output path.
+.It Fl -quiet
+Suppress terminal progress output.
 .El
 .Sh TRANSCRIPT OPTIONS
 .Bl -tag -width Ds

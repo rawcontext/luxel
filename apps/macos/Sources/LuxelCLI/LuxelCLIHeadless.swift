@@ -84,6 +84,9 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
     @Flag(help: "Print a JSON result instead of the output path.")
     public var json = false
 
+    @Flag(help: "Suppress terminal progress output.")
+    public var quiet = false
+
     public init() {}
 
     public func exportRequest(for source: SourceMedia) throws -> ExportRequest {
@@ -203,6 +206,9 @@ public struct LuxelExportCommand: ParsableCommand, Sendable {
 
     @Flag(help: "Print a JSON result instead of the output path.")
     public var json = false
+
+    @Flag(help: "Suppress terminal progress output.")
+    public var quiet = false
 
     public init() {}
 
@@ -410,11 +416,11 @@ public struct LuxelCropRectArgument: ExpressibleByArgument, Equatable, Sendable 
             String($0).trimmingCharacters(in: .whitespaces)
         }
         guard components.count == 4,
-              let x = Int(components[0]),
-              let y = Int(components[1]),
+              let originX = Int(components[0]),
+              let originY = Int(components[1]),
               let width = Int(components[2]),
               let height = Int(components[3]),
-              let rect = try? CaptureRect(x: x, y: y, width: width, height: height)
+              let rect = try? CaptureRect(x: originX, y: originY, width: width, height: height)
         else {
             return nil
         }
@@ -521,7 +527,11 @@ private struct LuxelHeadlessExportRunner: Sendable {
 
         let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: command.input.url)
         let request = try command.exportRequest(for: source)
-        let result = try await export(request, to: command.output.url)
+        let result = try await export(
+            request,
+            to: command.output.url,
+            showProgress: !command.quiet
+        )
         try printExportResult(result, json: command.json)
     }
 
@@ -531,20 +541,39 @@ private struct LuxelHeadlessExportRunner: Sendable {
 
         let requestData = try Data(contentsOf: command.request.url)
         let request = try JSONDecoder().decode(ExportRequest.self, from: requestData)
-        let result = try await export(request, to: command.output.url)
+        let result = try await export(
+            request,
+            to: command.output.url,
+            showProgress: !command.quiet
+        )
         try printExportResult(result, json: command.json)
     }
 
     private func export(
         _ request: ExportRequest,
-        to outputURL: URL
+        to outputURL: URL,
+        showProgress: Bool
     ) async throws -> LuxelHeadlessExportResult {
         let registry = try CodecAdapterRegistry(registrations: [try WebMCodecAdapter.registration()])
         let exporter = registry.mediaExporter(nativeExporter: NativeMediaExporter())
-        let exported = try await exporter.export(request, to: outputURL)
-        return LuxelHeadlessExportResult(
-            exportedMedia: exported.withFileSizeBytes(fileSizeBytes(at: outputURL))
+        let progress = LuxelTerminalProgressReporter(
+            label: "Exporting \(request.format.prettyName)",
+            isEnabled: showProgress && LuxelTerminalProgressReporter.defaultIsEnabled
         )
+
+        progress.start()
+        do {
+            let exported = try await exporter.export(request, to: outputURL) { value in
+                progress.update(value)
+            }
+            progress.finish()
+            return LuxelHeadlessExportResult(
+                exportedMedia: exported.withFileSizeBytes(fileSizeBytes(at: outputURL))
+            )
+        } catch {
+            progress.fail()
+            throw error
+        }
     }
 
     private func printExportResult(_ result: LuxelHeadlessExportResult, json: Bool) throws {

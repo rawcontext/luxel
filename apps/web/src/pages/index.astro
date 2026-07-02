@@ -3,20 +3,85 @@ import "../styles/global.css";
 
 const featureColumns = [
   {
-    title: "Menu Bar Capture",
-    text: "Record displays, windows, selected areas, and audio from a native menu bar surface."
+    title: "Capture",
+    text: "Record displays, windows, selected areas, audio, and camera overlays from a native menu bar surface."
   },
   {
-    title: "Quick Exports",
-    text: "Apply reusable presets after capture and send results to Finder, Clipboard, or a notification."
+    title: "Replay Buffer",
+    text: "Keep recent screen history ready, then export the last 30 seconds, 1 minute, 2 minutes, or 5 minutes."
   },
   {
-    title: "Editor Exports",
-    text: "Trim, resize, retime, and export recordings as MP4, HEVC MP4, ProRes MOV, GIF, APNG, or WebM."
+    title: "CLI and Automation",
+    text: "Run captures, clips, exports, transcripts, callbacks, and settings workflows from scripts."
   }
 ];
 
 const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM"];
+
+const primaryFeatures = [
+  {
+    id: "capture",
+    eyebrow: "Record",
+    title: "Menu bar capture",
+    text: "Start display, window, area, and audio-only recordings from the menu bar. Luxel keeps target selection, audio toggles, permission status, recent files, and quick recording controls close without opening a full app window.",
+    image: {
+      src: "/screenshots/luxel-menu-capture.png",
+      alt: "Luxel menu bar capture panel with source, recording, audio, and replay buffer controls."
+    },
+    points: ["Display, window, and selected-area targets", "System audio, microphone, and audio-only capture", "Countdown, auto-stop, pause, resume, and recent recording actions"]
+  },
+  {
+    id: "replay-buffer",
+    eyebrow: "Recover",
+    title: "Replay buffer",
+    text: "Turn on the replay buffer when you need to capture what just happened. Luxel records a rolling ScreenCaptureKit buffer and exports a replay clip without interrupting the buffer.",
+    image: {
+      src: "/screenshots/luxel-settings-replay-buffer.png",
+      alt: "Luxel Replay Buffer settings with length, source, frame rate, audio, and clip destination controls."
+    },
+    points: ["30 second, 1 minute, 2 minute, and 5 minute buffers", "24 or 30 FPS with optional system audio", "Clip to the editor or a configured quick export destination"]
+  },
+  {
+    id: "editor-export",
+    eyebrow: "Polish",
+    title: "Editor and export",
+    text: "Open recordings in the editor to trim, resize, retime, crop-to-fill, mute, copy frames, save originals, and export through native macOS media paths plus Luxel's native WebM adapter.",
+    image: {
+      src: "/screenshots/luxel-editor-loaded.png",
+      alt: "Luxel editor window with a loaded desktop clip and export format, timeline, and output panels open."
+    },
+    points: ["MP4, HEVC MP4, ProRes 422, ProRes 4444, GIF, APNG, and WebM", "Compact, Balanced, High, and format-aware quality controls", "Batch exports, Finder actions, copy path, copy file, and Share"]
+  },
+  {
+    id: "transcripts",
+    eyebrow: "Text",
+    title: "Local transcripts",
+    text: "Transcribe recordings locally with Apple Speech, preview transcript progress in the editor, and choose raw or Apple Intelligence turn segmentation for easier review.",
+    image: {
+      src: "/screenshots/luxel-settings-recording.png",
+      alt: "Luxel recording settings with capture, audio, and camera controls."
+    },
+    points: ["Plain text or JSON transcript output from the CLI", "Locale selection for command-line transcription", "Transcript caching and editor transcript workflows"]
+  },
+  {
+    id: "cli",
+    eyebrow: "Automate",
+    title: "Command line and URL control",
+    text: "Install the bundled luxel command from Settings and control Luxel from shell scripts, launchers, URL automation, or Shortcuts.",
+    image: {
+      src: "/screenshots/luxel-cli-convert-progress.png",
+      alt: "Luxel command line converting an MP4 file to WebM with a terminal progress bar."
+    },
+    points: ["record, stop, toggle, clip, latest, editor, convert, export, transcribe, preferences", "x-success and x-error callbacks with --wait, --json, and --print-url", "Headless trim, resize, speed, quality, crop, mute, and format conversion"]
+  },
+  {
+    id: "localization",
+    eyebrow: "Global",
+    title: "Native localization",
+    text: "Luxel now ships native macOS localization resources for the app interface and privacy permission prompts across 11 locales.",
+    points: ["English, German, Spanish, French, Italian, Japanese, Korean, Vietnamese", "Simplified Chinese, Portuguese (Brazil), and Portuguese (Portugal)", "Localized permission copy for camera, microphone, screen capture, and speech recognition"]
+  }
+];
 ---
 
 <!doctype html>
@@ -26,7 +91,7 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM"];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Luxel is a native macOS menu bar recorder for screen capture, audio, camera previews, quick exports, and polished exports."
+      content="Luxel is a native macOS menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports."
     />
     <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
     <title>Luxel - Native capture for Mac</title>
@@ -47,8 +112,9 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM"];
           </a>
           <nav class="nav-links" aria-label="Page sections">
             <a href="#features">Features</a>
+            <a href="#replay-buffer">Replay Buffer</a>
+            <a href="#cli">CLI</a>
             <a href="#notch">Notch</a>
-            <a href="#export">Export</a>
             <a href="/docs">Docs</a>
           </nav>
           <a class="topbar-cta" href="/docs">Read docs</a>
@@ -60,7 +126,8 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM"];
             <h1 id="hero-title">Luxel</h1>
             <p class="hero-copy__lead">Native capture for Mac.</p>
             <p class="hero-copy__body">
-              Record screens, windows, selected areas, and audio, then export without ceremony.
+              Record screens, clip the last few minutes, transcribe locally, automate from the CLI,
+              and export without ceremony.
             </p>
             <div class="hero-actions" aria-label="Primary actions">
               <a class="button button--primary" href="/docs">Read docs</a>
@@ -71,81 +138,21 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM"];
             </div>
           </div>
 
-          <div class="hero-product" aria-label="Luxel recording interface preview">
-            <div class="display-lid" aria-hidden="true">
-              <span class="camera-dot"></span>
-            </div>
-            <div class="recording-pill" aria-label="Recording in progress, 12 seconds">
-              <span class="record-dot" aria-hidden="true"></span>
-              <span class="waveform" aria-hidden="true">
-                {Array.from({ length: 17 }).map((_, index) => (
-                  <span style={`--level: ${[22, 44, 64, 36, 76, 48, 28, 58, 84, 52, 34, 68, 42, 74, 50, 30, 58][index]}`}></span>
-                ))}
-              </span>
-              <span class="timer">00:12</span>
-              <span class="stop-square" aria-hidden="true"></span>
-            </div>
-
-            <div class="glass-stem" aria-hidden="true"></div>
-
-            <div class="capture-panel">
-              <div class="target-row">
-                <span>Target</span>
-                <button class="target-select" type="button">
-                  <span class="display-icon" aria-hidden="true"></span>
-                  Display 1
-                  <span class="chevron" aria-hidden="true"></span>
-                </button>
-              </div>
-
-              <button class="record-button" type="button">
-                <span class="record-ring" aria-hidden="true"></span>
-                Record
-              </button>
-
-              <div class="mode-control" aria-label="Capture modes">
-                <button class="mode-control__item is-active" type="button">
-                  <span class="display-icon" aria-hidden="true"></span>
-                  Screen
-                </button>
-                <button class="mode-control__item" type="button">
-                  <span class="area-icon" aria-hidden="true"></span>
-                  Area
-                </button>
-                <button class="mode-control__item" type="button">
-                  <span class="audio-icon" aria-hidden="true"></span>
-                  Audio
-                </button>
-              </div>
-
-              <div class="permission-row" aria-label="Permission status">
-                <span class="permission-chip">
-                  <span class="display-icon" aria-hidden="true"></span>
-                  Screen
-                  <span class="status-dot" aria-hidden="true"></span>
-                </span>
-                <span class="permission-chip">
-                  <span class="mic-icon" aria-hidden="true"></span>
-                  Mic
-                  <span class="status-dot" aria-hidden="true"></span>
-                </span>
-                <button class="more-button" type="button" aria-label="More actions">•••</button>
-              </div>
-
-              <article class="recent-clip" aria-label="Most recent recording">
-                <div class="clip-thumb" aria-hidden="true">
-                  <span class="thumb-coast"></span>
-                  <span class="thumb-duration">0:23</span>
-                </div>
-                <div>
-                  <h2>Coastal Walkthrough</h2>
-                  <p>Today, 9:41 PM</p>
-                </div>
-                <button class="play-button" type="button" aria-label="Play recent recording">
-                  <span class="play-icon" aria-hidden="true"></span>
-                </button>
-              </article>
-            </div>
+          <div class="hero-product hero-product--real" aria-label="Actual Luxel app screenshots">
+            <img
+              class="hero-screenshot hero-screenshot--settings"
+              src="/screenshots/luxel-settings-replay-buffer.png"
+              alt="Actual Luxel Replay Buffer settings window."
+              width="1800"
+              height="1384"
+            />
+            <img
+              class="hero-screenshot hero-screenshot--menu"
+              src="/screenshots/luxel-menu-capture.png"
+              alt="Actual Luxel menu bar capture panel."
+              width="640"
+              height="420"
+            />
           </div>
         </div>
 
@@ -157,6 +164,38 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM"];
                 <h2>{feature.title}</h2>
                 <p>{feature.text}</p>
               </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section class="primary-features-section" id="primary-features" aria-labelledby="primary-features-title">
+        <div class="section-copy">
+          <p class="eyebrow">Primary features</p>
+          <h2 id="primary-features-title">Everything Luxel can do, in one native Mac workflow.</h2>
+          <p>
+            The app now covers capture, replay, export, transcripts, automation, and localization
+            without leaving native macOS frameworks.
+          </p>
+        </div>
+
+        <div class="primary-feature-grid">
+          {primaryFeatures.map((feature) => (
+            <article class="primary-feature-card" id={feature.id}>
+              <p class="primary-feature-card__eyebrow">{feature.eyebrow}</p>
+              <h3>{feature.title}</h3>
+              <p>{feature.text}</p>
+              {"image" in feature && (
+                <img
+                  class="primary-feature-card__media"
+                  src={feature.image.src}
+                  alt={feature.image.alt}
+                  loading="lazy"
+                />
+              )}
+              <ul>
+                {feature.points.map((point) => <li>{point}</li>)}
+              </ul>
             </article>
           ))}
         </div>

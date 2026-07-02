@@ -172,7 +172,8 @@ struct LuxelCLITests {
             "--speed", "2",
             "--mute",
             "--crop", "10,20,640,360",
-            "--quality", "high"
+            "--quality", "high",
+            "--quiet"
         ])
         let source = try SourceMedia(
             fileURL: URL(fileURLWithPath: "/tmp/ignored.mp4"),
@@ -194,6 +195,7 @@ struct LuxelCLITests {
         #expect(request.shouldCrop)
         #expect(request.cropRect == (try CaptureRect(x: 10, y: 20, width: 640, height: 360)))
         #expect(request.quality == .high)
+        #expect(command.quiet)
     }
 
     @Test("convert command validates ambiguous formats and dimensions")
@@ -242,6 +244,18 @@ struct LuxelCLITests {
         #expect(LuxelHeadlessExportFormat.allValueStrings.contains("prores422"))
         #expect(LuxelHeadlessExportFormat.allValueStrings.contains("flac"))
         #expect(!LuxelHeadlessExportFormat.allValueStrings.contains("av1"))
+    }
+
+    @Test("progress renderer builds a stable terminal bar")
+    func progressRendererBuildsStableTerminalBar() {
+        #expect(
+            LuxelProgressBarRenderer.line(label: "Exporting WebM", progress: 0.5, width: 10)
+                == "Exporting WebM [#####-----]  50%"
+        )
+        #expect(
+            LuxelProgressBarRenderer.line(label: "Exporting WebM", progress: 2, width: 10)
+                == "Exporting WebM [##########] 100%"
+        )
     }
 
     @Test("editor opener finds containing app bundle")

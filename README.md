@@ -294,6 +294,8 @@ Use `--wait` for a plain callback result, `--json` for structured callback outpu
 `luxel convert` uses the same `EditorExportDraft`/`ExportRequest` model as the app
 for common headless edits such as trim, resize, frame rate, quality, speed, mute, and crop.
 `luxel export` accepts a full `ExportRequest` JSON document for export fields that do not have dedicated CLI flags.
+Headless export commands show an interactive progress bar on stderr when run in a terminal.
+Use `--quiet` to suppress progress output.
 AV1 remains intentionally unavailable in the CLI until Luxel ships a registered native AV1 adapter.
 `luxel transcribe` uses local Apple Speech transcription and requires the same system
 speech availability and authorization as the app.
