@@ -81,13 +81,23 @@ This file is generated during the Luxel website build from the built Astro docum
 ${docsMarkdown}
 `);
 
+const sitemapUrls = [
+  { path: "/", changefreq: "weekly", priority: "1.0" },
+  { path: "/docs", changefreq: "weekly", priority: "0.8" },
+  { path: "/llms.txt", changefreq: "weekly", priority: "0.4" },
+  { path: "/llms-full.txt", changefreq: "weekly", priority: "0.4" }
+];
+
+const sitemap = buildSitemap(sitemapUrls, siteUrl);
+
 await mkdir(distDir, { recursive: true });
 await Promise.all([
   writeFile(path.join(distDir, "llms.txt"), `${llmsIndex}\n`, "utf8"),
-  writeFile(path.join(distDir, "llms-full.txt"), `${llmsFull}\n`, "utf8")
+  writeFile(path.join(distDir, "llms-full.txt"), `${llmsFull}\n`, "utf8"),
+  writeFile(path.join(distDir, "sitemap.xml"), `${sitemap}\n`, "utf8")
 ]);
 
-console.log("Generated dist/llms.txt and dist/llms-full.txt");
+console.log("Generated dist/llms.txt, dist/llms-full.txt, and dist/sitemap.xml");
 
 function normalizeMarkdown(value) {
   return value
@@ -103,4 +113,30 @@ function escapeHtml(value) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function buildSitemap(urls, baseUrl) {
+  const origin = baseUrl.replace(/\/+$/, "");
+
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...urls.map(({ path: urlPath, changefreq, priority }) => [
+      "  <url>",
+      `    <loc>${escapeXml(`${origin}${urlPath}`)}</loc>`,
+      `    <changefreq>${changefreq}</changefreq>`,
+      `    <priority>${priority}</priority>`,
+      "  </url>"
+    ].join("\n")),
+    "</urlset>"
+  ].join("\n");
+}
+
+function escapeXml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
 }
