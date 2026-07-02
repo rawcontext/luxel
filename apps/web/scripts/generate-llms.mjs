@@ -19,7 +19,7 @@ const primaryOutputDir = outputDirs[0] ?? distDir;
 const docsHtmlPath = path.join(primaryOutputDir, "docs", "index.html");
 
 const projectSummary =
-  "Luxel is a native macOS menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports.";
+  "Luxel is a Mac menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports.";
 
 const html = await readFile(docsHtmlPath, "utf8");
 const $ = cheerio.load(html);

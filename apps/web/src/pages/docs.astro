@@ -91,7 +91,7 @@ const settingsPanes = [
   ["Output", "Recordings folder, loop exports, transcript turn segmentation, and whether Luxel asks before discarding a recording."],
   ["Presets", "Quick export presets, cropper size presets, loupe behavior, dimming, and last-selection restoration."],
   ["Shortcuts", "Global shortcut enablement, shortcut search, custom shortcut editing, reset/clear controls, and conflict warnings."],
-  ["Notch", "Built-in notch surface, idle quick actions, recording waveform, auto-collapse timing, and floating HUD fallback."],
+  ["Notch", "Built-in notch controls, idle quick actions, recording waveform, auto-collapse timing, and floating HUD fallback."],
   ["Replay Buffer", "Enablement, buffer length, display-with-cursor source, frame rate, system audio, resume on launch, and clip destination."],
   ["Command Line", "Install or repair the bundled luxel command, choose an install location, choose a shell, and copy a PATH setup command."],
   ["System", "Menu bar timer, notification reminders, launch at login, update settings, and acknowledgements."]
@@ -99,12 +99,12 @@ const settingsPanes = [
 
 const exportFormatRows = [
   ["MP4", "H.264 video", "Most-compatible video export. Supports Compact, Balanced, and High quality."],
-  ["HEVC MP4", "HEVC video", "Smaller Apple-native video export. Supports Compact, Balanced, and High quality."],
+  ["HEVC MP4", "HEVC video", "Smaller video export. Supports Compact, Balanced, and High quality."],
   ["ProRes 422 MOV", "Apple ProRes 422", "Editing and mastering export with fixed High quality and LPCM audio."],
   ["ProRes 4444 MOV", "Apple ProRes 4444", "High-fidelity ProRes export with fixed High quality and LPCM audio."],
   ["GIF", "Animated image", "Drops audio. Supports loop and animation-focused export controls."],
   ["APNG", "Animated PNG", "Lossless animated image export. Drops audio."],
-  ["WebM", "VP9 WebM", "Native Luxel WebM adapter. Supports Compact, Balanced, and High quality."],
+  ["WebM", "VP9 WebM", "WebM export. Supports Compact, Balanced, and High quality."],
   ["M4A", "AAC audio", "Audio-only editor export and CLI conversion format."],
   ["ALAC M4A", "Apple Lossless audio", "Lossless audio-only editor export and CLI conversion format."],
   ["WAV", "PCM audio", "Uncompressed audio-only editor export and CLI conversion format."],
@@ -120,8 +120,8 @@ const cliCommands = [
   ["luxel clip", "Clip the replay buffer."],
   ["luxel latest", "Open the latest recording, or reveal it in Finder."],
   ["luxel editor <file>", "Open a media file in Luxel's editor."],
-  ["luxel convert <input> <output>", "Convert or edit media headlessly through Luxel's exporter."],
-  ["luxel export <request-json> <output>", "Export from a full Luxel ExportRequest JSON file."],
+  ["luxel convert <input> <output>", "Convert or edit media from the command line."],
+  ["luxel export <request-json> <output>", "Export from a Luxel export request JSON file."],
   ["luxel transcribe <file>", "Transcribe a media or audio file locally."],
   ["luxel preferences", "Open Luxel settings."]
 ];
@@ -140,7 +140,7 @@ const cliOptionGroups = [
     ]
   },
   {
-    title: "Headless export options",
+    title: "Command-line export options",
     rows: [
       ["--format <format>", "Use gif, hevc, mp4, webm, apng, prores422, prores4444, m4a, alac, wav, caf, or flac."],
       ["--width <pixels> --height <pixels>", "Resize the export. Use both options together."],
@@ -162,7 +162,7 @@ const cliOptionGroups = [
     rows: [
       ["--locale <identifier>", "Transcribe with a specific locale. Defaults to the current locale."],
       ["--output <file>", "Write transcript output to a file instead of stdout."],
-      ["--semantic-turns", "Use Apple Intelligence turn segmentation."],
+      ["--semantic-turns", "Use automatic turn grouping."],
       ["--json", "Print full transcript JSON instead of plain text."],
       ["--overwrite", "Replace the transcript output file if it already exists."]
     ]
@@ -203,11 +203,11 @@ const troubleshooting = [
   { problem: "Quick Record is disabled", answer: "Create or select a quick export preset, then choose a target or enable Remember Last Capture so Luxel has a previous capture to repeat." },
   { problem: "Copy Frame or Save Frame As is disabled", answer: "Pause preview playback first. Frame grabs use the current paused frame and save as PNG." },
   { problem: "Shortcut does not fire", answer: "Make sure Keyboard Shortcuts is enabled, remove duplicate shortcuts, and avoid known macOS capture shortcuts, including:", shortcuts: systemShortcutConflicts },
-  { problem: "The notch surface is not visible", answer: "Luxel uses the built-in notch when a notched display is detected and the Notch setting is enabled. Otherwise it falls back to the floating HUD if that fallback is enabled, or to menu-bar-only status." },
+  { problem: "The notch controls are not visible", answer: "Luxel uses the built-in notch when a notched display is detected and the Notch setting is enabled. Otherwise it falls back to the floating HUD if that fallback is enabled, or to menu-bar-only status." },
   { problem: "Replay buffer cannot start", answer: "Enable Replay Buffer, grant Screen & System Audio Recording permission, and make sure a normal recording is not already active. Luxel pauses the buffer while regular recordings run." },
   { problem: "Replay buffer clips are shorter than requested", answer: "The buffer can only export captured history that already exists. Wait until the menu reports that replay buffering is active before clipping the full selected duration." },
   { problem: "The luxel command is not found", answer: "Open Settings > Command Line, install or repair the command, then copy the PATH command for your shell if the install directory is not already on PATH." },
-  { problem: "CLI transcription fails", answer: "Confirm speech recognition is available and authorized, then retry. The transcribe command uses local Apple Speech, the selected locale, and the same system speech availability as the app." }
+  { problem: "CLI transcription fails", answer: "Confirm speech recognition is available and authorized, then retry. The transcribe command uses local transcription, the selected locale, and the same speech recognition availability as the app." }
 ];
 ---
 
@@ -218,7 +218,7 @@ const troubleshooting = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Luxel user documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, CLI, automation, localization, settings, and troubleshooting."
+      content="Luxel user documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, command-line control, automation, localization, settings, and troubleshooting."
     />
     <meta name="apple-itunes-app" content="app-id=6780682473" />
     <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
@@ -259,7 +259,7 @@ const troubleshooting = [
           <p class="docs-eyebrow">Luxel Docs</p>
           <h1 id="overview-title">Use Luxel from first launch to final export.</h1>
           <p class="docs-lead">
-            Luxel is a native macOS menu bar recorder for screen capture, area capture,
+            Luxel is a Mac menu bar recorder for screen capture, area capture,
             replay buffer clips, audio-only recordings, camera preview overlays,
             local transcripts, command-line automation, quick exports, and editor-based exports.
           </p>
@@ -278,7 +278,7 @@ const troubleshooting = [
               <h2>Capture from the app, buffer, or scripts</h2>
               <p>
                 Use the menu bar for interactive recording, global shortcuts for repeated
-                actions, Replay Buffer for the moments that already happened, and the
+                actions, Replay Buffer for the moments that already happened, and the{" "}
                 <code>luxel</code> command for scripted captures.
               </p>
             </article>
@@ -313,7 +313,7 @@ const troubleshooting = [
                 <li>Choose a target from Target, or use Area to draw a custom region.</li>
                 <li>Enable System Audio, Microphone, or Camera only if the recording needs them.</li>
                 <li>Click Record Source, Record Area, or Record Audio.</li>
-                <li>Stop recording from the menu bar status controls, active recording surface, or shortcut.</li>
+                <li>Stop recording from the menu bar status controls, active recording controls, or shortcut.</li>
               </ol>
             </article>
           </div>
@@ -362,7 +362,7 @@ const troubleshooting = [
               <h3>Speech Recognition</h3>
               <p>
                 Required when generating local transcripts in the editor or from the
-                command line. Luxel uses Apple Speech locally for transcription.
+                command line. Luxel uses on-device speech recognition for transcription.
               </p>
               <p class="expected">Luxel asks for this only when transcription starts.</p>
             </article>
@@ -433,7 +433,7 @@ const troubleshooting = [
             <article>
               <h3>Local transcripts</h3>
               <p>
-                Luxel transcribes audio with local Apple Speech support. Transcripts can
+                Luxel transcribes audio on your Mac. Transcripts can
                 stay in the editor workflow or be written from the CLI as text or JSON.
               </p>
             </article>
@@ -669,7 +669,7 @@ const troubleshooting = [
                 <tbody>
                   <tr>
                     <td>MP4 (H.264)</td>
-                    <td>Most-compatible Apple-native video export with Compact, Balanced, or High quality.</td>
+                    <td>Most-compatible video export with Compact, Balanced, or High quality.</td>
                   </tr>
                   <tr>
                     <td>MP4 (HEVC)</td>
@@ -677,11 +677,11 @@ const troubleshooting = [
                   </tr>
                   <tr>
                     <td>MOV (ProRes 422)</td>
-                    <td>Apple-native editing/master export with fixed High quality and LPCM audio.</td>
+                    <td>Editing and mastering export with fixed High quality and LPCM audio.</td>
                   </tr>
                   <tr>
                     <td>MOV (ProRes 4444)</td>
-                    <td>Apple-native high-fidelity ProRes export with fixed High quality and LPCM audio.</td>
+                    <td>High-fidelity ProRes export with fixed High quality and LPCM audio.</td>
                   </tr>
                   <tr>
                     <td>GIF</td>
@@ -693,7 +693,7 @@ const troubleshooting = [
                   </tr>
                   <tr>
                     <td>WebM (VP9)</td>
-                    <td>Registered external codec export with Compact, Balanced, or High quality.</td>
+                    <td>WebM export with Compact, Balanced, or High quality.</td>
                   </tr>
                 </tbody>
               </table>
@@ -734,7 +734,7 @@ const troubleshooting = [
             <p class="docs-eyebrow">Guide</p>
             <h2 id="transcripts-title">Create local transcripts</h2>
             <p>
-              Luxel uses local Apple Speech transcription for recordings with audio. Use
+              Luxel uses local transcription for recordings with audio. Use
               the editor for review workflows or the CLI when you need transcript files
               in scripts.
             </p>
@@ -747,7 +747,7 @@ const troubleshooting = [
                 <li>Open a recording with audio in the editor.</li>
                 <li>Use the transcript preview to generate or review transcript text.</li>
                 <li>Search transcript text or select transcript spans to jump playback.</li>
-                <li>Leave Segment Transcript Turns enabled for Apple Intelligence turn grouping.</li>
+                <li>Leave Segment Transcript Turns enabled for automatic turn grouping.</li>
                 <li>Turn it off in Settings > Output for faster raw transcripts on long recordings.</li>
               </ol>
             </article>
@@ -911,8 +911,8 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
               <h3>Install or repair</h3>
               <p>
                 Open Settings > Command Line to install the bundled command. Luxel creates
-                a symbolic link named <code>luxel</code>, defaulting to
-                <code>~/.local/bin/luxel</code>, and links the bundled manual page under
+                a symbolic link named <code>luxel</code>, defaulting to{" "}
+                <code>~/.local/bin/luxel</code>, and links the bundled manual page under{" "}
                 <code>share/man/man1/luxel.1</code> relative to the install root.
               </p>
               <p>
@@ -965,7 +965,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 alt="Luxel command line converting an MP4 file to WebM with an export progress bar."
                 loading="lazy"
               />
-              <figcaption>Headless WebM conversion with terminal progress.</figcaption>
+              <figcaption>Command-line WebM conversion with terminal progress.</figcaption>
             </figure>
             <figure>
               <img
@@ -973,7 +973,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 alt="Luxel command-line help output listing record, stop, toggle, clip, latest, editor, convert, export, transcribe, and preferences commands."
                 loading="lazy"
               />
-              <figcaption>The top-level <code>luxel --help</code> command surface.</figcaption>
+              <figcaption>The top-level <code>luxel --help</code> screen.</figcaption>
             </figure>
           </div>
 
@@ -1007,8 +1007,8 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 <li><code>latest --reveal</code> reveals the latest recording in Finder instead of opening it.</li>
                 <li><code>preferences</code> opens Luxel settings. <code>--pane</code> accepts <code>general</code>, <code>presets</code>, <code>shortcuts</code>, <code>updates</code>, or <code>about</code> as a URL hint; current builds open Settings normally.</li>
                 <li><code>convert</code> infers format from the output extension, but <code>.mov</code> requires <code>--format prores422</code> or <code>--format prores4444</code>, and <code>.m4a</code> requires <code>--format m4a</code> or <code>--format alac</code>.</li>
-                <li><code>export</code> accepts a full Luxel <code>ExportRequest</code> JSON document for fields without dedicated flags.</li>
-                <li>AV1 is not exposed in the CLI until Luxel ships a registered native AV1 adapter.</li>
+                <li><code>export</code> accepts a Luxel export request JSON document for fields without dedicated flags.</li>
+                <li>AV1 export is not available yet.</li>
               </ul>
             </article>
           </div>
@@ -1040,7 +1040,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
           <div class="callout">
             <h3>Callback output</h3>
             <p>
-              Successful file results append <code>filePath</code>. Recording starts append
+              Successful file results append <code>filePath</code>. Recording starts append{" "}
               <code>recordingID</code>. Failures append <code>errorMessage</code>.
               Use <code>--wait</code> for a plain result line, <code>--json</code> for
               structured callback output, and <code>--timeout</code> to control how long
@@ -1056,7 +1056,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
             <p>
               The editor exposes video and animation formats for screen recordings, plus
               audio-only formats when the source is audio. The CLI exposes the same
-              headless conversion surface for scripts.
+              conversion options for scripts.
             </p>
           </div>
 
@@ -1083,7 +1083,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
             <h3>Format rules</h3>
             <p>
               GIF and APNG drop audio. MP4, MOV, and WebM exports use even pixel dimensions.
-              ProRes exports use MOV output. WebM uses Luxel's native VP9 adapter.
+              ProRes exports use MOV output. WebM exports use VP9.
             </p>
           </div>
         </section>
@@ -1115,9 +1115,9 @@ luxel://latest?reveal=true</code></pre>
             <article>
               <h3>x-callback URLs</h3>
               <p>
-                Automation commands accept <code>x-success</code> and <code>x-error</code>
+                Automation commands accept <code>x-success</code> and <code>x-error</code>{" "}
                 callback URLs. Successful file-producing commands append <code>filePath</code>,
-                recording starts append <code>recordingID</code>, and failures append
+                recording starts append <code>recordingID</code>, and failures append{" "}
                 <code>errorMessage</code>.
               </p>
               <p class="tip">
@@ -1131,7 +1131,7 @@ luxel://latest?reveal=true</code></pre>
             <article>
               <h3>App Shortcuts</h3>
               <p>
-                Luxel exposes App Intents for Start Recording, Stop Recording, Toggle
+                Luxel includes App Shortcuts for Start Recording, Stop Recording, Toggle
                 Recording, Clip Replay Buffer, and Get Latest Recording. Start and Toggle
                 can accept target, preset, and countdown values; Clip Replay Buffer can
                 accept seconds; Get Latest Recording can reveal the file in Finder.
@@ -1191,7 +1191,7 @@ luxel://latest?reveal=true</code></pre>
             <article>
               <h3>Command Line</h3>
               <p>
-                Command Line settings install, repair, or move the bundled
+                Command Line settings install, repair, or move the bundled{" "}
                 <code>luxel</code> command and copy a PATH setup command for the selected shell.
               </p>
             </article>
@@ -1209,9 +1209,9 @@ luxel://latest?reveal=true</code></pre>
         <section class="docs-section" id="localization" aria-labelledby="localization-title">
           <div class="section-heading">
             <p class="docs-eyebrow">Reference</p>
-            <h2 id="localization-title">Native localization</h2>
+            <h2 id="localization-title">Languages</h2>
             <p>
-              Luxel ships native macOS localization resources for the app interface and
+              Luxel is available in multiple languages across the app interface and
               system permission descriptions.
             </p>
           </div>
@@ -1307,7 +1307,7 @@ luxel://latest?reveal=true</code></pre>
             <article>
               <h3>Can I control Luxel from scripts?</h3>
               <p>
-                Yes. Use the <code>luxel</code> command for shell workflows, or use the
+                Yes. Use the <code>luxel</code> command for shell workflows, or use the{" "}
                 <code>luxel://</code> URL scheme from apps that can open URLs.
               </p>
             </article>
@@ -1321,9 +1321,9 @@ luxel://latest?reveal=true</code></pre>
             <article>
               <h3>Can I use Luxel without opening the editor?</h3>
               <p>
-                Yes. Quick exports and replay clip destinations can finish directly, and
-                <code>luxel convert</code>, <code>luxel export</code>, and
-                <code>luxel transcribe</code> run headlessly from the command line.
+                Yes. Quick exports and replay clip destinations can finish directly, and{" "}
+                <code>luxel convert</code>, <code>luxel export</code>, and{" "}
+                <code>luxel transcribe</code> run from the command line without opening the editor.
               </p>
             </article>
             <article>

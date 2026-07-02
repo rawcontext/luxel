@@ -21,7 +21,7 @@ const macAppStoreUrl = "https://apps.apple.com/us/app/luxel/id6780682473?mt=12";
 
 const localPromisePoints = [
   "No watermarks, time limits, or export restrictions.",
-  "No tracking, analytics, or cloud recording pipeline.",
+  "No tracking, analytics, or cloud recording.",
   "Runs offline and does not require internet access.",
   "Every feature is available without paid upgrades."
 ];
@@ -42,7 +42,7 @@ const primaryFeatures = [
     id: "replay-buffer",
     eyebrow: "Recover",
     title: "Replay buffer",
-    text: "Turn on the replay buffer when you need to capture what just happened. Luxel records a rolling ScreenCaptureKit buffer and exports a replay clip without interrupting the buffer.",
+    text: "Turn on the replay buffer when you need to capture what just happened. Luxel keeps recent screen activity ready and saves a replay clip without stopping the buffer.",
     image: {
       src: "/screenshots/luxel-settings-replay-buffer.png",
       alt: "Luxel Replay Buffer settings with length, source, frame rate, audio, and clip destination controls."
@@ -53,7 +53,7 @@ const primaryFeatures = [
     id: "editor-export",
     eyebrow: "Polish",
     title: "Editor and export",
-    text: "Open recordings in the editor to trim, resize, retime, crop-to-fill, adjust audio, copy frames, save originals, and export through native macOS media paths plus Luxel's native WebM adapter.",
+    text: "Open recordings in the editor to trim, resize, retime, crop-to-fill, adjust audio, copy frames, save originals, and export video, animation, or audio files from the same workspace.",
     image: {
       src: "/screenshots/luxel-editor-loaded.png",
       alt: "Luxel editor window with a loaded desktop clip and export format, timeline, and output panels open."
@@ -64,7 +64,7 @@ const primaryFeatures = [
     id: "transcripts",
     eyebrow: "Text",
     title: "Local transcripts",
-    text: "Transcribe recordings locally with Apple Speech, search and jump through transcript text in the editor, and choose raw or Apple Intelligence turn segmentation for easier review.",
+    text: "Transcribe recordings on your Mac, search and jump through transcript text in the editor, and choose automatic turn grouping for easier review.",
     image: {
       src: "/screenshots/luxel-audio-transcript-editor.png",
       alt: "Luxel editor showing an audio file with searchable transcript text, highlighted segments, playback controls, and audio export settings."
@@ -83,7 +83,7 @@ const primaryFeatures = [
       height: 470,
       note: "This CLI walkthrough was recorded, edited, and exported using Luxel itself."
     },
-    points: ["record, stop, toggle, clip, latest, editor, convert, export, transcribe, preferences", "x-success and x-error callbacks with --wait, --json, and --print-url", "Headless trim, resize, speed, quality, crop, mute, and format conversion"]
+    points: ["record, stop, toggle, clip, latest, editor, convert, export, transcribe, preferences", "x-success and x-error callbacks with --wait, --json, and --print-url", "Command-line trim, resize, speed, quality, crop, mute, and format conversion"]
   },
   {
     id: "settings-shortcuts",
@@ -95,8 +95,8 @@ const primaryFeatures = [
   {
     id: "localization",
     eyebrow: "Global",
-    title: "Native localization",
-    text: "Luxel now ships native macOS localization resources for the app interface and privacy permission prompts across 11 locales.",
+    title: "Languages",
+    text: "Luxel is available in 11 languages, including the app interface and privacy permission prompts.",
     points: ["English, German, Spanish, French, Italian, Japanese, Korean, Vietnamese", "Simplified Chinese, Portuguese (Brazil), and Portuguese (Portugal)", "Localized permission copy for camera, microphone, screen capture, and speech recognition"]
   }
 ];
@@ -109,13 +109,13 @@ const primaryFeatures = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Luxel is a native macOS menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports."
+      content="Luxel is a Mac menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports."
     />
     <meta name="apple-itunes-app" content="app-id=6780682473" />
     <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
     <link rel="alternate" href="/llms.txt" type="text/markdown" title="Luxel LLM-readable index" />
     <link rel="alternate" href="/llms-full.txt" type="text/markdown" title="Luxel full Markdown documentation" />
-    <title>Luxel - Native capture for Mac</title>
+    <title>Luxel - Screen recording for Mac</title>
   </head>
   <body>
     <main class="site-shell">
@@ -147,7 +147,7 @@ const primaryFeatures = [
           <div class="hero-copy">
             <p class="eyebrow">Menu bar recorder for macOS</p>
             <h1 id="hero-title">Luxel</h1>
-            <p class="hero-copy__lead">Native capture for Mac.</p>
+            <p class="hero-copy__lead">Capture made for Mac.</p>
             <p class="hero-copy__body">
               Record screens, clip the last few minutes, transcribe locally, automate from the CLI,
               and export without ceremony.
@@ -171,7 +171,7 @@ const primaryFeatures = [
               <a class="button button--primary" href="/docs">Read docs</a>
               <a class="button button--ghost" href="#notch">
                 <span class="play-icon" aria-hidden="true"></span>
-                See capture surface
+                See recording controls
               </a>
             </div>
           </div>
@@ -215,7 +215,7 @@ const primaryFeatures = [
           </div>
           <p>
             Luxel runs on your Mac without restricting the files you make. Capture, replay,
-            transcribe, automate, and export without sending work to a service or unlocking
+            transcribe, automate, and export without uploading your work or unlocking
             core features later.
           </p>
           <ul aria-label="Local app promises">
@@ -227,10 +227,10 @@ const primaryFeatures = [
       <section class="primary-features-section" id="primary-features" aria-labelledby="primary-features-title">
         <div class="section-copy">
           <p class="eyebrow">Primary features</p>
-          <h2 id="primary-features-title">Everything Luxel can do, in one native Mac workflow.</h2>
+          <h2 id="primary-features-title">Everything Luxel can do, in one Mac workflow.</h2>
           <p>
             The app now covers capture, replay, export, transcripts, automation, and localization
-            without leaving native macOS frameworks.
+            inside one focused Mac app.
           </p>
         </div>
 
@@ -277,11 +277,11 @@ const primaryFeatures = [
 
       <section class="notch-section" id="notch" aria-labelledby="notch-title">
         <div class="section-copy">
-          <p class="eyebrow">Capture surface</p>
+          <p class="eyebrow">Recording controls</p>
           <h2 id="notch-title">The notch becomes your recorder.</h2>
           <p>
             Luxel keeps recording state where your eyes already go: timer, waveform,
-            and stop control live in one glanceable surface.
+            and stop control stay close at hand.
           </p>
         </div>
         <div class="notch-media" aria-label="Luxel notch capture controls">
@@ -345,12 +345,11 @@ const primaryFeatures = [
 
       <section class="export-section" id="export" aria-labelledby="export-title">
         <div class="section-copy">
-          <p class="eyebrow">Native export</p>
+          <p class="eyebrow">Export</p>
           <h2 id="export-title">Fast files. Clean choices.</h2>
           <p>
-            Built around native macOS capture and export paths with WebM support, Luxel
-            keeps video, animation, and audio-only formats close without turning the
-            recorder into an editor you have to manage.
+            With fast exports and WebM support, Luxel keeps video, animation, and audio-only
+            formats close without turning the recorder into an editor you have to manage.
           </p>
         </div>
         <ul class="format-list" aria-label="Export formats">
