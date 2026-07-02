@@ -4,10 +4,16 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/generate-llms.mjs",
+    "generate:llms": "node scripts/generate-llms.mjs",
     "preview": "astro preview"
   },
   "dependencies": {
     "astro": "6.4.7"
+  },
+  "devDependencies": {
+    "cheerio": "1.2.0",
+    "turndown": "7.2.4",
+    "turndown-plugin-gfm": "1.0.2"
   }
 }
