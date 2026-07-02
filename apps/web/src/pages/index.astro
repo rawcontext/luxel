@@ -26,7 +26,7 @@ const primaryFeatures = [
     text: "Start display, window, area, and audio-only recordings from the menu bar. Luxel keeps target selection, audio toggles, permission status, recent files, and quick recording controls close without opening a full app window.",
     image: {
       src: "/screenshots/luxel-menu-capture.png",
-      alt: "Luxel menu bar capture panel with source, recording, audio, and replay buffer controls."
+      alt: "Luxel menu bar capture panel with source, replay buffer, recent clip, audio, microphone, camera, and more controls."
     },
     points: ["Display, window, and selected-area targets", "System audio, microphone, and audio-only capture", "Countdown, auto-stop, pause, resume, and recent recording actions"]
   },
@@ -93,6 +93,7 @@ const primaryFeatures = [
       name="description"
       content="Luxel is a native macOS menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports."
     />
+    <meta name="apple-itunes-app" content="app-id=6780682473" />
     <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
     <title>Luxel - Native capture for Mac</title>
   </head>
@@ -149,9 +150,9 @@ const primaryFeatures = [
             <img
               class="hero-screenshot hero-screenshot--menu"
               src="/screenshots/luxel-menu-capture.png"
-              alt="Actual Luxel menu bar capture panel."
+              alt="Actual Luxel menu bar capture panel with bottom audio, microphone, camera, and more controls."
               width="640"
-              height="420"
+              height="674"
             />
           </div>
         </div>
@@ -187,7 +188,7 @@ const primaryFeatures = [
               <p>{feature.text}</p>
               {"image" in feature && (
                 <img
-                  class="primary-feature-card__media"
+                  class={`primary-feature-card__media${feature.id === "capture" ? " primary-feature-card__media--menu" : ""}`}
                   src={feature.image.src}
                   alt={feature.image.alt}
                   loading="lazy"
@@ -210,19 +211,38 @@ const primaryFeatures = [
             stop control, quick exports, and finished files live in one glanceable surface.
           </p>
         </div>
-        <div class="notch-demo" aria-label="Luxel notch states">
-          <div class="notch-demo__bar"></div>
-          <div class="notch-demo__state">
-            <span class="record-dot" aria-hidden="true"></span>
-            <span>Recording</span>
-            <strong>01:42</strong>
-          </div>
-          <div class="notch-demo__state notch-demo__state--export">
-            <span class="export-progress" aria-hidden="true"></span>
-            <span>GIF export</span>
-            <strong>48%</strong>
-          </div>
+        <div class="notch-media" aria-label="Luxel notch capture controls">
+          <img
+            class="notch-image"
+            src="/screenshots/luxel-notch-ui-with-black-top-bar.png"
+            alt="Luxel notch capture controls below a black notch bar."
+            width="492"
+            height="196"
+            loading="lazy"
+          />
         </div>
+      </section>
+
+      <section class="recording-status-section" id="recording-status" aria-labelledby="recording-status-title">
+        <div class="section-copy">
+          <p class="eyebrow">Menu bar status</p>
+          <h2 id="recording-status-title">Active recordings stay visible.</h2>
+          <p>
+            When recording starts, Luxel switches the menu bar into a compact live state
+            with the recording indicator, waveform, elapsed time, and stop control always
+            close at hand.
+          </p>
+        </div>
+        <figure class="recording-status-media" aria-label="Luxel menu bar active recording state">
+          <img
+            class="recording-menu-bar-image"
+            src="/screenshots/luxel-active-recording-menu-bar.png"
+            alt="Luxel menu bar active recording state with red recording dot, waveform, timer, and stop button."
+            width="778"
+            height="64"
+            loading="lazy"
+          />
+        </figure>
       </section>
 
       <section class="export-section" id="export" aria-labelledby="export-title">

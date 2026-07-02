@@ -181,7 +181,6 @@
   .permission-row,
   .recent-clip,
   .feature-band,
-  .notch-demo__state,
   .format-list,
   .docs-cta-section {
     display: flex;
@@ -779,6 +778,7 @@
 
   .feature-band h2,
   .notch-section h2,
+  .recording-status-section h2,
   .export-section h2,
   .docs-cta-section h2 {
     font-size: clamp(1.25rem, 2.2vw, 2.45rem);
@@ -794,6 +794,7 @@
 
   .primary-features-section,
   .notch-section,
+  .recording-status-section,
   .export-section,
   .docs-cta-section {
     display: grid;
@@ -872,6 +873,12 @@
     object-position: left top;
   }
 
+  .primary-feature-card__media--menu {
+    aspect-ratio: 640 / 674;
+    object-fit: contain;
+    object-position: center;
+  }
+
   .primary-feature-card ul {
     display: grid;
     gap: 0.42rem;
@@ -899,49 +906,57 @@
     box-shadow: 0 0 14px rgb(22 184 199 / 0.36);
   }
 
-  .notch-demo {
-    position: relative;
-    min-height: 22rem;
-    border-block: 1px solid rgb(255 255 255 / 0.12);
+  .notch-media {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    min-width: 0;
+    min-height: clamp(16rem, 28vw, 23rem);
+    padding: clamp(1.25rem, 4vw, 3rem);
+    border: 1px solid rgb(255 255 255 / 0.10);
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 52% 18%, rgb(22 184 199 / 0.10), transparent 17rem),
+      linear-gradient(180deg, rgb(255 255 255 / 0.035), rgb(255 255 255 / 0.012)),
+      rgb(3 6 8 / 0.54);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
   }
 
-  .notch-demo__bar {
-    height: 5.4rem;
-    border: 1px solid rgb(255 255 255 / 0.12);
-    border-radius: 0 0 2rem 2rem;
-    background: linear-gradient(180deg, #020304, rgb(10 26 35 / 0.8));
-    clip-path: polygon(0 0, 38% 0, 40% 48%, 44% 78%, 56% 78%, 60% 48%, 62% 0, 100% 0, 100% 100%, 0 100%);
+  .recording-status-section {
+    border-block-start: 1px solid rgb(255 255 255 / 0.10);
   }
 
-  .notch-demo__state {
-    gap: 0.8rem;
-    width: min(26rem, 92%);
-    min-height: 4.8rem;
-    margin: -1.2rem auto 0;
-    padding: 1rem 1.3rem;
-    border: 1px solid rgb(255 255 255 / 0.34);
-    border-radius: 2rem;
-    background: linear-gradient(180deg, rgb(25 31 38 / 0.92), rgb(3 5 7 / 0.94));
-    box-shadow: var(--shadow);
+  .recording-status-media {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    min-width: 0;
+    min-height: clamp(10rem, 17vw, 14rem);
+    margin: 0;
+    padding: clamp(1.25rem, 4vw, 3rem);
+    border: 1px solid rgb(255 255 255 / 0.10);
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 28% 22%, rgb(244 201 93 / 0.08), transparent 15rem),
+      linear-gradient(180deg, rgb(255 255 255 / 0.034), rgb(255 255 255 / 0.012)),
+      rgb(3 6 8 / 0.54);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
   }
 
-  .notch-demo__state strong {
-    margin-inline-start: auto;
-    font-variant-numeric: tabular-nums;
+  .notch-image,
+  .recording-menu-bar-image {
+    display: block;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 36px 90px rgb(0 0 0 / 0.42);
   }
 
-  .notch-demo__state--export {
-    width: min(22rem, 84%);
-    margin-block-start: 1rem;
-    color: var(--muted);
+  .notch-image {
+    width: min(100%, 36rem);
   }
 
-  .export-progress {
-    width: 1.4rem;
-    aspect-ratio: 1;
-    border: 0.18rem solid rgb(22 184 199 / 0.22);
-    border-block-start-color: var(--cyan);
-    border-radius: 50%;
+  .recording-menu-bar-image {
+    width: min(100%, 43rem);
   }
 
   .format-list {
@@ -1099,6 +1114,7 @@
 
   .primary-features-section,
   .notch-section,
+  .recording-status-section,
   .export-section {
     grid-template-columns: 1fr;
   }
@@ -1360,6 +1376,7 @@
 
   .primary-features-section,
   .notch-section,
+  .recording-status-section,
   .export-section,
   .docs-cta-section {
     width: min(calc(100% - 1.5rem), 88rem);

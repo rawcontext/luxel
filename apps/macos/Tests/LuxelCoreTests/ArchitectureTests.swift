@@ -85,8 +85,8 @@ extension ArchitectureTests {
         }
     }
 
-    @Test("screen permission checks avoid native prompt APIs")
-    func screenPermissionChecksAvoidNativePromptAPIs() throws {
+    @Test("screen permission status avoids ScreenCaptureKit enumeration")
+    func screenPermissionStatusAvoidsScreenCaptureKitEnumeration() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(
                 path: "Sources/LuxelCore/Infrastructure/System/ApplePermissionClient.swift"),
@@ -94,7 +94,7 @@ extension ArchitectureTests {
         )
 
         #expect(source.contains("CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined"))
-        #expect(!source.contains("CGRequestScreenCaptureAccess"))
+        #expect(source.contains("CGRequestScreenCaptureAccess() ? .authorized"))
         #expect(!source.contains("import ScreenCaptureKit"))
         #expect(!source.contains("SCShareableContent.current"))
     }
@@ -227,8 +227,8 @@ extension ArchitectureTests {
         #expect(!settingsSource.contains("isPresented: permissionPromptPresented"))
     }
 
-    @Test("screen recording permission action opens settings without native prompt")
-    func screenRecordingPermissionActionOpensSettingsWithoutNativePrompt() throws {
+    @Test("screen recording permission action requests before falling back to settings")
+    func screenRecordingPermissionActionRequestsBeforeFallingBackToSettings() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(
                 path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Permissions.swift"),
@@ -239,12 +239,9 @@ extension ArchitectureTests {
             source[handlerRange.upperBound...].range(of: "func sourcePermissionPresentation"))
         let handlerSource = String(source[handlerRange.lowerBound..<nextRange.lowerBound])
 
-        #expect(handlerSource.contains("if prompt.permission == .screenRecording"))
+        #expect(handlerSource.contains("_ = await permissionClient.request(prompt.permission)"))
         #expect(handlerSource.contains("await permissionClient.openSettings(for: prompt.permission)"))
         #expect(handlerSource.contains("permissionStatus(for: prompt.permission) != .authorized"))
-        #expect(
-            !handlerSource.contains(
-                "_ = await permissionClient.request(prompt.permission)\n        case .openSettings"))
     }
 
     @Test("menu bar status is owned by one AppKit status item")

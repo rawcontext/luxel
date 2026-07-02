@@ -11,8 +11,10 @@ struct PermissionClientTests {
         #expect(PermissionStatus.denied != .restricted)
     }
 
-    @Test("screen recording guidance opens screen and system audio settings after denial")
-    func screenRecordingGuidanceOpensScreenAndSystemAudioSettingsAfterDenial() {
+    @Test(
+        "screen recording guidance requests first and opens screen and system audio settings after denial"
+    )
+    func screenRecordingGuidanceRequestsFirstAndOpensScreenAndSystemAudioSettingsAfterDenial() {
         let notDetermined = PermissionGuidanceService().guidance(
             for: .screenRecording,
             status: .notDetermined
@@ -22,10 +24,9 @@ struct PermissionClientTests {
             status: .denied
         )
 
-        #expect(notDetermined.actionTitle == "Open System Settings")
-        #expect(notDetermined.action == .openSettings)
+        #expect(notDetermined.actionTitle == "Continue")
+        #expect(notDetermined.action == .request)
         #expect(notDetermined.message.contains("Screen & System Audio Recording"))
-        #expect(notDetermined.message.contains("click +"))
         #expect(guidance.title == "Screen capture is off")
         #expect(guidance.actionTitle == "Open System Settings")
         #expect(guidance.action == .openSettings)

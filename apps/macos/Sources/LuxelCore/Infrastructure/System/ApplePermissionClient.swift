@@ -21,7 +21,7 @@ public struct ApplePermissionClient: PermissionClient {
     public func request(_ permission: SystemPermission) async -> PermissionStatus {
         switch permission {
         case .screenRecording:
-            return await status(for: .screenRecording)
+            return CGRequestScreenCaptureAccess() ? .authorized : await status(for: .screenRecording)
         case .microphone:
             if await AVAudioApplication.requestRecordPermission() {
                 return .authorized

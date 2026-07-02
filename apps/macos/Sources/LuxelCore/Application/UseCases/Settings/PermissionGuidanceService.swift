@@ -68,9 +68,9 @@ public struct PermissionGuidanceService: Sendable {
             PermissionGuidance(
                 title: "Screen capture is off",
                 message: "macOS needs approval before Luxel can record your screen or system sound. "
-                    + "In Screen & System Audio Recording, click + and add Luxel if it is not listed, then turn it on.",
-                actionTitle: "Open System Settings",
-                action: .openSettings
+                    + "Continue to let macOS add this Luxel build to Screen & System Audio Recording.",
+                actionTitle: "Continue",
+                action: .request
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
