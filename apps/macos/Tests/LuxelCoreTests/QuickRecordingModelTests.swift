@@ -142,7 +142,7 @@ struct QuickRecordingModelTests {
 
         let selection = memory.restoredTopLeftSelection(in: display)
 
-        #expect(selection == (try CaptureRect(x: 10, y: 580, width: 640, height: 480)))
+        #expect(selection == (try CaptureRect(x: 10, y: 20, width: 640, height: 480)))
     }
 
     @Test("last display memory does not restore cropper selection")

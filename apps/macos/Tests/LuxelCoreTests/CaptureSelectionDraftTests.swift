@@ -60,8 +60,8 @@ struct CaptureSelectionDraftTests {
                 ))
     }
 
-    @Test("draft converts top-left selection to ScreenCaptureKit recording target")
-    func draftConvertsTopLeftSelectionToRecordingTarget() throws {
+    @Test("draft uses top-left selection for ScreenCaptureKit recording target")
+    func draftUsesTopLeftSelectionForRecordingTarget() throws {
         let display = try DisplayBounds(id: DisplayID(42), x: 0, y: 0, width: 1920, height: 1080)
         let selection = try CaptureRect(x: 100, y: 120, width: 640, height: 360)
 
@@ -72,7 +72,7 @@ struct CaptureSelectionDraftTests {
             try draft.captureTarget
                 == .area(
                     displayID: DisplayID(42),
-                    rect: CaptureRect(x: 100, y: 600, width: 640, height: 360)
+                    rect: selection
                 ))
     }
 

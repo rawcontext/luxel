@@ -25,7 +25,7 @@ enum CaptureTargetScreenRectResolver {
                 return nil
             }
 
-            return screenRect(fromBottomLeftLocalRect: rect, in: displayFrame)
+            return screenRect(fromTopLeftLocalRect: rect, in: displayFrame)
 
         case .window(let id):
             guard let windowTarget = availableTargets.first(where: { $0.target == .window(id: id) }),
@@ -86,12 +86,12 @@ enum CaptureTargetScreenRectResolver {
     }
 
     private static func screenRect(
-        fromBottomLeftLocalRect rect: CaptureRect,
+        fromTopLeftLocalRect rect: CaptureRect,
         in display: CaptureTargetDisplayScreenFrame
     ) -> NSRect {
         NSRect(
             x: display.screenFrame.minX + CGFloat(rect.originX) * display.xScale,
-            y: display.screenFrame.minY + CGFloat(rect.originY) * display.yScale,
+            y: display.screenFrame.maxY - CGFloat(rect.originY + rect.height) * display.yScale,
             width: CGFloat(rect.width) * display.xScale,
             height: CGFloat(rect.height) * display.yScale
         )

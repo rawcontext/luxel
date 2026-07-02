@@ -3,8 +3,8 @@ import Testing
 
 @Suite("Capture coordinate mapper")
 struct CaptureCoordinateMapperTests {
-    @Test("recording rect flips top-left cropper y inside display")
-    func recordingRectFlipsTopLeftCropperYInsideDisplay() throws {
+    @Test("recording rect preserves top-left cropper coordinates")
+    func recordingRectPreservesTopLeftCropperCoordinates() throws {
         let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 2560, height: 1440)
         let selection = try CaptureRect(x: 40, y: 120, width: 640, height: 360)
 
@@ -12,23 +12,21 @@ struct CaptureCoordinateMapperTests {
             fromTopLeftSelection: selection,
             in: display
         )
-        let expected = try CaptureRect(x: 40, y: 960, width: 640, height: 360)
 
-        #expect(rect == expected)
+        #expect(rect == selection)
     }
 
-    @Test("top-left selection flips recording rect y inside display")
-    func topLeftSelectionFlipsRecordingRectYInsideDisplay() throws {
+    @Test("top-left selection preserves recording rect coordinates")
+    func topLeftSelectionPreservesRecordingRectCoordinates() throws {
         let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 2560, height: 1440)
-        let rect = try CaptureRect(x: 40, y: 960, width: 640, height: 360)
+        let rect = try CaptureRect(x: 40, y: 120, width: 640, height: 360)
 
         let selection = try CaptureCoordinateMapper.topLeftSelection(
             fromRecordingRect: rect,
             in: display
         )
-        let expected = try CaptureRect(x: 40, y: 120, width: 640, height: 360)
 
-        #expect(selection == expected)
+        #expect(selection == rect)
     }
 
     @Test("local rect subtracts display origin")

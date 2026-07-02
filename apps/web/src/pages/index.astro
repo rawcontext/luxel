@@ -18,6 +18,13 @@ const featureColumns = [
 
 const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM"];
 
+const localPromisePoints = [
+  "No watermarks, time limits, or export restrictions.",
+  "No tracking, analytics, external API calls, or phone-home behavior.",
+  "Runs offline and does not require internet access.",
+  "Every feature is available without paid upgrades."
+];
+
 const primaryFeatures = [
   {
     id: "capture",
@@ -170,6 +177,21 @@ const primaryFeatures = [
         </div>
       </section>
 
+      <section class="local-promise-section" aria-labelledby="local-promise-title">
+        <div class="local-promise-copy">
+          <p class="eyebrow">Local by design</p>
+          <h2 id="local-promise-title">No watermarks. No tracking. No upgrade gates.</h2>
+        </div>
+        <p>
+          Luxel runs on your Mac without restricting the files you make. Capture, replay,
+          transcribe, automate, and export without sending work to a service or unlocking
+          core features later.
+        </p>
+        <ul aria-label="Local app promises">
+          {localPromisePoints.map((point) => <li>{point}</li>)}
+        </ul>
+      </section>
+
       <section class="primary-features-section" id="primary-features" aria-labelledby="primary-features-title">
         <div class="section-copy">
           <p class="eyebrow">Primary features</p>
@@ -182,10 +204,15 @@ const primaryFeatures = [
 
         <div class="primary-feature-grid">
           {primaryFeatures.map((feature) => (
-            <article class="primary-feature-card" id={feature.id}>
-              <p class="primary-feature-card__eyebrow">{feature.eyebrow}</p>
-              <h3>{feature.title}</h3>
-              <p>{feature.text}</p>
+            <article class={`primary-feature-card${"image" in feature ? "" : " primary-feature-card--text-only"}`} id={feature.id}>
+              <div class="primary-feature-card__copy">
+                <p class="primary-feature-card__eyebrow">{feature.eyebrow}</p>
+                <h3>{feature.title}</h3>
+                <p>{feature.text}</p>
+                <ul>
+                  {feature.points.map((point) => <li>{point}</li>)}
+                </ul>
+              </div>
               {"image" in feature && (
                 <img
                   class={`primary-feature-card__media${feature.id === "capture" ? " primary-feature-card__media--menu" : ""}`}
@@ -194,9 +221,6 @@ const primaryFeatures = [
                   loading="lazy"
                 />
               )}
-              <ul>
-                {feature.points.map((point) => <li>{point}</li>)}
-              </ul>
             </article>
           ))}
         </div>
@@ -234,12 +258,37 @@ const primaryFeatures = [
           </p>
         </div>
         <figure class="recording-status-media" aria-label="Luxel menu bar active recording state">
-          <img
+          <video
             class="recording-menu-bar-image"
-            src="/screenshots/luxel-active-recording-menu-bar.png"
-            alt="Luxel menu bar active recording state with red recording dot, waveform, timer, and stop button."
-            width="778"
-            height="64"
+            src="/videos/luxel-active-recording-menu-bar.webm"
+            aria-label="Luxel menu bar active recording state with red recording dot, waveform, timer, and stop button."
+            width="912"
+            height="66"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+          ></video>
+        </figure>
+      </section>
+
+      <section class="audio-transcript-section" id="audio-transcripts" aria-labelledby="audio-transcript-title">
+        <div class="section-copy">
+          <p class="eyebrow">Audio transcripts</p>
+          <h2 id="audio-transcript-title">Audio files stay searchable.</h2>
+          <p>
+            Open audio-only recordings in the editor with local transcripts, search within the
+            text, and keep playback, export, and transcript review in one workspace.
+          </p>
+        </div>
+        <figure class="audio-transcript-media" aria-label="Luxel audio editor with transcript search and highlighted transcript segment">
+          <img
+            class="audio-transcript-image"
+            src="/screenshots/luxel-audio-transcript-editor.png"
+            alt="Luxel editor showing an audio file with a searchable transcript, highlighted transcript text, playback controls, and audio export settings."
+            width="2224"
+            height="1648"
             loading="lazy"
           />
         </figure>

@@ -12,9 +12,15 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         contentRect: CGRect,
         pointPixelScale: Float
     ) -> RecordingRequest {
-        guard case .window = request.target,
-              let pixelSize = nativePixelSize(contentRect: contentRect, pointPixelScale: pointPixelScale)
-        else {
+        let pixelSize: PixelSize?
+        switch request.target {
+        case .display, .window:
+            pixelSize = nativePixelSize(contentRect: contentRect, pointPixelScale: pointPixelScale)
+        case .area(_, let rect):
+            pixelSize = nativePixelSize(rect: rect, pointPixelScale: pointPixelScale)
+        }
+
+        guard let pixelSize else {
             return request
         }
 
@@ -45,7 +51,7 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         configuration.queueDepth = 8
 
         if case .area(_, let rect) = request.target {
-            configuration.sourceRect = sourceRect(from: rect, pointPixelScale: pointPixelScale)
+            configuration.sourceRect = sourceRect(from: rect)
         }
 
         if case .window = request.target {
@@ -55,13 +61,12 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         return configuration
     }
 
-    private func sourceRect(from rect: CaptureRect, pointPixelScale: Float) -> CGRect {
-        let pointScale = max(CGFloat(pointPixelScale), 1)
+    private func sourceRect(from rect: CaptureRect) -> CGRect {
         return CGRect(
-            x: CGFloat(rect.originX) / pointScale,
-            y: CGFloat(rect.originY) / pointScale,
-            width: CGFloat(rect.width) / pointScale,
-            height: CGFloat(rect.height) / pointScale
+            x: CGFloat(rect.originX),
+            y: CGFloat(rect.originY),
+            width: CGFloat(rect.width),
+            height: CGFloat(rect.height)
         )
     }
 
@@ -69,6 +74,14 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         let pointScale = max(CGFloat(pointPixelScale), 1)
         let width = Int((contentRect.width * pointScale).rounded())
         let height = Int((contentRect.height * pointScale).rounded())
+
+        return try? PixelSize(width: max(width, 1), height: max(height, 1))
+    }
+
+    private func nativePixelSize(rect: CaptureRect, pointPixelScale: Float) -> PixelSize? {
+        let pointScale = max(CGFloat(pointPixelScale), 1)
+        let width = Int((CGFloat(rect.width) * pointScale).rounded())
+        let height = Int((CGFloat(rect.height) * pointScale).rounded())
 
         return try? PixelSize(width: max(width, 1), height: max(height, 1))
     }

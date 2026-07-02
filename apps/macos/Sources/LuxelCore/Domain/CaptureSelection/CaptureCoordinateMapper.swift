@@ -39,12 +39,7 @@ public enum CaptureCoordinateMapper {
             throw CaptureModelError.selectionOutsideDisplay
         }
 
-        return try CaptureRect(
-            x: selection.originX,
-            y: display.height - (selection.originY + selection.height),
-            width: selection.width,
-            height: selection.height
-        )
+        return selection
     }
 
     public static func topLeftSelection(
@@ -59,12 +54,7 @@ public enum CaptureCoordinateMapper {
             throw CaptureModelError.selectionOutsideDisplay
         }
 
-        return try CaptureRect(
-            x: rect.originX,
-            y: display.height - (rect.originY + rect.height),
-            width: rect.width,
-            height: rect.height
-        )
+        return rect
     }
 
     public static func localRect(
