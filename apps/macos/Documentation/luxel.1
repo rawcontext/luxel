@@ -1,4 +1,4 @@
-.Dd July 1, 2026
+.Dd July 2, 2026
 .Dt LUXEL 1
 .Os
 .Sh NAME
@@ -67,13 +67,14 @@ Plain text is printed to stdout by default.
 Open Luxel settings.
 Use
 .Fl -pane Ar pane
-to open
+to include a preferences pane hint in the automation URL:
 .Cm general ,
 .Cm presets ,
 .Cm shortcuts ,
 .Cm updates ,
 or
 .Cm about .
+Current Luxel builds open Settings normally.
 .El
 .Sh CAPTURE OPTIONS
 .Bl -tag -width Ds
@@ -217,7 +218,7 @@ luxel record --active-window --preset "Default" --save-to ~/Movies/Luxel
 luxel toggle --last-area
 luxel clip --seconds 30 --wait
 luxel latest --reveal
-luxel preferences --pane shortcuts
+luxel preferences
 luxel record --last-area --print-url
 luxel editor ~/Movies/demo.mp4
 luxel convert demo.mp4 demo.webm

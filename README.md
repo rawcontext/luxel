@@ -264,7 +264,7 @@ luxel record --active-window --preset "Default" --save-to ~/Movies/Luxel
 luxel toggle --last-area
 luxel stop
 luxel latest --reveal
-luxel preferences --pane shortcuts
+luxel preferences
 luxel record --last-area --print-url
 luxel editor ~/Movies/demo.mp4
 luxel convert demo.mp4 demo.webm
@@ -283,7 +283,7 @@ luxel://record?target=activeWindow&preset=Default
 luxel://toggle
 luxel://stop
 luxel://latest?reveal=true
-luxel://preferences?pane=shortcuts
+luxel://preferences
 ```
 
 Callbacks use `x-success` and `x-error` query parameters. Successful file results append `filePath`; recording starts append `recordingID`; failures append `errorMessage`.
@@ -291,6 +291,8 @@ Callbacks use `x-success` and `x-error` query parameters. Successful file result
 Use `--wait` for a plain callback result, `--json` for structured callback output, and
 `--timeout` to control callback waiting.
 `--print-url`/`--dry-run` prints the Luxel automation URL without opening it.
+`luxel preferences --pane` accepts pane hints for URL compatibility, but current
+builds open Settings normally.
 `luxel convert` uses the same `EditorExportDraft`/`ExportRequest` model as the app
 for common headless edits such as trim, resize, frame rate, quality, speed, mute, and crop.
 `luxel export` accepts a full `ExportRequest` JSON document for export fields that do not have dedicated CLI flags.

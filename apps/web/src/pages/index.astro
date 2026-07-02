@@ -4,7 +4,7 @@ import "../styles/global.css";
 const featureColumns = [
   {
     title: "Capture",
-    text: "Record displays, windows, selected areas, audio, and camera overlays from a native menu bar surface."
+    text: "Record displays, windows, selected areas, audio, and camera overlays with cursor, click, countdown, and auto-stop controls."
   },
   {
     title: "Replay Buffer",
@@ -12,15 +12,15 @@ const featureColumns = [
   },
   {
     title: "CLI and Automation",
-    text: "Run captures, clips, exports, transcripts, callbacks, and settings workflows from scripts."
+    text: "Run captures, clips, exports, transcripts, callbacks, settings, and URL workflows from scripts."
   }
 ];
 
-const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM"];
+const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "M4A", "WAV", "FLAC"];
 
 const localPromisePoints = [
   "No watermarks, time limits, or export restrictions.",
-  "No tracking, analytics, external API calls, or phone-home behavior.",
+  "No tracking, analytics, or cloud recording pipeline.",
   "Runs offline and does not require internet access.",
   "Every feature is available without paid upgrades."
 ];
@@ -30,12 +30,12 @@ const primaryFeatures = [
     id: "capture",
     eyebrow: "Record",
     title: "Menu bar capture",
-    text: "Start display, window, area, and audio-only recordings from the menu bar. Luxel keeps target selection, audio toggles, permission status, recent files, and quick recording controls close without opening a full app window.",
+    text: "Start display, window, area, and audio-only recordings from the menu bar. Luxel keeps target selection, audio toggles, cursor visibility, click highlights, permission status, recent files, and quick recording controls close without opening a full app window.",
     image: {
       src: "/screenshots/luxel-menu-capture.png",
       alt: "Luxel menu bar capture panel with source, replay buffer, recent clip, audio, microphone, camera, and more controls."
     },
-    points: ["Display, window, and selected-area targets", "System audio, microphone, and audio-only capture", "Countdown, auto-stop, pause, resume, and recent recording actions"]
+    points: ["Display, window, and selected-area targets", "System audio, microphone, camera preview, and audio-only capture", "1-60 FPS, countdown, auto-stop, pause, resume, and recent recording actions"]
   },
   {
     id: "replay-buffer",
@@ -52,23 +52,23 @@ const primaryFeatures = [
     id: "editor-export",
     eyebrow: "Polish",
     title: "Editor and export",
-    text: "Open recordings in the editor to trim, resize, retime, crop-to-fill, mute, copy frames, save originals, and export through native macOS media paths plus Luxel's native WebM adapter.",
+    text: "Open recordings in the editor to trim, resize, retime, crop-to-fill, adjust audio, copy frames, save originals, and export through native macOS media paths plus Luxel's native WebM adapter.",
     image: {
       src: "/screenshots/luxel-editor-loaded.png",
       alt: "Luxel editor window with a loaded desktop clip and export format, timeline, and output panels open."
     },
-    points: ["MP4, HEVC MP4, ProRes 422, ProRes 4444, GIF, APNG, and WebM", "Compact, Balanced, High, and format-aware quality controls", "Batch exports, Finder actions, copy path, copy file, and Share"]
+    points: ["MP4, HEVC MP4, ProRes 422, ProRes 4444, GIF, APNG, WebM, and audio-only exports", "Compact, Balanced, High, lossless, size estimates, level, and normalize controls", "Multi-format batches, Finder actions, copy path, copy file, and Share"]
   },
   {
     id: "transcripts",
     eyebrow: "Text",
     title: "Local transcripts",
-    text: "Transcribe recordings locally with Apple Speech, preview transcript progress in the editor, and choose raw or Apple Intelligence turn segmentation for easier review.",
+    text: "Transcribe recordings locally with Apple Speech, search and jump through transcript text in the editor, and choose raw or Apple Intelligence turn segmentation for easier review.",
     image: {
-      src: "/screenshots/luxel-settings-recording.png",
-      alt: "Luxel recording settings with capture, audio, and camera controls."
+      src: "/screenshots/luxel-audio-transcript-editor.png",
+      alt: "Luxel editor showing an audio file with searchable transcript text, highlighted segments, playback controls, and audio export settings."
     },
-    points: ["Plain text or JSON transcript output from the CLI", "Locale selection for command-line transcription", "Transcript caching and editor transcript workflows"]
+    points: ["Plain text or JSON transcript output from the CLI", "Locale selection and semantic turn segmentation", "Transcript caching, search, and editor transcript workflows"]
   },
   {
     id: "cli",
@@ -83,6 +83,13 @@ const primaryFeatures = [
       note: "This CLI walkthrough was recorded, edited, and exported using Luxel itself."
     },
     points: ["record, stop, toggle, clip, latest, editor, convert, export, transcribe, preferences", "x-success and x-error callbacks with --wait, --json, and --print-url", "Headless trim, resize, speed, quality, crop, mute, and format conversion"]
+  },
+  {
+    id: "settings-shortcuts",
+    eyebrow: "Control",
+    title: "Settings, shortcuts, and presets",
+    text: "Tune Luxel for repeated work with editable global shortcuts, quick export presets, reusable crop sizes, command-line installation, update controls, and replay buffer behavior.",
+    points: ["Searchable global shortcuts with conflict warnings", "Quick Recording presets with size, frame rate, destination, and post-action", "Recording, output, notch, replay buffer, command-line, and system settings"]
   },
   {
     id: "localization",
@@ -252,7 +259,7 @@ const primaryFeatures = [
           <h2 id="notch-title">The notch becomes your recorder.</h2>
           <p>
             Luxel keeps recording state where your eyes already go: timer, waveform,
-            stop control, quick exports, and finished files live in one glanceable surface.
+            and stop control live in one glanceable surface.
           </p>
         </div>
         <div class="notch-media" aria-label="Luxel notch capture controls">
@@ -320,8 +327,8 @@ const primaryFeatures = [
           <h2 id="export-title">Fast files. Clean choices.</h2>
           <p>
             Built around native macOS capture and export paths with WebM support, Luxel
-            keeps common formats close without turning the recorder into an editor you
-            have to manage.
+            keeps video, animation, and audio-only formats close without turning the
+            recorder into an editor you have to manage.
           </p>
         </div>
         <ul class="format-list" aria-label="Export formats">

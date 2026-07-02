@@ -87,10 +87,10 @@ const systemShortcutConflicts = [
 ];
 
 const settingsPanes = [
-  ["Recording", "Cursor visibility, click highlights, frame rate, system audio, microphone audio, audio-only format, microphone selection, camera preview, and camera preview style."],
-  ["Output", "Recordings folder, loop exports, and whether Luxel asks before discarding a recording."],
+  ["Recording", "Cursor visibility, click highlights, 1-60 FPS capture, system audio, microphone audio, audio-only format, microphone selection, camera preview, shape, size, and mirroring."],
+  ["Output", "Recordings folder, loop exports, transcript turn segmentation, and whether Luxel asks before discarding a recording."],
   ["Presets", "Quick export presets, cropper size presets, loupe behavior, dimming, and last-selection restoration."],
-  ["Shortcuts", "Global shortcut enablement, shortcut search, custom shortcut editing, reset/clear controls, conflict warnings, and URL automation."],
+  ["Shortcuts", "Global shortcut enablement, shortcut search, custom shortcut editing, reset/clear controls, and conflict warnings."],
   ["Notch", "Built-in notch surface, idle quick actions, recording waveform, auto-collapse timing, and floating HUD fallback."],
   ["Replay Buffer", "Enablement, buffer length, display-with-cursor source, frame rate, system audio, resume on launch, and clip destination."],
   ["Command Line", "Install or repair the bundled luxel command, choose an install location, choose a shell, and copy a PATH setup command."],
@@ -105,11 +105,11 @@ const exportFormatRows = [
   ["GIF", "Animated image", "Drops audio. Supports loop and animation-focused export controls."],
   ["APNG", "Animated PNG", "Lossless animated image export. Drops audio."],
   ["WebM", "VP9 WebM", "Native Luxel WebM adapter. Supports Compact, Balanced, and High quality."],
-  ["M4A", "AAC audio", "Audio-only export and CLI conversion format."],
-  ["ALAC M4A", "Apple Lossless audio", "Lossless audio-only export and CLI conversion format."],
-  ["WAV", "PCM audio", "Uncompressed audio-only CLI conversion format."],
-  ["CAF", "Core Audio Format", "Apple audio container available for CLI conversion."],
-  ["FLAC", "Free Lossless Audio Codec", "Lossless audio-only CLI conversion format."]
+  ["M4A", "AAC audio", "Audio-only editor export and CLI conversion format."],
+  ["ALAC M4A", "Apple Lossless audio", "Lossless audio-only editor export and CLI conversion format."],
+  ["WAV", "PCM audio", "Uncompressed audio-only editor export and CLI conversion format."],
+  ["CAF", "Core Audio Format", "Apple audio-only editor export and CLI conversion format."],
+  ["FLAC", "Free Lossless Audio Codec", "Lossless audio-only editor export and CLI conversion format."]
 ];
 
 const cliCommands = [
@@ -123,7 +123,7 @@ const cliCommands = [
   ["luxel convert <input> <output>", "Convert or edit media headlessly through Luxel's exporter."],
   ["luxel export <request-json> <output>", "Export from a full Luxel ExportRequest JSON file."],
   ["luxel transcribe <file>", "Transcribe a media or audio file locally."],
-  ["luxel preferences", "Open Luxel settings, optionally to a specific pane."]
+  ["luxel preferences", "Open Luxel settings."]
 ];
 
 const cliOptionGroups = [
@@ -153,7 +153,8 @@ const cliOptionGroups = [
       ["--crop <x,y,width,height>", "Use an explicit crop rectangle."],
       ["--quality <quality>", "Use compact, balanced, high, or lossless when available for the format."],
       ["--overwrite", "Replace an existing output file."],
-      ["--json", "Print a JSON result instead of the output path."]
+      ["--json", "Print a JSON result instead of the output path."],
+      ["--quiet", "Suppress terminal progress output."]
     ]
   },
   {
@@ -307,8 +308,8 @@ const troubleshooting = [
                 <li>Open Luxel from the menu bar.</li>
                 <li>Choose a target from Target, or use Area to draw a custom region.</li>
                 <li>Enable System Audio, Microphone, or Camera only if the recording needs them.</li>
-                <li>Click Screen, Area, or Audio from the More menu.</li>
-                <li>Stop recording from the menu bar, notch surface, or shortcut.</li>
+                <li>Click Record Source, Record Area, or Record Audio.</li>
+                <li>Stop recording from the menu bar status controls, active recording surface, or shortcut.</li>
               </ol>
             </article>
           </div>
@@ -352,6 +353,15 @@ const troubleshooting = [
               </p>
               <p class="expected">Camera controls appear after you choose a camera device.</p>
             </article>
+
+            <article>
+              <h3>Speech Recognition</h3>
+              <p>
+                Required when generating local transcripts in the editor or from the
+                command line. Luxel uses Apple Speech locally for transcription.
+              </p>
+              <p class="expected">Luxel asks for this only when transcription starts.</p>
+            </article>
           </div>
 
           <div class="callout">
@@ -375,8 +385,8 @@ const troubleshooting = [
               <h3>Menu bar first</h3>
               <p>
                 Luxel lives in the menu bar. The panel contains target selection,
-                capture buttons, audio toggles, permission status, recent files, settings,
-                and the More menu.
+                capture buttons, audio toggles, permission status, recent files,
+                replay controls, and settings access.
               </p>
             </article>
             <article>
@@ -397,15 +407,15 @@ const troubleshooting = [
               <h3>Editor</h3>
               <p>
                 Standard video recordings open in the editor after capture. Audio-only
-                recordings and quick exports finish directly to a file or post-action.
+                recordings can open in the editor for playback, transcript review, and
+                audio export. Quick exports can finish directly to a file or post-action.
               </p>
             </article>
             <article>
               <h3>Quick exports</h3>
               <p>
-                Export presets can turn a capture into a GIF, MP4, HEVC MP4,
-                ProRes MOV, APNG, or preset destination without manually opening
-                every export control.
+                Export presets can turn a capture into GIF, MP4, HEVC MP4,
+                ProRes MOV, or APNG output without manually opening every export control.
               </p>
             </article>
             <article>
@@ -426,8 +436,8 @@ const troubleshooting = [
             <article>
               <h3>Recent files</h3>
               <p>
-                The menu shows the latest recording and a Recent menu. Recordings open
-                in the editor.
+                The menu shows the latest recording and a Recent menu for opening clips
+                in the editor or revealing them in Finder.
               </p>
             </article>
           </div>
@@ -441,15 +451,25 @@ const troubleshooting = [
 
           <div class="guide-stack">
             <article>
-              <h3>Record a screen, window, or target</h3>
+              <h3>Record a screen, window, or area</h3>
               <ol>
                 <li>Open Luxel from the menu bar.</li>
                 <li>Choose Target and select a display or window.</li>
                 <li>Turn on System Audio or Microphone if needed.</li>
-                <li>Click Screen, or choose Quick Record from More if a quick preset is configured.</li>
+                <li>Click Record Source, or use Record Area for a selected region.</li>
                 <li>Use Stop, Pause, or Resume from the recording controls.</li>
               </ol>
               <p class="tip">Audio-only recordings do not support pause and resume.</p>
+            </article>
+
+            <article>
+              <h3>Tune capture behavior</h3>
+              <ul>
+                <li>Set screen recording frame rate from 1 to 60 FPS in Recording settings.</li>
+                <li>Choose whether the cursor is visible and whether clicks are highlighted.</li>
+                <li>Enable system audio, microphone audio, or both before recording.</li>
+                <li>Use countdown and auto-stop when a capture needs a timed start or end.</li>
+              </ul>
             </article>
 
             <article>
@@ -617,7 +637,8 @@ const troubleshooting = [
                 estimated file size, Save Original, and Export controls.
               </p>
               <p>
-                You can also import an existing movie from More > Open Recording.
+                Rename the source file in place, move to newer or older recordings in the
+                same folder, or open an existing media file with <code>luxel editor &lt;file&gt;</code>.
               </p>
             </article>
 
@@ -673,8 +694,20 @@ const troubleshooting = [
                 </tbody>
               </table>
               <p class="tip">
-                MP4, MOV, and WebM exports use even pixel dimensions.
+                The format menu can select multiple formats and shows size estimates when
+                Luxel can calculate them. MP4, MOV, and WebM exports use even pixel dimensions.
               </p>
+            </article>
+
+            <article>
+              <h3>Adjust audio</h3>
+              <ul>
+                <li>Use Include Audio to mute or keep audio for formats that support it.</li>
+                <li>Set audio level from 0% to 200%.</li>
+                <li>Enable Normalize Audio to smooth loudness during export.</li>
+                <li>Audio-only sources export as M4A, ALAC M4A, WAV, CAF, or FLAC.</li>
+              </ul>
+              <p class="tip">GIF and APNG always drop audio.</p>
             </article>
 
             <article>
@@ -709,6 +742,7 @@ const troubleshooting = [
               <ol>
                 <li>Open a recording with audio in the editor.</li>
                 <li>Use the transcript preview to generate or review transcript text.</li>
+                <li>Search transcript text or select transcript spans to jump playback.</li>
                 <li>Leave Segment Transcript Turns enabled for Apple Intelligence turn grouping.</li>
                 <li>Turn it off in Settings > Output for faster raw transcripts on long recordings.</li>
               </ol>
@@ -767,7 +801,8 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
               <ol>
                 <li>Turn on Remember Last Capture in Presets settings.</li>
                 <li>Make a normal capture once.</li>
-                <li>Use Quick Record Last from the More menu, shortcut, CLI, URL automation, or App Shortcut.</li>
+                <li>Use Quick Record Last from the shortcut, CLI, URL automation, or App Shortcut.</li>
+                <li>For a new selected area, use the area picker's Quick Record action with the active quick preset.</li>
               </ol>
             </article>
 
@@ -892,7 +927,7 @@ luxel toggle --last-area
 luxel stop
 luxel clip --seconds 30 --wait
 luxel latest --reveal
-luxel preferences --pane shortcuts
+luxel preferences
 luxel record --last-area --print-url
 luxel editor ~/Movies/demo.mp4
 luxel convert demo.mp4 demo.webm
@@ -966,7 +1001,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 <li><code>toggle</code> stops an active recording when no target is passed. When starting, target-related options require a target.</li>
                 <li><code>clip</code> uses the configured replay buffer length unless <code>--seconds</code> is passed.</li>
                 <li><code>latest --reveal</code> reveals the latest recording in Finder instead of opening it.</li>
-                <li><code>preferences --pane</code> accepts <code>general</code>, <code>presets</code>, <code>shortcuts</code>, <code>updates</code>, or <code>about</code>.</li>
+                <li><code>preferences</code> opens Luxel settings. <code>--pane</code> accepts <code>general</code>, <code>presets</code>, <code>shortcuts</code>, <code>updates</code>, or <code>about</code> as a URL hint; current builds open Settings normally.</li>
                 <li><code>convert</code> infers format from the output extension, but <code>.mov</code> requires <code>--format prores422</code> or <code>--format prores4444</code>, and <code>.m4a</code> requires <code>--format m4a</code> or <code>--format alac</code>.</li>
                 <li><code>export</code> accepts a full Luxel <code>ExportRequest</code> JSON document for fields without dedicated flags.</li>
                 <li>AV1 is not exposed in the CLI until Luxel ships a registered native AV1 adapter.</li>
@@ -1015,8 +1050,9 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
             <p class="docs-eyebrow">Reference</p>
             <h2 id="formats-title">Export and conversion formats</h2>
             <p>
-              The editor focuses on screen recording formats. The CLI also exposes
-              audio-only conversion formats for headless workflows.
+              The editor exposes video and animation formats for screen recordings, plus
+              audio-only formats when the source is audio. The CLI exposes the same
+              headless conversion surface for scripts.
             </p>
           </div>
 
@@ -1058,8 +1094,9 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
             <article>
               <h3>URL scheme</h3>
               <p>
-                Luxel registers the <code>luxel://</code> URL scheme. Starting captures can
-                require confirmation; commands like stop, preferences, and latest are
+                Luxel registers the <code>luxel://</code> URL scheme. Starting captures and
+                clipping the replay buffer can require confirmation unless a caller has
+                been granted access; commands like stop, preferences, and latest are
                 allowed by default.
               </p>
               <pre><code>luxel://record?target=display&amp;display=main&amp;countdown=3
@@ -1067,7 +1104,7 @@ luxel://record?target=activeWindow&amp;preset=Default
 luxel://toggle
 luxel://stop
 luxel://clip?seconds=30
-luxel://preferences?pane=shortcuts
+luxel://preferences
 luxel://latest?reveal=true</code></pre>
             </article>
 
@@ -1091,7 +1128,9 @@ luxel://latest?reveal=true</code></pre>
               <h3>App Shortcuts</h3>
               <p>
                 Luxel exposes App Intents for Start Recording, Stop Recording, Toggle
-                Recording, Clip Replay Buffer, and Get Latest Recording.
+                Recording, Clip Replay Buffer, and Get Latest Recording. Start and Toggle
+                can accept target, preset, and countdown values; Clip Replay Buffer can
+                accept seconds; Get Latest Recording can reveal the file in Finder.
                 Shortcut phrases include "Start a recording with Luxel", "Stop Luxel",
                 "Toggle Luxel", "Clip replay buffer with Luxel", and
                 "Show my latest Luxel recording".
@@ -1130,7 +1169,9 @@ luxel://latest?reveal=true</code></pre>
                 Export presets can be added, duplicated, deleted, renamed, and assigned
                 as the Quick Recording preset. Presets support format, size rule, frame
                 rate, destination, and post-action. Preset destinations are Recordings
-                Folder or Clipboard.
+                Folder or Clipboard. Quick presets expose GIF, MP4, HEVC MP4, ProRes
+                422 MOV, ProRes 4444 MOV, and APNG; WebM remains available from editor
+                and CLI export.
               </p>
             </article>
 
@@ -1246,7 +1287,17 @@ luxel://latest?reveal=true</code></pre>
               <h3>How does camera preview work?</h3>
               <p>
                 Choose a camera in Recording settings or the area picker. Luxel shows a
-                floating camera preview that can appear in the captured area.
+                floating camera preview that can appear in the captured area. You can
+                choose circle or rounded-rectangle shape, small/medium/large size, and
+                mirror behavior.
+              </p>
+            </article>
+            <article>
+              <h3>Can I export audio-only recordings?</h3>
+              <p>
+                Yes. Audio-only recordings are saved as <code>.m4a</code> with AAC or
+                ALAC. The editor and CLI can export audio-only sources as M4A, ALAC M4A,
+                WAV, CAF, or FLAC.
               </p>
             </article>
             <article>

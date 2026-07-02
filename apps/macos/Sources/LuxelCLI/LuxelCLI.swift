@@ -277,7 +277,7 @@ public struct LuxelPreferencesCommand: ParsableCommand {
         abstract: "Open Luxel settings."
     )
 
-    @Option(help: "Settings pane to open.")
+    @Option(help: "Settings pane hint to include in the automation URL.")
     public var pane: LuxelPreferencesPane?
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
