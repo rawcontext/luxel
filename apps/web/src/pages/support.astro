@@ -38,18 +38,16 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
         <p class="eyebrow">Support</p>
         <h1 id="support-title">Send a bug report or request.</h1>
         <p>
-          Send the issue, question, or feature request with the email address where we can follow up.
-          Submissions become private GitHub issues in the Luxel repository.
+          Send a bug report, feature request, or product question with the email address where
+          we can follow up.
         </p>
       </section>
 
-      <section class="support-form-section" aria-labelledby="support-form-title">
+      <section class="support-form-section" aria-labelledby="support-form-title" data-support-form-section>
         <div>
           <p class="eyebrow">Contact</p>
           <h2 id="support-form-title">Tell us what happened.</h2>
-          <p>
-            Do not include passwords, API keys, recovery phrases, or other sensitive secrets.
-          </p>
+          <p>We read every message and will reply when a follow-up is needed.</p>
         </div>
 
         <form class="support-form" method="post" action="/api/support" data-support-form>
@@ -83,16 +81,26 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
           }
 
           <button class="button button--primary" type="submit" disabled={!turnstileSiteKey}>
-            Send report
+            Send message
           </button>
           <p class="support-form__status" role="status" data-support-status></p>
         </form>
+      </section>
+
+      <section class="support-success" aria-labelledby="support-success-title" tabindex="-1" data-support-success hidden>
+        <p class="eyebrow">Submitted</p>
+        <h2 id="support-success-title">Thank you for your submission.</h2>
+        <p>We received your message and will follow up by email if needed.</p>
+        <p class="support-success__redirect">Redirecting you back to the homepage shortly.</p>
+        <a class="button button--secondary" href="/">Return home</a>
       </section>
     </main>
 
     <script>
       const supportForm = document.querySelector("[data-support-form]");
       const supportStatus = document.querySelector("[data-support-status]");
+      const supportFormSection = document.querySelector("[data-support-form-section]");
+      const supportSuccess = document.querySelector("[data-support-success]");
 
       if (supportForm instanceof HTMLFormElement && supportStatus instanceof HTMLElement) {
         supportForm.addEventListener("submit", async (event) => {
@@ -120,9 +128,16 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
               throw new Error(payload.message || "Could not send the report.");
             }
 
-            supportForm.reset();
-            window.turnstile?.reset();
-            supportStatus.textContent = payload.message || "Report sent.";
+            if (supportFormSection instanceof HTMLElement && supportSuccess instanceof HTMLElement) {
+              supportFormSection.hidden = true;
+              supportSuccess.hidden = false;
+              supportSuccess.focus();
+              window.setTimeout(() => {
+                window.location.assign("/");
+              }, 5000);
+            } else {
+              supportStatus.textContent = payload.message || "Thank you for your submission.";
+            }
           } catch (error) {
             window.turnstile?.reset();
             supportStatus.textContent = error instanceof Error ? error.message : "Could not send the report.";
@@ -271,6 +286,32 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
   .support-form__status {
     min-height: 1.5rem;
     color: var(--muted);
+  }
+
+  .support-success {
+    max-width: 42rem;
+    padding-block: clamp(2.5rem, 6vw, 5rem);
+    outline: 0;
+  }
+
+  .support-success h2 {
+    margin: 0;
+    font-size: clamp(2.25rem, 5vw, 4.8rem);
+    line-height: 0.98;
+  }
+
+  .support-success > p:not(.eyebrow) {
+    margin-block-start: 1.1rem;
+    color: var(--muted);
+    font-size: clamp(1.05rem, 2vw, 1.35rem);
+  }
+
+  .support-success .button {
+    margin-block-start: 1.5rem;
+  }
+
+  .support-success__redirect {
+    font-size: 1rem;
   }
 
   @media (max-width: 980px) {
