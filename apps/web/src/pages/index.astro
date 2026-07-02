@@ -190,18 +190,20 @@ const primaryFeatures = [
       </section>
 
       <section class="local-promise-section" aria-labelledby="local-promise-title">
-        <div class="local-promise-copy">
-          <p class="eyebrow">Local by design</p>
-          <h2 id="local-promise-title">No watermarks. No tracking. No upgrade gates.</h2>
+        <div class="local-promise-inner">
+          <div class="local-promise-copy">
+            <p class="eyebrow">Local by design</p>
+            <h2 id="local-promise-title">No watermarks. No tracking. No upgrade gates.</h2>
+          </div>
+          <p>
+            Luxel runs on your Mac without restricting the files you make. Capture, replay,
+            transcribe, automate, and export without sending work to a service or unlocking
+            core features later.
+          </p>
+          <ul aria-label="Local app promises">
+            {localPromisePoints.map((point) => <li>{point}</li>)}
+          </ul>
         </div>
-        <p>
-          Luxel runs on your Mac without restricting the files you make. Capture, replay,
-          transcribe, automate, and export without sending work to a service or unlocking
-          core features later.
-        </p>
-        <ul aria-label="Local app promises">
-          {localPromisePoints.map((point) => <li>{point}</li>)}
-        </ul>
       </section>
 
       <section class="primary-features-section" id="primary-features" aria-labelledby="primary-features-title">
