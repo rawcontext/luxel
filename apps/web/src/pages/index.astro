@@ -17,6 +17,7 @@ const featureColumns = [
 ];
 
 const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "M4A", "WAV", "FLAC"];
+const macAppStoreUrl = "https://apps.apple.com/us/app/luxel/id6780682473?mt=12";
 
 const localPromisePoints = [
   "No watermarks, time limits, or export restrictions.",
@@ -136,6 +137,7 @@ const primaryFeatures = [
             <a href="#cli">CLI</a>
             <a href="#notch">Notch</a>
             <a href="/docs">Docs</a>
+            <a href="/privacy">Privacy</a>
           </nav>
           <a class="topbar-cta" href="/docs">Read docs</a>
         </header>
@@ -150,6 +152,21 @@ const primaryFeatures = [
               and export without ceremony.
             </p>
             <div class="hero-actions" aria-label="Primary actions">
+              <a
+                class="app-store-link"
+                href={macAppStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Download Luxel on the Mac App Store"
+              >
+                <img
+                  class="app-store-badge"
+                  src="/app-store/mac-app-store-badge.svg"
+                  alt="Download on the Mac App Store"
+                  width="156"
+                  height="40"
+                />
+              </a>
               <a class="button button--primary" href="/docs">Read docs</a>
               <a class="button button--ghost" href="#notch">
                 <span class="play-icon" aria-hidden="true"></span>
@@ -345,9 +362,14 @@ const primaryFeatures = [
           <p class="eyebrow">Documentation</p>
           <h2 id="docs-title">Capture, export, and troubleshoot with confidence.</h2>
         </div>
-        <a class="button button--primary" href="/docs">
-          Open docs
-        </a>
+        <div class="docs-cta-actions">
+          <a class="button button--primary" href="/docs">
+            Open docs
+          </a>
+          <a class="button button--secondary" href="/privacy">
+            Privacy
+          </a>
+        </div>
       </section>
     </main>
     <script>

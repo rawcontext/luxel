@@ -68,6 +68,7 @@ This file is generated during the Luxel website build. Use the full Markdown exp
 ## Website
 
 - [Luxel marketing site](${siteUrl}/): Product overview, feature summary, screenshots, and CLI demo.
+- [Luxel privacy policy](${siteUrl}/privacy): Privacy policy for the Luxel Mac app and marketing website.
 `);
 
 const llmsFull = normalizeMarkdown(`# Luxel Documentation
@@ -84,6 +85,7 @@ ${docsMarkdown}
 const sitemapUrls = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/docs", changefreq: "weekly", priority: "0.8" },
+  { path: "/privacy", changefreq: "monthly", priority: "0.6" },
   { path: "/llms.txt", changefreq: "weekly", priority: "0.4" },
   { path: "/llms-full.txt", changefreq: "weekly", priority: "0.4" }
 ];
