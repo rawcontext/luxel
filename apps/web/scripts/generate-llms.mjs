@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,7 +10,13 @@ import { gfm } from "turndown-plugin-gfm";
 const siteUrl = process.env.LUXEL_SITE_URL ?? "https://luxel.media";
 const appRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const distDir = path.join(appRoot, "dist");
-const docsHtmlPath = path.join(distDir, "docs", "index.html");
+const outputDirs = await existingOutputDirs([
+  path.join(distDir, "client"),
+  distDir,
+  path.join(appRoot, ".vercel", "output", "static")
+]);
+const primaryOutputDir = outputDirs[0] ?? distDir;
+const docsHtmlPath = path.join(primaryOutputDir, "docs", "index.html");
 
 const projectSummary =
   "Luxel is a native macOS menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports.";
@@ -68,6 +74,7 @@ This file is generated during the Luxel website build. Use the full Markdown exp
 ## Website
 
 - [Luxel marketing site](${siteUrl}/): Product overview, feature summary, screenshots, and CLI demo.
+- [Luxel support](${siteUrl}/support): Contact form for bug reports, feature requests, and support questions.
 - [Luxel privacy policy](${siteUrl}/privacy): Privacy policy for the Luxel Mac app and marketing website.
 `);
 
@@ -85,6 +92,7 @@ ${docsMarkdown}
 const sitemapUrls = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/docs", changefreq: "weekly", priority: "0.8" },
+  { path: "/support", changefreq: "monthly", priority: "0.6" },
   { path: "/privacy", changefreq: "monthly", priority: "0.6" },
   { path: "/llms.txt", changefreq: "weekly", priority: "0.4" },
   { path: "/llms-full.txt", changefreq: "weekly", priority: "0.4" }
@@ -92,14 +100,42 @@ const sitemapUrls = [
 
 const sitemap = buildSitemap(sitemapUrls, siteUrl);
 
-await mkdir(distDir, { recursive: true });
-await Promise.all([
-  writeFile(path.join(distDir, "llms.txt"), `${llmsIndex}\n`, "utf8"),
-  writeFile(path.join(distDir, "llms-full.txt"), `${llmsFull}\n`, "utf8"),
-  writeFile(path.join(distDir, "sitemap.xml"), `${sitemap}\n`, "utf8")
-]);
+await Promise.all(outputDirs.flatMap(async (outputDir) => {
+  await mkdir(outputDir, { recursive: true });
+  return Promise.all([
+    writeFile(path.join(outputDir, "llms.txt"), `${llmsIndex}\n`, "utf8"),
+    writeFile(path.join(outputDir, "llms-full.txt"), `${llmsFull}\n`, "utf8"),
+    writeFile(path.join(outputDir, "sitemap.xml"), `${sitemap}\n`, "utf8")
+  ]);
+}));
 
-console.log("Generated dist/llms.txt, dist/llms-full.txt, and dist/sitemap.xml");
+console.log(`Generated llms.txt, llms-full.txt, and sitemap.xml in ${outputDirs.length} output director${outputDirs.length === 1 ? "y" : "ies"}`);
+
+async function existingOutputDirs(candidates) {
+  const seen = new Set();
+  const dirs = [];
+
+  for (const candidate of candidates) {
+    if (seen.has(candidate)) {
+      continue;
+    }
+    seen.add(candidate);
+
+    if (await isDirectory(candidate)) {
+      dirs.push(candidate);
+    }
+  }
+
+  return dirs.length > 0 ? dirs : [distDir];
+}
+
+async function isDirectory(candidate) {
+  try {
+    return (await stat(candidate)).isDirectory();
+  } catch {
+    return false;
+  }
+}
 
 function normalizeMarkdown(value) {
   return value

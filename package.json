@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "vercel-build": "bun run --cwd apps/web build && rm -rf .vercel/output && mkdir -p .vercel && cp -R apps/web/.vercel/output .vercel/output",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "app:build": "turbo run app:build",

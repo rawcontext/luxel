@@ -1,0 +1,303 @@
+---
+import "../styles/global.css";
+
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Contact Luxel support with a bug report, feature request, or product question."
+    />
+    <meta name="apple-itunes-app" content="app-id=6780682473" />
+    <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
+    <link rel="alternate" href="/llms.txt" type="text/markdown" title="Luxel LLM-readable index" />
+    <link rel="alternate" href="/llms-full.txt" type="text/markdown" title="Luxel full Markdown documentation" />
+    <title>Support - Luxel</title>
+    {turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+  </head>
+  <body class="support-page">
+    <header class="support-topbar">
+      <a class="brand" href="/" aria-label="Luxel home">
+        <img class="brand-mark" src="/luxel-icon.svg" alt="" width="48" height="48" />
+        <span>Luxel</span>
+      </a>
+      <nav aria-label="Support page navigation">
+        <a href="/">Home</a>
+        <a href="/docs">Docs</a>
+        <a href="/privacy">Privacy</a>
+      </nav>
+    </header>
+
+    <main class="support-shell">
+      <section class="support-hero" aria-labelledby="support-title">
+        <p class="eyebrow">Support</p>
+        <h1 id="support-title">Send a bug report or request.</h1>
+        <p>
+          Send the issue, question, or feature request with the email address where we can follow up.
+          Submissions become private GitHub issues in the Luxel repository.
+        </p>
+      </section>
+
+      <section class="support-form-section" aria-labelledby="support-form-title">
+        <div>
+          <p class="eyebrow">Contact</p>
+          <h2 id="support-form-title">Tell us what happened.</h2>
+          <p>
+            Do not include passwords, API keys, recovery phrases, or other sensitive secrets.
+          </p>
+        </div>
+
+        <form class="support-form" method="post" action="/api/support" data-support-form>
+          <label>
+            <span>Email address</span>
+            <input
+              type="email"
+              name="email"
+              autocomplete="email"
+              inputmode="email"
+              maxlength="254"
+              required
+            />
+          </label>
+
+          <label>
+            <span>Message</span>
+            <textarea name="message" rows="9" maxlength="8000" required></textarea>
+          </label>
+
+          {
+            turnstileSiteKey ? (
+              <div class="turnstile-field">
+                <div class="cf-turnstile" data-sitekey={turnstileSiteKey}></div>
+              </div>
+            ) : (
+              <p class="support-form__status" role="status">
+                Support submissions are not configured yet.
+              </p>
+            )
+          }
+
+          <button class="button button--primary" type="submit" disabled={!turnstileSiteKey}>
+            Send report
+          </button>
+          <p class="support-form__status" role="status" data-support-status></p>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      const supportForm = document.querySelector("[data-support-form]");
+      const supportStatus = document.querySelector("[data-support-status]");
+
+      if (supportForm instanceof HTMLFormElement && supportStatus instanceof HTMLElement) {
+        supportForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+
+          const submitButton = supportForm.querySelector("button[type='submit']");
+          if (!(submitButton instanceof HTMLButtonElement)) {
+            return;
+          }
+
+          submitButton.disabled = true;
+          supportStatus.textContent = "Sending...";
+
+          try {
+            const response = await fetch(supportForm.action, {
+              method: "POST",
+              body: new FormData(supportForm),
+              headers: {
+                Accept: "application/json"
+              }
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              throw new Error(payload.message || "Could not send the report.");
+            }
+
+            supportForm.reset();
+            window.turnstile?.reset();
+            supportStatus.textContent = payload.message || "Report sent.";
+          } catch (error) {
+            window.turnstile?.reset();
+            supportStatus.textContent = error instanceof Error ? error.message : "Could not send the report.";
+          } finally {
+            submitButton.disabled = false;
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  .support-page {
+    background:
+      radial-gradient(circle at 86% 16%, rgb(22 184 199 / 0.15), transparent 28rem),
+      linear-gradient(180deg, #030405 0%, #070b0f 44%, #020304 100%);
+  }
+
+  .support-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: center;
+    min-height: 6rem;
+    padding-inline: clamp(1.25rem, 4vw, 4.25rem);
+    border-block-end: 1px solid rgb(255 255 255 / 0.12);
+    background: rgb(3 5 7 / 0.72);
+    backdrop-filter: blur(24px);
+  }
+
+  .support-topbar nav {
+    display: flex;
+    gap: clamp(1rem, 3vw, 2.25rem);
+    color: var(--muted);
+    font-weight: 650;
+  }
+
+  .support-topbar a:hover {
+    color: var(--ink);
+  }
+
+  .support-shell {
+    width: min(calc(100% - 2.5rem), 78rem);
+    margin-inline: auto;
+    padding-block: clamp(4rem, 8vw, 7rem);
+  }
+
+  .support-hero {
+    max-width: 52rem;
+    padding-block-end: clamp(2rem, 5vw, 4rem);
+  }
+
+  .support-hero h1 {
+    max-width: 11ch;
+    font-size: clamp(3rem, 8vw, 7rem);
+    line-height: 0.92;
+  }
+
+  .support-hero > p:not(.eyebrow) {
+    max-width: 44rem;
+    margin-block-start: 1.35rem;
+    color: var(--muted);
+    font-size: clamp(1.08rem, 2vw, 1.45rem);
+  }
+
+  .support-form-section {
+    display: grid;
+    grid-template-columns: minmax(16rem, 0.72fr) minmax(20rem, 1fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+    padding-block-end: 4rem;
+  }
+
+  .support-form-section h2 {
+    margin: 0;
+    font-size: clamp(1.45rem, 3vw, 2.5rem);
+    line-height: 1.05;
+  }
+
+  .support-form-section > div > p:not(.eyebrow) {
+    margin-block-start: 1rem;
+    color: var(--muted);
+  }
+
+  .support-form {
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1.2rem, 3vw, 2rem);
+    border: 1px solid rgb(255 255 255 / 0.12);
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 0.045);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+
+  .support-form label {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .support-form label span {
+    color: rgb(248 251 255 / 0.86);
+    font-weight: 680;
+  }
+
+  .support-form input,
+  .support-form textarea {
+    width: 100%;
+    border: 1px solid rgb(255 255 255 / 0.14);
+    border-radius: 0.6rem;
+    background: rgb(3 5 7 / 0.74);
+    color: var(--ink);
+    font: inherit;
+  }
+
+  .support-form input {
+    min-height: 3.15rem;
+    padding-inline: 0.95rem;
+  }
+
+  .support-form textarea {
+    min-height: 12rem;
+    padding: 0.85rem 0.95rem;
+    resize: vertical;
+  }
+
+  .support-form input:focus,
+  .support-form textarea:focus {
+    border-color: rgb(22 184 199 / 0.72);
+    outline: 0;
+    box-shadow: 0 0 0 3px rgb(22 184 199 / 0.16);
+  }
+
+  .turnstile-field {
+    min-height: 4.1rem;
+  }
+
+  .support-form .button {
+    justify-self: start;
+    min-width: 10rem;
+  }
+
+  .support-form__status {
+    min-height: 1.5rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 980px) {
+    .support-form-section {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .support-topbar {
+      min-height: 4.75rem;
+      padding-inline: 1rem;
+    }
+
+    .support-topbar nav {
+      gap: 1rem;
+      font-size: 0.92rem;
+    }
+
+    .support-shell {
+      width: min(calc(100% - 1.25rem), 78rem);
+      padding-block: 2.5rem;
+    }
+
+    .support-form .button {
+      justify-self: stretch;
+      width: 100%;
+    }
+  }
+</style>
