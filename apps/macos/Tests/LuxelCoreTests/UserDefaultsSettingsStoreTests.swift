@@ -82,6 +82,15 @@ struct UserDefaultsSettingsStoreTests {
             showTimeInMenuBar: false,
             hideMenuBarIcon: false,
             launchAtLogin: false,
+            commandLineToolInstall: CommandLineToolInstall(
+                linkURL: URL(fileURLWithPath: "/Users/example/.local/bin/luxel"),
+                directoryBookmark: BookmarkedDirectory(
+                    url: URL(fileURLWithPath: "/Users/example/.local/bin", isDirectory: true),
+                    bookmarkData: Data([0x63, 0x6c, 0x69]),
+                    accessState: .resolved
+                )
+            ),
+            commandLineShell: .fish,
             notificationReminder: false,
             allowURLAutomation: true,
             urlAutomationGrants: ["com.example.terminal"],

@@ -7,6 +7,7 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
     case shortcuts
     case notch
     case experimental
+    case commandLine
     case system
 
     var id: Self {
@@ -27,6 +28,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Notch"
         case .experimental:
             "Experimental"
+        case .commandLine:
+            "Command Line"
         case .system:
             "System"
         }
@@ -46,6 +49,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Built-in notch display controls and fallback behavior."
         case .experimental:
             "Preview features that are still being built out."
+        case .commandLine:
+            "Install and configure the luxel command-line tool."
         case .system:
             "App startup, updates, menu bar behavior, and acknowledgements."
         }
@@ -65,6 +70,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "laptopcomputer"
         case .experimental:
             "sparkles"
+        case .commandLine:
+            "terminal"
         case .system:
             "gearshape"
         }

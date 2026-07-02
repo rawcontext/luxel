@@ -185,5 +185,6 @@ final class LuxelMenuModel {
         self.settings = loadedSettings
         self.launchAtLogin = loadedSettings.launchAtLogin
         reconcileLaunchAtLoginWithSettings()
+        reconcileCommandLineToolInstallWithBundle()
     }
 }

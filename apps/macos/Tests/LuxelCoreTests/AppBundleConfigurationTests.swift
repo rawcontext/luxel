@@ -24,6 +24,17 @@ struct AppBundleConfigurationTests {
         #expect(luxelURLType["CFBundleURLName"] as? String == "media.luxel.app.url")
         #expect(luxelURLType["CFBundleURLSchemes"] as? [String] == ["luxel"])
 
+        let documentTypes = try #require(plist["CFBundleDocumentTypes"] as? [[String: Any]])
+        #expect(documentTypes.count == 2)
+        #expect(
+            documentTypes.map { $0["CFBundleTypeName"] as? String }
+                == ["Luxel Video", "Luxel Audio"])
+        #expect(documentTypes.allSatisfy { $0["CFBundleTypeRole"] as? String == "Editor" })
+        #expect(documentTypes.allSatisfy { $0["LSHandlerRank"] as? String == "Alternate" })
+        #expect(
+            documentTypes.compactMap { $0["LSItemContentTypes"] as? [String] }
+                == [["public.movie"], ["public.audio"]])
+
         let microphonePurpose = try #require(plist["NSMicrophoneUsageDescription"] as? String)
         #expect(microphonePurpose.contains("microphone"))
         #expect(microphonePurpose.contains("screen recording"))
@@ -59,6 +70,15 @@ struct AppBundleConfigurationTests {
         #expect(entitlements["com.apple.security.network.client"] == nil)
     }
 
+    @Test("Mac App Store CLI entitlements sandbox terminal-facing command")
+    func macAppStoreCLIEntitlementsSandboxTerminalFacingCommand() throws {
+        let entitlements = try readPlist("Configuration/Luxel/LuxelCLI.MacAppStore.entitlements")
+
+        #expect(entitlements["com.apple.security.app-sandbox"] as? Bool == true)
+        #expect(entitlements["com.apple.security.network.server"] as? Bool == true)
+        #expect(entitlements["com.apple.security.inherit"] == nil)
+    }
+
     @Test("build script bundles third-party license ledger as app resource")
     func buildScriptBundlesThirdPartyLicenseLedgerAsAppResource() throws {
         let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
@@ -87,14 +107,16 @@ struct AppBundleConfigurationTests {
         #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 ${APP_URL_SCHEME}"))
     }
 
-    @Test("build script bundles CLI executable and install helper")
-    func buildScriptBundlesCLIExecutableAndInstallHelper() throws {
+    @Test("build script bundles and signs CLI executable")
+    func buildScriptBundlesAndSignsCLIExecutable() throws {
         let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
         let script = try String(contentsOf: scriptURL, encoding: .utf8)
 
         #expect(script.contains("swift build --configuration \"${CONFIGURATION}\" --product luxel-cli"))
         #expect(script.contains("Contents/MacOS/luxel-cli"))
-        #expect(script.contains("Contents/Resources/install-cli"))
+        #expect(script.contains("xcrun strip -x \"${APP_PATH}/Contents/MacOS/luxel-cli\""))
+        #expect(script.contains("\"${APP_PATH}/Contents/MacOS/luxel-cli\""))
+        #expect(!script.contains("Contents/Resources/install-cli"))
     }
 
     @Test("build script requires team signing")

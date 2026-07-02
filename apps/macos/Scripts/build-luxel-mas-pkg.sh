@@ -6,6 +6,7 @@ CONFIGURATION="${CONFIGURATION:-release}"
 PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
 BASE_ENTITLEMENTS="${PACKAGE_ROOT}/Configuration/Luxel/Luxel.MacAppStore.entitlements"
+CLI_ENTITLEMENTS="${PACKAGE_ROOT}/Configuration/Luxel/LuxelCLI.MacAppStore.entitlements"
 THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 OUTPUT_DIR="${OUTPUT_DIR:-${PACKAGE_ROOT}/.build/mas}"
@@ -48,6 +49,7 @@ fi
 
 require_file "${PROVISIONING_PROFILE}" "Mac App Store provisioning profile"
 require_file "${BASE_ENTITLEMENTS}" "Mac App Store entitlements"
+require_file "${CLI_ENTITLEMENTS}" "Mac App Store command line tool entitlements"
 
 if [[ -z "${APP_STORE_SIGN_IDENTITY}" ]]; then
 	APP_STORE_SIGN_IDENTITY="$(
@@ -112,6 +114,10 @@ swift build \
 	--configuration "${CONFIGURATION}" \
 	-Xswiftc -DLUXEL_MAC_APP_STORE \
 	--product "${APP_NAME}"
+swift build \
+	--configuration "${CONFIGURATION}" \
+	-Xswiftc -DLUXEL_MAC_APP_STORE \
+	--product luxel-cli
 BIN_DIR="$(swift build --configuration "${CONFIGURATION}" --show-bin-path)"
 
 rm -rf "${APP_PATH}" "${PKG_PATH}"
@@ -134,10 +140,23 @@ fi
 
 cp "${PROVISIONING_PROFILE}" "${APP_PATH}/Contents/embedded.provisionprofile"
 cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
+cp "${BIN_DIR}/luxel-cli" "${APP_PATH}/Contents/MacOS/luxel-cli"
 cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
 "${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
 
 chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
+chmod +x "${APP_PATH}/Contents/MacOS/luxel-cli"
+
+xcrun strip -x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
+xcrun strip -x "${APP_PATH}/Contents/MacOS/luxel-cli"
+
+codesign \
+	--force \
+	--sign "${APP_STORE_SIGN_IDENTITY}" \
+	--options runtime \
+	--entitlements "${CLI_ENTITLEMENTS}" \
+	--timestamp \
+	"${APP_PATH}/Contents/MacOS/luxel-cli"
 
 codesign \
 	--force \

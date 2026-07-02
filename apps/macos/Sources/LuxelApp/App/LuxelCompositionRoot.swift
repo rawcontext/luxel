@@ -81,10 +81,13 @@ enum LuxelCompositionRoot {
         PurchaseGateService(gate: AlwaysEntitledPurchaseGate())
     }
 
+    @MainActor
     static func commandLineToolInstallService() -> CommandLineToolInstallService {
         CommandLineToolInstallService(
             installer: BundledCommandLineToolInstaller(),
-            homeDirectory: FileManager.default.homeDirectoryForCurrentUser
+            homeDirectory: FileManager.default.homeDirectoryForCurrentUser,
+            destinationPicker: AppKitCommandLineToolInstallDestinationPicker(),
+            directoryAccessService: bookmarkedDirectoryAccessService()
         )
     }
 

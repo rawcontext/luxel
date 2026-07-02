@@ -113,7 +113,7 @@ extension LuxelSettingsView {
     private var settingsSidebar: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
-                ForEach(LuxelSettingsPane.allCases) { pane in
+                ForEach(visibleSettingsPanes) { pane in
                     settingsSidebarButton(pane)
                 }
             }
@@ -125,6 +125,13 @@ extension LuxelSettingsView {
         .padding(.bottom, 16)
         .frame(width: 232)
         .background(.regularMaterial)
+    }
+
+    private var visibleSettingsPanes: [LuxelSettingsPane] {
+        LuxelSettingsPane.allCases.filter { pane in
+            pane != .commandLine
+                || AppDistribution.current.capabilities.allowsCommandLineToolInstaller
+        }
     }
 
     private func settingsSidebarButton(_ pane: LuxelSettingsPane) -> some View {
@@ -187,6 +194,8 @@ extension LuxelSettingsView {
             notchSettingsForm
         case .experimental:
             experimentalSettingsForm
+        case .commandLine:
+            commandLineToolSettingsForm
         case .system:
             systemSettingsForm
         }
@@ -458,6 +467,11 @@ extension LuxelSettingsView {
     }
 
     @ViewBuilder
+    private var commandLineToolSettingsForm: some View {
+        CommandLineToolSettingsSection(model: model)
+    }
+
+    @ViewBuilder
     private var systemSettingsForm: some View {
         Section("Menu Bar") {
             Toggle("Show Time in Menu Bar", isOn: $model.settings.showTimeInMenuBar)
@@ -473,31 +487,6 @@ extension LuxelSettingsView {
         Section("Startup") {
             Toggle("Launch at Login", isOn: $model.launchAtLogin)
                 .help("Open Luxel automatically when you sign in.")
-        }
-
-        if AppDistribution.current.capabilities.allowsCommandLineToolInstaller {
-            Section("Command Line Tool") {
-                LabeledContent("Install Location") {
-                    Button {
-                        model.installCommandLineTool()
-                    } label: {
-                        Label("Install luxel", systemImage: "terminal")
-                    }
-                    .help(
-                        LuxelLocalization.format(
-                            "settings.commandLine.installDestinationHelp",
-                            defaultValue: "Install to %@",
-                            model.commandLineToolInstallService.defaultDestination.path)
-                    )
-                }
-                .help("Install the command line helper for terminal automation.")
-
-                if let installStatus = model.commandLineToolInstallStatus {
-                    Label(installStatus.message, systemImage: installStatus.systemImage)
-                        .font(.caption)
-                        .foregroundStyle(installStatus.tint)
-                }
-            }
         }
 
         Section("Updates") {

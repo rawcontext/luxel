@@ -4,6 +4,8 @@ import LuxelPresentation
 
 enum CommandLineToolInstallStatus: Equatable {
     case installed(URL)
+    case repaired(URL)
+    case pathCommandCopied(URL)
     case failed(String)
 }
 
@@ -68,10 +70,65 @@ extension LuxelMenuModel {
 
     func installCommandLineTool() {
         do {
-            let destination = try commandLineToolInstallService.installToDefaultLocation()
-            commandLineToolInstallStatus = .installed(destination)
+            guard let install = try commandLineToolInstallService.chooseAndInstall() else {
+                return
+            }
+
+            settings.commandLineToolInstall = install
+            saveSettings()
+            commandLineToolInstallStatus = .installed(install.linkURL)
         } catch {
             commandLineToolInstallStatus = .failed(errorMessage(error))
+        }
+    }
+
+    func repairCommandLineToolInstall() {
+        guard let install = settings.commandLineToolInstall else {
+            installCommandLineTool()
+            return
+        }
+
+        do {
+            let repairedInstall = try commandLineToolInstallService.repairInstall(install)
+            settings.commandLineToolInstall = repairedInstall
+            saveSettings()
+            commandLineToolInstallStatus = .repaired(repairedInstall.linkURL)
+        } catch {
+            commandLineToolInstallStatus = .failed(errorMessage(error))
+        }
+    }
+
+    func copyCommandLinePathSetupCommand() {
+        let install =
+            settings.commandLineToolInstall
+            ?? CommandLineToolInstall(
+                linkURL: commandLineToolInstallService.defaultDestination,
+                directoryBookmark: BookmarkedDirectory(
+                    url: commandLineToolInstallService.defaultDestination.deletingLastPathComponent(),
+                    bookmarkData: Data()
+                )
+            )
+        let command = commandLineToolInstallService.pathSetupCommand(
+            for: install,
+            shell: settings.commandLineShell,
+            homeDirectory: FileManager.default.homeDirectoryForCurrentUser
+        )
+        fileWorkflowService.copyText(command)
+        commandLineToolInstallStatus = .pathCommandCopied(install.linkURL)
+    }
+
+    func reconcileCommandLineToolInstallWithBundle() {
+        guard let install = settings.commandLineToolInstall else {
+            return
+        }
+
+        do {
+            let repairedInstall = try commandLineToolInstallService.repairInstall(install)
+            if repairedInstall != install {
+                settings.commandLineToolInstall = repairedInstall
+                saveSettings()
+            }
+        } catch {
         }
     }
 

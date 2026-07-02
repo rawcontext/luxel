@@ -26,7 +26,7 @@ public enum AppDistribution: String, Codable, CaseIterable, Equatable, Identifia
             AppDistributionCapabilities(
                 includesSparkleUpdater: false,
                 usesStoreKitEntitlements: true,
-                allowsCommandLineToolInstaller: false
+                allowsCommandLineToolInstaller: true
             )
         }
     }

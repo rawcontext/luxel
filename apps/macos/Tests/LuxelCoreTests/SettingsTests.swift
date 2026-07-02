@@ -55,6 +55,8 @@ extension SettingsTests {
         #expect(settings.showTimeInMenuBar)
         #expect(!settings.hideMenuBarIcon)
         #expect(settings.launchAtLogin)
+        #expect(settings.commandLineToolInstall == nil)
+        #expect(settings.commandLineShell == .zsh)
         #expect(settings.notificationReminder)
         #expect(settings.allowURLAutomation)
         #expect(settings.urlAutomationGrants.isEmpty)
@@ -71,6 +73,20 @@ extension SettingsTests {
         #expect(settings.confirmDiscard)
         #expect(settings.defaultCountdown == nil)
         #expect(settings.lastStopAfter == nil)
+    }
+
+    @Test("command line shell defaults to zsh when missing")
+    func commandLineShellDefaultsToZshWhenMissing() throws {
+        let data = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+      }
+      """.utf8)
+
+        let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(settings.commandLineShell == .zsh)
     }
 
     @Test("transcript turn segmentation setting defaults off and decodes explicit override")

@@ -40,6 +40,8 @@ extension AppSettings {
         case showTimeInMenuBar
         case hideMenuBarIcon
         case launchAtLogin
+        case commandLineToolInstall
+        case commandLineShell
         case notificationReminder
         case allowURLAutomation
         case urlAutomationGrants
@@ -129,6 +131,8 @@ extension AppSettings {
         showTimeInMenuBar = general.showTimeInMenuBar
         hideMenuBarIcon = general.hideMenuBarIcon && notchSurfaceSettings.isEnabled
         launchAtLogin = general.launchAtLogin
+        commandLineToolInstall = general.commandLineToolInstall
+        commandLineShell = general.commandLineShell
         notificationReminder = general.notificationReminder
         allowURLAutomation = true
         urlAutomationGrants = general.urlAutomationGrants
@@ -257,6 +261,14 @@ extension AppSettings {
             hideMenuBarIcon: container.decodeIfPresent(Bool.self, forKey: .hideMenuBarIcon)
                 ?? false,
             launchAtLogin: container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true,
+            commandLineToolInstall: container.decodeIfPresent(
+                CommandLineToolInstall.self,
+                forKey: .commandLineToolInstall
+            ),
+            commandLineShell: container.decodeIfPresent(
+                CommandLineShell.self,
+                forKey: .commandLineShell
+            ) ?? .zsh,
             notificationReminder: container.decodeIfPresent(Bool.self, forKey: .notificationReminder)
                 ?? true,
             urlAutomationGrants: container.decodeIfPresent(
@@ -395,6 +407,8 @@ private struct GeneralSettings {
     let showTimeInMenuBar: Bool
     let hideMenuBarIcon: Bool
     let launchAtLogin: Bool
+    let commandLineToolInstall: CommandLineToolInstall?
+    let commandLineShell: CommandLineShell
     let notificationReminder: Bool
     let urlAutomationGrants: [String]
     let exportPresets: [ExportPreset]

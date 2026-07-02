@@ -21,12 +21,12 @@ struct AppDistributionTests {
         #expect(capabilities.allowsCommandLineToolInstaller)
     }
 
-    @Test("Mac App Store distribution uses StoreKit and excludes external updater surfaces")
-    func macAppStoreDistributionUsesStoreKitAndExcludesExternalUpdaterSurfaces() {
+    @Test("Mac App Store distribution uses StoreKit and keeps CLI installer")
+    func macAppStoreDistributionUsesStoreKitAndKeepsCLIInstaller() {
         let capabilities = AppDistribution.macAppStore.capabilities
 
         #expect(!capabilities.includesSparkleUpdater)
         #expect(capabilities.usesStoreKitEntitlements)
-        #expect(!capabilities.allowsCommandLineToolInstaller)
+        #expect(capabilities.allowsCommandLineToolInstaller)
     }
 }

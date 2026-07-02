@@ -8,7 +8,6 @@ INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
 ENTITLEMENTS="${ENTITLEMENTS:-${PACKAGE_ROOT}/Configuration/Luxel/Luxel.DeveloperID.entitlements}"
 THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
 STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
-INSTALL_CLI="${PACKAGE_ROOT}/Scripts/install-cli.sh"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 APP_BUNDLE_IDENTIFIER="${APP_BUNDLE_IDENTIFIER:-media.luxel.app.dev}"
 APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-Luxel Dev}"
@@ -55,7 +54,6 @@ cp "${INFO_PLIST}" "${APP_PATH}/Contents/Info.plist"
 cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 cp "${BIN_DIR}/luxel-cli" "${APP_PATH}/Contents/MacOS/luxel-cli"
 cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
-cp "${INSTALL_CLI}" "${APP_PATH}/Contents/Resources/install-cli"
 "${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
 find "${BIN_DIR}" -maxdepth 1 -name '*.bundle' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
 find "${BIN_DIR}" -maxdepth 2 -name '*.lproj' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
@@ -104,7 +102,16 @@ PY
 fi
 chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 chmod +x "${APP_PATH}/Contents/MacOS/luxel-cli"
-chmod +x "${APP_PATH}/Contents/Resources/install-cli"
+
+xcrun strip -x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
+xcrun strip -x "${APP_PATH}/Contents/MacOS/luxel-cli"
+
+codesign \
+	--force \
+	--sign "${SIGN_IDENTITY}" \
+	--options runtime \
+	--timestamp \
+	"${APP_PATH}/Contents/MacOS/luxel-cli"
 
 codesign \
 	--force \

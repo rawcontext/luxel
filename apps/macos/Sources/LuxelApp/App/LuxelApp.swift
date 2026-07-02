@@ -6,6 +6,8 @@ import SwiftUI
 
 @main
 struct LuxelApp: App {
+    @NSApplicationDelegateAdaptor(LuxelApplicationDelegate.self) private var appDelegate
+
     @State private var model: LuxelMenuModel
     @State private var editorModel: LuxelEditorModel
     @State private var cropperPanelController: LuxelCropperPanelController
@@ -55,6 +57,13 @@ struct LuxelApp: App {
                 shortcutController: shortcutController,
                 windowPresenter: windowPresenter
             ))
+        appDelegate.openFiles = { fileURLs, activationSource in
+            guard let fileURL = fileURLs.first else {
+                return
+            }
+
+            windowPresenter.openEditor(fileURL: fileURL, activationSource: activationSource)
+        }
     }
 
     var body: some Scene {
@@ -81,6 +90,17 @@ struct LuxelApp: App {
                 }
             )
         }
+    }
+}
+
+@MainActor
+private final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
+    var openFiles: (([URL], NSRunningApplication?) -> Void)?
+
+    func application(_ sender: NSApplication, openFiles filenames: [String]) {
+        let fileURLs = filenames.map { URL(fileURLWithPath: $0) }
+        openFiles?(fileURLs, NSWorkspace.shared.frontmostApplication)
+        sender.reply(toOpenOrPrint: .success)
     }
 }
 
