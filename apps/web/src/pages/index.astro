@@ -75,9 +75,12 @@ const primaryFeatures = [
     eyebrow: "Automate",
     title: "Command line and URL control",
     text: "Install the bundled luxel command from Settings and control Luxel from shell scripts, launchers, URL automation, or Shortcuts.",
-    image: {
-      src: "/screenshots/luxel-cli-convert-progress.png",
-      alt: "Luxel command line converting an MP4 file to WebM with a terminal progress bar."
+    video: {
+      src: "/videos/luxel-cli-usage-demo.webm",
+      label: "Luxel command-line usage recording showing terminal commands and generated export output.",
+      width: 740,
+      height: 470,
+      note: "This CLI walkthrough was recorded, edited, and exported using Luxel itself."
     },
     points: ["record, stop, toggle, clip, latest, editor, convert, export, transcribe, preferences", "x-success and x-error callbacks with --wait, --json, and --print-url", "Headless trim, resize, speed, quality, crop, mute, and format conversion"]
   },
@@ -204,7 +207,7 @@ const primaryFeatures = [
 
         <div class="primary-feature-grid">
           {primaryFeatures.map((feature) => (
-            <article class={`primary-feature-card${"image" in feature ? "" : " primary-feature-card--text-only"}`} id={feature.id}>
+            <article class={`primary-feature-card${"image" in feature || "video" in feature ? "" : " primary-feature-card--text-only"}`} id={feature.id}>
               <div class="primary-feature-card__copy">
                 <p class="primary-feature-card__eyebrow">{feature.eyebrow}</p>
                 <h3>{feature.title}</h3>
@@ -220,6 +223,23 @@ const primaryFeatures = [
                   alt={feature.image.alt}
                   loading="lazy"
                 />
+              )}
+              {"video" in feature && (
+                <figure class="primary-feature-card__figure">
+                  <video
+                    class="primary-feature-card__media primary-feature-card__media--video js-lazy-video"
+                    data-lazy-src={feature.video.src}
+                    aria-label={feature.video.label}
+                    width={feature.video.width}
+                    height={feature.video.height}
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                  ></video>
+                  <figcaption>{feature.video.note}</figcaption>
+                </figure>
               )}
             </article>
           ))}
@@ -319,5 +339,43 @@ const primaryFeatures = [
         </a>
       </section>
     </main>
+    <script>
+      const lazyVideos = Array.from(document.querySelectorAll("video[data-lazy-src]"));
+
+      const loadLazyVideo = (video) => {
+        if (!(video instanceof HTMLVideoElement) || video.src) {
+          return;
+        }
+
+        const src = video.dataset.lazySrc;
+        if (!src) {
+          return;
+        }
+
+        video.src = src;
+        video.load();
+        video.play().catch(() => {});
+      };
+
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) {
+                return;
+              }
+
+              loadLazyVideo(entry.target);
+              observer.unobserve(entry.target);
+            });
+          },
+          { rootMargin: "420px 0px" }
+        );
+
+        lazyVideos.forEach((video) => observer.observe(video));
+      } else {
+        lazyVideos.forEach(loadLazyVideo);
+      }
+    </script>
   </body>
 </html>

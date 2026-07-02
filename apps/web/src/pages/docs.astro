@@ -904,7 +904,22 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
             </article>
           </div>
 
-          <div class="cli-screenshot-grid" aria-label="Luxel command-line screenshots">
+          <div class="cli-screenshot-grid" aria-label="Luxel command-line media">
+            <figure class="cli-video-card">
+              <video
+                class="cli-demo-video js-lazy-video"
+                data-lazy-src="/videos/luxel-cli-usage-demo.webm"
+                aria-label="Luxel command-line usage recording showing terminal commands and generated export output."
+                width="740"
+                height="470"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="metadata"
+              ></video>
+              <figcaption>This CLI walkthrough was recorded, edited, and exported using Luxel itself.</figcaption>
+            </figure>
             <figure>
               <img
                 src="/screenshots/luxel-cli-convert-progress.png"
@@ -1267,6 +1282,44 @@ luxel://latest?reveal=true</code></pre>
         </section>
       </div>
     </main>
+    <script>
+      const lazyVideos = Array.from(document.querySelectorAll("video[data-lazy-src]"));
+
+      const loadLazyVideo = (video) => {
+        if (!(video instanceof HTMLVideoElement) || video.src) {
+          return;
+        }
+
+        const src = video.dataset.lazySrc;
+        if (!src) {
+          return;
+        }
+
+        video.src = src;
+        video.load();
+        video.play().catch(() => {});
+      };
+
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) {
+                return;
+              }
+
+              loadLazyVideo(entry.target);
+              observer.unobserve(entry.target);
+            });
+          },
+          { rootMargin: "420px 0px" }
+        );
+
+        lazyVideos.forEach((video) => observer.observe(video));
+      } else {
+        lazyVideos.forEach(loadLazyVideo);
+      }
+    </script>
   </body>
 </html>
 
@@ -1619,6 +1672,21 @@ luxel://latest?reveal=true</code></pre>
     border: 1px solid var(--docs-line);
     border-radius: 8px;
     background: var(--docs-panel-strong);
+  }
+
+  .cli-video-card {
+    grid-column: 1 / -1;
+  }
+
+  .cli-demo-video {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 740 / 470;
+    border-bottom: 1px solid var(--docs-line);
+    background: #020304;
+    object-fit: contain;
+    object-position: center;
   }
 
   .cli-screenshot-grid img {
