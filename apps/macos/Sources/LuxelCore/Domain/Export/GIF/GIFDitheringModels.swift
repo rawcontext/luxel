@@ -229,8 +229,8 @@ public struct GIFFrameIndexer: Sendable {
             requestedMode: dithering
         )
 
-        return try frames.map { frame in
-            try indexedFrame(from: frame, palette: palette, resolvedMode: resolvedMode)
+        return try GIFConcurrentMapper.map(count: frames.count) { index in
+            try indexedFrame(from: frames[index], palette: palette, resolvedMode: resolvedMode)
         }
     }
 

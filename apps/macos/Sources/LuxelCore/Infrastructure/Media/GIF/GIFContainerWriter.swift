@@ -34,10 +34,19 @@ public struct GIFContainerWriter: Sendable {
             try appendLoopExtension(to: &output, loopCount: loopCount)
         }
 
-        for (frame, delay) in zip(frames, delays.centisecondDelays) {
+        let minimumCodeSize = max(2, Self.bitWidth(for: colorTableSize - 1))
+        let compressedFrames = try GIFConcurrentMapper.map(count: frames.count) { index in
+            try GIFLZWEncoder().encode(
+                colorIndexes: frames[index].colorIndexes,
+                minimumCodeSize: minimumCodeSize
+            )
+        }
+
+        for (index, (frame, delay)) in zip(frames, delays.centisecondDelays).enumerated() {
             try appendGraphicControlExtension(to: &output, frame: frame, delay: delay)
             try appendImageDescriptor(to: &output, frame: frame)
-            try appendImageData(to: &output, frame: frame, colorTableSize: colorTableSize)
+            output.appendByte(UInt8(minimumCodeSize))
+            output.appendSubblocks(compressedFrames[index])
         }
 
         output.appendByte(0x3B)
@@ -146,20 +155,6 @@ public struct GIFContainerWriter: Sendable {
         try output.appendUInt16LittleEndian(frame.rect.width)
         try output.appendUInt16LittleEndian(frame.rect.height)
         output.appendByte(0x00)
-    }
-
-    private func appendImageData(
-        to output: inout Data,
-        frame: GIFFrameDelta,
-        colorTableSize: Int
-    ) throws {
-        let minimumCodeSize = max(2, Self.bitWidth(for: colorTableSize - 1))
-        output.appendByte(UInt8(minimumCodeSize))
-        let compressedData = try GIFLZWEncoder().encode(
-            colorIndexes: frame.colorIndexes,
-            minimumCodeSize: minimumCodeSize
-        )
-        output.appendSubblocks(compressedData)
     }
 
     private func disposalCode(for disposal: GIFFrameDisposal) -> UInt8 {

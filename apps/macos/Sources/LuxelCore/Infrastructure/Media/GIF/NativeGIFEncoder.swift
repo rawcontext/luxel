@@ -34,8 +34,8 @@ struct NativeGIFEncoder: Sendable {
                 palette: sourcePalette,
                 dithering: options.dithering
             )
-        let outputIndexedFrames = try zip(frames, indexedFrames).map { bitmap, indexedFrame in
-            try shiftedIndexedFrame(indexedFrame, transparencyFrom: bitmap)
+        let outputIndexedFrames = try GIFConcurrentMapper.map(count: frames.count) { index in
+            try shiftedIndexedFrame(indexedFrames[index], transparencyFrom: frames[index])
         }
         let deltas = try frameDeltas(
             bitmaps: frames,
@@ -62,23 +62,16 @@ struct NativeGIFEncoder: Sendable {
         lossyTolerance: Int
     ) throws -> [GIFFrameDelta] {
         let differ = GIFFrameDiffer()
-        var previousFrame: GIFFrameBitmap?
-        var deltas: [GIFFrameDelta] = []
-        deltas.reserveCapacity(bitmaps.count)
 
-        for (bitmap, indexedFrame) in zip(bitmaps, indexedFrames) {
-            deltas.append(
-                try differ.delta(
-                    from: previousFrame,
-                    to: bitmap,
-                    indexedFrame: indexedFrame,
-                    transparentColorIndex: transparentColorIndex,
-                    lossyTolerance: lossyTolerance
-                ))
-            previousFrame = bitmap
+        return try GIFConcurrentMapper.map(count: bitmaps.count) { index in
+            try differ.delta(
+                from: index > 0 ? bitmaps[index - 1] : nil,
+                to: bitmaps[index],
+                indexedFrame: indexedFrames[index],
+                transparentColorIndex: transparentColorIndex,
+                lossyTolerance: lossyTolerance
+            )
         }
-
-        return deltas
     }
 
     private func shiftedIndexedFrame(
