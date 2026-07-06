@@ -33,9 +33,10 @@ public struct GIFNearestColorQuantizer: Sendable {
         from frame: GIFFrameBitmap,
         palette: GIFColorPalette
     ) throws -> GIFIndexedFrame {
-        try GIFIndexedFrame(
+        let memo = GIFNearestColorMemo(palette: palette)
+        return try GIFIndexedFrame(
             pixelSize: frame.pixelSize,
-            colorIndexes: frame.pixels.map { palette.nearestColorIndex(for: $0) }
+            colorIndexes: frame.pixels.map { memo.nearestColorIndex(for: $0) }
         )
     }
 }
@@ -54,6 +55,7 @@ public struct OrderedDitherer: Sendable {
         from frame: GIFFrameBitmap,
         palette: GIFColorPalette
     ) throws -> GIFIndexedFrame {
+        let memo = GIFNearestColorMemo(palette: palette)
         var colorIndexes: [UInt8] = []
         colorIndexes.reserveCapacity(frame.pixels.count)
 
@@ -63,7 +65,7 @@ public struct OrderedDitherer: Sendable {
                 let threshold = Self.bayer4x4[row % 4][column % 4]
                 let adjustment = (Double(threshold) - 7.5) * 16
                 colorIndexes.append(
-                    palette.nearestColorIndex(
+                    memo.nearestColorIndex(
                         for: frame.pixels[index].adjustedRGB(by: adjustment)
                     ))
             }
@@ -80,13 +82,14 @@ public struct FloydSteinbergDitherer: Sendable {
         from frame: GIFFrameBitmap,
         palette: GIFColorPalette
     ) throws -> GIFIndexedFrame {
+        let memo = GIFNearestColorMemo(palette: palette)
         var workingPixels = frame.pixels.map(DitherWorkingPixel.init(pixel:))
         var colorIndexes = Array(repeating: UInt8(0), count: frame.pixels.count)
 
         for row in 0..<frame.pixelSize.height {
             for column in 0..<frame.pixelSize.width {
                 let index = row * frame.pixelSize.width + column
-                let colorIndex = palette.nearestColorIndex(for: workingPixels[index].pixel)
+                let colorIndex = memo.nearestColorIndex(for: workingPixels[index].pixel)
                 let paletteColor = palette.colors[Int(colorIndex)]
                 colorIndexes[index] = colorIndex
 
@@ -144,12 +147,13 @@ public struct GIFDitheringHeuristic: Sendable {
             throw GIFEngineModelError.invalidFrameCount
         }
 
+        let memo = GIFNearestColorMemo(palette: palette)
         var errorTotal = 0.0
         var channelCount = 0
 
         for frame in frames {
             for pixel in frame.pixels {
-                let colorIndex = palette.nearestColorIndex(for: pixel)
+                let colorIndex = memo.nearestColorIndex(for: pixel)
                 let color = palette.colors[Int(colorIndex)]
                 errorTotal += abs(Double(pixel.red) - Double(color.red))
                 errorTotal += abs(Double(pixel.green) - Double(color.green))

@@ -67,16 +67,16 @@ public struct GIFColorPalette: Codable, Equatable, Sendable {
 
     public func nearestColorIndex(for pixel: GIFRGBAPixel) -> UInt8 {
         let target = GIFPaletteColor(pixel: pixel)
-        let bestIndex =
-            colors.indices.min { lhs, rhs in
-                let leftDistance = squaredDistance(from: target, to: colors[lhs])
-                let rightDistance = squaredDistance(from: target, to: colors[rhs])
-                if leftDistance == rightDistance {
-                    return lhs < rhs
-                }
+        var bestIndex = 0
+        var bestDistance = Int.max
 
-                return leftDistance < rightDistance
-            } ?? 0
+        for index in colors.indices {
+            let distance = squaredDistance(from: target, to: colors[index])
+            if distance < bestDistance {
+                bestDistance = distance
+                bestIndex = index
+            }
+        }
 
         return UInt8(bestIndex)
     }
@@ -86,6 +86,27 @@ public struct GIFColorPalette: Codable, Equatable, Sendable {
         let green = Int(lhs.green) - Int(rhs.green)
         let blue = Int(lhs.blue) - Int(rhs.blue)
         return red * red + green * green + blue * blue
+    }
+}
+
+final class GIFNearestColorMemo {
+    private let palette: GIFColorPalette
+    private var cachedIndexes: [UInt32: UInt8] = [:]
+
+    init(palette: GIFColorPalette) {
+        self.palette = palette
+        cachedIndexes.reserveCapacity(4_096)
+    }
+
+    func nearestColorIndex(for pixel: GIFRGBAPixel) -> UInt8 {
+        let key = UInt32(pixel.red) << 16 | UInt32(pixel.green) << 8 | UInt32(pixel.blue)
+        if let cached = cachedIndexes[key] {
+            return cached
+        }
+
+        let index = palette.nearestColorIndex(for: pixel)
+        cachedIndexes[key] = index
+        return index
     }
 }
 
