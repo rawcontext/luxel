@@ -1,42 +1,16 @@
 import AVFAudio
 import AVFoundation
 import AppKit
+import CoreGraphics
 import Foundation
-import ScreenCaptureKit
-
-public protocol ScreenCapturePermissionChecking: Sendable {
-    func hasScreenCaptureAccess() async -> Bool
-}
-
-public struct ScreenCaptureKitPermissionChecker: ScreenCapturePermissionChecking {
-    public init() {}
-
-    public func hasScreenCaptureAccess() async -> Bool {
-        do {
-            _ = try await SCShareableContent.current
-            return true
-        } catch {
-            return false
-        }
-    }
-}
 
 public struct ApplePermissionClient: PermissionClient {
-    private let screenCapturePermissionChecker: any ScreenCapturePermissionChecking
-
-    public init(
-        screenCapturePermissionChecker: any ScreenCapturePermissionChecking =
-            ScreenCaptureKitPermissionChecker()
-    ) {
-        self.screenCapturePermissionChecker = screenCapturePermissionChecker
-    }
+    public init() {}
 
     public func status(for permission: SystemPermission) async -> PermissionStatus {
         switch permission {
         case .screenRecording:
-            return await screenCapturePermissionChecker.hasScreenCaptureAccess()
-                ? .authorized
-                : .notDetermined
+            return CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined
         case .microphone:
             return AVAudioApplication.shared.recordPermission.permissionStatus
         case .camera:
@@ -45,22 +19,7 @@ public struct ApplePermissionClient: PermissionClient {
     }
 
     public func request(_ permission: SystemPermission) async -> PermissionStatus {
-        switch permission {
-        case .screenRecording:
-            return await status(for: .screenRecording)
-        case .microphone:
-            if await AVAudioApplication.requestRecordPermission() {
-                return .authorized
-            }
-
-            return await status(for: .microphone)
-        case .camera:
-            if await AVCaptureDevice.requestAccess(for: .video) {
-                return .authorized
-            }
-
-            return await status(for: .camera)
-        }
+        await status(for: permission)
     }
 
     @MainActor

@@ -67,10 +67,10 @@ public struct PermissionGuidanceService: Sendable {
         case .notDetermined:
             PermissionGuidance(
                 title: "Screen capture is off",
-                message: "macOS needs approval before Luxel can record your screen or system sound. "
-                    + "Continue to let macOS add this Luxel build to Screen & System Audio Recording.",
-                actionTitle: "Continue",
-                action: .request
+                message: "Turn Luxel on in Screen & System Audio Recording. "
+                    + "If Luxel is not listed, click + and add the app.",
+                actionTitle: "Open System Settings",
+                action: .openSettings
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
@@ -138,8 +138,8 @@ public struct PermissionGuidanceService: Sendable {
             PermissionGuidance(
                 title: "Microphone is off",
                 message: "Allow microphone access to add your voice to recordings.",
-                actionTitle: "Continue",
-                action: .request
+                actionTitle: "Open System Settings",
+                action: .openSettings
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
@@ -180,8 +180,8 @@ public struct PermissionGuidanceService: Sendable {
             PermissionGuidance(
                 title: "Camera is off",
                 message: "Allow camera access to add your camera overlay.",
-                actionTitle: "Continue",
-                action: .request
+                actionTitle: "Open System Settings",
+                action: .openSettings
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(

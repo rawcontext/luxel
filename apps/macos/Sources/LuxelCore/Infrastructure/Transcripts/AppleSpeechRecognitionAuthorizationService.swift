@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Speech
 
@@ -10,15 +11,22 @@ public struct AppleSpeechRecognitionAuthorizationService: SpeechRecognitionAutho
 
     public func requestAuthorization() async -> SpeechRecognitionAuthorizationState {
         let status = SFSpeechRecognizer.authorizationStatus()
-        guard status == .notDetermined else {
-            return Self.state(from: status)
-        }
+        if status != .authorized {
+            await MainActor.run {
+                guard
+                    let url = URL(
+                        string:
+                            "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition"
+                    )
+                else {
+                    return
+                }
 
-        return await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { status in
-                continuation.resume(returning: Self.state(from: status))
+                NSWorkspace.shared.open(url)
             }
         }
+
+        return Self.state(from: status)
     }
 
     private static func state(

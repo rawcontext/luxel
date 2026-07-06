@@ -11,29 +11,10 @@ struct PermissionClientTests {
         #expect(PermissionStatus.denied != .restricted)
     }
 
-    @Test("screen recording status uses injected ScreenCaptureKit access result")
-    func screenRecordingStatusUsesInjectedScreenCaptureKitAccessResult() async {
-        let authorizedClient = ApplePermissionClient(
-            screenCapturePermissionChecker: StubScreenCapturePermissionChecker(hasAccess: true))
-        let notDeterminedClient = ApplePermissionClient(
-            screenCapturePermissionChecker: StubScreenCapturePermissionChecker(hasAccess: false))
-
-        #expect(await authorizedClient.status(for: .screenRecording) == .authorized)
-        #expect(await notDeterminedClient.status(for: .screenRecording) == .notDetermined)
-    }
-
-    @Test("screen recording request uses ScreenCaptureKit access check")
-    func screenRecordingRequestUsesScreenCaptureKitAccessCheck() async {
-        let client = ApplePermissionClient(
-            screenCapturePermissionChecker: StubScreenCapturePermissionChecker(hasAccess: true))
-
-        #expect(await client.request(.screenRecording) == .authorized)
-    }
-
     @Test(
-        "screen recording guidance requests first and opens screen and system audio settings after denial"
+        "screen recording guidance opens screen and system audio settings without native request prompt"
     )
-    func screenRecordingGuidanceRequestsFirstAndOpensScreenAndSystemAudioSettingsAfterDenial() {
+    func screenRecordingGuidanceOpensScreenAndSystemAudioSettingsWithoutNativeRequestPrompt() {
         let notDetermined = PermissionGuidanceService().guidance(
             for: .screenRecording,
             status: .notDetermined
@@ -43,8 +24,8 @@ struct PermissionClientTests {
             status: .denied
         )
 
-        #expect(notDetermined.actionTitle == "Continue")
-        #expect(notDetermined.action == .request)
+        #expect(notDetermined.actionTitle == "Open System Settings")
+        #expect(notDetermined.action == .openSettings)
         #expect(notDetermined.message.contains("Screen & System Audio Recording"))
         #expect(guidance.title == "Screen capture is off")
         #expect(guidance.actionTitle == "Open System Settings")
@@ -53,8 +34,8 @@ struct PermissionClientTests {
         #expect(guidance.message.contains("click +"))
     }
 
-    @Test("microphone guidance requests before denial and opens settings after denial")
-    func microphoneGuidanceRequestsBeforeDenialAndOpensSettingsAfterDenial() {
+    @Test("microphone guidance opens settings without native request prompt")
+    func microphoneGuidanceOpensSettingsWithoutNativeRequestPrompt() {
         let notDetermined = PermissionGuidanceService().guidance(
             for: .microphone,
             status: .notDetermined
@@ -64,14 +45,14 @@ struct PermissionClientTests {
             status: .denied
         )
 
-        #expect(notDetermined.actionTitle == "Continue")
-        #expect(notDetermined.action == .request)
+        #expect(notDetermined.actionTitle == "Open System Settings")
+        #expect(notDetermined.action == .openSettings)
         #expect(denied.actionTitle == "Open System Settings")
         #expect(denied.action == .openSettings)
     }
 
-    @Test("camera guidance requests before denial and opens settings after denial")
-    func cameraGuidanceRequestsBeforeDenialAndOpensSettingsAfterDenial() {
+    @Test("camera guidance opens settings without native request prompt")
+    func cameraGuidanceOpensSettingsWithoutNativeRequestPrompt() {
         let notDetermined = PermissionGuidanceService().guidance(
             for: .camera,
             status: .notDetermined
@@ -81,8 +62,8 @@ struct PermissionClientTests {
             status: .denied
         )
 
-        #expect(notDetermined.actionTitle == "Continue")
-        #expect(notDetermined.action == .request)
+        #expect(notDetermined.actionTitle == "Open System Settings")
+        #expect(notDetermined.action == .openSettings)
         #expect(denied.actionTitle == "Open System Settings")
         #expect(denied.action == .openSettings)
     }
@@ -169,13 +150,5 @@ struct PermissionClientTests {
         #expect(guidance.title == "Microphone is off")
         #expect(guidance.actionTitle == "Enable Mic")
         #expect(guidance.action == .enableSource)
-    }
-}
-
-private struct StubScreenCapturePermissionChecker: ScreenCapturePermissionChecking {
-    let hasAccess: Bool
-
-    func hasScreenCaptureAccess() async -> Bool {
-        hasAccess
     }
 }

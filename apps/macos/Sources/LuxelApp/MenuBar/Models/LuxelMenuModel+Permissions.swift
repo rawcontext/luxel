@@ -40,7 +40,6 @@ extension LuxelMenuModel {
         switch prompt.guidance.action {
         case .request:
             try? await Task.sleep(nanoseconds: 200_000_000)
-            _ = await permissionClient.request(prompt.permission)
             if permissionStatus(for: prompt.permission) != .authorized {
                 await refreshPermissions()
             }

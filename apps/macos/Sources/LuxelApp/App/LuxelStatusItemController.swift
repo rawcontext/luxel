@@ -12,18 +12,19 @@ final class LuxelStatusItemController: NSObject {
         category: "StatusItem"
     )
 
-    private let model: LuxelMenuModel
+    let model: LuxelMenuModel
     private let editorModel: LuxelEditorModel
     private let cropperPanelController: LuxelCropperPanelController
     private let shortcutController: LuxelShortcutController
     private let windowPresenter: LuxelWindowPresenter
     private let quickExportProgressPanelController = QuickExportProgressPanelController()
 
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+    let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private var statusRefreshTimer: Timer?
-    private var recordingAnimationTimer: Timer?
-    private var recordingFrameIndex = 0
-    private var currentImageKey: String?
+    var recordingAnimationTimer: Timer?
+    var recordingFrameIndex = 0
+    var recordingLevelHistory: [CGFloat] = []
+    var currentImageKey: String?
     private var currentStatusItemLength = NSStatusItem.squareLength
     private var isHandlingStatusItemStop = false
     private var statusItemStopTask: Task<Void, Never>?
@@ -964,58 +965,6 @@ extension LuxelStatusItemController {
             )
         }
     }
-}
-
-extension LuxelStatusItemController {
-    private func startRecordingAnimation() {
-        guard recordingAnimationTimer == nil else {
-            return
-        }
-
-        recordingFrameIndex = 0
-        setRecordingFrame()
-
-        let timer = Timer(timeInterval: 1.0 / 18.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.advanceRecordingFrame()
-            }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        recordingAnimationTimer = timer
-    }
-
-    private func stopRecordingAnimation() {
-        recordingAnimationTimer?.invalidate()
-        recordingAnimationTimer = nil
-        recordingFrameIndex = 0
-    }
-
-    private func advanceRecordingFrame() {
-        recordingFrameIndex = (recordingFrameIndex + 1) % 18
-        setRecordingFrame()
-    }
-
-    private func setRecordingFrame() {
-        let presentation = model.recordingPresentation()
-        let frame = makeActiveRecordingFrame(
-            elapsedText: presentation.menuBarTitle,
-            audioLevel: model.audioLevelSample
-        )
-        setButtonImage(
-            frame,
-            key: "recording-\(recordingFrameIndex)-\(presentation.menuBarTitle)-\(model.audioLevelSample)"
-        )
-    }
-
-    private func setButtonImage(_ image: NSImage?, key: String) {
-        guard currentImageKey != key else {
-            return
-        }
-
-        statusItem.button?.image = image
-        currentImageKey = key
-    }
-
 }
 
 extension LuxelStatusItemController: NSWindowDelegate {

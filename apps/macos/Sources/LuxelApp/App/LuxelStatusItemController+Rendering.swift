@@ -2,6 +2,8 @@ import AppKit
 import LuxelCore
 
 extension LuxelStatusItemController {
+    static let waveformBarCount = 14
+
     func symbolImage(named name: String, accessibilityLabel: String) -> NSImage? {
         guard
             let baseImage = NSImage(systemSymbolName: name, accessibilityDescription: accessibilityLabel)
@@ -18,7 +20,7 @@ extension LuxelStatusItemController {
 
     func makeActiveRecordingFrame(
         elapsedText: String,
-        audioLevel: AudioLevelSample
+        levelHistory: [CGFloat]
     ) -> NSImage {
         let width = activeStatusItemWidth(elapsedText: elapsedText)
         let size = NSSize(width: width, height: activeIconHeight)
@@ -28,7 +30,7 @@ extension LuxelStatusItemController {
         drawActiveRecordingFrame(
             in: NSRect(origin: .zero, size: size),
             elapsedText: elapsedText,
-            audioLevel: audioLevel
+            levelHistory: levelHistory
         )
 
         image.unlockFocus()
@@ -89,7 +91,7 @@ extension LuxelStatusItemController {
     private func drawActiveRecordingFrame(
         in rect: NSRect,
         elapsedText: String,
-        audioLevel: AudioLevelSample
+        levelHistory: [CGFloat]
     ) {
         let width = rect.width
         let font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)
@@ -123,7 +125,7 @@ extension LuxelStatusItemController {
 
         drawWaveform(
             in: NSRect(x: 35, y: 4, width: waveformWidth, height: 16),
-            audioLevel: audioLevel
+            levelHistory: levelHistory
         )
 
         if !elapsedText.isEmpty {
@@ -140,18 +142,17 @@ extension LuxelStatusItemController {
 
     private func drawWaveform(
         in rect: NSRect,
-        audioLevel: AudioLevelSample
+        levelHistory: [CGFloat]
     ) {
-        let bars: [CGFloat] = [
-            0.30, 0.72, 0.42, 0.88, 0.56, 0.78, 0.34,
-            0.64, 0.92, 0.50, 0.76, 0.44, 0.70, 0.36
-        ]
-        let level = min(1, max(CGFloat(audioLevel.rms), CGFloat(audioLevel.peak)))
+        let barCount = Self.waveformBarCount
         let barWidth: CGFloat = 2
-        let step = rect.width / CGFloat(bars.count)
+        let step = rect.width / CGFloat(barCount)
+        let recentLevels = Array(levelHistory.suffix(barCount))
+        let emptySlotCount = barCount - recentLevels.count
 
-        for (index, bar) in bars.enumerated() {
-            let height = max(2, rect.height * min(1, bar * (0.2 + level)))
+        for index in 0..<barCount {
+            let level = index < emptySlotCount ? 0 : recentLevels[index - emptySlotCount]
+            let height = max(2, rect.height * min(1, sqrt(level)))
             let barX = rect.minX + (CGFloat(index) * step) + ((step - barWidth) / 2)
             let barY = rect.midY - (height / 2)
 

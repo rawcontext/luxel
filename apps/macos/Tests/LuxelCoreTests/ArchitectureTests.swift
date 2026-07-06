@@ -85,18 +85,28 @@ extension ArchitectureTests {
         }
     }
 
-    @Test("screen permission status uses ScreenCaptureKit instead of legacy CoreGraphics")
-    func screenPermissionStatusUsesScreenCaptureKitInsteadOfLegacyCoreGraphics() throws {
-        let source = try String(
+    @Test("permission client avoids native request prompts")
+    func permissionClientAvoidsNativeRequestPrompts() throws {
+        let permissionSource = try String(
             contentsOf: packageRootURL().appending(
                 path: "Sources/LuxelCore/Infrastructure/System/ApplePermissionClient.swift"),
             encoding: .utf8
         )
+        let speechSource = try String(
+            contentsOf: packageRootURL().appending(
+                path:
+                    "Sources/LuxelCore/Infrastructure/Transcripts/AppleSpeechRecognitionAuthorizationService.swift"
+            ),
+            encoding: .utf8
+        )
 
-        #expect(source.contains("import ScreenCaptureKit"))
-        #expect(source.contains("SCShareableContent.current"))
-        #expect(!source.contains("CGPreflightScreenCaptureAccess"))
-        #expect(!source.contains("CGRequestScreenCaptureAccess"))
+        #expect(
+            permissionSource.contains("CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined"))
+        #expect(!permissionSource.contains("CGRequestScreenCaptureAccess"))
+        #expect(!permissionSource.contains("AVAudioApplication.requestRecordPermission"))
+        #expect(!permissionSource.contains("AVCaptureDevice.requestAccess"))
+        #expect(!permissionSource.contains("SCShareableContent.current"))
+        #expect(!speechSource.contains("SFSpeechRecognizer.requestAuthorization"))
     }
 
     @Test("status item startup does not enumerate capture targets")
@@ -227,8 +237,8 @@ extension ArchitectureTests {
         #expect(!settingsSource.contains("isPresented: permissionPromptPresented"))
     }
 
-    @Test("screen recording permission action requests before falling back to settings")
-    func screenRecordingPermissionActionRequestsBeforeFallingBackToSettings() throws {
+    @Test("permission actions open settings without native request prompts")
+    func permissionActionsOpenSettingsWithoutNativeRequestPrompts() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(
                 path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Permissions.swift"),
@@ -239,7 +249,7 @@ extension ArchitectureTests {
             source[handlerRange.upperBound...].range(of: "func sourcePermissionPresentation"))
         let handlerSource = String(source[handlerRange.lowerBound..<nextRange.lowerBound])
 
-        #expect(handlerSource.contains("_ = await permissionClient.request(prompt.permission)"))
+        #expect(!handlerSource.contains("permissionClient.request"))
         #expect(handlerSource.contains("await permissionClient.openSettings(for: prompt.permission)"))
         #expect(handlerSource.contains("permissionStatus(for: prompt.permission) != .authorized"))
     }
