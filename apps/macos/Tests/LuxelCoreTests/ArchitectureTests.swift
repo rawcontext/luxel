@@ -85,18 +85,18 @@ extension ArchitectureTests {
         }
     }
 
-    @Test("screen permission status avoids ScreenCaptureKit enumeration")
-    func screenPermissionStatusAvoidsScreenCaptureKitEnumeration() throws {
+    @Test("screen permission status uses ScreenCaptureKit instead of legacy CoreGraphics")
+    func screenPermissionStatusUsesScreenCaptureKitInsteadOfLegacyCoreGraphics() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(
                 path: "Sources/LuxelCore/Infrastructure/System/ApplePermissionClient.swift"),
             encoding: .utf8
         )
 
-        #expect(source.contains("CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined"))
-        #expect(source.contains("CGRequestScreenCaptureAccess() ? .authorized"))
-        #expect(!source.contains("import ScreenCaptureKit"))
-        #expect(!source.contains("SCShareableContent.current"))
+        #expect(source.contains("import ScreenCaptureKit"))
+        #expect(source.contains("SCShareableContent.current"))
+        #expect(!source.contains("CGPreflightScreenCaptureAccess"))
+        #expect(!source.contains("CGRequestScreenCaptureAccess"))
     }
 
     @Test("status item startup does not enumerate capture targets")

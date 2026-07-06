@@ -11,6 +11,25 @@ struct PermissionClientTests {
         #expect(PermissionStatus.denied != .restricted)
     }
 
+    @Test("screen recording status uses injected ScreenCaptureKit access result")
+    func screenRecordingStatusUsesInjectedScreenCaptureKitAccessResult() async {
+        let authorizedClient = ApplePermissionClient(
+            screenCapturePermissionChecker: StubScreenCapturePermissionChecker(hasAccess: true))
+        let notDeterminedClient = ApplePermissionClient(
+            screenCapturePermissionChecker: StubScreenCapturePermissionChecker(hasAccess: false))
+
+        #expect(await authorizedClient.status(for: .screenRecording) == .authorized)
+        #expect(await notDeterminedClient.status(for: .screenRecording) == .notDetermined)
+    }
+
+    @Test("screen recording request uses ScreenCaptureKit access check")
+    func screenRecordingRequestUsesScreenCaptureKitAccessCheck() async {
+        let client = ApplePermissionClient(
+            screenCapturePermissionChecker: StubScreenCapturePermissionChecker(hasAccess: true))
+
+        #expect(await client.request(.screenRecording) == .authorized)
+    }
+
     @Test(
         "screen recording guidance requests first and opens screen and system audio settings after denial"
     )
@@ -150,5 +169,13 @@ struct PermissionClientTests {
         #expect(guidance.title == "Microphone is off")
         #expect(guidance.actionTitle == "Enable Mic")
         #expect(guidance.action == .enableSource)
+    }
+}
+
+private struct StubScreenCapturePermissionChecker: ScreenCapturePermissionChecking {
+    let hasAccess: Bool
+
+    func hasScreenCaptureAccess() async -> Bool {
+        hasAccess
     }
 }

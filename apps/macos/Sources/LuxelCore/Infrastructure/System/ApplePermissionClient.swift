@@ -1,16 +1,42 @@
 import AVFAudio
 import AVFoundation
 import AppKit
-import CoreGraphics
 import Foundation
+import ScreenCaptureKit
+
+public protocol ScreenCapturePermissionChecking: Sendable {
+    func hasScreenCaptureAccess() async -> Bool
+}
+
+public struct ScreenCaptureKitPermissionChecker: ScreenCapturePermissionChecking {
+    public init() {}
+
+    public func hasScreenCaptureAccess() async -> Bool {
+        do {
+            _ = try await SCShareableContent.current
+            return true
+        } catch {
+            return false
+        }
+    }
+}
 
 public struct ApplePermissionClient: PermissionClient {
-    public init() {}
+    private let screenCapturePermissionChecker: any ScreenCapturePermissionChecking
+
+    public init(
+        screenCapturePermissionChecker: any ScreenCapturePermissionChecking =
+            ScreenCaptureKitPermissionChecker()
+    ) {
+        self.screenCapturePermissionChecker = screenCapturePermissionChecker
+    }
 
     public func status(for permission: SystemPermission) async -> PermissionStatus {
         switch permission {
         case .screenRecording:
-            return CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined
+            return await screenCapturePermissionChecker.hasScreenCaptureAccess()
+                ? .authorized
+                : .notDetermined
         case .microphone:
             return AVAudioApplication.shared.recordPermission.permissionStatus
         case .camera:
@@ -21,7 +47,7 @@ public struct ApplePermissionClient: PermissionClient {
     public func request(_ permission: SystemPermission) async -> PermissionStatus {
         switch permission {
         case .screenRecording:
-            return CGRequestScreenCaptureAccess() ? .authorized : await status(for: .screenRecording)
+            return await status(for: .screenRecording)
         case .microphone:
             if await AVAudioApplication.requestRecordPermission() {
                 return .authorized
