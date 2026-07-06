@@ -1,4 +1,5 @@
 import AVFoundation
+import Accelerate
 import CoreMedia
 import Foundation
 
@@ -56,6 +57,7 @@ public struct AVAssetReaderAudioPeakAnalyzer: AudioPeakAnalyzer {
 
         var peak = 0.0
         while let sampleBuffer = output.copyNextSampleBuffer() {
+            try Task.checkCancellation()
             peak = max(peak, try peakValue(in: sampleBuffer))
         }
 
@@ -105,13 +107,22 @@ public struct AVAssetReaderAudioPeakAnalyzer: AudioPeakAnalyzer {
         let data = try pcmData(from: sampleBuffer)
         return data.withUnsafeBytes { buffer in
             let samples = buffer.bindMemory(to: Float32.self)
-            return samples.reduce(0.0) { peak, sample in
-                guard sample.isFinite else {
-                    return peak
-                }
-
-                return max(peak, Double(abs(sample)))
+            guard !samples.isEmpty else {
+                return 0
             }
+
+            let magnitude = vDSP.maximumMagnitude(samples)
+            guard magnitude.isFinite else {
+                return samples.reduce(0.0) { peak, sample in
+                    guard sample.isFinite else {
+                        return peak
+                    }
+
+                    return max(peak, Double(abs(sample)))
+                }
+            }
+
+            return Double(magnitude)
         }
     }
 
