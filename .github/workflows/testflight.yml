@@ -63,6 +63,26 @@ jobs:
       - name: Verify Xcode
         run: xcodebuild -version
 
+      - name: Resolve release inputs
+        run: |
+          marketing_version="${MARKETING_VERSION}"
+
+          if [[ -z "${marketing_version}" && "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+(\.[0-9]+){1,2}$ ]]; then
+              echo "Tag ${GITHUB_REF_NAME} must match v<major>.<minor>[.<patch>] to derive MARKETING_VERSION." >&2
+              exit 1
+            fi
+
+            marketing_version="${GITHUB_REF_NAME#v}"
+          fi
+
+          if [[ -n "${marketing_version}" ]]; then
+            echo "MARKETING_VERSION=${marketing_version}" >> "${GITHUB_ENV}"
+            echo "Resolved MARKETING_VERSION=${marketing_version}"
+          else
+            echo "MARKETING_VERSION not set; package script will use Info.plist."
+          fi
+
       - name: Upload to TestFlight
         working-directory: apps/macos
         run: bundle exec fastlane mac release_testflight
