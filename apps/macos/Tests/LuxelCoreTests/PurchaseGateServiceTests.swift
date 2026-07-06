@@ -1,3 +1,4 @@
+import Foundation
 import LuxelCore
 import Testing
 
@@ -29,6 +30,74 @@ struct PurchaseGateServiceTests {
 
         #expect(await gate.isEntitled())
         #expect(await iterator.next() == true)
+    }
+
+    @Test("Mac App Store gate allows TestFlight sandbox receipts")
+    func macAppStoreGateAllowsTestFlightSandboxReceipts() async {
+        let gate = MacAppStorePaidAppPurchaseGate(
+            receiptURL: {
+                URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/sandboxReceipt")
+            },
+            currentBundleID: {
+                "media.luxel.app"
+            },
+            appTransactionEntitlement: {
+                .unavailable
+            }
+        )
+
+        #expect(await gate.isEntitled())
+    }
+
+    @Test("Mac App Store gate verifies production app transaction bundle ID")
+    func macAppStoreGateVerifiesProductionAppTransactionBundleID() async {
+        let gate = MacAppStorePaidAppPurchaseGate(
+            receiptURL: {
+                URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/receipt")
+            },
+            currentBundleID: {
+                "media.luxel.app"
+            },
+            appTransactionEntitlement: {
+                .verified(bundleID: "media.luxel.app")
+            }
+        )
+
+        #expect(await gate.isEntitled())
+    }
+
+    @Test("Mac App Store gate rejects verified app transaction for another bundle ID")
+    func macAppStoreGateRejectsMismatchedProductionAppTransactionBundleID() async {
+        let gate = MacAppStorePaidAppPurchaseGate(
+            receiptURL: {
+                URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/receipt")
+            },
+            currentBundleID: {
+                "media.luxel.app"
+            },
+            appTransactionEntitlement: {
+                .verified(bundleID: "media.other.app")
+            }
+        )
+
+        #expect(await !gate.isEntitled())
+    }
+
+    @Test("Mac App Store gate does not lock out on unavailable app transaction")
+    func macAppStoreGateAllowsUnavailableAppTransaction() async {
+        let gate = MacAppStorePaidAppPurchaseGate(
+            receiptURL: {
+                URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/receipt")
+            },
+            currentBundleID: {
+                "media.luxel.app"
+            },
+            appTransactionEntitlement: {
+                .unavailable
+            }
+        )
+
+        #expect(await gate.isEntitled())
     }
 }
 
