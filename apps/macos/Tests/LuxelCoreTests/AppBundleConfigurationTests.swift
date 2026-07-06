@@ -126,6 +126,7 @@ struct AppBundleConfigurationTests {
 
         #expect(script.contains("find \"${BIN_DIR}\" -maxdepth 1 -name '*.bundle'"))
         #expect(script.contains("Contents/Resources/Luxel_LuxelCore.bundle"))
+        #expect(script.contains("CFBundleIdentifier"))
         #expect(script.contains("LuxelCore resource bundle was not copied"))
     }
 

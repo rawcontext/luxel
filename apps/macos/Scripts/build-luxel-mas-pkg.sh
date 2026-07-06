@@ -189,6 +189,13 @@ for output_root in output_roots:
                     output.write(f'"{escaped(key)}" = "{escaped(value)}";\n')
 PY
 fi
+while IFS= read -r -d '' bundle_plist; do
+	if ! /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${bundle_plist}" >/dev/null 2>&1; then
+		bundle_name="$(basename "$(dirname "${bundle_plist}")" .bundle)"
+		bundle_identifier_suffix="$(printf "%s" "${bundle_name}" | tr '[:upper:]_' '[:lower:].')"
+		/usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string ${BUNDLE_IDENTIFIER}.${bundle_identifier_suffix}" "${bundle_plist}"
+	fi
+done < <(find "${APP_PATH}/Contents/Resources" -maxdepth 2 -path '*.bundle/Info.plist' -type f -print0)
 if [[ ! -d "${APP_PATH}/Contents/Resources/Luxel_LuxelCore.bundle" ]]; then
 	echo "LuxelCore resource bundle was not copied into the app bundle." >&2
 	exit 1
