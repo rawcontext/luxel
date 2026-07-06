@@ -70,24 +70,44 @@ public struct ExportService: Sendable {
         defaultName: String,
         progress: BatchProgressHandler? = nil
     ) async throws -> [ExportedMedia] {
-        var exportedMedia: [ExportedMedia] = []
+        var exportedByJobID = [ExportedMedia?](repeating: nil, count: batch.requests.count)
 
-        for (jobID, request) in batch.requests.enumerated() {
-            try Task.checkCancellation()
+        try await withThrowingTaskGroup(of: (jobID: Int, exported: ExportedMedia).self) { group in
+            var nextJobID = 0
 
-            let exported = try await export(
-                request,
-                to: outputDirectory,
-                defaultName: batchDefaultName(defaultName, format: request.format)
-            ) { snapshot in
-                await progress?(ExportBatchProgressSnapshot(jobID: jobID, snapshot: snapshot))
+            func addJob(_ jobID: Int) {
+                let request = batch.requests[jobID]
+                group.addTask {
+                    let exported = try await export(
+                        request,
+                        to: outputDirectory,
+                        defaultName: batchDefaultName(defaultName, format: request.format)
+                    ) { snapshot in
+                        await progress?(ExportBatchProgressSnapshot(jobID: jobID, snapshot: snapshot))
+                    }
+                    return (jobID, exported)
+                }
             }
 
-            exportedMedia.append(exported)
+            while nextJobID < min(batch.requests.count, Self.maxConcurrentBatchJobs) {
+                addJob(nextJobID)
+                nextJobID += 1
+            }
+
+            while let result = try await group.next() {
+                exportedByJobID[result.jobID] = result.exported
+
+                if nextJobID < batch.requests.count {
+                    addJob(nextJobID)
+                    nextJobID += 1
+                }
+            }
         }
 
-        return exportedMedia
+        return exportedByJobID.compactMap { $0 }
     }
+
+    private static let maxConcurrentBatchJobs = 4
 
     private func batchDefaultName(_ defaultName: String, format: ExportFormat) -> String {
         "\(defaultName) \(batchNameComponent(for: format))"

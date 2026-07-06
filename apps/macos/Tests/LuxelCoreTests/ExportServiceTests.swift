@@ -109,8 +109,8 @@ struct ExportServiceTests {
         #expect(fileSystem.removedURLs == [expectedOutputURL])
     }
 
-    @Test("batch export runs requests sequentially with keyed progress")
-    func batchExportRunsSequentiallyWithKeyedProgress() async throws {
+    @Test("batch export preserves request order with keyed progress")
+    func batchExportPreservesRequestOrderWithKeyedProgress() async throws {
         let exporter = SpyMediaExporter()
         let progress = BatchProgressRecorder()
         let service = ExportService(exporter: exporter)
@@ -132,26 +132,24 @@ struct ExportServiceTests {
         let snapshots = await progress.snapshots()
 
         #expect(exported.map(\.format) == [.mp4, .hevc, .gif])
-        #expect(captured.map(\.request.format) == [.mp4, .hevc, .gif])
+        #expect(Set(captured.map(\.request.format)) == [.mp4, .hevc, .gif])
         #expect(
-            captured.map(\.outputFileURL.path) == [
+            Set(captured.map(\.outputFileURL.path)) == [
                 "/tmp/exports/Luxel Clip H.264.mp4",
                 "/tmp/exports/Luxel Clip HEVC.mp4",
                 "/tmp/exports/Luxel Clip GIF.gif"
             ])
-        #expect(snapshots.map(\.jobID) == [0, 0, 0, 1, 1, 1, 2, 2, 2])
-        #expect(
-            snapshots.map(\.snapshot) == [
-                .preparing(format: .mp4),
-                .exporting(format: .mp4, progress: 0),
-                .completed(format: .mp4),
-                .preparing(format: .hevc),
-                .exporting(format: .hevc, progress: 0),
-                .completed(format: .hevc),
-                .preparing(format: .gif),
-                .exporting(format: .gif, progress: 0),
-                .completed(format: .gif)
-            ])
+
+        let expectedFormatsByJobID: [Int: ExportFormat] = [0: .mp4, 1: .hevc, 2: .gif]
+        for (jobID, format) in expectedFormatsByJobID {
+            let jobSnapshots = snapshots.filter { $0.jobID == jobID }.map(\.snapshot)
+            #expect(
+                jobSnapshots == [
+                    .preparing(format: format),
+                    .exporting(format: format, progress: 0),
+                    .completed(format: format)
+                ])
+        }
     }
 
     @Test("batch export names audio formats distinctly")
@@ -168,7 +166,7 @@ struct ExportServiceTests {
 
         let captured = await exporter.capturedExports()
         #expect(
-            captured.map(\.outputFileURL.path) == [
+            Set(captured.map(\.outputFileURL.path)) == [
                 "/tmp/exports/Luxel Clip M4A AAC.m4a",
                 "/tmp/exports/Luxel Clip M4A ALAC.m4a",
                 "/tmp/exports/Luxel Clip WAV.wav",
@@ -188,15 +186,21 @@ struct ExportServiceTests {
             makeRequest(format: .hevc)
         ])
 
+        let progress = BatchProgressRecorder()
         let task = Task {
             try await service.runBatch(
                 batch,
                 to: URL(fileURLWithPath: "/tmp/exports"),
                 defaultName: "Luxel Clip"
-            )
+            ) { snapshot in
+                await progress.append(snapshot)
+            }
         }
 
-        await exporter.waitUntilSecondExportStarted()
+        await exporter.waitUntilHangingExportsStarted(count: 2)
+        while await !progress.snapshots().contains(where: { $0.snapshot.phase == .completed }) {
+            await Task.yield()
+        }
         task.cancel()
 
         await #expect(throws: CancellationError.self) {
@@ -204,10 +208,11 @@ struct ExportServiceTests {
         }
 
         let captured = await exporter.capturedExports()
-        #expect(captured.map(\.request.format) == [.mp4, .gif])
+        #expect(Set(captured.map(\.request.format)) == [.mp4, .gif, .hevc])
         #expect(
-            fileSystem.removedURLs == [
-                URL(fileURLWithPath: "/tmp/exports/Luxel Clip GIF.gif")
+            Set(fileSystem.removedURLs) == [
+                URL(fileURLWithPath: "/tmp/exports/Luxel Clip GIF.gif"),
+                URL(fileURLWithPath: "/tmp/exports/Luxel Clip HEVC.mp4")
             ])
     }
 
@@ -351,8 +356,9 @@ private actor CancellableMediaExporter: MediaExporter {
 
 private actor CancellableBatchMediaExporter: MediaExporter {
     private var captured: [(request: ExportRequest, outputFileURL: URL)] = []
-    private var secondExportStarted = false
-    private var secondExportContinuation: CheckedContinuation<Void, Never>?
+    private var hangingExportCount = 0
+    private var awaitedHangingExportCount = Int.max
+    private var hangingExportsContinuation: CheckedContinuation<Void, Never>?
 
     func export(
         _ request: ExportRequest,
@@ -361,7 +367,7 @@ private actor CancellableBatchMediaExporter: MediaExporter {
     ) async throws -> ExportedMedia {
         captured.append((request, outputFileURL))
 
-        if captured.count == 1 {
+        if request.format == .mp4 {
             return try ExportedMedia(
                 fileURL: outputFileURL,
                 format: request.format,
@@ -370,20 +376,21 @@ private actor CancellableBatchMediaExporter: MediaExporter {
             )
         }
 
-        markSecondExportStarted()
+        markHangingExportStarted()
 
         while true {
             try await Task.sleep(for: .milliseconds(10))
         }
     }
 
-    func waitUntilSecondExportStarted() async {
-        if secondExportStarted {
+    func waitUntilHangingExportsStarted(count: Int) async {
+        if hangingExportCount >= count {
             return
         }
 
+        awaitedHangingExportCount = count
         await withCheckedContinuation { continuation in
-            secondExportContinuation = continuation
+            hangingExportsContinuation = continuation
         }
     }
 
@@ -391,10 +398,12 @@ private actor CancellableBatchMediaExporter: MediaExporter {
         captured
     }
 
-    private func markSecondExportStarted() {
-        secondExportStarted = true
-        secondExportContinuation?.resume()
-        secondExportContinuation = nil
+    private func markHangingExportStarted() {
+        hangingExportCount += 1
+        if hangingExportCount >= awaitedHangingExportCount {
+            hangingExportsContinuation?.resume()
+            hangingExportsContinuation = nil
+        }
     }
 }
 

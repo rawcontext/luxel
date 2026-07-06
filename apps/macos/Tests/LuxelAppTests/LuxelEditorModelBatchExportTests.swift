@@ -40,12 +40,14 @@ extension LuxelEditorModelTests {
             dithering: .diffusion
         )
 
-        #expect(captured.map(\.request.format) == [.hevc, .mp4, .gif])
-        #expect(captured[0].request.gifOptions == nil)
-        #expect(captured[1].request.gifOptions == nil)
-        #expect(captured[2].request.gifOptions == expectedGIFOptions)
+        let capturedByFormat = Dictionary(
+            uniqueKeysWithValues: captured.map { ($0.request.format, $0) })
+        #expect(Set(captured.map(\.request.format)) == [.hevc, .mp4, .gif])
+        #expect(capturedByFormat[.hevc]?.request.gifOptions == nil)
+        #expect(capturedByFormat[.mp4]?.request.gifOptions == nil)
+        #expect(capturedByFormat[.gif]?.request.gifOptions == expectedGIFOptions)
         #expect(
-            captured.map(\.outputFileURL.path) == [
+            Set(captured.map(\.outputFileURL.path)) == [
                 "/tmp/source Export/source Export HEVC.mp4",
                 "/tmp/source Export/source Export H.264.mp4",
                 "/tmp/source Export/source Export GIF.gif"

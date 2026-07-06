@@ -453,8 +453,7 @@ extension LuxelEditorModel {
         updateExportJob(id: batchSnapshot.jobID, snapshot: batchSnapshot.snapshot)
 
         let jobCount = max(exportJobs.count, 1)
-        let progress =
-            (Double(batchSnapshot.jobID) + batchSnapshot.snapshot.progress) / Double(jobCount)
+        let progress = exportJobs.reduce(0) { $0 + $1.progressValue } / Double(jobCount)
         exportProgress = ExportProgressSnapshot(
             phase: batchSnapshot.snapshot.phase,
             actionTitle: batchSnapshot.snapshot.actionTitle,
