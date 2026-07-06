@@ -15,9 +15,13 @@ extension LuxelMenu {
                     height: LuxelCameraFooterPickerLayout.buttonHeight
                 )
                 .contentShape(Rectangle())
-                .luxelIslandCellHighlight()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            LuxelIslandCellButtonStyle(
+                corners: .trailing,
+                cornerRadius: LuxelCameraFooterPickerLayout.cornerRadius
+            )
+        )
         .frame(height: LuxelCameraFooterPickerLayout.buttonHeight)
         .help("Choose camera")
         .accessibilityLabel("Choose Camera")
@@ -73,4 +77,5 @@ extension LuxelMenu {
 private enum LuxelCameraFooterPickerLayout {
     static let buttonWidth: CGFloat = 30
     static let buttonHeight: CGFloat = 36
+    static let cornerRadius: CGFloat = 18
 }

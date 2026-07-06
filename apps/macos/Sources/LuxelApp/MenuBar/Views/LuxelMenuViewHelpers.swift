@@ -125,8 +125,8 @@ private enum LuxelMenuGlassContrast {
 }
 
 enum LuxelMenuIslandStyle {
-    static let fillTop = Color(red: 74 / 255, green: 74 / 255, blue: 92 / 255).opacity(0.52)
-    static let fillBottom = Color(red: 30 / 255, green: 30 / 255, blue: 40 / 255).opacity(0.62)
+    static let fillTop = Color(red: 74 / 255, green: 74 / 255, blue: 92 / 255).opacity(0.22)
+    static let fillBottom = Color(red: 30 / 255, green: 30 / 255, blue: 40 / 255).opacity(0.34)
     static let recordRedTop = Color(red: 1.0, green: 0.43, blue: 0.39)
     static let recordRedBottom = Color(red: 0.86, green: 0.2, blue: 0.16)
     static let recordGlow = Color(red: 1.0, green: 0.27, blue: 0.23)
@@ -202,23 +202,91 @@ private struct LuxelIslandButtonBody<Label: View>: View {
     }
 }
 
+enum LuxelIslandCellCorners {
+    case leading
+    case trailing
+    case all
+
+    func shape(cornerRadius: CGFloat) -> UnevenRoundedRectangle {
+        switch self {
+        case .leading:
+            UnevenRoundedRectangle(
+                topLeadingRadius: cornerRadius,
+                bottomLeadingRadius: cornerRadius,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 0,
+                style: .continuous
+            )
+        case .trailing:
+            UnevenRoundedRectangle(
+                topLeadingRadius: 0,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: cornerRadius,
+                topTrailingRadius: cornerRadius,
+                style: .continuous
+            )
+        case .all:
+            UnevenRoundedRectangle(
+                cornerRadii: .init(
+                    topLeading: cornerRadius,
+                    bottomLeading: cornerRadius,
+                    bottomTrailing: cornerRadius,
+                    topTrailing: cornerRadius
+                ), style: .continuous)
+        }
+    }
+}
+
 struct LuxelIslandCellButtonStyle: ButtonStyle {
+    let corners: LuxelIslandCellCorners
+    let cornerRadius: CGFloat
+
+    init(corners: LuxelIslandCellCorners = .all, cornerRadius: CGFloat = 0) {
+        self.corners = corners
+        self.cornerRadius = cornerRadius
+    }
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .luxelIslandCellHighlight(isPressed: configuration.isPressed)
+            .luxelIslandCellHighlight(
+                isPressed: configuration.isPressed,
+                corners: corners,
+                cornerRadius: cornerRadius
+            )
     }
 }
 
 private struct LuxelIslandCellHighlight: ViewModifier {
+    @Environment(\.isEnabled) private var isEnabled
     @State private var isHovered = false
 
     let isPressed: Bool
+    let corners: LuxelIslandCellCorners
+    let cornerRadius: CGFloat
 
     func body(content: Content) -> some View {
+        let shape = corners.shape(cornerRadius: cornerRadius)
+
         content
-            .background(.white.opacity(isPressed ? 0.12 : isHovered ? 0.09 : 0))
-            .onHover { isHovered = $0 }
+            .background {
+                shape.fill(.white.opacity(fillOpacity))
+            }
+            .contentShape(shape)
+            .onHover { isHovered = isEnabled && $0 }
             .animation(.easeOut(duration: 0.12), value: isHovered)
+            .animation(.easeOut(duration: 0.08), value: isPressed)
+    }
+
+    private var fillOpacity: Double {
+        guard isEnabled else {
+            return 0
+        }
+
+        if isPressed {
+            return 0.1
+        }
+
+        return isHovered ? 0.07 : 0
     }
 }
 
@@ -249,8 +317,17 @@ private struct LuxelIslandControlGroupBackground: ViewModifier {
 }
 
 extension View {
-    func luxelIslandCellHighlight(isPressed: Bool = false) -> some View {
-        modifier(LuxelIslandCellHighlight(isPressed: isPressed))
+    func luxelIslandCellHighlight(
+        isPressed: Bool = false,
+        corners: LuxelIslandCellCorners = .all,
+        cornerRadius: CGFloat = 0
+    ) -> some View {
+        modifier(
+            LuxelIslandCellHighlight(
+                isPressed: isPressed,
+                corners: corners,
+                cornerRadius: cornerRadius
+            ))
     }
 
     func luxelIslandControlGroupBackground(cornerRadius: CGFloat) -> some View {
@@ -262,7 +339,9 @@ extension View {
     func luxelMenuIslandBackground(cornerRadius: CGFloat) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
-        return glassEffect(.clear, in: .rect(cornerRadius: cornerRadius))
+        return
+            self
+            .glassEffect(.clear, in: .rect(cornerRadius: cornerRadius))
             .background(
                 LinearGradient(
                     colors: [LuxelMenuIslandStyle.fillTop, LuxelMenuIslandStyle.fillBottom],
@@ -283,6 +362,6 @@ extension View {
                     )
                     .allowsHitTesting(false)
             }
-            .shadow(color: .black.opacity(0.4), radius: 18, y: 10)
+            .clipShape(shape)
     }
 }

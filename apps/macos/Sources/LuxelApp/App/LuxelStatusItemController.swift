@@ -105,11 +105,12 @@ extension LuxelStatusItemController {
     }
 
     private func configurePopover() {
-        let hostingController = NSHostingController(
+        let hostingController = LuxelMenuHostingController(
             rootView: makeMenuRootView()
         )
         hostingController.view.frame = NSRect(origin: .zero, size: fallbackMenuPanelSize)
         hostingController.view.wantsLayer = true
+        hostingController.view.layer?.isOpaque = false
         hostingController.view.layer?.backgroundColor = NSColor.clear.cgColor
         menuHostingController = hostingController
     }
@@ -782,6 +783,7 @@ extension LuxelStatusItemController {
             hostingView.frame = container.bounds
             hostingView.autoresizingMask = [.width, .height]
             hostingView.wantsLayer = true
+            hostingView.layer?.isOpaque = false
             hostingView.layer?.backgroundColor = NSColor.clear.cgColor
             container.addSubview(hostingView)
         }

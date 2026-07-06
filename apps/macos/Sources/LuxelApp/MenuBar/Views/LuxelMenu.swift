@@ -25,18 +25,13 @@ struct LuxelMenu: View {
     @State var captureMode: LuxelCaptureMode = .display
 
     var body: some View {
-        GlassEffectContainer(spacing: Self.islandSpacing) {
-            VStack(alignment: .leading, spacing: Self.islandSpacing) {
-                captureIsland
-                statusMessages
-                LuxelReplayBufferControls(model: model) { fileURL in
-                    openRecording(fileURL)
-                }
-                libraryIsland
-            }
-            .frame(width: Self.contentWidth, alignment: .leading)
-            .padding(Self.contentPadding)
+        VStack(alignment: .leading, spacing: Self.islandSpacing) {
+            captureIsland
+            statusMessages
+            libraryIsland
         }
+        .frame(width: Self.contentWidth, alignment: .leading)
+        .padding(Self.contentPadding)
         .fixedSize(horizontal: false, vertical: true)
         .background {
             LuxelShortcutInstaller(
@@ -267,7 +262,12 @@ extension LuxelMenu {
                     .frame(width: Self.deviceIconCellWidth, height: Self.deviceControlHeight)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(LuxelIslandCellButtonStyle())
+            .buttonStyle(
+                LuxelIslandCellButtonStyle(
+                    corners: .leading,
+                    cornerRadius: Self.deviceControlCornerRadius
+                )
+            )
             .help(presentation.message)
             .accessibilityLabel("Microphone")
             .accessibilityValue(presentation.statusTitle)
@@ -290,7 +290,12 @@ extension LuxelMenu {
                     .frame(width: Self.deviceIconCellWidth, height: Self.deviceControlHeight)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(LuxelIslandCellButtonStyle())
+            .buttonStyle(
+                LuxelIslandCellButtonStyle(
+                    corners: .leading,
+                    cornerRadius: Self.deviceControlCornerRadius
+                )
+            )
             .help(presentation.message)
             .accessibilityLabel("Camera")
             .accessibilityValue(presentation.statusTitle)
@@ -319,7 +324,12 @@ extension LuxelMenu {
                     .frame(width: Self.deviceIconCellWidth, height: Self.deviceControlHeight)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(LuxelIslandCellButtonStyle())
+            .buttonStyle(
+                LuxelIslandCellButtonStyle(
+                    corners: .leading,
+                    cornerRadius: Self.deviceControlCornerRadius
+                )
+            )
             .help(presentation.message)
             .accessibilityLabel("System Audio")
             .accessibilityValue(presentation.statusTitle)
@@ -347,9 +357,13 @@ extension LuxelMenu {
                 .foregroundStyle(.white.opacity(0.55))
                 .frame(width: 30, height: Self.deviceControlHeight)
                 .contentShape(Rectangle())
-                .luxelIslandCellHighlight()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            LuxelIslandCellButtonStyle(
+                corners: .trailing,
+                cornerRadius: Self.deviceControlCornerRadius
+            )
+        )
         .frame(height: Self.deviceControlHeight)
         .help("Choose audio source")
         .accessibilityLabel("Choose Audio Source")

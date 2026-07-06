@@ -23,9 +23,13 @@ extension LuxelMenu {
                     height: LuxelMicrophoneFooterPickerLayout.buttonHeight
                 )
                 .contentShape(Rectangle())
-                .luxelIslandCellHighlight()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(
+            LuxelIslandCellButtonStyle(
+                corners: .trailing,
+                cornerRadius: LuxelMicrophoneFooterPickerLayout.cornerRadius
+            )
+        )
         .frame(height: LuxelMicrophoneFooterPickerLayout.buttonHeight)
         .help("Choose microphone")
         .accessibilityLabel("Choose Microphone")
@@ -72,4 +76,5 @@ extension LuxelMenu {
 private enum LuxelMicrophoneFooterPickerLayout {
     static let buttonWidth: CGFloat = 30
     static let buttonHeight: CGFloat = 36
+    static let cornerRadius: CGFloat = 18
 }

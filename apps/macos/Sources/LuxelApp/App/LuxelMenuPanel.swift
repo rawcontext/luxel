@@ -21,11 +21,35 @@ struct LuxelMenuPanelChrome<Content: View>: View {
     }
 }
 
+final class LuxelMenuHostingController<Content: View>: NSHostingController<Content> {
+    override func loadView() {
+        view = LuxelMenuHostingView(rootView: rootView)
+    }
+}
+
+private final class LuxelMenuHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool {
+        false
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        wantsLayer = true
+        layer?.isOpaque = false
+        layer?.backgroundColor = NSColor.clear.cgColor
+    }
+}
+
 final class LuxelMenuPanelContentView: NSView {
+    override var isOpaque: Bool {
+        false
+    }
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
 
         wantsLayer = true
+        layer?.isOpaque = false
         layer?.backgroundColor = NSColor.clear.cgColor
     }
 
