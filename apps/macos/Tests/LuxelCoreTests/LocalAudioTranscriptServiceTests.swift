@@ -25,8 +25,8 @@ struct LocalAudioTranscriptServiceTests {
 
         #expect(transcript?.turns.map(\.source) == [.system, .microphone])
         let requests = await transcriber.requests
-        #expect(requests.map(\.source) == [.system, .microphone])
-        #expect(requests.map(\.audioTrackIndex) == [0, 1])
+        #expect(Set(requests.map(\.source)) == [.system, .microphone])
+        #expect(Set(requests.map(\.audioTrackIndex)) == [0, 1])
     }
 
     @Test("service returns cached transcript without transcribing")
@@ -106,7 +106,7 @@ private actor SpyTimedSpeechTranscriber: TimedSpeechTranscriber {
 
     func transcribe(_ request: TimedSpeechTranscriptionRequest) async throws -> [TimedTranscriptSpan] {
         requests.append(request)
-        let index = requests.count - 1
+        let index = request.audioTrackIndex ?? 0
         let text = request.source == .system ? "System" : "Microphone"
         let start = TimeInterval(index)
 

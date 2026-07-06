@@ -42,16 +42,29 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
             return nil
         }
 
-        var spans: [TimedTranscriptSpan] = []
-        for plan in extractionPlans {
-            let extracted = try await transcriber.transcribe(
-                TimedSpeechTranscriptionRequest(
-                    audioURL: effectiveRequest.audioURL,
-                    locale: effectiveRequest.locale,
-                    source: plan.source,
-                    audioTrackIndex: plan.audioTrackIndex
-                ))
-            spans.append(contentsOf: extracted)
+        let transcriber = transcriber
+        let spans = try await withThrowingTaskGroup(
+            of: (planIndex: Int, spans: [TimedTranscriptSpan]).self
+        ) { group in
+            for (planIndex, plan) in extractionPlans.enumerated() {
+                group.addTask {
+                    let extracted = try await transcriber.transcribe(
+                        TimedSpeechTranscriptionRequest(
+                            audioURL: effectiveRequest.audioURL,
+                            locale: effectiveRequest.locale,
+                            source: plan.source,
+                            audioTrackIndex: plan.audioTrackIndex
+                        ))
+                    return (planIndex, extracted)
+                }
+            }
+
+            var spansByPlanIndex = [[TimedTranscriptSpan]](
+                repeating: [], count: extractionPlans.count)
+            while let result = try await group.next() {
+                spansByPlanIndex[result.planIndex] = result.spans
+            }
+            return spansByPlanIndex.flatMap { $0 }
         }
 
         let stableSpans = try Self.stableSortedSpans(spans)
