@@ -114,7 +114,11 @@ enum LuxelCompositionRoot {
     }
 
     static func purchaseGateService() -> PurchaseGateService {
+        #if LUXEL_MAC_APP_STORE
+        PurchaseGateService(gate: MacAppStorePaidAppPurchaseGate())
+        #else
         PurchaseGateService(gate: AlwaysEntitledPurchaseGate())
+        #endif
     }
 
     @MainActor

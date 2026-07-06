@@ -39,11 +39,31 @@ extension LuxelMenuModel {
             requestReplayBufferArm(configuration)
         } else {
             settings.replayBufferConfiguration = nil
+            settings.replayBufferResumeOnLaunch = false
             saveSettings()
             Task {
                 await disarmReplayBuffer()
             }
         }
+    }
+
+    func setReplayBufferResumeOnLaunch(_ isEnabled: Bool) {
+        settings.replayBufferResumeOnLaunch = isEnabled
+
+        guard isEnabled,
+              settings.replayBufferConfiguration == nil,
+              let configuration = replayBufferConfiguration(
+                bufferLength: settings.replayBufferPreferredBufferLength
+              )
+        else {
+            saveSettings()
+            return
+        }
+
+        settings.replayBufferPreferredBufferLength = configuration.bufferLength
+        settings.replayBufferConfiguration = configuration
+        saveSettings()
+        requestReplayBufferArm(configuration)
     }
 
     func setReplayBufferDuration(_ bufferLength: TimeInterval) {

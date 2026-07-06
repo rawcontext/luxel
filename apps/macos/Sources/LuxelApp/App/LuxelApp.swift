@@ -57,6 +57,7 @@ struct LuxelApp: App {
                 shortcutController: shortcutController,
                 windowPresenter: windowPresenter
             ))
+        LuxelAppPurchaseGuard.enforce(purchaseGateService: LuxelCompositionRoot.purchaseGateService())
         appDelegate.openFiles = { fileURLs, activationSource in
             guard let fileURL = fileURLs.first else {
                 return
@@ -89,6 +90,26 @@ struct LuxelApp: App {
                     windowPresenter.openEditor()
                 }
             )
+        }
+    }
+}
+
+private enum LuxelAppPurchaseGuard {
+    static func enforce(purchaseGateService: PurchaseGateService) {
+        Task { @MainActor in
+            let isEntitled = await purchaseGateService.isEntitled()
+            guard !isEntitled else {
+                return
+            }
+
+            let alert = NSAlert()
+            alert.alertStyle = .critical
+            alert.messageText = "Luxel Purchase Could Not Be Verified"
+            alert.informativeText =
+                "Install Luxel from the Mac App Store using the Apple Account that purchased it."
+            alert.addButton(withTitle: "Quit Luxel")
+            alert.runModal()
+            NSApplication.shared.terminate(nil)
         }
     }
 }

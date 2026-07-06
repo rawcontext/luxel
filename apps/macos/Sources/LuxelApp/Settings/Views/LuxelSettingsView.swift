@@ -403,9 +403,8 @@ extension LuxelSettingsView {
                 .disabled(!isConfigured)
                 .help("Include Mac audio in replay buffer clips.")
 
-            Toggle("Resume on Launch", isOn: $model.settings.replayBufferResumeOnLaunch)
-                .disabled(!isConfigured)
-                .help("Restart the replay buffer when Luxel opens.")
+            Toggle("Start Replay When Luxel Launches", isOn: replayBufferResumeOnLaunch)
+                .help("Start the replay buffer automatically when Luxel opens.")
 
             Picker("Clip Opens In", selection: $model.settings.replayClipDestination) {
                 ForEach(ReplayClipDestination.allCases) { destination in
@@ -717,6 +716,14 @@ extension LuxelSettingsView {
                 ?? model.settings.replayBufferPreferredBufferLength
         } set: { bufferLength in
             model.setReplayBufferDuration(bufferLength)
+        }
+    }
+
+    private var replayBufferResumeOnLaunch: Binding<Bool> {
+        Binding {
+            model.settings.replayBufferResumeOnLaunch
+        } set: { isEnabled in
+            model.setReplayBufferResumeOnLaunch(isEnabled)
         }
     }
 
