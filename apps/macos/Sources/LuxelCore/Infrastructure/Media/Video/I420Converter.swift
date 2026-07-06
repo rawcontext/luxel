@@ -68,7 +68,7 @@ public struct I420Converter: Sendable {
         var yPlane = Data(count: pixelSize.width * pixelSize.height)
         var uPlane = Data(count: (pixelSize.width / 2) * (pixelSize.height / 2))
         var vPlane = Data(count: (pixelSize.width / 2) * (pixelSize.height / 2))
-        var conversionInfo = try makeBT709LimitedConversionInfo()
+        var conversionInfo = try Self.bt709LimitedConversionInfo.get()
         var permuteMap: [UInt8] = [3, 2, 1, 0]
         var conversionError: vImage_Error = kvImageNoError
 
@@ -129,7 +129,11 @@ public struct I420Converter: Sendable {
         }
     }
 
-    private func makeBT709LimitedConversionInfo() throws -> vImage_ARGBToYpCbCr {
+    private static let bt709LimitedConversionInfo = Result {
+        try makeBT709LimitedConversionInfo()
+    }
+
+    private static func makeBT709LimitedConversionInfo() throws -> vImage_ARGBToYpCbCr {
         var pixelRange = vImage_YpCbCrPixelRange(
             Yp_bias: 16,
             CbCr_bias: 128,
