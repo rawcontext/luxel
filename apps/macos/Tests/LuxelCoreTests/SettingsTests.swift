@@ -24,7 +24,7 @@ extension SettingsTests {
         #expect(settings.record60FPS)
         #expect(settings.recordingFrameRate == (try FrameRate(60)))
         #expect(settings.loopExports)
-        #expect(!settings.recordSystemAudio)
+        #expect(settings.recordSystemAudio)
         #expect(!settings.recordAudio)
         #expect(settings.audioInputDeviceID == "SYSTEM_DEFAULT")
         #expect(settings.audioInputDeviceName == "System Default")

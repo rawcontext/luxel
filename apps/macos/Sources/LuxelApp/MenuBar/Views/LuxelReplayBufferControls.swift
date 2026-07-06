@@ -5,9 +5,6 @@ struct LuxelReplayBufferControls: View {
     private static let durationOptions: [TimeInterval] = [30, 60, 120, 300]
     private static let actionButtonHeight: CGFloat = 32
     private static let actionButtonCornerRadius: CGFloat = 16
-    private static let durationPickerWidth: CGFloat = 102
-    private static let exportButtonWidth: CGFloat = 76
-    private static let powerButtonWidth: CGFloat = 74
 
     let model: LuxelMenuModel
     let openRecording: @MainActor @Sendable (URL) -> Void
@@ -15,38 +12,50 @@ struct LuxelReplayBufferControls: View {
     var body: some View {
         let presentation = model.replayBufferMenuPresentation
 
-        Divider()
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Replay Buffer")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.96))
+                    .lineLimit(1)
 
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Replay Buffer")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.9))
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-
-            HStack(spacing: 6) {
-                Picker("Duration", selection: replayBufferDurationSelection) {
-                    ForEach(Self.durationOptions, id: \.self) { seconds in
-                        Text(replayBufferDurationLabel(seconds)).tag(seconds)
-                    }
-                }
-                .labelsHidden()
-                .pickerStyle(.menu)
-                .frame(width: Self.durationPickerWidth)
-                .disabled(model.replayBufferState == .clipping)
-                .help("Choose how much recent recording history to keep.")
-
-                Spacer(minLength: 0)
-
-                exportBufferButton(presentation)
-
-                replayBufferPowerButton
+                durationMenu
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            exportBufferButton(presentation)
+
+            replayBufferPowerButton
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 7)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .luxelMenuSectionBackground(cornerRadius: 18)
+        .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 12))
+        .luxelMenuIslandBackground(cornerRadius: 24)
+    }
+
+    private var durationMenu: some View {
+        Menu {
+            Picker("Duration", selection: replayBufferDurationSelection) {
+                ForEach(Self.durationOptions, id: \.self) { seconds in
+                    Text(replayBufferDurationLabel(seconds)).tag(seconds)
+                }
+            }
+            .pickerStyle(.inline)
+        } label: {
+            HStack(spacing: 4) {
+                Text(replayBufferDurationSubtitle)
+                    .font(.system(size: 11, weight: .regular, design: .rounded))
+                    .lineLimit(1)
+
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8, weight: .bold))
+            }
+            .foregroundStyle(.white.opacity(0.5))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(model.replayBufferState == .clipping)
+        .help("Choose how much recent recording history to keep.")
+        .accessibilityLabel("Replay buffer duration")
+        .accessibilityValue(replayBufferDurationSubtitle)
     }
 
     private var isReplayBufferConfigured: Bool {
@@ -92,6 +101,14 @@ struct LuxelReplayBufferControls: View {
         }
     }
 
+    private var replayBufferDurationSubtitle: String {
+        let seconds =
+            model.settings.replayBufferConfiguration?.bufferLength
+            ?? model.settings.replayBufferPreferredBufferLength
+
+        return "Keeps the last \(replayBufferDurationLabel(seconds).lowercased())"
+    }
+
     private var replayBufferPowerButton: some View {
         Button {
             performReplayBufferPowerAction()
@@ -101,15 +118,19 @@ struct LuxelReplayBufferControls: View {
                     .font(.system(size: 11, weight: .semibold))
 
                 Text(replayBufferPowerTitle)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(size: 12.5, weight: .semibold, design: .rounded))
                     .lineLimit(1)
             }
-            .foregroundStyle(.white)
-            .frame(width: Self.powerButtonWidth, height: Self.actionButtonHeight)
+            .foregroundStyle(Color(red: 22 / 255, green: 22 / 255, blue: 29 / 255))
+            .padding(.leading, 11)
+            .padding(.trailing, 14)
+            .frame(height: Self.actionButtonHeight)
             .contentShape(
                 RoundedRectangle(cornerRadius: Self.actionButtonCornerRadius, style: .continuous))
         }
-        .buttonStyle(LuxelMenuControlButtonStyle(cornerRadius: Self.actionButtonCornerRadius))
+        .buttonStyle(
+            LuxelReplayBufferPowerButtonStyle(cornerRadius: Self.actionButtonCornerRadius)
+        )
         .disabled(replayBufferPowerButtonIsDisabled)
         .help(replayBufferPowerTitle)
         .accessibilityLabel(replayBufferPowerTitle)
@@ -122,12 +143,17 @@ struct LuxelReplayBufferControls: View {
             }
         } label: {
             Text("Export")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 12.5, weight: .medium, design: .rounded))
                 .lineLimit(1)
-                .foregroundStyle(.white)
-                .frame(width: Self.exportButtonWidth, height: Self.actionButtonHeight)
+                .foregroundStyle(.white.opacity(presentation.canClip ? 0.9 : 0.35))
+                .padding(.horizontal, 13)
+                .frame(height: Self.actionButtonHeight)
+                .contentShape(
+                    RoundedRectangle(cornerRadius: 15, style: .continuous))
         }
-        .buttonStyle(LuxelMenuControlButtonStyle(cornerRadius: Self.actionButtonCornerRadius))
+        .buttonStyle(
+            LuxelIslandButtonStyle(cornerRadius: 15, fillOpacity: 0.06, dimsWhenDisabled: false)
+        )
         .disabled(!presentation.canClip)
         .help(presentation.clipActionTitle)
         .accessibilityLabel("Export")
@@ -163,5 +189,47 @@ struct LuxelReplayBufferControls: View {
         default:
             "\(Int(seconds)) Seconds"
         }
+    }
+}
+
+private struct LuxelReplayBufferPowerButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    let cornerRadius: CGFloat
+
+    func makeBody(configuration: Configuration) -> some View {
+        LuxelReplayBufferPowerButtonBody(
+            label: configuration.label,
+            isPressed: configuration.isPressed,
+            isEnabled: isEnabled,
+            cornerRadius: cornerRadius
+        )
+    }
+}
+
+private struct LuxelReplayBufferPowerButtonBody<Label: View>: View {
+    @State private var isHovered = false
+
+    let label: Label
+    let isPressed: Bool
+    let isEnabled: Bool
+    let cornerRadius: CGFloat
+
+    var body: some View {
+        label
+            .background(
+                .white.opacity(isEnabled ? 0.92 : 0.35),
+                in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            )
+            .shadow(
+                color: .black.opacity(isHovered ? 0.35 : 0.25),
+                radius: isHovered ? 10 : 7,
+                y: isHovered ? 4 : 2
+            )
+            .offset(y: isHovered && !isPressed ? -1 : 0)
+            .scaleEffect(isPressed ? 0.95 : 1)
+            .onHover { isHovered = isEnabled && $0 }
+            .animation(.easeOut(duration: 0.12), value: isHovered)
+            .animation(.easeOut(duration: 0.08), value: isPressed)
     }
 }

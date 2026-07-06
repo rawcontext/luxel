@@ -160,7 +160,7 @@ extension AppSettings {
         record60FPS: Bool = true,
         recordingFrameRate: FrameRate? = nil,
         loopExports: Bool = true,
-        recordSystemAudio: Bool = false,
+        recordSystemAudio: Bool = true,
         recordAudio: Bool = false,
         audioInputDeviceID: String? = AudioInputDeviceID.systemDefault,
         audioInputDeviceName: String? = AudioInputDeviceOption.systemDefault.name,

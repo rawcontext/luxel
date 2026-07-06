@@ -16,13 +16,14 @@ extension LuxelMenu {
         } label: {
             Image(systemName: "chevron.down")
                 .labelStyle(.iconOnly)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(.white.opacity(0.55))
                 .frame(
                     width: LuxelMicrophoneFooterPickerLayout.buttonWidth,
                     height: LuxelMicrophoneFooterPickerLayout.buttonHeight
                 )
                 .contentShape(Rectangle())
+                .luxelIslandCellHighlight()
         }
         .buttonStyle(.plain)
         .frame(height: LuxelMicrophoneFooterPickerLayout.buttonHeight)
@@ -69,6 +70,6 @@ extension LuxelMenu {
 }
 
 private enum LuxelMicrophoneFooterPickerLayout {
-    static let buttonWidth: CGFloat = 36
-    static let buttonHeight: CGFloat = 34
+    static let buttonWidth: CGFloat = 30
+    static let buttonHeight: CGFloat = 36
 }
