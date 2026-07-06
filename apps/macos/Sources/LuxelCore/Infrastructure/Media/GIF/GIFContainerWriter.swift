@@ -217,47 +217,41 @@ private struct GIFLZWEncoder {
         let endCode = clearCode + 1
         var codeSize = minimumCodeSize + 1
         var nextCode = endCode + 1
-        var dictionary = Self.initialDictionary(clearCode: clearCode)
+        var dictionary: [Int: Int] = [:]
+        dictionary.reserveCapacity(4_096)
         var packer = GIFLZWBitPacker()
 
         packer.write(clearCode, codeSize: codeSize)
 
-        var currentSequence = [firstIndex]
+        var currentCode = Int(firstIndex)
         for colorIndex in colorIndexes.dropFirst() {
-            let extendedSequence = currentSequence + [colorIndex]
-            if dictionary[extendedSequence] != nil {
-                currentSequence = extendedSequence
+            let extendedKey = (currentCode << 8) | Int(colorIndex)
+            if let extendedCode = dictionary[extendedKey] {
+                currentCode = extendedCode
                 continue
             }
 
-            packer.write(dictionary[currentSequence] ?? Int(currentSequence[0]), codeSize: codeSize)
+            packer.write(currentCode, codeSize: codeSize)
 
             if nextCode < 4096 {
-                dictionary[extendedSequence] = nextCode
+                dictionary[extendedKey] = nextCode
                 nextCode += 1
                 if nextCode == (1 << codeSize), codeSize < 12 {
                     codeSize += 1
                 }
             } else {
                 packer.write(clearCode, codeSize: codeSize)
-                dictionary = Self.initialDictionary(clearCode: clearCode)
+                dictionary.removeAll(keepingCapacity: true)
                 codeSize = minimumCodeSize + 1
                 nextCode = endCode + 1
             }
 
-            currentSequence = [colorIndex]
+            currentCode = Int(colorIndex)
         }
 
-        packer.write(dictionary[currentSequence] ?? Int(currentSequence[0]), codeSize: codeSize)
+        packer.write(currentCode, codeSize: codeSize)
         packer.write(endCode, codeSize: codeSize)
         return packer.finalizedData()
-    }
-
-    private static func initialDictionary(clearCode: Int) -> [[UInt8]: Int] {
-        Dictionary(
-            uniqueKeysWithValues: (0..<clearCode).map { code in
-                ([UInt8(code)], code)
-            })
     }
 }
 
