@@ -122,12 +122,13 @@ public struct CodecExportPipeline: Sendable {
                 guard let frame = nextVideoFrame else {
                     continue
                 }
+                async let upcomingVideoFrame = mediaSource.nextVideoFrame()
                 let packets = try await videoEncoder.encode(frame: frame)
                 for packet in packets {
                     try await muxer.write(packet, to: .video)
                 }
                 await progressTracker.completeUnit()
-                nextVideoFrame = try await mediaSource.nextVideoFrame()
+                nextVideoFrame = try await upcomingVideoFrame
             } else if let chunk = nextAudioChunk, let audioEncoder {
                 let packets = try await audioEncoder.encode(chunk: chunk)
                 for packet in packets {
