@@ -98,19 +98,6 @@ static int luxel_collect_vpx_packets(
     return 0;
 }
 
-static void luxel_copy_plane(
-    uint8_t *destination,
-    int destination_stride,
-    const uint8_t *source,
-    int source_stride,
-    int width,
-    int height
-) {
-    for (int row = 0; row < height; row += 1) {
-        memcpy(destination + row * destination_stride, source + row * source_stride, (size_t)width);
-    }
-}
-
 int LuxelVPXEncoderCreate(
     int width,
     int height,
@@ -185,6 +172,26 @@ int LuxelVPXEncoderCreate(
         return -1;
     }
 
+    int tile_columns = 0;
+    while (tile_columns < 6
+           && (256 << (tile_columns + 1)) <= width
+           && (1u << (tile_columns + 1)) <= thread_count) {
+        tile_columns += 1;
+    }
+    result = vpx_codec_control(&created_encoder->codec, VP9E_SET_TILE_COLUMNS, tile_columns);
+    if (result != VPX_CODEC_OK) {
+        luxel_set_error(error_message, error_message_size, "Could not set VP9 tile columns: %s.", vpx_codec_err_to_string(result));
+        LuxelVPXEncoderDestroy(created_encoder);
+        return -1;
+    }
+
+    result = vpx_codec_control(&created_encoder->codec, VP9E_SET_FRAME_PARALLEL_DECODING, 1);
+    if (result != VPX_CODEC_OK) {
+        luxel_set_error(error_message, error_message_size, "Could not enable VP9 frame-parallel decoding: %s.", vpx_codec_err_to_string(result));
+        LuxelVPXEncoderDestroy(created_encoder);
+        return -1;
+    }
+
     created_encoder->width = width;
     created_encoder->height = height;
     created_encoder->frame_rate = frame_rate;
@@ -219,14 +226,17 @@ int LuxelVPXEncoderEncodeFrame(
     }
 
     vpx_image_t image;
-    if (vpx_img_alloc(&image, VPX_IMG_FMT_I420, (unsigned int)encoder->width, (unsigned int)encoder->height, 1) == NULL) {
-        luxel_set_error(error_message, error_message_size, "Could not allocate VP9 input image.");
+    if (vpx_img_wrap(&image, VPX_IMG_FMT_I420, (unsigned int)encoder->width, (unsigned int)encoder->height, 1, (unsigned char *)y_plane) == NULL) {
+        luxel_set_error(error_message, error_message_size, "Could not wrap VP9 input image.");
         return -1;
     }
 
-    luxel_copy_plane(image.planes[0], image.stride[0], y_plane, encoder->width, encoder->width, encoder->height);
-    luxel_copy_plane(image.planes[1], image.stride[1], u_plane, encoder->width / 2, encoder->width / 2, encoder->height / 2);
-    luxel_copy_plane(image.planes[2], image.stride[2], v_plane, encoder->width / 2, encoder->width / 2, encoder->height / 2);
+    image.planes[VPX_PLANE_Y] = (unsigned char *)y_plane;
+    image.stride[VPX_PLANE_Y] = encoder->width;
+    image.planes[VPX_PLANE_U] = (unsigned char *)u_plane;
+    image.stride[VPX_PLANE_U] = encoder->width / 2;
+    image.planes[VPX_PLANE_V] = (unsigned char *)v_plane;
+    image.stride[VPX_PLANE_V] = encoder->width / 2;
 
     vpx_codec_err_t result = vpx_codec_encode(
         &encoder->codec,
@@ -236,7 +246,6 @@ int LuxelVPXEncoderEncodeFrame(
         0,
         VPX_DL_GOOD_QUALITY
     );
-    vpx_img_free(&image);
 
     if (result != VPX_CODEC_OK) {
         luxel_set_error(error_message, error_message_size, "Could not encode VP9 frame: %s.", vpx_codec_error(&encoder->codec));

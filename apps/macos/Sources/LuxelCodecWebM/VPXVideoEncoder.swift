@@ -25,7 +25,7 @@ public actor VPXVideoEncoder: CodecVideoEncoder {
             settings.cqLevel,
             settings.cpuUsed,
             1,
-            UInt32(min(ProcessInfo.processInfo.activeProcessorCount, 8)),
+            UInt32(min(ProcessInfo.processInfo.activeProcessorCount, 16)),
             UInt32(max(configuration.frameRate.framesPerSecond * 5, 150)),
             &createdEncoder,
             &errorBuffer,
