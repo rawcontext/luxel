@@ -128,6 +128,7 @@ public struct FloydSteinbergDitherer: Sendable {
 
 public struct GIFDitheringHeuristic: Sendable {
     public static let flatContentMeanErrorThreshold = 12.0
+    private static let maximumSampledFrameCount = 8
 
     public init() {}
 
@@ -135,8 +136,21 @@ public struct GIFDitheringHeuristic: Sendable {
         for frames: [GIFFrameBitmap],
         palette: GIFColorPalette
     ) throws -> GIFDitheringMode {
-        let error = try meanQuantizationError(for: frames, palette: palette)
+        let error = try meanQuantizationError(
+            for: Self.sampledFrames(frames),
+            palette: palette
+        )
         return error <= Self.flatContentMeanErrorThreshold ? .none : .diffusion
+    }
+
+    static func sampledFrames(_ frames: [GIFFrameBitmap]) -> [GIFFrameBitmap] {
+        guard frames.count > maximumSampledFrameCount else {
+            return frames
+        }
+
+        return (0..<maximumSampledFrameCount).map { sampleIndex in
+            frames[sampleIndex * (frames.count - 1) / (maximumSampledFrameCount - 1)]
+        }
     }
 
     public func meanQuantizationError(
