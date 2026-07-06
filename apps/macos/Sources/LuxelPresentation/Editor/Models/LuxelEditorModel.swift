@@ -93,6 +93,8 @@ public final class LuxelEditorModel {
     @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService?
     @ObservationIgnored var playbackRequested = false
     @ObservationIgnored var playbackTimeObserver: PlaybackTimeObserver?
+    @ObservationIgnored var pendingPlayerSeekTarget: TimeInterval?
+    @ObservationIgnored var isPlayerSeekInProgress = false
     @ObservationIgnored var exportTask: Task<Void, Never>?
     @ObservationIgnored var frameGrabTask: Task<Void, Never>?
     @ObservationIgnored var previewAudioMixTask: Task<Void, Never>?

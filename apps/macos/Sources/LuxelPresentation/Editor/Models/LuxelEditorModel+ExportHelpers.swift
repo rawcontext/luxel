@@ -38,6 +38,12 @@ extension LuxelEditorModel {
 
         previewAudioMixTask = Task { [weak self] in
             do {
+                // Debounce: trim/volume sliders reschedule this on every tick, and
+                // resolving gains can decode audio for peak analysis. Let rapid
+                // updates cancel each other during the sleep so only the final
+                // value pays for the analysis.
+                try await Task.sleep(for: .milliseconds(200))
+
                 guard let self else {
                     return
                 }
