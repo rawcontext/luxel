@@ -11,7 +11,7 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundleDisplayName"] as? String == "Luxel")
         #expect(plist["CFBundleExecutable"] as? String == "Luxel")
         #expect(plist["CFBundleIdentifier"] as? String == "media.luxel.app")
-        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.15")
+        #expect(plist["CFBundleShortVersionString"] as? String == "1.0.16")
         #expect(plist["CFBundleVersion"] as? String == "1")
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
         #expect(plist["LSMinimumSystemVersion"] as? String == "26.0")
@@ -117,6 +117,16 @@ struct AppBundleConfigurationTests {
         #expect(script.contains("xcrun strip -x \"${APP_PATH}/Contents/MacOS/luxel-cli\""))
         #expect(script.contains("\"${APP_PATH}/Contents/MacOS/luxel-cli\""))
         #expect(!script.contains("Contents/Resources/install-cli"))
+    }
+
+    @Test("Mac App Store package script bundles SwiftPM resources")
+    func macAppStorePackageScriptBundlesSwiftPMResources() throws {
+        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-mas-pkg.sh")
+        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+        #expect(script.contains("find \"${BIN_DIR}\" -maxdepth 1 -name '*.bundle'"))
+        #expect(script.contains("Contents/Resources/Luxel_LuxelCore.bundle"))
+        #expect(script.contains("LuxelCore resource bundle was not copied"))
     }
 
     @Test("build script requires team signing")
