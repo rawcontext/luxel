@@ -1,6 +1,8 @@
 import Foundation
 
 public enum LuxelLocalization {
+    private static let bundleName = "Luxel_LuxelCore.bundle"
+
     public static let supportedLocales = [
         "en",
         "de",
@@ -22,12 +24,12 @@ public enum LuxelLocalization {
         LocalizedStringResource(
             key,
             defaultValue: defaultValue,
-            bundle: .atURL(Bundle.module.bundleURL)
+            bundle: .atURL(localizationBundle.bundleURL)
         )
     }
 
     public static func string(_ key: String, defaultValue: String) -> String {
-        NSLocalizedString(key, bundle: .module, value: defaultValue, comment: "")
+        NSLocalizedString(key, bundle: localizationBundle, value: defaultValue, comment: "")
     }
 
     public static func format(
@@ -40,5 +42,28 @@ public enum LuxelLocalization {
             locale: Locale.current,
             arguments: arguments
         )
+    }
+
+    private static var localizationBundle: Bundle {
+        let executableContentsURL =
+            Bundle.main.executableURL?
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+
+        let candidates = [
+            Bundle.main.resourceURL?.appending(path: bundleName),
+            Bundle.main.bundleURL.appending(path: "Contents/Resources").appending(path: bundleName),
+            executableContentsURL?.appending(path: "Resources").appending(path: bundleName)
+        ]
+
+        for candidate in candidates {
+            guard let candidate, let bundle = Bundle(url: candidate) else {
+                continue
+            }
+
+            return bundle
+        }
+
+        return .module
     }
 }

@@ -97,6 +97,18 @@ struct LocalizationTests {
 
         #expect(missing.isEmpty, "Missing catalog keys:\n\(missing.joined(separator: "\n"))")
     }
+
+    @Test("localization lookup prefers packaged app resource bundle")
+    func localizationLookupPrefersPackagedAppResourceBundle() throws {
+        let sourceURL =
+            packageRoot
+            .appending(path: "Sources/LuxelCore/Application/Localization/LuxelLocalization.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+
+        #expect(source.contains("Contents/Resources"))
+        #expect(source.contains("return .module"))
+        #expect(LuxelLocalization.string("common.ok", defaultValue: "OK") == "OK")
+    }
 }
 
 private struct StringCatalog: Decodable {
