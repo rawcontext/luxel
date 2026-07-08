@@ -302,8 +302,9 @@
   }
 
   .record-glyph::after {
-    width: 4.5px;
-    height: 4.5px;
+    display: block;
+    width: 4px;
+    height: 4px;
     content: "";
     border-radius: 50%;
     background: #fff;
