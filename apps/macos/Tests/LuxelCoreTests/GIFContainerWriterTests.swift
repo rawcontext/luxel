@@ -46,6 +46,62 @@ struct GIFContainerWriterTests {
             ])
     }
 
+    @Test("LZW output decodes losslessly once the code table crosses width boundaries")
+    func lzwOutputDecodesLosslesslyAcrossCodeWidthBoundaries() throws {
+        // High-entropy content grows the LZW dictionary through the 512, 1024,
+        // and 2048 code-width boundaries and past a 4096-entry table reset —
+        // the regions where a miswritten code width desyncs standard decoders.
+        let side = 300
+        let colors = Self.fullPaletteColors()
+        let palette = try GIFColorPalette(colors: colors)
+        let colorIndexes = Self.highEntropyIndexes(count: side * side)
+        let frame = try GIFFrameDelta(
+            rect: GIFPixelRect(x: 0, y: 0, width: side, height: side),
+            colorIndexes: colorIndexes,
+            transparentColorIndex: 0
+        )
+
+        let data = try GIFContainerWriter().data(
+            pixelSize: PixelSize(width: side, height: side),
+            palette: palette,
+            frames: [frame],
+            delays: try GIFCentisecondDelayPlan(centisecondDelays: [5]),
+            loopMode: .forever
+        )
+
+        let source = try #require(CGImageSourceCreateWithData(data as CFData, nil))
+        let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        #expect(image.width == side)
+        #expect(image.height == side)
+
+        var decoded = [UInt8](repeating: 0, count: side * side * 4)
+        let colorSpace = try #require(CGColorSpace(name: CGColorSpace.sRGB))
+        let context = try #require(
+            CGContext(
+                data: &decoded,
+                width: side,
+                height: side,
+                bitsPerComponent: 8,
+                bytesPerRow: side * 4,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+
+        var mismatchedPixelCount = 0
+        for pixel in 0..<(side * side) {
+            let expected = colors[Int(colorIndexes[pixel])]
+            let offset = pixel * 4
+            if abs(Int(decoded[offset]) - Int(expected.red)) > 2
+                || abs(Int(decoded[offset + 1]) - Int(expected.green)) > 2
+                || abs(Int(decoded[offset + 2]) - Int(expected.blue)) > 2
+                || decoded[offset + 3] != 255 {
+                mismatchedPixelCount += 1
+            }
+        }
+        #expect(mismatchedPixelCount == 0)
+    }
+
     @Test("writer rejects invalid frame shape palette indexes and delay counts")
     func writerRejectsInvalidFrameShapePaletteIndexesAndDelayCounts() throws {
         let palette = try testPalette()
@@ -93,6 +149,24 @@ struct GIFContainerWriterTests {
                 delays: delays,
                 loopMode: .forever
             )
+        }
+    }
+
+    private static func fullPaletteColors() -> [GIFPaletteColor] {
+        (0..<256).map { (index: Int) -> GIFPaletteColor in
+            let blue: Int = (index * 89 + 41) % 256
+            return GIFPaletteColor(
+                red: UInt8(index),
+                green: UInt8(255 - index),
+                blue: UInt8(blue)
+            )
+        }
+    }
+
+    private static func highEntropyIndexes(count: Int) -> [UInt8] {
+        (0..<count).map { (index: Int) -> UInt8 in
+            let value: Int = (index * 31 + (index >> 3) * 17) % 255
+            return UInt8(1 + value)
         }
     }
 

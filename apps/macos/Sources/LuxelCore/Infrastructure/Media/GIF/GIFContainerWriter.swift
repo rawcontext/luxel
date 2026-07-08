@@ -231,7 +231,10 @@ private struct GIFLZWEncoder {
             if nextCode < 4096 {
                 dictionary[extendedKey] = nextCode
                 nextCode += 1
-                if nextCode == (1 << codeSize), codeSize < 12 {
+                // Decoders grow their table one entry behind the encoder, so the
+                // code width must widen one code later than nextCode reaching
+                // 2^codeSize; widening early desyncs every standard GIF decoder.
+                if nextCode == (1 << codeSize) + 1, codeSize < 12 {
                     codeSize += 1
                 }
             } else {
