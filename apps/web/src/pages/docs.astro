@@ -105,6 +105,7 @@ const exportFormatRows = [
   ["GIF", "Animated image", "Drops audio. Supports loop and animation-focused export controls."],
   ["APNG", "Animated PNG", "Lossless animated image export. Drops audio."],
   ["WebM", "VP9 WebM", "WebM export. Supports Compact, Balanced, and High quality."],
+  ["MP4 (AV1)", "AV1 video with AAC audio", "AV1 MP4 export through the bundled SVT-AV1 encoder."],
   ["M4A", "AAC audio", "Audio-only editor export and CLI conversion format."],
   ["ALAC M4A", "Apple Lossless audio", "Lossless audio-only editor export and CLI conversion format."],
   ["WAV", "PCM audio", "Uncompressed audio-only editor export and CLI conversion format."],
@@ -142,7 +143,7 @@ const cliOptionGroups = [
   {
     title: "Command-line export options",
     rows: [
-      ["--format <format>", "Use gif, hevc, mp4, webm, apng, prores422, prores4444, m4a, alac, wav, caf, or flac."],
+      ["--format <format>", "Use gif, hevc, mp4, av1, webm, apng, prores422, prores4444, m4a, alac, wav, caf, or flac."],
       ["--width <pixels> --height <pixels>", "Resize the export. Use both options together."],
       ["--fps <frames>", "Set the output frame rate."],
       ["--start <seconds> --end <seconds>", "Trim to an explicit time range."],
@@ -695,11 +696,15 @@ const troubleshooting = [
                     <td>WebM (VP9)</td>
                     <td>WebM export with Compact, Balanced, or High quality.</td>
                   </tr>
+                  <tr>
+                    <td>MP4 (AV1)</td>
+                    <td>AV1 MP4 export with AAC audio through the bundled SVT-AV1 encoder.</td>
+                  </tr>
                 </tbody>
               </table>
               <p class="tip">
                 The format menu can select multiple formats and shows size estimates when
-                Luxel can calculate them. MP4, MOV, and WebM exports use even pixel dimensions.
+                Luxel can calculate them. MP4, MOV, WebM, and AV1 exports use even pixel dimensions.
               </p>
             </article>
 
@@ -778,7 +783,7 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
                 <li>Record a display, window, or area.</li>
                 <li>Stop to open the editor.</li>
                 <li>Trim the range, choose size, frame rate, and speed.</li>
-                <li>Export as MP4, HEVC, ProRes MOV, GIF, APNG, or WebM.</li>
+                <li>Export as MP4, HEVC, ProRes MOV, GIF, APNG, WebM, or AV1.</li>
                 <li>Use Copy Path, Share, or Reveal in Finder from the exported file menu.</li>
               </ol>
             </article>
@@ -835,6 +840,7 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
               <ol>
                 <li>Install the command from Settings > Command Line.</li>
                 <li>Run <code>luxel convert demo.mp4 demo.webm --width 1280 --height 720</code>.</li>
+                <li>Use <code>luxel convert demo.mp4 demo-av1.mp4 --format av1</code> when you want MP4 AV1.</li>
                 <li>Run <code>luxel transcribe demo.mp4 --output demo.txt</code>.</li>
                 <li>Use <code>--json</code> when another tool needs structured output.</li>
               </ol>
@@ -935,6 +941,7 @@ luxel preferences
 luxel record --last-area --print-url
 luxel editor ~/Movies/demo.mp4
 luxel convert demo.mp4 demo.webm
+luxel convert demo.mp4 demo-av1.mp4 --format av1
 luxel convert demo.mp4 demo.gif --start 2 --duration 5 --fps 15 --width 800 --height 450
 luxel convert demo.mp4 demo.mov --format prores422 --quality high
 luxel export request.json output.webm --overwrite --json
@@ -1006,9 +1013,8 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 <li><code>clip</code> uses the configured replay buffer length unless <code>--seconds</code> is passed.</li>
                 <li><code>latest --reveal</code> reveals the latest recording in Finder instead of opening it.</li>
                 <li><code>preferences</code> opens Luxel settings. <code>--pane</code> accepts <code>general</code>, <code>presets</code>, <code>shortcuts</code>, <code>updates</code>, or <code>about</code> as a URL hint; current builds open Settings normally.</li>
-                <li><code>convert</code> infers format from the output extension, but <code>.mov</code> requires <code>--format prores422</code> or <code>--format prores4444</code>, and <code>.m4a</code> requires <code>--format m4a</code> or <code>--format alac</code>.</li>
+                <li><code>convert</code> infers format from the output extension, but <code>.mov</code> requires <code>--format prores422</code> or <code>--format prores4444</code>, <code>.m4a</code> requires <code>--format m4a</code> or <code>--format alac</code>, and MP4 AV1 requires <code>--format av1</code>.</li>
                 <li><code>export</code> accepts a Luxel export request JSON document for fields without dedicated flags.</li>
-                <li>AV1 export is not available yet.</li>
               </ul>
             </article>
           </div>
@@ -1082,8 +1088,8 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
           <div class="callout">
             <h3>Format rules</h3>
             <p>
-              GIF and APNG drop audio. MP4, MOV, and WebM exports use even pixel dimensions.
-              ProRes exports use MOV output. WebM exports use VP9.
+              GIF and APNG drop audio. MP4, MOV, WebM, and AV1 exports use even pixel dimensions.
+              ProRes exports use MOV output. WebM exports use VP9. AV1 exports use MP4 output.
             </p>
           </div>
         </section>
@@ -1174,8 +1180,8 @@ luxel://latest?reveal=true</code></pre>
                 as the Quick Recording preset. Presets support format, size rule, frame
                 rate, destination, and post-action. Preset destinations are Recordings
                 Folder or Clipboard. Quick presets expose GIF, MP4, HEVC MP4, ProRes
-                422 MOV, ProRes 4444 MOV, and APNG; WebM remains available from editor
-                and CLI export.
+                422 MOV, ProRes 4444 MOV, and APNG; WebM and AV1 remain available from
+                editor and CLI export.
               </p>
             </article>
 
@@ -1284,7 +1290,7 @@ luxel://latest?reveal=true</code></pre>
               <h3>Can I export audio in GIF or APNG?</h3>
               <p>
                 No. GIF and APNG are animated image formats in Luxel and drop audio.
-                Use MP4, HEVC MP4, ProRes MOV, or WebM when audio is required.
+                Use MP4, HEVC MP4, ProRes MOV, WebM, or AV1 when audio is required.
               </p>
             </article>
             <article>

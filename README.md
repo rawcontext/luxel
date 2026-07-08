@@ -1,6 +1,6 @@
 # Luxel
 
-Luxel is a native macOS menu bar screen recorder inspired by Luxel and rebuilt in Swift. The app records displays, windows, selected regions, audio, and automation-driven workflows, then exports through Apple-native media pipelines plus an in-process native WebM adapter.
+Luxel is a native macOS menu bar screen recorder inspired by Luxel and rebuilt in Swift. The app records displays, windows, selected regions, audio, and automation-driven workflows, then exports through Apple-native media pipelines plus in-process native WebM and AV1 adapters.
 
 This repository is a monorepo for the macOS app, bundled command-line tool, marketing/docs website, release scripts, and product planning docs.
 
@@ -52,6 +52,7 @@ apps/macos/Sources/LuxelApp           SwiftUI/AppKit app shell and menu bar UI
 apps/macos/Sources/LuxelCore          Domain, application use cases, ports, adapters
 apps/macos/Sources/LuxelPresentation  Editor presentation models and views
 apps/macos/Sources/LuxelCodecWebM     Native VP9/WebM adapter
+apps/macos/Sources/LuxelCodecAV1      Native SVT-AV1/MP4 adapter
 apps/macos/Sources/LuxelCLI           ArgumentParser-based CLI wrapper
 apps/macos/Tests                      Swift test targets and fixtures
 apps/macos/Configuration/Luxel        Info.plist, entitlements, app assets
@@ -156,6 +157,7 @@ The Swift package exports these products:
 | --- | --- | --- |
 | `LuxelCore` | Library | Domain models, application services, ports, and infrastructure adapters. |
 | `LuxelCodecWebM` | Library | VP9/WebM export through vendored libvpx/libopus artifacts and Swift muxing. |
+| `LuxelCodecAV1` | Library | AV1 MP4 export through vendored SVT-AV1 artifacts and AVAssetWriter muxing. |
 | `Luxel` | Executable | Menu bar app, editor window, settings, panels, shortcuts, app composition. |
 | `luxel-cli` | Executable | Command-line wrapper around Luxel automation, editor, export, and transcript workflows. |
 
@@ -165,6 +167,7 @@ Test targets:
 | --- | --- |
 | `LuxelCoreTests` | Domain, use case, infrastructure, export, recording, automation, and settings coverage. |
 | `LuxelCodecWebMTests` | WebM codec stack and muxing coverage using media fixtures. |
+| `LuxelCodecAV1Tests` | SVT-AV1 encode, MP4 muxing, AAC audio, and ffprobe-gated validation. |
 | `LuxelCLITests` | CLI parsing, validation, and command execution behavior. |
 | `LuxelAppTests` | Presentation/editor model behavior that depends on app-facing models. |
 
@@ -187,6 +190,7 @@ Use these boundaries when adding or changing behavior:
 - `LuxelPresentation`: UI-facing editor models, commands, views, and reusable presentation support.
 - `LuxelApp`: App composition, SwiftUI/AppKit shell, menu bar, panels, settings, shortcuts, and concrete dependency wiring.
 - `LuxelCodecWebM`: Isolated native codec integration for WebM VP9.
+- `LuxelCodecAV1`: Isolated native codec integration for MP4 AV1.
 - `LuxelCLI`: ArgumentParser commands for URL automation, editor opening, headless export, and transcription.
 
 When a feature crosses these layers, test the lower layers first. Keep UI state out of domain models and keep framework objects behind ports.
@@ -200,7 +204,7 @@ These constraints are part of the product shape, not incidental implementation d
 - macOS 26 minimum in `Info.plist` and `Package.swift`.
 - App runtime must not depend on Electron, JavaScript plugin compatibility, npm packages, or `ffmpeg` shell-outs.
 - WebM VP9 ships through the native `LuxelCodecWebM` adapter.
-- MP4 AV1 is modeled but intentionally not exposed until a native adapter is designed, licensed, notarized, and tested.
+- MP4 AV1 ships through the native `LuxelCodecAV1` adapter using bundled SVT-AV1.
 - Mac App Store distribution is a goal, so new dependencies and entitlements need license and sandbox review.
 - Vendored codec code must remain license-compatible with the project and distribution channels.
 
@@ -225,6 +229,7 @@ apps/macos/Sources/LuxelCore/Domain/Export
 apps/macos/Sources/LuxelCore/Application/UseCases/Export
 apps/macos/Sources/LuxelCore/Infrastructure/Media
 apps/macos/Sources/LuxelCodecWebM
+apps/macos/Sources/LuxelCodecAV1
 ```
 
 Current export format groups:
@@ -233,7 +238,7 @@ Current export format groups:
 - External native codec formats: `webm`, `av1`
 - Audio-only formats: `m4a`, `alac`, `wav`, `caf`, `flac`
 
-The UI and availability logic should reflect the accepted codec decision docs. Do not expose AV1 just because the enum contains it.
+The UI and availability logic should reflect registered codec adapters, not just enum cases.
 
 ## CLI And Automation
 
@@ -268,6 +273,7 @@ luxel preferences
 luxel record --last-area --print-url
 luxel editor ~/Movies/demo.mp4
 luxel convert demo.mp4 demo.webm
+luxel convert demo.mp4 demo-av1.mp4 --format av1
 luxel convert demo.mp4 demo.gif --start 2 --duration 5 --fps 15 --width 800 --height 450
 luxel convert demo.mp4 demo.mov --format prores422 --quality high
 luxel export request.json output.webm --overwrite --json
@@ -298,7 +304,7 @@ for common headless edits such as trim, resize, frame rate, quality, speed, mute
 `luxel export` accepts a full `ExportRequest` JSON document for export fields that do not have dedicated CLI flags.
 Headless export commands show an interactive progress bar on stderr when run in a terminal.
 Use `--quiet` to suppress progress output.
-AV1 remains intentionally unavailable in the CLI until Luxel ships a registered native AV1 adapter.
+`.mp4` output defaults to H.264; use `--format av1` when you want MP4 AV1.
 `luxel transcribe` uses local Apple Speech transcription and requires the same system
 speech availability and authorization as the app.
 The checked-in manual page lives at `apps/macos/Documentation/luxel.1`, is bundled into

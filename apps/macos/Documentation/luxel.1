@@ -1,4 +1,4 @@
-.Dd July 2, 2026
+.Dd July 8, 2026
 .Dt LUXEL 1
 .Os
 .Sh NAME
@@ -25,8 +25,10 @@ Headless exports use Luxel's
 model and the same native exporter stack as the app.
 Interactive terminal progress is written to standard error, leaving standard
 output available for file paths and JSON.
-AV1 is intentionally not exposed until Luxel ships a registered native AV1
-adapter.
+.Pa .mp4
+output defaults to H.264; use
+.Fl -format Cm av1
+when MP4 AV1 is required.
 .Sh COMMANDS
 .Bl -tag -width Ds
 .It Cm record
@@ -102,6 +104,7 @@ Export format:
 .Cm gif ,
 .Cm hevc ,
 .Cm mp4 ,
+.Cm av1 ,
 .Cm webm ,
 .Cm apng ,
 .Cm prores422 ,
@@ -116,6 +119,7 @@ or
 Use
 .Fl -format
 for ambiguous extensions such as
+.Pa .mp4 ,
 .Pa .mov
 and
 .Pa .m4a .
@@ -222,6 +226,7 @@ luxel preferences
 luxel record --last-area --print-url
 luxel editor ~/Movies/demo.mp4
 luxel convert demo.mp4 demo.webm
+luxel convert demo.mp4 demo-av1.mp4 --format av1
 luxel convert demo.mp4 demo.gif --start 2 --duration 5 --fps 15
 luxel convert demo.mp4 demo.mov --format prores422 --quality high
 luxel export request.json output.webm --overwrite --json
