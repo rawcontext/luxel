@@ -1,105 +1,89 @@
 ---
 import "../styles/global.css";
 
-const featureColumns = [
+const macAppStoreUrl = "https://apps.apple.com/us/app/luxel/id6780682473?mt=12";
+
+const featureTrio = [
   {
     title: "Capture",
-    text: "Record displays, windows, selected areas, audio, and camera overlays with cursor, click, countdown, and auto-stop controls."
+    text: "Record displays, windows, selected areas, audio, and camera overlays with cursor, click, countdown, and auto-stop controls.",
+    icon: "display"
   },
   {
     title: "Replay Buffer",
-    text: "Keep recent screen history ready, then export the last 30 seconds, 1 minute, 2 minutes, or 5 minutes."
+    text: "Keep recent screen history ready, then export the last 30 seconds, 1 minute, 2 minutes, or 5 minutes.",
+    icon: "clock"
   },
   {
     title: "CLI and Automation",
-    text: "Run captures, clips, exports, transcripts, callbacks, settings, and URL workflows from scripts."
+    text: "Run captures, clips, exports, transcripts, callbacks, settings, and URL workflows from scripts.",
+    icon: "terminal"
   }
+];
+
+const menuCapturePoints = [
+  "Display, window, and selected-area targets",
+  "System audio, microphone, camera preview, and audio-only capture",
+  "1–60 FPS, countdown, auto-stop, pause, resume, and recent recording actions"
+];
+
+const replayBufferPoints = [
+  "30 second, 1 minute, 2 minute, and 5 minute buffers",
+  "24 or 30 FPS with optional system audio",
+  "Clip to the editor or a configured quick export destination"
+];
+
+const editorFacts = [
+  "MP4, HEVC MP4, ProRes 422, ProRes 4444, GIF, APNG, WebM, AV1, and audio-only exports",
+  "Compact, Balanced, High, lossless, size estimates, level, and normalize controls",
+  "Multi-format batches, Finder actions, copy path, copy file, and Share"
+];
+
+const transcriptPoints = [
+  "Plain text or JSON transcript output from the CLI",
+  "Locale selection and semantic turn segmentation",
+  "Transcript caching, search, and editor transcript workflows"
+];
+
+const cliPoints = [
+  "record, stop, toggle, clip, latest, editor, convert, export, transcribe, preferences",
+  "x-success and x-error callbacks with --wait, --json, and --print-url",
+  "Command-line trim, resize, speed, quality, crop, mute, and format conversion"
+];
+
+const settingsPoints = [
+  "Searchable global shortcuts with conflict warnings",
+  "Quick Recording presets with size, frame rate, destination, and post-action",
+  "Recording, output, notch, replay buffer, command-line, and system settings"
+];
+
+const languages = [
+  "English",
+  "Deutsch",
+  "Español",
+  "Français",
+  "Italiano",
+  "日本語",
+  "한국어",
+  "Tiếng Việt",
+  "简体中文",
+  "Português (BR)",
+  "Português (PT)"
+];
+
+const agentPoints = [
+  "--json results plus x-success and x-error callbacks",
+  "luxel:// URL scheme and App Shortcuts for app-level automation",
+  "Runs locally, so agents work without network access"
+];
+
+const localPoints = [
+  "No watermarks, time limits, or export restrictions.",
+  "No tracking, analytics, or cloud recording.",
+  "Runs offline and does not require internet access."
 ];
 
 const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M4A", "WAV", "FLAC"];
-const macAppStoreUrl = "https://apps.apple.com/us/app/luxel/id6780682473?mt=12";
-
-const localPromisePoints = [
-  "No watermarks, time limits, or export restrictions.",
-  "No tracking, analytics, or cloud recording.",
-  "Runs offline and does not require internet access.",
-  "Every feature is available without paid upgrades."
-];
-
-const primaryFeatures = [
-  {
-    id: "capture",
-    eyebrow: "Record",
-    title: "Menu bar capture",
-    text: "Start display, window, area, and audio-only recordings from the menu bar. Luxel keeps target selection, audio toggles, cursor visibility, click highlights, permission status, recent files, and quick recording controls close without opening a full app window.",
-    image: {
-      src: "/screenshots/luxel-menu-capture.png",
-      alt: "Luxel menu bar capture panel with source, replay buffer, recent clip, audio, microphone, camera, and more controls."
-    },
-    points: ["Display, window, and selected-area targets", "System audio, microphone, camera preview, and audio-only capture", "1-60 FPS, countdown, auto-stop, pause, resume, and recent recording actions"]
-  },
-  {
-    id: "replay-buffer",
-    eyebrow: "Recover",
-    title: "Replay buffer",
-    text: "Turn on the replay buffer when you need to capture what just happened. Luxel keeps recent screen activity ready and saves a replay clip without stopping the buffer.",
-    image: {
-      src: "/screenshots/luxel-settings-replay-buffer.png",
-      alt: "Luxel Replay Buffer settings with length, source, frame rate, audio, and clip destination controls."
-    },
-    points: ["30 second, 1 minute, 2 minute, and 5 minute buffers", "24 or 30 FPS with optional system audio", "Clip to the editor or a configured quick export destination"]
-  },
-  {
-    id: "editor-export",
-    eyebrow: "Polish",
-    title: "Editor and export",
-    text: "Open recordings in the editor to trim, resize, retime, crop-to-fill, adjust audio, copy frames, save originals, and export video, animation, or audio files from the same workspace.",
-    image: {
-      src: "/screenshots/luxel-editor-loaded.png",
-      alt: "Luxel editor window with a loaded desktop clip and export format, timeline, and output panels open."
-    },
-    points: ["MP4, HEVC MP4, ProRes 422, ProRes 4444, GIF, APNG, WebM, AV1, and audio-only exports", "Compact, Balanced, High, lossless, size estimates, level, and normalize controls", "Multi-format batches, Finder actions, copy path, copy file, and Share"]
-  },
-  {
-    id: "transcripts",
-    eyebrow: "Text",
-    title: "Local transcripts",
-    text: "Transcribe recordings on your Mac, search and jump through transcript text in the editor, and choose automatic turn grouping for easier review.",
-    image: {
-      src: "/screenshots/luxel-audio-transcript-editor.png",
-      alt: "Luxel editor showing an audio file with searchable transcript text, highlighted segments, playback controls, and audio export settings."
-    },
-    points: ["Plain text or JSON transcript output from the CLI", "Locale selection and semantic turn segmentation", "Transcript caching, search, and editor transcript workflows"]
-  },
-  {
-    id: "cli",
-    eyebrow: "Automate",
-    title: "Command line and URL control",
-    text: "Install the bundled luxel command from Settings and control Luxel from shell scripts, launchers, URL automation, or Shortcuts.",
-    video: {
-      src: "/videos/luxel-cli-usage-demo.webm",
-      label: "Luxel command-line usage recording showing terminal commands and generated export output.",
-      width: 740,
-      height: 470,
-      note: "This CLI walkthrough was recorded, edited, and exported using Luxel itself."
-    },
-    points: ["record, stop, toggle, clip, latest, editor, convert, export, transcribe, preferences", "x-success and x-error callbacks with --wait, --json, and --print-url", "Command-line trim, resize, speed, quality, crop, mute, and format conversion"]
-  },
-  {
-    id: "settings-shortcuts",
-    eyebrow: "Control",
-    title: "Settings, shortcuts, and presets",
-    text: "Tune Luxel for repeated work with editable global shortcuts, quick export presets, reusable crop sizes, command-line installation, update controls, and replay buffer behavior.",
-    points: ["Searchable global shortcuts with conflict warnings", "Quick Recording presets with size, frame rate, destination, and post-action", "Recording, output, notch, replay buffer, command-line, and system settings"]
-  },
-  {
-    id: "localization",
-    eyebrow: "Global",
-    title: "Languages",
-    text: "Luxel is available in 11 languages, including the app interface and privacy permission prompts.",
-    points: ["English, German, Spanish, French, Italian, Japanese, Korean, Vietnamese", "Simplified Chinese, Portuguese (Brazil), and Portuguese (Portugal)", "Localized permission copy for camera, microphone, screen capture, and speech recognition"]
-  }
-];
 ---
 
 <!doctype html>
@@ -118,20 +102,21 @@ const primaryFeatures = [
     <title>Luxel - Screen recording for Mac</title>
   </head>
   <body>
-    <main class="site-shell">
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero__atmosphere" aria-hidden="true">
-          <span class="coast coast--left"></span>
-          <span class="coast coast--right"></span>
-          <span class="lightline"></span>
-        </div>
+    <div class="page" id="top">
+      <div class="ambient" aria-hidden="true">
+        <span class="ambient__glow ambient__glow--hero"></span>
+        <span class="ambient__glow ambient__glow--left"></span>
+        <span class="ambient__glow ambient__glow--right"></span>
+        <span class="ambient__glow ambient__glow--low"></span>
+      </div>
 
-        <header class="topbar" aria-label="Primary navigation">
-          <a class="brand" href="/" aria-label="Luxel home">
-            <img class="brand-mark" src="/luxel-icon.svg" alt="" width="48" height="48" />
+      <header class="nav">
+        <div class="nav__pill">
+          <a class="brand" href="#top" aria-label="Luxel home">
+            <img class="brand-mark" src="/luxel-icon.svg" alt="" width="24" height="24" />
             <span>Luxel</span>
           </a>
-          <nav class="nav-links" aria-label="Page sections">
+          <nav class="nav__links" aria-label="Page sections">
             <a href="#features">Features</a>
             <a href="#replay-buffer">Replay Buffer</a>
             <a href="#cli">CLI</a>
@@ -140,19 +125,412 @@ const primaryFeatures = [
             <a href="/support">Support</a>
             <a href="/privacy">Privacy</a>
           </nav>
-          <a class="topbar-cta" href="/docs">Read docs</a>
-        </header>
+          <a
+            class="nav__download"
+            href={macAppStoreUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Download Luxel on the Mac App Store"
+          >
+            <span class="record-glyph" aria-hidden="true"></span>
+            <span>Download</span>
+          </a>
+        </div>
+      </header>
 
-        <div class="hero__content">
-          <div class="hero-copy">
-            <p class="eyebrow">Menu bar recorder for macOS</p>
-            <h1 id="hero-title">Luxel</h1>
-            <p class="hero-copy__lead">Capture made for Mac.</p>
-            <p class="hero-copy__body">
-              Record screens, clip the last few minutes, transcribe locally, automate from the CLI,
-              and export without ceremony.
+      <main>
+        <section class="hero container" aria-labelledby="hero-title">
+          <p class="hero__badge">
+            <span class="live-dot" aria-hidden="true"></span>
+            Menu bar recorder for macOS
+          </p>
+          <h1 class="hero__title" id="hero-title">Capture made for Mac.</h1>
+          <p class="hero__lead">
+            Record screens, clip the last few minutes, transcribe locally, automate from the CLI,
+            and export without ceremony.
+          </p>
+          <div class="hero__actions" aria-label="Primary actions">
+            <a
+              class="app-store-link"
+              href={macAppStoreUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Download Luxel on the Mac App Store"
+            >
+              <img
+                src="/app-store/mac-app-store-badge.svg"
+                alt="Download on the Mac App Store"
+                width="156"
+                height="48"
+              />
+            </a>
+            <a class="glass-button" href="/docs">Read docs</a>
+            <a class="hero__more" href="#notch">See recording controls →</a>
+          </div>
+
+          <div class="hero__stage" aria-label="Actual Luxel app screenshots">
+            <div class="hero__card hero__card--settings">
+              <img
+                src="/screenshots/luxel-settings-replay-buffer.png"
+                alt="Luxel Replay Buffer settings window"
+                width="1800"
+                height="1384"
+              />
+            </div>
+            <div class="hero__card hero__card--menu">
+              <img
+                src="/screenshots/luxel-menu-capture-under-menu-bar.png"
+                alt="Luxel menu bar capture panel below the macOS menu bar"
+                width="1114"
+                height="896"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="trio container" id="features" aria-label="Feature overview">
+          {featureTrio.map((feature) => (
+            <article class="glass-card trio__card">
+              <span class="trio__icon" aria-hidden="true">
+                {feature.icon === "display" && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="13" rx="3"></rect><path d="M12 17v4"></path><path d="M8 21h8"></path></svg>
+                )}
+                {feature.icon === "clock" && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>
+                )}
+                {feature.icon === "terminal" && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-5-6-5"></path><path d="M12 19h8"></path></svg>
+                )}
+              </span>
+              <h2 class="trio__title">{feature.title}</h2>
+              <p>{feature.text}</p>
+            </article>
+          ))}
+        </section>
+
+        <section class="section container" id="area-recording" aria-labelledby="area-title">
+          <div class="section__head">
+            <p class="eyebrow">Area recording</p>
+            <h2 class="section__title" id="area-title">Draw a box. Record inside it.</h2>
+            <p class="section__lead">
+              Drag a boundary box anywhere on screen and Luxel records only what's inside. Size
+              presets, aspect ratios, microphone, camera, delay, and auto-stop stay attached to the
+              selection.
             </p>
-            <div class="hero-actions" aria-label="Primary actions">
+          </div>
+          <div class="frame frame--fit">
+            <img
+              src="/screenshots/luxel-area-selection.png"
+              alt="Luxel area selection with boundary box, dimension pill, and recording toolbar"
+              width="1200"
+              height="870"
+              loading="lazy"
+            />
+          </div>
+        </section>
+
+        <section class="section section--wide container" id="primary-features" aria-labelledby="primary-features-title">
+          <div class="section__head section__head--wide">
+            <p class="eyebrow">Primary features</p>
+            <h2 class="section__title" id="primary-features-title">
+              Everything Luxel can do, in one Mac workflow.
+            </h2>
+            <p class="section__lead">
+              The app now covers capture, replay, export, transcripts, automation, and localization
+              inside one focused Mac app.
+            </p>
+          </div>
+
+          <article class="feature-row" id="capture">
+            <div class="feature-row__copy">
+              <p class="chip chip--red">Record</p>
+              <h3>Menu bar capture</h3>
+              <p>
+                Start display, window, area, and audio-only recordings from the menu bar. Luxel
+                keeps target selection, audio toggles, cursor visibility, click highlights,
+                permission status, recent files, and quick recording controls close without opening
+                a full app window.
+              </p>
+              <ul class="points">
+                {menuCapturePoints.map((point) => <li>{point}</li>)}
+              </ul>
+            </div>
+            <div class="feature-row__media">
+              <img
+                class="feature-row__media--panel"
+                src="/screenshots/luxel-menu-capture-panel.png"
+                alt="Luxel menu bar capture panel"
+                width="640"
+                height="786"
+                loading="lazy"
+              />
+            </div>
+          </article>
+
+          <article class="feature-row feature-row--flip" id="replay-buffer">
+            <div class="feature-row__media">
+              <img
+                src="/screenshots/luxel-settings-replay-buffer.png"
+                alt="Luxel Replay Buffer settings"
+                width="1800"
+                height="1384"
+                loading="lazy"
+              />
+            </div>
+            <div class="feature-row__copy">
+              <p class="chip chip--indigo">Recover</p>
+              <h3>Replay buffer</h3>
+              <p>
+                Turn on the replay buffer when you need to capture what just happened. Luxel keeps
+                recent screen activity ready and saves a replay clip without stopping the buffer.
+              </p>
+              <ul class="points">
+                {replayBufferPoints.map((point) => <li>{point}</li>)}
+              </ul>
+            </div>
+          </article>
+
+          <div class="showcase" id="editor-export">
+            <div class="showcase__head">
+              <p class="chip chip--red">Polish</p>
+              <h3>Editor and export</h3>
+              <p>
+                Open recordings in the editor to trim, resize, retime, crop-to-fill, adjust audio,
+                copy frames, save originals, and export video, animation, or audio files from the
+                same workspace.
+              </p>
+            </div>
+            <div class="frame">
+              <img
+                src="/screenshots/luxel-editor-loaded.png"
+                alt="Luxel editor window with export panels"
+                width="1800"
+                height="1184"
+                loading="lazy"
+              />
+            </div>
+            <ul class="fact-grid" aria-label="Editor and export details">
+              {editorFacts.map((fact) => <li>{fact}</li>)}
+            </ul>
+          </div>
+
+          <article class="feature-row feature-row--flip" id="transcripts">
+            <div class="feature-row__media">
+              <img
+                src="/screenshots/luxel-audio-transcript-editor.png"
+                alt="Luxel editor with searchable transcript"
+                width="2224"
+                height="1648"
+                loading="lazy"
+              />
+            </div>
+            <div class="feature-row__copy">
+              <p class="chip chip--indigo">Text</p>
+              <h3>Local transcripts</h3>
+              <p>
+                Transcribe recordings on your Mac, search and jump through transcript text in the
+                editor, and choose automatic turn grouping for easier review.
+              </p>
+              <ul class="points">
+                {transcriptPoints.map((point) => <li>{point}</li>)}
+              </ul>
+            </div>
+          </article>
+
+          <div class="feature-columns" id="cli">
+            <article class="glass-card feature-column">
+              <p class="chip chip--red chip--small">Automate</p>
+              <h3>Command line and URL control</h3>
+              <p>
+                Install the bundled luxel command from Settings and control Luxel from shell
+                scripts, launchers, URL automation, or Shortcuts.
+              </p>
+              <div class="code-block" aria-label="Example luxel commands">
+                <div><span class="code-prompt">$</span> luxel record --display 1</div>
+                <div><span class="code-prompt">$</span> luxel clip --last 2m --json</div>
+                <div><span class="code-prompt">$</span> luxel transcribe latest --wait</div>
+              </div>
+              <ul class="points points--small">
+                {cliPoints.map((point) => <li>{point}</li>)}
+              </ul>
+            </article>
+            <article class="glass-card feature-column" id="settings-shortcuts">
+              <p class="chip chip--indigo chip--small">Control</p>
+              <h3>Settings, shortcuts, and presets</h3>
+              <p>
+                Tune Luxel for repeated work with editable global shortcuts, quick export presets,
+                reusable crop sizes, command-line installation, update controls, and replay buffer
+                behavior.
+              </p>
+              <ul class="points points--small">
+                {settingsPoints.map((point) => <li>{point}</li>)}
+              </ul>
+            </article>
+            <article class="glass-card feature-column" id="localization">
+              <p class="chip chip--green chip--small">Global</p>
+              <h3>Languages</h3>
+              <p>
+                Luxel is available in 11 languages, including the app interface and privacy
+                permission prompts.
+              </p>
+              <ul class="tag-list" aria-label="Available languages">
+                {languages.map((language) => <li>{language}</li>)}
+              </ul>
+              <ul class="points points--small">
+                <li>Localized permission copy for camera, microphone, screen capture, and speech recognition</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="section container" id="notch" aria-labelledby="notch-title">
+          <div class="section__head">
+            <p class="eyebrow">Recording controls</p>
+            <h2 class="section__title" id="notch-title">The notch becomes your recorder.</h2>
+            <p class="section__lead">
+              Luxel keeps recording state where your eyes already go: timer, waveform, and stop
+              control stay close at hand.
+            </p>
+          </div>
+          <div class="notch-scene" aria-label="Luxel notch capture controls below the menu bar">
+            <div class="notch-scene__menubar" aria-hidden="true">
+              <div class="notch-scene__cluster">
+                <img src="/luxel-icon.svg" alt="" width="15" height="15" />
+                <span class="notch-scene__app">Luxel</span>
+                <span>File</span><span>Edit</span><span>View</span>
+              </div>
+              <div class="notch-scene__cluster">
+                <span class="live-dot live-dot--menubar"></span>
+                <span>Tue 23:30</span>
+              </div>
+            </div>
+            <div class="notch-scene__notch" aria-hidden="true"></div>
+            <div class="notch-scene__body">
+              <img
+                src="/screenshots/luxel-notch-controls.png"
+                alt="Luxel notch capture controls"
+                width="632"
+                height="308"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="duo container" aria-label="Menu bar status and audio transcripts">
+          <article class="glass-card duo__card" id="recording-status">
+            <p class="eyebrow">Menu bar status</p>
+            <h3>Active recordings stay visible.</h3>
+            <p>
+              When recording starts, Luxel switches the menu bar into a compact live state with the
+              recording indicator, waveform, elapsed time, and stop control always close at hand.
+            </p>
+            <img
+              src="/screenshots/luxel-menu-bar-recording-status.png"
+              alt="Luxel active recording state in the menu bar with indicator, waveform, elapsed time, and stop control"
+              width="1162"
+              height="736"
+              loading="lazy"
+            />
+          </article>
+          <article class="glass-card duo__card" id="audio-transcripts">
+            <p class="eyebrow">Audio transcripts</p>
+            <h3>Audio files stay searchable.</h3>
+            <p>
+              Open audio-only recordings in the editor with local transcripts, search within the
+              text, and keep playback, export, and transcript review in one workspace.
+            </p>
+            <img
+              src="/screenshots/luxel-audio-transcript-editor.png"
+              alt="Luxel editor with searchable audio transcript"
+              width="2224"
+              height="1648"
+              loading="lazy"
+            />
+          </article>
+        </section>
+
+        <section class="section container" id="agents" aria-labelledby="agents-title">
+          <div class="banner banner--agents">
+            <div>
+              <p class="eyebrow">Agent ready</p>
+              <h2 class="banner__title" id="agents-title">Your agent can run the whole recorder.</h2>
+              <p class="banner__lead">
+                Everything Luxel does is scriptable, so any LLM or agent that can run a shell
+                command can capture, clip, convert, and transcribe on your behalf — with structured
+                results it can actually read.
+              </p>
+              <ul class="points">
+                {agentPoints.map((point) => <li>{point}</li>)}
+              </ul>
+              <a class="glass-button banner__cta" href="/docs#cli">CLI reference →</a>
+            </div>
+            <div class="terminal" aria-label="Example agent session in a terminal">
+              <div class="terminal__bar">
+                <span class="terminal__dot terminal__dot--close" aria-hidden="true"></span>
+                <span class="terminal__dot terminal__dot--min" aria-hidden="true"></span>
+                <span class="terminal__dot terminal__dot--max" aria-hidden="true"></span>
+                <span class="terminal__label">agent session</span>
+              </div>
+              <div class="terminal__body">
+                <div class="terminal__comment"># agent: reproduce the bug and report back</div>
+                <div><span class="code-prompt">$</span> luxel record --display main --countdown 3</div>
+                <div><span class="code-prompt">$</span> luxel stop</div>
+                <div><span class="code-prompt">$</span> luxel convert demo.mp4 demo.gif --start 2 --duration 5 --fps 15</div>
+                <div><span class="code-prompt">$</span> luxel transcribe demo.mp4 --json --output demo.json</div>
+                <div><span class="code-prompt">$</span> luxel clip --seconds 30 --wait</div>
+                <div class="terminal__result">&#123;"status":"success","filePath":"~/Movies/Luxel/Luxel Replay 2026-07-08 at 00.12.30.mp4"&#125;</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section container" id="local" aria-labelledby="local-title">
+          <div class="banner banner--local">
+            <div>
+              <p class="eyebrow">Local by design</p>
+              <h2 class="banner__title" id="local-title">No watermarks. No tracking.</h2>
+              <p class="banner__lead">
+                Luxel runs purely offline and locally on your Mac, without restricting the files you
+                make. Capture, replay, transcribe, automate, and export without ever uploading your
+                work.
+              </p>
+            </div>
+            <ul class="check-list" aria-label="Local app promises">
+              {localPoints.map((point) => (
+                <li>
+                  <span class="check-list__badge" aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"></path></svg>
+                  </span>
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section class="section section--center container" id="export" aria-labelledby="export-title">
+          <div class="section__head">
+            <p class="eyebrow">Export</p>
+            <h2 class="section__title" id="export-title">Fast files. Clean choices.</h2>
+            <p class="section__lead">
+              With fast exports plus WebM and AV1 support, Luxel keeps video, animation, and
+              audio-only formats close without turning the recorder into an editor you have to
+              manage.
+            </p>
+          </div>
+          <ul class="format-list" aria-label="Export formats">
+            {exportFormats.map((format) => <li>{format}</li>)}
+          </ul>
+        </section>
+
+        <section class="footer-cta container" aria-labelledby="docs-title">
+          <div class="banner banner--cta">
+            <p class="eyebrow">Documentation</p>
+            <h2 class="banner__title banner__title--center" id="docs-title">
+              Capture, export, and troubleshoot with confidence.
+            </h2>
+            <div class="footer-cta__actions">
               <a
                 class="app-store-link"
                 href={macAppStoreUrl}
@@ -161,257 +539,31 @@ const primaryFeatures = [
                 aria-label="Download Luxel on the Mac App Store"
               >
                 <img
-                  class="app-store-badge"
                   src="/app-store/mac-app-store-badge.svg"
                   alt="Download on the Mac App Store"
-                  width="156"
-                  height="40"
+                  width="149"
+                  height="46"
                 />
               </a>
-              <a class="button button--primary" href="/docs">Read docs</a>
-              <a class="button button--ghost" href="#notch">
-                <span class="play-icon" aria-hidden="true"></span>
-                See recording controls
-              </a>
+              <a class="button button--primary" href="/docs">Open docs</a>
+              <a class="glass-button" href="/privacy">Privacy</a>
+              <a class="glass-button" href="/support">Support</a>
             </div>
           </div>
-
-          <div class="hero-product hero-product--real" aria-label="Actual Luxel app screenshots">
-            <img
-              class="hero-screenshot hero-screenshot--settings"
-              src="/screenshots/luxel-settings-replay-buffer.png"
-              alt="Actual Luxel Replay Buffer settings window."
-              width="1800"
-              height="1384"
-            />
-            <img
-              class="hero-screenshot hero-screenshot--menu"
-              src="/screenshots/luxel-menu-capture.png"
-              alt="Actual Luxel menu bar capture panel with bottom audio, microphone, camera, and more controls."
-              width="640"
-              height="674"
-            />
-          </div>
-        </div>
-
-        <div class="feature-band" id="features">
-          {featureColumns.map((feature) => (
-            <article class="feature-band__item">
-              <span class="feature-glyph" aria-hidden="true"></span>
-              <div>
-                <h2>{feature.title}</h2>
-                <p>{feature.text}</p>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section class="local-promise-section" aria-labelledby="local-promise-title">
-        <div class="local-promise-inner">
-          <div class="local-promise-copy">
-            <p class="eyebrow">Local by design</p>
-            <h2 id="local-promise-title">No watermarks. No tracking. No upgrade gates.</h2>
-          </div>
-          <p>
-            Luxel runs on your Mac without restricting the files you make. Capture, replay,
-            transcribe, automate, and export without uploading your work or unlocking
-            core features later.
-          </p>
-          <ul aria-label="Local app promises">
-            {localPromisePoints.map((point) => <li>{point}</li>)}
-          </ul>
-        </div>
-      </section>
-
-      <section class="primary-features-section" id="primary-features" aria-labelledby="primary-features-title">
-        <div class="section-copy">
-          <p class="eyebrow">Primary features</p>
-          <h2 id="primary-features-title">Everything Luxel can do, in one Mac workflow.</h2>
-          <p>
-            The app now covers capture, replay, export, transcripts, automation, and localization
-            inside one focused Mac app.
-          </p>
-        </div>
-
-        <div class="primary-feature-grid">
-          {primaryFeatures.map((feature) => (
-            <article class={`primary-feature-card${"image" in feature || "video" in feature ? "" : " primary-feature-card--text-only"}`} id={feature.id}>
-              <div class="primary-feature-card__copy">
-                <p class="primary-feature-card__eyebrow">{feature.eyebrow}</p>
-                <h3>{feature.title}</h3>
-                <p>{feature.text}</p>
-                <ul>
-                  {feature.points.map((point) => <li>{point}</li>)}
-                </ul>
-              </div>
-              {"image" in feature && (
-                <img
-                  class={`primary-feature-card__media${feature.id === "capture" ? " primary-feature-card__media--menu" : ""}`}
-                  src={feature.image.src}
-                  alt={feature.image.alt}
-                  loading="lazy"
-                />
-              )}
-              {"video" in feature && (
-                <figure class="primary-feature-card__figure">
-                  <video
-                    class="primary-feature-card__media primary-feature-card__media--video js-lazy-video"
-                    data-lazy-src={feature.video.src}
-                    aria-label={feature.video.label}
-                    width={feature.video.width}
-                    height={feature.video.height}
-                    autoplay
-                    muted
-                    loop
-                    playsinline
-                    preload="metadata"
-                  ></video>
-                  <figcaption>{feature.video.note}</figcaption>
-                </figure>
-              )}
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section class="notch-section" id="notch" aria-labelledby="notch-title">
-        <div class="section-copy">
-          <p class="eyebrow">Recording controls</p>
-          <h2 id="notch-title">The notch becomes your recorder.</h2>
-          <p>
-            Luxel keeps recording state where your eyes already go: timer, waveform,
-            and stop control stay close at hand.
-          </p>
-        </div>
-        <div class="notch-media" aria-label="Luxel notch capture controls">
-          <img
-            class="notch-image"
-            src="/screenshots/luxel-notch-ui-with-black-top-bar.png"
-            alt="Luxel notch capture controls below a black notch bar."
-            width="492"
-            height="196"
-            loading="lazy"
-          />
-        </div>
-      </section>
-
-      <section class="recording-status-section" id="recording-status" aria-labelledby="recording-status-title">
-        <div class="section-copy">
-          <p class="eyebrow">Menu bar status</p>
-          <h2 id="recording-status-title">Active recordings stay visible.</h2>
-          <p>
-            When recording starts, Luxel switches the menu bar into a compact live state
-            with the recording indicator, waveform, elapsed time, and stop control always
-            close at hand.
-          </p>
-        </div>
-        <figure class="recording-status-media" aria-label="Luxel menu bar active recording state">
-          <video
-            class="recording-menu-bar-image"
-            src="/videos/luxel-active-recording-menu-bar.webm"
-            aria-label="Luxel menu bar active recording state with red recording dot, waveform, timer, and stop button."
-            width="912"
-            height="66"
-            autoplay
-            muted
-            loop
-            playsinline
-            preload="metadata"
-          ></video>
-        </figure>
-      </section>
-
-      <section class="audio-transcript-section" id="audio-transcripts" aria-labelledby="audio-transcript-title">
-        <div class="section-copy">
-          <p class="eyebrow">Audio transcripts</p>
-          <h2 id="audio-transcript-title">Audio files stay searchable.</h2>
-          <p>
-            Open audio-only recordings in the editor with local transcripts, search within the
-            text, and keep playback, export, and transcript review in one workspace.
-          </p>
-        </div>
-        <figure class="audio-transcript-media" aria-label="Luxel audio editor with transcript search and highlighted transcript segment">
-          <img
-            class="audio-transcript-image"
-            src="/screenshots/luxel-audio-transcript-editor.png"
-            alt="Luxel editor showing an audio file with a searchable transcript, highlighted transcript text, playback controls, and audio export settings."
-            width="2224"
-            height="1648"
-            loading="lazy"
-          />
-        </figure>
-      </section>
-
-      <section class="export-section" id="export" aria-labelledby="export-title">
-        <div class="section-copy">
-          <p class="eyebrow">Export</p>
-          <h2 id="export-title">Fast files. Clean choices.</h2>
-          <p>
-            With fast exports plus WebM and AV1 support, Luxel keeps video, animation, and audio-only
-            formats close without turning the recorder into an editor you have to manage.
-          </p>
-        </div>
-        <ul class="format-list" aria-label="Export formats">
-          {exportFormats.map((format) => <li>{format}</li>)}
-        </ul>
-      </section>
-
-      <section class="docs-cta-section" id="docs" aria-labelledby="docs-title">
-        <div>
-          <p class="eyebrow">Documentation</p>
-          <h2 id="docs-title">Capture, export, and troubleshoot with confidence.</h2>
-        </div>
-        <div class="docs-cta-actions">
-          <a class="button button--primary" href="/docs">
-            Open docs
-          </a>
-          <a class="button button--secondary" href="/privacy">
-            Privacy
-          </a>
-          <a class="button button--secondary" href="/support">
-            Support
-          </a>
-        </div>
-      </section>
-    </main>
-    <script>
-      const lazyVideos = Array.from(document.querySelectorAll("video[data-lazy-src]"));
-
-      const loadLazyVideo = (video) => {
-        if (!(video instanceof HTMLVideoElement) || video.src) {
-          return;
-        }
-
-        const src = video.dataset.lazySrc;
-        if (!src) {
-          return;
-        }
-
-        video.src = src;
-        video.load();
-        video.play().catch(() => {});
-      };
-
-      if ("IntersectionObserver" in window) {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (!entry.isIntersecting) {
-                return;
-              }
-
-              loadLazyVideo(entry.target);
-              observer.unobserve(entry.target);
-            });
-          },
-          { rootMargin: "420px 0px" }
-        );
-
-        lazyVideos.forEach((video) => observer.observe(video));
-      } else {
-        lazyVideos.forEach(loadLazyVideo);
-      }
-    </script>
+          <footer class="footer">
+            <div class="footer__brand">
+              <img src="/luxel-icon.svg" alt="" width="20" height="20" />
+              <span class="footer__name">Luxel</span>
+              <span class="footer__tag">· Screen recording for Mac</span>
+            </div>
+            <nav class="footer__links" aria-label="Footer">
+              <a href="/docs">Docs</a>
+              <a href="/support">Support</a>
+              <a href="/privacy">Privacy</a>
+            </nav>
+          </footer>
+        </section>
+      </main>
+    </div>
   </body>
 </html>
