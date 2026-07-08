@@ -5,29 +5,24 @@ import SwiftUI
 
 struct LuxelCropperView: View {
     static let loupeSize = CGSize(width: 204, height: 136)
-    static let toolbarButtonWidth: CGFloat = 196
-    static let toolbarButtonHeight: CGFloat = 30
-    static let toolbarControlSpacing: CGFloat = 8
-    static let toolbarFullDisplayButtonWidth: CGFloat = 116
-    static let toolbarIconButtonSide: CGFloat = 32
-    static let toolbarIconWidth: CGFloat = 18
-    static let toolbarCornerRadius: CGFloat = 8
+    static let toolbarCircleSide: CGFloat = 36
+    static let toolbarPillHeight: CGFloat = 36
+    static let toolbarBottomPadding: CGFloat = 22
+    static let dimensionPillMinimumSelectionSize = CGSize(width: 170, height: 60)
     static let resizeHandleHitSize = CGSize(width: 28, height: 28)
-    static var toolbarPairedButtonWidth: CGFloat {
-        (toolbarButtonWidth - toolbarControlSpacing) / 2
-    }
-    static var toolbarSizeButtonWidth: CGFloat {
-        toolbarButtonWidth - toolbarFullDisplayButtonWidth - toolbarControlSpacing
-    }
 
     @Environment(\.openURL) var openURL
     @State private var activeDragTarget: CropperDragTarget?
     @State var currentCameraConfiguration: CropperCameraConfiguration?
+    @State private var isEditingDimensions = false
+    @State private var dimensionWidthText = ""
+    @State private var dimensionHeightText = ""
 
     @Bindable var model: LuxelCropperModel
     let cameraConfiguration: CropperCameraConfiguration
     let quickRecordingConfiguration: CropperQuickRecordingConfiguration
     let showsNotificationReminder: Bool
+    let toolbarBottomInset: CGFloat
     let onCameraSelectionChange: (String?) -> Void
     let onCameraPreviewStyleChange: (CameraPreviewStyle) -> Void
     let onNotificationReminderDismiss: () -> Void
@@ -130,7 +125,7 @@ extension LuxelCropperView {
     }
 
     private var cropperOverlayControls: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack(alignment: .bottom) {
             if shouldShowNotificationReminder {
                 VStack {
                     notificationReminderPanel
@@ -141,131 +136,52 @@ extension LuxelCropperView {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
 
-            cropperControls
+            bottomToolbar
+                .padding(.bottom, Self.toolbarBottomPadding + toolbarBottomInset)
         }
-        .padding(.horizontal, 28)
-        .padding(.vertical, 28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
     }
 
     private var shouldShowNotificationReminder: Bool {
         showsNotificationReminder && model.canRecordSelection
     }
 
-    private var cropperControls: some View {
-        GlassPanel {
-            VStack(alignment: .leading, spacing: 7) {
-                toolbarControl(selectionSummaryHelp) {
-                    selectionGeometryControls
-                }
+    private var bottomToolbar: some View {
+        HStack(spacing: 6) {
+            fullDisplayButton
+            sizePresetMenu
+            aspectRatioMenu
 
-                toolbarControl("Select the full current display or apply a saved size preset.") {
-                    HStack(spacing: Self.toolbarControlSpacing) {
-                        fullDisplayButton
-                        sizePresetMenu(width: Self.toolbarSizeButtonWidth)
-                    }
-                }
+            toolbarDivider
 
-                toolbarControl("Constrain the selected area. Current: \(model.aspectRatioSummary).") {
-                    aspectRatioMenu(width: Self.toolbarButtonWidth)
-                }
+            recordAudioToggle
+            cameraMenu
+            countdownMenu
+            stopAfterMenu
 
-                Divider()
+            toolbarDivider
 
-                toolbarControl("\(recordAudioHelp) \(cameraMenuHelp)") {
-                    HStack(spacing: Self.toolbarControlSpacing) {
-                        recordAudioToggle
-                        cameraMenu
-                    }
-                }
-
-                toolbarControl("Delay recording after pressing Record. Current: \(model.countdownSummary).") {
-                    HStack(spacing: Self.toolbarControlSpacing) {
-                        countdownMenu(width: Self.toolbarPairedButtonWidth)
-                        stopAfterMenu(width: Self.toolbarPairedButtonWidth)
-                    }
-                }
-
-                Divider()
-
-                toolbarControl("Record or cancel the selected area.") {
-                    HStack(spacing: Self.toolbarControlSpacing) {
-                        cancelButton
-                        primaryActionButton
-                    }
-                }
-            }
+            cancelButton
+            primaryActionButton
         }
+        .padding(8)
+        .luxelMenuIslandBackground(cornerRadius: 26)
+        .background(
+            Color.black.opacity(0.32),
+            in: RoundedRectangle(cornerRadius: 26, style: .continuous)
+        )
         .fixedSize()
         .appKitCursor(.arrow)
     }
 
-    private func toolbarControl<Content: View>(
-        _ help: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        ZStack {
-            content()
-        }
-        .frame(width: Self.toolbarButtonWidth, alignment: .leading)
-        .contentShape(Rectangle())
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
-        .nativeTooltip(help)
+    private var toolbarDivider: some View {
+        Rectangle()
+            .fill(.white.opacity(0.12))
+            .frame(width: 1, height: 22)
+            .padding(.horizontal, 2)
     }
 
-    private func toolbarButtonLabel(
-        _ title: String,
-        systemImage: String,
-        width: CGFloat,
-        isActive: Bool = false,
-        isDisabled: Bool = false
-    ) -> some View {
-        Label {
-            Text(title)
-        } icon: {
-            Image(systemName: systemImage)
-                .frame(width: Self.toolbarIconWidth)
-        }
-        .labelStyle(.titleAndIcon)
-        .font(.subheadline.weight(.semibold))
-        .lineLimit(1)
-        .minimumScaleFactor(0.78)
-        .foregroundStyle(isDisabled ? .secondary : .primary)
-        .padding(.horizontal, 10)
-        .frame(width: width, height: Self.toolbarButtonHeight, alignment: .leading)
-        .background {
-            toolbarBackground(isActive: isActive, isDisabled: isDisabled)
-        }
-    }
-
-    private func toolbarMenuLabel(_ title: String, systemImage: String? = nil, width: CGFloat)
-    -> some View {
-        HStack(spacing: systemImage == nil ? 4 : 6) {
-            if let systemImage {
-                Image(systemName: systemImage)
-                    .frame(width: Self.toolbarIconWidth)
-            }
-
-            Text(title)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-
-            Spacer(minLength: 0)
-
-            Image(systemName: "chevron.down")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.secondary)
-        }
-        .font(.subheadline.weight(.semibold))
-        .padding(.horizontal, systemImage == nil ? 9 : 10)
-        .frame(width: width, height: Self.toolbarButtonHeight, alignment: .leading)
-        .background {
-            toolbarBackground()
-        }
-    }
-
-    private func toolbarIconLabel(
+    private func toolbarCircleLabel(
         _ title: String,
         systemImage: String,
         isActive: Bool = false,
@@ -274,37 +190,50 @@ extension LuxelCropperView {
         Label(title, systemImage: systemImage)
             .labelStyle(.iconOnly)
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(isDisabled ? .secondary : .primary)
-            .frame(width: Self.toolbarIconButtonSide, height: Self.toolbarIconButtonSide)
+            .foregroundStyle(isDisabled ? .tertiary : isActive ? .primary : .secondary)
+            .frame(width: Self.toolbarCircleSide, height: Self.toolbarCircleSide)
             .background {
-                toolbarBackground(isActive: isActive, isDisabled: isDisabled)
+                toolbarControlBackground(in: Circle(), isActive: isActive, isDisabled: isDisabled)
             }
+            .contentShape(Circle())
     }
 
-    private func actionLabel(
-        _ title: String,
-        systemImage: String,
+    private func toolbarPillLabel(_ title: String, isActive: Bool = false) -> some View {
+        HStack(spacing: 5) {
+            Text(title)
+                .lineLimit(1)
+
+            Image(systemName: "chevron.down")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(.secondary)
+        }
+        .font(.subheadline.weight(.medium))
+        .padding(.leading, 12)
+        .padding(.trailing, 9)
+        .frame(height: Self.toolbarPillHeight)
+        .background {
+            toolbarControlBackground(in: Capsule(style: .continuous), isActive: isActive)
+        }
+        .contentShape(Capsule(style: .continuous))
+    }
+
+    private func toolbarControlBackground<S: InsettableShape>(
+        in shape: S,
         isActive: Bool = false,
         isDisabled: Bool = false
     ) -> some View {
-        Label(title, systemImage: systemImage)
-            .labelStyle(.titleAndIcon)
-            .font(.subheadline.weight(.semibold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.82)
-            .foregroundStyle(isDisabled ? .secondary : .primary)
-            .frame(width: Self.toolbarPairedButtonWidth, height: Self.toolbarButtonHeight)
-            .background {
-                toolbarBackground(isActive: isActive, isDisabled: isDisabled)
-            }
-    }
-
-    private func toolbarBackground(isActive: Bool = false, isDisabled: Bool = false) -> some View {
-        RoundedRectangle(cornerRadius: Self.toolbarCornerRadius, style: .continuous)
-            .fill(.white.opacity(isDisabled ? 0.08 : isActive ? 0.24 : 0.14))
+        shape
+            .fill(.white.opacity(isDisabled ? 0.04 : isActive ? 0.16 : 0.08))
             .overlay {
-                RoundedRectangle(cornerRadius: Self.toolbarCornerRadius, style: .continuous)
-                    .stroke(.white.opacity(isDisabled ? 0.05 : 0.08), lineWidth: 1)
+                shape
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [.white.opacity(isDisabled ? 0.05 : isActive ? 0.2 : 0.1), .clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1
+                    )
             }
     }
 
@@ -312,17 +241,13 @@ extension LuxelCropperView {
         Button {
             model.selectFullDisplay()
         } label: {
-            toolbarButtonLabel(
-                "Full Display",
-                systemImage: "rectangle.inset.filled",
-                width: Self.toolbarFullDisplayButtonWidth
-            )
+            toolbarCircleLabel("Full Display", systemImage: "display")
         }
         .buttonStyle(.plain)
         .help("Select the full current display.")
     }
 
-    private func countdownMenu(width: CGFloat = Self.toolbarButtonWidth) -> some View {
+    private var countdownMenu: some View {
         Menu {
             countdownButton(title: "Off", duration: nil)
 
@@ -332,14 +257,21 @@ extension LuxelCropperView {
                 countdownButton(title: preset.title, duration: preset.duration)
             }
         } label: {
-            countdownMenuLabel(width: width)
+            toolbarCircleLabel(
+                "Countdown",
+                systemImage: "clock",
+                isActive: model.countdownDuration != nil
+            )
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
-        .frame(width: width)
+        .frame(width: Self.toolbarCircleSide, height: Self.toolbarCircleSide)
+        .accessibilityLabel("Countdown")
+        .accessibilityValue(model.countdownSummary)
+        .help("Delay recording after pressing Record. Current: \(model.countdownSummary).")
     }
 
-    private func stopAfterMenu(width: CGFloat = Self.toolbarButtonWidth) -> some View {
+    private var stopAfterMenu: some View {
         Menu {
             stopAfterButton(title: "Off", duration: nil)
 
@@ -362,14 +294,21 @@ extension LuxelCropperView {
             }
             .help("Use the custom automatic stop duration.")
         } label: {
-            toolbarMenuLabel(compactStopAfterToolbarText, width: width)
+            toolbarCircleLabel(
+                "Stop After",
+                systemImage: "square",
+                isActive: model.stopAfterDuration != nil
+            )
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
-        .frame(width: width)
+        .frame(width: Self.toolbarCircleSide, height: Self.toolbarCircleSide)
+        .accessibilityLabel("Stop After")
+        .accessibilityValue(model.stopAfterSummary)
+        .help("Stop recording automatically. Current: \(model.stopAfterSummary).")
     }
 
-    private func aspectRatioMenu(width: CGFloat = Self.toolbarButtonWidth) -> some View {
+    private var aspectRatioMenu: some View {
         Menu {
             ForEach(CaptureAspectRatioPreset.allCases, id: \.self) { preset in
                 Button {
@@ -409,11 +348,12 @@ extension LuxelCropperView {
             }
             .help("Apply the custom aspect ratio values.")
         } label: {
-            toolbarMenuLabel(aspectRatioToolbarText, systemImage: "aspectratio", width: width)
+            toolbarPillLabel(model.aspectRatioSummary)
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
-        .frame(width: width)
+        .accessibilityLabel("Aspect Ratio")
+        .accessibilityValue(model.aspectRatioSummary)
         .help(
             LuxelLocalization.format(
                 "cropper.aspectRatio.currentHelp",
@@ -422,7 +362,7 @@ extension LuxelCropperView {
         )
     }
 
-    private func sizePresetMenu(width: CGFloat = Self.toolbarButtonWidth) -> some View {
+    private var sizePresetMenu: some View {
         Menu {
             ForEach(model.sizePresets) { preset in
                 Button {
@@ -438,29 +378,11 @@ extension LuxelCropperView {
                 )
             }
         } label: {
-            toolbarMenuLabel("Size", systemImage: "arrow.up.left.and.arrow.down.right", width: width)
+            toolbarPillLabel("Size")
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
-        .frame(width: width)
         .help("Apply a saved size preset to the selected area.")
-    }
-
-    private func countdownMenuLabel(width: CGFloat = Self.toolbarButtonWidth) -> some View {
-        toolbarMenuLabel(compactCountdownToolbarText, width: width)
-            .accessibilityLabel("Countdown")
-            .accessibilityValue(model.countdownSummary)
-    }
-
-    @ViewBuilder
-    private var selectionGeometryControls: some View {
-        Text(model.selectionSummary)
-            .font(.caption)
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-            .frame(width: Self.toolbarButtonWidth)
-            .help(selectionSummaryHelp)
     }
 
     @ViewBuilder
@@ -539,7 +461,7 @@ extension LuxelCropperView {
                 .help("Flip the camera preview horizontally.")
             }
         } label: {
-            toolbarIconLabel(
+            toolbarCircleLabel(
                 cameraToolbarText,
                 systemImage: cameraMenuSystemImage,
                 isActive: cameraConfiguration.selectedDeviceID != nil
@@ -547,7 +469,7 @@ extension LuxelCropperView {
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
-        .frame(width: Self.toolbarIconButtonSide, height: Self.toolbarIconButtonSide)
+        .frame(width: Self.toolbarCircleSide, height: Self.toolbarCircleSide)
         .accessibilityLabel("Camera")
         .accessibilityValue(cameraToolbarText)
         .help(cameraMenuHelp)
@@ -557,7 +479,7 @@ extension LuxelCropperView {
         Button {
             recordAudio.wrappedValue.toggle()
         } label: {
-            toolbarIconLabel(
+            toolbarCircleLabel(
                 microphoneToolbarText,
                 systemImage: model.recordsAudio ? "mic.fill" : "mic.slash",
                 isActive: model.recordsAudio,
@@ -565,7 +487,7 @@ extension LuxelCropperView {
             )
         }
         .buttonStyle(.plain)
-        .frame(width: Self.toolbarIconButtonSide, height: Self.toolbarIconButtonSide)
+        .frame(width: Self.toolbarCircleSide, height: Self.toolbarCircleSide)
         .disabled(!model.canToggleRecordAudio)
         .accessibilityLabel("Microphone")
         .accessibilityValue(microphoneToolbarText)
@@ -611,11 +533,64 @@ extension LuxelCropperView {
         Button {
             onCancel()
         } label: {
-            actionLabel("Cancel", systemImage: "xmark")
+            toolbarCircleLabel("Cancel", systemImage: "xmark")
         }
         .buttonStyle(.plain)
-        .frame(width: Self.toolbarPairedButtonWidth)
         .help("Close area selection without recording or capturing.")
+    }
+
+    private func recordPillLabel(isDisabled: Bool) -> some View {
+        HStack(spacing: 7) {
+            ZStack {
+                Circle()
+                    .strokeBorder(.white.opacity(0.9), lineWidth: 2)
+
+                Circle()
+                    .fill(.white)
+                    .frame(width: 5, height: 5)
+            }
+            .frame(width: 13, height: 13)
+
+            Text(model.primaryActionTitle)
+                .font(.subheadline.weight(.semibold))
+        }
+        .foregroundStyle(.white)
+        .opacity(isDisabled ? 0.55 : 1)
+        .padding(.leading, 13)
+        .padding(.trailing, 16)
+        .frame(height: Self.toolbarPillHeight)
+        .background {
+            Capsule(style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            LuxelMenuIslandStyle.recordRedTop,
+                            LuxelMenuIslandStyle.recordRedBottom
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay {
+                    Capsule(style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white.opacity(0.35), .clear],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+                }
+                .saturation(isDisabled ? 0.35 : 1)
+                .opacity(isDisabled ? 0.5 : 1)
+                .shadow(
+                    color: LuxelMenuIslandStyle.recordGlow.opacity(isDisabled ? 0 : 0.35),
+                    radius: 11,
+                    y: 4
+                )
+        }
+        .contentShape(Capsule(style: .continuous))
     }
 
     @ViewBuilder
@@ -623,16 +598,11 @@ extension LuxelCropperView {
         Button {
             commitPrimarySelection()
         } label: {
-            actionLabel(
-                model.primaryActionTitle,
-                systemImage: model.primaryActionSystemImage,
-                isActive: model.canRecordSelection,
-                isDisabled: !model.canRecordSelection
-            )
+            recordPillLabel(isDisabled: !model.canRecordSelection)
         }
         .buttonStyle(.plain)
         .disabled(!model.canRecordSelection)
-        .frame(width: Self.toolbarPairedButtonWidth)
+        .accessibilityLabel(model.primaryActionTitle)
         .help(primaryActionHelp)
         .contextMenu {
             Button {
@@ -681,7 +651,109 @@ extension LuxelCropperView {
             ForEach(Self.resizeHandlePresentationOrder, id: \.self) { handle in
                 resizeHandle(handle, rect: rect, viewSize: viewSize)
             }
+
+            if let selection = model.selection {
+                dimensionPill(selection: selection, rect: rect, viewSize: viewSize)
+            }
         }
+    }
+
+    private func dimensionPill(
+        selection: CaptureRect,
+        rect: CGRect,
+        viewSize: CGSize
+    ) -> some View {
+        Button {
+            beginEditingDimensions()
+        } label: {
+            HStack(spacing: 6) {
+                Text("\(selection.width)")
+
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .semibold))
+                    .opacity(0.5)
+
+                Text("\(selection.height)")
+
+                Image(systemName: "pencil")
+                    .font(.system(size: 9, weight: .semibold))
+                    .opacity(0.45)
+                    .padding(.leading, 2)
+            }
+            .font(.system(size: 12, design: .monospaced))
+            .foregroundStyle(.white.opacity(0.9))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .glassEffect(.clear, in: .capsule)
+            .background(Color.black.opacity(0.42), in: Capsule(style: .continuous))
+            .contentShape(Capsule(style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .position(dimensionPillPosition(rect: rect, viewSize: viewSize))
+        .popover(isPresented: $isEditingDimensions, arrowEdge: .bottom) {
+            dimensionEditor
+        }
+        .appKitCursor(.arrow)
+        .accessibilityLabel("Selection Size")
+        .accessibilityValue("\(selection.width) by \(selection.height)")
+        .help("Edit the exact selection size in pixels.")
+    }
+
+    private func dimensionPillPosition(rect: CGRect, viewSize: CGSize) -> CGPoint {
+        let fitsInside =
+            rect.width >= Self.dimensionPillMinimumSelectionSize.width
+            && rect.height >= Self.dimensionPillMinimumSelectionSize.height
+        let pillY = fitsInside ? rect.midY : rect.minY - 26
+
+        return CGPoint(
+            x: min(max(rect.midX, 76), max(76, viewSize.width - 76)),
+            y: min(max(pillY, 22), max(22, viewSize.height - 22))
+        )
+    }
+
+    private var dimensionEditor: some View {
+        HStack(spacing: 6) {
+            TextField("Width", text: $dimensionWidthText)
+                .frame(width: 64)
+
+            Image(systemName: "xmark")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            TextField("Height", text: $dimensionHeightText)
+                .frame(width: 64)
+
+            Button("Apply") {
+                applyEditedDimensions()
+            }
+            .keyboardShortcut(.defaultAction)
+        }
+        .textFieldStyle(.roundedBorder)
+        .monospacedDigit()
+        .padding(12)
+    }
+
+    private func beginEditingDimensions() {
+        guard let selection = model.selection else {
+            return
+        }
+
+        dimensionWidthText = "\(selection.width)"
+        dimensionHeightText = "\(selection.height)"
+        isEditingDimensions = true
+    }
+
+    private func applyEditedDimensions() {
+        guard
+            let width = Int(dimensionWidthText.trimmingCharacters(in: .whitespaces)),
+            let height = Int(dimensionHeightText.trimmingCharacters(in: .whitespaces)),
+            model.setSelectionSize(width: width, height: height)
+        else {
+            NSSound.beep()
+            return
+        }
+
+        isEditingDimensions = false
     }
 
     private func snapGuidesOverlay(viewSize: CGSize) -> some View {

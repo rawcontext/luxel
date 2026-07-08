@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelPresentation
 import SwiftUI
 
 struct ExportPresetSettingsSection: View {
@@ -8,57 +9,74 @@ struct ExportPresetSettingsSection: View {
 
     var body: some View {
         Group {
-            Section("Quick Recording") {
-                Picker("Quick Preset", selection: $settings.quickExportPresetID) {
-                    Text("None").tag(Optional<UUID>.none)
-                    ForEach(settings.exportPresets) { preset in
-                        Text(preset.name).tag(Optional(preset.id))
+            SettingsIslandGroup("Quick Recording") {
+                SettingsRow("Quick Preset") {
+                    SettingsMenuPicker(
+                        selection: $settings.quickExportPresetID,
+                        options: quickPresetOptions
+                    ) { presetID in
+                        quickPresetLabel(presetID)
                     }
                 }
-                .pickerStyle(.menu)
                 .help("Choose the preset used by quick recording.")
 
+                LuxelGlassRowDivider()
+
                 Toggle("Remember Last Capture", isOn: $settings.rememberLastCapture)
+                    .toggleStyle(LuxelGlassSwitchToggleStyle())
+                    .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
                     .help("Reuse the last capture target for quick recording.")
             }
 
-            Section("Presets") {
-                Picker("Edit Preset", selection: editPresetSelection) {
-                    ForEach(settings.exportPresets) { preset in
-                        Text(preset.name).tag(Optional(preset.id))
+            SettingsIslandGroup("Presets") {
+                SettingsRow("Edit Preset") {
+                    SettingsMenuPicker(
+                        selection: editPresetSelection,
+                        options: settings.exportPresets.map { Optional($0.id) }
+                    ) { presetID in
+                        presetLabel(presetID)
                     }
                 }
-                .pickerStyle(.menu)
                 .disabled(settings.exportPresets.isEmpty)
+                .opacity(settings.exportPresets.isEmpty ? 0.45 : 1)
                 .help("Choose which export preset to edit.")
 
-                HStack {
+                LuxelGlassRowDivider()
+
+                HStack(spacing: 8) {
                     Button {
                         addPreset()
                     } label: {
-                        Label("Add", systemImage: "plus")
+                        SettingsCapsuleButtonLabel("Add", systemImage: "plus")
                     }
+                    .buttonStyle(.plain)
                     .help("Create a new export preset.")
 
                     Button {
                         duplicateSelectedPreset()
                     } label: {
-                        Label("Duplicate", systemImage: "doc.on.doc")
+                        SettingsCapsuleButtonLabel("Duplicate", systemImage: "doc.on.doc")
                     }
+                    .buttonStyle(.plain)
                     .disabled(currentSelectedPresetID == nil)
+                    .opacity(currentSelectedPresetID == nil ? 0.45 : 1)
                     .help("Copy the selected export preset.")
 
                     Button(role: .destructive) {
                         deleteSelectedPreset()
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        SettingsCapsuleButtonLabel("Delete", systemImage: "trash")
                     }
+                    .buttonStyle(.plain)
                     .disabled(currentSelectedPresetID == nil)
+                    .opacity(currentSelectedPresetID == nil ? 0.45 : 1)
                     .help("Delete the selected export preset.")
                 }
-                .buttonStyle(.bordered)
+                .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
 
                 if let selectedPresetBinding {
+                    LuxelGlassRowDivider()
+
                     ExportPresetEditor(preset: selectedPresetBinding)
                 }
             }
@@ -69,6 +87,28 @@ struct ExportPresetSettingsSection: View {
         .onChange(of: settings.exportPresets.map(\.id)) {
             repairSelection()
         }
+    }
+
+    private var quickPresetOptions: [UUID?] {
+        [nil] + settings.exportPresets.map { Optional($0.id) }
+    }
+
+    private func quickPresetLabel(_ presetID: UUID?) -> String {
+        guard let presetID,
+              let preset = settings.exportPresets.first(where: { $0.id == presetID })
+        else {
+            return "None"
+        }
+
+        return preset.name
+    }
+
+    private func presetLabel(_ presetID: UUID?) -> String {
+        guard let presetID else {
+            return ""
+        }
+
+        return settings.exportPresets.first { $0.id == presetID }?.name ?? ""
     }
 
     private var editPresetSelection: Binding<UUID?> {
@@ -140,61 +180,110 @@ private struct ExportPresetEditor: View {
     @Binding var preset: ExportPreset
 
     var body: some View {
-        TextField("Name", text: name)
+        Group {
+            SettingsRow("Name") {
+                TextField("Name", text: name)
+                    .textFieldStyle(.plain)
+                    .labelsHidden()
+                    .font(.system(size: 12.5, weight: .medium))
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 180)
+                    .luxelGlassFieldBackground(cornerRadius: 13)
+            }
             .help("Name this export preset.")
 
-        Picker("Format", selection: $preset.format) {
-            ForEach(ExportFormat.appleNativeV1Formats, id: \.self) { format in
-                Text(format.prettyName).tag(format)
-            }
-        }
-        .pickerStyle(.menu)
-        .help("Choose the export file format.")
+            LuxelGlassRowDivider()
 
-        Picker("Size", selection: sizeSelection) {
-            ForEach(PresetSizeSelection.allCases) { selection in
-                Text(selection.label).tag(selection)
+            SettingsRow("Format") {
+                SettingsMenuPicker(
+                    selection: $preset.format,
+                    options: ExportFormat.appleNativeV1Formats
+                ) { format in
+                    format.prettyName
+                }
             }
+            .help("Choose the export file format.")
+
+            LuxelGlassRowDivider()
+
+            SettingsRow("Size") {
+                SettingsMenuPicker(
+                    selection: sizeSelection,
+                    options: Array(PresetSizeSelection.allCases)
+                ) { selection in
+                    selection.label
+                }
+            }
+            .help("Choose how much to resize exported video.")
         }
-        .pickerStyle(.menu)
-        .help("Choose how much to resize exported video.")
 
         if case .maxWidth = preset.sizeRule {
-            Stepper(value: maxWidth, in: 1...10_000, step: 10) {
+            LuxelGlassRowDivider()
+
+            SettingsRow {
                 Text(
                     LuxelLocalization.format(
                         "settings.exportPreset.maxWidth",
                         defaultValue: "Max Width %d px",
                         maxWidth.wrappedValue)
                 )
+                .font(.system(size: 13.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.95))
+
+                Spacer(minLength: 12)
+
+                Stepper(value: maxWidth, in: 1...10_000, step: 10) {
+                    Text(
+                        LuxelLocalization.format(
+                            "settings.exportPreset.maxWidth",
+                            defaultValue: "Max Width %d px",
+                            maxWidth.wrappedValue)
+                    )
+                }
+                .labelsHidden()
             }
             .help("Set the maximum exported width in pixels.")
         }
 
-        Picker("Frame Rate", selection: frameRateSelection) {
-            ForEach(frameRateChoices, id: \.self) { frameRate in
-                Text(frameRate == 0 ? "Source" : "\(frameRate) FPS").tag(frameRate)
-            }
-        }
-        .pickerStyle(.menu)
-        .help("Choose the exported video frame rate.")
+        Group {
+            LuxelGlassRowDivider()
 
-        Picker("Destination", selection: destinationSelection) {
-            ForEach(PresetDestinationSelection.allCases) { destination in
-                Text(destination.label).tag(destination)
+            SettingsRow("Frame Rate") {
+                SettingsMenuPicker(
+                    selection: frameRateSelection,
+                    options: frameRateChoices
+                ) { frameRate in
+                    frameRate == 0 ? "Source" : "\(frameRate) FPS"
+                }
             }
-        }
-        .pickerStyle(.menu)
-        .help("Choose where the exported result goes.")
+            .help("Choose the exported video frame rate.")
 
-        Picker("After Export", selection: postActionSelection) {
-            ForEach(ExportPresetPostAction.allCases, id: \.self) { action in
-                Text(action.label).tag(action)
+            LuxelGlassRowDivider()
+
+            SettingsRow("Destination") {
+                SettingsMenuPicker(
+                    selection: destinationSelection,
+                    options: Array(PresetDestinationSelection.allCases)
+                ) { destination in
+                    destination.label
+                }
             }
+            .help("Choose where the exported result goes.")
+
+            LuxelGlassRowDivider()
+
+            SettingsRow("After Export") {
+                SettingsMenuPicker(
+                    selection: postActionSelection,
+                    options: Array(ExportPresetPostAction.allCases)
+                ) { action in
+                    action.label
+                }
+            }
+            .disabled(preset.destination == .clipboard)
+            .opacity(preset.destination == .clipboard ? 0.45 : 1)
+            .help("Choose what Luxel does after exporting.")
         }
-        .pickerStyle(.menu)
-        .disabled(preset.destination == .clipboard)
-        .help("Choose what Luxel does after exporting.")
     }
 
     private var name: Binding<String> {

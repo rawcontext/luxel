@@ -15,13 +15,17 @@ struct AudioTranscriptPreview: View {
     @Bindable var model: LuxelEditorModel
 
     var body: some View {
-        if model.shouldShowSpeechRecognitionPrompt {
+        if model.hasAudioOnlySource {
+            audioColumn
+        } else if model.shouldShowSpeechRecognitionPrompt {
             speechRecognitionPrompt
         } else if model.shouldShowTranscriptProgress {
             transcriptProgress
         } else if let transcript = model.visibleTranscript {
             VStack {
                 transcriptCard(transcript)
+                    .frame(maxWidth: Layout.transcriptCardMaxWidth)
+                    .frame(height: Layout.transcriptCardHeight)
                     .padding(.horizontal, Layout.transcriptHorizontalPadding)
                     .padding(.top, Layout.transcriptTopPadding)
 
@@ -32,39 +36,51 @@ struct AudioTranscriptPreview: View {
         }
     }
 
+    private var audioColumn: some View {
+        VStack(spacing: 10) {
+            if model.shouldShowSpeechRecognitionPrompt {
+                HStack {
+                    Spacer()
+
+                    Button {
+                        model.enableSpeechRecognition()
+                    } label: {
+                        Label("Enable Speech Recognition", systemImage: "waveform")
+                    }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.regular)
+
+                    if model.canCloseTranscriptPanel {
+                        closeTranscriptButton
+                    }
+
+                    Spacer()
+                }
+            } else if model.shouldShowTranscriptProgress {
+                TimelineView(.periodic(from: .now, by: 1)) { timeline in
+                    transcriptProgressRow(at: timeline.date)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(transcriptProgressTitle(at: timeline.date))
+                }
+            }
+
+            if let transcript = model.visibleTranscript {
+                transcriptCard(transcript)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Spacer(minLength: 0)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var transcriptProgress: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
             VStack {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 10) {
-                        ProgressView()
-                            .controlSize(.small)
-
-                        Text(transcriptProgressTitle(at: timeline.date))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        Spacer(minLength: 0)
-
-                        if model.canCloseTranscriptPanel {
-                            closeTranscriptButton
-                        }
-                    }
-
-                    ProgressView()
-                        .progressViewStyle(.linear)
-                        .controlSize(.small)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 11)
-                .frame(maxWidth: Layout.progressCardMaxWidth)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(.white.opacity(0.12), lineWidth: 1)
-                }
-                .padding(.horizontal, Layout.transcriptHorizontalPadding)
-                .padding(.top, Layout.transcriptTopPadding)
+                transcriptProgressRow(at: timeline.date)
+                    .frame(maxWidth: Layout.progressCardMaxWidth)
+                    .padding(.horizontal, Layout.transcriptHorizontalPadding)
+                    .padding(.top, Layout.transcriptTopPadding)
 
                 Spacer()
             }
@@ -72,6 +88,30 @@ struct AudioTranscriptPreview: View {
             .allowsHitTesting(model.canCloseTranscriptPanel)
             .accessibilityElement(children: .combine)
             .accessibilityLabel(transcriptProgressTitle(at: timeline.date))
+        }
+    }
+
+    private func transcriptProgressRow(at date: Date) -> some View {
+        LuxelGlassIsland(cornerRadius: 18) {
+            HStack(spacing: 10) {
+                Image(systemName: "clock")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+
+                Text(transcriptProgressTitle(at: date))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .lineLimit(1)
+
+                TranscriptProgressBar()
+                    .frame(maxWidth: .infinity)
+
+                if model.canCloseTranscriptPanel {
+                    closeTranscriptButton
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
         }
     }
 
@@ -105,7 +145,7 @@ struct AudioTranscriptPreview: View {
         let activeTurnID = model.activeTranscriptTurnID
         let activeSpanID = model.activeTranscriptSpanID
 
-        return TranscriptCardContent(
+        let content = TranscriptCardContent(
             transcript: transcript,
             activeTurnID: activeTurnID,
             activeSpanID: activeSpanID,
@@ -117,13 +157,11 @@ struct AudioTranscriptPreview: View {
         ) { span in
             model.seekToTranscriptSpan(span)
         }
-        .frame(maxWidth: Layout.transcriptCardMaxWidth)
-        .frame(height: Layout.transcriptCardHeight)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.white.opacity(0.12), lineWidth: 1)
+
+        return LuxelGlassIsland(cornerRadius: 18) {
+            content
         }
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var closeTranscriptButton: some View {
@@ -131,11 +169,8 @@ struct AudioTranscriptPreview: View {
             model.hideTranscriptPanel()
         } label: {
             Image(systemName: "xmark")
-                .frame(width: 24, height: 24)
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
+        .buttonStyle(LuxelGlassCircleButtonStyle())
         .help("Close transcript")
         .accessibilityLabel("Close transcript")
     }
@@ -146,6 +181,27 @@ struct AudioTranscriptPreview: View {
         }
 
         return "Transcribing audio... \(elapsed)"
+    }
+}
+
+private struct TranscriptProgressBar: View {
+    @State private var isAnimating = false
+
+    var body: some View {
+        GeometryReader { proxy in
+            Capsule(style: .continuous)
+                .fill(.white.opacity(0.8))
+                .frame(width: proxy.size.width * 0.35)
+                .offset(x: isAnimating ? proxy.size.width * 0.65 : 0)
+        }
+        .frame(height: 3)
+        .background(.white.opacity(0.12), in: Capsule(style: .continuous))
+        .clipShape(Capsule(style: .continuous))
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
+                isAnimating = true
+            }
+        }
     }
 }
 
@@ -193,8 +249,7 @@ private struct TranscriptCardContent: View {
         VStack(spacing: 0) {
             transcriptToolbar
 
-            Divider()
-                .opacity(0.45)
+            LuxelGlassRowDivider()
 
             transcriptList
         }
@@ -210,10 +265,10 @@ private struct TranscriptCardContent: View {
     }
 
     private var transcriptToolbar: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             Text("Transcript")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
 
             Spacer(minLength: 8)
 
@@ -229,11 +284,8 @@ private struct TranscriptCardContent: View {
                 copyTranscript(transcript)
             } label: {
                 Image(systemName: "doc.on.doc")
-                    .frame(width: 24, height: 24)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .buttonStyle(LuxelGlassCircleButtonStyle())
             .help("Copy transcript")
             .accessibilityLabel("Copy transcript")
 
@@ -242,18 +294,14 @@ private struct TranscriptCardContent: View {
                     closeTranscript()
                 } label: {
                     Image(systemName: "xmark")
-                        .frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .buttonStyle(LuxelGlassCircleButtonStyle())
                 .help("Close transcript")
                 .accessibilityLabel("Close transcript")
             }
         }
-        .padding(.leading, 14)
-        .padding(.trailing, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
     }
 
     private var transcriptList: some View {
@@ -366,53 +414,54 @@ private struct TranscriptSearchControl: View {
     let selectNext: () -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
-            TextField("Search", text: $query)
-                .textFieldStyle(.plain)
-                .font(.caption.weight(.medium))
-                .frame(width: 132)
-                .padding(.horizontal, 8)
-                .onSubmit {
-                    selectNext()
+        HStack(spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.45))
+
+                TextField("Search", text: $query)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .onSubmit {
+                        selectNext()
+                    }
+
+                Text(counterText)
+                    .font(.system(size: 10.5, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(counterForegroundStyle)
+                    .layoutPriority(1)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .frame(width: 170)
+            .background {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.black.opacity(0.22))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+                    }
+            }
+
+            if matchCount > 0 {
+                Button(action: selectPrevious) {
+                    Image(systemName: "chevron.up")
                 }
+                .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
+                .help("Previous match")
+                .accessibilityLabel("Previous transcript search match")
 
-            Divider()
-                .frame(height: 20)
-                .opacity(0.5)
-
-            Text(counterText)
-                .font(.caption.monospacedDigit().weight(.semibold))
-                .foregroundStyle(counterForegroundStyle)
-                .frame(width: 42, alignment: .center)
-
-            Button(action: selectPrevious) {
-                Image(systemName: "chevron.up")
-                    .frame(width: 24, height: 24)
-                    .contentShape(Rectangle())
+                Button(action: selectNext) {
+                    Image(systemName: "chevron.down")
+                }
+                .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
+                .help("Next match")
+                .accessibilityLabel("Next transcript search match")
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(buttonForegroundStyle)
-            .disabled(matchCount == 0)
-            .help("Previous match")
-            .accessibilityLabel("Previous transcript search match")
-
-            Button(action: selectNext) {
-                Image(systemName: "chevron.down")
-                    .frame(width: 24, height: 24)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(buttonForegroundStyle)
-            .disabled(matchCount == 0)
-            .help("Next match")
-            .accessibilityLabel("Next transcript search match")
         }
-        .padding(.vertical, 2)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 6))
-        .overlay {
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(.white.opacity(0.12), lineWidth: 1)
-        }
+        .animation(.easeOut(duration: 0.15), value: matchCount > 0)
     }
 
     private var counterText: String {
@@ -428,11 +477,7 @@ private struct TranscriptSearchControl: View {
             return .red
         }
 
-        return .secondary
-    }
-
-    private var buttonForegroundStyle: Color {
-        matchCount == 0 ? .secondary.opacity(0.45) : .secondary
+        return .white.opacity(0.4)
     }
 }
 
@@ -592,20 +637,20 @@ private struct TranscriptChunkView: View {
                 HStack(spacing: 6) {
                     if let source = chunk.turn.source {
                         Text(source.displayName)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.55))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
                     }
 
                     Text(formatTranscriptTime(chunk.turn.start))
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 10.5, weight: .medium).monospacedDigit())
+                        .foregroundStyle(.white.opacity(0.4))
                 }
             }
 
-            TranscriptSpanFlowLayout(horizontalSpacing: 4, verticalSpacing: 5) {
+            TranscriptSpanFlowLayout(horizontalSpacing: 4, verticalSpacing: 7) {
                 ForEach(chunk.spans) { span in
                     TranscriptSpanButton(
                         span: span,
@@ -619,13 +664,9 @@ private struct TranscriptChunkView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 10)
-        .padding(.top, chunk.showsHeader ? 8 : 2)
+        .padding(.horizontal, 8)
+        .padding(.top, chunk.showsHeader ? 10 : 2)
         .padding(.bottom, 6)
-        .background(
-            isActiveTurn ? Color.accentColor.opacity(0.16) : Color.clear,
-            in: RoundedRectangle(cornerRadius: 6)
-        )
     }
 }
 
@@ -642,16 +683,17 @@ private struct TranscriptSpanButton: View {
             seekToSpan(span)
         } label: {
             Text(span.text)
-                .font(.callout)
+                .font(.system(size: 13))
                 .foregroundStyle(
-                    isActiveSpan || isActiveTurn || isSearchMatch ? .primary : .secondary
+                    isActiveSpan || isActiveTurn || isSearchMatch
+                        ? Color.white : Color.white.opacity(0.75)
                 )
-                .underline(isActiveSpan, color: .primary.opacity(0.75))
+                .underline(isActiveSpan, color: .white.opacity(0.75))
                 .padding(.horizontal, 2)
                 .padding(.vertical, 1)
                 .background(
                     spanBackground,
-                    in: RoundedRectangle(cornerRadius: 3)
+                    in: RoundedRectangle(cornerRadius: 4)
                 )
                 .contentShape(Rectangle())
         }
@@ -667,15 +709,15 @@ private struct TranscriptSpanButton: View {
 
     private var spanBackground: Color {
         if isCurrentSearchMatch {
-            return .yellow.opacity(0.34)
+            return .white.opacity(0.3)
         }
 
         if isSearchMatch {
-            return .yellow.opacity(0.18)
+            return .white.opacity(0.18)
         }
 
         if isActiveSpan {
-            return Color.accentColor.opacity(0.18)
+            return .white.opacity(0.14)
         }
 
         return .clear

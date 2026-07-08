@@ -1,3 +1,4 @@
+import LuxelPresentation
 import SwiftUI
 
 enum LuxelSettingsPane: CaseIterable, Identifiable {
@@ -80,20 +81,165 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
 }
 
 struct SettingsSidebarSelectionBackground: View {
+    @State private var isHovered = false
+
     let isSelected: Bool
 
     var body: some View {
-        if isSelected {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.primary.opacity(0.08))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(.white.opacity(0.08), lineWidth: 1)
+        RoundedRectangle(cornerRadius: 15, style: .continuous)
+            .fill(.white.opacity(isSelected ? 0.14 : isHovered ? 0.07 : 0))
+            .overlay {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white.opacity(0.18), .clear],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
                 }
-        } else {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.clear)
+            }
+            .onHover { isHovered = $0 }
+            .animation(.easeOut(duration: 0.12), value: isHovered)
+    }
+}
+
+struct SettingsIslandGroup<Content: View>: View {
+    private let header: String?
+    private let footer: String?
+    private let content: Content
+
+    init(
+        _ header: String? = nil,
+        footer: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.header = header
+        self.footer = footer
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let header {
+                LuxelGlassSectionHeader(header)
+                    .padding(.leading, 6)
+                    .padding(.bottom, 10)
+            }
+
+            LuxelGlassIsland(cornerRadius: 20) {
+                VStack(alignment: .leading, spacing: 0) {
+                    content
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 2)
+            }
+
+            if let footer {
+                LuxelGlassSectionFooter(footer)
+                    .padding(.leading, 6)
+                    .padding(.top, 8)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct SettingsRow<Content: View>: View {
+    private let title: String?
+    private let content: Content
+
+    init(_ title: String? = nil, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if let title {
+                Text(title)
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.95))
+
+                Spacer(minLength: 12)
+            }
+
+            content
+        }
+        .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct SettingsMenuPicker<Option: Hashable>: View {
+    @Binding var selection: Option
+    let options: [Option]
+    let optionLabel: (Option) -> String
+
+    var body: some View {
+        Menu {
+            ForEach(options, id: \.self) { option in
+                Button {
+                    selection = option
+                } label: {
+                    if option == selection {
+                        Label(optionLabel(option), systemImage: "checkmark")
+                    } else {
+                        Text(optionLabel(option))
+                    }
+                }
+            }
+        } label: {
+            LuxelGlassMenuLabel(optionLabel(selection))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .fixedSize()
+    }
+}
+
+struct SettingsCapsuleButtonLabel: View {
+    private let title: String
+    private let systemImage: String?
+
+    init(_ title: String, systemImage: String? = nil) {
+        self.title = title
+        self.systemImage = systemImage
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.system(size: 11, weight: .medium))
+            }
+
+            Text(title)
+                .font(.system(size: 12.5, weight: .medium))
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .foregroundStyle(.white.opacity(0.92))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background {
+            Capsule(style: .continuous)
+                .fill(LuxelGlassTheme.controlFill)
+                .overlay {
+                    Capsule(style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [LuxelGlassTheme.controlHighlight, .clear],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+                }
+        }
+        .contentShape(Capsule(style: .continuous))
     }
 }
 

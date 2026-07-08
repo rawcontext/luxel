@@ -1,4 +1,5 @@
 import LuxelCore
+import LuxelPresentation
 import SwiftUI
 
 struct CaptureSizePresetSettingsSection: View {
@@ -6,43 +7,55 @@ struct CaptureSizePresetSettingsSection: View {
     @State private var selectedPresetID: UUID?
 
     var body: some View {
-        Section("Cropper Sizes") {
-            Picker("Edit Size", selection: editPresetSelection) {
-                ForEach(settings.userSizePresets) { preset in
-                    Text(preset.name).tag(Optional(preset.id))
+        SettingsIslandGroup("Cropper Sizes") {
+            SettingsRow("Edit Size") {
+                SettingsMenuPicker(
+                    selection: editPresetSelection,
+                    options: settings.userSizePresets.map { Optional($0.id) }
+                ) { presetID in
+                    presetLabel(presetID)
                 }
             }
-            .pickerStyle(.menu)
             .disabled(settings.userSizePresets.isEmpty)
+            .opacity(settings.userSizePresets.isEmpty ? 0.45 : 1)
             .help("Choose which saved cropper size to edit.")
 
-            HStack {
+            LuxelGlassRowDivider()
+
+            HStack(spacing: 8) {
                 Button {
                     addPreset()
                 } label: {
-                    Label("Add", systemImage: "plus")
+                    SettingsCapsuleButtonLabel("Add", systemImage: "plus")
                 }
+                .buttonStyle(.plain)
                 .help("Create a new cropper size preset.")
 
                 Button {
                     duplicateSelectedPreset()
                 } label: {
-                    Label("Duplicate", systemImage: "doc.on.doc")
+                    SettingsCapsuleButtonLabel("Duplicate", systemImage: "doc.on.doc")
                 }
+                .buttonStyle(.plain)
                 .disabled(currentSelectedPresetID == nil)
+                .opacity(currentSelectedPresetID == nil ? 0.45 : 1)
                 .help("Copy the selected cropper size preset.")
 
                 Button(role: .destructive) {
                     deleteSelectedPreset()
                 } label: {
-                    Label("Delete", systemImage: "trash")
+                    SettingsCapsuleButtonLabel("Delete", systemImage: "trash")
                 }
+                .buttonStyle(.plain)
                 .disabled(currentSelectedPresetID == nil)
+                .opacity(currentSelectedPresetID == nil ? 0.45 : 1)
                 .help("Delete the selected cropper size preset.")
             }
-            .buttonStyle(.bordered)
+            .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
 
             if let selectedPresetBinding {
+                LuxelGlassRowDivider()
+
                 CaptureSizePresetEditor(preset: selectedPresetBinding)
             }
         }
@@ -52,6 +65,14 @@ struct CaptureSizePresetSettingsSection: View {
         .onChange(of: settings.userSizePresets.map(\.id)) {
             repairSelection()
         }
+    }
+
+    private func presetLabel(_ presetID: UUID?) -> String {
+        guard let presetID else {
+            return ""
+        }
+
+        return settings.userSizePresets.first { $0.id == presetID }?.name ?? ""
     }
 
     private var editPresetSelection: Binding<UUID?> {
@@ -118,26 +139,66 @@ private struct CaptureSizePresetEditor: View {
     @Binding var preset: CaptureSizePreset
 
     var body: some View {
-        TextField("Name", text: name)
-            .help("Name this cropper size preset.")
+        SettingsRow("Name") {
+            TextField("Name", text: name)
+                .textFieldStyle(.plain)
+                .labelsHidden()
+                .font(.system(size: 12.5, weight: .medium))
+                .multilineTextAlignment(.trailing)
+                .frame(width: 180)
+                .luxelGlassFieldBackground(cornerRadius: 13)
+        }
+        .help("Name this cropper size preset.")
 
-        Stepper(value: width, in: 1...10_000, step: 10) {
+        LuxelGlassRowDivider()
+
+        SettingsRow {
             Text(
                 LuxelLocalization.format(
                     "settings.captureSize.width",
                     defaultValue: "Width %d px",
                     preset.pixelSize.width)
             )
+            .font(.system(size: 13.5, weight: .medium))
+            .foregroundStyle(.white.opacity(0.95))
+
+            Spacer(minLength: 12)
+
+            Stepper(value: width, in: 1...10_000, step: 10) {
+                Text(
+                    LuxelLocalization.format(
+                        "settings.captureSize.width",
+                        defaultValue: "Width %d px",
+                        preset.pixelSize.width)
+                )
+            }
+            .labelsHidden()
         }
         .help("Set the preset width in pixels.")
 
-        Stepper(value: height, in: 1...10_000, step: 10) {
+        LuxelGlassRowDivider()
+
+        SettingsRow {
             Text(
                 LuxelLocalization.format(
                     "settings.captureSize.height",
                     defaultValue: "Height %d px",
                     preset.pixelSize.height)
             )
+            .font(.system(size: 13.5, weight: .medium))
+            .foregroundStyle(.white.opacity(0.95))
+
+            Spacer(minLength: 12)
+
+            Stepper(value: height, in: 1...10_000, step: 10) {
+                Text(
+                    LuxelLocalization.format(
+                        "settings.captureSize.height",
+                        defaultValue: "Height %d px",
+                        preset.pixelSize.height)
+                )
+            }
+            .labelsHidden()
         }
         .help("Set the preset height in pixels.")
     }

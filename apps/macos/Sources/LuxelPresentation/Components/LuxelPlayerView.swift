@@ -7,7 +7,7 @@ struct LuxelPlayerView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> AVPlayerView {
         let view = AVPlayerView()
-        view.controlsStyle = .floating
+        view.controlsStyle = .none
         view.videoGravity = .resizeAspect
         view.player = player
         updateBackground(for: view)

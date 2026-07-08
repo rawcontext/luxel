@@ -91,7 +91,7 @@ public final class LuxelEditorModel {
         (any SpeechRecognitionAuthorizationService)?
     @ObservationIgnored let fileSystem: any FileSystem
     @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService?
-    @ObservationIgnored var playbackRequested = false
+    var playbackRequested = false
     @ObservationIgnored var playbackTimeObserver: PlaybackTimeObserver?
     @ObservationIgnored var pendingPlayerSeekTarget: TimeInterval?
     @ObservationIgnored var isPlayerSeekInProgress = false

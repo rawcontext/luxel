@@ -67,6 +67,16 @@ extension LuxelEditorModel {
         }
     }
 
+    func scrub(to seconds: TimeInterval) {
+        guard hasSource, seconds.isFinite else {
+            return
+        }
+
+        let target = min(max(seconds, 0), duration)
+        currentPlaybackTime = target
+        enqueuePlayerSeek(to: target)
+    }
+
     var playbackLoop: EditorPlaybackLoop? {
         guard let trimRange = try? TimeRange(start: trimStart, end: trimEnd) else {
             return nil

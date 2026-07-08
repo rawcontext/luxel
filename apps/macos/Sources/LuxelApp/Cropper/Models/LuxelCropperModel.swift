@@ -167,14 +167,6 @@ final class LuxelCropperModel {
 }
 
 extension LuxelCropperModel {
-    var selectionSummary: String {
-        guard let selection else {
-            return "Select Area"
-        }
-
-        return "\(selection.width)x\(selection.height)"
-    }
-
     var aspectRatioSummary: String {
         customAspectRatio.map { "\($0.width):\($0.height)" } ?? aspectRatioPreset.title
     }
@@ -473,6 +465,25 @@ extension LuxelCropperModel {
             errorMessage = nil
         } catch {
             errorMessage = errorMessage(for: error)
+        }
+    }
+
+    func setSelectionSize(width: Int, height: Int) -> Bool {
+        guard let selection, width > 0, height > 0 else {
+            return false
+        }
+
+        do {
+            let draft = try CaptureSelectionDraft(display: display, topLeftSelection: selection)
+            self.selection = try draft.replacingSelection(width: width, height: height)
+                .topLeftSelection
+            activateDisplay()
+            pushUndoState()
+            errorMessage = nil
+            return true
+        } catch {
+            errorMessage = errorMessage(for: error)
+            return false
         }
     }
 

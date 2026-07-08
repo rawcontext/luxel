@@ -1,30 +1,37 @@
 import LuxelCore
+import LuxelPresentation
 import SwiftUI
 
 struct CommandLineToolSettingsSection: View {
     @Bindable var model: LuxelMenuModel
 
     var body: some View {
-        Section("Command Line Tool") {
+        SettingsIslandGroup("Command Line Tool") {
             if let install = model.settings.commandLineToolInstall {
-                LabeledContent("Installed Link") {
+                SettingsRow("Installed Link") {
                     Text(install.linkURL.path)
+                        .font(.system(size: 12.5, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55))
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .textSelection(.enabled)
                 }
+
+                LuxelGlassRowDivider()
             }
 
-            LabeledContent("Install Location") {
-                HStack {
+            SettingsRow("Install Location") {
+                HStack(spacing: 8) {
                     Button {
                         model.installCommandLineTool()
                     } label: {
-                        Label(
+                        SettingsCapsuleButtonLabel(
                             model.settings.commandLineToolInstall == nil
                                 ? "Install luxel" : "Change Location",
-                            systemImage: "terminal")
+                            systemImage: "terminal"
+                        )
                     }
+                    .buttonStyle(.plain)
                     .help(
                         LuxelLocalization.format(
                             "settings.commandLine.installDestinationHelp",
@@ -36,12 +43,14 @@ struct CommandLineToolSettingsSection: View {
                         Button {
                             model.repairCommandLineToolInstall()
                         } label: {
-                            Label(
+                            SettingsCapsuleButtonLabel(
                                 LuxelLocalization.string(
                                     "settings.commandLine.repair",
                                     defaultValue: "Repair"),
-                                systemImage: "arrow.triangle.2.circlepath")
+                                systemImage: "arrow.triangle.2.circlepath"
+                            )
                         }
+                        .buttonStyle(.plain)
                         .help(
                             LuxelLocalization.string(
                                 "settings.commandLine.repairHelp",
@@ -53,21 +62,15 @@ struct CommandLineToolSettingsSection: View {
             }
             .help("Install the command line helper for terminal automation.")
 
-            LabeledContent("Shell") {
-                Picker(selection: $model.settings.commandLineShell) {
-                    ForEach(CommandLineShell.allCases) { shell in
-                        Text(shell.displayName).tag(shell)
-                    }
-                } label: {
-                    Text(
-                        LuxelLocalization.string(
-                            "settings.commandLine.shell",
-                            defaultValue: "Shell")
-                    )
+            LuxelGlassRowDivider()
+
+            SettingsRow("Shell") {
+                SettingsMenuPicker(
+                    selection: $model.settings.commandLineShell,
+                    options: Array(CommandLineShell.allCases)
+                ) { shell in
+                    shell.displayName
                 }
-                .labelsHidden()
-                .pickerStyle(.menu)
-                .frame(width: 140)
                 .help(
                     LuxelLocalization.string(
                         "settings.commandLine.shellHelp",
@@ -76,16 +79,20 @@ struct CommandLineToolSettingsSection: View {
                 )
             }
 
-            LabeledContent("Shell PATH") {
+            LuxelGlassRowDivider()
+
+            SettingsRow("Shell PATH") {
                 Button {
                     model.copyCommandLinePathSetupCommand()
                 } label: {
-                    Label(
+                    SettingsCapsuleButtonLabel(
                         LuxelLocalization.string(
                             "settings.commandLine.copyPathCommand",
                             defaultValue: "Copy PATH Command"),
-                        systemImage: "doc.on.doc")
+                        systemImage: "doc.on.doc"
+                    )
                 }
+                .buttonStyle(.plain)
                 .help(
                     LuxelLocalization.string(
                         "settings.commandLine.copyPathCommandHelp",
@@ -95,9 +102,12 @@ struct CommandLineToolSettingsSection: View {
             }
 
             if let installStatus = model.commandLineToolInstallStatus {
+                LuxelGlassRowDivider()
+
                 Label(installStatus.message, systemImage: installStatus.systemImage)
                     .font(.caption)
                     .foregroundStyle(installStatus.tint)
+                    .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
             }
         }
     }

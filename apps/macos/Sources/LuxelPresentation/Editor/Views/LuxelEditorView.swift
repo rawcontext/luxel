@@ -15,19 +15,66 @@ public struct LuxelEditorView: View {
 
 extension LuxelEditorView {
     public var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 12) {
             preview
 
-            Divider()
-
             controls
-                .frame(width: 340)
-                .background(.thinMaterial)
+                .frame(width: 280)
         }
+        .padding(.horizontal, 12)
+        .padding(.top, 6)
+        .padding(.bottom, 12)
         .frame(minWidth: 900, minHeight: 560)
+        .tint(.white)
+        .preferredColorScheme(.dark)
+        .navigationTitle(model.source?.fileURL.lastPathComponent ?? "Luxel")
+        .background {
+            LuxelGlassWindowBackground()
+                .overlay(LuxelGlassWindowChromeConfigurator())
+        }
     }
 
+    @ViewBuilder
     private var preview: some View {
+        if model.hasAudioOnlySource {
+            audioStage
+        } else {
+            videoStage
+        }
+    }
+
+    private var audioStage: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                recordingNavigationButtons
+
+                Spacer(minLength: 0)
+            }
+
+            AudioTranscriptPreview(model: model)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .overlay {
+                    if !showsTranscriptContent {
+                        ContentUnavailableView("Audio Recording", systemImage: "waveform")
+                            .foregroundStyle(.secondary)
+                            .allowsHitTesting(false)
+                    }
+
+                    if case .loading = model.status {
+                        ProgressView()
+                            .controlSize(.large)
+                    }
+                }
+
+            if model.hasSource {
+                EditorPlaybackCapsule(model: model)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .frame(minWidth: 540, maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var videoStage: some View {
         ZStack {
             if model.usesAlphaPreviewBackground {
                 CheckerboardBackground()
@@ -42,16 +89,6 @@ extension LuxelEditorView {
                     usesAlphaBackground: model.usesAlphaPreviewBackground
                 )
                 .background(model.usesAlphaPreviewBackground ? .clear : .black)
-            } else if model.hasAudioOnlySource {
-                LuxelPlayerView(
-                    player: model.player,
-                    usesAlphaBackground: false
-                )
-                .background(.black)
-
-                ContentUnavailableView("Audio Recording", systemImage: "waveform")
-                    .foregroundStyle(.secondary)
-                    .allowsHitTesting(false)
             } else {
                 ContentUnavailableView("No Recording", systemImage: "film")
                     .foregroundStyle(.secondary)
@@ -64,12 +101,25 @@ extension LuxelEditorView {
 
             AudioTranscriptPreview(model: model)
         }
-        .frame(minWidth: 560, maxWidth: .infinity, maxHeight: .infinity)
+        .frame(minWidth: 540, maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+        }
         .overlay(alignment: .topLeading) {
-            recordingNavigationControls
+            recordingNavigationButtons
+                .padding(12)
         }
         .overlay(alignment: .topTrailing) {
             transcriptPreviewControls
+        }
+        .overlay(alignment: .bottom) {
+            if model.hasSource {
+                EditorPlaybackCapsule(model: model)
+                    .padding(.horizontal, 48)
+                    .padding(.bottom, 14)
+            }
         }
         .contextMenu {
             Button("Copy Frame") {
@@ -84,47 +134,62 @@ extension LuxelEditorView {
         }
     }
 
-    private var recordingNavigationControls: some View {
-        GlassEffectContainer(spacing: 6) {
-            HStack(spacing: 6) {
-                recordingNavigationButton(
-                    title: "Back",
-                    systemImage: "chevron.left",
-                    isEnabled: model.canNavigateToNewerRecording
-                ) {
-                    await model.navigateToNewerRecording()
-                }
-                .help("Open newer recording")
+    private var showsTranscriptContent: Bool {
+        model.shouldShowSpeechRecognitionPrompt
+            || model.shouldShowTranscriptProgress
+            || model.visibleTranscript != nil
+    }
 
-                recordingNavigationButton(
-                    title: "Forward",
-                    systemImage: "chevron.right",
-                    isEnabled: model.canNavigateToOlderRecording
-                ) {
-                    await model.navigateToOlderRecording()
-                }
-                .help("Open older recording")
+    private var recordingNavigationButtons: some View {
+        HStack(spacing: 6) {
+            recordingNavigationButton(
+                title: "Back",
+                systemImage: "chevron.left",
+                isEnabled: model.canNavigateToNewerRecording
+            ) {
+                await model.navigateToNewerRecording()
             }
+            .help("Open newer recording")
+
+            recordingNavigationButton(
+                title: "Forward",
+                systemImage: "chevron.right",
+                isEnabled: model.canNavigateToOlderRecording
+            ) {
+                await model.navigateToOlderRecording()
+            }
+            .help("Open older recording")
         }
-        .controlSize(.small)
-        .padding(12)
     }
 
     @ViewBuilder
     private var transcriptPreviewControls: some View {
         if model.canShowVideoTranscriptToggle {
-            GlassEffectContainer(spacing: 6) {
-                Button {
-                    model.toggleTranscriptPanel()
-                } label: {
-                    Label(transcriptPreviewButtonTitle, systemImage: "text.quote")
-                        .labelStyle(.titleAndIcon)
-                        .padding(.horizontal, 4)
+            Button {
+                model.toggleTranscriptPanel()
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "text.quote")
+                        .font(.system(size: 11, weight: .medium))
+
+                    Text(transcriptPreviewButtonTitle)
+                        .font(.system(size: 12, weight: .medium))
                 }
-                .buttonStyle(.glass)
-                .controlSize(.small)
-                .help(transcriptPreviewButtonHelp)
+                .foregroundStyle(.white.opacity(0.85))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background {
+                    Capsule(style: .continuous)
+                        .fill(EditorStageChromeStyle.fill)
+                        .overlay {
+                            Capsule(style: .continuous)
+                                .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                        }
+                }
+                .contentShape(Capsule(style: .continuous))
             }
+            .buttonStyle(.plain)
+            .help(transcriptPreviewButtonHelp)
             .padding(12)
         }
     }
@@ -153,17 +218,27 @@ extension LuxelEditorView {
             }
         } label: {
             Image(systemName: systemImage)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(isEnabled ? 0.8 : 0.3))
+                .frame(width: 32, height: 32)
+                .background {
+                    Circle()
+                        .fill(EditorStageChromeStyle.fill)
+                        .overlay {
+                            Circle()
+                                .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                        }
+                }
+                .contentShape(Circle())
                 .accessibilityLabel(title)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.plain)
         .disabled(!isEnabled)
     }
 
     private var controls: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 10) {
                 header
                 exportControls
                 if model.showsExportProgressPanel {
@@ -176,33 +251,39 @@ extension LuxelEditorView {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
         }
+        .scrollIndicators(.hidden)
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let source = model.source {
-                editableFilenameField(source)
+        LuxelGlassIsland(cornerRadius: 18) {
+            VStack(alignment: .leading, spacing: 10) {
+                if let source = model.source {
+                    editableFilenameField(source)
 
-                LazyVGrid(columns: metadataColumns, alignment: .leading, spacing: 8) {
-                    metadataField("Length", model.formatTime(source.duration))
-                    if source.hasVideo {
-                        metadataField("Dimensions", "\(source.pixelSize.width)x\(source.pixelSize.height)")
-                    } else {
-                        metadataField("Type", "Audio")
-                    }
-                    metadataField("Audio", source.hasAudio ? "Yes" : "No")
+                    LazyVGrid(columns: metadataColumns, alignment: .leading, spacing: 8) {
+                        metadataField("Length", model.formatTime(source.duration))
+                        if source.hasVideo {
+                            metadataField(
+                                "Dimensions", "\(source.pixelSize.width)x\(source.pixelSize.height)")
+                        } else {
+                            metadataField("Type", "Audio")
+                        }
+                        metadataField("Audio", source.hasAudio ? "Yes" : "No")
 
-                    if source.hasVideo, source.hasAlpha {
-                        metadataField("Alpha", "Yes")
+                        if source.hasVideo, source.hasAlpha {
+                            metadataField("Alpha", "Yes")
+                        }
                     }
+                } else {
+                    Text("No recording loaded")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-            } else {
-                Text("No recording loaded")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -270,12 +351,12 @@ extension LuxelEditorView {
     ) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 10.5))
+                .foregroundStyle(.white.opacity(0.45))
 
             Text(value)
-                .font(.caption)
-                .foregroundStyle(.primary)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
                 .lineLimit(lineLimit)
                 .truncationMode(.middle)
                 .monospacedDigit()
@@ -316,27 +397,27 @@ extension LuxelEditorView {
     }
 
     private var exportControls: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            editorCard {
-                exportActions
-            }
+        VStack(alignment: .leading, spacing: 10) {
+            exportActionButtons
 
-            editorDisclosureCard("Export Format") {
-                VStack(alignment: .leading, spacing: 14) {
+            editorDisclosureCard("Format") {
+                VStack(alignment: .leading, spacing: 12) {
                     controlRow("Format") {
                         formatMenu
                     }
 
                     if model.canChooseQuality {
-                        qualityPicker
+                        controlRow("Quality") {
+                            qualityMenu
+                        }
                     }
 
                     if model.showsGIFOptions {
-                        Divider()
+                        LuxelGlassRowDivider()
                         gifControls
                     }
 
-                    Divider()
+                    LuxelGlassRowDivider()
 
                     audioExportControls
                 }
@@ -355,13 +436,14 @@ extension LuxelEditorView {
                 }
             }
         } label: {
-            Label(
-                model.selectedFormatSummary, systemImage: model.hasAudioOnlySource ? "waveform" : "video"
+            LuxelGlassMenuLabel(
+                model.selectedFormatSummary,
+                systemImage: model.hasAudioOnlySource ? "waveform" : "video"
             )
-            .lineLimit(1)
-            .frame(maxWidth: .infinity)
         }
         .menuStyle(.button)
+        .buttonStyle(.plain)
+        .fixedSize()
     }
 
     private func formatMenuTitle(for format: ExportFormat) -> String {
@@ -369,84 +451,77 @@ extension LuxelEditorView {
         return "\(format.prettyName)  \(estimate)"
     }
 
-    private var qualityPicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Quality")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
-
-            Picker("Quality", selection: qualitySelection) {
-                ForEach(model.availableQualities, id: \.self) { quality in
-                    Text(quality.label).tag(quality)
+    private var qualityMenu: some View {
+        Menu {
+            ForEach(model.availableQualities, id: \.self) { quality in
+                Button {
+                    qualitySelection.wrappedValue = quality
+                } label: {
+                    if model.quality == quality {
+                        Label(quality.label, systemImage: "checkmark")
+                    } else {
+                        Text(quality.label)
+                    }
                 }
             }
-            .labelsHidden()
-            .pickerStyle(.segmented)
+        } label: {
+            LuxelGlassMenuLabel(model.quality.label)
         }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .fixedSize()
+        .accessibilityLabel("Quality")
     }
 
     private var audioExportControls: some View {
         VStack(alignment: .leading, spacing: 10) {
             Toggle("Include Audio", isOn: includeAudioSelection)
+                .toggleStyle(LuxelGlassCheckboxToggleStyle())
                 .disabled(!model.canToggleAudioInclusion)
 
             if model.includesAudio {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .firstTextBaseline) {
                         Text("Level")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(.white.opacity(0.55))
 
                         Spacer()
 
                         Text(model.audioVolumePercentSummary)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.55))
                     }
 
                     Slider(
                         value: audioVolumeSelection,
                         in: 0...2
                     )
+                    .controlSize(.small)
                     .disabled(!model.canAdjustAudioMix)
 
                     Toggle("Normalize Audio", isOn: normalizeAudioSelection)
+                        .toggleStyle(LuxelGlassCheckboxToggleStyle())
                         .disabled(!model.canAdjustAudioMix)
                 }
-                .padding(.leading, 2)
             }
         }
-    }
-
-    private var exportActions: some View {
-        exportActionButtons
     }
 
     private var exportActionButtons: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
-                saveOriginalButton
-                exportButton
-            }
-
-            VStack(spacing: 8) {
-                saveOriginalButton
-                exportButton
-            }
+        HStack(spacing: 8) {
+            saveOriginalButton
+            exportButton
         }
-        .controlSize(.large)
     }
 
     private var saveOriginalButton: some View {
         Button {
             model.saveOriginal()
         } label: {
-            exportActionLabel("Save Original", systemImage: "doc.on.doc")
+            Text("Save Original")
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(LuxelGlassPillButtonStyle())
         .disabled(!model.canSaveOriginal)
     }
 
@@ -454,174 +529,79 @@ extension LuxelEditorView {
         Button {
             model.startExport()
         } label: {
-            exportActionLabel(
-                model.isExporting ? "Exporting" : "Export",
-                systemImage: "square.and.arrow.down"
-            )
+            HStack(spacing: 6) {
+                Image(systemName: "square.and.arrow.down")
+                    .font(.system(size: 11, weight: .semibold))
+
+                Text(model.isExporting ? "Exporting" : "Export")
+            }
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(LuxelGlassPillButtonStyle(isProminent: true))
         .disabled(!model.canExport)
     }
 
-    private func exportActionLabel(
-        _ title: String,
-        systemImage: String
-    ) -> some View {
-        Label(title, systemImage: systemImage)
-            .lineLimit(1)
-            .minimumScaleFactor(0.82)
-            .frame(minWidth: 0, maxWidth: .infinity)
-    }
-
     private var gifControls: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Picker("Loop", selection: gifLoopModeSelection) {
-                ForEach(EditorGIFLoopModeKind.allCases, id: \.self) { kind in
-                    Text(kind.label).tag(kind)
+        VStack(alignment: .leading, spacing: 12) {
+            controlRow("Loop") {
+                editorMenuPicker(
+                    selection: gifLoopModeSelection,
+                    options: Array(EditorGIFLoopModeKind.allCases)
+                ) { kind in
+                    kind.label
                 }
+                .accessibilityLabel("Loop")
             }
-            .pickerStyle(.menu)
 
             if model.gifLoopModeKind == .count {
-                LabeledContent("Loop Count") {
+                controlRow("Loop Count") {
                     Stepper(value: gifLoopCountSelection, in: 1...100) {
                         Text("\(model.gifLoopCount)x")
-                            .monospacedDigit()
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.9))
                     }
                 }
             }
 
-            Picker("Dithering", selection: gifDitheringSelection) {
-                ForEach(GIFDitheringMode.allCases, id: \.self) { mode in
-                    Text(gifDitheringLabel(mode)).tag(mode)
+            controlRow("Dithering") {
+                editorMenuPicker(
+                    selection: gifDitheringSelection,
+                    options: Array(GIFDitheringMode.allCases)
+                ) { mode in
+                    gifDitheringLabel(mode)
                 }
+                .accessibilityLabel("Dithering")
             }
-            .pickerStyle(.menu)
         }
     }
 
-    private var exportProgressPanel: some View {
-        GlassPanel {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    if showsExportPanelStatusIcon {
-                        Image(systemName: model.exportPanelSystemImage)
-                            .foregroundStyle(exportPanelTint)
-                            .frame(width: 18)
-                    }
-
-                    Text(model.exportPanelTitle)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-
-                    Spacer(minLength: 8)
-                }
-
-                Text(model.exportPanelMessage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-
-                if model.exportJobs.count > 1, model.isExporting || model.exportProgress != nil {
-                    ProgressView(value: model.exportProgressValue)
-                        .progressViewStyle(.linear)
-                }
-
-                if !model.exportJobs.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(model.exportJobs) { job in
-                            exportJobRow(job)
-                        }
+    private func editorMenuPicker<Option: Hashable>(
+        selection: Binding<Option>,
+        options: [Option],
+        optionLabel: @escaping (Option) -> String
+    ) -> some View {
+        Menu {
+            ForEach(options, id: \.self) { option in
+                Button {
+                    selection.wrappedValue = option
+                } label: {
+                    if option == selection.wrappedValue {
+                        Label(optionLabel(option), systemImage: "checkmark")
+                    } else {
+                        Text(optionLabel(option))
                     }
                 }
-
-                exportProgressActions
             }
-        }
-    }
-
-    @ViewBuilder
-    private var exportProgressActions: some View {
-        HStack(spacing: 8) {
-            if model.canCancelExport {
-                Button {
-                    model.cancelExport()
-                } label: {
-                    Label("Cancel", systemImage: "xmark.circle")
-                }
-                .help("Cancel the export in progress.")
-            }
-
-            if let exportedURL = model.exportedURL {
-                Button {
-                    model.openExportedFile()
-                } label: {
-                    Label("Open", systemImage: "arrow.up.forward.app")
-                }
-                .help("Open the exported file.")
-
-                Menu {
-                    exportedFileMenuItems(exportedURL: exportedURL)
-                } label: {
-                    Label("More", systemImage: "ellipsis.circle")
-                }
-                .help("More exported file actions.")
-            }
-
-            if model.canRetryExport {
-                Button {
-                    model.retryExport()
-                } label: {
-                    Label("Retry", systemImage: "arrow.clockwise")
-                }
-                .help("Run the export again.")
-            }
-        }
-        .labelStyle(.titleAndIcon)
-    }
-
-    @ViewBuilder
-    private func exportedFileMenuItems(exportedURL: URL) -> some View {
-        Button {
-            model.revealExportedFile()
         } label: {
-            Label("Reveal in Finder", systemImage: "magnifyingglass")
+            LuxelGlassMenuLabel(optionLabel(selection.wrappedValue))
         }
-
-        Button {
-            model.saveExportedFileAs()
-        } label: {
-            Label("Save a Copy...", systemImage: "tray.and.arrow.down")
-        }
-
-        Button {
-            model.openExportedFileWithApplication()
-        } label: {
-            Label("Open With...", systemImage: "square.grid.3x3")
-        }
-
-        Divider()
-
-        Button {
-            model.copyExportedFile()
-        } label: {
-            Label("Copy File", systemImage: "doc.on.clipboard")
-        }
-
-        Button {
-            model.copyExportedFilePath()
-        } label: {
-            Label("Copy Path", systemImage: "doc.text")
-        }
-
-        ShareLink(item: exportedURL) {
-            Label("Share...", systemImage: "square.and.arrow.up")
-        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .fixedSize()
     }
 
     private var timelineControls: some View {
         editorDisclosureCard("Timeline") {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 9) {
                 timelineSliderRow(
                     "Start",
                     value: model.formatTime(model.trimStart),
@@ -638,34 +618,42 @@ extension LuxelEditorView {
                     )
                 )
 
-                LabeledContent("Output Duration", value: model.outputDurationSummary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack {
+                    Text("Output Duration")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(.white.opacity(0.5))
+
+                    Spacer()
+
+                    Text(model.outputDurationSummary)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
             }
         }
     }
 
     private var outputControls: some View {
         editorDisclosureCard("Output") {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 12) {
                 if model.hasVideoSource {
                     controlRow("Size") {
-                        Picker("Size", selection: sizePresetSelection) {
-                            Text("Custom").tag(EditorSizePreset?.none)
-                            ForEach(LuxelEditorModel.sizePresets, id: \.self) { preset in
-                                Text(preset.label).tag(EditorSizePreset?.some(preset))
-                            }
+                        editorMenuPicker(
+                            selection: sizePresetSelection,
+                            options: [EditorSizePreset?.none]
+                                + LuxelEditorModel.sizePresets.map(EditorSizePreset?.some)
+                        ) { preset in
+                            preset?.label ?? "Custom"
                         }
-                        .labelsHidden()
-                        .pickerStyle(.menu)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .accessibilityLabel("Size")
                     }
 
                     controlRow("Fit") {
                         Toggle("Crop to Fill", isOn: shouldCropSelection)
+                            .toggleStyle(LuxelGlassCheckboxToggleStyle())
                     }
 
-                    Divider()
+                    LuxelGlassRowDivider()
 
                     controlRow("Width") {
                         integerStepperField(
@@ -700,7 +688,7 @@ extension LuxelEditorView {
                         )
                     }
 
-                    Divider()
+                    LuxelGlassRowDivider()
                 }
 
                 controlRow("Speed") {
@@ -714,32 +702,46 @@ extension LuxelEditorView {
                     )
                 }
 
-                Divider()
+                LuxelGlassRowDivider()
 
                 controlRow("Folder") {
                     Button {
                         model.chooseOutputDirectory()
                     } label: {
-                        Label {
+                        HStack(spacing: 6) {
+                            Image(systemName: "folder")
+                                .font(.system(size: 11, weight: .medium))
+
                             Text(model.outputDirectorySummary)
+                                .font(.system(size: 12, weight: .medium))
                                 .lineLimit(1)
                                 .truncationMode(.middle)
-                        } icon: {
-                            Image(systemName: "folder")
                         }
+                        .foregroundStyle(.white.opacity(0.92))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background {
+                            Capsule(style: .continuous)
+                                .fill(LuxelGlassTheme.controlFill)
+                                .overlay {
+                                    Capsule(style: .continuous)
+                                        .strokeBorder(
+                                            LinearGradient(
+                                                colors: [LuxelGlassTheme.controlHighlight, .clear],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                }
+                        }
+                        .contentShape(Capsule(style: .continuous))
                     }
+                    .buttonStyle(.plain)
                     .help(model.outputDirectory.path)
                 }
             }
         }
-    }
-
-    private func editorCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        GlassPanel {
-            content()
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func editorDisclosureCard<Content: View>(
@@ -753,16 +755,15 @@ extension LuxelEditorView {
         _ label: String,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        HStack(alignment: .center, spacing: 14) {
+        HStack(alignment: .center, spacing: 12) {
             Text(label)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.9))
                 .lineLimit(1)
-                .frame(width: 88, alignment: .leading)
+
+            Spacer(minLength: 8)
 
             content()
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -771,21 +772,21 @@ extension LuxelEditorView {
         value: String,
         slider: SliderContent
     ) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(label)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.9))
 
                 Spacer()
 
                 Text(value)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.7))
             }
 
             slider
+                .controlSize(.small)
         }
     }
 
@@ -807,9 +808,11 @@ extension LuxelEditorView {
     ) -> some View {
         Stepper {
             TextField(title, value: value, format: .number)
-                .frame(width: 72)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12, design: .monospaced))
+                .frame(width: 56)
                 .multilineTextAlignment(.trailing)
-                .monospacedDigit()
+                .luxelGlassFieldBackground()
         } onIncrement: {
             value.wrappedValue = min(
                 range.upperBound, value.wrappedValue + currentStep(step, shiftedStep))
@@ -830,9 +833,11 @@ extension LuxelEditorView {
     ) -> some View {
         Stepper {
             TextField(title, value: value, format: .number.precision(.fractionLength(1)))
-                .frame(width: 58)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12, design: .monospaced))
+                .frame(width: 42)
                 .multilineTextAlignment(.trailing)
-                .monospacedDigit()
+                .luxelGlassFieldBackground()
         } onIncrement: {
             value.wrappedValue = roundedSpeed(
                 min(range.upperBound, value.wrappedValue + currentStep(step, shiftedStep)))
@@ -857,229 +862,5 @@ extension LuxelEditorView {
         }
 
         return .secondary
-    }
-
-    private var exportPanelTint: Color {
-        switch model.status {
-        case .exported, .exportedBatch, .saved:
-            .green
-        case .failed:
-            .red
-        case .canceled:
-            .secondary
-        default:
-            .accentColor
-        }
-    }
-
-    private func exportJobRow(_ job: ExportJobSnapshot) -> some View {
-        HStack(spacing: 8) {
-            if showsExportJobStatusIcon(job) {
-                Image(systemName: exportJobSystemImage(job))
-                    .foregroundStyle(exportJobTint(job))
-                    .frame(width: 18)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(job.format.prettyName)
-                        .font(.caption)
-                        .fontWeight(.semibold)
-
-                    Spacer(minLength: 8)
-
-                    Text(job.statusSummary)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-
-                ProgressView(value: job.progressValue)
-                    .progressViewStyle(.linear)
-            }
-
-            if job.fileURL != nil {
-                Button {
-                    model.revealExportJob(job)
-                } label: {
-                    Label("Reveal", systemImage: "magnifyingglass")
-                }
-                .labelStyle(.iconOnly)
-                .help("Reveal in Finder")
-            }
-        }
-    }
-
-    private func exportJobSystemImage(_ job: ExportJobSnapshot) -> String {
-        switch job.progress?.phase {
-        case .preparing, .exporting:
-            "arrow.triangle.2.circlepath"
-        case .completed:
-            "checkmark.circle"
-        case .canceled:
-            "xmark.circle"
-        case .none:
-            "clock"
-        }
-    }
-
-    private var showsExportPanelStatusIcon: Bool {
-        model.exportPanelSystemImage != "checkmark.circle"
-    }
-
-    private func showsExportJobStatusIcon(_ job: ExportJobSnapshot) -> Bool {
-        job.progress?.phase != .completed
-    }
-
-    private func exportJobTint(_ job: ExportJobSnapshot) -> Color {
-        switch job.progress?.phase {
-        case .completed:
-            .green
-        case .canceled:
-            .secondary
-        default:
-            .accentColor
-        }
-    }
-
-    private func formatSelectionBinding(_ format: ExportFormat) -> Binding<Bool> {
-        Binding {
-            model.selectedFormats.contains(format)
-        } set: { isSelected in
-            model.setFormatSelection(format, isSelected: isSelected)
-        }
-    }
-
-    private var includeAudioSelection: Binding<Bool> {
-        Binding {
-            model.includesAudio
-        } set: { includesAudio in
-            model.setIncludesAudio(includesAudio)
-        }
-    }
-
-    private var audioVolumeSelection: Binding<Double> {
-        Binding {
-            model.audioVolume
-        } set: { volume in
-            model.setAudioVolume(volume)
-        }
-    }
-
-    private var normalizeAudioSelection: Binding<Bool> {
-        Binding {
-            model.normalizeAudio
-        } set: { normalizeAudio in
-            model.setNormalizeAudio(normalizeAudio)
-        }
-    }
-
-    private var qualitySelection: Binding<ExportQuality> {
-        Binding {
-            model.quality
-        } set: { quality in
-            model.setQuality(quality)
-        }
-    }
-
-    private var gifLoopModeSelection: Binding<EditorGIFLoopModeKind> {
-        Binding {
-            model.gifLoopModeKind
-        } set: { kind in
-            model.setGIFLoopModeKind(kind)
-        }
-    }
-
-    private var gifLoopCountSelection: Binding<Int> {
-        Binding {
-            model.gifLoopCount
-        } set: { count in
-            model.setGIFLoopCount(count)
-        }
-    }
-
-    private var gifDitheringSelection: Binding<GIFDitheringMode> {
-        Binding {
-            model.gifDithering
-        } set: { mode in
-            model.setGIFDithering(mode)
-        }
-    }
-
-    private var trimStartSelection: Binding<Double> {
-        Binding {
-            model.trimStart
-        } set: { value in
-            model.setTrimStart(value)
-        }
-    }
-
-    private var trimEndSelection: Binding<Double> {
-        Binding {
-            model.trimEnd
-        } set: { value in
-            model.setTrimEnd(value)
-        }
-    }
-
-    private var sizePresetSelection: Binding<EditorSizePreset?> {
-        Binding {
-            model.sizePreset
-        } set: { preset in
-            model.setSizePreset(preset)
-        }
-    }
-
-    private var outputWidthSelection: Binding<Int> {
-        Binding {
-            model.outputWidth
-        } set: { value in
-            model.setOutputWidth(value)
-        }
-    }
-
-    private var outputHeightSelection: Binding<Int> {
-        Binding {
-            model.outputHeight
-        } set: { value in
-            model.setOutputHeight(value)
-        }
-    }
-
-    private var frameRateSelection: Binding<Int> {
-        Binding {
-            model.frameRate
-        } set: { value in
-            model.setFrameRate(value)
-        }
-    }
-
-    private var playbackSpeedSelection: Binding<Double> {
-        Binding {
-            model.playbackSpeedValue
-        } set: { value in
-            model.setPlaybackSpeed(value)
-        }
-    }
-
-    private var shouldCropSelection: Binding<Bool> {
-        Binding {
-            model.shouldCrop
-        } set: { shouldCrop in
-            model.setShouldCrop(shouldCrop)
-        }
-    }
-
-    private func gifDitheringLabel(_ mode: GIFDitheringMode) -> String {
-        switch mode {
-        case .auto:
-            "Auto"
-        case .none:
-            "None"
-        case .ordered:
-            "Ordered"
-        case .diffusion:
-            "Diffusion"
-        }
     }
 }

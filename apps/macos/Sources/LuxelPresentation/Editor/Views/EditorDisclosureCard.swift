@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct EditorDisclosureCard<Content: View>: View {
-    @State private var isExpanded = false
+    @State private var isExpanded = true
 
     private let title: String
     private let content: Content
@@ -15,19 +15,10 @@ struct EditorDisclosureCard<Content: View>: View {
     }
 
     var body: some View {
-        cardContainer
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private var cardContainer: some View {
-        if #available(macOS 26.0, *) {
+        LuxelGlassIsland(cornerRadius: 18) {
             cardContent
-                .glassEffect(in: .rect(cornerRadius: 8))
-        } else {
-            cardContent
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var cardContent: some View {
@@ -38,32 +29,32 @@ struct EditorDisclosureCard<Content: View>: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    SectionLabel(title)
+                    Text(title)
+                        .font(.system(size: 11, weight: .semibold))
+                        .kerning(0.8)
+                        .textCase(.uppercase)
+                        .foregroundStyle(.white.opacity(0.45))
 
                     Spacer(minLength: 8)
 
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .rotationEffect(.degrees(isExpanded ? 0 : -90))
                 }
-                .padding(.top, 16)
-                .padding(.horizontal, 16)
-                .padding(.bottom, isExpanded ? 12 : 16)
+                .padding(.top, 12)
+                .padding(.horizontal, 14)
+                .padding(.bottom, isExpanded ? 10 : 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
             if isExpanded {
-                Divider()
-                    .padding(.horizontal, 16)
-
                 content
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 16)
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 12)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

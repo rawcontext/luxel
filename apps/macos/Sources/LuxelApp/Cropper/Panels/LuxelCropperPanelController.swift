@@ -160,6 +160,7 @@ final class LuxelCropperPanelController {
                     cameraConfiguration: presentation.cameraConfiguration,
                     quickRecordingConfiguration: presentation.quickRecordingConfiguration,
                     showsNotificationReminder: presentation.showsNotificationReminder,
+                    toolbarBottomInset: max(0, screen.visibleFrame.minY - screen.frame.minY),
                     onCameraSelectionChange: presentation.onCameraSelectionChange,
                     onCameraPreviewStyleChange: presentation.onCameraPreviewStyleChange,
                     onNotificationReminderDismiss: presentation.onNotificationReminderDismiss,

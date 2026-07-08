@@ -3,27 +3,8 @@ import LuxelCore
 import SwiftUI
 
 extension View {
-    func nativeTooltip(_ text: String) -> some View {
-        help(text)
-            .background(NativeTooltipView(text: text))
-    }
-
     func appKitCursor(_ cursor: NSCursor) -> some View {
         background(CursorRectView(cursor: cursor))
-    }
-}
-
-private struct NativeTooltipView: NSViewRepresentable {
-    let text: String
-
-    func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        view.toolTip = text
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        nsView.toolTip = text
     }
 }
 

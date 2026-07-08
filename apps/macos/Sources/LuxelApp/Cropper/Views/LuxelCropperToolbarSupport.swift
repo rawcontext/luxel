@@ -144,14 +144,6 @@ extension LuxelCropperView {
         return "Choose a camera overlay for the recording."
     }
 
-    var selectionSummaryHelp: String {
-        guard let selection = model.selection else {
-            return "Drag to select the area to record."
-        }
-
-        return "Selected area: \(selection.width) by \(selection.height) pixels."
-    }
-
     var recordAudioHelp: String {
         if !model.canToggleRecordAudio {
             return "Microphone permission is required to record mic audio."
@@ -170,32 +162,8 @@ extension LuxelCropperView {
         return model.primaryActionHelp
     }
 
-    var compactCountdownToolbarText: String {
-        "Delay \(compactDurationSummary(model.countdownDuration))"
-    }
-
-    var aspectRatioToolbarText: String {
-        "Aspect \(model.aspectRatioSummary)"
-    }
-
-    var compactStopAfterToolbarText: String {
-        "Stop \(compactDurationSummary(model.stopAfterDuration))"
-    }
-
     var microphoneToolbarText: String {
         model.recordsAudio ? "Mic On" : "Mic Off"
-    }
-
-    private func compactDurationSummary(_ duration: TimeInterval?) -> String {
-        guard let duration else {
-            return "Off"
-        }
-
-        if duration < 60 {
-            return "\(Int(duration))s"
-        }
-
-        return "\(Int(duration / 60))m"
     }
 
     private func countdownHelp(title: String, duration: TimeInterval?) -> String {

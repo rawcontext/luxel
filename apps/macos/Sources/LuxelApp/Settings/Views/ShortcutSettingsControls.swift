@@ -1,5 +1,6 @@
 import AppKit
 import LuxelCore
+import LuxelPresentation
 import SwiftUI
 
 struct LuxelShortcutSettingsCommand: Identifiable {
@@ -20,53 +21,38 @@ struct LuxelShortcutSettingsCommand: Identifiable {
     }
 }
 
-struct LuxelShortcutSearchField: NSViewRepresentable {
+struct LuxelShortcutSearchField: View {
     @Binding var text: String
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text)
-    }
+    var body: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.4))
 
-    func makeNSView(context: Context) -> NSSearchField {
-        let field = NSSearchField()
-        field.placeholderString = "Search shortcuts"
-        field.delegate = context.coordinator
-        field.target = context.coordinator
-        field.action = #selector(Coordinator.searchFieldChanged(_:))
-        field.setAccessibilityLabel("Search shortcuts")
-        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return field
-    }
-
-    func updateNSView(_ nsView: NSSearchField, context: Context) {
-        context.coordinator.text = $text
-
-        if nsView.stringValue != text {
-            nsView.stringValue = text
+            TextField("Search shortcuts", text: $text)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.92))
         }
-    }
-
-    final class Coordinator: NSObject, NSSearchFieldDelegate {
-        var text: Binding<String>
-
-        init(text: Binding<String>) {
-            self.text = text
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.black.opacity(0.22))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.black.opacity(0.3), .white.opacity(0.06)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+                }
         }
-
-        @MainActor
-        @objc func searchFieldChanged(_ sender: NSSearchField) {
-            text.wrappedValue = sender.stringValue
-        }
-
-        @MainActor
-        func controlTextDidChange(_ notification: Notification) {
-            guard let field = notification.object as? NSSearchField else {
-                return
-            }
-
-            text.wrappedValue = field.stringValue
-        }
+        .accessibilityLabel("Search shortcuts")
     }
 }
 
@@ -86,7 +72,7 @@ struct LuxelShortcutSettingsTable: View {
             } else {
                 ForEach(Array(commands.enumerated()), id: \.element.id) { index, command in
                     if index > 0 {
-                        Divider()
+                        LuxelGlassRowDivider()
                     }
 
                     LuxelShortcutSettingsRow(
@@ -99,10 +85,13 @@ struct LuxelShortcutSettingsTable: View {
                 }
             }
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .fill(.black.opacity(0.16))
+        }
         .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(.primary.opacity(0.1), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .strokeBorder(.white.opacity(0.07), lineWidth: 1)
         }
         .opacity(isEnabled ? 1 : 0.58)
     }
@@ -118,21 +107,21 @@ struct LuxelShortcutSettingsTable: View {
             Color.clear
                 .frame(width: 72)
         }
-        .font(.callout.weight(.semibold))
-        .foregroundStyle(.secondary)
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(.white.opacity(0.55))
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
     }
 
     private var emptyState: some View {
         Text("No shortcuts found")
-            .font(.callout)
-            .foregroundStyle(.secondary)
+            .font(.system(size: 12.5))
+            .foregroundStyle(.white.opacity(0.55))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 18)
             .padding(.vertical, 18)
             .overlay(alignment: .top) {
-                Divider()
+                LuxelGlassRowDivider()
             }
     }
 }
@@ -144,6 +133,7 @@ private struct LuxelShortcutSettingsRow: View {
     let conflictDetector: AppKeyboardShortcutConflictDetector
     @Binding var editingCommandID: String?
     @State private var recorderMessage: String?
+    @State private var isHovered = false
 
     private var isEditing: Bool {
         editingCommandID == command.id
@@ -164,6 +154,13 @@ private struct LuxelShortcutSettingsRow: View {
         .padding(.vertical, 10)
         .frame(minHeight: 76)
         .contentShape(Rectangle())
+        .background {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(.white.opacity(isHovered ? 0.07 : 0))
+                .padding(.horizontal, 6)
+        }
+        .onHover { isHovered = $0 }
+        .animation(.easeOut(duration: 0.12), value: isHovered)
         .onChange(of: isEditing) {
             if !isEditing {
                 recorderMessage = nil
@@ -174,13 +171,13 @@ private struct LuxelShortcutSettingsRow: View {
     private var commandColumn: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(command.title)
-                .font(.body)
-                .foregroundStyle(.primary)
+                .font(.system(size: 13.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.95))
                 .lineLimit(1)
 
             Text(command.detail)
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.55))
                 .lineLimit(1)
         }
     }
@@ -200,8 +197,8 @@ private struct LuxelShortcutSettingsRow: View {
 
                     Button("Cancel", action: cancelEditing)
                         .buttonStyle(.plain)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55))
                 } else {
                     ShortcutKeybindingLabel(rawValue: command.selection.wrappedValue)
 
@@ -307,10 +304,10 @@ private struct LuxelShortcutSettingsRow: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.7))
                 .frame(width: 30, height: 30)
                 .background(
-                    .primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                    .white.opacity(0.08), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
@@ -325,15 +322,15 @@ private struct ShortcutKeybindingLabel: View {
         if let shortcut = AppKeyboardShortcut(rawValue: rawValue) {
             Text(shortcut.compactDisplayName)
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white.opacity(0.92))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(.primary.opacity(0.1), in: Capsule())
+                .background(.white.opacity(0.1), in: Capsule())
                 .lineLimit(1)
         } else {
             Text("Unassigned")
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.55))
                 .lineLimit(1)
         }
     }
@@ -372,17 +369,17 @@ private final class ShortcutRecorderNSView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
 
-        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 10, yRadius: 10)
-        NSColor.controlBackgroundColor.setFill()
+        let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 11, yRadius: 11)
+        NSColor.black.withAlphaComponent(0.22).setFill()
         path.fill()
-        NSColor.separatorColor.setStroke()
+        NSColor.white.withAlphaComponent(0.14).setStroke()
         path.lineWidth = 1
         path.stroke()
 
         let text = "Press shortcut" as NSString
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 15, weight: .medium),
-            .foregroundColor: NSColor.labelColor
+            .foregroundColor: NSColor.white.withAlphaComponent(0.85)
         ]
         let size = text.size(withAttributes: attributes)
         let rect = NSRect(
