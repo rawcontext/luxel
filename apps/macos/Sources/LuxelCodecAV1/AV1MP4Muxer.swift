@@ -9,10 +9,7 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
     private var writer: AVAssetWriter?
     private var videoInput: AVAssetWriterInput?
     private var audioInput: AVAssetWriterInput?
-    private var videoFormatDescription: CMVideoFormatDescription?
-    private var audioFormatDescription: CMAudioFormatDescription?
-    private var audioSampleRate: Int = 0
-    private var audioChannelCount: Int = 0
+    private var sampleBufferFactory: AV1MP4SampleBufferFactory?
     private var tracks: Set<CodecTrack> = []
     private var outputFileURL: URL?
 
@@ -31,62 +28,11 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
             throw AV1CodecError.muxerFailure("AV1 muxer requires output pixel size metadata.")
         }
 
-        let outputFileURL = configuration.outputFileURL
-        try fileSystem.createDirectory(
-            at: outputFileURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        if fileSystem.fileExists(atPath: outputFileURL.path) {
-            try fileSystem.removeItem(at: outputFileURL)
-        }
-
-        let writer = try AVAssetWriter(outputURL: outputFileURL, fileType: .mp4)
-        writer.shouldOptimizeForNetworkUse = true
-
-        let videoDescription = try makeVideoFormatDescription(pixelSize: pixelSize)
-        let videoInput = AVAssetWriterInput(
-            mediaType: .video,
-            outputSettings: nil,
-            sourceFormatHint: videoDescription
-        )
-        videoInput.expectsMediaDataInRealTime = false
-
-        guard writer.canAdd(videoInput) else {
-            throw AV1CodecError.muxerFailure("Could not add AV1 video writer input.")
-        }
-        writer.add(videoInput)
-
-        if configuration.tracks.contains(.audio) {
-            guard let sampleRate = configuration.audioSampleRate,
-                  let channelCount = configuration.audioChannelCount
-            else {
-                throw AV1CodecError.muxerFailure("AV1 muxer requires audio stream metadata.")
-            }
-
-            let audioInput = AVAssetWriterInput(
-                mediaType: .audio,
-                outputSettings: [
-                    AVFormatIDKey: kAudioFormatMPEG4AAC,
-                    AVSampleRateKey: sampleRate,
-                    AVNumberOfChannelsKey: channelCount,
-                    AVEncoderBitRateKey: AV1AACBitrate.balanced
-                ]
-            )
-            audioInput.expectsMediaDataInRealTime = false
-
-            guard writer.canAdd(audioInput) else {
-                throw AV1CodecError.muxerFailure("Could not add AAC audio writer input.")
-            }
-            writer.add(audioInput)
-
-            self.audioInput = audioInput
-            audioFormatDescription = try makeAudioFormatDescription(
-                sampleRate: sampleRate,
-                channelCount: channelCount
-            )
-            audioSampleRate = sampleRate
-            audioChannelCount = channelCount
-        }
+        let writer = try makeWriter(outputFileURL: configuration.outputFileURL)
+        let videoDescription = try AV1MP4SampleBufferFactory.makeVideoFormatDescription(
+            pixelSize: pixelSize)
+        let videoInput = try addVideoInput(to: writer, formatDescription: videoDescription)
+        let audioSetup = try addAudioInputIfNeeded(to: writer, configuration: configuration)
 
         guard writer.startWriting() else {
             throw AV1CodecError.muxerFailure(writer.errorDescription)
@@ -95,13 +41,19 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
 
         self.writer = writer
         self.videoInput = videoInput
-        videoFormatDescription = videoDescription
+        audioInput = audioSetup?.input
+        sampleBufferFactory = AV1MP4SampleBufferFactory(
+            videoFormatDescription: videoDescription,
+            audioFormatDescription: audioSetup?.formatDescription,
+            audioSampleRate: audioSetup?.sampleRate ?? 0,
+            audioChannelCount: audioSetup?.channelCount ?? 0
+        )
         tracks = Set(configuration.tracks)
-        self.outputFileURL = outputFileURL
+        outputFileURL = configuration.outputFileURL
     }
 
     public func write(_ packet: EncodedPacket, to track: CodecTrack) async throws {
-        guard let writer else {
+        guard let writer, let sampleBufferFactory else {
             throw AV1CodecError.muxerFailure("AV1 muxer was used before begin.")
         }
         guard tracks.contains(track) else {
@@ -111,20 +63,20 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
 
         switch track {
         case .video:
-            guard let videoInput, let videoFormatDescription else {
+            guard let videoInput else {
                 throw AV1CodecError.muxerFailure("AV1 video writer input was not configured.")
             }
             try await append(
-                try makeVideoSampleBuffer(packet, formatDescription: videoFormatDescription),
+                try sampleBufferFactory.makeVideoSampleBuffer(packet),
                 to: videoInput,
                 writer: writer
             )
         case .audio:
-            guard let audioInput, let audioFormatDescription else {
+            guard let audioInput else {
                 throw AV1CodecError.muxerFailure("AV1 audio writer input was not configured.")
             }
             try await append(
-                try makeAudioSampleBuffer(packet, formatDescription: audioFormatDescription),
+                try sampleBufferFactory.makeAudioSampleBuffer(packet),
                 to: audioInput,
                 writer: writer
             )
@@ -179,7 +131,102 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
         }
     }
 
-    private func makeVideoFormatDescription(pixelSize: PixelSize) throws -> CMVideoFormatDescription {
+    private func makeWriter(outputFileURL: URL) throws -> AVAssetWriter {
+        try fileSystem.createDirectory(
+            at: outputFileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        if fileSystem.fileExists(atPath: outputFileURL.path) {
+            try fileSystem.removeItem(at: outputFileURL)
+        }
+
+        let writer = try AVAssetWriter(outputURL: outputFileURL, fileType: .mp4)
+        writer.shouldOptimizeForNetworkUse = true
+        return writer
+    }
+
+    private func addVideoInput(
+        to writer: AVAssetWriter,
+        formatDescription: CMVideoFormatDescription
+    ) throws -> AVAssetWriterInput {
+        let input = AVAssetWriterInput(
+            mediaType: .video,
+            outputSettings: nil,
+            sourceFormatHint: formatDescription
+        )
+        input.expectsMediaDataInRealTime = false
+
+        guard writer.canAdd(input) else {
+            throw AV1CodecError.muxerFailure("Could not add AV1 video writer input.")
+        }
+        writer.add(input)
+        return input
+    }
+
+    private func addAudioInputIfNeeded(
+        to writer: AVAssetWriter,
+        configuration: CodecMuxerConfiguration
+    ) throws -> AV1MP4AudioInputSetup? {
+        guard configuration.tracks.contains(.audio) else {
+            return nil
+        }
+        guard let sampleRate = configuration.audioSampleRate,
+              let channelCount = configuration.audioChannelCount
+        else {
+            throw AV1CodecError.muxerFailure("AV1 muxer requires audio stream metadata.")
+        }
+
+        let input = AVAssetWriterInput(
+            mediaType: .audio,
+            outputSettings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: sampleRate,
+                AVNumberOfChannelsKey: channelCount,
+                AVEncoderBitRateKey: AV1AACBitrate.balanced
+            ]
+        )
+        input.expectsMediaDataInRealTime = false
+
+        guard writer.canAdd(input) else {
+            throw AV1CodecError.muxerFailure("Could not add AAC audio writer input.")
+        }
+        writer.add(input)
+
+        return try AV1MP4AudioInputSetup(
+            input: input,
+            formatDescription: AV1MP4SampleBufferFactory.makeAudioFormatDescription(
+                sampleRate: sampleRate,
+                channelCount: channelCount
+            ),
+            sampleRate: sampleRate,
+            channelCount: channelCount
+        )
+    }
+
+    private func reset() {
+        writer = nil
+        videoInput = nil
+        audioInput = nil
+        sampleBufferFactory = nil
+        tracks.removeAll(keepingCapacity: true)
+        outputFileURL = nil
+    }
+}
+
+private struct AV1MP4AudioInputSetup {
+    let input: AVAssetWriterInput
+    let formatDescription: CMAudioFormatDescription
+    let sampleRate: Int
+    let channelCount: Int
+}
+
+private struct AV1MP4SampleBufferFactory {
+    let videoFormatDescription: CMVideoFormatDescription
+    let audioFormatDescription: CMAudioFormatDescription?
+    let audioSampleRate: Int
+    let audioChannelCount: Int
+
+    static func makeVideoFormatDescription(pixelSize: PixelSize) throws -> CMVideoFormatDescription {
         var formatDescription: CMVideoFormatDescription?
         let status = CMVideoFormatDescriptionCreate(
             allocator: kCFAllocatorDefault,
@@ -196,7 +243,7 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
         return formatDescription
     }
 
-    private func makeAudioFormatDescription(
+    static func makeAudioFormatDescription(
         sampleRate: Int,
         channelCount: Int
     ) throws -> CMAudioFormatDescription {
@@ -230,10 +277,7 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
         return formatDescription
     }
 
-    private func makeVideoSampleBuffer(
-        _ packet: EncodedPacket,
-        formatDescription: CMVideoFormatDescription
-    ) throws -> CMSampleBuffer {
+    func makeVideoSampleBuffer(_ packet: EncodedPacket) throws -> CMSampleBuffer {
         let blockBuffer = try makeBlockBuffer(packet.data)
         var timing = CMSampleTimingInfo(
             duration: CMTime(seconds: max(packet.duration, 1.0 / 60_000), preferredTimescale: 60_000),
@@ -245,7 +289,7 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
         let status = CMSampleBufferCreateReady(
             allocator: kCFAllocatorDefault,
             dataBuffer: blockBuffer,
-            formatDescription: formatDescription,
+            formatDescription: videoFormatDescription,
             sampleCount: 1,
             sampleTimingEntryCount: 1,
             sampleTimingArray: &timing,
@@ -263,10 +307,11 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
         return sampleBuffer
     }
 
-    private func makeAudioSampleBuffer(
-        _ packet: EncodedPacket,
-        formatDescription: CMAudioFormatDescription
-    ) throws -> CMSampleBuffer {
+    func makeAudioSampleBuffer(_ packet: EncodedPacket) throws -> CMSampleBuffer {
+        guard let audioFormatDescription else {
+            throw AV1CodecError.muxerFailure("AV1 audio format description was not configured.")
+        }
+
         let bytesPerFrame = audioChannelCount * MemoryLayout<Int16>.size
         guard bytesPerFrame > 0, packet.data.count.isMultiple(of: bytesPerFrame) else {
             throw AV1CodecError.muxerFailure("PCM audio packet size did not match stream metadata.")
@@ -284,7 +329,7 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
         let status = CMSampleBufferCreateReady(
             allocator: kCFAllocatorDefault,
             dataBuffer: blockBuffer,
-            formatDescription: formatDescription,
+            formatDescription: audioFormatDescription,
             sampleCount: sampleCount,
             sampleTimingEntryCount: 1,
             sampleTimingArray: &timing,
@@ -354,18 +399,6 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
             Unmanaged.passUnretained(kCMSampleAttachmentKey_NotSync).toOpaque(),
             Unmanaged.passUnretained(kCFBooleanTrue).toOpaque()
         )
-    }
-
-    private func reset() {
-        writer = nil
-        videoInput = nil
-        audioInput = nil
-        videoFormatDescription = nil
-        audioFormatDescription = nil
-        audioSampleRate = 0
-        audioChannelCount = 0
-        tracks.removeAll(keepingCapacity: true)
-        outputFileURL = nil
     }
 }
 

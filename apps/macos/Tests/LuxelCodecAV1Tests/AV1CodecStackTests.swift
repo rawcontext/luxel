@@ -213,9 +213,9 @@ private func runFFProbe(ffprobe: String, fileURL: URL) throws -> String {
     try process.run()
     process.waitUntilExit()
 
-    let output = String(
-        decoding: outputPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-    _ = String(decoding: errorPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+    let output = String(data: outputData, encoding: .utf8) ?? ""
+    _ = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
     #expect(process.terminationStatus == 0)
     return output
 }

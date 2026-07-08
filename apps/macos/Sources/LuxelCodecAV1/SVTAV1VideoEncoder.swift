@@ -21,7 +21,7 @@ public actor SVTAV1VideoEncoder: CodecVideoEncoder {
             Int32(configuration.pixelSize.height),
             Int32(configuration.frameRate.framesPerSecond),
             settings.preset,
-            settings.qp,
+            settings.quantizer,
             UInt32(max(configuration.frameRate.framesPerSecond * 5, 150)),
             0,
             &createdEncoder,
@@ -137,19 +137,19 @@ private final class SVTAV1EncoderHandle: @unchecked Sendable {
 
 private struct SVTAV1QualitySettings {
     let preset: Int32
-    let qp: UInt32
+    let quantizer: UInt32
 
     init(quality: ExportQuality) {
         switch quality {
         case .compact:
             preset = 10
-            qp = 44
+            quantizer = 44
         case .balanced, .lossless:
             preset = 8
-            qp = 36
+            quantizer = 36
         case .high:
             preset = 6
-            qp = 28
+            quantizer = 28
         }
     }
 }
