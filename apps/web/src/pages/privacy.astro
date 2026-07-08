@@ -1,5 +1,7 @@
 ---
 import "../styles/global.css";
+import SiteNav from "../components/SiteNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 
 const effectiveDate = "July 2, 2026";
 const contactEmail = "maintainer@example.com";
@@ -21,257 +23,244 @@ const contactEmail = "maintainer@example.com";
     <title>Privacy Policy - Luxel</title>
   </head>
   <body class="privacy-page">
-    <header class="privacy-topbar">
-      <a class="brand" href="/" aria-label="Luxel home">
-        <img class="brand-mark" src="/luxel-icon.svg" alt="" width="48" height="48" />
-        <span>Luxel</span>
-      </a>
-      <nav aria-label="Privacy page navigation">
-        <a href="/">Home</a>
-        <a href="/docs">Docs</a>
-        <a href="/support">Support</a>
-      </nav>
-    </header>
+    <div class="page">
+      <div class="ambient" aria-hidden="true">
+        <span class="ambient__glow ambient__glow--hero"></span>
+      </div>
 
-    <main class="privacy-shell">
-      <section class="privacy-hero" aria-labelledby="privacy-title">
-        <p class="eyebrow">Privacy Policy</p>
-        <h1 id="privacy-title">Your recordings stay yours.</h1>
-        <p>
-          Luxel is built as a local-first Mac app. We do not track you, run analytics,
-          sell data, or send your recordings, screenshots, audio, transcripts, or exports
-          to Luxel.
-        </p>
-        <p class="privacy-date">Effective date: {effectiveDate}</p>
-      </section>
+      <SiteNav
+        ariaLabel="Privacy page navigation"
+        links={[
+          { href: "/", label: "Home" },
+          { href: "/docs", label: "Docs" },
+          { href: "/support", label: "Support" }
+        ]}
+      />
 
-      <section class="privacy-content" aria-label="Privacy policy">
-        <article>
-          <h2>Summary</h2>
-          <ul>
-            <li>Luxel does not collect personal data from the Mac app.</li>
-            <li>Luxel does not use advertising tools, tracking pixels, analytics, or data brokers.</li>
-            <li>Luxel does not sell, rent, share, or monetize your personal data.</li>
-            <li>The support form collects only the email address and message you choose to send.</li>
-            <li>Your app content stays on your Mac unless you choose to export, share, or move it.</li>
-          </ul>
-        </article>
+      <main class="privacy-shell container">
+        <section class="privacy-hero" aria-labelledby="privacy-title">
+          <p class="eyebrow">Privacy Policy</p>
+          <h1 class="privacy-title" id="privacy-title">Your recordings stay yours.</h1>
+          <p class="privacy-lead">
+            Luxel is built as a local-first Mac app. We do not track you, run analytics,
+            sell data, or send your recordings, screenshots, audio, transcripts, or exports
+            to Luxel.
+          </p>
+          <p class="privacy-date">Effective date: {effectiveDate}</p>
+        </section>
 
-        <article>
-          <h2>What Luxel Processes Locally</h2>
-          <p>
-            Luxel records and edits the content you choose: screen video, system audio,
-            microphone audio, camera preview overlays, replay buffer clips, transcripts,
-            exports, settings, presets, history, and related caches. This processing happens
-            on your Mac. Luxel does not upload this content to us.
-          </p>
-          <p>
-            Transcription uses local speech recognition and, when enabled, local turn grouping
-            provided by macOS. If the required local capability is unavailable, Luxel does not
-            fall back to cloud transcription.
-          </p>
-        </article>
+        <section class="privacy-content" aria-label="Privacy policy">
+          <article>
+            <h2>Summary</h2>
+            <ul>
+              <li>Luxel does not collect personal data from the Mac app.</li>
+              <li>Luxel does not use advertising tools, tracking pixels, analytics, or data brokers.</li>
+              <li>Luxel does not sell, rent, share, or monetize your personal data.</li>
+              <li>The support form collects only the email address and message you choose to send.</li>
+              <li>Your app content stays on your Mac unless you choose to export, share, or move it.</li>
+            </ul>
+          </article>
 
-        <article>
-          <h2>Permissions</h2>
-          <p>
-            macOS may ask you to grant Screen & System Audio Recording, Microphone, Camera,
-            Speech Recognition, file, folder, or automation permissions. Luxel uses those
-            permissions only to perform the feature you request. We do not use permissions
-            to build profiles, track behavior, or collect analytics.
-          </p>
-        </article>
+          <article>
+            <h2>What Luxel Processes Locally</h2>
+            <p>
+              Luxel records and edits the content you choose: screen video, system audio,
+              microphone audio, camera preview overlays, replay buffer clips, transcripts,
+              exports, settings, presets, history, and related caches. This processing happens
+              on your Mac. Luxel does not upload this content to us.
+            </p>
+            <p>
+              Transcription uses local speech recognition and, when enabled, local turn grouping
+              provided by macOS. If the required local capability is unavailable, Luxel does not
+              fall back to cloud transcription.
+            </p>
+          </article>
 
-        <article>
-          <h2>Data Collection</h2>
-          <p>
-            The Luxel Mac app does not transmit personal data to Luxel or third-party partners
-            in a way that lets us access it. That is why Luxel's intended App Store privacy
-            posture is Data Not Collected.
-          </p>
-          <p>
-            If you contact us for support, we will receive the information you choose to send,
-            such as your email address, message, and any files or screenshots you attach. We use
-            that information only to respond to your request, troubleshoot the issue, and keep
-            records needed for support, security, or legal compliance.
-          </p>
-          <p>
-            The website support form stores your email address and message in our private support
-            workflow so we can track and respond to the request. Only people helping operate
-            Luxel support may see those submissions.
-          </p>
-        </article>
+          <article>
+            <h2>Permissions</h2>
+            <p>
+              macOS may ask you to grant Screen & System Audio Recording, Microphone, Camera,
+              Speech Recognition, file, folder, or automation permissions. Luxel uses those
+              permissions only to perform the feature you request. We do not use permissions
+              to build profiles, track behavior, or collect analytics.
+            </p>
+          </article>
 
-        <article>
-          <h2>No Sale or Tracking</h2>
-          <p>
-            Luxel does not sell personal information. Luxel does not share personal information
-            for cross-context behavioral advertising. Luxel does not track you across apps,
-            websites, or services owned by other companies.
-          </p>
-        </article>
+          <article>
+            <h2>Data Collection</h2>
+            <p>
+              The Luxel Mac app does not transmit personal data to Luxel or third-party partners
+              in a way that lets us access it. That is why Luxel's intended App Store privacy
+              posture is Data Not Collected.
+            </p>
+            <p>
+              If you contact us for support, we will receive the information you choose to send,
+              such as your email address, message, and any files or screenshots you attach. We use
+              that information only to respond to your request, troubleshoot the issue, and keep
+              records needed for support, security, or legal compliance.
+            </p>
+            <p>
+              The website support form stores your email address and message in our private support
+              workflow so we can track and respond to the request. Only people helping operate
+              Luxel support may see those submissions.
+            </p>
+          </article>
 
-        <article>
-          <h2>Website and App Store</h2>
-          <p>
-            The Luxel marketing website is a static website. We do not intentionally place
-            analytics scripts, advertising cookies, tracking pixels, or fingerprinting code on it.
-            Our hosting provider, Vercel, may process standard request metadata such as IP address,
-            browser user agent, requested URL, timestamp, and security events to deliver, secure,
-            and operate the site.
-          </p>
-          <p>
-            The support form uses Cloudflare Turnstile to reduce automated spam. Cloudflare may
-            process technical request data necessary to verify that the submission is legitimate.
-          </p>
-          <p>
-            If you open the Mac App Store listing, Apple processes the App Store page, download,
-            purchase, update, refund, and account activity under Apple's own terms and privacy
-            policy. Luxel does not receive your recordings, transcripts, exports, or app content
-            through Apple.
-          </p>
-        </article>
+          <article>
+            <h2>No Sale or Tracking</h2>
+            <p>
+              Luxel does not sell personal information. Luxel does not share personal information
+              for cross-context behavioral advertising. Luxel does not track you across apps,
+              websites, or services owned by other companies.
+            </p>
+          </article>
 
-        <article>
-          <h2>Updates</h2>
-          <p>
-            Mac App Store builds receive updates through Apple. If Luxel is distributed separately
-            outside the Mac App Store, update checks may contact an update server only when update
-            checks are enabled. Update checks are not analytics and are not used for advertising
-            or tracking.
-          </p>
-        </article>
+          <article>
+            <h2>Website and App Store</h2>
+            <p>
+              The Luxel marketing website is a static website. We do not intentionally place
+              analytics scripts, advertising cookies, tracking pixels, or fingerprinting code on it.
+              Our hosting provider, Vercel, may process standard request metadata such as IP address,
+              browser user agent, requested URL, timestamp, and security events to deliver, secure,
+              and operate the site.
+            </p>
+            <p>
+              The support form uses Cloudflare Turnstile to reduce automated spam. Cloudflare may
+              process technical request data necessary to verify that the submission is legitimate.
+            </p>
+            <p>
+              If you open the Mac App Store listing, Apple processes the App Store page, download,
+              purchase, update, refund, and account activity under Apple's own terms and privacy
+              policy. Luxel does not receive your recordings, transcripts, exports, or app content
+              through Apple.
+            </p>
+          </article>
 
-        <article>
-          <h2>Retention and Deletion</h2>
-          <p>
-            Recordings, exports, transcript caches, replay buffer files, and settings remain on
-            your Mac until you delete them, clear app data, or remove the app. You can delete
-            exported files wherever you saved them. Support messages are retained only as long
-            as reasonably necessary for support, security, business records, or legal obligations.
-          </p>
-        </article>
+          <article>
+            <h2>Updates</h2>
+            <p>
+              Mac App Store builds receive updates through Apple. If Luxel is distributed separately
+              outside the Mac App Store, update checks may contact an update server only when update
+              checks are enabled. Update checks are not analytics and are not used for advertising
+              or tracking.
+            </p>
+          </article>
 
-        <article>
-          <h2>Children</h2>
-          <p>
-            Luxel is not directed to children under 13, and we do not knowingly collect personal
-            information from children. If you believe a child has provided personal information
-            to us, contact us so we can delete it.
-          </p>
-        </article>
+          <article>
+            <h2>Retention and Deletion</h2>
+            <p>
+              Recordings, exports, transcript caches, replay buffer files, and settings remain on
+              your Mac until you delete them, clear app data, or remove the app. You can delete
+              exported files wherever you saved them. Support messages are retained only as long
+              as reasonably necessary for support, security, business records, or legal obligations.
+            </p>
+          </article>
 
-        <article>
-          <h2>Changes</h2>
-          <p>
-            We may update this policy if Luxel's privacy practices change, if the app's features
-            change, or if legal requirements change. The effective date above shows when this
-            policy was last updated.
-          </p>
-        </article>
+          <article>
+            <h2>Children</h2>
+            <p>
+              Luxel is not directed to children under 13, and we do not knowingly collect personal
+              information from children. If you believe a child has provided personal information
+              to us, contact us so we can delete it.
+            </p>
+          </article>
 
-        <article>
-          <h2>Contact</h2>
-          <p>
-            For privacy questions or requests, email{" "}
-            <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
-          </p>
-        </article>
-      </section>
-    </main>
+          <article>
+            <h2>Changes</h2>
+            <p>
+              We may update this policy if Luxel's privacy practices change, if the app's features
+              change, or if legal requirements change. The effective date above shows when this
+              policy was last updated.
+            </p>
+          </article>
+
+          <article>
+            <h2>Contact</h2>
+            <p>
+              For privacy questions or requests, email{" "}
+              <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
+            </p>
+          </article>
+        </section>
+      </main>
+
+      <SiteFooter />
+    </div>
   </body>
 </html>
 
 <style>
-  .privacy-page {
-    background:
-      radial-gradient(circle at 84% 12%, rgb(22 184 199 / 0.16), transparent 28rem),
-      linear-gradient(180deg, #030405 0%, #080b0f 44%, #020304 100%);
-  }
-
-  .privacy-topbar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 2rem;
-    align-items: center;
-    min-height: 6rem;
-    padding-inline: clamp(1.25rem, 4vw, 4.25rem);
-    border-block-end: 1px solid rgb(255 255 255 / 0.12);
-    background: rgb(3 5 7 / 0.72);
-    backdrop-filter: blur(24px);
-  }
-
-  .privacy-topbar nav {
-    display: flex;
-    gap: clamp(1rem, 3vw, 2.25rem);
-    color: var(--muted);
-    font-weight: 650;
-  }
-
-  .privacy-topbar a:hover {
-    color: var(--ink);
-  }
-
   .privacy-shell {
-    width: min(calc(100% - 2.5rem), 68rem);
-    margin-inline: auto;
-    padding-block: clamp(4rem, 8vw, 7rem);
+    width: min(100%, 50rem);
+    padding-block: clamp(3.5rem, 7vw, 6rem) 2rem;
   }
 
   .privacy-hero {
-    max-width: 52rem;
-    padding-block-end: clamp(2rem, 5vw, 4rem);
+    margin-block-end: 44px;
+    text-align: center;
   }
 
-  .privacy-hero h1 {
-    max-width: 11ch;
-    font-size: clamp(3rem, 8vw, 7rem);
-    line-height: 0.92;
+  .privacy-title {
+    margin: 0;
+    background: linear-gradient(180deg, #fff 55%, rgb(255 255 255 / 0.55));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: clamp(2.4rem, 5.4vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1.08;
+    text-wrap: balance;
   }
 
-  .privacy-hero > p:not(.eyebrow) {
-    max-width: 44rem;
-    margin-block-start: 1.35rem;
+  .privacy-lead {
+    max-width: 38rem;
+    margin: 18px auto 0;
     color: var(--muted);
-    font-size: clamp(1.08rem, 2vw, 1.45rem);
+    font-size: 1rem;
+    line-height: 1.65;
+    text-wrap: pretty;
   }
 
-  .privacy-hero .privacy-date {
+  .privacy-date {
+    margin-block-start: 14px;
     color: var(--quiet);
-    font-size: 0.98rem;
+    font-size: 0.9rem;
   }
 
   .privacy-content {
     display: grid;
-    gap: 1rem;
-    padding-block-end: 4rem;
+    gap: 14px;
   }
 
   .privacy-content article {
-    padding: clamp(1.2rem, 3vw, 2rem);
-    border: 1px solid rgb(255 255 255 / 0.12);
-    border-radius: 0.75rem;
-    background: rgb(255 255 255 / 0.045);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+    padding: clamp(1.4rem, 3vw, 1.9rem);
+    border-radius: 20px;
+    background: rgb(255 255 255 / 0.04);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.07),
+      inset 0 0 0 1px rgb(255 255 255 / 0.03);
   }
 
   .privacy-content h2 {
     margin: 0;
-    font-size: clamp(1.2rem, 2vw, 1.7rem);
-    line-height: 1.1;
+    font-size: clamp(1.15rem, 2vw, 1.4rem);
+    font-weight: 700;
+    letter-spacing: -0.014em;
+    line-height: 1.15;
   }
 
   .privacy-content p,
   .privacy-content ul {
     margin-block: 0.85rem 0;
     color: var(--muted);
+    font-size: 0.96rem;
+    line-height: 1.65;
   }
 
   .privacy-content ul {
     padding-inline-start: 1.2rem;
+    list-style: disc;
   }
 
   .privacy-content li + li,
@@ -280,25 +269,13 @@ const contactEmail = "maintainer@example.com";
   }
 
   .privacy-content a {
-    color: var(--cyan);
+    color: var(--accent-soft);
     text-decoration: underline;
     text-underline-offset: 0.18em;
+    transition: color 150ms ease;
   }
 
-  @media (max-width: 620px) {
-    .privacy-topbar {
-      min-height: 4.75rem;
-      padding-inline: 1rem;
-    }
-
-    .privacy-topbar nav {
-      gap: 1rem;
-      font-size: 0.92rem;
-    }
-
-    .privacy-shell {
-      width: min(calc(100% - 1.25rem), 68rem);
-      padding-block: 2.5rem;
-    }
+  .privacy-content a:hover {
+    color: #fff;
   }
 </style>

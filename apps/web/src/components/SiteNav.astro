@@ -1,0 +1,37 @@
+---
+interface Props {
+  links?: { href: string; label: string }[];
+  ariaLabel?: string;
+}
+
+const macAppStoreUrl = "https://apps.apple.com/us/app/luxel/id6780682473?mt=12";
+const { links = [], ariaLabel = "Site navigation" } = Astro.props;
+---
+
+<header class="nav">
+  <div class="nav__pill">
+    <a class="brand" href="/" aria-label="Luxel home">
+      <img class="brand-mark" src="/luxel-icon.svg" alt="" width="24" height="24" />
+      <span>Luxel</span>
+    </a>
+    {
+      links.length > 0 && (
+        <nav class="nav__links" aria-label={ariaLabel}>
+          {links.map((link) => (
+            <a href={link.href}>{link.label}</a>
+          ))}
+        </nav>
+      )
+    }
+    <a
+      class="nav__download"
+      href={macAppStoreUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Download Luxel on the Mac App Store"
+    >
+      <span class="record-glyph" aria-hidden="true"></span>
+      <span>Download</span>
+    </a>
+  </div>
+</header>

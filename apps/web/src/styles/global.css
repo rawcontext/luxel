@@ -1072,7 +1072,11 @@
 
   /* ---- footer CTA + footer ---- */
   .footer-cta {
-    padding-block: 130px 60px;
+    padding-block-start: 130px;
+  }
+
+  .site-footer {
+    padding-block-end: 60px;
   }
 
   .banner--cta {

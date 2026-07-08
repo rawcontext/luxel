@@ -1,7 +1,19 @@
 ---
 import "../styles/global.css";
+import SiteNav from "../components/SiteNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 
 const macAppStoreUrl = "https://apps.apple.com/us/app/luxel/id6780682473?mt=12";
+
+const navLinks = [
+  { href: "#features", label: "Features" },
+  { href: "#replay-buffer", label: "Replay Buffer" },
+  { href: "#cli", label: "CLI" },
+  { href: "#notch", label: "Notch" },
+  { href: "/docs", label: "Docs" },
+  { href: "/support", label: "Support" },
+  { href: "/privacy", label: "Privacy" }
+];
 
 const featureTrio = [
   {
@@ -110,33 +122,7 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
         <span class="ambient__glow ambient__glow--low"></span>
       </div>
 
-      <header class="nav">
-        <div class="nav__pill">
-          <a class="brand" href="#top" aria-label="Luxel home">
-            <img class="brand-mark" src="/luxel-icon.svg" alt="" width="24" height="24" />
-            <span>Luxel</span>
-          </a>
-          <nav class="nav__links" aria-label="Page sections">
-            <a href="#features">Features</a>
-            <a href="#replay-buffer">Replay Buffer</a>
-            <a href="#cli">CLI</a>
-            <a href="#notch">Notch</a>
-            <a href="/docs">Docs</a>
-            <a href="/support">Support</a>
-            <a href="/privacy">Privacy</a>
-          </nav>
-          <a
-            class="nav__download"
-            href={macAppStoreUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Download Luxel on the Mac App Store"
-          >
-            <span class="record-glyph" aria-hidden="true"></span>
-            <span>Download</span>
-          </a>
-        </div>
-      </header>
+      <SiteNav links={navLinks} ariaLabel="Page sections" />
 
       <main>
         <section class="hero container" aria-labelledby="hero-title">
@@ -550,20 +536,9 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <a class="glass-button" href="/support">Support</a>
             </div>
           </div>
-          <footer class="footer">
-            <div class="footer__brand">
-              <img src="/luxel-icon.svg" alt="" width="20" height="20" />
-              <span class="footer__name">Luxel</span>
-              <span class="footer__tag">· Screen recording for Mac</span>
-            </div>
-            <nav class="footer__links" aria-label="Footer">
-              <a href="/docs">Docs</a>
-              <a href="/support">Support</a>
-              <a href="/privacy">Privacy</a>
-            </nav>
-          </footer>
         </section>
       </main>
+      <SiteFooter />
     </div>
   </body>
 </html>

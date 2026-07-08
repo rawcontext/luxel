@@ -1,5 +1,7 @@
 ---
 import "../styles/global.css";
+import SiteNav from "../components/SiteNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 
 const navGroups = [
   {
@@ -228,20 +230,23 @@ const troubleshooting = [
     <title>Luxel Documentation</title>
   </head>
   <body class="docs-page">
-    <header class="docs-topbar">
-      <a class="docs-brand" href="/" aria-label="Luxel home">
-        <img src="/luxel-icon.svg" width="36" height="36" alt="" />
-        <span>Luxel</span>
-      </a>
-      <nav aria-label="Documentation navigation">
-        <a href="#overview">Start</a>
-        <a href="#capture">Guides</a>
-        <a href="#shortcuts">Reference</a>
-        <a href="/support">Support</a>
-        <a href="/privacy">Privacy</a>
-      </nav>
-      <a class="topbar-cta" href="/">Home</a>
-    </header>
+    <div class="page">
+    <div class="ambient" aria-hidden="true">
+      <span class="ambient__glow ambient__glow--hero"></span>
+      <span class="ambient__glow ambient__glow--left"></span>
+    </div>
+
+    <SiteNav
+      ariaLabel="Documentation navigation"
+      links={[
+        { href: "/", label: "Home" },
+        { href: "#overview", label: "Start" },
+        { href: "#capture", label: "Guides" },
+        { href: "#shortcuts", label: "Reference" },
+        { href: "/support", label: "Support" },
+        { href: "/privacy", label: "Privacy" }
+      ]}
+    />
 
     <main class="docs-layout">
       <aside class="docs-sidebar" aria-label="Documentation sections">
@@ -1343,6 +1348,8 @@ luxel://latest?reveal=true</code></pre>
         </section>
       </div>
     </main>
+    <SiteFooter />
+    </div>
     <script>
       const lazyVideos = Array.from(document.querySelectorAll("video[data-lazy-src]"));
 
@@ -1385,44 +1392,18 @@ luxel://latest?reveal=true</code></pre>
 </html>
 
 <style>
-  :global(body.docs-page) {
-    background:
-      linear-gradient(180deg, #05050c 0%, #090b10 38%, #05050c 100%),
-      #05050c;
-    color: #f4f6f8;
-  }
-
   .docs-page {
-    --docs-ink: #f4f6f8;
-    --docs-muted: #a9b3bd;
-    --docs-soft: #1a1f27;
-    --docs-line: rgb(244 246 248 / 0.13);
-    --docs-panel: #10131a;
-    --docs-panel-strong: #151923;
-    --docs-accent: #8ce7d1;
-    --docs-accent-strong: #f4c95d;
+    --docs-ink: rgb(255 255 255 / 0.95);
+    --docs-muted: rgb(255 255 255 / 0.6);
+    --docs-line: rgb(255 255 255 / 0.08);
+    --docs-panel: rgb(255 255 255 / 0.04);
+    --docs-panel-strong: rgb(255 255 255 / 0.03);
+    --docs-accent: #aca5ff;
     --docs-warn: #ffb86b;
-    --docs-code: #f7f2dd;
-    --docs-shadow: 0 22px 70px rgb(0 0 0 / 0.42);
+    --docs-code: #e9e7ff;
+    --docs-shadow: 0 20px 50px rgb(0 0 0 / 0.4);
   }
 
-  .docs-topbar {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content max-content;
-    align-items: center;
-    gap: 2rem;
-    min-height: 6rem;
-    padding-inline: clamp(1.25rem, 4vw, 4.25rem);
-    border-bottom: 1px solid var(--docs-line);
-    background: rgb(5 5 12 / 0.86);
-    backdrop-filter: blur(18px);
-  }
-
-  .docs-brand,
-  .docs-topbar nav,
   .docs-hero-grid,
   .permission-grid,
   .concept-list,
@@ -1433,66 +1414,27 @@ luxel://latest?reveal=true</code></pre>
     display: grid;
   }
 
-  .docs-brand {
-    grid-auto-flow: column;
-    align-items: center;
-    justify-content: start;
-    gap: 0.78rem;
-    color: var(--docs-ink);
-    font-size: clamp(1.25rem, 2vw, 2rem);
-    font-weight: 780;
-    min-width: 0;
-  }
-
-  .docs-brand img {
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 0.65rem;
-    box-shadow: 0 10px 28px rgb(0 0 0 / 0.38);
-  }
-
-  .docs-topbar nav {
-    grid-auto-flow: column;
-    gap: clamp(0.9rem, 3vw, 2rem);
-    color: var(--docs-muted);
-    font-size: 0.96rem;
-    font-weight: 650;
-  }
-
-  .docs-topbar > .topbar-cta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    justify-self: end;
-    width: max-content;
-    white-space: nowrap;
-  }
-
-  .docs-topbar a:hover {
-    color: var(--docs-accent);
-  }
-
   .docs-layout {
     display: grid;
     grid-template-columns: 17rem minmax(0, 1fr);
     gap: clamp(1.5rem, 4vw, 4rem);
     width: min(calc(100% - 2rem), 92rem);
     margin-inline: auto;
-    padding-block: clamp(1.5rem, 4vw, 3.5rem) 5rem;
+    padding-block: clamp(1.75rem, 4vw, 3rem) 4rem;
   }
 
   .docs-sidebar {
     position: sticky;
-    top: 6rem;
+    top: 88px;
     align-self: start;
-    max-height: calc(100svh - 7rem);
+    max-height: calc(100svh - 104px);
     overflow: auto;
     padding: 1rem;
-    border: 1px solid var(--docs-line);
-    border-radius: 8px;
-    background: rgb(16 19 26 / 0.78);
-    box-shadow: var(--docs-shadow);
-    backdrop-filter: blur(18px);
+    border-radius: 20px;
+    background: var(--glass-card);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--card-shadow);
   }
 
   .docs-sidebar nav {
@@ -1502,27 +1444,30 @@ luxel://latest?reveal=true</code></pre>
 
   .docs-nav-group {
     display: grid;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .docs-nav-group p {
-    color: var(--docs-muted);
-    font-size: 0.75rem;
-    font-weight: 780;
-    letter-spacing: 0.12em;
+    color: var(--quiet);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
   }
 
   .docs-nav-group a {
-    padding: 0.35rem 0.45rem;
-    border-radius: 6px;
-    color: #d6dde5;
-    font-size: 0.94rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 9px;
+    color: rgb(255 255 255 / 0.7);
+    font-size: 0.92rem;
+    transition:
+      background 150ms ease,
+      color 150ms ease;
   }
 
   .docs-nav-group a:hover {
-    background: rgb(140 231 209 / 0.10);
-    color: var(--docs-accent);
+    background: rgb(143 134 255 / 0.12);
+    color: #fff;
   }
 
   .docs-content {
@@ -1534,7 +1479,7 @@ luxel://latest?reveal=true</code></pre>
   .docs-hero,
   .docs-section {
     min-width: 0;
-    scroll-margin-top: 6rem;
+    scroll-margin-top: 96px;
   }
 
   .docs-content > *,
@@ -1551,44 +1496,51 @@ luxel://latest?reveal=true</code></pre>
   }
 
   .docs-hero {
-    padding: clamp(1.5rem, 4vw, 3rem);
-    border: 1px solid var(--docs-line);
-    border-radius: 8px;
+    padding: clamp(1.75rem, 4vw, 3rem);
+    border-radius: 26px;
     background:
-      linear-gradient(135deg, rgb(21 25 35 / 0.96), rgb(8 11 18 / 0.96)),
-      linear-gradient(90deg, rgb(140 231 209 / 0.14), transparent 42%, rgb(244 201 93 / 0.10));
-    box-shadow: var(--docs-shadow);
+      radial-gradient(120% 140% at 80% 0%, rgb(96 90 230 / 0.24), transparent 60%),
+      var(--glass-frame);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: var(--banner-shadow);
   }
 
   .docs-eyebrow {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.85rem;
     color: var(--docs-accent);
     font-size: 0.78rem;
-    font-weight: 820;
-    letter-spacing: 0.12em;
+    font-weight: 600;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
   }
 
   .docs-hero h1 {
     max-width: 50rem;
     margin: 0;
-    color: var(--docs-ink);
-    font-size: clamp(2.25rem, 5vw, 4.75rem);
-    line-height: 0.98;
-    letter-spacing: 0;
+    background: linear-gradient(180deg, #fff 55%, rgb(255 255 255 / 0.55));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: clamp(2.15rem, 4.6vw, 3.9rem);
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1.05;
+    text-wrap: balance;
   }
 
   .docs-lead {
     max-width: 54rem;
     margin-top: 1.15rem;
-    color: #cdd6de;
-    font-size: clamp(1.08rem, 2vw, 1.35rem);
-    line-height: 1.55;
+    color: var(--docs-muted);
+    font-size: clamp(1.02rem, 1.8vw, 1.2rem);
+    line-height: 1.6;
+    text-wrap: pretty;
   }
 
   .docs-hero-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 0.9rem;
     margin-top: 2rem;
   }
 
@@ -1602,9 +1554,11 @@ luxel://latest?reveal=true</code></pre>
   .faq-grid article,
   .mini-reference,
   .callout {
-    border: 1px solid var(--docs-line);
-    border-radius: 8px;
-    background: linear-gradient(180deg, rgb(21 25 35 / 0.94), rgb(14 17 24 / 0.94));
+    border-radius: 18px;
+    background: var(--docs-panel);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.07),
+      inset 0 0 0 1px rgb(255 255 255 / 0.03);
   }
 
   .docs-hero-grid article,
@@ -1615,7 +1569,11 @@ luxel://latest?reveal=true</code></pre>
   .guide-stack article,
   .workflow-grid article,
   .faq-grid article {
-    padding: 1.15rem;
+    padding: 1.25rem;
+  }
+
+  .docs-hero-grid article {
+    background: rgb(255 255 255 / 0.05);
   }
 
   .docs-section {
@@ -1631,15 +1589,19 @@ luxel://latest?reveal=true</code></pre>
   .section-heading h2 {
     margin: 0;
     color: var(--docs-ink);
-    font-size: clamp(1.75rem, 3vw, 2.7rem);
+    font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: -0.022em;
     line-height: 1.08;
-    letter-spacing: 0;
+    text-wrap: balance;
   }
 
   .section-heading p:not(.docs-eyebrow) {
+    max-width: 44rem;
     margin-top: 0.8rem;
     color: var(--docs-muted);
-    font-size: 1.03rem;
+    font-size: 1rem;
+    text-wrap: pretty;
   }
 
   h2,
@@ -1650,7 +1612,8 @@ luxel://latest?reveal=true</code></pre>
 
   h3 {
     margin: 0 0 0.55rem;
-    font-size: 1.08rem;
+    font-size: 1.05rem;
+    font-weight: 600;
   }
 
   p,
@@ -1664,7 +1627,7 @@ luxel://latest?reveal=true</code></pre>
   p,
   li,
   td {
-    color: #c3cbd3;
+    color: rgb(255 255 255 / 0.66);
     overflow-wrap: anywhere;
   }
 
@@ -1672,6 +1635,7 @@ luxel://latest?reveal=true</code></pre>
   ul {
     margin-block: 0.6rem 0;
     padding-left: 1.25rem;
+    list-style: revert;
   }
 
   li + li {
@@ -1696,43 +1660,45 @@ luxel://latest?reveal=true</code></pre>
 
   .permission-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 0.9rem;
   }
 
   .concept-list,
   .workflow-grid,
   .faq-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 0.9rem;
   }
 
   .split-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 0.9rem;
   }
 
   .option-reference-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 0.9rem;
   }
 
   .guide-stack {
     display: grid;
-    gap: 1rem;
+    gap: 0.9rem;
   }
 
   .cli-screenshot-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+    gap: 0.9rem;
   }
 
   .cli-screenshot-grid figure {
     margin: 0;
     overflow: hidden;
-    border: 1px solid var(--docs-line);
-    border-radius: 8px;
+    border-radius: 18px;
     background: var(--docs-panel-strong);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.07),
+      inset 0 0 0 1px rgb(255 255 255 / 0.03);
   }
 
   .cli-video-card {
@@ -1745,7 +1711,7 @@ luxel://latest?reveal=true</code></pre>
     height: auto;
     aspect-ratio: 740 / 470;
     border-bottom: 1px solid var(--docs-line);
-    background: #020304;
+    background: rgb(0 0 0 / 0.4);
     object-fit: contain;
     object-position: center;
   }
@@ -1766,40 +1732,41 @@ luxel://latest?reveal=true</code></pre>
   }
 
   .callout {
-    padding: 1rem;
-    border-color: rgb(140 231 209 / 0.28);
-    background: linear-gradient(180deg, rgb(13 33 31 / 0.88), rgb(12 18 25 / 0.88));
+    padding: 1.15rem 1.25rem;
+    background: rgb(143 134 255 / 0.08);
+    box-shadow: inset 0 0 0 1px rgb(143 134 255 / 0.18);
   }
 
   .mini-reference {
-    padding: 1rem;
+    padding: 1.15rem 1.25rem;
   }
 
   .locale-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.55rem;
+    gap: 0.4rem;
     margin: 0.7rem 0 0;
     padding: 0;
     list-style: none;
   }
 
   .locale-list li {
-    padding: 0.42rem 0.62rem;
-    border: 1px solid rgb(140 231 209 / 0.24);
-    border-radius: 6px;
-    background: rgb(140 231 209 / 0.08);
-    color: #e6f3ef;
-    font-size: 0.9rem;
+    padding: 0.32rem 0.7rem;
+    border-radius: 12px;
+    background: rgb(255 255 255 / 0.06);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+    color: rgb(255 255 255 / 0.75);
+    font-size: 0.85rem;
+    font-weight: 500;
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
     overflow: hidden;
-    border: 1px solid var(--docs-line);
-    border-radius: 8px;
+    border-radius: 14px;
     background: var(--docs-panel-strong);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
   }
 
   th,
@@ -1811,9 +1778,9 @@ luxel://latest?reveal=true</code></pre>
   }
 
   th {
-    color: #eef3f4;
-    font-size: 0.82rem;
-    font-weight: 820;
+    color: rgb(255 255 255 / 0.85);
+    font-size: 0.76rem;
+    font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
@@ -1823,15 +1790,15 @@ luxel://latest?reveal=true</code></pre>
   }
 
   code {
-    border-radius: 5px;
-    background: rgb(244 246 248 / 0.10);
+    border-radius: 6px;
+    background: rgb(255 255 255 / 0.09);
     color: var(--docs-code);
-    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
     font-size: 0.92em;
   }
 
   td code {
-    padding: 0.12rem 0.25rem;
+    padding: 0.12rem 0.3rem;
   }
 
   .shortcut-keys {
@@ -1853,24 +1820,24 @@ luxel://latest?reveal=true</code></pre>
     min-width: 1.75rem;
     height: 1.75rem;
     padding: 0 0.44rem;
-    border: 1px solid rgb(244 246 248 / 0.22);
     border-radius: 7px;
     background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0.055)),
-      #121722;
+      linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.05)),
+      #17171f;
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.22),
       inset 0 -1px 0 rgb(0 0 0 / 0.42),
+      inset 0 0 0 1px rgb(255 255 255 / 0.08),
       0 1px 2px rgb(0 0 0 / 0.32);
     color: var(--docs-ink);
-    font-family: "SF Pro Text", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
     font-size: 0.92rem;
-    font-weight: 780;
+    font-weight: 700;
     line-height: 1;
   }
 
   kbd.is-modifier {
-    color: #f4f6f8;
     font-size: 1.02rem;
   }
 
@@ -1902,9 +1869,10 @@ luxel://latest?reveal=true</code></pre>
   pre {
     margin: 0.85rem 0 0;
     overflow: auto;
-    border-radius: 8px;
-    background: #07090f;
-    color: #f5fbf8;
+    border-radius: 14px;
+    background: rgb(0 0 0 / 0.35);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+    color: rgb(255 255 255 / 0.8);
   }
 
   pre code {
@@ -1915,42 +1883,38 @@ luxel://latest?reveal=true</code></pre>
   }
 
   .reference-table {
-    box-shadow: var(--docs-shadow);
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.07),
+      var(--docs-shadow);
   }
 
   .troubleshooting-list {
     display: grid;
-    gap: 0.75rem;
+    gap: 0.65rem;
   }
 
   details {
-    border: 1px solid var(--docs-line);
-    border-radius: 8px;
+    border-radius: 14px;
     background: var(--docs-panel);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.07),
+      inset 0 0 0 1px rgb(255 255 255 / 0.03);
   }
 
   summary {
     cursor: pointer;
-    padding: 1rem;
+    padding: 1rem 1.15rem;
     color: var(--docs-ink);
-    font-weight: 760;
+    font-weight: 600;
   }
 
   details p {
-    padding: 0 1rem 1rem;
+    padding: 0 1.15rem 1.15rem;
   }
 
   @media (max-width: 980px) {
     .docs-layout {
       grid-template-columns: 1fr;
-    }
-
-    .docs-topbar {
-      grid-template-columns: 1fr auto;
-    }
-
-    .docs-topbar nav {
-      display: none;
     }
 
     .docs-sidebar {
@@ -1979,27 +1943,8 @@ luxel://latest?reveal=true</code></pre>
   }
 
   @media (max-width: 680px) {
-    .docs-topbar {
-      min-height: 4.75rem;
-      padding-inline: 1rem;
-    }
-
-    .docs-topbar nav {
-      display: none;
-    }
-
-    .docs-brand {
-      font-size: 1.22rem;
-    }
-
-    .docs-brand img {
-      width: 1.9rem;
-      height: 1.9rem;
-      border-radius: 0.54rem;
-    }
-
     .docs-layout {
-      width: min(calc(100% - 1rem), 92rem);
+      width: min(calc(100% - 1.25rem), 92rem);
       padding-top: 1rem;
     }
 
