@@ -238,12 +238,30 @@ struct LuxelCLITests {
         }
     }
 
-    @Test("explicit convert formats cover native and external exports without AV1")
-    func explicitConvertFormatsCoverNativeAndExternalExportsWithoutAV1() throws {
+    @Test("convert command accepts explicit AV1 for MP4 output")
+    func convertCommandAcceptsExplicitAV1ForMP4Output() throws {
+        let source = try SourceMedia(
+            fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
+            duration: 10,
+            pixelSize: PixelSize(width: 1920, height: 1080),
+            nominalFrameRate: FrameRate(60),
+            hasAudio: true
+        )
+        let command = try LuxelConvertCommand.parse([
+            "input.mp4", "output.mp4", "--format", "av1"
+        ])
+
+        let request = try command.exportRequest(for: source)
+
+        #expect(request.format == .av1)
+    }
+
+    @Test("explicit convert formats cover native and external exports")
+    func explicitConvertFormatsCoverNativeAndExternalExports() throws {
+        #expect(LuxelHeadlessExportFormat.allValueStrings.contains("av1"))
         #expect(LuxelHeadlessExportFormat.allValueStrings.contains("webm"))
         #expect(LuxelHeadlessExportFormat.allValueStrings.contains("prores422"))
         #expect(LuxelHeadlessExportFormat.allValueStrings.contains("flac"))
-        #expect(!LuxelHeadlessExportFormat.allValueStrings.contains("av1"))
     }
 
     @Test("progress renderer builds a stable terminal bar")

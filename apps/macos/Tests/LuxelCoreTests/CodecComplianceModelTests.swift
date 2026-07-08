@@ -103,8 +103,8 @@ struct CodecComplianceModelTests {
         #expect(CodecLicensePolicy().decision(for: tool) == .developmentToolExempt)
     }
 
-    @Test("license gate passes for bundled WebM codec dependencies")
-    func licenseGatePassesForBundledWebMCodecDependencies() throws {
+    @Test("license gate passes for bundled codec dependencies")
+    func licenseGatePassesForBundledCodecDependencies() throws {
         let ledgerURL = try packageRootURL().appending(path: "THIRD_PARTY_LICENSES.md")
         let markdown = try String(contentsOf: ledgerURL, encoding: .utf8)
         let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
@@ -113,7 +113,7 @@ struct CodecComplianceModelTests {
             ledger: ledger
         )
 
-        #expect(CodecDependency.bundledNativeCodecStack.map(\.id) == ["libvpx", "libopus"])
+        #expect(CodecDependency.bundledNativeCodecStack.map(\.id) == ["libvpx", "libopus", "svt-av1"])
         #expect(report.isPassing)
         #expect(report.violations.isEmpty)
     }
@@ -129,7 +129,7 @@ struct CodecComplianceModelTests {
             ledger: ledger
         )
 
-        #expect(ledger.entries.map(\.dependencyID) == ["libvpx", "libopus"])
+        #expect(ledger.entries.map(\.dependencyID) == ["libvpx", "libopus", "svt-av1"])
         #expect(report.isPassing)
         #expect(report.violations.isEmpty)
     }

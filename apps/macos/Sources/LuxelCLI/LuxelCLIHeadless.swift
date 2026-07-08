@@ -1,5 +1,6 @@
 import ArgumentParser
 import Foundation
+import LuxelCodecAV1
 import LuxelCodecWebM
 import LuxelCore
 
@@ -26,7 +27,7 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
         abstract: "Convert or edit media headlessly through Luxel's exporter.",
         discussion: """
       The output format is inferred from the output file extension unless --format is \
-      provided. Use --format for ambiguous extensions such as .mov or .m4a.
+      provided. Use --format for ambiguous extensions such as .mp4, .mov, or .m4a.
       """
     )
 
@@ -284,6 +285,7 @@ public enum LuxelHeadlessExportFormat: String, CaseIterable, ExpressibleByArgume
     case gif
     case hevc
     case mp4
+    case av1
     case webm
     case apng
     case proRes422 = "prores422"
@@ -306,6 +308,8 @@ public enum LuxelHeadlessExportFormat: String, CaseIterable, ExpressibleByArgume
             .hevc
         case .mp4:
             .mp4
+        case .av1:
+            .av1
         case .webm:
             .webm
         case .apng:
@@ -554,7 +558,10 @@ private struct LuxelHeadlessExportRunner: Sendable {
         to outputURL: URL,
         showProgress: Bool
     ) async throws -> LuxelHeadlessExportResult {
-        let registry = try CodecAdapterRegistry(registrations: [try WebMCodecAdapter.registration()])
+        let registry = try CodecAdapterRegistry(registrations: [
+            try AV1CodecAdapter.registration(),
+            try WebMCodecAdapter.registration()
+        ])
         let exporter = registry.mediaExporter(nativeExporter: NativeMediaExporter())
         let progress = LuxelTerminalProgressReporter(
             label: "Exporting \(request.format.prettyName)",

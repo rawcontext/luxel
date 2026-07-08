@@ -95,6 +95,13 @@ public struct CodecDependency: Codable, Equatable, Identifiable, Sendable {
             role: "Opus audio encode",
             license: .bsd3Clause,
             patentGrant: "Xiph, Broadcom, and Microsoft/Skype patent grants"
+        ),
+        CodecDependency(
+            id: "svt-av1",
+            name: "SVT-AV1",
+            role: "AV1 video encode",
+            license: .bsd3ClauseClear,
+            patentGrant: "Alliance for Open Media Patent License 1.0"
         )
     ]
 }

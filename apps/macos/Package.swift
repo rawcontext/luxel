@@ -11,6 +11,7 @@ let package = Package(
     products: [
         .library(name: "LuxelCore", targets: ["LuxelCore"]),
         .library(name: "LuxelCodecWebM", targets: ["LuxelCodecWebM"]),
+        .library(name: "LuxelCodecAV1", targets: ["LuxelCodecAV1"]),
         .executable(name: "Luxel", targets: ["LuxelApp"]),
         .executable(name: "luxel-cli", targets: ["LuxelCLIExecutable"])
     ],
@@ -22,6 +23,7 @@ let package = Package(
             name: "LuxelApp",
             dependencies: [
                 "LuxelCore",
+                "LuxelCodecAV1",
                 "LuxelCodecWebM",
                 "LuxelPresentation"
             ]
@@ -30,6 +32,7 @@ let package = Package(
         .target(
             name: "LuxelCLI",
             dependencies: [
+                "LuxelCodecAV1",
                 "LuxelCodecWebM",
                 "LuxelCore",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
@@ -40,6 +43,22 @@ let package = Package(
             name: "LuxelCore",
             resources: [
                 .process("Resources")
+            ]
+        ),
+        .target(
+            name: "LuxelCodecAV1",
+            dependencies: [
+                "LuxelCore",
+                "CAV1CodecShims"
+            ]
+        ),
+        .target(
+            name: "CAV1CodecShims",
+            dependencies: [
+                "CSVTAV1"
+            ],
+            linkerSettings: [
+                .linkedLibrary("c++")
             ]
         ),
         .target(
@@ -61,7 +80,9 @@ let package = Package(
         ),
         .binaryTarget(name: "CVPX", path: "Vendor/Artifacts/CVPX.xcframework"),
         .binaryTarget(name: "COpus", path: "Vendor/Artifacts/COpus.xcframework"),
+        .binaryTarget(name: "CSVTAV1", path: "Vendor/Artifacts/CSVTAV1.xcframework"),
         .testTarget(name: "LuxelCoreTests", dependencies: ["LuxelCore"]),
+        .testTarget(name: "LuxelCodecAV1Tests", dependencies: ["LuxelCodecAV1"]),
         .testTarget(name: "LuxelCodecWebMTests", dependencies: ["LuxelCodecWebM"]),
         .testTarget(
             name: "LuxelCLITests",

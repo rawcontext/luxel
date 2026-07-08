@@ -50,7 +50,9 @@ public struct CodecExportPipeline: Sendable {
                     outputFileURL: outputFileURL,
                     format: request.format,
                     tracks: tracks,
-                    pixelSize: outputPixelSize
+                    pixelSize: outputPixelSize,
+                    audioSampleRate: includesAudio ? sourceDescription.audioSampleRate : nil,
+                    audioChannelCount: includesAudio ? sourceDescription.audioChannelCount : nil
                 ))
             await progress?(0)
 

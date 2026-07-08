@@ -1,4 +1,5 @@
 import Foundation
+import LuxelCodecAV1
 import LuxelCodecWebM
 import LuxelCore
 import LuxelPresentation
@@ -134,6 +135,7 @@ enum LuxelCompositionRoot {
     static func codecAdapterRegistry() -> CodecAdapterRegistry {
         do {
             return try CodecAdapterRegistry(registrations: [
+                try AV1CodecAdapter.registration(),
                 try WebMCodecAdapter.registration()
             ])
         } catch {

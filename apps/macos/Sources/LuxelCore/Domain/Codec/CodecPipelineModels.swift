@@ -146,21 +146,35 @@ public struct CodecMuxerConfiguration: Equatable, Sendable {
     public let format: ExportFormat
     public let tracks: [CodecTrack]
     public let pixelSize: PixelSize?
+    public let audioSampleRate: Int?
+    public let audioChannelCount: Int?
 
     public init(
         outputFileURL: URL,
         format: ExportFormat,
         tracks: [CodecTrack],
-        pixelSize: PixelSize? = nil
+        pixelSize: PixelSize? = nil,
+        audioSampleRate: Int? = nil,
+        audioChannelCount: Int? = nil
     ) throws {
         guard !tracks.isEmpty else {
             throw CodecPipelineModelError.invalidMuxerConfiguration
+        }
+
+        if tracks.contains(.audio) {
+            guard let audioSampleRate, audioSampleRate > 0,
+                  let audioChannelCount, audioChannelCount > 0
+            else {
+                throw CodecPipelineModelError.invalidMuxerConfiguration
+            }
         }
 
         self.outputFileURL = outputFileURL
         self.format = format
         self.tracks = tracks
         self.pixelSize = pixelSize
+        self.audioSampleRate = audioSampleRate
+        self.audioChannelCount = audioChannelCount
     }
 }
 
