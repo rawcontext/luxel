@@ -1402,6 +1402,11 @@ luxel://latest?reveal=true</code></pre>
     --docs-warn: #ffb86b;
     --docs-code: #e9e7ff;
     --docs-shadow: 0 20px 50px rgb(0 0 0 / 0.4);
+    --docs-glass-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.14),
+      inset 0 -1px 0 rgb(255 255 255 / 0.04),
+      inset 0 0 0 1px rgb(255 255 255 / 0.05),
+      0 18px 44px rgb(0 0 0 / 0.32);
   }
 
   .docs-hero-grid,
@@ -1426,15 +1431,21 @@ luxel://latest?reveal=true</code></pre>
   .docs-sidebar {
     position: sticky;
     top: 88px;
+    isolation: isolate;
     align-self: start;
     max-height: calc(100svh - 104px);
     overflow: auto;
     padding: 1rem;
     border-radius: 20px;
-    background: var(--glass-card);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    box-shadow: var(--card-shadow);
+    background:
+      radial-gradient(120% 100% at 50% -20%, rgb(255 255 255 / 0.16), transparent 54%),
+      var(--glass-card);
+    backdrop-filter: blur(34px) saturate(185%);
+    -webkit-backdrop-filter: blur(34px) saturate(185%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.18),
+      inset 0 0 0 1px rgb(255 255 255 / 0.06),
+      var(--docs-shadow);
   }
 
   .docs-sidebar nav {
@@ -1554,11 +1565,54 @@ luxel://latest?reveal=true</code></pre>
   .faq-grid article,
   .mini-reference,
   .callout {
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
     border-radius: 18px;
-    background: var(--docs-panel);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.07),
-      inset 0 0 0 1px rgb(255 255 255 / 0.03);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.035)),
+      rgb(24 24 34 / 0.34);
+    backdrop-filter: blur(28px) saturate(170%);
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+    box-shadow: var(--docs-glass-shadow);
+  }
+
+  :is(
+    .docs-hero-grid article,
+    .permission-grid article,
+    .concept-list article,
+    .split-grid article,
+    .option-reference-grid article,
+    .guide-stack article,
+    .workflow-grid article,
+    .faq-grid article,
+    .mini-reference,
+    .callout
+  )::before {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    content: "";
+    border-radius: inherit;
+    background:
+      radial-gradient(120% 80% at 50% -20%, rgb(255 255 255 / 0.14), transparent 52%),
+      linear-gradient(105deg, rgb(255 255 255 / 0.08), transparent 38% 72%, rgb(143 134 255 / 0.08));
+  }
+
+  :is(
+    .docs-hero-grid article,
+    .permission-grid article,
+    .concept-list article,
+    .split-grid article,
+    .option-reference-grid article,
+    .guide-stack article,
+    .workflow-grid article,
+    .faq-grid article,
+    .mini-reference,
+    .callout
+  ) > * {
+    position: relative;
+    z-index: 1;
   }
 
   .docs-hero-grid article,
@@ -1573,7 +1627,9 @@ luxel://latest?reveal=true</code></pre>
   }
 
   .docs-hero-grid article {
-    background: rgb(255 255 255 / 0.05);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.045)),
+      rgb(31 31 45 / 0.36);
   }
 
   .docs-section {
@@ -1693,12 +1749,15 @@ luxel://latest?reveal=true</code></pre>
 
   .cli-screenshot-grid figure {
     margin: 0;
+    isolation: isolate;
     overflow: hidden;
     border-radius: 18px;
-    background: var(--docs-panel-strong);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.07),
-      inset 0 0 0 1px rgb(255 255 255 / 0.03);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.025)),
+      rgb(14 14 21 / 0.48);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    box-shadow: var(--docs-glass-shadow);
   }
 
   .cli-video-card {
@@ -1733,8 +1792,13 @@ luxel://latest?reveal=true</code></pre>
 
   .callout {
     padding: 1.15rem 1.25rem;
-    background: rgb(143 134 255 / 0.08);
-    box-shadow: inset 0 0 0 1px rgb(143 134 255 / 0.18);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.035)),
+      rgb(143 134 255 / 0.1);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.16),
+      inset 0 0 0 1px rgb(143 134 255 / 0.2),
+      0 18px 44px rgb(0 0 0 / 0.28);
   }
 
   .mini-reference {
@@ -1753,8 +1817,12 @@ luxel://latest?reveal=true</code></pre>
   .locale-list li {
     padding: 0.32rem 0.7rem;
     border-radius: 12px;
-    background: rgb(255 255 255 / 0.06);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.04)),
+      rgb(255 255 255 / 0.03);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.12),
+      inset 0 0 0 1px rgb(255 255 255 / 0.04);
     color: rgb(255 255 255 / 0.75);
     font-size: 0.85rem;
     font-weight: 500;
@@ -1765,8 +1833,12 @@ luxel://latest?reveal=true</code></pre>
     border-collapse: collapse;
     overflow: hidden;
     border-radius: 14px;
-    background: var(--docs-panel-strong);
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.025)),
+      rgb(10 10 15 / 0.42);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      inset 0 0 0 1px rgb(255 255 255 / 0.07);
   }
 
   th,
@@ -1894,11 +1966,32 @@ luxel://latest?reveal=true</code></pre>
   }
 
   details {
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
     border-radius: 14px;
-    background: var(--docs-panel);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.03)),
+      rgb(24 24 34 / 0.34);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.07),
-      inset 0 0 0 1px rgb(255 255 255 / 0.03);
+      inset 0 1px 0 rgb(255 255 255 / 0.12),
+      inset 0 0 0 1px rgb(255 255 255 / 0.04);
+  }
+
+  details::before {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    content: "";
+    border-radius: inherit;
+    background: radial-gradient(120% 90% at 50% -20%, rgb(255 255 255 / 0.11), transparent 54%);
+  }
+
+  details > * {
+    position: relative;
+    z-index: 1;
   }
 
   summary {
