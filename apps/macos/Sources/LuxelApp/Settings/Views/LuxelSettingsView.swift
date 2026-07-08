@@ -455,6 +455,14 @@ extension LuxelSettingsView {
 
             LuxelGlassRowDivider()
 
+            settingsToggleRow(
+                "Always Show Replay Buffer Island",
+                isOn: $model.settings.alwaysShowReplayBufferIsland
+            )
+            .help("Keep the replay buffer controls visible in the menu even when replay buffer is off.")
+
+            LuxelGlassRowDivider()
+
             SettingsRow("Length") {
                 SettingsMenuPicker(
                     selection: replayBufferLengthSelection,

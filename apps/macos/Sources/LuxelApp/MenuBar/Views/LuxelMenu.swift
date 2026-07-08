@@ -28,6 +28,9 @@ struct LuxelMenu: View {
         VStack(alignment: .leading, spacing: Self.islandSpacing) {
             captureIsland
             statusMessages
+            LuxelReplayBufferControls(model: model) { fileURL in
+                openRecording(fileURL)
+            }
             libraryIsland
         }
         .frame(width: Self.contentWidth, alignment: .leading)

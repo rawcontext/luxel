@@ -28,6 +28,7 @@ extension AppSettings {
         case replayBufferPreferredBufferLength
         case replayBufferResumeOnLaunch
         case replayBufferConsentAccepted
+        case alwaysShowReplayBufferIsland
         case replayClipDestination
         case notchSurfaceSettings
         case enableShortcuts
@@ -119,6 +120,7 @@ extension AppSettings {
         replayBufferPreferredBufferLength = capture.replayBufferPreferredBufferLength
         replayBufferResumeOnLaunch = capture.replayBufferResumeOnLaunch
         replayBufferConsentAccepted = capture.replayBufferConsentAccepted
+        alwaysShowReplayBufferIsland = capture.alwaysShowReplayBufferIsland
         replayClipDestination = capture.replayClipDestination
         notchSurfaceSettings = capture.notchSurfaceSettings
         enableShortcuts = capture.enableShortcuts
@@ -233,6 +235,10 @@ extension AppSettings {
             replayBufferConsentAccepted: container.decodeIfPresent(
                 Bool.self,
                 forKey: .replayBufferConsentAccepted
+            ) ?? false,
+            alwaysShowReplayBufferIsland: container.decodeIfPresent(
+                Bool.self,
+                forKey: .alwaysShowReplayBufferIsland
             ) ?? false,
             replayClipDestination: container.decodeIfPresent(
                 ReplayClipDestination.self, forKey: .replayClipDestination)
@@ -407,6 +413,7 @@ private struct CaptureSurfaceSettings {
     let replayBufferPreferredBufferLength: TimeInterval
     let replayBufferResumeOnLaunch: Bool
     let replayBufferConsentAccepted: Bool
+    let alwaysShowReplayBufferIsland: Bool
     let replayClipDestination: ReplayClipDestination
     let notchSurfaceSettings: NotchSurfaceSettings
     let enableShortcuts: Bool

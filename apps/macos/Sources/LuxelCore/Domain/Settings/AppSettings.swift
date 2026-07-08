@@ -89,6 +89,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var replayBufferPreferredBufferLength: TimeInterval
     public var replayBufferResumeOnLaunch: Bool
     public var replayBufferConsentAccepted: Bool
+    public var alwaysShowReplayBufferIsland: Bool
     public var replayClipDestination: ReplayClipDestination
     public var notchSurfaceSettings: NotchSurfaceSettings {
         didSet {
@@ -174,6 +175,7 @@ extension AppSettings {
         replayBufferPreferredBufferLength: TimeInterval? = nil,
         replayBufferResumeOnLaunch: Bool = false,
         replayBufferConsentAccepted: Bool = false,
+        alwaysShowReplayBufferIsland: Bool = false,
         replayClipDestination: ReplayClipDestination = .editor,
         notchSurfaceSettings: NotchSurfaceSettings = .defaults,
         enableShortcuts: Bool = true,
@@ -245,6 +247,7 @@ extension AppSettings {
             ) ?? ReplayBufferConfiguration.defaults.bufferLength
         self.replayBufferResumeOnLaunch = replayBufferResumeOnLaunch
         self.replayBufferConsentAccepted = replayBufferConsentAccepted
+        self.alwaysShowReplayBufferIsland = alwaysShowReplayBufferIsland
         self.replayClipDestination = replayClipDestination
         self.notchSurfaceSettings = notchSurfaceSettings
         self.enableShortcuts = enableShortcuts

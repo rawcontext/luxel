@@ -67,6 +67,7 @@ struct UserDefaultsSettingsStoreTests {
             replayBufferPreferredBufferLength: 120,
             replayBufferResumeOnLaunch: true,
             replayBufferConsentAccepted: true,
+            alwaysShowReplayBufferIsland: true,
             replayClipDestination: .quickExport,
             notchSurfaceSettings: try persistedNotchSurfaceSettings(),
             triggerCropperShortcut: "command+control+option+r",
@@ -253,6 +254,7 @@ struct UserDefaultsSettingsStoreTests {
             settings.replayBufferPreferredBufferLength == ReplayBufferConfiguration.defaults.bufferLength)
         #expect(!settings.replayBufferResumeOnLaunch)
         #expect(!settings.replayBufferConsentAccepted)
+        #expect(!settings.alwaysShowReplayBufferIsland)
         #expect(settings.replayClipDestination == .editor)
         #expect(settings.notchSurfaceSettings == .defaults)
         #expect(settings.notchSurfacePreferences == .defaults)

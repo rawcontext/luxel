@@ -40,6 +40,7 @@ extension SettingsTests {
             settings.replayBufferPreferredBufferLength == ReplayBufferConfiguration.defaults.bufferLength)
         #expect(!settings.replayBufferResumeOnLaunch)
         #expect(!settings.replayBufferConsentAccepted)
+        #expect(!settings.alwaysShowReplayBufferIsland)
         #expect(settings.replayClipDestination == .editor)
         #expect(settings.notchSurfaceSettings == .defaults)
         #expect(settings.notchSurfacePreferences == .defaults)
@@ -130,6 +131,30 @@ extension SettingsTests {
 
         #expect(settings.replayBufferConfiguration == nil)
         #expect(settings.replayBufferPreferredBufferLength == 300)
+    }
+
+    @Test("replay buffer island visibility defaults off and decodes explicit override")
+    func replayBufferIslandVisibilityDefaultsOffAndDecodesOverride() throws {
+        let missingData = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+      }
+      """.utf8)
+        let enabledData = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "alwaysShowReplayBufferIsland": true
+      }
+      """.utf8)
+
+        #expect(
+            !(try JSONDecoder().decode(AppSettings.self, from: missingData)
+                .alwaysShowReplayBufferIsland))
+        #expect(
+            try JSONDecoder().decode(AppSettings.self, from: enabledData)
+                .alwaysShowReplayBufferIsland)
     }
 
     @Test("replay buffer preferred length falls back to configured buffer length")
