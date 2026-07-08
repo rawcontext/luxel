@@ -1286,7 +1286,28 @@
     }
   }
 
-  @media (max-width: 760px) {
+  @media (max-width: 860px) {
+    .nav__pill {
+      gap: 14px;
+      padding: 9px 9px 9px 14px;
+    }
+
+    .brand {
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .nav__links {
+      gap: 12px;
+      font-size: 12.5px;
+    }
+
+    .nav__download {
+      padding: 8px 13px 8px 11px;
+    }
+  }
+
+  @media (max-width: 680px) {
     .nav__links {
       display: none;
     }
