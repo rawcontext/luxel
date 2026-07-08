@@ -28,6 +28,10 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
         discussion: """
       The output format is inferred from the output file extension unless --format is \
       provided. Use --format for ambiguous extensions such as .mp4, .mov, or .m4a.
+
+      Aliases: --ss for --start, --to for --end, --t for --duration, -r for \
+      --fps, -s WIDTHxHEIGHT for --width/--height, -an for --mute, and -y for \
+      --overwrite. These are convenience shortcuts, not full ffmpeg compatibility.
       """
     )
 
@@ -49,23 +53,41 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
     @Option(help: "Output height in pixels. Must be used with --width.")
     public var height: Int?
 
+    @Option(name: .customShort("s"), help: .hidden)
+    public var sizeAlias: LuxelVideoSizeArgument?
+
     @Option(help: "Output frame rate.")
     public var fps: Int?
+
+    @Option(name: .customShort("r"), help: .hidden)
+    public var fpsAlias: Int?
 
     @Option(help: "Trim start time in seconds.")
     public var start: Double?
 
+    @Option(name: .customLong("ss"), help: .hidden)
+    public var startAlias: Double?
+
     @Option(help: "Trim end time in seconds.")
     public var end: Double?
 
+    @Option(name: .customLong("to"), help: .hidden)
+    public var endAlias: Double?
+
     @Option(help: "Trim duration in seconds. Cannot be combined with --end.")
     public var duration: Double?
+
+    @Option(name: .customLong("t"), help: .hidden)
+    public var durationAlias: Double?
 
     @Option(help: "Playback speed from 0.1 to 10. Defaults to 1.")
     public var speed: Double = 1
 
     @Flag(help: "Export without audio.")
     public var mute = false
+
+    @Flag(name: .customLong("an", withSingleDash: true), help: .hidden)
+    public var muteAlias = false
 
     @Flag(name: .customLong("crop-to-fill"), help: "Enable crop-to-fill rendering.")
     public var cropToFill = false
@@ -82,6 +104,9 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
     @Flag(help: "Replace the output file if it already exists.")
     public var overwrite = false
 
+    @Flag(name: .customShort("y"), help: .hidden)
+    public var overwriteAlias = false
+
     @Flag(help: "Print a JSON result instead of the output path.")
     public var json = false
 
@@ -89,6 +114,10 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
     public var quiet = false
 
     public init() {}
+
+    public var shouldOverwrite: Bool {
+        overwrite || overwriteAlias
+    }
 
     public func exportRequest(for source: SourceMedia) throws -> ExportRequest {
         try exportDraft(for: source).exportRequest
@@ -107,7 +136,7 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
             trimRange: timeRange(sourceDuration: source.duration),
             pixelSize: pixelSize(),
             frameRate: frameRate(),
-            shouldMute: mute,
+            shouldMute: mute || muteAlias,
             shouldCrop: cropToFill || crop != nil,
             cropRect: crop?.domainValue,
             quality: resolvedQuality,
@@ -123,6 +152,20 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
     }
 
     private func pixelSize() throws -> PixelSize? {
+        if let sizeAlias {
+            if let width, width != sizeAlias.width {
+                throw aliasConflict(primaryName: "--width", aliasName: "-s")
+            }
+            if let height, height != sizeAlias.height {
+                throw aliasConflict(primaryName: "--height", aliasName: "-s")
+            }
+
+            return try PixelSize(
+                width: width ?? sizeAlias.width,
+                height: height ?? sizeAlias.height
+            )
+        }
+
         switch (width, height) {
         case (.none, .none):
             return nil
@@ -136,7 +179,14 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
     }
 
     private func frameRate() throws -> FrameRate? {
-        guard let fps else {
+        guard
+            let fps = try resolvedAliasedOption(
+                primary: fps,
+                alias: fpsAlias,
+                primaryName: "--fps",
+                aliasName: "-r"
+            )
+        else {
             return nil
         }
 
@@ -144,18 +194,37 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
     }
 
     private func timeRange(sourceDuration: TimeInterval) throws -> TimeRange? {
-        if end != nil, duration != nil {
+        let resolvedStartOption = try resolvedAliasedOption(
+            primary: start,
+            alias: startAlias,
+            primaryName: "--start",
+            aliasName: "--ss"
+        )
+        let resolvedEndOption = try resolvedAliasedOption(
+            primary: end,
+            alias: endAlias,
+            primaryName: "--end",
+            aliasName: "--to"
+        )
+        let resolvedDurationOption = try resolvedAliasedOption(
+            primary: duration,
+            alias: durationAlias,
+            primaryName: "--duration",
+            aliasName: "--t"
+        )
+
+        if resolvedEndOption != nil, resolvedDurationOption != nil {
             throw LuxelCLIError.invalidHeadlessExportOptions(
-                "--end and --duration cannot be combined."
+                "--end and --duration cannot be combined (aliases: --to and --t)."
             )
         }
 
-        let resolvedStart = try validatedNonNegative(start ?? 0, name: "--start")
+        let resolvedStart = try validatedNonNegative(resolvedStartOption ?? 0, name: "--start")
         let resolvedEnd: TimeInterval
-        if let duration {
+        if let duration = resolvedDurationOption {
             let resolvedDuration = try validatedPositive(duration, name: "--duration")
             resolvedEnd = resolvedStart + resolvedDuration
-        } else if let end {
+        } else if let end = resolvedEndOption {
             resolvedEnd = try validatedPositive(end, name: "--end")
         } else {
             resolvedEnd = sourceDuration
@@ -183,6 +252,34 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
         }
 
         return resolvedQuality
+    }
+
+    private func resolvedAliasedOption<Value: Equatable>(
+        primary: Value?,
+        alias: Value?,
+        primaryName: String,
+        aliasName: String
+    ) throws -> Value? {
+        switch (primary, alias) {
+        case (.some(let primary), .some(let alias)):
+            guard primary == alias else {
+                throw aliasConflict(primaryName: primaryName, aliasName: aliasName)
+            }
+
+            return primary
+        case (.some(let primary), .none):
+            return primary
+        case (.none, .some(let alias)):
+            return alias
+        case (.none, .none):
+            return nil
+        }
+    }
+
+    private func aliasConflict(primaryName: String, aliasName: String) -> LuxelCLIError {
+        LuxelCLIError.invalidHeadlessExportOptions(
+            "\(primaryName) and \(aliasName) cannot use different values."
+        )
     }
 }
 
@@ -433,6 +530,33 @@ public struct LuxelCropRectArgument: ExpressibleByArgument, Equatable, Sendable 
     }
 }
 
+public struct LuxelVideoSizeArgument: ExpressibleByArgument, Equatable, Sendable {
+    public let domainValue: PixelSize
+
+    public var width: Int {
+        domainValue.width
+    }
+
+    public var height: Int {
+        domainValue.height
+    }
+
+    public init?(argument: String) {
+        let components = argument.split { character in
+            character == "x" || character == "X"
+        }
+        guard components.count == 2,
+              let width = Int(components[0]),
+              let height = Int(components[1]),
+              let size = try? PixelSize(width: width, height: height)
+        else {
+            return nil
+        }
+
+        domainValue = size
+    }
+}
+
 public protocol LuxelEditorOpener: Sendable {
     func openEditor(fileURL: URL) throws
 }
@@ -527,7 +651,7 @@ public enum LuxelTranscriptFormatter {
 private struct LuxelHeadlessExportRunner: Sendable {
     func convert(_ command: LuxelConvertCommand) async throws {
         try validateInputFile(command.input.url)
-        try prepareOutputFile(command.output.url, overwrite: command.overwrite)
+        try prepareOutputFile(command.output.url, overwrite: command.shouldOverwrite)
 
         let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: command.input.url)
         let request = try command.exportRequest(for: source)
