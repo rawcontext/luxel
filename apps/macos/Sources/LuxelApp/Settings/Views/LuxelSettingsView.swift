@@ -190,6 +190,8 @@ extension LuxelSettingsView {
             notchSettingsForm
         case .replayBuffer:
             replayBufferSettingsForm
+        case .transcripts:
+            transcriptsSettingsForm
         case .commandLine:
             commandLineToolSettingsForm
         case .system:
@@ -377,17 +379,6 @@ extension LuxelSettingsView {
 
             settingsToggleRow("Confirm Discard", isOn: $model.settings.confirmDiscard)
                 .help("Ask before closing an editor with unsaved changes.")
-        }
-
-        SettingsIslandGroup(
-            "Transcripts",
-            footer: "Turn this off for faster raw transcripts on long audio recordings."
-        ) {
-            settingsToggleRow(
-                "Segment Transcript Turns",
-                isOn: $model.settings.transcriptTurnSegmentationEnabled
-            )
-            .help("Use Apple Intelligence to group audio transcripts into display turns.")
         }
     }
 

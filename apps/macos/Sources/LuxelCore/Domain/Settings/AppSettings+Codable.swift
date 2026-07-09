@@ -20,6 +20,8 @@ extension AppSettings {
         case audioInputDeviceName
         case audioOnlyFormat
         case transcriptTurnSegmentationEnabled
+        case transcriptSpeakerDiarizationEnabled
+        case transcriptLanguageIdentifier
         case cameraDeviceID
         case cameraSeparateTrack
         case cameraPreviewStyle
@@ -111,6 +113,13 @@ extension AppSettings {
         transcriptTurnSegmentationEnabled =
             try container.decodeIfPresent(Bool.self, forKey: .transcriptTurnSegmentationEnabled)
             ?? false
+        transcriptSpeakerDiarizationEnabled =
+            try container.decodeIfPresent(
+                Bool.self, forKey: .transcriptSpeakerDiarizationEnabled)
+            ?? true
+        transcriptLanguageIdentifier =
+            try container.decodeIfPresent(String.self, forKey: .transcriptLanguageIdentifier)
+            .flatMap(Self.nonEmpty)
         let capture = try Self.decodeCaptureSurfaceSettings(from: container)
         cameraDeviceID = capture.cameraDeviceID
         cameraSeparateTrack = capture.cameraSeparateTrack

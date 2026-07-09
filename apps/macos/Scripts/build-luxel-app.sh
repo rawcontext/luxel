@@ -55,6 +55,10 @@ cp "${INFO_PLIST}" "${APP_PATH}/Contents/Info.plist"
 cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 cp "${BIN_DIR}/luxel-cli" "${APP_PATH}/Contents/MacOS/luxel-cli"
 cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
+if [[ -d "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" ]]; then
+	mkdir -p "${APP_PATH}/Contents/Resources/Models"
+	cp -R "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" "${APP_PATH}/Contents/Resources/Models/"
+fi
 if [[ -f "${CLI_MANPAGE}" ]]; then
 	mkdir -p "${APP_PATH}/Contents/Resources/man/man1"
 	cp "${CLI_MANPAGE}" "${APP_PATH}/Contents/Resources/man/man1/luxel.1"

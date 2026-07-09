@@ -1,7 +1,7 @@
 import Foundation
 
 public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecked Sendable {
-    public static let schemaVersion = 2
+    public static let schemaVersion = 3
 
     private let cacheDirectory: URL
     private let fileManager: FileManager
@@ -34,7 +34,8 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
         return try TurnSegmentedTranscript(
             spans: document.transcript.spans,
             turns: document.transcript.turns,
-            localeIdentifier: document.transcript.localeIdentifier
+            localeIdentifier: document.transcript.localeIdentifier,
+            speakers: document.transcript.speakers
         )
     }
 
@@ -69,7 +70,10 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
             "\(modificationDate?.timeIntervalSince1970 ?? 0)",
             request.locale.identifier,
             request.sourceContext.cacheIdentifier,
-            request.turnSegmentationMode.rawValue
+            request.turnSegmentationMode.rawValue,
+            request.speakerDiarizationMode.rawValue,
+            request.speakerModelRevision ?? "",
+            request.speakerLibraryRevision ?? ""
         ].joined(separator: "|")
 
         return stableFNV1aHash(rawKey)

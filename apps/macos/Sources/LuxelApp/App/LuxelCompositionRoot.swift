@@ -158,6 +158,8 @@ enum LuxelCompositionRoot {
                     nativeEstimator: NativeExportSizeEstimator())
             ),
             audioTranscriptService: localAudioTranscriptService(),
+            speakerNamingService: speakerVoiceNamingService(),
+            speakerModelStore: speakerDiarizationModelStore,
             speechRecognitionAuthorizationService: AppleSpeechRecognitionAuthorizationService(),
             codecAvailability: codecAdapterRegistry.availability,
             directoryAccessService: bookmarkedDirectoryAccessService(),
@@ -165,19 +167,12 @@ enum LuxelCompositionRoot {
         )
     }
 
-    static func localAudioTranscriptService() -> LocalAudioTranscriptService {
-        let settingsStore = settingsStore()
-        return LocalAudioTranscriptService(
-            transcriber: AppleSpeechTranscriptExtractor(),
-            turnSegmenter: AppleIntelligenceTurnSegmenter(),
-            turnSegmentationMode: {
-                let settings = (try? settingsStore.load()) ?? defaultSettings
-                return settings.transcriptTurnSegmentationEnabled ? .semantic : .raw
-            },
-            cache: ApplicationSupportTranscriptCache(cacheDirectory: transcriptCacheDirectory),
-            audioTrackInspector: AVFoundationAudioTrackInspector()
-        )
-    }
+    static let speakerDiarizationModelStore = FluidAudioSpeakerDiarizationModelStore(
+        modelsDirectory: speakerDiarizationModelsDirectory,
+        bundledModelDirectory: Bundle.main.resourceURL?
+            .appending(path: "Models", directoryHint: .isDirectory)
+            .appending(path: "speaker-diarization", directoryHint: .isDirectory)
+    )
 
     @MainActor
     static func quickExportService(fileWorkflowService: ExportedFileWorkflowService)
@@ -222,19 +217,13 @@ enum LuxelCompositionRoot {
             .appending(path: "corrupt-recordings.jsonl")
     }
 
-    private static var transcriptCacheDirectory: URL {
-        applicationSupportDirectory
-            .appending(path: "Luxel")
-            .appending(path: "Transcripts", directoryHint: .isDirectory)
-    }
-
     private static var replayBufferCacheDirectory: URL {
         cachesDirectory
             .appending(path: "Luxel")
             .appending(path: "ReplayBuffer", directoryHint: .isDirectory)
     }
 
-    private static var applicationSupportDirectory: URL {
+    static var applicationSupportDirectory: URL {
         let applicationSupportDirectory =
             FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)

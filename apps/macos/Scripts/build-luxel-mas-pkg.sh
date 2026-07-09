@@ -143,6 +143,10 @@ cp "${PROVISIONING_PROFILE}" "${APP_PATH}/Contents/embedded.provisionprofile"
 cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 cp "${BIN_DIR}/luxel-cli" "${APP_PATH}/Contents/MacOS/luxel-cli"
 cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
+if [[ -d "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" ]]; then
+	mkdir -p "${APP_PATH}/Contents/Resources/Models"
+	cp -R "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" "${APP_PATH}/Contents/Resources/Models/"
+fi
 "${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
 find "${BIN_DIR}" -maxdepth 1 -name '*.bundle' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
 find "${BIN_DIR}" -maxdepth 2 -name '*.lproj' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;

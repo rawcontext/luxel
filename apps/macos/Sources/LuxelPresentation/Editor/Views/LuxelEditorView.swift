@@ -78,6 +78,23 @@ extension LuxelEditorView {
     }
 
     private var videoStage: some View {
+        // Mirrors audioStage: navigation lives in a row above the stage so the
+        // arrows do not move when flipping between audio and video recordings.
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                recordingNavigationButtons
+
+                Spacer(minLength: 0)
+
+                transcriptPreviewControls
+            }
+
+            videoFrame
+        }
+        .frame(minWidth: 540, maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var videoFrame: some View {
         ZStack {
             if model.usesAlphaPreviewBackground {
                 CheckerboardBackground()
@@ -104,18 +121,11 @@ extension LuxelEditorView {
 
             AudioTranscriptPreview(model: model)
         }
-        .frame(minWidth: 540, maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-        }
-        .overlay(alignment: .topLeading) {
-            recordingNavigationButtons
-                .padding(12)
-        }
-        .overlay(alignment: .topTrailing) {
-            transcriptPreviewControls
         }
         .overlay(alignment: .bottom) {
             if model.hasSource {
@@ -193,7 +203,6 @@ extension LuxelEditorView {
             }
             .buttonStyle(.plain)
             .help(transcriptPreviewButtonHelp)
-            .padding(12)
         }
     }
 
@@ -402,6 +411,10 @@ extension LuxelEditorView {
     private var exportControls: some View {
         VStack(alignment: .leading, spacing: 10) {
             exportActionButtons
+
+            if !model.visibleSpeakerVoices.isEmpty {
+                EditorSpeakersCard(model: model)
+            }
 
             editorDisclosureCard("Format") {
                 VStack(alignment: .leading, spacing: 12) {

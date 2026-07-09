@@ -16,7 +16,8 @@ let package = Package(
         .executable(name: "luxel-cli", targets: ["LuxelCLIExecutable"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.8.2")
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.8.2"),
+        .package(url: "https://github.com/FluidInference/FluidAudio.git", from: "0.15.5")
     ],
     targets: [
         .executableTarget(
@@ -41,6 +42,9 @@ let package = Package(
         .target(name: "LuxelPresentation", dependencies: ["LuxelCore"]),
         .target(
             name: "LuxelCore",
+            dependencies: [
+                .product(name: "FluidAudio", package: "FluidAudio")
+            ],
             resources: [
                 .process("Resources")
             ]

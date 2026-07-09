@@ -2,6 +2,19 @@ import Foundation
 
 public protocol AudioTranscriptService: Sendable {
     func transcript(for request: AudioTranscriptRequest) async throws -> TurnSegmentedTranscript?
+    /// Persists a caller-updated transcript (for example after renaming a speaker)
+    /// under the same effective cache key the service would use for `request`.
+    func storeUpdatedTranscript(
+        _ transcript: TurnSegmentedTranscript,
+        for request: AudioTranscriptRequest
+    ) async throws
+}
+
+extension AudioTranscriptService {
+    public func storeUpdatedTranscript(
+        _ transcript: TurnSegmentedTranscript,
+        for request: AudioTranscriptRequest
+    ) async throws {}
 }
 
 public enum TranscriptTurnSegmentationMode: String, Codable, Equatable, Sendable {
@@ -25,17 +38,26 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
     public let locale: Locale
     public let sourceContext: TranscriptSourceContext
     public let turnSegmentationMode: TranscriptTurnSegmentationMode
+    public let speakerDiarizationMode: TranscriptSpeakerDiarizationMode
+    public let speakerModelRevision: String?
+    public let speakerLibraryRevision: String?
 
     public init(
         audioURL: URL,
         locale: Locale = .current,
         sourceContext: TranscriptSourceContext = .unknown,
-        turnSegmentationMode: TranscriptTurnSegmentationMode = .semantic
+        turnSegmentationMode: TranscriptTurnSegmentationMode = .semantic,
+        speakerDiarizationMode: TranscriptSpeakerDiarizationMode = .disabled,
+        speakerModelRevision: String? = nil,
+        speakerLibraryRevision: String? = nil
     ) {
         self.audioURL = audioURL
         self.locale = locale
         self.sourceContext = sourceContext
         self.turnSegmentationMode = turnSegmentationMode
+        self.speakerDiarizationMode = speakerDiarizationMode
+        self.speakerModelRevision = speakerModelRevision
+        self.speakerLibraryRevision = speakerLibraryRevision
     }
 
     public func replacingTurnSegmentationMode(
@@ -45,7 +67,38 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
             audioURL: audioURL,
             locale: locale,
             sourceContext: sourceContext,
-            turnSegmentationMode: turnSegmentationMode
+            turnSegmentationMode: turnSegmentationMode,
+            speakerDiarizationMode: speakerDiarizationMode,
+            speakerModelRevision: speakerModelRevision,
+            speakerLibraryRevision: speakerLibraryRevision
+        )
+    }
+
+    public func replacingSpeakerDiarizationMode(
+        _ speakerDiarizationMode: TranscriptSpeakerDiarizationMode,
+        modelRevision: String? = nil,
+        libraryRevision: String? = nil
+    ) -> AudioTranscriptRequest {
+        AudioTranscriptRequest(
+            audioURL: audioURL,
+            locale: locale,
+            sourceContext: sourceContext,
+            turnSegmentationMode: turnSegmentationMode,
+            speakerDiarizationMode: speakerDiarizationMode,
+            speakerModelRevision: speakerDiarizationMode == .enabled ? modelRevision : nil,
+            speakerLibraryRevision: speakerDiarizationMode == .enabled ? libraryRevision : nil
+        )
+    }
+
+    public func replacingLocale(_ locale: Locale) -> AudioTranscriptRequest {
+        AudioTranscriptRequest(
+            audioURL: audioURL,
+            locale: locale,
+            sourceContext: sourceContext,
+            turnSegmentationMode: turnSegmentationMode,
+            speakerDiarizationMode: speakerDiarizationMode,
+            speakerModelRevision: speakerModelRevision,
+            speakerLibraryRevision: speakerLibraryRevision
         )
     }
 }

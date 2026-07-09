@@ -6,30 +6,45 @@ import OSLog
 private let transcriptLogger = Logger(subsystem: "media.luxel.app", category: "transcripts")
 
 extension LuxelEditorModel {
+    var canTranscribeSource: Bool {
+        source?.hasAudio == true
+            && audioTranscriptService != nil
+            && speechRecognitionAuthorizationService != nil
+    }
+
+    var canShowVideoTranscriptToggle: Bool {
+        hasVideoSource && canTranscribeSource
+    }
+
+    var canCloseTranscriptPanel: Bool {
+        hasVideoSource && isTranscriptPanelVisible
+    }
+
+    var visibleTranscript: TurnSegmentedTranscript? {
+        isTranscriptPanelVisible && canTranscribeSource ? transcript : nil
+    }
+
+    var shouldShowSpeechRecognitionPrompt: Bool {
+        isTranscriptPanelVisible
+            && canTranscribeSource
+            && (speechRecognitionAuthorizationState == .notDetermined
+                    || speechRecognitionAuthorizationState == .denied)
+    }
+
+    var shouldShowTranscriptProgress: Bool {
+        isTranscriptPanelVisible
+            && canTranscribeSource
+            && isTranscriptExtractionActive
+            && visibleTranscript == nil
+            && !shouldShowSpeechRecognitionPrompt
+    }
+
     func seekToTranscriptTurn(_ turn: TranscriptTurn) {
         seekToTranscriptTime(turn.start)
     }
 
     func seekToTranscriptSpan(_ span: TimedTranscriptSpan) {
         seekToTranscriptTime(span.start)
-    }
-
-    private func seekToTranscriptTime(_ time: TimeInterval) {
-        currentPlaybackTime = time
-        let shouldStartPlayback = !playbackRequested
-        player.seek(
-            to: CMTime(seconds: time, preferredTimescale: 600),
-            toleranceBefore: .zero,
-            toleranceAfter: .zero
-        ) { [weak self] finished in
-            guard finished, shouldStartPlayback else {
-                return
-            }
-
-            Task { @MainActor in
-                self?.startPlayback()
-            }
-        }
     }
 
     func toggleTranscriptPanel() {
@@ -142,6 +157,7 @@ extension LuxelEditorModel {
         transcriptTask?.cancel()
         isTranscriptExtractionActive = true
         transcriptExtractionStartedAt = Date()
+        startSpeakerModelStatePolling()
         transcriptTask = Task { [weak self, audioTranscriptService] in
             do {
                 let transcript = try await audioTranscriptService.transcript(
@@ -162,6 +178,7 @@ extension LuxelEditorModel {
                     self?.isTranscriptExtractionActive = false
                     self?.transcriptExtractionStartedAt = nil
                     self?.transcriptTask = nil
+                    self?.stopSpeakerModelStatePolling()
                 }
             } catch {
                 Self.logTranscriptFailure(error)
@@ -176,6 +193,7 @@ extension LuxelEditorModel {
                     self?.isTranscriptExtractionActive = false
                     self?.transcriptExtractionStartedAt = nil
                     self?.transcriptTask = nil
+                    self?.stopSpeakerModelStatePolling()
                 }
             }
         }

@@ -340,6 +340,9 @@ public struct LuxelTranscribeCommand: ParsableCommand, Sendable {
     @Flag(name: .customLong("semantic-turns"), help: "Use Apple Intelligence turn segmentation.")
     public var semanticTurns = false
 
+    @Flag(help: "Identify speakers with the local diarization model (downloads it if missing).")
+    public var diarize = false
+
     @Flag(help: "Print the full transcript JSON instead of plain text.")
     public var json = false
 
@@ -628,7 +631,28 @@ public struct LuxelHeadlessExportResult: Codable, Equatable, Sendable {
 
 public enum LuxelTranscriptFormatter {
     public static func plainText(_ transcript: TurnSegmentedTranscript) -> String {
-        transcript.turns.map(\.text).joined(separator: "\n")
+        // Non-diarized transcripts keep the historical text-only format;
+        // speaker/source prefixes appear only when speaker labels exist.
+        transcript.turns.map { turn in
+            guard !transcript.speakers.isEmpty else {
+                return turn.text
+            }
+
+            var labels: [String] = []
+            if let speaker = transcript.speaker(for: turn.speakerID) {
+                labels.append(speaker.displayName)
+            }
+            if let source = turn.source {
+                labels.append(source.displayName)
+            }
+
+            guard !labels.isEmpty else {
+                return turn.text
+            }
+
+            return "\(labels.joined(separator: " — ")): \(turn.text)"
+        }
+        .joined(separator: "\n")
     }
 
     public static func data(
@@ -731,14 +755,15 @@ private struct LuxelTranscriptionRunner: Sendable {
         }
 
         let mode: TranscriptTurnSegmentationMode = command.semanticTurns ? .semantic : .raw
-        let transcript = try await transcriptService(mode: mode).transcript(
-            for: AudioTranscriptRequest(
-                audioURL: command.file.url,
-                locale: Locale(identifier: command.locale ?? Locale.current.identifier),
-                sourceContext: .unknown,
-                turnSegmentationMode: mode
+        let transcript = try await transcriptService(mode: mode, diarize: command.diarize)
+            .transcript(
+                for: AudioTranscriptRequest(
+                    audioURL: command.file.url,
+                    locale: Locale(identifier: command.locale ?? Locale.current.identifier),
+                    sourceContext: .unknown,
+                    turnSegmentationMode: mode
+                )
             )
-        )
 
         guard let transcript else {
             throw LuxelCLIError.transcriptUnavailable
@@ -752,21 +777,49 @@ private struct LuxelTranscriptionRunner: Sendable {
         }
     }
 
-    private func transcriptService(mode: TranscriptTurnSegmentationMode)
-    -> LocalAudioTranscriptService {
+    private func transcriptService(
+        mode: TranscriptTurnSegmentationMode,
+        diarize: Bool
+    ) -> LocalAudioTranscriptService {
         let semanticSegmenter: any TranscriptTurnSegmenter =
             mode == .semantic ? AppleIntelligenceTurnSegmenter() : RawTranscriptTurnSegmenter()
+        let speakerModelsDirectory = luxelApplicationSupportDirectory()
+            .appendingPathComponent("Models", isDirectory: true)
+            .appendingPathComponent("FluidAudio", isDirectory: true)
+            .appendingPathComponent("SpeakerDiarization", isDirectory: true)
 
         return LocalAudioTranscriptService(
             transcriber: AppleSpeechTranscriptExtractor(),
             turnSegmenter: semanticSegmenter,
             turnSegmentationMode: { mode },
+            speakerDiarizationMode: { diarize ? .enabled : .disabled },
             cache: ApplicationSupportTranscriptCache(cacheDirectory: transcriptCacheDirectory()),
-            audioTrackInspector: AVFoundationAudioTrackInspector()
+            audioTrackInspector: AVFoundationAudioTrackInspector(),
+            speakerDiarizer: diarize
+                ? FluidAudioSpeakerDiarizer(modelsDirectory: speakerModelsDirectory) : nil,
+            speakerModelStore: diarize
+                ? FluidAudioSpeakerDiarizationModelStore(
+                    modelsDirectory: speakerModelsDirectory,
+                    bundledModelDirectory: Bundle.main.resourceURL?
+                        .appendingPathComponent("Models", isDirectory: true)
+                        .appendingPathComponent("speaker-diarization", isDirectory: true)) : nil,
+            knownSpeakerStore: diarize
+                ? FileKnownSpeakerProfileStore(
+                    directory: luxelApplicationSupportDirectory()
+                        .appendingPathComponent("Known Speakers", isDirectory: true)) : nil,
+            diarizationArtifactsStore: diarize
+                ? SpeakerDiarizationArtifactsFileStore(
+                    directory: transcriptCacheDirectory()
+                        .appendingPathComponent("Diarization", isDirectory: true)) : nil
         )
     }
 
     private func transcriptCacheDirectory() -> URL {
+        luxelApplicationSupportDirectory()
+            .appendingPathComponent("Transcripts", isDirectory: true)
+    }
+
+    private func luxelApplicationSupportDirectory() -> URL {
         let applicationSupport =
             FileManager.default.urls(
                 for: .applicationSupportDirectory,
@@ -775,10 +828,7 @@ private struct LuxelTranscriptionRunner: Sendable {
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
                 "Library/Application Support")
 
-        return
-            applicationSupport
-            .appendingPathComponent("Luxel", isDirectory: true)
-            .appendingPathComponent("Transcripts", isDirectory: true)
+        return applicationSupport.appendingPathComponent("Luxel", isDirectory: true)
     }
 }
 

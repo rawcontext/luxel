@@ -50,10 +50,18 @@ public final class LuxelEditorModel {
     var outputDirectoryBookmark: BookmarkedDirectory?
     var recordingNavigationURLs: [URL] = []
     var recordingNavigationIndex: Int?
-    var transcript: TurnSegmentedTranscript?
+    var transcript: TurnSegmentedTranscript? {
+        didSet {
+            refreshDetectedSpeakerVoices()
+        }
+    }
     var isTranscriptExtractionActive = false
     var isTranscriptPanelVisible = false
     var transcriptExtractionStartedAt: Date?
+    var detectedSpeakerVoices: [DetectedSpeakerVoice] = []
+    var knownSpeakerOptions: [KnownSpeakerProfile] = []
+    var ignoredSpeakerVoiceIDs: Set<String> = []
+    var isSpeakerModelPreparing = false
     var speechRecognitionAuthorizationState: SpeechRecognitionAuthorizationState?
     var currentPlaybackTime: TimeInterval = 0
     let configuredSupportedFormats: [ExportFormat]
@@ -87,6 +95,10 @@ public final class LuxelEditorModel {
     @ObservationIgnored let frameGrabService: FrameGrabService
     @ObservationIgnored let audioMixResolutionService: AudioMixResolutionService
     @ObservationIgnored let audioTranscriptService: (any AudioTranscriptService)?
+    @ObservationIgnored let speakerNamingService: SpeakerVoiceNamingService?
+    @ObservationIgnored let speakerModelStore: (any SpeakerDiarizationModelStore)?
+    @ObservationIgnored var exampleClipPlaybackTask: Task<Void, Never>?
+    @ObservationIgnored var speakerModelStatePollingTask: Task<Void, Never>?
     @ObservationIgnored let speechRecognitionAuthorizationService:
         (any SpeechRecognitionAuthorizationService)?
     @ObservationIgnored let fileSystem: any FileSystem
@@ -133,6 +145,8 @@ public final class LuxelEditorModel {
         ),
         audioPeakAnalyzer: any AudioPeakAnalyzer = AVAssetReaderAudioPeakAnalyzer(),
         audioTranscriptService: (any AudioTranscriptService)? = nil,
+        speakerNamingService: SpeakerVoiceNamingService? = nil,
+        speakerModelStore: (any SpeakerDiarizationModelStore)? = nil,
         speechRecognitionAuthorizationService:
             (any SpeechRecognitionAuthorizationService)? = nil,
         fileSystem: any FileSystem = LocalFileSystem(),
@@ -152,6 +166,8 @@ public final class LuxelEditorModel {
         self.frameGrabService = frameGrabService
         self.audioMixResolutionService = AudioMixResolutionService(analyzer: audioPeakAnalyzer)
         self.audioTranscriptService = audioTranscriptService
+        self.speakerNamingService = speakerNamingService
+        self.speakerModelStore = speakerModelStore
         self.speechRecognitionAuthorizationService = speechRecognitionAuthorizationService
         self.fileSystem = fileSystem
         self.directoryAccessService = directoryAccessService
@@ -185,39 +201,6 @@ extension LuxelEditorModel {
 
     var hasAudioOnlySource: Bool {
         source?.isAudioOnly == true
-    }
-
-    var canTranscribeSource: Bool {
-        source?.hasAudio == true
-            && audioTranscriptService != nil
-            && speechRecognitionAuthorizationService != nil
-    }
-
-    var canShowVideoTranscriptToggle: Bool {
-        hasVideoSource && canTranscribeSource
-    }
-
-    var canCloseTranscriptPanel: Bool {
-        hasVideoSource && isTranscriptPanelVisible
-    }
-
-    var visibleTranscript: TurnSegmentedTranscript? {
-        isTranscriptPanelVisible && canTranscribeSource ? transcript : nil
-    }
-
-    var shouldShowSpeechRecognitionPrompt: Bool {
-        isTranscriptPanelVisible
-            && canTranscribeSource
-            && (speechRecognitionAuthorizationState == .notDetermined
-                    || speechRecognitionAuthorizationState == .denied)
-    }
-
-    var shouldShowTranscriptProgress: Bool {
-        isTranscriptPanelVisible
-            && canTranscribeSource
-            && isTranscriptExtractionActive
-            && visibleTranscript == nil
-            && !shouldShowSpeechRecognitionPrompt
     }
 
     var supportedFormats: [ExportFormat] {

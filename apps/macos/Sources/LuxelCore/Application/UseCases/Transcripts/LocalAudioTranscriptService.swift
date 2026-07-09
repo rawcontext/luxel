@@ -2,11 +2,20 @@ import Foundation
 
 public struct LocalAudioTranscriptService: AudioTranscriptService {
     private let transcriber: any TimedSpeechTranscriber
-    private let turnSegmenter: any TranscriptTurnSegmenter
+    // Several stored properties are internal (not private) because the diarization
+    // members in LocalAudioTranscriptService+Diarization.swift need cross-file access.
+    let turnSegmenter: any TranscriptTurnSegmenter
     private let rawTurnSegmenter: any TranscriptTurnSegmenter
     private let turnSegmentationMode: @Sendable () -> TranscriptTurnSegmentationMode
-    private let cache: any TranscriptCache
+    private let speakerDiarizationMode: @Sendable () -> TranscriptSpeakerDiarizationMode
+    private let transcriptLocaleOverride: @Sendable () -> Locale?
+    let cache: any TranscriptCache
     private let audioTrackInspector: any AudioTrackInspector
+    private let speakerDiarizer: (any SpeakerDiarizer)?
+    private let speakerModelStore: (any SpeakerDiarizationModelStore)?
+    let knownSpeakerStore: (any KnownSpeakerProfileStore)?
+    let diarizationArtifactsStore: (any SpeakerDiarizationArtifactsStore)?
+    let knownSpeakerMatcherConfiguration: KnownSpeakerMatcherConfiguration
 
     public init(
         transcriber: any TimedSpeechTranscriber,
@@ -15,21 +24,36 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
         turnSegmentationMode: @escaping @Sendable () -> TranscriptTurnSegmentationMode = {
             .semantic
         },
+        speakerDiarizationMode: @escaping @Sendable () -> TranscriptSpeakerDiarizationMode = {
+            .disabled
+        },
+        transcriptLocaleOverride: @escaping @Sendable () -> Locale? = { nil },
         cache: any TranscriptCache,
-        audioTrackInspector: any AudioTrackInspector
+        audioTrackInspector: any AudioTrackInspector,
+        speakerDiarizer: (any SpeakerDiarizer)? = nil,
+        speakerModelStore: (any SpeakerDiarizationModelStore)? = nil,
+        knownSpeakerStore: (any KnownSpeakerProfileStore)? = nil,
+        diarizationArtifactsStore: (any SpeakerDiarizationArtifactsStore)? = nil,
+        knownSpeakerMatcherConfiguration: KnownSpeakerMatcherConfiguration = .default
     ) {
         self.transcriber = transcriber
         self.turnSegmenter = turnSegmenter
         self.rawTurnSegmenter = rawTurnSegmenter
         self.turnSegmentationMode = turnSegmentationMode
+        self.speakerDiarizationMode = speakerDiarizationMode
+        self.transcriptLocaleOverride = transcriptLocaleOverride
         self.cache = cache
         self.audioTrackInspector = audioTrackInspector
+        self.speakerDiarizer = speakerDiarizer
+        self.speakerModelStore = speakerModelStore
+        self.knownSpeakerStore = knownSpeakerStore
+        self.diarizationArtifactsStore = diarizationArtifactsStore
+        self.knownSpeakerMatcherConfiguration = knownSpeakerMatcherConfiguration
     }
 
     public func transcript(for request: AudioTranscriptRequest) async throws
     -> TurnSegmentedTranscript? {
-        let mode = turnSegmentationMode()
-        let effectiveRequest = request.replacingTurnSegmentationMode(mode)
+        let effectiveRequest = await effectiveRequest(for: request)
         if let cached = try cache.load(for: effectiveRequest) {
             return cached
         }
@@ -42,16 +66,58 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
             return nil
         }
 
+        let spans = try await extractSpans(
+            request: effectiveRequest,
+            extractionPlans: extractionPlans
+        )
+        let stableSpans = try Self.stableSortedSpans(spans)
+        guard !stableSpans.isEmpty else {
+            return nil
+        }
+
+        guard effectiveRequest.speakerDiarizationMode == .enabled,
+              let speakerDiarizer,
+              let speakerModelStore
+        else {
+            let transcript = try await segmentedTranscript(
+                spans: stableSpans,
+                mode: effectiveRequest.turnSegmentationMode,
+                locale: effectiveRequest.locale
+            )
+            try cache.save(transcript, for: effectiveRequest)
+            return transcript
+        }
+
+        return try await diarizedOrFallbackTranscript(
+            spans: stableSpans,
+            extractionPlans: extractionPlans,
+            request: effectiveRequest,
+            diarizer: speakerDiarizer,
+            modelStore: speakerModelStore
+        )
+    }
+
+    public func storeUpdatedTranscript(
+        _ transcript: TurnSegmentedTranscript,
+        for request: AudioTranscriptRequest
+    ) async throws {
+        try cache.save(transcript, for: await effectiveRequest(for: request))
+    }
+
+    private func extractSpans(
+        request: AudioTranscriptRequest,
+        extractionPlans: [TranscriptExtractionPlan]
+    ) async throws -> [TimedTranscriptSpan] {
         let transcriber = transcriber
-        let spans = try await withThrowingTaskGroup(
+        return try await withThrowingTaskGroup(
             of: (planIndex: Int, spans: [TimedTranscriptSpan]).self
         ) { group in
             for (planIndex, plan) in extractionPlans.enumerated() {
                 group.addTask {
                     let extracted = try await transcriber.transcribe(
                         TimedSpeechTranscriptionRequest(
-                            audioURL: effectiveRequest.audioURL,
-                            locale: effectiveRequest.locale,
+                            audioURL: request.audioURL,
+                            locale: request.locale,
                             source: plan.source,
                             audioTrackIndex: plan.audioTrackIndex
                         ))
@@ -66,18 +132,38 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
             }
             return spansByPlanIndex.flatMap { $0 }
         }
+    }
 
-        let stableSpans = try Self.stableSortedSpans(spans)
-        guard !stableSpans.isEmpty else {
-            return nil
+    private func effectiveRequest(for request: AudioTranscriptRequest) async
+    -> AudioTranscriptRequest {
+        var effective = request.replacingTurnSegmentationMode(turnSegmentationMode())
+        if let locale = transcriptLocaleOverride() {
+            effective = effective.replacingLocale(locale)
         }
 
-        let transcript = try await segmenter(for: mode).segment(
-            spans: stableSpans,
-            locale: effectiveRequest.locale
+        let diarizationRequested =
+            speakerDiarizationMode() == .enabled
+            && speakerDiarizer != nil
+            && speakerModelStore != nil
+        guard diarizationRequested, let speakerModelStore else {
+            return effective.replacingSpeakerDiarizationMode(.disabled)
+        }
+
+        let modelRevision = await speakerModelStore.modelInfo().revision
+        let libraryRevision = (try? knownSpeakerStore?.library())?.revision
+        return effective.replacingSpeakerDiarizationMode(
+            .enabled,
+            modelRevision: modelRevision,
+            libraryRevision: libraryRevision
         )
-        try cache.save(transcript, for: effectiveRequest)
-        return transcript
+    }
+
+    func segmentedTranscript(
+        spans: [TimedTranscriptSpan],
+        mode: TranscriptTurnSegmentationMode,
+        locale: Locale
+    ) async throws -> TurnSegmentedTranscript {
+        try await segmenter(for: mode).segment(spans: spans, locale: locale)
     }
 
     private func segmenter(
@@ -108,43 +194,5 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
         return try sortedSpans.enumerated().map { index, span in
             try span.replacingID("span-\(index)")
         }
-    }
-}
-
-public struct RawTranscriptTurnSegmenter: TranscriptTurnSegmenter {
-    private static let maximumTurnSpanCount = 80
-
-    public init() {}
-
-    public func segment(
-        spans: [TimedTranscriptSpan],
-        locale: Locale
-    ) async throws -> TurnSegmentedTranscript {
-        try TranscriptSegmentationValidator.makeTranscript(
-            spans: spans,
-            turnSpanIDs: Self.rawTurnSpanIDs(from: spans),
-            localeIdentifier: locale.identifier
-        )
-    }
-
-    private static func rawTurnSpanIDs(from spans: [TimedTranscriptSpan]) -> [[String]] {
-        var groups: [[String]] = []
-        var current: [TimedTranscriptSpan] = []
-
-        for span in spans {
-            if let last = current.last,
-               current.count >= maximumTurnSpanCount || last.source != span.source {
-                groups.append(current.map(\.id))
-                current = []
-            }
-
-            current.append(span)
-        }
-
-        if !current.isEmpty {
-            groups.append(current.map(\.id))
-        }
-
-        return groups
     }
 }

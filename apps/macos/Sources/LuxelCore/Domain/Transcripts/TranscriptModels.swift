@@ -23,6 +23,23 @@ public enum TranscriptSourceLabel: String, Codable, CaseIterable, Equatable, Has
     }
 }
 
+public struct TranscriptSpeakerLabel: Codable, Equatable, Hashable, Identifiable, Sendable {
+    public let id: String
+    public let displayName: String
+    public let knownSpeakerID: UUID?
+
+    public init(id: String, displayName: String, knownSpeakerID: UUID? = nil) throws {
+        let normalizedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !id.isEmpty, !normalizedDisplayName.isEmpty else {
+            throw TranscriptModelError.invalidSpeakerLabel
+        }
+
+        self.id = id
+        self.displayName = normalizedDisplayName
+        self.knownSpeakerID = knownSpeakerID
+    }
+}
+
 public struct TimedTranscriptSpan: Codable, Equatable, Identifiable, Sendable {
     public let id: String
     public let text: String
@@ -30,6 +47,7 @@ public struct TimedTranscriptSpan: Codable, Equatable, Identifiable, Sendable {
     public let end: TimeInterval
     public let confidence: Double?
     public let source: TranscriptSourceLabel?
+    public let speakerID: String?
 
     public init(
         id: String,
@@ -37,7 +55,8 @@ public struct TimedTranscriptSpan: Codable, Equatable, Identifiable, Sendable {
         start: TimeInterval,
         end: TimeInterval,
         confidence: Double? = nil,
-        source: TranscriptSourceLabel? = nil
+        source: TranscriptSourceLabel? = nil,
+        speakerID: String? = nil
     ) throws {
         let normalizedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !id.isEmpty, !normalizedText.isEmpty, start.isFinite, end.isFinite, end > start else {
@@ -53,6 +72,7 @@ public struct TimedTranscriptSpan: Codable, Equatable, Identifiable, Sendable {
         self.end = end
         self.confidence = confidence
         self.source = source
+        self.speakerID = speakerID.flatMap { $0.isEmpty ? nil : $0 }
     }
 
     public func replacingID(_ id: String) throws -> TimedTranscriptSpan {
@@ -62,7 +82,20 @@ public struct TimedTranscriptSpan: Codable, Equatable, Identifiable, Sendable {
             start: start,
             end: end,
             confidence: confidence,
-            source: source
+            source: source,
+            speakerID: speakerID
+        )
+    }
+
+    public func replacingSpeakerID(_ speakerID: String?) throws -> TimedTranscriptSpan {
+        try TimedTranscriptSpan(
+            id: id,
+            text: text,
+            start: start,
+            end: end,
+            confidence: confidence,
+            source: source,
+            speakerID: speakerID
         )
     }
 }
@@ -74,6 +107,7 @@ public struct TranscriptTurn: Codable, Equatable, Identifiable, Sendable {
     public let end: TimeInterval
     public let text: String
     public let source: TranscriptSourceLabel?
+    public let speakerID: String?
 
     public init(
         id: String,
@@ -81,7 +115,8 @@ public struct TranscriptTurn: Codable, Equatable, Identifiable, Sendable {
         start: TimeInterval,
         end: TimeInterval,
         text: String,
-        source: TranscriptSourceLabel? = nil
+        source: TranscriptSourceLabel? = nil,
+        speakerID: String? = nil
     ) throws {
         let normalizedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !id.isEmpty,
@@ -100,6 +135,7 @@ public struct TranscriptTurn: Codable, Equatable, Identifiable, Sendable {
         self.end = end
         self.text = normalizedText
         self.source = source
+        self.speakerID = speakerID.flatMap { $0.isEmpty ? nil : $0 }
     }
 }
 
@@ -107,11 +143,13 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
     public let spans: [TimedTranscriptSpan]
     public let turns: [TranscriptTurn]
     public let localeIdentifier: String
+    public let speakers: [TranscriptSpeakerLabel]
 
     public init(
         spans: [TimedTranscriptSpan],
         turns: [TranscriptTurn],
-        localeIdentifier: String
+        localeIdentifier: String,
+        speakers: [TranscriptSpeakerLabel] = []
     ) throws {
         guard !spans.isEmpty, !turns.isEmpty, !localeIdentifier.isEmpty else {
             throw TranscriptModelError.invalidTranscript
@@ -120,7 +158,17 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
         self.spans = spans
         self.turns = turns
         self.localeIdentifier = localeIdentifier
+        self.speakers = speakers
         try TranscriptSegmentationValidator.validate(transcript: self)
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        spans = try container.decode([TimedTranscriptSpan].self, forKey: .spans)
+        turns = try container.decode([TranscriptTurn].self, forKey: .turns)
+        localeIdentifier = try container.decode(String.self, forKey: .localeIdentifier)
+        speakers =
+            try container.decodeIfPresent([TranscriptSpeakerLabel].self, forKey: .speakers) ?? []
     }
 
     public func span(for id: String) -> TimedTranscriptSpan? {
@@ -130,6 +178,28 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
     public func spans(for turn: TranscriptTurn) -> [TimedTranscriptSpan] {
         let spansByID = Dictionary(uniqueKeysWithValues: spans.map { ($0.id, $0) })
         return turn.spanIDs.compactMap { spansByID[$0] }
+    }
+
+    public func speaker(for id: String?) -> TranscriptSpeakerLabel? {
+        guard let id else {
+            return nil
+        }
+
+        return speakers.first { $0.id == id }
+    }
+
+    public func replacingSpeakerLabel(_ label: TranscriptSpeakerLabel) throws
+    -> TurnSegmentedTranscript {
+        guard speakers.contains(where: { $0.id == label.id }) else {
+            throw TranscriptModelError.unknownSpeaker(label.id)
+        }
+
+        return try TurnSegmentedTranscript(
+            spans: spans,
+            turns: turns,
+            localeIdentifier: localeIdentifier,
+            speakers: speakers.map { $0.id == label.id ? label : $0 }
+        )
     }
 }
 
@@ -253,11 +323,16 @@ public enum TranscriptModelError: Error, Equatable, Sendable {
     case invalidTurn
     case invalidTranscript
     case invalidConfidence
+    case invalidSpeakerLabel
     case missingSpan(String)
     case duplicateSpan(String)
     case reorderedSpan(String)
     case changedTurnText(String)
     case invalidTurnTiming(String)
     case inventedSource(String)
+    case inventedSpeaker(String)
+    case mixedTurnSpeakers(String)
+    case unknownSpeaker(String)
+    case duplicateSpeakerLabel(String)
     case unsupportedCacheSchemaVersion(Int)
 }

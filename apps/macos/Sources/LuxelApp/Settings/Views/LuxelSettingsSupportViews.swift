@@ -8,6 +8,7 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
     case shortcuts
     case notch
     case replayBuffer
+    case transcripts
     case commandLine
     case system
 
@@ -29,6 +30,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Notch"
         case .replayBuffer:
             "Replay Buffer"
+        case .transcripts:
+            "Transcripts"
         case .commandLine:
             "Command Line"
         case .system:
@@ -50,6 +53,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Built-in notch display controls and fallback behavior."
         case .replayBuffer:
             "Always-on recent capture and clip behavior."
+        case .transcripts:
+            "Transcription language, turn segmentation, and speaker identification."
         case .commandLine:
             "Install and configure the luxel command-line tool."
         case .system:
@@ -71,6 +76,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "laptopcomputer"
         case .replayBuffer:
             "gobackward"
+        case .transcripts:
+            "text.alignleft"
         case .commandLine:
             "terminal"
         case .system:

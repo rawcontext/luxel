@@ -40,7 +40,14 @@ final class LuxelMenuModel {
     var recoveryPrompt: RecoveryPrompt?
     var automationPrompt: AutomationURLPrompt?
     var commandLineToolInstallStatus: CommandLineToolInstallStatus?
+    var knownSpeakers: [KnownSpeakerProfile] = []
+    var expandedKnownSpeakerID: UUID?
     let appMetadata: AppMetadata
+
+    @ObservationIgnored let speakerDiarizationModelStore: any SpeakerDiarizationModelStore =
+        LuxelCompositionRoot.speakerDiarizationModelStore
+    @ObservationIgnored let knownSpeakerProfileStore: any KnownSpeakerProfileStore =
+        LuxelCompositionRoot.knownSpeakerProfileStore()
 
     @ObservationIgnored let settingsStore: any SettingsStore
     @ObservationIgnored let permissionClient: any PermissionClient
@@ -207,5 +214,6 @@ final class LuxelMenuModel {
         self.launchAtLogin = loadedSettings.launchAtLogin
         reconcileLaunchAtLoginWithSettings()
         reconcileCommandLineToolInstallWithBundle()
+        prepareSpeakerModelIfNeeded()
     }
 }

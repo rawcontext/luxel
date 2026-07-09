@@ -30,6 +30,8 @@ extension SettingsTests {
         #expect(settings.audioInputDeviceName == "System Default")
         #expect(settings.audioOnlyFormat == .aac)
         #expect(!settings.transcriptTurnSegmentationEnabled)
+        #expect(settings.transcriptSpeakerDiarizationEnabled)
+        #expect(settings.transcriptLanguageIdentifier == nil)
         #expect(settings.cameraDeviceID == nil)
         #expect(settings.cameraSeparateTrack)
         #expect(settings.cameraPreviewStyle == CameraPreviewStyle())
@@ -115,6 +117,64 @@ extension SettingsTests {
         #expect(
             try JSONDecoder().decode(AppSettings.self, from: enabledData)
                 .transcriptTurnSegmentationEnabled)
+    }
+
+    @Test("speaker diarization setting defaults on and decodes explicit opt-out")
+    func speakerDiarizationSettingDecodesOverride() throws {
+        let missingData = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+      }
+      """.utf8)
+        let disabledData = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "transcriptSpeakerDiarizationEnabled": false
+      }
+      """.utf8)
+
+        #expect(
+            try JSONDecoder().decode(AppSettings.self, from: missingData)
+                .transcriptSpeakerDiarizationEnabled)
+        #expect(
+            !(try JSONDecoder().decode(AppSettings.self, from: disabledData)
+                .transcriptSpeakerDiarizationEnabled))
+    }
+
+    @Test("transcript language decodes explicit identifier and treats empty as system default")
+    func transcriptLanguageDecodesIdentifier() throws {
+        let missingData = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+      }
+      """.utf8)
+        let explicitData = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "transcriptLanguageIdentifier": "de-DE"
+      }
+      """.utf8)
+        let emptyData = Data(
+            """
+      {
+          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+          "transcriptLanguageIdentifier": ""
+      }
+      """.utf8)
+
+        #expect(
+            try JSONDecoder().decode(AppSettings.self, from: missingData)
+                .transcriptLanguageIdentifier == nil)
+        #expect(
+            try JSONDecoder().decode(AppSettings.self, from: explicitData)
+                .transcriptLanguageIdentifier == "de-DE")
+        #expect(
+            try JSONDecoder().decode(AppSettings.self, from: emptyData)
+                .transcriptLanguageIdentifier == nil)
     }
 
     @Test("replay buffer preferred length decodes without enabling buffer")
