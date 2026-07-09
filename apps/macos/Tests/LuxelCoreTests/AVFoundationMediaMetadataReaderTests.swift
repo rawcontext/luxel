@@ -90,7 +90,7 @@ struct AVFoundationMediaMetadataReaderTests {
         #expect(!source.hasVideo)
         #expect(source.isAudioOnly)
         #expect(source.hasAudio)
-        #expect(source.audioTracks == [.system])
+        #expect(source.audioTracks == [.microphone])
         #expect(source.duration > 0.20)
         #expect(source.duration < 0.30)
     }

@@ -53,6 +53,43 @@ struct LuxelEditorModelTranscriptTests {
         #expect(model.currentPlaybackTime == 0.5)
     }
 
+    @Test("opening audio-only source infers transcript source from metadata")
+    func openingAudioOnlySourceInfersTranscriptSourceFromMetadata() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
+        let source = try SourceMedia.audioOnly(
+            fileURL: sourceURL,
+            duration: 12,
+            audioTracks: [.microphone]
+        )
+        let transcriptService = SpyAudioTranscriptService(
+            transcript: try helper.sampleTranscript(source: .microphone)
+        )
+        let model = helper.makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            audioTranscriptService: transcriptService
+        )
+
+        await model.open(
+            fileURL: sourceURL,
+            outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
+
+        let visibleTranscript = try await helper.waitForTranscript(model)
+        #expect(visibleTranscript.turns.first?.source == .microphone)
+        #expect(
+            await transcriptService.requests() == [
+                AudioTranscriptRequest(
+                    audioURL: sourceURL,
+                    locale: .current,
+                    sourceContext: TranscriptSourceContext(
+                        recordingAudioMode: .microphone(deviceID: nil)
+                    )
+                )
+            ]
+        )
+    }
+
     @Test("transcript progress appears while local extraction is active")
     func transcriptProgressAppearsWhileExtractionIsActive() async throws {
         let helper = LuxelEditorModelTests()
@@ -153,7 +190,7 @@ struct LuxelEditorModelTranscriptTests {
                 AudioTranscriptRequest(
                     audioURL: sourceURL,
                     locale: .current,
-                    sourceContext: .unknown
+                    sourceContext: TranscriptSourceContext(recordingAudioMode: .system)
                 )
             ])
 

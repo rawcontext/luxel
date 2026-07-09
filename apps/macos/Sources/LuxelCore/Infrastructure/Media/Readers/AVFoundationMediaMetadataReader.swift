@@ -16,18 +16,26 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
 
         let videoTracks = try await asset.loadTracks(withMediaType: .video)
         let audioTracks = try await asset.loadTracks(withMediaType: .audio)
-        let audioTrackKinds = try await resolvedAudioTrackKinds(for: audioTracks)
         guard !videoTracks.isEmpty || !audioTracks.isEmpty else {
             throw AVFoundationMediaMetadataReaderError.missingMediaTracks
         }
 
         guard let videoTrack = videoTracks.first else {
+            let audioTrackKinds = try await resolvedAudioTrackKinds(
+                for: audioTracks,
+                unmarkedFallback: .microphone
+            )
             return try SourceMedia.audioOnly(
                 fileURL: fileURL,
                 duration: durationSeconds,
                 audioTracks: audioTrackKinds
             )
         }
+
+        let audioTrackKinds = try await resolvedAudioTrackKinds(
+            for: audioTracks,
+            unmarkedFallback: .system
+        )
 
         let naturalSize = try await videoTrack.load(.naturalSize)
         let width = Int(abs(naturalSize.width).rounded())
@@ -106,7 +114,10 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
         }
     }
 
-    private func resolvedAudioTrackKinds(for audioTracks: [AVAssetTrack]) async throws
+    private func resolvedAudioTrackKinds(
+        for audioTracks: [AVAssetTrack],
+        unmarkedFallback: AudioTrackKind
+    ) async throws
     -> [AudioTrackKind] {
         guard !audioTracks.isEmpty else {
             return []
@@ -115,7 +126,7 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
         let detectedKinds = try await AVFoundationAudioTrackMetadata.trackKinds(for: audioTracks)
         let markedKinds = detectedKinds.compactMap { $0 }
         guard !markedKinds.isEmpty else {
-            return [.system]
+            return [unmarkedFallback]
         }
 
         return AudioTrackKind.allCases.filter { markedKinds.contains($0) }

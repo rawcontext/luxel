@@ -639,7 +639,12 @@ extension LuxelEditorModel {
 
         do {
             let media = try await metadataReader.readSourceMedia(at: fileURL)
+            let resolvedTranscriptSourceContext = resolvedTranscriptSourceContext(
+                transcriptSourceContext,
+                for: media
+            )
             source = media
+            self.transcriptSourceContext = resolvedTranscriptSourceContext
             applySupportedFormatForSource()
             trimStart = 0
             trimEnd = media.duration
@@ -656,7 +661,7 @@ extension LuxelEditorModel {
             resetEditorUndoStack()
             isTranscriptPanelVisible = media.isAudioOnly
             if media.isAudioOnly {
-                prepareTranscriptExtraction(sourceContext: transcriptSourceContext)
+                prepareTranscriptExtraction(sourceContext: resolvedTranscriptSourceContext)
             }
         } catch {
             source = nil
@@ -674,6 +679,28 @@ extension LuxelEditorModel {
             player.replaceCurrentItem(with: nil)
             status = .failed(errorMessage(error))
             resetEditorUndoStack()
+        }
+    }
+
+    private func resolvedTranscriptSourceContext(
+        _ sourceContext: TranscriptSourceContext,
+        for source: SourceMedia
+    ) -> TranscriptSourceContext {
+        guard sourceContext.recordingAudioMode == nil else {
+            return sourceContext
+        }
+
+        let audioTracks = Set(source.audioTracks)
+        switch (audioTracks.contains(.system), audioTracks.contains(.microphone)) {
+        case (true, true):
+            return TranscriptSourceContext(
+                recordingAudioMode: .systemAndMicrophone(deviceID: nil))
+        case (true, false):
+            return TranscriptSourceContext(recordingAudioMode: .system)
+        case (false, true):
+            return TranscriptSourceContext(recordingAudioMode: .microphone(deviceID: nil))
+        case (false, false):
+            return .unknown
         }
     }
 
