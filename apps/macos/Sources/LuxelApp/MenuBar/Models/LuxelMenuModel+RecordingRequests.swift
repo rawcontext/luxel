@@ -28,7 +28,8 @@ extension LuxelMenuModel {
                 showCursor: usesBakedCursor,
                 highlightClicks: usesBakedCursor && settings.highlightClicks,
                 captureKeystrokes: settings.keystrokeOverlayEnabled,
-                camera: captureCapabilities.cameraOverlayAvailable ? settings.cameraRecordingOptions : nil,
+                camera: captureCapabilities.cameraOverlayAvailable
+                    ? settings.cameraRecordingOptions : nil,
                 audio: resolvedAudio.mode,
                 videoCodec: .h264,
                 captureKind: captureKind,
@@ -59,15 +60,16 @@ extension LuxelMenuModel {
     func makeAudioRecordingRequest() throws -> (
         request: AudioRecordingRequest, noticeMessage: String?
     ) {
-        let resolution = resolveSelectedAudioInputDevice()
+        let resolvedAudio = resolveRecordingAudioMode()
 
         return (
             try AudioRecordingRequest(
-                outputFileURL: try nextAudioRecordingFileURL(now: Date(), format: settings.audioOnlyFormat),
-                audio: .microphone(deviceID: resolution.microphoneDeviceID),
+                outputFileURL: try nextAudioRecordingFileURL(
+                    now: Date(), format: settings.audioOnlyFormat),
+                audio: resolvedAudio.mode,
                 format: settings.audioOnlyFormat
             ),
-            resolution.fallbackMessage
+            resolvedAudio.noticeMessage
         )
     }
 

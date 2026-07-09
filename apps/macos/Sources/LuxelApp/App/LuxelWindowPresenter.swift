@@ -197,11 +197,23 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         }
     }
 
-    nonisolated func windowWillClose(_ notification: Notification) {
+    func windowWillClose(_ notification: Notification) {
+        pauseEditorPlaybackIfNeeded(for: notification)
+
         Task { @MainActor [weak self] in
             await Task.yield()
             self?.restoreAccessoryActivationPolicyIfNoManagedWindowsVisible()
         }
+    }
+
+    private func pauseEditorPlaybackIfNeeded(for notification: Notification) {
+        guard let closingWindow = notification.object as? NSWindow,
+              closingWindow === editorWindow
+        else {
+            return
+        }
+
+        editorModel.pausePlayback()
     }
 
     private func restoreAccessoryActivationPolicyIfNoManagedWindowsVisible() {

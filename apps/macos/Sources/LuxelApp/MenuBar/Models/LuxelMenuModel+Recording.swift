@@ -219,8 +219,8 @@ extension LuxelMenuModel {
         recordingNoticeMessage = nil
         recordingActionErrorMessage = nil
 
-        guard microphoneStatus == .authorized else {
-            recordingState = .failed("Microphone permission is required")
+        guard captureCapabilities.audioOnlyRecordingAvailable else {
+            recordingState = .failed("No audio source available")
             return
         }
 

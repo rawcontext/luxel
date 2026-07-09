@@ -29,6 +29,17 @@ struct AudioRecordingRequestTests {
         #expect(request.recordingOptions.audio == .microphone(deviceID: "mic-1"))
     }
 
+    @Test("request accepts combined system and microphone audio")
+    func requestAcceptsCombinedSystemAndMicrophoneAudio() throws {
+        let request = try AudioRecordingRequest(
+            outputFileURL: URL(fileURLWithPath: "/tmp/audio.m4a"),
+            audio: .systemAndMicrophone(deviceID: "mic-1")
+        )
+
+        #expect(request.recordingOptions.isAudioOnly)
+        #expect(request.recordingOptions.audio == .systemAndMicrophone(deviceID: "mic-1"))
+    }
+
     @Test("formats expose settings labels and file extensions")
     func formatsExposeSettingsLabelsAndFileExtensions() {
         #expect(AudioRecordingFormat.aac.label == "AAC")

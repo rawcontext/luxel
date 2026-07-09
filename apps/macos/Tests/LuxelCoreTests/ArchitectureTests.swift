@@ -199,11 +199,14 @@ extension ArchitectureTests {
 
         #expect(
             handlerSource.contains(
-                "case .offByUser:\n            model.settings.recordSystemAudio = true\n            model.saveSettings()"
+                "case .offByUser:\n"
+                    + "            model.settings.recordSystemAudio = true\n"
+                    + "            model.saveSettings()"
             ))
         #expect(
-            !handlerSource.contains("case .offByUser:\n            presentPermissionPrompt(.systemAudio)")
-        )
+            !handlerSource.contains(
+                "case .offByUser:\n"
+                    + "      presentPermissionPrompt(.systemAudio)"))
     }
 
     @Test("permission prompts are hosted outside transient SwiftUI menu surfaces")
@@ -307,7 +310,8 @@ extension ArchitectureTests {
         #expect(source.contains("setStatusItemLength(activeStatusItemWidth"))
         #expect(
             source.contains(
-                "if let button = statusItem.button {\n            configureStatusItemButton(button)"))
+                "if let button = statusItem.button {\n"
+                    + "                configureStatusItemButton(button)"))
         #expect(source.contains("button.accessibilityFrame()"))
         #expect(source.contains("func activeStatusItemWidth"))
         #expect(source.contains("makeActiveRecordingFrame"))
@@ -379,7 +383,10 @@ extension ArchitectureTests {
             encoding: .utf8
         )
 
-        #expect(writerSource.contains("RecordingWriterFinishCompletion(\n            segment: self"))
+        #expect(
+            writerSource.contains(
+                "RecordingWriterFinishCompletion(\n"
+                    + "            segment: self"))
         #expect(writerSource.contains("private let segment: RecordingWriterSegment"))
         #expect(writerSource.contains("withExtendedLifetime(segment)"))
     }

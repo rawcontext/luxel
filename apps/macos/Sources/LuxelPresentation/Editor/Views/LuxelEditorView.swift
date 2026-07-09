@@ -32,6 +32,9 @@ extension LuxelEditorView {
             LuxelGlassWindowBackground()
                 .overlay(LuxelGlassWindowChromeConfigurator())
         }
+        .onDisappear {
+            model.pausePlayback()
+        }
     }
 
     @ViewBuilder

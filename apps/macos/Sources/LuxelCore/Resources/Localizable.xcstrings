@@ -22224,6 +22224,77 @@
         }
       }
     },
+    "Keep the replay buffer controls visible in the menu even when replay buffer is off.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the replay buffer controls visible in the menu even when replay buffer is off."
+          }
+        }
+      }
+    },
     "Continuously keep recent screen video available for clipping.": {
       "extractionState": "manual",
       "localizations": {

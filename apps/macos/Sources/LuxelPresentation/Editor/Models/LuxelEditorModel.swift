@@ -762,6 +762,11 @@ extension LuxelEditorModel {
         resetEditorUndoStack()
     }
 
+    public func pausePlayback() {
+        player.pause()
+        playbackRequested = false
+    }
+
     func setFormat(_ nextFormat: ExportFormat) {
         guard supportedFormats.contains(nextFormat) else {
             return

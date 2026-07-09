@@ -89,7 +89,7 @@ enum LuxelCompositionRoot {
     static func audioRecorder(
         audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)? = nil
     ) -> any AudioRecorder {
-        AVFoundationAudioOnlyRecorder(audioLevelHandler: audioLevelHandler)
+        ScreenCaptureKitAudioOnlyRecorder(audioLevelHandler: audioLevelHandler)
     }
 
     static func recordingOutputFinalizer() -> any RecordingOutputFinalizer {

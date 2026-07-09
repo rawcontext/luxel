@@ -16,22 +16,7 @@ public struct ReplayBufferMenuPresentation: Equatable, Sendable {
         now: Date = Date()
     ) {
         guard let configuration else {
-            isVisible = false
-            statusText = LuxelLocalization.string(
-                "replayBuffer.status.off",
-                defaultValue: "Replay Buffer Off")
-            statusDetail = LuxelLocalization.string(
-                "replayBuffer.detail.enableInSettings",
-                defaultValue: "Enable in Settings")
-            clipActionTitle = LuxelLocalization.string(
-                "replayBuffer.action.clip",
-                defaultValue: "Clip Replay Buffer")
-            pauseActionTitle = LuxelLocalization.string(
-                "replayBuffer.action.pause",
-                defaultValue: "Pause Replay Buffer")
-            canClip = false
-            canPause = false
-            pauseActionIsResume = false
+            self = .hidden
             return
         }
 
@@ -125,6 +110,47 @@ public struct ReplayBufferMenuPresentation: Equatable, Sendable {
             canPause = false
             pauseActionIsResume = false
         }
+    }
+
+    private init(
+        isVisible: Bool,
+        statusText: String,
+        statusDetail: String,
+        clipActionTitle: String,
+        pauseActionTitle: String,
+        canClip: Bool,
+        canPause: Bool,
+        pauseActionIsResume: Bool
+    ) {
+        self.isVisible = isVisible
+        self.statusText = statusText
+        self.statusDetail = statusDetail
+        self.clipActionTitle = clipActionTitle
+        self.pauseActionTitle = pauseActionTitle
+        self.canClip = canClip
+        self.canPause = canPause
+        self.pauseActionIsResume = pauseActionIsResume
+    }
+
+    private static var hidden: Self {
+        Self(
+            isVisible: false,
+            statusText: LuxelLocalization.string(
+                "replayBuffer.status.off",
+                defaultValue: "Replay Buffer Off"),
+            statusDetail: LuxelLocalization.string(
+                "replayBuffer.detail.enableInSettings",
+                defaultValue: "Enable in Settings"),
+            clipActionTitle: LuxelLocalization.string(
+                "replayBuffer.action.clip",
+                defaultValue: "Clip Replay Buffer"),
+            pauseActionTitle: LuxelLocalization.string(
+                "replayBuffer.action.pause",
+                defaultValue: "Pause Replay Buffer"),
+            canClip: false,
+            canPause: false,
+            pauseActionIsResume: false
+        )
     }
 
     private static func durationText(_ seconds: TimeInterval) -> String {
