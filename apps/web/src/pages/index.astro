@@ -33,7 +33,7 @@ const featureTrio = [
 const menuCapturePoints = [
   "Display, window, and selected-area targets",
   "System audio, microphone, camera preview, and audio-only capture",
-  "1–60 FPS, countdown, auto-stop, pause, resume, and recent recording actions"
+  "1–120 FPS or display-matched capture, plus countdown, auto-stop, pause, and resume"
 ];
 
 const replayBufferPoints = [
@@ -57,7 +57,7 @@ const transcriptPoints = [
 const cliPoints = [
   "record, stop, toggle, clip, latest, editor, convert, export, transcribe, preferences",
   "x-success and x-error callbacks with --wait, --json, and --print-url",
-  "Command-line trim, resize, speed, quality, crop, mute, and format conversion"
+  "Recording frame-rate overrides plus trim, resize, speed, quality, crop, mute, and conversion"
 ];
 
 const settingsPoints = [
@@ -457,7 +457,7 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               </div>
               <div class="terminal__body">
                 <div class="terminal__comment"># agent: reproduce the bug and report back</div>
-                <div><span class="code-prompt">$</span> luxel record --display main --countdown 3</div>
+                <div><span class="code-prompt">$</span> luxel record --display main --fps display --countdown 3</div>
                 <div><span class="code-prompt">$</span> luxel stop</div>
                 <div><span class="code-prompt">$</span> luxel convert demo.mp4 demo.gif --start 2 --duration 5 --fps 15</div>
                 <div><span class="code-prompt">$</span> luxel transcribe demo.mp4 --json --output demo.json</div>

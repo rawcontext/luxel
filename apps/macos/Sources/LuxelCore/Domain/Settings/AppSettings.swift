@@ -44,6 +44,8 @@ public enum AppSettingsError: Error, Equatable {
 }
 
 public struct AppSettings: Codable, Equatable, Sendable {
+    public static let recordingFrameRateRange = 1...120
+
     public static func defaults(recordingsDirectory: URL) -> AppSettings {
         AppSettings(recordingsDirectory: recordingsDirectory)
     }
@@ -74,6 +76,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var pauseKeystrokeCaptureShortcut: String
     public var record60FPS: Bool
     public var recordingFrameRate: FrameRate
+    public var matchDisplayFrameRate: Bool
     public var loopExports: Bool
     public var recordSystemAudio: Bool
     public var recordAudio: Bool
@@ -162,6 +165,7 @@ extension AppSettings {
         pauseKeystrokeCaptureShortcut: String = "",
         record60FPS: Bool = true,
         recordingFrameRate: FrameRate? = nil,
+        matchDisplayFrameRate: Bool = false,
         loopExports: Bool = true,
         recordSystemAudio: Bool = true,
         recordAudio: Bool = false,
@@ -233,6 +237,7 @@ extension AppSettings {
             ) ?? Self.legacyRecordingFrameRate(record60FPS: record60FPS)
         self.record60FPS = resolvedRecordingFrameRate.framesPerSecond == 60
         self.recordingFrameRate = resolvedRecordingFrameRate
+        self.matchDisplayFrameRate = matchDisplayFrameRate
         self.loopExports = loopExports
         self.recordSystemAudio = recordSystemAudio
         self.recordAudio = recordAudio

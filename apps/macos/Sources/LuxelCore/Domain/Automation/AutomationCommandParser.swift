@@ -105,9 +105,30 @@ public enum AutomationCommandParser {
         return AutomationRecordingOptions(
             target: target,
             presetName: nonEmpty(query.value(for: "preset")),
+            frameRate: try optionalRecordingFrameRate(in: query),
             countdownSeconds: try optionalCountdownInteger(in: query),
             outputDirectory: try optionalOutputDirectory(in: query)
         )
+    }
+
+    private static func optionalRecordingFrameRate(
+        in query: AutomationQuery
+    ) throws -> AutomationRecordingFrameRate? {
+        guard let value = query.value(for: "fps") else {
+            return nil
+        }
+
+        if value.lowercased() == "display" {
+            return .matchDisplay
+        }
+
+        guard let framesPerSecond = Int(value),
+              let frameRate = try? AppSettings.makeRecordingFrameRate(framesPerSecond)
+        else {
+            throw AutomationCommandParseError.invalidParameter("fps")
+        }
+
+        return .fixed(frameRate)
     }
 
     private static func captureTarget(

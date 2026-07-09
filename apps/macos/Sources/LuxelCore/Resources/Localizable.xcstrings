@@ -2415,6 +2415,77 @@
         }
       }
     },
+    "Capture at the display's maximum supported frame rate.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture at the display's maximum supported frame rate."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit der maximal unterstützten Bildwiederholrate des Displays aufnehmen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Graba con la frecuencia de actualización máxima compatible de la pantalla."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrez à la fréquence de rafraîchissement maximale prise en charge par l’écran."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra alla frequenza di aggiornamento massima supportata dallo schermo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ディスプレイが対応する最大リフレッシュレートでキャプチャします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "디스플레이가 지원하는 최대 재생률로 캡처합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quay ở tần số quét tối đa mà màn hình hỗ trợ."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以显示器支持的最高刷新率录制。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture na taxa de atualização máxima compatível com a tela."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture à taxa de atualização máxima suportada pelo ecrã."
+          }
+        }
+      }
+    },
     "Capture audio from the selected microphone.": {
       "extractionState": "manual",
       "localizations": {
@@ -2908,6 +2979,77 @@
           "stringUnit": {
             "state": "translated",
             "value": "Escolher câmara"
+          }
+        }
+      }
+    },
+    "Choose a fixed frame rate or match the display refresh rate.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a fixed frame rate or match the display refresh rate."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle eine feste Bildrate oder passe sie an die Bildwiederholrate des Displays an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige una frecuencia de fotogramas fija o ajústala a la frecuencia de actualización de la pantalla."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez une fréquence d’images fixe ou adaptez-la à la fréquence de rafraîchissement de l’écran."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli una frequenza fotogrammi fissa o adattala alla frequenza di aggiornamento dello schermo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "固定フレームレートを選択するか、ディスプレイのリフレッシュレートに合わせます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고정 프레임률을 선택하거나 디스플레이 재생률에 맞춥니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn tốc độ khung hình cố định hoặc khớp với tần số quét của màn hình."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择固定帧率或匹配显示器刷新率。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha uma taxa de quadros fixa ou corresponda à taxa de atualização da tela."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha uma taxa de fotogramas fixa ou iguale a taxa de atualização do ecrã."
           }
         }
       }
@@ -3764,73 +3906,73 @@
         }
       }
     },
-    "Choose the recording frame rate from 1 to 60 FPS.": {
+    "Choose the recording frame rate from 1 to 120 FPS.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the recording frame rate from 1 to 60 FPS."
+            "value": "Choose the recording frame rate from 1 to 120 FPS."
           }
         }
       }
@@ -9369,6 +9511,77 @@
           "stringUnit": {
             "state": "translated",
             "value": "FPS"
+          }
+        }
+      }
+    },
+    "Frame rate follows the display's supported refresh rate.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frame rate follows the display's supported refresh rate."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Bildrate folgt der unterstützten Bildwiederholrate des Displays."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La frecuencia de fotogramas sigue la frecuencia de actualización compatible de la pantalla."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La fréquence d’images suit la fréquence de rafraîchissement prise en charge par l’écran."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La frequenza fotogrammi segue la frequenza di aggiornamento supportata dallo schermo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フレームレートは、ディスプレイが対応するリフレッシュレートに追従します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프레임률이 디스플레이가 지원하는 재생률을 따릅니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tốc độ khung hình sẽ theo tần số quét được màn hình hỗ trợ."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "帧率将跟随显示器支持的刷新率。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A taxa de quadros acompanha a taxa de atualização compatível com a tela."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A taxa de fotogramas acompanha a taxa de atualização suportada pelo ecrã."
           }
         }
       }
@@ -27620,6 +27833,77 @@
         }
       }
     },
+    "Match Display Refresh Rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Match Display Refresh Rate"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An Bildwiederholrate des Displays anpassen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustar a la frecuencia de actualización de la pantalla"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adapter à la fréquence de l’écran"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adatta alla frequenza dello schermo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ディスプレイのリフレッシュレートに合わせる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "디스플레이 재생률에 맞추기"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khớp tần số quét màn hình"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匹配显示器刷新率"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corresponder à taxa de atualização da tela"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Igualar a taxa de atualização do ecrã"
+          }
+        }
+      }
+    },
     "Use a floating HUD when notch controls are unavailable.": {
       "extractionState": "manual",
       "localizations": {
@@ -27691,73 +27975,73 @@
         }
       }
     },
-    "Use a whole number from 1 to 60 FPS.": {
+    "Use a whole number from 1 to 120 FPS.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use a whole number from 1 to 60 FPS."
+            "value": "Use a whole number from 1 to 120 FPS."
           }
         }
       }

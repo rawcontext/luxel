@@ -10,7 +10,7 @@ extension LuxelMenuModel {
         countdownSeconds: Int? = nil,
         outputDirectory: URL? = nil
     ) throws -> (request: RecordingRequest, noticeMessage: String?) {
-        let frameRate = settings.recordingFrameRate
+        let frameRate = settings.matchDisplayFrameRate ? FrameRate.fps120 : settings.recordingFrameRate
         let outputFileURL = try nextRecordingFileURL(now: Date(), directory: outputDirectory)
         let resolvedAudio = resolveRecordingAudioMode()
         let schedule = try recordingSchedule(
@@ -25,6 +25,7 @@ extension LuxelMenuModel {
                 outputFileURL: outputFileURL,
                 pixelSize: pixelSize,
                 frameRate: frameRate,
+                matchesDisplayFrameRate: settings.matchDisplayFrameRate,
                 showCursor: usesBakedCursor,
                 highlightClicks: usesBakedCursor && settings.highlightClicks,
                 captureKeystrokes: settings.keystrokeOverlayEnabled,
@@ -112,6 +113,7 @@ extension LuxelMenuModel {
             outputFileURL: request.outputFileURL,
             pixelSize: request.pixelSize,
             frameRate: request.frameRate,
+            matchesDisplayFrameRate: request.matchesDisplayFrameRate,
             showCursor: request.showCursor,
             highlightClicks: request.highlightClicks,
             captureKeystrokes: request.captureKeystrokes,

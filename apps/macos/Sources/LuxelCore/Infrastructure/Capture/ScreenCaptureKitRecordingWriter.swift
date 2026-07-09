@@ -111,7 +111,7 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         let writer = try AVAssetWriter(outputURL: outputFileURL, fileType: .mp4)
         let videoInput = AVAssetWriterInput(
             mediaType: .video,
-            outputSettings: Self.videoOutputSettings(for: request)
+            outputSettings: ScreenCaptureKitRecordingVideoSettings.outputSettings(for: request)
         )
         videoInput.expectsMediaDataInRealTime = true
 
@@ -353,22 +353,28 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         return input
     }
 
-    private static func videoOutputSettings(for request: RecordingRequest) -> [String: Any] {
-        let pixelSize = (try? request.pixelSize.roundedToEvenDimensions) ?? request.pixelSize
-
-        return [
-            AVVideoCodecKey: request.videoCodec.avVideoCodecType,
-            AVVideoWidthKey: pixelSize.width,
-            AVVideoHeightKey: pixelSize.height
-        ]
-    }
-
     private static func audioOutputSettings() -> [String: Any] {
         [
             AVFormatIDKey: kAudioFormatMPEG4AAC,
             AVSampleRateKey: 48_000,
             AVNumberOfChannelsKey: 2,
             AVEncoderBitRateKey: 192_000
+        ]
+    }
+}
+
+enum ScreenCaptureKitRecordingVideoSettings {
+    static func outputSettings(for request: RecordingRequest) -> [String: Any] {
+        let pixelSize = (try? request.pixelSize.roundedToEvenDimensions) ?? request.pixelSize
+
+        return [
+            AVVideoCodecKey: request.videoCodec.avVideoCodecType,
+            AVVideoWidthKey: pixelSize.width,
+            AVVideoHeightKey: pixelSize.height,
+            AVVideoCompressionPropertiesKey: [
+                AVVideoExpectedSourceFrameRateKey:
+                    request.encoderFrameRateHint.framesPerSecond
+            ]
         ]
     }
 }

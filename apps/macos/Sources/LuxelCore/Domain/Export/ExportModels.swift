@@ -266,6 +266,7 @@ public struct PixelSize: Codable, Equatable, Sendable {
 public struct FrameRate: Codable, Equatable, Sendable {
     public static let fps30 = FrameRate(uncheckedFramesPerSecond: 30)
     public static let fps60 = FrameRate(uncheckedFramesPerSecond: 60)
+    public static let fps120 = FrameRate(uncheckedFramesPerSecond: 120)
 
     public let framesPerSecond: Int
 

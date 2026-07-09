@@ -42,6 +42,39 @@ struct ScreenRecordingConfigurationFactoryTests {
         #expect(configuration.sourceRect == CGRect(x: 42, y: 24, width: 641, height: 839))
     }
 
+    @Test("120 FPS capture uses an encoding-efficient pixel format")
+    func highFrameRateCaptureUsesEncodingPixelFormat() throws {
+        let request = try RecordingRequest(
+            target: .display(DisplayID(12)),
+            outputFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
+            pixelSize: PixelSize(width: 1920, height: 1080),
+            frameRate: FrameRate(120)
+        )
+
+        let configuration = ScreenRecordingConfigurationFactory()
+            .makeStreamConfiguration(for: request)
+
+        #expect(configuration.minimumFrameInterval == CMTime(value: 1, timescale: 120))
+        #expect(configuration.pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange)
+    }
+
+    @Test("matching the display uses the maximum supported capture cadence")
+    func matchingDisplayUsesMaximumCaptureCadence() throws {
+        let request = try RecordingRequest(
+            target: .display(DisplayID(12)),
+            outputFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
+            pixelSize: PixelSize(width: 1920, height: 1080),
+            frameRate: .fps120,
+            matchesDisplayFrameRate: true
+        )
+
+        let configuration = ScreenRecordingConfigurationFactory()
+            .makeStreamConfiguration(for: request)
+
+        #expect(configuration.minimumFrameInterval == .zero)
+        #expect(configuration.pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange)
+    }
+
     @Test("top area selection maps to top source rect")
     func topAreaSelectionMapsToTopSourceRect() throws {
         let display = try DisplayBounds(id: DisplayID(12), x: 0, y: 0, width: 1728, height: 1117)

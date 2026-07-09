@@ -224,6 +224,7 @@ public struct ActiveRecording: Codable, Equatable, Sendable {
 
 public struct RecordingOptions: Codable, Equatable, Sendable {
     public let frameRate: Int
+    public let matchesDisplayFrameRate: Bool
     public let captureRect: CaptureRect?
     public let showCursor: Bool
     public let highlightClicks: Bool
@@ -239,6 +240,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
 
     public init(
         frameRate: Int,
+        matchesDisplayFrameRate: Bool = false,
         captureRect: CaptureRect? = nil,
         showCursor: Bool = true,
         highlightClicks: Bool = false,
@@ -253,6 +255,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         timelapse: TimelapseOptions? = nil
     ) {
         self.frameRate = frameRate
+        self.matchesDisplayFrameRate = matchesDisplayFrameRate
         self.captureRect = captureRect
         self.showCursor = showCursor
         self.highlightClicks = highlightClicks
@@ -269,6 +272,7 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case frameRate
+        case matchesDisplayFrameRate
         case captureRect
         case showCursor
         case highlightClicks
@@ -287,6 +291,9 @@ public struct RecordingOptions: Codable, Equatable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         frameRate = try container.decode(Int.self, forKey: .frameRate)
+        matchesDisplayFrameRate =
+            try container.decodeIfPresent(Bool.self, forKey: .matchesDisplayFrameRate)
+            ?? false
         captureRect = try container.decodeIfPresent(CaptureRect.self, forKey: .captureRect)
         showCursor =
             try container.decodeIfPresent(Bool.self, forKey: .showCursor)

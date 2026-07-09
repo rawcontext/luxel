@@ -146,6 +146,7 @@ extension LuxelMenuModel {
     private func startRecordingFromLastCapture(
         captureKind: QuickCaptureKind,
         entryPoint: RecordingStartEntryPoint,
+        frameRate: AutomationRecordingFrameRate? = nil,
         countdownSeconds: Int? = nil,
         outputDirectory: URL? = nil
     ) async {
@@ -161,9 +162,10 @@ extension LuxelMenuModel {
                 outputFileURL: try nextRecordingFileURL(now: Date(), directory: outputDirectory),
                 captureKind: captureKind
             )
+            let frameRateRequest = requestByApplyingAutomationFrameRate(frameRate, to: request)
             let scheduledRequest = try requestByApplyingAutomationCountdown(
                 countdownSeconds,
-                to: request
+                to: frameRateRequest
             )
             await startRecording(
                 recordingRequestWithAvailableSources(scheduledRequest),
@@ -179,6 +181,7 @@ extension LuxelMenuModel {
         target: CaptureTarget,
         pixelSize: PixelSize,
         presetID: UUID?,
+        frameRate: AutomationRecordingFrameRate? = nil,
         countdownSeconds: Int? = nil,
         outputDirectory: URL? = nil
     ) async {
@@ -191,6 +194,7 @@ extension LuxelMenuModel {
             target: target,
             pixelSize: pixelSize,
             captureKind: captureKind,
+            frameRate: frameRate,
             countdownSeconds: countdownSeconds,
             outputDirectory: outputDirectory,
             latencySpan: latencySpan
@@ -199,6 +203,7 @@ extension LuxelMenuModel {
 
     func startAutomationRecordingFromLastCapture(
         presetID: UUID?,
+        frameRate: AutomationRecordingFrameRate? = nil,
         countdownSeconds: Int? = nil,
         outputDirectory: URL? = nil
     ) async {
@@ -206,6 +211,7 @@ extension LuxelMenuModel {
         await startRecordingFromLastCapture(
             captureKind: captureKind,
             entryPoint: .urlAutomation,
+            frameRate: frameRate,
             countdownSeconds: countdownSeconds,
             outputDirectory: outputDirectory
         )
@@ -259,6 +265,7 @@ extension LuxelMenuModel {
         target: CaptureTarget,
         pixelSize: PixelSize,
         captureKind: QuickCaptureKind,
+        frameRate: AutomationRecordingFrameRate? = nil,
         countdownSeconds: Int? = nil,
         outputDirectory: URL? = nil,
         latencySpan: RecordingStartLatencySpan? = nil,
@@ -283,8 +290,12 @@ extension LuxelMenuModel {
                 countdownSeconds: countdownSeconds,
                 outputDirectory: outputDirectory
             )
+            let request = requestByApplyingAutomationFrameRate(
+                frameRate,
+                to: preparedRequest.request
+            )
             await startRecording(
-                preparedRequest.request,
+                request,
                 noticeMessage: preparedRequest.noticeMessage,
                 latencySpan: latencySpan,
                 notchRecordingActionID: notchRecordingActionID
@@ -310,6 +321,28 @@ extension LuxelMenuModel {
                 countdownSeconds: countdownSeconds,
                 maxRecordedDuration: request.schedule?.maxRecordedDuration
             ))
+    }
+
+    private func requestByApplyingAutomationFrameRate(
+        _ frameRate: AutomationRecordingFrameRate?,
+        to request: RecordingRequest
+    ) -> RecordingRequest {
+        guard let frameRate else {
+            return request
+        }
+
+        switch frameRate {
+        case .fixed(let fixedFrameRate):
+            return request.replacingFrameRate(
+                fixedFrameRate,
+                matchesDisplayFrameRate: false
+            )
+        case .matchDisplay:
+            return request.replacingFrameRate(
+                .fps120,
+                matchesDisplayFrameRate: true
+            )
+        }
     }
 
     private func startRecording(

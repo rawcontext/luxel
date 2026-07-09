@@ -301,13 +301,34 @@ extension SettingsTests {
         #expect(settings.recordingFrameRate == (try FrameRate(60)))
         #expect(settings.record60FPS)
 
+        try settings.setRecordingFrameRate(120)
+
+        #expect(settings.recordingFrameRate == (try FrameRate(120)))
+        #expect(!settings.record60FPS)
+
         #expect(throws: AppSettingsError.invalidRecordingFrameRate) {
             try settings.setRecordingFrameRate(0)
         }
         #expect(throws: AppSettingsError.invalidRecordingFrameRate) {
-            try settings.setRecordingFrameRate(61)
+            try settings.setRecordingFrameRate(121)
         }
-        #expect(settings.recordingFrameRate == (try FrameRate(60)))
+        #expect(settings.recordingFrameRate == (try FrameRate(120)))
+    }
+
+    @Test("recording display frame rate preference persists")
+    func recordingDisplayFrameRatePreferencePersists() throws {
+        let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
+        let settings = AppSettings(
+            recordingsDirectory: directory,
+            recordingFrameRate: try FrameRate(120),
+            matchDisplayFrameRate: true
+        )
+
+        let data = try JSONEncoder().encode(settings)
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+
+        #expect(decoded.recordingFrameRate == (try FrameRate(120)))
+        #expect(decoded.matchDisplayFrameRate)
     }
 
     @Test("legacy record 60 FPS setting migrates to typed frame rate")

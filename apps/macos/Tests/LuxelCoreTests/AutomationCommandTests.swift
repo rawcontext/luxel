@@ -94,6 +94,35 @@ struct AutomationCommandTests {
                     )))
     }
 
+    @Test("parser and URL builder preserve recording frame rate modes")
+    func parserAndBuilderPreserveRecordingFrameRateModes() throws {
+        let fixedURL = try #require(
+            URL(string: "luxel://record?target=display&display=main&fps=120"))
+        let matchedURL = try #require(
+            URL(string: "luxel://record?target=activeWindow&fps=display"))
+
+        let fixed = try AutomationCommandParser.parse(fixedURL)
+        let matched = try AutomationCommandParser.parse(matchedURL)
+        let fixedFrameRate = try FrameRate(120)
+
+        #expect(
+            fixed.command
+                == .record(
+                    AutomationRecordingOptions(
+                        target: .display(.main),
+                        frameRate: .fixed(fixedFrameRate)
+                    )))
+        #expect(
+            matched.command
+                == .record(
+                    AutomationRecordingOptions(
+                        target: .activeWindow,
+                        frameRate: .matchDisplay
+                    )))
+        #expect(AutomationInvocationURLBuilder.url(for: fixed) == fixedURL)
+        #expect(AutomationInvocationURLBuilder.url(for: matched) == matchedURL)
+    }
+
     @Test("parser rejects removed still image URL action")
     func parserRejectsRemovedStillImageURLAction() throws {
         let action = ["screen", "shot"].joined()
@@ -151,6 +180,11 @@ struct AutomationCommandTests {
         #expect(throws: AutomationCommandParseError.invalidParameter("countdown")) {
             _ = try AutomationCommandParser.parse(
                 #require(URL(string: "luxel://record?target=lastArea&countdown=61")))
+        }
+
+        #expect(throws: AutomationCommandParseError.invalidParameter("fps")) {
+            _ = try AutomationCommandParser.parse(
+                #require(URL(string: "luxel://record?target=lastArea&fps=121")))
         }
 
         #expect(throws: AutomationCommandParseError.invalidParameter("reveal")) {

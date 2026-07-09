@@ -113,20 +113,28 @@ public enum AutomationCommand: Equatable, Sendable {
 public struct AutomationRecordingOptions: Equatable, Sendable {
     public let target: AutomationCaptureTarget
     public let presetName: String?
+    public let frameRate: AutomationRecordingFrameRate?
     public let countdownSeconds: Int?
     public let outputDirectory: URL?
 
     public init(
         target: AutomationCaptureTarget,
         presetName: String? = nil,
+        frameRate: AutomationRecordingFrameRate? = nil,
         countdownSeconds: Int? = nil,
         outputDirectory: URL? = nil
     ) {
         self.target = target
         self.presetName = presetName
+        self.frameRate = frameRate
         self.countdownSeconds = countdownSeconds
         self.outputDirectory = outputDirectory
     }
+}
+
+public enum AutomationRecordingFrameRate: Equatable, Sendable {
+    case fixed(FrameRate)
+    case matchDisplay
 }
 
 public enum AutomationCaptureTarget: Equatable, Sendable {

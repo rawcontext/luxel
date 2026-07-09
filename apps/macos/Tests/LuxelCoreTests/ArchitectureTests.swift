@@ -622,8 +622,9 @@ extension ArchitectureTests {
         #expect(settingsSource.contains("value: recordingFrameRateSelection"))
         #expect(settingsSource.contains("formatter: recordingFrameRateFormatter"))
         #expect(settingsSource.contains("try model.settings.setRecordingFrameRate(frameRate)"))
-        #expect(settingsSource.contains("Use a whole number from 1 to 60 FPS."))
-        #expect(requestSource.contains("let frameRate = settings.recordingFrameRate"))
+        #expect(settingsSource.contains("Use a whole number from 1 to 120 FPS."))
+        #expect(settingsSource.contains("Match Display Refresh Rate"))
+        #expect(requestSource.contains("settings.matchDisplayFrameRate ? FrameRate.fps120"))
         #expect(!requestSource.contains("settings.record60FPS ? 60 : 30"))
     }
 

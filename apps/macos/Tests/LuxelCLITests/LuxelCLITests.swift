@@ -99,6 +99,37 @@ struct LuxelCLITests {
                         ))))
     }
 
+    @Test("record command accepts fixed and display-matched frame rates")
+    func recordCommandAcceptsFrameRateModes() throws {
+        let fixed = try LuxelRecordCommand.parse([
+            "--display", "main", "--fps", "120"
+        ])
+        let matched = try LuxelRecordCommand.parse([
+            "--active-window", "--fps", "display"
+        ])
+
+        #expect(
+            try fixed.invocation
+                == AutomationInvocation(
+                    command: .record(
+                        AutomationRecordingOptions(
+                            target: .display(.main),
+                            frameRate: .fixed(FrameRate(120))
+                        ))))
+        #expect(
+            try AutomationInvocationURLBuilder.url(for: fixed.invocation).absoluteString
+                == "luxel://record?target=display&display=main&fps=120"
+        )
+        #expect(
+            try matched.invocation
+                == AutomationInvocation(
+                    command: .record(
+                        AutomationRecordingOptions(
+                            target: .activeWindow,
+                            frameRate: .matchDisplay
+                        ))))
+    }
+
     @Test("clip latest and preferences commands map URL-backed actions")
     func clipLatestAndPreferencesCommandsMapURLBackedActions() throws {
         let clip = try LuxelClipCommand.parse(["--seconds", "30"])
@@ -128,6 +159,11 @@ struct LuxelCLITests {
 
         #expect(throws: LuxelCLIError.invalidCountdown) {
             let command = try LuxelRecordCommand.parse(["--last-area", "--countdown", "61"])
+            _ = try command.invocation
+        }
+
+        #expect(throws: LuxelCLIError.invalidRecordingFrameRate) {
+            let command = try LuxelRecordCommand.parse(["--last-area", "--fps", "121"])
             _ = try command.invocation
         }
 

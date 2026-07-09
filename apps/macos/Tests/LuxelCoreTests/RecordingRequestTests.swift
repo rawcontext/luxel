@@ -40,7 +40,8 @@ struct RecordingRequestTests {
             target: .area(displayID: displayID, rect: rect),
             outputFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
             pixelSize: PixelSize(width: 640, height: 480),
-            frameRate: FrameRate(60),
+            frameRate: FrameRate(120),
+            matchesDisplayFrameRate: true,
             showCursor: false,
             highlightClicks: true,
             captureKeystrokes: true,
@@ -51,7 +52,9 @@ struct RecordingRequestTests {
         )
 
         #expect(request.camera == camera)
-        #expect(request.recordingOptions.frameRate == 60)
+        #expect(request.recordingOptions.frameRate == 120)
+        #expect(request.recordingOptions.matchesDisplayFrameRate)
+        #expect(request.encoderFrameRateHint == .fps120)
         #expect(request.recordingOptions.captureRect == rect)
         #expect(request.recordingOptions.showCursor == false)
         #expect(request.recordingOptions.highlightClicks)

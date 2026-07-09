@@ -89,7 +89,7 @@ const systemShortcutConflicts = [
 ];
 
 const settingsPanes = [
-  ["Recording", "Cursor visibility, click highlights, 1-60 FPS capture, system audio, microphone audio, audio-only format, microphone selection, camera preview, shape, size, and mirroring."],
+  ["Recording", "Cursor visibility, click highlights, 1-120 FPS or display-matched capture, system audio, microphone audio, audio-only format, microphone selection, camera preview, shape, size, and mirroring."],
   ["Output", "Recordings folder, loop exports, transcript turn segmentation, and whether Luxel asks before discarding a recording."],
   ["Presets", "Quick export presets, cropper size presets, loupe behavior, dimming, and last-selection restoration."],
   ["Shortcuts", "Global shortcut enablement, shortcut search, custom shortcut editing, reset/clear controls, and conflict warnings."],
@@ -137,6 +137,7 @@ const cliOptionGroups = [
       ["--active-window", "Record the active window."],
       ["--last-area", "Record the last selected area."],
       ["--preset <name>", "Use a Luxel export preset for quick recording."],
+      ["--fps <1-120|display>", "Use a fixed recording frame rate or match the display refresh rate."],
       ["--countdown <seconds>", "Wait 0 to 60 seconds before capture starts."],
       ["--save-to <directory>", "Save the recording in a specific directory."],
       ["--seconds <seconds>", "Clip a specific replay buffer duration with luxel clip."]
@@ -473,7 +474,7 @@ const troubleshooting = [
             <article>
               <h3>Tune capture behavior</h3>
               <ul>
-                <li>Set screen recording frame rate from 1 to 60 FPS in Recording settings.</li>
+                <li>Choose a fixed screen recording rate from 1 to 120 FPS, or match the display refresh rate.</li>
                 <li>Choose whether the cursor is visible and whether clicks are highlighted.</li>
                 <li>Enable system audio, microphone audio, or both before recording.</li>
                 <li>Use countdown and auto-stop when a capture needs a timed start or end.</li>
@@ -934,7 +935,8 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
             <article>
               <h3>Common examples</h3>
               <pre><code>luxel --version
-luxel record --display main --countdown 3
+luxel record --display main --fps display --countdown 3
+luxel record --active-window --fps 120
 luxel record --active-window --preset "Default" --save-to ~/Movies/Luxel
 luxel toggle --last-area
 luxel stop
@@ -1012,6 +1014,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
               <h3>Command details</h3>
               <ul>
                 <li><code>record</code> requires exactly one target: <code>--display</code>, <code>--active-window</code>, or <code>--last-area</code>.</li>
+                <li><code>record --fps</code> and <code>toggle --fps</code> accept a whole number from 1 to 120 or <code>display</code> to follow the screen refresh rate.</li>
                 <li><code>toggle</code> stops an active recording when no target is passed. When starting, target-related options require a target.</li>
                 <li><code>clip</code> uses the configured replay buffer length unless <code>--seconds</code> is passed.</li>
                 <li><code>latest --reveal</code> reveals the latest recording in Finder instead of opening it.</li>
@@ -1112,7 +1115,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 been granted access; commands like stop, preferences, and latest are
                 allowed by default.
               </p>
-              <pre><code>luxel://record?target=display&amp;display=main&amp;countdown=3
+              <pre><code>luxel://record?target=display&amp;display=main&amp;fps=display&amp;countdown=3
 luxel://record?target=activeWindow&amp;preset=Default
 luxel://toggle
 luxel://stop

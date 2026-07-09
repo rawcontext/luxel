@@ -43,6 +43,7 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
     public let outputFileURL: URL
     public let pixelSize: PixelSize
     public let frameRate: FrameRate
+    public let matchesDisplayFrameRate: Bool
     public let showCursor: Bool
     public let highlightClicks: Bool
     public let captureKeystrokes: Bool
@@ -58,6 +59,7 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         outputFileURL: URL,
         pixelSize: PixelSize,
         frameRate: FrameRate,
+        matchesDisplayFrameRate: Bool = false,
         showCursor: Bool = true,
         highlightClicks: Bool = false,
         captureKeystrokes: Bool = false,
@@ -72,6 +74,7 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         self.outputFileURL = outputFileURL
         self.pixelSize = pixelSize
         self.frameRate = frameRate
+        self.matchesDisplayFrameRate = matchesDisplayFrameRate
         self.showCursor = showCursor
         self.highlightClicks = highlightClicks
         self.captureKeystrokes = captureKeystrokes
@@ -86,6 +89,7 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
     public var recordingOptions: RecordingOptions {
         RecordingOptions(
             frameRate: frameRate.framesPerSecond,
+            matchesDisplayFrameRate: matchesDisplayFrameRate,
             captureRect: captureRect,
             showCursor: showCursor,
             highlightClicks: highlightClicks,
@@ -100,12 +104,17 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         )
     }
 
+    public var encoderFrameRateHint: FrameRate {
+        matchesDisplayFrameRate ? .fps120 : frameRate
+    }
+
     public func replacingOutputFileURL(_ outputFileURL: URL) -> RecordingRequest {
         RecordingRequest(
             target: target,
             outputFileURL: outputFileURL,
             pixelSize: pixelSize,
             frameRate: frameRate,
+            matchesDisplayFrameRate: matchesDisplayFrameRate,
             showCursor: showCursor,
             highlightClicks: highlightClicks,
             captureKeystrokes: captureKeystrokes,
@@ -124,6 +133,7 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
             outputFileURL: outputFileURL,
             pixelSize: pixelSize,
             frameRate: frameRate,
+            matchesDisplayFrameRate: matchesDisplayFrameRate,
             showCursor: showCursor,
             highlightClicks: highlightClicks,
             captureKeystrokes: captureKeystrokes,
@@ -142,6 +152,29 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
             outputFileURL: outputFileURL,
             pixelSize: pixelSize,
             frameRate: frameRate,
+            matchesDisplayFrameRate: matchesDisplayFrameRate,
+            showCursor: showCursor,
+            highlightClicks: highlightClicks,
+            captureKeystrokes: captureKeystrokes,
+            camera: camera,
+            audio: audio,
+            videoCodec: videoCodec,
+            captureKind: captureKind,
+            schedule: schedule,
+            timelapse: timelapse
+        )
+    }
+
+    public func replacingFrameRate(
+        _ frameRate: FrameRate,
+        matchesDisplayFrameRate: Bool
+    ) -> RecordingRequest {
+        RecordingRequest(
+            target: target,
+            outputFileURL: outputFileURL,
+            pixelSize: pixelSize,
+            frameRate: frameRate,
+            matchesDisplayFrameRate: matchesDisplayFrameRate,
             showCursor: showCursor,
             highlightClicks: highlightClicks,
             captureKeystrokes: captureKeystrokes,
@@ -159,6 +192,7 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         case outputFileURL
         case pixelSize
         case frameRate
+        case matchesDisplayFrameRate
         case showCursor
         case highlightClicks
         case captureKeystrokes
@@ -178,6 +212,8 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
             outputFileURL: container.decode(URL.self, forKey: .outputFileURL),
             pixelSize: container.decode(PixelSize.self, forKey: .pixelSize),
             frameRate: container.decode(FrameRate.self, forKey: .frameRate),
+            matchesDisplayFrameRate: container.decodeIfPresent(
+                Bool.self, forKey: .matchesDisplayFrameRate) ?? false,
             showCursor: container.decodeIfPresent(Bool.self, forKey: .showCursor) ?? true,
             highlightClicks: container.decodeIfPresent(Bool.self, forKey: .highlightClicks) ?? false,
             captureKeystrokes: container.decodeIfPresent(Bool.self, forKey: .captureKeystrokes) ?? false,

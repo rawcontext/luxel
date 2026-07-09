@@ -1,4 +1,4 @@
-.Dd July 8, 2026
+.Dd July 9, 2026
 .Dt LUXEL 1
 .Os
 .Sh NAME
@@ -91,6 +91,10 @@ Record the active window.
 Record the last selected area.
 .It Fl -preset Ar name
 Use a Luxel export preset for quick recording.
+.It Fl -fps Ar frames|display
+Use a fixed recording frame rate from 1 to 120, or
+.Cm display
+to match the screen refresh rate.
 .It Fl -countdown Ar seconds
 Wait 0 to 60 seconds before capture starts.
 .It Fl -save-to Ar directory
@@ -217,7 +221,8 @@ Bundled manual page.
 .Sh EXAMPLES
 .Bd -literal -offset indent
 luxel --version
-luxel record --display main --countdown 3
+luxel record --display main --fps display --countdown 3
+luxel record --active-window --fps 120
 luxel record --active-window --preset "Default" --save-to ~/Movies/Luxel
 luxel toggle --last-area
 luxel clip --seconds 30 --wait

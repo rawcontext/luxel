@@ -52,6 +52,9 @@ public enum AutomationInvocationURLBuilder {
         if let presetName = options.presetName {
             items.append(URLQueryItem(name: "preset", value: presetName))
         }
+        if let frameRate = options.frameRate {
+            items.append(URLQueryItem(name: "fps", value: frameRate.queryValue))
+        }
         if let countdownSeconds = options.countdownSeconds {
             items.append(URLQueryItem(name: "countdown", value: String(countdownSeconds)))
         }
@@ -86,6 +89,17 @@ public enum AutomationInvocationURLBuilder {
         }
 
         return url
+    }
+}
+
+private extension AutomationRecordingFrameRate {
+    var queryValue: String {
+        switch self {
+        case .fixed(let frameRate):
+            String(frameRate.framesPerSecond)
+        case .matchDisplay:
+            "display"
+        }
     }
 }
 

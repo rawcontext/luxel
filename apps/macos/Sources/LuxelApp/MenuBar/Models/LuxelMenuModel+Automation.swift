@@ -215,6 +215,7 @@ extension LuxelMenuModel {
         if options.target == .lastArea {
             await startAutomationRecordingFromLastCapture(
                 presetID: presetID,
+                frameRate: options.frameRate,
                 countdownSeconds: options.countdownSeconds,
                 outputDirectory: options.outputDirectory
             )
@@ -226,6 +227,7 @@ extension LuxelMenuModel {
             target: target.target,
             pixelSize: target.pixelSize,
             presetID: presetID,
+            frameRate: options.frameRate,
             countdownSeconds: options.countdownSeconds,
             outputDirectory: options.outputDirectory
         )

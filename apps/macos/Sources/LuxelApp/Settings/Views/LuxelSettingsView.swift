@@ -215,6 +215,14 @@ extension LuxelSettingsView {
                 LuxelGlassRowDivider()
 
                 recordingFrameRateSettings
+
+                LuxelGlassRowDivider()
+
+                settingsToggleRow(
+                    "Match Display Refresh Rate",
+                    isOn: matchDisplayFrameRateSelection
+                )
+                .help("Capture at the display's maximum supported frame rate.")
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -222,8 +230,10 @@ extension LuxelSettingsView {
                     Text(recordingFrameRateMessage)
                         .font(.system(size: 11.5))
                         .foregroundStyle(.red)
+                } else if model.settings.matchDisplayFrameRate {
+                    LuxelGlassSectionFooter("Frame rate follows the display's supported refresh rate.")
                 } else {
-                    LuxelGlassSectionFooter("Use a whole number from 1 to 60 FPS.")
+                    LuxelGlassSectionFooter("Use a whole number from 1 to 120 FPS.")
                 }
 
                 LuxelGlassSectionFooter("Cursor and frame rate apply to new recordings.")
@@ -817,7 +827,9 @@ extension LuxelSettingsView {
                 .monospacedDigit()
                 .multilineTextAlignment(.trailing)
                 .frame(width: 34)
-                .help("Choose the recording frame rate from 1 to 60 FPS.")
+                .disabled(model.settings.matchDisplayFrameRate)
+                .opacity(model.settings.matchDisplayFrameRate ? 0.45 : 1)
+                .help("Choose the recording frame rate from 1 to 120 FPS.")
 
                 Text("FPS")
                     .font(.system(size: 11.5))
@@ -825,8 +837,18 @@ extension LuxelSettingsView {
             }
             .luxelGlassFieldBackground(cornerRadius: 13)
         }
-        .help("Choose how many frames per second new recordings use.")
+        .help("Choose a fixed frame rate or match the display refresh rate.")
     }
+
+    var matchDisplayFrameRateSelection: Binding<Bool> {
+        Binding {
+            model.settings.matchDisplayFrameRate
+        } set: { matchesDisplay in
+            model.settings.matchDisplayFrameRate = matchesDisplay
+            recordingFrameRateMessage = nil
+        }
+    }
+
     var recordingFrameRateSelection: Binding<Int> {
         Binding {
             model.settings.recordingFrameRate.framesPerSecond
@@ -835,7 +857,7 @@ extension LuxelSettingsView {
                 try model.settings.setRecordingFrameRate(frameRate)
                 recordingFrameRateMessage = nil
             } catch {
-                recordingFrameRateMessage = "Use a whole number from 1 to 60 FPS."
+                recordingFrameRateMessage = "Use a whole number from 1 to 120 FPS."
             }
         }
     }
@@ -843,8 +865,8 @@ extension LuxelSettingsView {
     var recordingFrameRateFormatter: NumberFormatter {
         let formatter = NumberFormatter()
         formatter.allowsFloats = false
-        formatter.minimum = 1
-        formatter.maximum = 60
+        formatter.minimum = NSNumber(value: AppSettings.recordingFrameRateRange.lowerBound)
+        formatter.maximum = NSNumber(value: AppSettings.recordingFrameRateRange.upperBound)
         return formatter
     }
 

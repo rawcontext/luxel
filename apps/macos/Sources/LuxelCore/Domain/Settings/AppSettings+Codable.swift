@@ -13,6 +13,7 @@ extension AppSettings {
         case pauseKeystrokeCaptureShortcut
         case record60FPS
         case recordingFrameRate
+        case matchDisplayFrameRate
         case loopExports
         case recordSystemAudio
         case recordAudio
@@ -103,6 +104,7 @@ extension AppSettings {
         let recording = try Self.decodeRecordingSettings(from: container)
         recordingFrameRate = recording.frameRate
         record60FPS = recording.records60FPS
+        matchDisplayFrameRate = recording.matchesDisplayFrameRate
         loopExports = recording.loopsExports
         recordSystemAudio = recording.recordsSystemAudio
         recordAudio = recording.recordsAudio
@@ -178,6 +180,8 @@ extension AppSettings {
 
         return try RecordingSettings(
             frameRate: frameRate,
+            matchesDisplayFrameRate: container.decodeIfPresent(
+                Bool.self, forKey: .matchDisplayFrameRate) ?? false,
             loopsExports: container.decodeIfPresent(Bool.self, forKey: .loopExports) ?? true,
             recordsSystemAudio: container.decodeIfPresent(Bool.self, forKey: .recordSystemAudio)
                 ?? (container.decodeIfPresent(Bool.self, forKey: .recordAudio) ?? false),
@@ -350,7 +354,7 @@ extension AppSettings {
     }
 
     public static func makeRecordingFrameRate(_ framesPerSecond: Int) throws -> FrameRate {
-        guard (1...60).contains(framesPerSecond) else {
+        guard recordingFrameRateRange.contains(framesPerSecond) else {
             throw AppSettingsError.invalidRecordingFrameRate
         }
 
@@ -359,7 +363,7 @@ extension AppSettings {
 
     static func supportedRecordingFrameRate(_ frameRate: FrameRate?) -> FrameRate? {
         guard let frameRate,
-              (1...60).contains(frameRate.framesPerSecond)
+              recordingFrameRateRange.contains(frameRate.framesPerSecond)
         else {
             return nil
         }
@@ -387,6 +391,7 @@ private typealias AppSettingsDecoder = KeyedDecodingContainer<AppSettings.Coding
 private struct RecordingSettings {
     let frameRate: FrameRate
     let records60FPS: Bool
+    let matchesDisplayFrameRate: Bool
     let loopsExports: Bool
     let recordsSystemAudio: Bool
     let recordsAudio: Bool
@@ -394,6 +399,7 @@ private struct RecordingSettings {
 
     init(
         frameRate: FrameRate,
+        matchesDisplayFrameRate: Bool,
         loopsExports: Bool,
         recordsSystemAudio: Bool,
         recordsAudio: Bool,
@@ -401,6 +407,7 @@ private struct RecordingSettings {
     ) {
         self.frameRate = frameRate
         records60FPS = frameRate.framesPerSecond == 60
+        self.matchesDisplayFrameRate = matchesDisplayFrameRate
         self.loopsExports = loopsExports
         self.recordsSystemAudio = recordsSystemAudio
         self.recordsAudio = recordsAudio

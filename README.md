@@ -264,7 +264,8 @@ Example commands:
 
 ```sh
 luxel --version
-luxel record --display main --countdown 3
+luxel record --display main --fps display --countdown 3
+luxel record --active-window --fps 120
 luxel record --active-window --preset "Default" --save-to ~/Movies/Luxel
 luxel toggle --last-area
 luxel stop
@@ -284,7 +285,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite
 The app also parses `luxel://` URLs:
 
 ```text
-luxel://record?target=display&display=main&countdown=3
+luxel://record?target=display&display=main&fps=display&countdown=3
 luxel://record?target=activeWindow&preset=Default
 luxel://toggle
 luxel://stop
@@ -301,6 +302,9 @@ Use `--wait` for a plain callback result, `--json` for structured callback outpu
 builds open Settings normally.
 `luxel convert` uses the same `EditorExportDraft`/`ExportRequest` model as the app
 for common headless edits such as trim, resize, frame rate, quality, speed, mute, and crop.
+`luxel record --fps` and `luxel toggle --fps` accept a fixed capture rate from 1 to 120
+or `display` to match the screen refresh rate. The same value is available as the `fps`
+query parameter in `luxel://record` and `luxel://toggle` URLs.
 `luxel export` accepts a full `ExportRequest` JSON document for export fields that do not have dedicated CLI flags.
 Headless export commands show an interactive progress bar on stderr when run in a terminal.
 Use `--quiet` to suppress progress output.

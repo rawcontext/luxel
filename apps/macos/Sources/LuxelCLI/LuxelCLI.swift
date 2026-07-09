@@ -52,6 +52,7 @@ public enum LuxelCLIError: LocalizedError, Equatable {
     case missingTarget
     case conflictingTargets
     case invalidCountdown
+    case invalidRecordingFrameRate
     case invalidClipDuration
     case invalidCallbackURL(String)
     case invalidOutputDirectory
@@ -77,6 +78,8 @@ public enum LuxelCLIError: LocalizedError, Equatable {
             "Choose only one capture target."
         case .invalidCountdown:
             "Countdown must be between 0 and 60 seconds."
+        case .invalidRecordingFrameRate:
+            "Recording frame rate must be a whole number from 1 to 120, or 'display'."
         case .invalidClipDuration:
             "Clip duration must be greater than zero seconds."
         case .invalidCallbackURL(let name):
@@ -124,6 +127,9 @@ public struct LuxelRecordCommand: ParsableCommand {
     @Option(help: "Export preset name to use for quick recording.")
     public var preset: String?
 
+    @Option(help: "Recording frame rate from 1 to 120, or 'display' to match the screen.")
+    public var fps: String?
+
     @Option(help: "Seconds to wait before capture starts, from 0 to 60.")
     public var countdown: Int?
 
@@ -151,6 +157,7 @@ public struct LuxelRecordCommand: ParsableCommand {
                     AutomationRecordingOptions(
                         target: resolvedTarget,
                         presetName: preset,
+                        frameRate: try validatedRecordingFrameRate(fps),
                         countdownSeconds: validatedCountdown(countdown),
                         outputDirectory: try resolvedOutputDirectory(saveTo)
                     )),
@@ -198,6 +205,9 @@ public struct LuxelToggleCommand: ParsableCommand {
     @Option(help: "Export preset name to use when starting a quick recording.")
     public var preset: String?
 
+    @Option(help: "Recording frame rate from 1 to 120, or 'display' to match the screen.")
+    public var fps: String?
+
     @Option(help: "Seconds to wait before capture starts, from 0 to 60.")
     public var countdown: Int?
 
@@ -217,7 +227,7 @@ public struct LuxelToggleCommand: ParsableCommand {
     public var invocation: AutomationInvocation {
         get throws {
             let resolvedTarget = try target.resolvedTarget(required: false)
-            guard resolvedTarget != nil || (preset == nil && countdown == nil && saveTo == nil) else {
+            guard resolvedTarget != nil || (preset == nil && fps == nil && countdown == nil && saveTo == nil) else {
                 throw LuxelCLIError.missingTarget
             }
 
@@ -225,6 +235,7 @@ public struct LuxelToggleCommand: ParsableCommand {
                 AutomationRecordingOptions(
                     target: $0,
                     presetName: preset,
+                    frameRate: try validatedRecordingFrameRate(fps),
                     countdownSeconds: try validatedCountdown(countdown),
                     outputDirectory: try resolvedOutputDirectory(saveTo)
                 )
@@ -442,6 +453,26 @@ private func validatedCountdown(_ countdown: Int?) throws -> Int? {
     }
 
     return countdown
+}
+
+private func validatedRecordingFrameRate(
+    _ value: String?
+) throws -> AutomationRecordingFrameRate? {
+    guard let value else {
+        return nil
+    }
+
+    if value.lowercased() == "display" {
+        return .matchDisplay
+    }
+
+    guard let framesPerSecond = Int(value),
+          let frameRate = try? AppSettings.makeRecordingFrameRate(framesPerSecond)
+    else {
+        throw LuxelCLIError.invalidRecordingFrameRate
+    }
+
+    return .fixed(frameRate)
 }
 
 private func resolvedOutputDirectory(_ path: String?) throws -> URL? {
