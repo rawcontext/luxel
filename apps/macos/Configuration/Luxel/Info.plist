@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Luxel</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -31,8 +33,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>CFBundleDisplayName</key>
-	<string>Luxel</string>
 	<key>CFBundleExecutable</key>
 	<string>Luxel</string>
 	<key>CFBundleIdentifier</key>
@@ -44,7 +44,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.19</string>
+	<string>1.0.23</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -64,20 +64,20 @@
 	<string>26.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Luxel uses your camera only when you enable camera preview or camera-track recording.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Context. All rights reserved.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Luxel records microphone audio only when you enable microphone capture for a screen recording.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Luxel uses your camera only when you enable camera preview or camera-track recording.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Luxel uses on-device speech recognition to transcribe audio recordings in the export editor.</string>
-	<key>NSScreenCaptureUsageDescription</key>
-	<string>Luxel captures your screen only when you start a recording.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Luxel captures your screen only when you start a recording.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Luxel uses on-device speech recognition to transcribe audio recordings in the export editor.</string>
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
 </dict>
