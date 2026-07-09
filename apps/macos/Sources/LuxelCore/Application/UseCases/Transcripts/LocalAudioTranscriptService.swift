@@ -34,10 +34,10 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
             return cached
         }
 
-        let audioTrackCount = try await audioTrackInspector.audioTrackCount(
+        let audioTrackLayout = try await audioTrackInspector.audioTrackLayout(
             in: effectiveRequest.audioURL)
         let extractionPlans = effectiveRequest.sourceContext.extractionPlans(
-            audioTrackCount: audioTrackCount)
+            audioTrackLayout: audioTrackLayout)
         guard !extractionPlans.isEmpty else {
             return nil
         }

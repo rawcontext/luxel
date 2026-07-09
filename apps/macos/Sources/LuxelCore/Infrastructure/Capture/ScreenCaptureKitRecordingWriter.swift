@@ -121,9 +121,15 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         writer.add(videoInput)
 
         let systemAudioInput = try Self.makeAudioInput(
-            for: writer, enabled: request.audio.capturesSystemAudio)
+            for: writer,
+            enabled: request.audio.capturesSystemAudio,
+            kind: .system
+        )
         let microphoneAudioInput = try Self.makeAudioInput(
-            for: writer, enabled: request.audio.capturesMicrophone)
+            for: writer,
+            enabled: request.audio.capturesMicrophone,
+            kind: .microphone
+        )
 
         self.outputFileURL = outputFileURL
         self.writer = writer
@@ -325,7 +331,11 @@ private final class RecordingWriterSegment: @unchecked Sendable {
         return nil
     }
 
-    private static func makeAudioInput(for writer: AVAssetWriter, enabled: Bool) throws
+    private static func makeAudioInput(
+        for writer: AVAssetWriter,
+        enabled: Bool,
+        kind: AudioTrackKind
+    ) throws
     -> AVAssetWriterInput? {
         guard enabled else {
             return nil
@@ -333,6 +343,7 @@ private final class RecordingWriterSegment: @unchecked Sendable {
 
         let input = AVAssetWriterInput(mediaType: .audio, outputSettings: audioOutputSettings())
         input.expectsMediaDataInRealTime = true
+        input.metadata = AVFoundationAudioTrackMetadata.writerMetadata(for: kind)
 
         guard writer.canAdd(input) else {
             throw ScreenCaptureKitRecorderError.startFailed("Cannot add audio writer input")

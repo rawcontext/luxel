@@ -174,6 +174,38 @@ struct TranscriptModelTests {
         )
     }
 
+    @Test("source context uses marked audio track layout before ordinal fallback")
+    func sourceContextUsesMarkedAudioTrackLayout() {
+        #expect(
+            TranscriptSourceContext(recordingAudioMode: .systemAndMicrophone(deviceID: nil))
+                .extractionPlans(
+                    audioTrackLayout: AudioTrackLayout(trackKinds: [.microphone, .system])
+                )
+                == [
+                    TranscriptExtractionPlan(source: .system, audioTrackIndex: 1),
+                    TranscriptExtractionPlan(source: .microphone, audioTrackIndex: 0)
+                ]
+        )
+        #expect(
+            TranscriptSourceContext(recordingAudioMode: .systemAndMicrophone(deviceID: nil))
+                .extractionPlans(audioTrackLayout: AudioTrackLayout(trackKinds: [.microphone]))
+                == [TranscriptExtractionPlan(source: .microphone)]
+        )
+        #expect(
+            TranscriptSourceContext.unknown
+                .extractionPlans(audioTrackLayout: AudioTrackLayout(trackKinds: [.microphone]))
+                == [TranscriptExtractionPlan(source: .microphone)]
+        )
+        #expect(
+            TranscriptSourceContext.unknown
+                .extractionPlans(audioTrackLayout: AudioTrackLayout(trackKinds: [.system, .microphone]))
+                == [
+                    TranscriptExtractionPlan(source: .system, audioTrackIndex: 0),
+                    TranscriptExtractionPlan(source: .microphone, audioTrackIndex: 1)
+                ]
+        )
+    }
+
     private func sampleSpans(source: TranscriptSourceLabel?) throws -> [TimedTranscriptSpan] {
         [
             try TimedTranscriptSpan(

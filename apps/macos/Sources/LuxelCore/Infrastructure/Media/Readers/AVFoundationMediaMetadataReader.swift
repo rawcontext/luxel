@@ -16,6 +16,7 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
 
         let videoTracks = try await asset.loadTracks(withMediaType: .video)
         let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+        let audioTrackKinds = try await resolvedAudioTrackKinds(for: audioTracks)
         guard !videoTracks.isEmpty || !audioTracks.isEmpty else {
             throw AVFoundationMediaMetadataReaderError.missingMediaTracks
         }
@@ -24,7 +25,7 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
             return try SourceMedia.audioOnly(
                 fileURL: fileURL,
                 duration: durationSeconds,
-                audioTracks: [.system]
+                audioTracks: audioTrackKinds
             )
         }
 
@@ -50,7 +51,7 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
             nominalFrameRate: FrameRate(roundedFrameRate),
             hasAudio: !audioTracks.isEmpty,
             hasAlpha: hasAlpha,
-            audioTracks: audioTracks.isEmpty ? [] : [.system]
+            audioTracks: audioTrackKinds
         )
     }
 
@@ -103,6 +104,21 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
         default:
             false
         }
+    }
+
+    private func resolvedAudioTrackKinds(for audioTracks: [AVAssetTrack]) async throws
+    -> [AudioTrackKind] {
+        guard !audioTracks.isEmpty else {
+            return []
+        }
+
+        let detectedKinds = try await AVFoundationAudioTrackMetadata.trackKinds(for: audioTracks)
+        let markedKinds = detectedKinds.compactMap { $0 }
+        guard !markedKinds.isEmpty else {
+            return [.system]
+        }
+
+        return AudioTrackKind.allCases.filter { markedKinds.contains($0) }
     }
 }
 

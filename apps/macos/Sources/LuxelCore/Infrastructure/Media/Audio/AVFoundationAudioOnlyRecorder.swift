@@ -75,6 +75,7 @@ private final class AudioOnlyCaptureSession: @unchecked Sendable {
             outputSettings: Self.outputSettings(for: request.format)
         )
         writerInput.expectsMediaDataInRealTime = true
+        writerInput.metadata = AVFoundationAudioTrackMetadata.writerMetadata(for: .microphone)
 
         guard writer.canAdd(writerInput) else {
             throw AVFoundationAudioOnlyRecorderError.writerSetupFailed("Cannot add audio input")

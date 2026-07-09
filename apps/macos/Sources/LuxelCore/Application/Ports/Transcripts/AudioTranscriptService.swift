@@ -85,6 +85,33 @@ public protocol TranscriptCache: Sendable {
     func save(_ transcript: TurnSegmentedTranscript, for request: AudioTranscriptRequest) throws
 }
 
+public struct AudioTrackLayout: Equatable, Sendable {
+    public let trackKinds: [AudioTrackKind?]
+
+    public init(trackKinds: [AudioTrackKind?]) {
+        self.trackKinds = trackKinds
+    }
+
+    public init(audioTrackCount: Int) {
+        self.trackKinds = Array(repeating: nil, count: max(0, audioTrackCount))
+    }
+
+    public var count: Int {
+        trackKinds.count
+    }
+
+    public func firstIndex(of kind: AudioTrackKind) -> Int? {
+        trackKinds.firstIndex { $0 == kind }
+    }
+}
+
 public protocol AudioTrackInspector: Sendable {
     func audioTrackCount(in audioURL: URL) async throws -> Int
+    func audioTrackLayout(in audioURL: URL) async throws -> AudioTrackLayout
+}
+
+extension AudioTrackInspector {
+    public func audioTrackLayout(in audioURL: URL) async throws -> AudioTrackLayout {
+        try await AudioTrackLayout(audioTrackCount: audioTrackCount(in: audioURL))
+    }
 }

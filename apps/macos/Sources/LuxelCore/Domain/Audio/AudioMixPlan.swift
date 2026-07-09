@@ -3,6 +3,26 @@ import Foundation
 public enum AudioTrackKind: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
     case system
     case microphone
+
+    public var assetTrackTitle: String {
+        switch self {
+        case .system:
+            "Luxel System Audio"
+        case .microphone:
+            "Luxel Microphone"
+        }
+    }
+
+    public init?(assetTrackTitle: String) {
+        switch assetTrackTitle.trimmingCharacters(in: .whitespacesAndNewlines) {
+        case AudioTrackKind.system.assetTrackTitle:
+            self = .system
+        case AudioTrackKind.microphone.assetTrackTitle:
+            self = .microphone
+        default:
+            return nil
+        }
+    }
 }
 
 public struct AudioTrackMix: Codable, Equatable, Sendable {

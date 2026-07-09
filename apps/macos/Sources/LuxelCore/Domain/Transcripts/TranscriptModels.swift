@@ -143,22 +143,22 @@ public struct TranscriptSourceContext: Codable, Equatable, Sendable {
     }
 
     public func extractionPlans(audioTrackCount: Int) -> [TranscriptExtractionPlan] {
+        extractionPlans(audioTrackLayout: AudioTrackLayout(audioTrackCount: audioTrackCount))
+    }
+
+    public func extractionPlans(audioTrackLayout: AudioTrackLayout) -> [TranscriptExtractionPlan] {
         switch recordingAudioMode {
         case .some(.system):
             [TranscriptExtractionPlan(source: .system)]
         case .some(.microphone):
             [TranscriptExtractionPlan(source: .microphone)]
         case .some(.systemAndMicrophone):
-            if audioTrackCount >= 2 {
-                [
-                    TranscriptExtractionPlan(source: .system, audioTrackIndex: 0),
-                    TranscriptExtractionPlan(source: .microphone, audioTrackIndex: 1)
-                ]
-            } else {
-                [TranscriptExtractionPlan(source: nil)]
-            }
-        case .some(.none), nil:
+            systemAndMicrophoneExtractionPlans(audioTrackLayout: audioTrackLayout)
+        case .some(.none):
             [TranscriptExtractionPlan(source: nil)]
+        case nil:
+            markedTrackExtractionPlans(audioTrackLayout: audioTrackLayout)
+                ?? [TranscriptExtractionPlan(source: nil)]
         }
     }
 
@@ -175,6 +175,66 @@ public struct TranscriptSourceContext: Codable, Equatable, Sendable {
         case nil:
             "unknown"
         }
+    }
+
+    private func systemAndMicrophoneExtractionPlans(
+        audioTrackLayout: AudioTrackLayout
+    ) -> [TranscriptExtractionPlan] {
+        guard audioTrackLayout.count > 0 else {
+            return [TranscriptExtractionPlan(source: nil)]
+        }
+
+        if audioTrackLayout.count == 1 {
+            guard let kind = audioTrackLayout.trackKinds[0] else {
+                return [TranscriptExtractionPlan(source: nil)]
+            }
+
+            return [TranscriptExtractionPlan(source: TranscriptSourceLabel(kind))]
+        }
+
+        let systemIndex = audioTrackLayout.firstIndex(of: .system)
+        let microphoneIndex = audioTrackLayout.firstIndex(of: .microphone)
+
+        if audioTrackLayout.count == 2,
+           systemIndex != nil || microphoneIndex != nil {
+            let resolvedSystemIndex = systemIndex ?? (microphoneIndex == 0 ? 1 : 0)
+            let resolvedMicrophoneIndex = microphoneIndex ?? (systemIndex == 0 ? 1 : 0)
+
+            return [
+                TranscriptExtractionPlan(source: .system, audioTrackIndex: resolvedSystemIndex),
+                TranscriptExtractionPlan(
+                    source: .microphone,
+                    audioTrackIndex: resolvedMicrophoneIndex
+                )
+            ]
+        }
+
+        if let systemIndex, let microphoneIndex {
+            return [
+                TranscriptExtractionPlan(source: .system, audioTrackIndex: systemIndex),
+                TranscriptExtractionPlan(source: .microphone, audioTrackIndex: microphoneIndex)
+            ]
+        }
+
+        return [
+            TranscriptExtractionPlan(source: .system, audioTrackIndex: 0),
+            TranscriptExtractionPlan(source: .microphone, audioTrackIndex: 1)
+        ]
+    }
+
+    private func markedTrackExtractionPlans(
+        audioTrackLayout: AudioTrackLayout
+    ) -> [TranscriptExtractionPlan]? {
+        let plans = audioTrackLayout.trackKinds.enumerated().compactMap { index, kind in
+            kind.map {
+                TranscriptExtractionPlan(
+                    source: TranscriptSourceLabel($0),
+                    audioTrackIndex: audioTrackLayout.count > 1 ? index : nil
+                )
+            }
+        }
+
+        return plans.isEmpty ? nil : plans
     }
 }
 

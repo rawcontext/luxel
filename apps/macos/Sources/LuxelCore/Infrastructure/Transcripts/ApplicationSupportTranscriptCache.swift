@@ -1,7 +1,7 @@
 import Foundation
 
 public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecked Sendable {
-    public static let schemaVersion = 1
+    public static let schemaVersion = 2
 
     private let cacheDirectory: URL
     private let fileManager: FileManager

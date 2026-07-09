@@ -29,6 +29,38 @@ struct LocalAudioTranscriptServiceTests {
         #expect(Set(requests.map(\.audioTrackIndex)) == [0, 1])
     }
 
+    @Test("service follows marked track layout when physical order differs")
+    func serviceFollowsMarkedTrackLayout() async throws {
+        let transcriber = SpyTimedSpeechTranscriber()
+        let service = LocalAudioTranscriptService(
+            transcriber: transcriber,
+            turnSegmenter: EchoTranscriptTurnSegmenter(),
+            cache: MemoryTranscriptCache(),
+            audioTrackInspector: StubAudioTrackInspector(
+                audioTrackLayout: AudioTrackLayout(trackKinds: [.microphone, .system])
+            )
+        )
+
+        let transcript = try await service.transcript(
+            for: AudioTranscriptRequest(
+                audioURL: URL(fileURLWithPath: "/tmp/reordered-recording.mp4"),
+                locale: Locale(identifier: "en_US"),
+                sourceContext: TranscriptSourceContext(
+                    recordingAudioMode: .systemAndMicrophone(deviceID: nil)
+                )
+            ))
+
+        #expect(transcript?.turns.map(\.source) == [.microphone, .system])
+        let requests = await transcriber.requests
+        let trackIndexBySource = Dictionary(
+            uniqueKeysWithValues: requests.compactMap { request in
+                request.source.map { ($0, request.audioTrackIndex) }
+            }
+        )
+        #expect(trackIndexBySource[.system] == 1)
+        #expect(trackIndexBySource[.microphone] == 0)
+    }
+
     @Test("service returns cached transcript without transcribing")
     func serviceReturnsCachedTranscript() async throws {
         let cachedTranscript = try sampleTranscript(source: .microphone)
@@ -173,9 +205,21 @@ private final class MemoryTranscriptCache: TranscriptCache, @unchecked Sendable 
 }
 
 private struct StubAudioTrackInspector: AudioTrackInspector {
-    let audioTrackCount: Int
+    let audioTrackLayout: AudioTrackLayout
+
+    init(audioTrackCount: Int) {
+        self.audioTrackLayout = AudioTrackLayout(audioTrackCount: audioTrackCount)
+    }
+
+    init(audioTrackLayout: AudioTrackLayout) {
+        self.audioTrackLayout = audioTrackLayout
+    }
 
     func audioTrackCount(in audioURL: URL) async throws -> Int {
-        audioTrackCount
+        audioTrackLayout.count
+    }
+
+    func audioTrackLayout(in audioURL: URL) async throws -> AudioTrackLayout {
+        audioTrackLayout
     }
 }
