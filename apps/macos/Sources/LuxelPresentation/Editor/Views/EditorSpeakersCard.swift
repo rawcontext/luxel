@@ -104,7 +104,7 @@ struct EditorSpeakersCard: View {
             }
 
             Picker(
-                "",
+                "Detection",
                 selection: Binding(
                     get: { model.speakerCountMode },
                     set: { model.setSpeakerCountMode($0) }
