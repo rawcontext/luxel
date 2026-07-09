@@ -142,6 +142,7 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         _ window: NSWindow,
         activationSource: NSRunningApplication?
     ) {
+        LuxelGlassWindowChrome.configure(window)
         editorMenuController.install()
         activateLuxel(from: activationSource)
         window.makeKeyAndOrderFront(nil)
@@ -172,10 +173,17 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         editorMenuController.install()
     }
 
-    nonisolated func windowDidBecomeKey(_ notification: Notification) {
+    nonisolated func windowDidBecomeKey(_: Notification) {
         Task { @MainActor [weak self] in
             await Task.yield()
+            self?.configureManagedWindowChrome()
             self?.refreshEditorMenusIfNeeded()
+        }
+    }
+
+    private func configureManagedWindowChrome() {
+        for window in [editorWindow, settingsWindow].compactMap({ $0 }) where window.isVisible {
+            LuxelGlassWindowChrome.configure(window)
         }
     }
 

@@ -57,6 +57,45 @@ public struct LuxelGlassWindowChromeConfigurator: NSViewRepresentable {
     }
 }
 
+@MainActor
+public enum LuxelGlassWindowChrome {
+    public static func configure(_ window: NSWindow) {
+        let requiredStyleMask: NSWindow.StyleMask = [
+            .titled,
+            .closable,
+            .miniaturizable,
+            .resizable,
+            .fullSizeContentView
+        ]
+        if !window.styleMask.isSuperset(of: requiredStyleMask) {
+            window.styleMask.formUnion(requiredStyleMask)
+        }
+
+        if !window.titlebarAppearsTransparent {
+            window.titlebarAppearsTransparent = true
+        }
+
+        if window.titleVisibility != .visible {
+            window.titleVisibility = .visible
+        }
+
+        let buttons: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
+        for button in buttons {
+            if let windowButton = window.standardWindowButton(button), windowButton.isHidden {
+                windowButton.isHidden = false
+            }
+        }
+
+        if window.isOpaque {
+            window.isOpaque = false
+        }
+
+        if window.backgroundColor != .clear {
+            window.backgroundColor = .clear
+        }
+    }
+}
+
 // SwiftUI re-asserts `isOpaque = true` on scene windows when they become key,
 // which silently disables behind-window blur sampling. Re-enforce transparency
 // on every window activation/occlusion change so the glass chrome survives focus.
@@ -99,22 +138,7 @@ public final class LuxelGlassWindowChromeEnforcerView: NSView {
             return
         }
 
-        window.styleMask.insert([.titled, .fullSizeContentView])
-        window.titlebarAppearsTransparent = true
-        window.titleVisibility = .visible
-
-        let buttons: [NSWindow.ButtonType] = [.closeButton, .miniaturizeButton, .zoomButton]
-        for button in buttons {
-            window.standardWindowButton(button)?.isHidden = false
-        }
-
-        if window.isOpaque {
-            window.isOpaque = false
-        }
-
-        if window.backgroundColor != .clear {
-            window.backgroundColor = .clear
-        }
+        LuxelGlassWindowChrome.configure(window)
     }
 
     private func removeObservers() {
