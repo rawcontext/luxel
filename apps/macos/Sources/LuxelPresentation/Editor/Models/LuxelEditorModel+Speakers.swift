@@ -7,8 +7,42 @@ private let speakersLogger = Logger(subsystem: "media.luxel.app", category: "spe
 
 @MainActor
 extension LuxelEditorModel {
+    private static var speakerCountBounds: ClosedRange<Int> {
+        1...12
+    }
+
     var visibleSpeakerVoices: [DetectedSpeakerVoice] {
         detectedSpeakerVoices.filter { !ignoredSpeakerVoiceIDs.contains($0.id) }
+    }
+
+    var showsSpeakerCard: Bool {
+        canTranscribeSource
+            && isTranscriptPanelVisible
+            && (transcript != nil
+                    || isTranscriptExtractionActive
+                    || hasPendingSpeakerCountHintChange)
+    }
+
+    var selectedSpeakerCountHint: TranscriptSpeakerCountHint {
+        switch speakerCountMode {
+        case .automatic:
+            .automatic
+        case .exact:
+            .exact(exactSpeakerCount).normalized
+        case .range:
+            .range(min: minimumSpeakerCount, max: maximumSpeakerCount).normalized
+        }
+    }
+
+    var hasPendingSpeakerCountHintChange: Bool {
+        selectedSpeakerCountHint != appliedSpeakerCountHint
+    }
+
+    var canApplySpeakerCountHint: Bool {
+        canTranscribeSource
+            && isTranscriptPanelVisible
+            && !isTranscriptExtractionActive
+            && hasPendingSpeakerCountHintChange
     }
 
     func refreshDetectedSpeakerVoices() {
@@ -121,6 +155,68 @@ extension LuxelEditorModel {
         ignoredSpeakerVoiceIDs.insert(speakerID)
     }
 
+    func setSpeakerCountMode(_ mode: EditorSpeakerCountMode) {
+        guard speakerCountMode != mode else {
+            return
+        }
+
+        speakerCountMode = mode
+        switch mode {
+        case .automatic:
+            break
+        case .exact:
+            setExactSpeakerCount(inferredSpeakerCount())
+        case .range:
+            let detectedCount = inferredSpeakerCount()
+            setMaximumSpeakerCount(max(detectedCount, detectedCount + 2))
+            setMinimumSpeakerCount(detectedCount)
+        }
+    }
+
+    func setExactSpeakerCount(_ count: Int) {
+        exactSpeakerCount = clampedSpeakerCount(count)
+    }
+
+    func setMinimumSpeakerCount(_ count: Int) {
+        let clamped = clampedSpeakerCount(count)
+        minimumSpeakerCount = min(clamped, maximumSpeakerCount)
+    }
+
+    func setMaximumSpeakerCount(_ count: Int) {
+        let clamped = clampedSpeakerCount(count)
+        maximumSpeakerCount = max(clamped, minimumSpeakerCount)
+    }
+
+    func applySpeakerCountHint() {
+        guard canTranscribeSource,
+              isTranscriptPanelVisible
+        else {
+            return
+        }
+
+        transcriptTask?.cancel()
+        transcriptTask = nil
+        transcript = nil
+        ignoredSpeakerVoiceIDs = []
+        isTranscriptExtractionActive = false
+        transcriptExtractionStartedAt = nil
+        stopSpeakerModelStatePolling()
+
+        if speechRecognitionAuthorizationState == .authorized {
+            scheduleTranscriptExtraction(sourceContext: transcriptSourceContext)
+        } else {
+            prepareTranscriptExtraction(sourceContext: transcriptSourceContext)
+        }
+    }
+
+    func resetSpeakerCountControls() {
+        speakerCountMode = .automatic
+        exactSpeakerCount = 1
+        minimumSpeakerCount = 1
+        maximumSpeakerCount = 3
+        appliedSpeakerCountHint = .automatic
+    }
+
     private func applyUpdatedTranscript(_ updated: TurnSegmentedTranscript, audioURL: URL) {
         guard source?.fileURL == audioURL else {
             return
@@ -134,7 +230,8 @@ extension LuxelEditorModel {
         let request = AudioTranscriptRequest(
             audioURL: audioURL,
             locale: .current,
-            sourceContext: transcriptSourceContext
+            sourceContext: transcriptSourceContext,
+            speakerCountHint: appliedSpeakerCountHint
         )
         Task {
             do {
@@ -187,5 +284,15 @@ extension LuxelEditorModel {
                 self?.startPlayback()
             }
         }
+    }
+
+    private func inferredSpeakerCount() -> Int {
+        let visibleCount = visibleSpeakerVoices.count
+        let transcriptCount = transcript?.speakers.count ?? 0
+        return clampedSpeakerCount(max(visibleCount, transcriptCount, 1))
+    }
+
+    private func clampedSpeakerCount(_ count: Int) -> Int {
+        min(max(count, Self.speakerCountBounds.lowerBound), Self.speakerCountBounds.upperBound)
     }
 }

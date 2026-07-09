@@ -78,12 +78,12 @@ public struct SpeakerVoiceNamingService: Sendable {
             let trackIndex = artifacts?.tracks
                 .first { track in track.segments.contains { $0.speakerID == label.id } }?
                 .audioTrackIndex
-            let speakingTime =
-                segments.isEmpty
-                ? transcript.turns
+            let turnSpeakingTime = transcript.turns
                 .filter { $0.speakerID == label.id }
                 .reduce(0) { $0 + ($1.end - $1.start) }
-                : segments.reduce(0) { $0 + $1.duration }
+            let artifactSpeakingTime = segments.reduce(0) { $0 + $1.duration }
+            let speakingTime =
+                segments.isEmpty ? turnSpeakingTime : max(artifactSpeakingTime, turnSpeakingTime)
 
             return DetectedSpeakerVoice(
                 label: label,
@@ -143,12 +143,20 @@ public struct SpeakerVoiceNamingService: Sendable {
         profile.updatedAt = Date()
         try profileStore.save(profile)
 
-        return try transcript.replacingSpeakerLabel(
-            TranscriptSpeakerLabel(
-                id: speakerID,
-                displayName: profile.displayName,
-                knownSpeakerID: profile.id
-            ))
+        let updatedLabel = try TranscriptSpeakerLabel(
+            id: speakerID,
+            displayName: profile.displayName,
+            knownSpeakerID: profile.id
+        )
+        let updatedTranscript = try transcript.replacingSpeakerLabel(updatedLabel)
+
+        guard let existingSpeakerID = updatedTranscript.speakers.first(where: {
+            $0.id != speakerID && $0.knownSpeakerID == profile.id
+        })?.id else {
+            return updatedTranscript
+        }
+
+        return try updatedTranscript.mergingSpeaker(id: speakerID, into: existingSpeakerID)
     }
 
     public func resetToAnonymous(

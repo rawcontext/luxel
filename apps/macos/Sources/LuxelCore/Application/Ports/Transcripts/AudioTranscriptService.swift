@@ -39,6 +39,7 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
     public let sourceContext: TranscriptSourceContext
     public let turnSegmentationMode: TranscriptTurnSegmentationMode
     public let speakerDiarizationMode: TranscriptSpeakerDiarizationMode
+    public let speakerCountHint: TranscriptSpeakerCountHint
     public let speakerModelRevision: String?
     public let speakerLibraryRevision: String?
 
@@ -48,6 +49,7 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
         sourceContext: TranscriptSourceContext = .unknown,
         turnSegmentationMode: TranscriptTurnSegmentationMode = .semantic,
         speakerDiarizationMode: TranscriptSpeakerDiarizationMode = .disabled,
+        speakerCountHint: TranscriptSpeakerCountHint = .automatic,
         speakerModelRevision: String? = nil,
         speakerLibraryRevision: String? = nil
     ) {
@@ -56,6 +58,7 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
         self.sourceContext = sourceContext
         self.turnSegmentationMode = turnSegmentationMode
         self.speakerDiarizationMode = speakerDiarizationMode
+        self.speakerCountHint = speakerCountHint.normalized
         self.speakerModelRevision = speakerModelRevision
         self.speakerLibraryRevision = speakerLibraryRevision
     }
@@ -69,6 +72,7 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
             sourceContext: sourceContext,
             turnSegmentationMode: turnSegmentationMode,
             speakerDiarizationMode: speakerDiarizationMode,
+            speakerCountHint: speakerCountHint,
             speakerModelRevision: speakerModelRevision,
             speakerLibraryRevision: speakerLibraryRevision
         )
@@ -85,8 +89,24 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
             sourceContext: sourceContext,
             turnSegmentationMode: turnSegmentationMode,
             speakerDiarizationMode: speakerDiarizationMode,
+            speakerCountHint: speakerCountHint,
             speakerModelRevision: speakerDiarizationMode == .enabled ? modelRevision : nil,
             speakerLibraryRevision: speakerDiarizationMode == .enabled ? libraryRevision : nil
+        )
+    }
+
+    public func replacingSpeakerCountHint(
+        _ speakerCountHint: TranscriptSpeakerCountHint
+    ) -> AudioTranscriptRequest {
+        AudioTranscriptRequest(
+            audioURL: audioURL,
+            locale: locale,
+            sourceContext: sourceContext,
+            turnSegmentationMode: turnSegmentationMode,
+            speakerDiarizationMode: speakerDiarizationMode,
+            speakerCountHint: speakerCountHint,
+            speakerModelRevision: speakerModelRevision,
+            speakerLibraryRevision: speakerLibraryRevision
         )
     }
 
@@ -97,9 +117,40 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
             sourceContext: sourceContext,
             turnSegmentationMode: turnSegmentationMode,
             speakerDiarizationMode: speakerDiarizationMode,
+            speakerCountHint: speakerCountHint,
             speakerModelRevision: speakerModelRevision,
             speakerLibraryRevision: speakerLibraryRevision
         )
+    }
+}
+
+public enum TranscriptSpeakerCountHint: Equatable, Hashable, Sendable {
+    case automatic
+    case exact(Int)
+    case range(min: Int, max: Int)
+
+    public var normalized: TranscriptSpeakerCountHint {
+        switch self {
+        case .automatic:
+            return .automatic
+        case .exact(let count):
+            return .exact(max(1, count))
+        case .range(let min, let max):
+            let lower = Swift.max(1, Swift.min(min, max))
+            let upper = Swift.max(lower, Swift.max(min, max))
+            return .range(min: lower, max: upper)
+        }
+    }
+
+    public var cacheIdentifier: String {
+        switch normalized {
+        case .automatic:
+            return "auto"
+        case .exact(let count):
+            return "exact-\(count)"
+        case .range(let min, let max):
+            return "range-\(min)-\(max)"
+        }
     }
 }
 

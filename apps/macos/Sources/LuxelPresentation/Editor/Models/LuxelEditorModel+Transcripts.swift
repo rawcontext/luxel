@@ -154,6 +154,7 @@ extension LuxelEditorModel {
         }
 
         let sourceURL = source.fileURL
+        let speakerCountHint = selectedSpeakerCountHint
         transcriptTask?.cancel()
         isTranscriptExtractionActive = true
         transcriptExtractionStartedAt = Date()
@@ -164,7 +165,8 @@ extension LuxelEditorModel {
                     for: AudioTranscriptRequest(
                         audioURL: sourceURL,
                         locale: .current,
-                        sourceContext: sourceContext
+                        sourceContext: sourceContext,
+                        speakerCountHint: speakerCountHint
                     ))
                 Self.logTranscriptResult(transcript)
                 await MainActor.run {
@@ -175,6 +177,7 @@ extension LuxelEditorModel {
                     }
 
                     self?.transcript = transcript
+                    self?.appliedSpeakerCountHint = speakerCountHint
                     self?.isTranscriptExtractionActive = false
                     self?.transcriptExtractionStartedAt = nil
                     self?.transcriptTask = nil

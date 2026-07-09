@@ -18,7 +18,8 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
     /// Re-check on every FluidAudio version bump; embeddings and cached diarized
     /// transcripts are keyed by this identity.
     public static let packageVersion = "0.15.5"
-    public static let modelRevision = "speaker-diarization-coreml@fluidaudio-\(packageVersion)"
+    public static let modelRevision =
+        "speaker-diarization-coreml@fluidaudio-\(packageVersion)-threshold0.7"
 
     public enum ModelInstallError: Error, Equatable, Sendable {
         case bundledModelMissing
@@ -46,7 +47,7 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
         SpeakerDiarizationModelInfo(
             displayName: catalogInfo.displayName,
             repository: catalogInfo.repository,
-            revision: loadManifest()?.revision ?? Self.modelRevision,
+            revision: Self.modelRevision,
             expectedDownloadBytes: catalogInfo.expectedDownloadBytes,
             licenseIdentifier: catalogInfo.licenseIdentifier
         )
@@ -62,7 +63,7 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
         if let manifest = loadManifest() {
             return .ready(
                 installedBytes: installedBytes() ?? manifest.installedBytes,
-                modelRevision: manifest.revision
+                modelRevision: Self.modelRevision
             )
         }
 
@@ -164,6 +165,8 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
 }
 
 public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
+    public static let offlineClusteringThreshold = 0.7
+
     private let modelsDirectory: URL
     private let segmentExporter: AVFoundationAudioSegmentExporter
 
@@ -193,7 +196,8 @@ public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
             }
         }
 
-        let manager = OfflineDiarizerManager()
+        let manager = OfflineDiarizerManager(
+            config: Self.offlineDiarizerConfig(speakerCountHint: request.speakerCountHint))
         try await manager.prepareModels(directory: modelsDirectory)
         do {
             let result = try await manager.process(audioURL)
@@ -215,6 +219,20 @@ public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
         let asset = AVURLAsset(url: request.audioURL)
         let hasVideoTracks = try await !asset.loadTracks(withMediaType: .video).isEmpty
         return hasVideoTracks ? 0 : nil
+    }
+
+    private static func offlineDiarizerConfig(
+        speakerCountHint: TranscriptSpeakerCountHint
+    ) -> OfflineDiarizerConfig {
+        let base = OfflineDiarizerConfig(clusteringThreshold: offlineClusteringThreshold)
+        switch speakerCountHint.normalized {
+        case .automatic:
+            return base
+        case .exact(let count):
+            return base.withSpeakers(exactly: count)
+        case .range(let min, let max):
+            return base.withSpeakers(min: min, max: max)
+        }
     }
 
     /// Maps FluidAudio speaker IDs ("S1", "SPEAKER_00", ...) to stable Luxel-local

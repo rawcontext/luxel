@@ -81,6 +81,25 @@ struct TranscriptCacheSpeakerKeyTests {
         #expect(try fixture.cache.load(for: libraryTwo) == nil)
     }
 
+    @Test("cache keys differ across diarization speaker count hints")
+    func cacheKeysDifferAcrossSpeakerCountHints() throws {
+        let fixture = try makeCacheAndAudioFile()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+
+        let automatic = AudioTranscriptRequest(
+            audioURL: fixture.audioURL,
+            locale: Locale(identifier: "en_US")
+        ).replacingSpeakerDiarizationMode(.enabled, modelRevision: "rev-1")
+        let exact = automatic.replacingSpeakerCountHint(.exact(5))
+        let range = automatic.replacingSpeakerCountHint(.range(min: 4, max: 6))
+
+        try fixture.cache.save(try sampleTranscript(), for: exact)
+
+        #expect(try fixture.cache.load(for: exact) != nil)
+        #expect(try fixture.cache.load(for: automatic) == nil)
+        #expect(try fixture.cache.load(for: range) == nil)
+    }
+
     @Test("diarized transcripts round-trip speakers through the cache")
     func diarizedTranscriptRoundTripsSpeakers() throws {
         let fixture = try makeCacheAndAudioFile()

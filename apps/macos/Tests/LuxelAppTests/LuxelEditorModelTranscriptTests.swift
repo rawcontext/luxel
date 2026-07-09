@@ -53,6 +53,37 @@ struct LuxelEditorModelTranscriptTests {
         #expect(model.currentPlaybackTime == 0.5)
     }
 
+    @Test("applying an exact speaker count re-runs transcript extraction")
+    func applyingExactSpeakerCountRerunsTranscriptExtraction() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
+        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
+        let transcriptService = SpyAudioTranscriptService(
+            transcript: try helper.sampleTranscript(source: .microphone)
+        )
+        let model = helper.makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            audioTranscriptService: transcriptService
+        )
+
+        await model.open(
+            fileURL: sourceURL,
+            outputDirectory: URL(fileURLWithPath: "/tmp")
+        )
+        _ = try await helper.waitForTranscript(model)
+
+        model.setSpeakerCountMode(.exact)
+        model.setExactSpeakerCount(5)
+        #expect(model.canApplySpeakerCountHint)
+        model.applySpeakerCountHint()
+        _ = try await helper.waitForTranscript(model)
+
+        let requests = await transcriptService.requests()
+        #expect(requests.map(\.speakerCountHint) == [.automatic, .exact(5)])
+        #expect(model.appliedSpeakerCountHint == .exact(5))
+        #expect(!model.canApplySpeakerCountHint)
+    }
+
     @Test("opening audio-only source infers transcript source from metadata")
     func openingAudioOnlySourceInfersTranscriptSourceFromMetadata() async throws {
         let helper = LuxelEditorModelTests()

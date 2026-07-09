@@ -37,6 +37,12 @@ struct EditorSpeakersCard: View {
     var body: some View {
         EditorDisclosureCard("Speakers") {
             VStack(alignment: .leading, spacing: 10) {
+                speakerDetectionControls
+
+                if !model.visibleSpeakerVoices.isEmpty {
+                    LuxelGlassRowDivider()
+                }
+
                 ForEach(model.visibleSpeakerVoices) { voice in
                     if voice.label.knownSpeakerID != nil {
                         matchedVoiceRow(voice)
@@ -69,6 +75,110 @@ struct EditorSpeakersCard: View {
         }
 
         expandedVoiceID = anonymousVoices.first?.id
+    }
+
+    // MARK: - Detection
+
+    private var speakerDetectionControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text("Detection")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.45))
+
+                Spacer(minLength: 8)
+
+                Button {
+                    model.applySpeakerCountHint()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 10, weight: .semibold))
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white.opacity(0.75))
+                .disabled(!model.canApplySpeakerCountHint)
+                .opacity(model.canApplySpeakerCountHint ? 1 : 0.35)
+                .help("Re-run speaker detection with these settings.")
+            }
+
+            Picker(
+                "",
+                selection: Binding(
+                    get: { model.speakerCountMode },
+                    set: { model.setSpeakerCountMode($0) }
+                )
+            ) {
+                ForEach(EditorSpeakerCountMode.allCases, id: \.self) { mode in
+                    Text(mode.label).tag(mode)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .controlSize(.small)
+
+            switch model.speakerCountMode {
+            case .automatic:
+                EmptyView()
+            case .exact:
+                exactSpeakerCountControl
+            case .range:
+                speakerCountRangeControls
+            }
+        }
+        .padding(.horizontal, 3)
+        .padding(.vertical, 2)
+    }
+
+    private var exactSpeakerCountControl: some View {
+        Stepper(
+            value: Binding(
+                get: { model.exactSpeakerCount },
+                set: { model.setExactSpeakerCount($0) }
+            ),
+            in: 1...12
+        ) {
+            Text(speakerCountLabel(model.exactSpeakerCount))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.78))
+        }
+        .controlSize(.small)
+        .help("Set the expected number of speakers.")
+    }
+
+    private var speakerCountRangeControls: some View {
+        HStack(spacing: 10) {
+            Stepper(
+                value: Binding(
+                    get: { model.minimumSpeakerCount },
+                    set: { model.setMinimumSpeakerCount($0) }
+                ),
+                in: 1...12
+            ) {
+                Text("Min \(model.minimumSpeakerCount)")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .frame(minWidth: 42, alignment: .leading)
+            }
+            .controlSize(.small)
+            .help("Set the minimum expected speaker count.")
+
+            Stepper(
+                value: Binding(
+                    get: { model.maximumSpeakerCount },
+                    set: { model.setMaximumSpeakerCount($0) }
+                ),
+                in: 1...12
+            ) {
+                Text("Max \(model.maximumSpeakerCount)")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .frame(minWidth: 42, alignment: .leading)
+            }
+            .controlSize(.small)
+            .help("Set the maximum expected speaker count.")
+        }
     }
 
     // MARK: - Rows
@@ -302,6 +412,10 @@ struct EditorSpeakersCard: View {
     private func voiceStats(_ voice: DetectedSpeakerVoice) -> String {
         let turns = voice.turnCount == 1 ? "1 turn" : "\(voice.turnCount) turns"
         return "\(formatDuration(voice.totalSpeakingTime)) · \(turns)"
+    }
+
+    private func speakerCountLabel(_ count: Int) -> String {
+        count == 1 ? "1 speaker" : "\(count) speakers"
     }
 
     private func formatDuration(_ duration: TimeInterval) -> String {

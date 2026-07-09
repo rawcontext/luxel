@@ -137,6 +137,18 @@ public struct TranscriptTurn: Codable, Equatable, Identifiable, Sendable {
         self.source = source
         self.speakerID = speakerID.flatMap { $0.isEmpty ? nil : $0 }
     }
+
+    public func replacingSpeakerID(_ speakerID: String?) throws -> TranscriptTurn {
+        try TranscriptTurn(
+            id: id,
+            spanIDs: spanIDs,
+            start: start,
+            end: end,
+            text: text,
+            source: source,
+            speakerID: speakerID
+        )
+    }
 }
 
 public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
@@ -199,6 +211,34 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
             turns: turns,
             localeIdentifier: localeIdentifier,
             speakers: speakers.map { $0.id == label.id ? label : $0 }
+        )
+    }
+
+    public func mergingSpeaker(
+        id speakerID: String,
+        into targetSpeakerID: String
+    ) throws -> TurnSegmentedTranscript {
+        guard speakers.contains(where: { $0.id == speakerID }) else {
+            throw TranscriptModelError.unknownSpeaker(speakerID)
+        }
+        guard speakers.contains(where: { $0.id == targetSpeakerID }) else {
+            throw TranscriptModelError.unknownSpeaker(targetSpeakerID)
+        }
+        guard speakerID != targetSpeakerID else {
+            return self
+        }
+
+        return try TurnSegmentedTranscript(
+            spans: try spans.map {
+                try $0.replacingSpeakerID(
+                    $0.speakerID == speakerID ? targetSpeakerID : $0.speakerID)
+            },
+            turns: try turns.map {
+                try $0.replacingSpeakerID(
+                    $0.speakerID == speakerID ? targetSpeakerID : $0.speakerID)
+            },
+            localeIdentifier: localeIdentifier,
+            speakers: speakers.filter { $0.id != speakerID }
         )
     }
 }

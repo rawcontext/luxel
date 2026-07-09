@@ -73,7 +73,9 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
             request.turnSegmentationMode.rawValue,
             request.speakerDiarizationMode.rawValue,
             request.speakerModelRevision ?? "",
-            request.speakerLibraryRevision ?? ""
+            request.speakerLibraryRevision ?? "",
+            request.speakerDiarizationMode == .enabled
+                ? request.speakerCountHint.cacheIdentifier : ""
         ].joined(separator: "|")
 
         return stableFNV1aHash(rawKey)

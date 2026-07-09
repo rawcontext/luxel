@@ -111,7 +111,8 @@ extension LocalAudioTranscriptService {
                 SpeakerDiarizationRequest(
                     audioURL: request.audioURL,
                     audioTrackIndex: plan.audioTrackIndex,
-                    modelRevision: request.speakerModelRevision
+                    modelRevision: request.speakerModelRevision,
+                    speakerCountHint: request.speakerCountHint
                 ))
             let namespace = namespaceBySource ? plan.source?.rawValue : nil
             let segments = output.segments.map {

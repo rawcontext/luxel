@@ -337,6 +337,50 @@ struct TranscriptSpeakerModelTests {
                 TranscriptSpeakerLabel(id: "missing", displayName: "Nobody"))
         }
     }
+
+    @Test("merging a speaker rewrites references and removes the duplicate label")
+    func mergingSpeakerRewritesReferences() throws {
+        let spans = try makeSpans(speakerIDs: ["speaker-0", "speaker-1"])
+        let turns = [
+            try TranscriptTurn(
+                id: "turn-0",
+                spanIDs: ["span-0"],
+                start: 0,
+                end: 1,
+                text: "Word0",
+                speakerID: "speaker-0"
+            ),
+            try TranscriptTurn(
+                id: "turn-1",
+                spanIDs: ["span-1"],
+                start: 1,
+                end: 2,
+                text: "Word1",
+                speakerID: "speaker-1"
+            )
+        ]
+        let targetProfileID = UUID()
+        let transcript = try TurnSegmentedTranscript(
+            spans: spans,
+            turns: turns,
+            localeIdentifier: "en_US",
+            speakers: [
+                try TranscriptSpeakerLabel(
+                    id: "speaker-0",
+                    displayName: "Jordan Smith",
+                    knownSpeakerID: targetProfileID
+                ),
+                try TranscriptSpeakerLabel(id: "speaker-1", displayName: "Speaker 2")
+            ]
+        )
+
+        let merged = try transcript.mergingSpeaker(id: "speaker-1", into: "speaker-0")
+
+        #expect(merged.speakers.map(\.id) == ["speaker-0"])
+        #expect(merged.speakers.first?.knownSpeakerID == targetProfileID)
+        #expect(merged.spans.map(\.speakerID) == ["speaker-0", "speaker-0"])
+        #expect(merged.turns.map(\.speakerID) == ["speaker-0", "speaker-0"])
+    }
 }
 
 // MARK: - Speaker-aware segmentation

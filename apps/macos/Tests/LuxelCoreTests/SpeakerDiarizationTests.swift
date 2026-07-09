@@ -59,6 +59,29 @@ struct TranscriptServiceDiarizationTests {
         #expect(savedRequests.first?.speakerModelRevision == StubSpeakerModelStore.revision)
     }
 
+    @Test("passes speaker count hints through diarization and cache")
+    func passesSpeakerCountHintsThroughDiarizationAndCache() async throws {
+        let diarizer = SpySpeakerDiarizer(
+            segments: [
+                SpeakerDiarizationSegment(speakerID: "speaker-0", start: 0, end: 0.6)
+            ]
+        )
+        let modelStore = StubSpeakerModelStore(initiallyReady: true)
+        let cache = KeyedMemoryTranscriptCache()
+        let service = makeService(
+            diarizer: diarizer,
+            modelStore: modelStore,
+            mode: .enabled,
+            cache: cache
+        )
+
+        _ = try await service.transcript(for: makeRequest(speakerCountHint: .exact(5)))
+
+        let requests = await diarizer.requests
+        #expect(requests.first?.speakerCountHint == .exact(5))
+        #expect(cache.savedRequests.first?.speakerCountHint == .exact(5))
+    }
+
     @Test("returns non-diarized transcript under the non-diarized key when diarization fails")
     func fallsBackWhenDiarizationFails() async throws {
         let diarizer = FailingSpeakerDiarizer()
@@ -148,11 +171,14 @@ struct TranscriptServiceDiarizationTests {
 
     // MARK: Helpers
 
-    private func makeRequest() -> AudioTranscriptRequest {
+    private func makeRequest(
+        speakerCountHint: TranscriptSpeakerCountHint = .automatic
+    ) -> AudioTranscriptRequest {
         AudioTranscriptRequest(
             audioURL: URL(fileURLWithPath: "/tmp/diarized-recording.m4a"),
             locale: Locale(identifier: "en_US"),
-            sourceContext: TranscriptSourceContext(recordingAudioMode: .microphone(deviceID: nil))
+            sourceContext: TranscriptSourceContext(recordingAudioMode: .microphone(deviceID: nil)),
+            speakerCountHint: speakerCountHint
         )
     }
 
@@ -299,7 +325,9 @@ private final class KeyedMemoryTranscriptCache: TranscriptCache, @unchecked Send
             request.turnSegmentationMode.rawValue,
             request.speakerDiarizationMode.rawValue,
             request.speakerModelRevision ?? "",
-            request.speakerLibraryRevision ?? ""
+            request.speakerLibraryRevision ?? "",
+            request.speakerDiarizationMode == .enabled
+                ? request.speakerCountHint.cacheIdentifier : ""
         ].joined(separator: "|")
     }
 }

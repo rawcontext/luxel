@@ -61,6 +61,11 @@ public final class LuxelEditorModel {
     var detectedSpeakerVoices: [DetectedSpeakerVoice] = []
     var knownSpeakerOptions: [KnownSpeakerProfile] = []
     var ignoredSpeakerVoiceIDs: Set<String> = []
+    var speakerCountMode: EditorSpeakerCountMode = .automatic
+    var exactSpeakerCount = 1
+    var minimumSpeakerCount = 1
+    var maximumSpeakerCount = 3
+    var appliedSpeakerCountHint: TranscriptSpeakerCountHint = .automatic
     var isSpeakerModelPreparing = false
     var speechRecognitionAuthorizationState: SpeechRecognitionAuthorizationState?
     var currentPlaybackTime: TimeInterval = 0
@@ -617,6 +622,7 @@ extension LuxelEditorModel {
         isTranscriptPanelVisible = false
         transcriptExtractionStartedAt = nil
         speechRecognitionAuthorizationState = nil
+        resetSpeakerCountControls()
         self.transcriptSourceContext = transcriptSourceContext
         currentPlaybackTime = 0
 
@@ -659,6 +665,7 @@ extension LuxelEditorModel {
             isTranscriptPanelVisible = false
             transcriptExtractionStartedAt = nil
             speechRecognitionAuthorizationState = nil
+            resetSpeakerCountControls()
             player.replaceCurrentItem(with: nil)
             status = .failed(errorMessage(error))
             resetEditorUndoStack()

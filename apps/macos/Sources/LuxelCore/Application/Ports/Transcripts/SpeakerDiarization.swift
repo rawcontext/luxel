@@ -9,11 +9,18 @@ public struct SpeakerDiarizationRequest: Equatable, Sendable {
     public let audioURL: URL
     public let audioTrackIndex: Int?
     public let modelRevision: String?
+    public let speakerCountHint: TranscriptSpeakerCountHint
 
-    public init(audioURL: URL, audioTrackIndex: Int? = nil, modelRevision: String? = nil) {
+    public init(
+        audioURL: URL,
+        audioTrackIndex: Int? = nil,
+        modelRevision: String? = nil,
+        speakerCountHint: TranscriptSpeakerCountHint = .automatic
+    ) {
         self.audioURL = audioURL
         self.audioTrackIndex = audioTrackIndex
         self.modelRevision = modelRevision
+        self.speakerCountHint = speakerCountHint.normalized
     }
 }
 

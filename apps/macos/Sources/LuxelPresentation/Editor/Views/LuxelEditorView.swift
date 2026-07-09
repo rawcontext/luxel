@@ -412,7 +412,7 @@ extension LuxelEditorView {
         VStack(alignment: .leading, spacing: 10) {
             exportActionButtons
 
-            if !model.visibleSpeakerVoices.isEmpty {
+            if model.showsSpeakerCard {
                 EditorSpeakersCard(model: model)
             }
 
