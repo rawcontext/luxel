@@ -284,10 +284,14 @@ public struct LuxelGlassRowDivider: View {
 }
 
 public struct LuxelGlassSwitchToggleStyle: ToggleStyle {
-    public init() {}
+    private let showsLabel: Bool
+
+    public init(showsLabel: Bool = true) {
+        self.showsLabel = showsLabel
+    }
 
     public func makeBody(configuration: Configuration) -> some View {
-        LuxelGlassSwitchBody(configuration: configuration)
+        LuxelGlassSwitchBody(configuration: configuration, showsLabel: showsLabel)
     }
 }
 
@@ -295,25 +299,35 @@ private struct LuxelGlassSwitchBody: View {
     @Environment(\.isEnabled) private var isEnabled
 
     let configuration: ToggleStyleConfiguration
+    let showsLabel: Bool
 
+    @ViewBuilder
     var body: some View {
-        HStack(spacing: 12) {
-            configuration.label
-                .font(.system(size: 13.5, weight: .medium))
-                .foregroundStyle(.white.opacity(isEnabled ? 0.95 : 0.45))
+        if showsLabel {
+            HStack(spacing: 12) {
+                configuration.label
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundStyle(.white.opacity(isEnabled ? 0.95 : 0.45))
 
-            Spacer(minLength: 12)
+                Spacer(minLength: 12)
 
-            switchCapsule
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            guard isEnabled else {
-                return
+                switchCapsule
             }
-
-            configuration.isOn.toggle()
+            .contentShape(Rectangle())
+            .onTapGesture(perform: toggle)
+        } else {
+            switchCapsule
+                .contentShape(Rectangle())
+                .onTapGesture(perform: toggle)
         }
+    }
+
+    private func toggle() {
+        guard isEnabled else {
+            return
+        }
+
+        configuration.isOn.toggle()
     }
 
     private var switchCapsule: some View {

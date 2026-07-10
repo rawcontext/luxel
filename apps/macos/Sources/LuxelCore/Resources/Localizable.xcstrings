@@ -32945,73 +32945,73 @@
         }
       }
     },
-    "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded.": {
+    "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         }
       }
@@ -33513,77 +33513,6 @@
         }
       }
     },
-    "Parakeet TDT 0.6B v3 (INT8)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parakeet TDT 0.6B v3 (INT8)"
-          }
-        }
-      }
-    },
     "Download": {
       "extractionState": "manual",
       "localizations": {
@@ -33874,67 +33803,67 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. The CC-BY-4.0 Parakeet model supports 25 European languages. After installation, transcription runs locally and audio is never uploaded."
+            "value": "Downloads 483 MB and needs about 1.05 GB free while installing. Precision Transcription supports 25 European languages, runs entirely on your Mac, and never uploads your audio."
           }
         }
       }
@@ -34016,67 +33945,67 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model installed (%@)."
+            "value": "Downloaded and ready (%@)."
           }
         }
       }
@@ -34148,6 +34077,77 @@
           "stringUnit": {
             "state": "translated",
             "value": "Higher-accuracy local transcription. Requires a 483 MB download."
+          }
+        }
+      }
+    },
+    "precision.marketing.description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More accurate words and timing, processed entirely on your Mac."
           }
         }
       }

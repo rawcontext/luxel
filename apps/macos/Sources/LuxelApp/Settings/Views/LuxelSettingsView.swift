@@ -15,8 +15,6 @@ struct LuxelSettingsView: View {
     @State private var editingShortcutCommandID: String?
     @State private var shortcutSearchText = ""
     @State private var selectedPane: LuxelSettingsPane = .recording
-    @State var isShowingPrecisionDownloadConfirmation = false
-    @State var isShowingPrecisionRemovalConfirmation = false
     @State var pendingUnsupportedPrecisionLanguage: String?
 
     @Bindable var model: LuxelMenuModel

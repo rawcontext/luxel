@@ -305,7 +305,9 @@ public struct ParakeetPrecisionModelValidator: LocalModelValidating {
         } catch let failure as LocalModelFailure {
             throw failure
         } catch {
-            throw LocalModelFailure.validationFailed("Parakeet could not load from local files")
+            throw LocalModelFailure.validationFailed(
+                "Precision Transcription could not load its local files"
+            )
         }
     }
 }

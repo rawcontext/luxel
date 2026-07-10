@@ -35,48 +35,11 @@ extension LuxelSettingsView {
 
             LuxelGlassRowDivider()
 
-            precisionTranscriptionRow
-
-            LuxelGlassRowDivider()
-
             transcriptsToggleRow(
                 "Segment Transcript Turns",
                 isOn: $model.settings.transcriptTurnSegmentationEnabled
             )
             .help("Use Apple Intelligence to group audio transcripts into display turns.")
-        }
-        .confirmationDialog(
-            "Download Precision Transcription?",
-            isPresented: $isShowingPrecisionDownloadConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Download and Enable") {
-                model.installAndEnablePrecisionTranscription()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(
-                LuxelLocalization.resource(
-                    "precision.download.disclosure",
-                    defaultValue: """
-                        Downloads 483 MB from huggingface.co and needs about 1.05 GB free while installing. \
-                        The CC-BY-4.0 Parakeet model supports 25 European languages. \
-                        After installation, transcription runs locally and audio is never uploaded.
-                        """
-                )
-            )
-        }
-        .confirmationDialog(
-            "Remove Precision Transcription?",
-            isPresented: $isShowingPrecisionRemovalConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Remove Model", role: .destructive) {
-                model.removePrecisionModel()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Luxel will switch to Apple Speech. Existing transcript caches are retained.")
         }
         .confirmationDialog(
             "Switch to Apple Speech?",
@@ -101,13 +64,7 @@ extension LuxelSettingsView {
             model.refreshKnownSpeakers()
         }
 
-        SettingsIslandGroup(
-            "Local Models",
-            footer:
-                "Model downloads use normal HTTPS network metadata. Recording audio, transcripts, and projects are never sent."
-        ) {
-            precisionModelManagementRow
-        }
+        precisionTranscriptionCard
 
         SettingsIslandGroup(
             "Speakers",
@@ -160,110 +117,109 @@ extension LuxelSettingsView {
         }
     }
 
-    @ViewBuilder
-    private var precisionTranscriptionRow: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Toggle("Precision Transcription", isOn: precisionToggleBinding)
-                .toggleStyle(LuxelGlassSwitchToggleStyle())
+    private var precisionTranscriptionCard: some View {
+        SettingsIslandGroup(
+            "Precision Transcription",
+            footer: LuxelLocalization.string(
+                "precision.detail.notInstalled",
+                defaultValue: "Higher-accuracy local transcription. Requires a 483 MB download."
+            )
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(
+                            LuxelLocalization.string(
+                                "precision.marketing.description",
+                                defaultValue:
+                                    "More accurate words and timing, processed entirely on your Mac."
+                            )
+                        )
+                        .font(.system(size: 13, weight: .medium))
 
-            Text(precisionTranscriptionDetail)
-                .font(.system(size: 11.5))
-                .foregroundStyle(.white.opacity(0.5))
+                        if let status = precisionFeatureStatusText {
+                            Text(status)
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+                    }
 
-            if case .notInstalled = model.precisionModelState {
-                Button("Download and Enable...") {
-                    isShowingPrecisionDownloadConfirmation = true
+                    Spacer(minLength: 16)
+
+                    Toggle("Precision Transcription", isOn: precisionToggleBinding)
+                        .toggleStyle(LuxelGlassSwitchToggleStyle(showsLabel: false))
+                        .disabled(precisionToggleIsLocked)
+                        .accessibilityLabel("Precision Transcription")
                 }
-                .disabled(!model.precisionLanguageIsSupported)
-            }
 
-            if !model.precisionLanguageIsSupported {
-                Text("Choose one of the 25 supported European languages before enabling Precision.")
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(.orange.opacity(0.85))
+                if let progress = precisionModelProgress {
+                    ProgressView(value: progress.fractionCompleted)
+                    Text(
+                        "\(byteString(progress.completedBytes)) of \(byteString(progress.totalBytes))"
+                    )
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.45))
+                }
+
+                if !model.precisionLanguageIsSupported {
+                    Text("Choose one of the 25 supported European languages before enabling Precision.")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(.orange.opacity(0.85))
+                }
+
+                if let error = model.precisionModelErrorMessage {
+                    Text(error)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(.orange.opacity(0.85))
+                }
             }
+            .padding(.vertical, 9)
         }
-        .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
     }
 
     private var precisionToggleBinding: Binding<Bool> {
         Binding {
-            model.settings.transcriptEnginePreference == .precision
+            precisionToggleIsOn
         } set: { enabled in
             if enabled {
                 switch model.precisionModelState {
                 case .ready, .updateAvailable:
                     model.setPrecisionTranscriptionEnabled(true)
                 default:
-                    isShowingPrecisionDownloadConfirmation = true
+                    model.installAndEnablePrecisionTranscription()
                 }
             } else {
-                model.setPrecisionTranscriptionEnabled(false)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var precisionModelManagementRow: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Parakeet TDT 0.6B v3 (INT8)")
-                        .font(.system(size: 13, weight: .semibold))
-                    Text(precisionModelStatusText)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(.white.opacity(0.5))
+                switch model.precisionModelState {
+                case .queued, .downloading, .verifying, .preparing, .validating:
+                    model.cancelPrecisionModelInstallation()
+                case .ready, .updateAvailable:
+                    model.removePrecisionModel()
+                default:
+                    model.setPrecisionTranscriptionEnabled(false)
                 }
-                Spacer()
-                precisionModelAction
             }
-
-            if let progress = precisionModelProgress {
-                ProgressView(value: progress.fractionCompleted)
-                Text(
-                    "\(byteString(progress.completedBytes)) of \(byteString(progress.totalBytes))"
-                )
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.45))
-            }
-
-            if let error = model.precisionModelErrorMessage {
-                Text(error)
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(.orange.opacity(0.85))
-            }
-
-            HStack(spacing: 12) {
-                Link(
-                    "Model Card",
-                    destination: URL(
-                        string:
-                            "https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml/tree/aed02740059203c4a87495924f685de3722ae9ce"
-                    )!
-                )
-                Link(
-                    "CC-BY-4.0",
-                    destination: URL(string: "https://creativecommons.org/licenses/by/4.0/")!
-                )
-            }
-            .font(.system(size: 11.5))
         }
-        .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
     }
 
-    @ViewBuilder
-    private var precisionModelAction: some View {
-        switch model.precisionModelState {
-        case .notInstalled:
-            Button("Download") { isShowingPrecisionDownloadConfirmation = true }
-        case .queued, .downloading, .verifying, .preparing, .validating, .canceling:
-            Button("Cancel") { model.cancelPrecisionModelInstallation() }
-        case .ready, .updateAvailable:
-            Button("Remove...") { isShowingPrecisionRemovalConfirmation = true }
-        case .repairRequired, .failed:
-            Button("Repair") { isShowingPrecisionDownloadConfirmation = true }
-        case .removing:
-            ProgressView().controlSize(.small)
+    private var precisionToggleIsOn: Bool {
+        if model.settings.transcriptEnginePreference == .precision {
+            return true
+        }
+
+        return switch model.precisionModelState {
+        case .queued, .downloading, .verifying, .preparing, .validating:
+            true
+        default:
+            false
+        }
+    }
+
+    private var precisionToggleIsLocked: Bool {
+        return switch model.precisionModelState {
+        case .canceling, .removing:
+            true
+        default:
+            !model.precisionLanguageIsSupported && !precisionToggleIsOn
         }
     }
 
@@ -278,7 +234,7 @@ extension LuxelSettingsView {
         }
     }
 
-    private var precisionTranscriptionDetail: String {
+    private var precisionFeatureStatusText: String? {
         switch model.precisionModelState {
         case .ready(let installation), .updateAvailable(let installation, _):
             let size = byteString(installation.allocatedBytes)
@@ -290,66 +246,57 @@ extension LuxelSettingsView {
                 )
                 : LuxelLocalization.format(
                     "precision.detail.installed",
-                    defaultValue: "Model installed (%@).",
+                    defaultValue: "Downloaded and ready (%@).",
                     size
                 )
-        default:
-            return LuxelLocalization.string(
-                "precision.detail.notInstalled",
-                defaultValue: "Higher-accuracy local transcription. Requires a 483 MB download."
-            )
-        }
-    }
-
-    private var precisionModelStatusText: String {
-        switch model.precisionModelState {
-        case .notInstalled(let downloadBytes, let requiredFreeBytes):
-            LuxelLocalization.format(
-                "precision.status.notInstalled",
-                defaultValue: "Not installed · %@ download · %@ free required",
-                byteString(downloadBytes),
-                byteString(requiredFreeBytes)
-            )
+        case .notInstalled:
+            return nil
         case .queued(let position):
-            LuxelLocalization.format(
+            return LuxelLocalization.format(
                 "precision.status.queued",
                 defaultValue: "Queued (position %lld)",
                 position
             )
         case .downloading:
-            LuxelLocalization.string("precision.status.downloading", defaultValue: "Downloading")
+            return LuxelLocalization.string(
+                "precision.status.downloading",
+                defaultValue: "Downloading"
+            )
         case .verifying:
-            LuxelLocalization.string("precision.status.verifying", defaultValue: "Verifying")
+            return LuxelLocalization.string(
+                "precision.status.verifying",
+                defaultValue: "Verifying"
+            )
         case .preparing:
-            LuxelLocalization.string("precision.status.preparing", defaultValue: "Preparing")
+            return LuxelLocalization.string(
+                "precision.status.preparing",
+                defaultValue: "Preparing"
+            )
         case .validating:
-            LuxelLocalization.string(
+            return LuxelLocalization.string(
                 "precision.status.validating",
                 defaultValue: "Validating offline load"
             )
-        case .ready(let installation):
-            LuxelLocalization.format(
-                "precision.status.ready",
-                defaultValue: "Ready · revision %@ · %@",
-                String(installation.commit.prefix(7)),
-                byteString(installation.allocatedBytes)
-            )
-        case .updateAvailable:
-            LuxelLocalization.string(
-                "precision.status.updateAvailable",
-                defaultValue: "Update available"
-            )
         case .repairRequired:
-            LuxelLocalization.string(
+            return LuxelLocalization.string(
                 "precision.status.repairRequired",
                 defaultValue: "Repair required"
             )
         case .canceling:
-            LuxelLocalization.string("precision.status.canceling", defaultValue: "Canceling")
+            return LuxelLocalization.string(
+                "precision.status.canceling",
+                defaultValue: "Canceling"
+            )
         case .removing:
-            LuxelLocalization.string("precision.status.removing", defaultValue: "Removing")
+            return LuxelLocalization.string(
+                "precision.status.removing",
+                defaultValue: "Removing"
+            )
         case .failed:
-            LuxelLocalization.string("precision.status.failed", defaultValue: "Setup failed")
+            return LuxelLocalization.string(
+                "precision.status.failed",
+                defaultValue: "Setup failed"
+            )
         }
     }
 
