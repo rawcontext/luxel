@@ -1,0 +1,83 @@
+[
+  {
+    "metadataOutputVersion" : "3.0",
+    "shortDescription" : "Video-adapted MODNet portrait alpha matting",
+    "outputSchema" : [
+      {
+        "height" : "512",
+        "colorspace" : "Grayscale16Half",
+        "isOptional" : "0",
+        "width" : "512",
+        "isColor" : "0",
+        "formattedType" : "Image (Grayscale16Half 512 × 512)",
+        "hasSizeFlexibility" : "0",
+        "type" : "Image",
+        "shortDescription" : "512 x 512 continuous foreground alpha matte",
+        "name" : "alphaMatte"
+      }
+    ],
+    "storagePrecision" : "Float16",
+    "modelParameters" : [
+
+    ],
+    "author" : "ZHKKKe\/MODNet; Core ML conversion by Luxel",
+    "specificationVersion" : 10,
+    "license" : "Apache-2.0",
+    "mlProgramOperationTypeHistogram" : {
+      "Ios18.linear" : 2,
+      "Ios19.sliceByIndex" : 32,
+      "Ios18.conv" : 69,
+      "Ios18.batchNorm" : 16,
+      "Ios18.relu" : 17,
+      "Ios19.concat" : 22,
+      "Ios18.clip" : 36,
+      "Ios19.add" : 11,
+      "Ios18.sigmoid" : 2,
+      "Ios16.upsampleBilinear" : 8,
+      "Ios16.reduceMean" : 1,
+      "Ios18.cast" : 1,
+      "Tile" : 1,
+      "Ios19.reshape" : 2,
+      "Ios19.mul" : 2,
+      "Ios18.instanceNorm" : 16
+    },
+    "computePrecision" : "Mixed (Float16, Float32, Int32)",
+    "stateSchema" : [
+
+    ],
+    "isUpdatable" : "0",
+    "availability" : {
+      "macOS" : "16.0",
+      "tvOS" : "19.0",
+      "visionOS" : "3.0",
+      "watchOS" : "12.0",
+      "iOS" : "19.0",
+      "macCatalyst" : "19.0"
+    },
+    "modelType" : {
+      "name" : "MLModelType_mlProgram"
+    },
+    "inputSchema" : [
+      {
+        "height" : "512",
+        "colorspace" : "RGB",
+        "isOptional" : "0",
+        "width" : "512",
+        "isColor" : "1",
+        "formattedType" : "Image (Color 512 × 512)",
+        "hasSizeFlexibility" : "0",
+        "type" : "Image",
+        "shortDescription" : "512 x 512 center-cropped RGB camera frame",
+        "name" : "cameraImage"
+      }
+    ],
+    "userDefinedMetadata" : {
+      "com.github.apple.coremltools.conversion_date" : "2026-07-10",
+      "com.github.apple.coremltools.source" : "torch==2.7.0",
+      "com.github.apple.coremltools.version" : "9.0",
+      "com.github.apple.coremltools.source_dialect" : "TorchScript"
+    },
+    "generatedClassName" : "MODNetPortraitMatting",
+    "method" : "predict"
+  }
+]

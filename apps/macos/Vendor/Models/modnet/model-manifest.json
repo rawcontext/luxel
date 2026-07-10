@@ -1,0 +1,85 @@
+{
+  "artifact": {
+    "byteSize": 13122775,
+    "directory": "MODNetPortraitMatting.mlmodelc",
+    "sha256": "4ac8e748039196c5ce9a93bc5222a3407fce6f71b514d814cede1253b0ba5b09"
+  },
+  "checkpoint": {
+    "license": "Apache-2.0",
+    "name": "modnet_webcam_portrait_matting.ckpt",
+    "sha256": "913b82b66558db39b6286c150f809017d7528c872b156eb14333c9c6cb52108b",
+    "source": "https://drive.google.com/file/d/1Nf1ZxeJZJL8Qx9KadcYYyEmmlKhTADxX/view"
+  },
+  "contract": {
+    "input": {
+      "bias": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "name": "cameraImage",
+      "scale": 0.00784313725490196,
+      "shape": [
+        1,
+        3,
+        512,
+        512
+      ],
+      "type": "image<RGB, UInt8>"
+    },
+    "output": {
+      "name": "alphaMatte",
+      "range": [
+        0.0,
+        1.0
+      ],
+      "shape": [
+        1,
+        1,
+        512,
+        512
+      ],
+      "type": "image<Grayscale, Float16>"
+    }
+  },
+  "conversion": {
+    "computeUnits": "all",
+    "coremltools": "9.0",
+    "minimumDeploymentTarget": "macOS 26",
+    "numpy": "2.5.1",
+    "precision": "Float16",
+    "python": "3.13.13",
+    "pytorch": "2.7.0",
+    "representation": "ML Program",
+    "requirementsLockSha256": "e97aedf2f586d29aaa9a09e0a0cb88ce9952f2c279d11ffb541bba9ad3181efd",
+    "scriptSha256": "eadd6d9fc0c07ef7bdba64ba4b6ef25a3588d40251ccea9ceec4b20b05b3fb32"
+  },
+  "schemaVersion": 1,
+  "upstream": {
+    "commit": "28165a451e4610c9d77cfdf925a94610bb2810fb",
+    "repository": "https://github.com/ZHKKKe/MODNet"
+  },
+  "validation": {
+    "benchmark": {
+      "completedMattesPerSecond": 128.25208983178692,
+      "meanMilliseconds": 7.797143900825176,
+      "p95Milliseconds": 7.980435737408698,
+      "sampleCount": 20
+    },
+    "fixtures": {
+      "gradient": {
+        "maximumAbsoluteError": 0.09012904763221741,
+        "meanAbsoluteError": 0.00031335101812146604,
+        "p99AbsoluteError": 0.006342442240566015
+      },
+      "silhouette": {
+        "maximumAbsoluteError": 0.003928065299987793,
+        "meanAbsoluteError": 3.241440572310239e-05,
+        "p99AbsoluteError": 0.0003684042894747108
+      }
+    },
+    "maximumAbsoluteErrorTolerance": 0.1,
+    "meanAbsoluteErrorTolerance": 0.002,
+    "p99AbsoluteErrorTolerance": 0.01
+  }
+}
