@@ -1,0 +1,167 @@
+name: Nightly Release
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+      timezone: America/Chicago
+
+concurrency:
+  group: nightly-release
+  cancel-in-progress: false
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  release:
+    name: Release Luxel
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Plan patch release
+        id: release
+        shell: bash
+        run: |
+          latest_tag="$(gh release list \
+            --exclude-drafts \
+            --exclude-pre-releases \
+            --limit 1 \
+            --json tagName \
+            --jq '.[0].tagName')"
+
+          if [[ ! "${latest_tag}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Latest release tag '${latest_tag}' must match v<major>.<minor>.<patch>." >&2
+            exit 1
+          fi
+
+          git fetch origin "refs/tags/${latest_tag}:refs/tags/${latest_tag}"
+
+          if ! git merge-base --is-ancestor "${latest_tag}" HEAD; then
+            echo "Latest release tag ${latest_tag} is not an ancestor of master." >&2
+            exit 1
+          fi
+
+          if [[ "$(git rev-list --count "${latest_tag}..HEAD")" == "0" ]]; then
+            echo "release=false" >> "${GITHUB_OUTPUT}"
+            echo "No commits have landed since ${latest_tag}; skipping the nightly release."
+            exit 0
+          fi
+
+          current_version="${latest_tag#v}"
+          IFS=. read -r major minor patch <<< "${current_version}"
+          new_version="${major}.${minor}.$((patch + 1))"
+
+          {
+            echo "release=true"
+            echo "latest_tag=${latest_tag}"
+            echo "current_version=${current_version}"
+            echo "new_version=${new_version}"
+            echo "new_tag=v${new_version}"
+            echo "release_source=$(git rev-parse HEAD)"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Bump Luxel patch version
+        if: steps.release.outputs.release == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.release.outputs.current_version }}
+          NEW_VERSION: ${{ steps.release.outputs.new_version }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          current_version = os.environ["CURRENT_VERSION"]
+          new_version = os.environ["NEW_VERSION"]
+
+          info_path = Path("apps/macos/Configuration/Luxel/Info.plist")
+          info = info_path.read_text()
+          info_pattern = re.compile(
+              r"(<key>CFBundleShortVersionString</key>\s*<string>)"
+              + re.escape(current_version)
+              + r"(</string>)"
+          )
+          info, count = info_pattern.subn(
+              rf"\g<1>{new_version}\g<2>", info, count=1
+          )
+          if count != 1:
+              raise SystemExit(
+                  f"Expected Info.plist version {current_version} exactly once"
+              )
+          info_path.write_text(info)
+
+          test_path = Path(
+              "apps/macos/Tests/LuxelCoreTests/AppBundleConfigurationTests.swift"
+          )
+          test = test_path.read_text()
+          current_expectation = (
+              '#expect(plist["CFBundleShortVersionString"] as? String == '
+              f'"{current_version}")'
+          )
+          if test.count(current_expectation) != 1:
+              raise SystemExit(
+                  f"Expected version assertion {current_version} exactly once"
+              )
+          test_path.write_text(
+              test.replace(
+                  current_expectation,
+                  current_expectation.replace(current_version, new_version),
+              )
+          )
+          PY
+
+      - name: Commit and tag release
+        if: steps.release.outputs.release == 'true'
+        env:
+          NEW_TAG: ${{ steps.release.outputs.new_tag }}
+          NEW_VERSION: ${{ steps.release.outputs.new_version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            apps/macos/Configuration/Luxel/Info.plist \
+            apps/macos/Tests/LuxelCoreTests/AppBundleConfigurationTests.swift
+          git diff --cached --check
+          git commit -m "Bump version to ${NEW_VERSION}"
+          git tag "${NEW_TAG}"
+          git push --atomic origin HEAD:refs/heads/master "refs/tags/${NEW_TAG}"
+
+      - name: Create GitHub release
+        if: steps.release.outputs.release == 'true'
+        env:
+          LATEST_TAG: ${{ steps.release.outputs.latest_tag }}
+          NEW_TAG: ${{ steps.release.outputs.new_tag }}
+          NEW_VERSION: ${{ steps.release.outputs.new_version }}
+          RELEASE_SOURCE: ${{ steps.release.outputs.release_source }}
+        run: |
+          {
+            echo "## Changes"
+            echo
+            git log --format='- %s' "${LATEST_TAG}..${RELEASE_SOURCE}"
+            echo
+            echo "**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${LATEST_TAG}...${NEW_TAG}"
+          } > release-notes.md
+
+          gh release create "${NEW_TAG}" \
+            --verify-tag \
+            --title "Luxel ${NEW_VERSION}" \
+            --notes-file release-notes.md
+
+      - name: Trigger TestFlight build
+        if: steps.release.outputs.release == 'true'
+        env:
+          NEW_TAG: ${{ steps.release.outputs.new_tag }}
+          NEW_VERSION: ${{ steps.release.outputs.new_version }}
+        run: |
+          gh workflow run testflight.yml \
+            --ref "${NEW_TAG}" \
+            -f marketing_version="${NEW_VERSION}" \
+            -f changelog="Nightly release ${NEW_VERSION}"
