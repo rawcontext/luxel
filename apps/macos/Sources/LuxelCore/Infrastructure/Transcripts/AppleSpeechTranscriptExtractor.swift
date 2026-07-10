@@ -170,7 +170,7 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
             resultSpans.append(contentsOf: try spans(from: result, source: source))
         }
 
-        return deduplicated(resultSpans)
+        return resultSpans
     }
 
     private static func spans(
@@ -222,19 +222,6 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
         }
 
         return spans
-    }
-
-    private static func deduplicated(_ spans: [TimedTranscriptSpan]) -> [TimedTranscriptSpan] {
-        var seen: Set<String> = []
-        return spans.filter { span in
-            let key = [
-                String(format: "%.3f", span.start),
-                String(format: "%.3f", span.end),
-                span.text,
-                span.source?.rawValue ?? "unknown"
-            ].joined(separator: "|")
-            return seen.insert(key).inserted
-        }
     }
 }
 
