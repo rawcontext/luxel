@@ -11,6 +11,8 @@ CLI_MANPAGE="${PACKAGE_ROOT}/Documentation/luxel.1"
 STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 PRECISION_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-precision-model-bundle.sh"
+MODNET_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/modnet"
+MODNET_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-modnet-model.sh"
 APP_BUNDLE_IDENTIFIER="${APP_BUNDLE_IDENTIFIER:-media.luxel.app.dev}"
 APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-Luxel Dev}"
 APP_URL_SCHEME="${APP_URL_SCHEME:-luxel-dev}"
@@ -35,6 +37,8 @@ if [[ "${SIGN_IDENTITY}" == "-" ]]; then
 fi
 
 cd "${PACKAGE_ROOT}"
+
+"${MODNET_MODEL_AUDITOR}" "${MODNET_MODEL_DIR}"
 
 swift build --configuration "${CONFIGURATION}" --product "${APP_NAME}"
 swift build --configuration "${CONFIGURATION}" --product luxel-cli
@@ -64,6 +68,9 @@ if [[ -d "${PACKAGE_ROOT}/Vendor/Models/studio-voice" ]]; then
 	mkdir -p "${APP_PATH}/Contents/Resources/Models"
 	cp -R "${PACKAGE_ROOT}/Vendor/Models/studio-voice" "${APP_PATH}/Contents/Resources/Models/"
 fi
+mkdir -p "${APP_PATH}/Contents/Resources/Models"
+cp -R "${MODNET_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
+"${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
 if [[ -f "${CLI_MANPAGE}" ]]; then
 	mkdir -p "${APP_PATH}/Contents/Resources/man/man1"
 	cp "${CLI_MANPAGE}" "${APP_PATH}/Contents/Resources/man/man1/luxel.1"
@@ -136,6 +143,9 @@ codesign \
 	--entitlements "${ENTITLEMENTS}" \
 	--timestamp \
 	"${APP_PATH}"
+
+codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+"${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
 
 TEAM_IDENTIFIER="$(
 	codesign -dv --verbose=4 "${APP_PATH}" 2>&1 |

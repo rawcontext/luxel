@@ -218,6 +218,29 @@ struct AppBundleConfigurationTests {
         }
     }
 
+    @Test("signed app scripts require and audit bundled MODNet resources")
+    func signedAppScriptsRequireAndAuditBundledMODNetResources() throws {
+        let root = try packageRootURL()
+        let auditor = root.appending(path: "Scripts/audit-modnet-model.sh")
+        let auditProcess = Process()
+        auditProcess.executableURL = auditor
+        auditProcess.arguments = [root.appending(path: "Vendor/Models/modnet").path]
+        try auditProcess.run()
+        auditProcess.waitUntilExit()
+        #expect(auditProcess.terminationStatus == 0)
+
+        for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
+            let script = try String(
+                contentsOf: root.appending(path: "Scripts/\(scriptName)"),
+                encoding: .utf8
+            )
+            #expect(script.contains("MODNET_MODEL_DIR"))
+            #expect(script.contains("audit-modnet-model.sh"))
+            #expect(script.contains("cp -R \"${MODNET_MODEL_DIR}\""))
+            #expect(!script.contains("if [[ -d \"${MODNET_MODEL_DIR}"))
+        }
+    }
+
     @Test("local build script uses a development app identity by default")
     func localBuildScriptUsesDevelopmentAppIdentityByDefault() throws {
         let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")

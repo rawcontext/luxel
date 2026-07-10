@@ -11,6 +11,7 @@ Luxel ships the following third-party components:
 7. FluidInference parakeet-tdt-0.6b-v3-coreml — CC-BY-4.0 — optional downloaded Precision Transcription model
 8. aufklarer/DeepFilterNet3-CoreML — Apache License 2.0 — bundled Studio Voice Core ML model
 9. soniqo/speech-swift — Apache License 2.0 — adapted Studio Voice signal-processing runtime
+10. ZHKKKe/MODNet — Apache License 2.0 — bundled local camera portrait-matting model
 
 The full license text and attribution for each component follow, in the same order.
 
@@ -322,11 +323,32 @@ License: Apache License 2.0 (full text reproduced below)
 
 Upstream: https://github.com/soniqo/speech-swift
 
+## ZHKKKe/MODNet (bundled model)
+
+Luxel bundles the video-adapted `modnet_webcam_portrait_matting.ckpt` from
+ZHKKKe/MODNet, converted to an FP16 Core ML ML Program, at
+`Contents/Resources/Models/modnet`. The source checkpoint has SHA-256
+`913b82b66558db39b6286c150f809017d7528c872b156eb14333c9c6cb52108b` and
+the upstream source is pinned to commit
+`28165a451e4610c9d77cfdf925a94610bb2810fb`.
+
+License: Apache License 2.0 (full text reproduced below)
+
+Copyright: Copyright 2020 Zhanghan Ke and contributors
+
+Upstream: https://github.com/ZHKKKe/MODNet
+
+Paper: Zhanghan Ke et al., "MODNet: Real-Time Trimap-Free Portrait Matting via
+Objective Decomposition," https://arxiv.org/abs/2011.11961
+
+Model use: Luxel performs inference locally. Camera frames are not uploaded,
+and the converted model does not require networking at runtime.
+
 ## Apache License, Version 2.0
 
 The following license text applies to Swift Argument Parser (together with the
-Runtime Library Exception noted above), FluidAudio, DeepFilterNet3-CoreML, and
-the adapted speech-swift runtime.
+Runtime Library Exception noted above), FluidAudio, DeepFilterNet3-CoreML,
+the adapted speech-swift runtime, and MODNet.
 
                                  Apache License
                            Version 2.0, January 2004

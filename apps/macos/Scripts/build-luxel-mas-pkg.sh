@@ -11,6 +11,8 @@ THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
 STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 PRECISION_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-precision-model-bundle.sh"
+MODNET_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/modnet"
+MODNET_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-modnet-model.sh"
 OUTPUT_DIR="${OUTPUT_DIR:-${PACKAGE_ROOT}/.build/mas}"
 APP_PATH="${APP_PATH:-${OUTPUT_DIR}/${APP_NAME}.app}"
 PKG_PATH="${PKG_PATH:-${OUTPUT_DIR}/${APP_NAME}.pkg}"
@@ -52,6 +54,7 @@ fi
 require_file "${PROVISIONING_PROFILE}" "Mac App Store provisioning profile"
 require_file "${BASE_ENTITLEMENTS}" "Mac App Store entitlements"
 require_file "${CLI_ENTITLEMENTS}" "Mac App Store command line tool entitlements"
+"${MODNET_MODEL_AUDITOR}" "${MODNET_MODEL_DIR}"
 
 if [[ -z "${APP_STORE_SIGN_IDENTITY}" ]]; then
 	APP_STORE_SIGN_IDENTITY="$(
@@ -152,6 +155,9 @@ if [[ -d "${PACKAGE_ROOT}/Vendor/Models/studio-voice" ]]; then
 	mkdir -p "${APP_PATH}/Contents/Resources/Models"
 	cp -R "${PACKAGE_ROOT}/Vendor/Models/studio-voice" "${APP_PATH}/Contents/Resources/Models/"
 fi
+mkdir -p "${APP_PATH}/Contents/Resources/Models"
+cp -R "${MODNET_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
+"${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
 "${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
 find "${BIN_DIR}" -maxdepth 1 -name '*.bundle' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
 find "${BIN_DIR}" -maxdepth 2 -name '*.lproj' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
@@ -253,5 +259,6 @@ productbuild \
 
 pkgutil --check-signature "${PKG_PATH}" >/dev/null
 "${PRECISION_MODEL_AUDITOR}" "${PKG_PATH}"
+"${MODNET_MODEL_AUDITOR}" "${PKG_PATH}"
 
 echo "${PKG_PATH}"
