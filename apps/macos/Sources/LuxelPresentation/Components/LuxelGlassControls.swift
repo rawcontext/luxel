@@ -48,12 +48,41 @@ private struct BehindWindowBlurView: NSViewRepresentable {
 public struct LuxelGlassWindowChromeConfigurator: NSViewRepresentable {
     public init() {}
 
-    public func makeNSView(context: Context) -> LuxelGlassWindowChromeEnforcerView {
-        LuxelGlassWindowChromeEnforcerView()
+    public func makeNSView(context: Context) -> LuxelGlassWindowEnforcerView {
+        LuxelGlassWindowEnforcerView(configuration: .chrome)
     }
 
-    public func updateNSView(_ nsView: LuxelGlassWindowChromeEnforcerView, context: Context) {
-        nsView.enforceChrome()
+    public func updateNSView(
+        _ nsView: LuxelGlassWindowEnforcerView,
+        context: Context
+    ) {
+        nsView.enforceWindowConfiguration()
+    }
+}
+
+public struct LuxelGlassWindowTransparencyConfigurator: NSViewRepresentable {
+    public init() {}
+
+    public func makeNSView(context: Context) -> LuxelGlassWindowEnforcerView {
+        LuxelGlassWindowEnforcerView(configuration: .transparency)
+    }
+
+    public func updateNSView(
+        _ nsView: LuxelGlassWindowEnforcerView,
+        context: Context
+    ) {
+        nsView.enforceWindowConfiguration()
+    }
+}
+
+public extension View {
+    func luxelGlassSceneWindowChrome() -> some View {
+        containerBackground(.clear, for: .window)
+            .toolbar(removing: .title)
+            .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+            .windowMinimizeBehavior(.enabled)
+            .windowResizeBehavior(.enabled)
+            .windowFullScreenBehavior(.enabled)
     }
 }
 
@@ -86,6 +115,13 @@ public enum LuxelGlassWindowChrome {
             }
         }
 
+        LuxelGlassWindowTransparency.configure(window)
+    }
+}
+
+@MainActor
+public enum LuxelGlassWindowTransparency {
+    public static func configure(_ window: NSWindow) {
         if window.isOpaque {
             window.isOpaque = false
         }
@@ -99,8 +135,24 @@ public enum LuxelGlassWindowChrome {
 // SwiftUI re-asserts `isOpaque = true` on scene windows when they become key,
 // which silently disables behind-window blur sampling. Re-enforce transparency
 // on every window activation/occlusion change so the glass chrome survives focus.
-public final class LuxelGlassWindowChromeEnforcerView: NSView {
+public final class LuxelGlassWindowEnforcerView: NSView {
+    enum Configuration {
+        case chrome
+        case transparency
+    }
+
+    private let configuration: Configuration
     private var observers: [NSObjectProtocol] = []
+
+    init(configuration: Configuration) {
+        self.configuration = configuration
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError()
+    }
 
     public override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
@@ -111,7 +163,7 @@ public final class LuxelGlassWindowChromeEnforcerView: NSView {
             return
         }
 
-        enforceChrome()
+        enforceWindowConfiguration()
 
         let names: [Notification.Name] = [
             NSWindow.didBecomeKeyNotification,
@@ -127,18 +179,23 @@ public final class LuxelGlassWindowChromeEnforcerView: NSView {
                 queue: .main
             ) { [weak self] _ in
                 MainActor.assumeIsolated {
-                    self?.enforceChrome()
+                    self?.enforceWindowConfiguration()
                 }
             }
         }
     }
 
-    func enforceChrome() {
+    func enforceWindowConfiguration() {
         guard let window else {
             return
         }
 
-        LuxelGlassWindowChrome.configure(window)
+        switch configuration {
+        case .chrome:
+            LuxelGlassWindowChrome.configure(window)
+        case .transparency:
+            LuxelGlassWindowTransparency.configure(window)
+        }
     }
 
     private func removeObservers() {

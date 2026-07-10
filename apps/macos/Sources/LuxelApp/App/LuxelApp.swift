@@ -7,6 +7,7 @@ import SwiftUI
 @main
 struct LuxelApp: App {
     @NSApplicationDelegateAdaptor(LuxelApplicationDelegate.self) private var appDelegate
+    @Environment(\.openSettings) private var openSettings
 
     @State private var model: LuxelMenuModel
     @State private var editorModel: LuxelEditorModel
@@ -38,9 +39,7 @@ struct LuxelApp: App {
         let aboutWindowPresenter = LuxelAboutWindowPresenter(metadata: model.appMetadata)
         let windowPresenter = LuxelWindowPresenter(
             model: model,
-            editorModel: editorModel,
-            cropperPanelController: cropperPanelController,
-            shortcutController: shortcutController
+            editorModel: editorModel
         )
 
         _model = State(initialValue: model)
@@ -68,29 +67,62 @@ struct LuxelApp: App {
     }
 
     var body: some Scene {
-        WindowGroup(id: LuxelEditorScene.id) {
-            LuxelEditorView(model: editorModel)
-        }
-        .defaultLaunchBehavior(.suppressed)
-        .commands {
-            CommandGroup(replacing: .appInfo) {
-                Button("About \(model.appMetadata.displayName)") {
-                    aboutWindowPresenter.open()
+        LuxelSettingsActionScene(
+            windowPresenter: windowPresenter,
+            openSettingsAction: openSettings
+        ) {
+            WindowGroup(id: LuxelEditorScene.id) {
+                LuxelEditorView(model: editorModel)
+            }
+            .defaultLaunchBehavior(.suppressed)
+            .commands {
+                CommandGroup(replacing: .appInfo) {
+                    Button("About \(model.appMetadata.displayName)") {
+                        aboutWindowPresenter.open()
+                    }
                 }
             }
-        }
 
-        Settings {
-            LuxelSettingsView(
-                model: model,
-                editorModel: editorModel,
-                cropperPanelController: cropperPanelController,
-                shortcutController: shortcutController,
-                openEditorWindow: {
-                    windowPresenter.openEditor()
+            Settings {
+                LuxelSettingsView(
+                    model: model,
+                    editorModel: editorModel,
+                    cropperPanelController: cropperPanelController,
+                    shortcutController: shortcutController,
+                    openEditorWindow: {
+                        windowPresenter.openEditor()
+                    }
+                )
+                .navigationTitle("Luxel Settings")
+                .luxelGlassSceneWindowChrome()
+                .background {
+                    LuxelSettingsWindowLifecycleObserver(
+                        onWindowDidAppear: windowPresenter.settingsWindowDidAppear,
+                        onWindowWillClose: windowPresenter.settingsWindowWillClose
+                    )
                 }
-            )
+            }
+            .defaultSize(width: 920, height: 760)
+            .windowResizability(.contentMinSize)
+            .windowBackgroundDragBehavior(.enabled)
         }
+    }
+}
+
+private struct LuxelSettingsActionScene<Content: Scene>: Scene {
+    let content: Content
+
+    init(
+        windowPresenter: LuxelWindowPresenter,
+        openSettingsAction: OpenSettingsAction,
+        @SceneBuilder content: () -> Content
+    ) {
+        windowPresenter.install(openSettingsAction: openSettingsAction)
+        self.content = content()
+    }
+
+    var body: some Scene {
+        content
     }
 }
 

@@ -6,24 +6,22 @@ import SwiftUI
 final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
     private let model: LuxelMenuModel
     private let editorModel: LuxelEditorModel
-    private let cropperPanelController: LuxelCropperPanelController
-    private let shortcutController: LuxelShortcutController
     private let editorMenuController: LuxelEditorNativeMenuController
     private var applicationDidBecomeActiveObserver: NSObjectProtocol?
+    private var openSettingsAction: OpenSettingsAction?
+    private var pendingSettingsPresentation = false
+    private var pendingSettingsActivationSource: NSRunningApplication?
+    private var settingsPresentationInFlight = false
 
     private var editorWindow: NSWindow?
-    private var settingsWindow: NSWindow?
+    private weak var settingsWindow: NSWindow?
 
     init(
         model: LuxelMenuModel,
-        editorModel: LuxelEditorModel,
-        cropperPanelController: LuxelCropperPanelController,
-        shortcutController: LuxelShortcutController
+        editorModel: LuxelEditorModel
     ) {
         self.model = model
         self.editorModel = editorModel
-        self.cropperPanelController = cropperPanelController
-        self.shortcutController = shortcutController
         self.editorMenuController = LuxelEditorNativeMenuController(model: editorModel)
         super.init()
         installMenuRefreshObserver()
@@ -52,8 +50,46 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
     }
 
     func openSettings(activationSource: NSRunningApplication? = nil) {
-        let window = settingsWindow ?? makeSettingsWindow()
-        show(window, activationSource: activationSource)
+        guard openSettingsAction != nil else {
+            pendingSettingsPresentation = true
+            pendingSettingsActivationSource = activationSource
+            return
+        }
+
+        showSettings(activationSource: activationSource)
+    }
+
+    func install(openSettingsAction: OpenSettingsAction) {
+        self.openSettingsAction = openSettingsAction
+
+        guard pendingSettingsPresentation else {
+            return
+        }
+
+        pendingSettingsPresentation = false
+        let activationSource = pendingSettingsActivationSource
+        pendingSettingsActivationSource = nil
+        Task { @MainActor [weak self, weak activationSource] in
+            await Task.yield()
+            self?.openSettings(activationSource: activationSource)
+        }
+    }
+
+    func settingsWindowDidAppear(_ window: NSWindow) {
+        settingsWindow = window
+        settingsPresentationInFlight = false
+        refreshEditorMenusIfNeeded()
+    }
+
+    func settingsWindowWillClose(_ window: NSWindow) {
+        guard window === settingsWindow else {
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            self?.restoreAccessoryActivationPolicyIfNoManagedWindowsVisible()
+        }
     }
 
     private func makeEditorWindow() -> NSWindow {
@@ -68,32 +104,6 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.delegate = self
         editorWindow = window
-        return window
-    }
-
-    private func makeSettingsWindow() -> NSWindow {
-        let hostingController = NSHostingController(
-            rootView: LuxelSettingsView(
-                model: model,
-                editorModel: editorModel,
-                cropperPanelController: cropperPanelController,
-                shortcutController: shortcutController,
-                openEditorWindow: { [weak self] in
-                    self?.openEditor()
-                }
-            )
-            .frame(minWidth: 840, minHeight: 660)
-        )
-        let window = NSWindow(contentViewController: hostingController)
-        window.title = ""
-        window.titleVisibility = .hidden
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-        window.setContentSize(NSSize(width: 920, height: 760))
-        window.minSize = NSSize(width: 840, height: 660)
-        window.center()
-        window.isReleasedWhenClosed = false
-        window.delegate = self
-        settingsWindow = window
         return window
     }
 
@@ -123,6 +133,37 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
                 try? await Task.sleep(for: .milliseconds(120))
                 present(window, activationSource: activationSource)
             }
+        }
+    }
+
+    private func showSettings(activationSource: NSRunningApplication?) {
+        if settingsWindow?.isVisible != true {
+            guard !settingsPresentationInFlight else {
+                return
+            }
+            settingsPresentationInFlight = true
+        }
+
+        Task { @MainActor [weak self, weak activationSource] in
+            guard let self, let openSettingsAction else {
+                return
+            }
+
+            let promotedFromAccessory = NSApplication.shared.activationPolicy() != .regular
+            _ = NSApplication.shared.setActivationPolicy(.regular)
+
+            if promotedFromAccessory {
+                yieldActivation(to: activationSource)
+                await Task.yield()
+                try? await Task.sleep(for: .milliseconds(80))
+            }
+
+            editorMenuController.install()
+            activateLuxel(from: activationSource)
+            openSettingsAction()
+            await Task.yield()
+            activateLuxel(from: activationSource)
+            refreshEditorMenusIfNeeded()
         }
     }
 
@@ -182,8 +223,8 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
     }
 
     private func configureManagedWindowChrome() {
-        for window in [editorWindow, settingsWindow].compactMap({ $0 }) where window.isVisible {
-            LuxelGlassWindowChrome.configure(window)
+        if let editorWindow, editorWindow.isVisible {
+            LuxelGlassWindowChrome.configure(editorWindow)
         }
     }
 
@@ -225,12 +266,111 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
     }
 
     private func restoreAccessoryActivationPolicyIfNoManagedWindowsVisible() {
-        guard editorWindow?.isVisible != true,
-              settingsWindow?.isVisible != true
+        guard !settingsPresentationInFlight,
+              !NSApplication.shared.windows.contains(where: { window in
+                window.isVisible && window.canBecomeMain
+              })
         else {
             return
         }
 
         _ = NSApplication.shared.setActivationPolicy(.accessory)
+    }
+}
+
+struct LuxelSettingsWindowLifecycleObserver: NSViewRepresentable {
+    let onWindowDidAppear: @MainActor (NSWindow) -> Void
+    let onWindowWillClose: @MainActor (NSWindow) -> Void
+
+    func makeNSView(context: Context) -> LuxelSettingsWindowLifecycleView {
+        LuxelSettingsWindowLifecycleView(
+            onWindowDidAppear: onWindowDidAppear,
+            onWindowWillClose: onWindowWillClose
+        )
+    }
+
+    func updateNSView(_ nsView: LuxelSettingsWindowLifecycleView, context: Context) {
+        nsView.onWindowDidAppear = onWindowDidAppear
+        nsView.onWindowWillClose = onWindowWillClose
+        nsView.refreshWindowObservation()
+    }
+}
+
+@MainActor
+final class LuxelSettingsWindowLifecycleView: NSView {
+    var onWindowDidAppear: @MainActor (NSWindow) -> Void
+    var onWindowWillClose: @MainActor (NSWindow) -> Void
+
+    private weak var observedWindow: NSWindow?
+
+    init(
+        onWindowDidAppear: @escaping @MainActor (NSWindow) -> Void,
+        onWindowWillClose: @escaping @MainActor (NSWindow) -> Void
+    ) {
+        self.onWindowDidAppear = onWindowDidAppear
+        self.onWindowWillClose = onWindowWillClose
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        refreshWindowObservation()
+    }
+
+    func refreshWindowObservation() {
+        guard observedWindow !== window else {
+            return
+        }
+
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSWindow.willCloseNotification,
+            object: observedWindow
+        )
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSWindow.didBecomeKeyNotification,
+            object: observedWindow
+        )
+        observedWindow = window
+
+        guard let window else {
+            return
+        }
+
+        onWindowDidAppear(window)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowWillClose(_:)),
+            name: NSWindow.willCloseNotification,
+            object: window
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidBecomeKey(_:)),
+            name: NSWindow.didBecomeKeyNotification,
+            object: window
+        )
+    }
+
+    @objc private func windowDidBecomeKey(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else {
+            return
+        }
+
+        onWindowDidAppear(window)
+    }
+
+    @objc private func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow else {
+            return
+        }
+
+        onWindowWillClose(window)
     }
 }

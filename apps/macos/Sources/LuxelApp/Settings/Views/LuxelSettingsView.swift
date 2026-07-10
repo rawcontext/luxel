@@ -93,7 +93,7 @@ extension LuxelSettingsView {
             .preferredColorScheme(.dark)
             .background {
                 LuxelGlassWindowBackground()
-                    .overlay(LuxelGlassWindowChromeConfigurator())
+                    .overlay(LuxelGlassWindowTransparencyConfigurator())
             }
     }
 
