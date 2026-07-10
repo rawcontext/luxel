@@ -1,34 +1,6 @@
 import LuxelCore
 import SwiftUI
 
-/// Display-only speaker accent colors, assigned by first-seen order within a
-/// transcript. Never persisted as semantic data.
-public enum TranscriptSpeakerPalette {
-    public static let dotColors: [Color] = [
-        Color(red: 0.62, green: 0.58, blue: 1.0),
-        Color(red: 0.44, green: 0.85, blue: 0.95),
-        Color(red: 0.95, green: 0.77, blue: 0.44),
-        Color(red: 0.55, green: 0.9, blue: 0.6),
-        Color(red: 0.96, green: 0.56, blue: 0.62)
-    ]
-
-    public static let textColors: [Color] = [
-        Color(red: 0.73, green: 0.7, blue: 1.0),
-        Color(red: 0.6, green: 0.89, blue: 0.96),
-        Color(red: 0.96, green: 0.84, blue: 0.6),
-        Color(red: 0.68, green: 0.93, blue: 0.72),
-        Color(red: 0.97, green: 0.68, blue: 0.73)
-    ]
-
-    public static func dotColor(at index: Int) -> Color {
-        dotColors[abs(index) % dotColors.count]
-    }
-
-    public static func textColor(at index: Int) -> Color {
-        textColors[abs(index) % textColors.count]
-    }
-}
-
 struct EditorSpeakersCard: View {
     @Bindable var model: LuxelEditorModel
     @State private var expandedVoiceID: String?
@@ -209,8 +181,7 @@ struct EditorSpeakersCard: View {
     }
 
     private func speakerDot(_ voice: DetectedSpeakerVoice) -> some View {
-        let color = TranscriptSpeakerPalette.dotColor(
-            at: model.speakerAccentIndex(for: voice.id) ?? 0)
+        let color = TranscriptSpeakerPalette.dotColor(for: voice.label.displayName)
         return Circle()
             .fill(color)
             .frame(width: 9, height: 9)

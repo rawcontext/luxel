@@ -62,16 +62,6 @@ extension LuxelEditorModel {
         knownSpeakerOptions = (try? speakerNamingService.knownSpeakers())?.profiles ?? []
     }
 
-    func speakerAccentIndex(for speakerID: String?) -> Int? {
-        guard let speakerID,
-              let index = transcript?.speakers.firstIndex(where: { $0.id == speakerID })
-        else {
-            return nil
-        }
-
-        return index
-    }
-
     func playSpeakerExample(_ range: SpeakerVoiceExampleRange) {
         exampleClipPlaybackTask?.cancel()
         seekToTranscriptTime(range.start)

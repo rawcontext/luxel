@@ -111,9 +111,9 @@ struct TranscriptCardContent: View {
                 ForEach(
                     Array(transcript.speakers.prefix(3).enumerated()),
                     id: \.element.id
-                ) { index, _ in
+                ) { _, speaker in
                     Circle()
-                        .fill(TranscriptSpeakerPalette.dotColor(at: index))
+                        .fill(TranscriptSpeakerPalette.dotColor(for: speaker.displayName))
                         .frame(width: 8, height: 8)
                         .overlay {
                             Circle().strokeBorder(.black.opacity(0.6), lineWidth: 1.5)
@@ -238,8 +238,10 @@ struct TranscriptCardContent: View {
 
         return TranscriptSpeakerChip(
             displayName: transcript.speakers[index].displayName,
-            dotColor: TranscriptSpeakerPalette.dotColor(at: index),
-            textColor: TranscriptSpeakerPalette.textColor(at: index)
+            dotColor: TranscriptSpeakerPalette.dotColor(
+                for: transcript.speakers[index].displayName),
+            textColor: TranscriptSpeakerPalette.textColor(
+                for: transcript.speakers[index].displayName)
         )
     }
 
