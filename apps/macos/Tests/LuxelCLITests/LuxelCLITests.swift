@@ -50,7 +50,8 @@ struct LuxelCLITests {
                 ))
         #expect(
             AutomationInvocationURLBuilder.url(for: invocation).absoluteString
-                == "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3&saveTo=/tmp/Luxel%20Exports&x-success=luxel-callback://done"
+                == "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3"
+                + "&saveTo=/tmp/Luxel%20Exports&x-success=luxel-callback://done"
         )
     }
 
@@ -195,6 +196,9 @@ struct LuxelCLITests {
         }
     }
 
+}
+
+extension LuxelCLITests {
     @Test("convert command maps headless editor export options")
     func convertCommandMapsHeadlessEditorExportOptions() throws {
         let command = try LuxelConvertCommand.parse([

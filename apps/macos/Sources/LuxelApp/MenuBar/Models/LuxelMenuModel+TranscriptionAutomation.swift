@@ -20,11 +20,14 @@ private enum AutomationTranscriptionError: LocalizedError {
         case .speechRecognitionDenied:
             "speech_recognition_denied: Apple Speech permission was not granted."
         case .precisionModelNotInstalled:
-            "precision_model_not_installed: Install Precision Transcription in Luxel Settings or switch to Apple Speech."
+            "precision_model_not_installed: Install Precision Transcription in Luxel Settings "
+                + "or switch to Apple Speech."
         case .precisionModelCorrupt:
-            "precision_model_corrupt: Repair Precision Transcription in Luxel Settings or switch to Apple Speech."
+            "precision_model_corrupt: Repair Precision Transcription in Luxel Settings "
+                + "or switch to Apple Speech."
         case .precisionLanguageUnsupported(let language):
-            "precision_language_unsupported: Precision Transcription does not support \(language). Change the language or switch to Apple Speech."
+            "precision_language_unsupported: Precision Transcription does not support \(language). "
+                + "Change the language or switch to Apple Speech."
         case .precisionInferenceFailed:
             "precision_inference_failed: Precision Transcription failed. Retry or switch to Apple Speech."
         case .unavailable:
@@ -38,6 +41,22 @@ extension LuxelMenuModel {
     func runAutomationTranscription(
         _ options: AutomationTranscriptionOptions
     ) async throws -> AutomationExecutionResult {
+        try validateAutomationTranscriptionOptions(options)
+        try await authorizeAutomationTranscriptionIfNeeded()
+        let locale = Locale(identifier: options.localeIdentifier ?? Locale.current.identifier)
+        let mode: TranscriptTurnSegmentationMode = options.semanticTurns ? .semantic : .raw
+        let transcript = try await automationTranscript(
+            options: options,
+            locale: locale,
+            mode: mode
+        )
+        let output = try automationTranscriptOutput(transcript, json: options.json)
+        return try writeAutomationTranscriptOutput(output, to: options.outputURL)
+    }
+
+    private func validateAutomationTranscriptionOptions(
+        _ options: AutomationTranscriptionOptions
+    ) throws {
         var isDirectory = ObjCBool(false)
         guard
             FileManager.default.fileExists(
@@ -52,23 +71,28 @@ extension LuxelMenuModel {
            !options.overwrite {
             throw AutomationTranscriptionError.outputExists
         }
+    }
 
+    private func authorizeAutomationTranscriptionIfNeeded() async throws {
         if settings.transcriptEnginePreference == .appleSpeech {
-            let authorization = await AppleSpeechRecognitionAuthorizationService()
+            let authorization = await AppleSpeechAuthorizationService()
                 .requestAuthorization()
             guard authorization == .authorized else {
                 throw AutomationTranscriptionError.speechRecognitionDenied
             }
         }
+    }
 
-        let locale = Locale(identifier: options.localeIdentifier ?? Locale.current.identifier)
-        let mode: TranscriptTurnSegmentationMode = options.semanticTurns ? .semantic : .raw
+    private func automationTranscript(
+        options: AutomationTranscriptionOptions,
+        locale: Locale,
+        mode: TranscriptTurnSegmentationMode
+    ) async throws -> TurnSegmentedTranscript {
         let service = LuxelCompositionRoot.localAudioTranscriptService(
             turnSegmentationModeOverride: mode,
             speakerDiarizationModeOverride: options.diarize ? .enabled : .disabled,
             transcriptLocaleOverride: { locale }
         )
-        let transcript: TurnSegmentedTranscript
         do {
             guard
                 let result = try await service.transcript(
@@ -82,7 +106,7 @@ extension LuxelMenuModel {
             else {
                 throw AutomationTranscriptionError.unavailable
             }
-            transcript = result
+            return result
         } catch let error as PrecisionTranscriptionError {
             switch error {
             case .modelNotInstalled:
@@ -95,26 +119,36 @@ extension LuxelMenuModel {
                 throw AutomationTranscriptionError.precisionInferenceFailed
             }
         }
+    }
 
-        let data: Data
-        let contentType: String
-        let fileExtension: String
-        if options.json {
-            data = try LuxelTranscriptFormatter.data(for: transcript, json: true)
-            contentType = "application/json"
-            fileExtension = "json"
-        } else {
-            data = try LuxelTranscriptFormatter.data(for: transcript, json: false)
-            contentType = "text/plain; charset=utf-8"
-            fileExtension = "txt"
+    private func automationTranscriptOutput(
+        _ transcript: TurnSegmentedTranscript,
+        json: Bool
+    ) throws -> AutomationTranscriptOutput {
+        if json {
+            return AutomationTranscriptOutput(
+                data: try LuxelTranscriptFormatter.data(for: transcript, json: true),
+                contentType: "application/json",
+                fileExtension: "json"
+            )
         }
+        return AutomationTranscriptOutput(
+            data: try LuxelTranscriptFormatter.data(for: transcript, json: false),
+            contentType: "text/plain; charset=utf-8",
+            fileExtension: "txt"
+        )
+    }
 
-        if let outputURL = options.outputURL {
+    private func writeAutomationTranscriptOutput(
+        _ output: AutomationTranscriptOutput,
+        to outputURL: URL?
+    ) throws -> AutomationExecutionResult {
+        if let outputURL {
             try FileManager.default.createDirectory(
                 at: outputURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            try data.write(to: outputURL, options: .atomic)
+            try output.data.write(to: outputURL, options: .atomic)
             return .file(outputURL)
         }
 
@@ -126,9 +160,15 @@ extension LuxelMenuModel {
             withIntermediateDirectories: true
         )
         let resultURL = resultDirectory.appending(
-            path: "transcript-\(UUID().uuidString).\(fileExtension)"
+            path: "transcript-\(UUID().uuidString).\(output.fileExtension)"
         )
-        try data.write(to: resultURL, options: .atomic)
-        return .resultFile(resultURL, contentType: contentType, removeAfterRead: true)
+        try output.data.write(to: resultURL, options: .atomic)
+        return .resultFile(resultURL, contentType: output.contentType, removeAfterRead: true)
     }
+}
+
+private struct AutomationTranscriptOutput {
+    let data: Data
+    let contentType: String
+    let fileExtension: String
 }

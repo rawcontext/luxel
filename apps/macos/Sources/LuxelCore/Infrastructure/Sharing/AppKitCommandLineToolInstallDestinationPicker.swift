@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 @MainActor
-public final class AppKitCommandLineToolInstallDestinationPicker:
+public final class CommandLineInstallDestinationPicker:
     CommandLineToolInstallDestinationPicker {
     private let bookmarkCreator: any BookmarkedDirectoryBookmarkCreator
 

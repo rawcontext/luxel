@@ -131,7 +131,7 @@ private struct CaptureTargetDisplayScreenFrame {
 }
 
 extension NSScreen {
-    fileprivate var displayID: DisplayID? {
+    var displayID: DisplayID? {
         guard
             let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
         else {

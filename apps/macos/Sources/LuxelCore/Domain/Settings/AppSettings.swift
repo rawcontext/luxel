@@ -224,81 +224,56 @@ extension AppSettings {
         defaultCountdown: TimeInterval? = nil,
         lastStopAfter: TimeInterval? = nil
     ) {
-        self.recordingsDirectory = recordingsDirectory
-        self.recordingsDirectoryBookmark = recordingsDirectoryBookmark
-        self.showCursor = showCursor
-        self.highlightClicks = highlightClicks
-        self.cursorMode = cursorMode ?? Self.cursorMode(showCursor: showCursor)
-        self.cursorRenderOptions =
-            cursorRenderOptions
-            ?? Self.cursorRenderOptions(
-                showCursor: showCursor,
-                highlightClicks: highlightClicks
-            )
-        self.keystrokeOverlayEnabled = keystrokeOverlayEnabled
-        self.keystrokeRenderOptions = keystrokeRenderOptions
+        let resolvedCursorMode = cursorMode ?? Self.cursorMode(showCursor: showCursor)
+        let renderOptions = cursorRenderOptions ?? Self.cursorRenderOptions(
+            showCursor: showCursor, highlightClicks: highlightClicks
+        )
+        let legacyFrameRate = Self.legacyRecordingFrameRate(record60FPS: record60FPS)
+        let frameRate = Self.supportedRecordingFrameRate(recordingFrameRate ?? legacyFrameRate)
+            ?? legacyFrameRate
+        let preferredBufferLength = replayBufferPreferredBufferLength ?? replayBufferConfiguration?.bufferLength
+        let bufferLength = Self.supportedReplayBufferLength(preferredBufferLength)
+            ?? ReplayBufferConfiguration.defaults.bufferLength
+        self.recordingsDirectory = recordingsDirectory; self.recordingsDirectoryBookmark = recordingsDirectoryBookmark
+        self.showCursor = showCursor; self.highlightClicks = highlightClicks
+        self.cursorMode = resolvedCursorMode; self.cursorRenderOptions = renderOptions
+        self.keystrokeOverlayEnabled = keystrokeOverlayEnabled; self.keystrokeRenderOptions = keystrokeRenderOptions
         self.pauseKeystrokeCaptureShortcut = pauseKeystrokeCaptureShortcut
-        let resolvedRecordingFrameRate =
-            Self.supportedRecordingFrameRate(
-                recordingFrameRate ?? Self.legacyRecordingFrameRate(record60FPS: record60FPS)
-            ) ?? Self.legacyRecordingFrameRate(record60FPS: record60FPS)
-        self.record60FPS = resolvedRecordingFrameRate.framesPerSecond == 60
-        self.recordingFrameRate = resolvedRecordingFrameRate
-        self.matchDisplayFrameRate = matchDisplayFrameRate
-        self.loopExports = loopExports
-        self.recordSystemAudio = recordSystemAudio
-        self.recordAudio = recordAudio
-        self.audioInputDeviceID = audioInputDeviceID
-        self.audioInputDeviceName = audioInputDeviceName
-        self.audioOnlyFormat = audioOnlyFormat
+        self.record60FPS = frameRate.framesPerSecond == 60; self.recordingFrameRate = frameRate
+        self.matchDisplayFrameRate = matchDisplayFrameRate; self.loopExports = loopExports
+        self.recordSystemAudio = recordSystemAudio; self.recordAudio = recordAudio
+        self.audioInputDeviceID = audioInputDeviceID; self.audioInputDeviceName = audioInputDeviceName
+        self.audioOnlyFormat = audioOnlyFormat; self.cameraSeparateTrack = cameraSeparateTrack
         self.transcriptTurnSegmentationEnabled = transcriptTurnSegmentationEnabled
         self.transcriptSpeakerDiarizationEnabled = transcriptSpeakerDiarizationEnabled
         self.transcriptLanguageIdentifier = transcriptLanguageIdentifier.flatMap(Self.nonEmpty)
+        self.cameraDeviceID = cameraDeviceID.flatMap(Self.nonEmpty); self.cameraPreviewStyle = cameraPreviewStyle
         self.transcriptEnginePreference = transcriptEnginePreference
-        self.cameraDeviceID = cameraDeviceID.flatMap(Self.nonEmpty)
-        self.cameraSeparateTrack = cameraSeparateTrack
-        self.cameraPreviewStyle = cameraPreviewStyle
         self.cameraPreviewPlacements = cameraPreviewPlacements
         self.replayBufferConfiguration = replayBufferConfiguration
-        self.replayBufferPreferredBufferLength =
-            Self.supportedReplayBufferLength(
-                replayBufferPreferredBufferLength ?? replayBufferConfiguration?.bufferLength
-            ) ?? ReplayBufferConfiguration.defaults.bufferLength
+        self.replayBufferPreferredBufferLength = bufferLength
         self.replayBufferResumeOnLaunch = replayBufferResumeOnLaunch
         self.replayBufferConsentAccepted = replayBufferConsentAccepted
         self.alwaysShowReplayBufferIsland = alwaysShowReplayBufferIsland
-        self.replayClipDestination = replayClipDestination
-        self.notchSurfaceSettings = notchSurfaceSettings
-        self.enableShortcuts = enableShortcuts
-        self.triggerCropperShortcut = triggerCropperShortcut
+        self.replayClipDestination = replayClipDestination; self.notchSurfaceSettings = notchSurfaceSettings
+        self.enableShortcuts = enableShortcuts; self.triggerCropperShortcut = triggerCropperShortcut
         self.toggleRecordingShortcut = toggleRecordingShortcut
         self.recordActiveWindowShortcut = recordActiveWindowShortcut
         self.recordFullscreenShortcut = recordFullscreenShortcut
         self.audioOnlyRecordingShortcut = audioOnlyRecordingShortcut
-        self.quickRecordLastShortcut = quickRecordLastShortcut
-        self.clipReplayBufferShortcut = clipReplayBufferShortcut
-        self.updatePreferences = updatePreferences
-        self.showTimeInMenuBar = showTimeInMenuBar
+        self.quickRecordLastShortcut = quickRecordLastShortcut; self.clipReplayBufferShortcut = clipReplayBufferShortcut
+        self.updatePreferences = updatePreferences; self.showTimeInMenuBar = showTimeInMenuBar
         self.hideMenuBarIcon = hideMenuBarIcon && notchSurfaceSettings.isEnabled
-        self.launchAtLogin = launchAtLogin
-        self.commandLineToolInstall = commandLineToolInstall
-        self.commandLineShell = commandLineShell
-        self.notificationReminder = notificationReminder
-        self.allowURLAutomation = true
-        self.urlAutomationGrants = urlAutomationGrants
-        self.exportPresets = exportPresets
-        self.quickExportPresetID = quickExportPresetID
-        self.rememberLastCapture = rememberLastCapture
-        self.loupeAlwaysOn = loupeAlwaysOn
-        self.dimOtherDisplays = dimOtherDisplays
-        self.restoreLastSelection = restoreLastSelection
+        self.launchAtLogin = launchAtLogin; self.commandLineToolInstall = commandLineToolInstall
+        self.commandLineShell = commandLineShell; self.notificationReminder = notificationReminder
+        self.allowURLAutomation = true; self.urlAutomationGrants = urlAutomationGrants
+        self.exportPresets = exportPresets; self.quickExportPresetID = quickExportPresetID
+        self.rememberLastCapture = rememberLastCapture; self.loupeAlwaysOn = loupeAlwaysOn
+        self.dimOtherDisplays = dimOtherDisplays; self.restoreLastSelection = restoreLastSelection
         self.userSizePresets = Self.removingRemovedBuiltInSizePresets(from: userSizePresets)
-        self.lastCaptureMemory = lastCaptureMemory
-        self.perFormatExportMemory = perFormatExportMemory
-        self.lastSelectedExportFormat = lastSelectedExportFormat
-        self.confirmDiscard = confirmDiscard
-        self.defaultCountdown = defaultCountdown
-        self.lastStopAfter = lastStopAfter
+        self.lastCaptureMemory = lastCaptureMemory; self.perFormatExportMemory = perFormatExportMemory
+        self.lastSelectedExportFormat = lastSelectedExportFormat; self.confirmDiscard = confirmDiscard
+        self.defaultCountdown = defaultCountdown; self.lastStopAfter = lastStopAfter
     }
 
     static func removingRemovedBuiltInSizePresets(

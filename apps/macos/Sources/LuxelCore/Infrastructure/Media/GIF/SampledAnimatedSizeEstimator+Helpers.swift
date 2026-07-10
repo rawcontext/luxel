@@ -35,7 +35,7 @@ extension SampledAnimatedSizeEstimator {
         request: ExportRequest,
         outputPixelSize: PixelSize,
         schedule: AnimatedFrameSchedule,
-        backgroundMatte: RGBColor?,
+        backgroundMatte: RGBColor? = nil,
         imageGenerator: AVAssetImageGenerator
     ) async throws -> GIFFrameBitmap {
         let sourceFrame = try await imageGenerator.image(

@@ -82,44 +82,58 @@ public struct GIFFrameDiffer: Sendable {
             throw GIFEngineModelError.frameSizeMismatch
         }
 
-        var minX = currentFrame.pixelSize.width
-        var minY = currentFrame.pixelSize.height
-        var maxX = -1
-        var maxY = -1
-
-        for row in 0..<currentFrame.pixelSize.height {
-            for column in 0..<currentFrame.pixelSize.width {
-                let index = row * currentFrame.pixelSize.width + column
-                if !isNearMatch(
-                    previousFrame.pixels[index],
-                    currentFrame.pixels[index],
-                    tolerance: lossyTolerance
-                ) {
-                    minX = min(minX, column)
-                    minY = min(minY, row)
-                    maxX = max(maxX, column)
-                    maxY = max(maxY, row)
-                }
-            }
-        }
-
-        guard maxX >= minX, maxY >= minY else {
+        guard let rect = try changedRect(
+            from: previousFrame,
+            to: currentFrame,
+            tolerance: lossyTolerance
+        ) else {
             return try transparentDelta(
                 at: currentFrame.pixelSize,
                 transparentColorIndex: transparentColorIndex
             )
         }
-
-        let rect = try GIFPixelRect(
-            x: minX,
-            y: minY,
-            width: maxX - minX + 1,
-            height: maxY - minY + 1
-        )
         return try GIFFrameDelta(
             rect: rect,
             colorIndexes: croppedIndexes(from: indexedFrame, rect: rect),
             transparentColorIndex: transparentColorIndex
+        )
+    }
+
+    private func changedRect(
+        from previousFrame: GIFFrameBitmap,
+        to currentFrame: GIFFrameBitmap,
+        tolerance: Int
+    ) throws -> GIFPixelRect? {
+        var bounds = (
+            minX: currentFrame.pixelSize.width,
+            minY: currentFrame.pixelSize.height,
+            maxX: -1,
+            maxY: -1
+        )
+        for row in 0..<currentFrame.pixelSize.height {
+            for column in 0..<currentFrame.pixelSize.width {
+                let index = row * currentFrame.pixelSize.width + column
+                guard !isNearMatch(
+                    previousFrame.pixels[index],
+                    currentFrame.pixels[index],
+                    tolerance: tolerance
+                ) else {
+                    continue
+                }
+                bounds.minX = min(bounds.minX, column)
+                bounds.minY = min(bounds.minY, row)
+                bounds.maxX = max(bounds.maxX, column)
+                bounds.maxY = max(bounds.maxY, row)
+            }
+        }
+        guard bounds.maxX >= bounds.minX, bounds.maxY >= bounds.minY else {
+            return nil
+        }
+        return try GIFPixelRect(
+            x: bounds.minX,
+            y: bounds.minY,
+            width: bounds.maxX - bounds.minX + 1,
+            height: bounds.maxY - bounds.minY + 1
         )
     }
 

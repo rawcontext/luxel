@@ -56,8 +56,7 @@ public enum CursorPathSmoother {
 
         let progress = (time - lower.time) / (upper.time - lower.time)
         let position = try position(
-            between: lowerIndex,
-            and: upperIndex,
+            between: lowerIndex...upperIndex,
             in: samples,
             progress: progress,
             level: level,
@@ -72,13 +71,14 @@ public enum CursorPathSmoother {
     }
 
     private static func position(
-        between lowerIndex: Int,
-        and upperIndex: Int,
+        between indices: ClosedRange<Int>,
         in samples: [CursorSample],
         progress: Double,
         level: CursorSmoothingLevel,
         frameSize: PixelSize?
     ) throws -> CursorPoint {
+        let lowerIndex = indices.lowerBound
+        let upperIndex = indices.upperBound
         let lower = samples[lowerIndex]
         let upper = samples[upperIndex]
 
@@ -91,10 +91,12 @@ public enum CursorPathSmoother {
             let next = renderableNeighbor(after: upperIndex, in: samples, frameSize: frameSize) ?? upper
             let tension = level == .light ? 0.5 : 0
             let position = try catmullRomPoint(
-                previous.position,
-                lower.position,
-                upper.position,
-                next.position,
+                segment: CatmullRomSegment(
+                    previous: previous.position,
+                    start: lower.position,
+                    end: upper.position,
+                    next: next.position
+                ),
                 progress: progress,
                 tension: tension
             )
@@ -158,13 +160,14 @@ public enum CursorPathSmoother {
     }
 
     private static func catmullRomPoint(
-        _ previousPoint: CursorPoint,
-        _ startPoint: CursorPoint,
-        _ endPoint: CursorPoint,
-        _ nextPoint: CursorPoint,
+        segment: CatmullRomSegment,
         progress: Double,
         tension: Double
     ) throws -> CursorPoint {
+        let previousPoint = segment.previous
+        let startPoint = segment.start
+        let endPoint = segment.end
+        let nextPoint = segment.next
         let squaredProgress = progress * progress
         let cubedProgress = squaredProgress * progress
         let tangentScale = (1 - tension) / 2
@@ -195,6 +198,13 @@ public enum CursorPathSmoother {
             y: point.yCoordinate.clamped(to: yRange)
         )
     }
+}
+
+private struct CatmullRomSegment {
+    let previous: CursorPoint
+    let start: CursorPoint
+    let end: CursorPoint
+    let next: CursorPoint
 }
 
 extension Double {

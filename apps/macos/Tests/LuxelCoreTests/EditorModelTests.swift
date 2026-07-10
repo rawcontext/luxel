@@ -35,6 +35,33 @@ struct EditorModelTests {
 
     @Test("draft applies trim resize frame rate and mute overrides")
     func draftAppliesOverrides() throws {
+        let draft = try makeConfiguredDraft()
+        let data = try JSONEncoder().encode(draft)
+        let decodedDraft = try JSONDecoder().decode(EditorExportDraft.self, from: data)
+        let request = try draft.exportRequest
+
+        #expect(decodedDraft == draft)
+        #expect(request.format == .gif)
+        #expect(request.pixelSize == (try PixelSize(width: 320, height: 200)))
+        #expect(request.frameRate == (try FrameRate(12)))
+        #expect(request.timeRange == (try TimeRange(start: 1, end: 5)))
+        #expect(request.outputShouldMute)
+        #expect(request.audioMix == draft.audioMix)
+        #expect(request.studioVoiceEnabled)
+        #expect(request.shouldCrop)
+        #expect(request.cropRect == draft.cropRect)
+        #expect(request.quality == .high)
+        #expect(request.speed == (try PlaybackSpeed(2)))
+        #expect(request.gifOptions == draft.gifOptions)
+        #expect(request.cursorOptions == draft.cursorOptions)
+        #expect(request.keystrokeOptions == draft.keystrokeOptions)
+        #expect(request.captionOptions == draft.captionOptions)
+        #expect(request.cameraOverlay == draft.cameraOverlay)
+        #expect(request.zoomBlocks == draft.zoomBlocks)
+        #expect(request.outputDuration == 2)
+    }
+
+    private func makeConfiguredDraft() throws -> EditorExportDraft {
         let gifOptions = try GIFRenderOptions(
             loopMode: .bounce,
             dithering: .ordered,
@@ -62,7 +89,7 @@ struct EditorModelTests {
             normalizePeak: true
         )
         let cropRect = try CaptureRect(x: 12, y: 20, width: 300, height: 180)
-        let draft = try EditorExportDraft(
+        return try EditorExportDraft(
             source: makeSource(),
             format: .gif,
             trimRange: TimeRange(start: 1, end: 5),
@@ -82,33 +109,6 @@ struct EditorModelTests {
             cameraOverlay: cameraOverlay,
             zoomBlocks: zoomBlocks
         )
-
-        let data = try JSONEncoder().encode(draft)
-        let decodedDraft = try JSONDecoder().decode(EditorExportDraft.self, from: data)
-        let request = try draft.exportRequest
-        let pixelSize = try PixelSize(width: 320, height: 200)
-        let frameRate = try FrameRate(12)
-        let trimRange = try TimeRange(start: 1, end: 5)
-
-        #expect(decodedDraft == draft)
-        #expect(request.format == .gif)
-        #expect(request.pixelSize == pixelSize)
-        #expect(request.frameRate == frameRate)
-        #expect(request.timeRange == trimRange)
-        #expect(request.outputShouldMute)
-        #expect(request.audioMix == audioMix)
-        #expect(request.studioVoiceEnabled)
-        #expect(request.shouldCrop)
-        #expect(request.cropRect == cropRect)
-        #expect(request.quality == .high)
-        #expect(request.speed == (try PlaybackSpeed(2)))
-        #expect(request.gifOptions == gifOptions)
-        #expect(request.cursorOptions == cursorOptions)
-        #expect(request.keystrokeOptions == keystrokeOptions)
-        #expect(request.captionOptions == captionOptions)
-        #expect(request.cameraOverlay == cameraOverlay)
-        #expect(request.zoomBlocks == zoomBlocks)
-        #expect(request.outputDuration == 2)
     }
 
     @Test("draft decodes missing quality speed and GIF options as defaults")

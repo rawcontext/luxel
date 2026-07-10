@@ -36,7 +36,13 @@ extension LuxelMenuModel {
 
     func performPermissionAction(_ prompt: PermissionPrompt) async {
         permissionPrompt = nil
+        await performGuidanceAction(prompt)
+        await refreshPermissions()
+        await openSettingsAfterDeniedRequest(prompt)
+        await refreshCaptureSource(prompt.source)
+    }
 
+    private func performGuidanceAction(_ prompt: PermissionPrompt) async {
         switch prompt.guidance.action {
         case .request:
             try? await Task.sleep(nanoseconds: 200_000_000)
@@ -49,15 +55,17 @@ extension LuxelMenuModel {
         case .enableSource:
             enableCaptureSource(prompt.source)
         }
+    }
 
-        await refreshPermissions()
-
+    private func openSettingsAfterDeniedRequest(_ prompt: PermissionPrompt) async {
         if prompt.guidance.action == .request,
            permissionStatus(for: prompt.permission) != .authorized {
             await permissionClient.openSettings(for: prompt.permission)
         }
+    }
 
-        switch prompt.source {
+    private func refreshCaptureSource(_ source: CapturePermissionSource) async {
+        switch source {
         case .screenPixels:
             await refreshCaptureTargets()
         case .systemAudio:

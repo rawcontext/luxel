@@ -59,7 +59,7 @@ public final class AppKitNotchDisplayProvider: NotchDisplayProvider {
         safeAreaInsets: NSEdgeInsets,
         auxiliaryTopLeftArea: CGRect?,
         auxiliaryTopRightArea: CGRect?,
-        isBuiltIn: Bool,
+        isBuiltIn: Bool = false,
         isVisible: Bool = true
     ) -> NotchDisplayDescriptor? {
         guard let displayID,

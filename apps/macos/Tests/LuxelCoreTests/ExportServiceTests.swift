@@ -6,7 +6,7 @@ import Testing
 struct ExportServiceTests {
     @Test("service exports draft to named destination")
     func serviceExportsDraftToNamedDestination() async throws {
-        let exporter = SpyMediaExporter()
+        let exporter = ExportServiceSpyMediaExporter()
         let service = ExportService(exporter: exporter)
         let source = try SourceMedia(
             fileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
@@ -36,8 +36,8 @@ struct ExportServiceTests {
 
     @Test("service emits progress snapshots")
     func serviceEmitsProgressSnapshots() async throws {
-        let exporter = SpyMediaExporter(reportedProgress: [0.25, 0.75])
-        let progress = ProgressRecorder()
+        let exporter = ExportServiceSpyMediaExporter(reportedProgress: [0.25, 0.75])
+        let progress = ExportServiceProgressRecorder()
         let service = ExportService(exporter: exporter)
         let source = try makeSource()
         let draft = EditorExportDraft(source: source, format: .gif)
@@ -70,7 +70,7 @@ struct ExportServiceTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-        let exporter = WritingMediaExporter(byteCount: 1_234)
+        let exporter = ExportServiceWritingMediaExporter(byteCount: 1_234)
         let service = ExportService(exporter: exporter)
 
         let exported = try await service.export(
@@ -84,8 +84,8 @@ struct ExportServiceTests {
 
     @Test("service removes intended output when export task is canceled")
     func serviceRemovesIntendedOutputWhenExportTaskIsCanceled() async throws {
-        let exporter = CancellableMediaExporter()
-        let fileSystem = SpyFileSystem()
+        let exporter = ExportServiceCancellableMediaExporter()
+        let fileSystem = ExportServiceSpyFileSystem()
         let service = ExportService(exporter: exporter, fileSystem: fileSystem)
         let source = try makeSource()
         let draft = EditorExportDraft(source: source, format: .mp4)
@@ -111,8 +111,8 @@ struct ExportServiceTests {
 
     @Test("batch export preserves request order with keyed progress")
     func batchExportPreservesRequestOrderWithKeyedProgress() async throws {
-        let exporter = SpyMediaExporter()
-        let progress = BatchProgressRecorder()
+        let exporter = ExportServiceSpyMediaExporter()
+        let progress = ExportServiceBatchProgressRecorder()
         let service = ExportService(exporter: exporter)
         let batch = try ExportBatch([
             makeRequest(format: .mp4),
@@ -152,9 +152,12 @@ struct ExportServiceTests {
         }
     }
 
+}
+
+extension ExportServiceTests {
     @Test("batch export names audio formats distinctly")
     func batchExportNamesAudioFormatsDistinctly() async throws {
-        let exporter = SpyMediaExporter()
+        let exporter = ExportServiceSpyMediaExporter()
         let service = ExportService(exporter: exporter)
         let batch = try ExportBatch(ExportFormat.audioOnlyFormats.map { try makeRequest(format: $0) })
 
@@ -193,12 +196,12 @@ struct ExportServiceTests {
             sampleRate: 48_000,
             channelCount: 2
         )
-        let preparer = SpyExportAudioPreparer(
+        let preparer = ExportServiceSpyExportAudioPreparer(
             preparedAsset: preparedAsset,
             temporaryDirectoryURL: temporaryDirectory
         )
-        let exporter = SpyMediaExporter()
-        let progress = BatchProgressRecorder()
+        let exporter = ExportServiceSpyMediaExporter()
+        let progress = ExportServiceBatchProgressRecorder()
         let service = ExportService(exporter: exporter, audioPreparer: preparer)
         let batch = try ExportBatch([
             makeRequest(format: .mp4, studioVoiceEnabled: true),
@@ -226,7 +229,7 @@ struct ExportServiceTests {
 
     @Test("request-only exporter convenience rejects untreated Studio Voice")
     func requestOnlyExporterRejectsStudioVoice() async throws {
-        let exporter = SpyMediaExporter()
+        let exporter = ExportServiceSpyMediaExporter()
         let request = try makeRequest(format: .mp4, studioVoiceEnabled: true)
 
         await #expect(throws: MediaExporterError.preparedAudioRequired) {
@@ -240,8 +243,8 @@ struct ExportServiceTests {
 
     @Test("batch cancellation keeps completed output and removes in-flight output")
     func batchCancellationKeepsCompletedOutputAndRemovesInFlightOutput() async throws {
-        let exporter = CancellableBatchMediaExporter()
-        let fileSystem = SpyFileSystem()
+        let exporter = ExportServiceBatchCancellableExporter()
+        let fileSystem = ExportServiceSpyFileSystem()
         let service = ExportService(exporter: exporter, fileSystem: fileSystem)
         let batch = try ExportBatch([
             makeRequest(format: .mp4),
@@ -249,7 +252,7 @@ struct ExportServiceTests {
             makeRequest(format: .hevc)
         ])
 
-        let progress = BatchProgressRecorder()
+        let progress = ExportServiceBatchProgressRecorder()
         let task = Task {
             try await service.runBatch(
                 batch,
@@ -304,251 +307,4 @@ struct ExportServiceTests {
             shouldCrop: false
         )
     }
-}
-
-private actor SpyMediaExporter: MediaExporter {
-    private let reportedProgress: [Double]
-    private var captured: [(
-        request: ExportRequest,
-        outputFileURL: URL,
-        preparedAudio: PreparedAudioAsset?
-    )] = []
-
-    init(reportedProgress: [Double] = []) {
-        self.reportedProgress = reportedProgress
-    }
-
-    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
-        try await export(request, to: outputFileURL, progress: nil)
-    }
-
-    func export(
-        _ input: MediaExportInput,
-        to outputFileURL: URL,
-        progress: MediaExportProgressHandler?
-    ) async throws -> ExportedMedia {
-        let request = input.request
-        captured.append((request, outputFileURL, input.preparedAudio))
-        for value in reportedProgress {
-            await progress?(value)
-        }
-
-        return try ExportedMedia(
-            fileURL: outputFileURL,
-            format: request.format,
-            pixelSize: request.outputPixelSize,
-            shouldMute: request.outputShouldMute
-        )
-    }
-
-    func capturedExport() -> (
-        request: ExportRequest,
-        outputFileURL: URL,
-        preparedAudio: PreparedAudioAsset?
-    )? {
-        captured.last
-    }
-
-    func capturedExports() -> [(
-        request: ExportRequest,
-        outputFileURL: URL,
-        preparedAudio: PreparedAudioAsset?
-    )] {
-        captured
-    }
-}
-
-private actor SpyExportAudioPreparer: ExportAudioPreparing {
-    private let preparedAsset: PreparedAudioAsset
-    private let temporaryDirectoryURL: URL
-    private var callCount = 0
-
-    init(preparedAsset: PreparedAudioAsset, temporaryDirectoryURL: URL) {
-        self.preparedAsset = preparedAsset
-        self.temporaryDirectoryURL = temporaryDirectoryURL
-    }
-
-    func prepareAudio(
-        for requests: [ExportRequest],
-        progress: ExportAudioPreparationProgressHandler?
-    ) async throws -> PreparedExportAudioSet {
-        callCount += 1
-        let requestIndices = Array(requests.indices)
-        await progress?(
-            ExportAudioPreparationProgress(
-                requestIndices: requestIndices,
-                progress: 1
-            )
-        )
-        return PreparedExportAudioSet(
-            assetsByRequestIndex: Dictionary(
-                uniqueKeysWithValues: requestIndices.map { ($0, preparedAsset) }
-            ),
-            temporaryDirectoryURL: temporaryDirectoryURL
-        )
-    }
-
-    func prepareCallCount() -> Int {
-        callCount
-    }
-}
-
-private struct WritingMediaExporter: MediaExporter {
-    let byteCount: Int
-
-    func export(
-        _ input: MediaExportInput,
-        to outputFileURL: URL,
-        progress: MediaExportProgressHandler?
-    ) async throws -> ExportedMedia {
-        let request = input.request
-        let data = Data(repeating: 0x5A, count: byteCount)
-        try data.write(to: outputFileURL)
-        return ExportedMedia(
-            fileURL: outputFileURL,
-            format: request.format,
-            pixelSize: try request.outputPixelSize,
-            shouldMute: request.outputShouldMute
-        )
-    }
-}
-
-private actor ProgressRecorder {
-    private var captured: [ExportProgressSnapshot] = []
-
-    func append(_ snapshot: ExportProgressSnapshot) {
-        captured.append(snapshot)
-    }
-
-    func snapshots() -> [ExportProgressSnapshot] {
-        captured
-    }
-}
-
-private actor BatchProgressRecorder {
-    private var captured: [ExportBatchProgressSnapshot] = []
-
-    func append(_ snapshot: ExportBatchProgressSnapshot) {
-        captured.append(snapshot)
-    }
-
-    func snapshots() -> [ExportBatchProgressSnapshot] {
-        captured
-    }
-}
-
-private actor CancellableMediaExporter: MediaExporter {
-    private var started = false
-    private var startContinuation: CheckedContinuation<Void, Never>?
-
-    func export(
-        _ input: MediaExportInput,
-        to outputFileURL: URL,
-        progress: MediaExportProgressHandler?
-    ) async throws -> ExportedMedia {
-        markStarted()
-
-        while true {
-            try await Task.sleep(for: .milliseconds(10))
-        }
-    }
-
-    func waitUntilStarted() async {
-        if started {
-            return
-        }
-
-        await withCheckedContinuation { continuation in
-            startContinuation = continuation
-        }
-    }
-
-    private func markStarted() {
-        started = true
-        startContinuation?.resume()
-        startContinuation = nil
-    }
-}
-
-private actor CancellableBatchMediaExporter: MediaExporter {
-    private var captured: [(request: ExportRequest, outputFileURL: URL)] = []
-    private var hangingExportCount = 0
-    private var awaitedHangingExportCount = Int.max
-    private var hangingExportsContinuation: CheckedContinuation<Void, Never>?
-
-    func export(
-        _ input: MediaExportInput,
-        to outputFileURL: URL,
-        progress: MediaExportProgressHandler?
-    ) async throws -> ExportedMedia {
-        let request = input.request
-        captured.append((request, outputFileURL))
-
-        if request.format == .mp4 {
-            return try ExportedMedia(
-                fileURL: outputFileURL,
-                format: request.format,
-                pixelSize: request.outputPixelSize,
-                shouldMute: request.outputShouldMute
-            )
-        }
-
-        markHangingExportStarted()
-
-        while true {
-            try await Task.sleep(for: .milliseconds(10))
-        }
-    }
-
-    func waitUntilHangingExportsStarted(count: Int) async {
-        if hangingExportCount >= count {
-            return
-        }
-
-        awaitedHangingExportCount = count
-        await withCheckedContinuation { continuation in
-            hangingExportsContinuation = continuation
-        }
-    }
-
-    func capturedExports() -> [(request: ExportRequest, outputFileURL: URL)] {
-        captured
-    }
-
-    private func markHangingExportStarted() {
-        hangingExportCount += 1
-        if hangingExportCount >= awaitedHangingExportCount {
-            hangingExportsContinuation?.resume()
-            hangingExportsContinuation = nil
-        }
-    }
-}
-
-private final class SpyFileSystem: FileSystem, @unchecked Sendable {
-    private let lock = NSLock()
-    private var capturedRemovedURLs: [URL] = []
-
-    var removedURLs: [URL] {
-        lock.withLock {
-            capturedRemovedURLs
-        }
-    }
-
-    func fileExists(at url: URL) -> Bool {
-        true
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func writeData(_ data: Data, to url: URL) throws {}
-
-    func removeFile(at url: URL) throws {
-        lock.withLock {
-            capturedRemovedURLs.append(url)
-        }
-    }
-
-    func trashItem(at url: URL) throws {}
 }

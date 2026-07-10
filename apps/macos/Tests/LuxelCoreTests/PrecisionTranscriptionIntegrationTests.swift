@@ -16,26 +16,7 @@ struct PrecisionTranscriptionIntegrationTests {
         )
         defer { try? FileManager.default.removeItem(at: root) }
 
-        let validator = ParakeetPrecisionModelValidator()
-        let catalog = try BundledLocalModelCatalog.production(
-            registeredValidatorKeys: [validator.key],
-            attributionIdentifiers: ["fluidinference-parakeet-tdt-0.6b-v3-coreml"],
-            currentAppVersion: "1.0.25"
-        )
-        let downloader = LocalPrecisionFixtureDownloader(
-            modelDirectory: environment.modelDirectory
-        )
-        let manager = try LocalModelManager(
-            catalogProvider: catalog,
-            validators: [validator],
-            downloader: downloader,
-            verifier: SHA256ArtifactVerifier(),
-            repository: ApplicationSupportLocalModelRepository(
-                root: root,
-                appVersion: "1.0.25",
-                appBuild: "integration"
-            )
-        )
+        let (manager, downloader) = try makeManager(environment: environment, root: root)
         let installation = try await manager.install(PrecisionTranscriptionEngine.modelID)
         let engine = PrecisionTranscriptionEngine(modelManager: manager)
 
@@ -90,26 +71,7 @@ struct PrecisionTranscriptionIntegrationTests {
         )
         defer { try? FileManager.default.removeItem(at: root) }
 
-        let validator = ParakeetPrecisionModelValidator()
-        let catalog = try BundledLocalModelCatalog.production(
-            registeredValidatorKeys: [validator.key],
-            attributionIdentifiers: ["fluidinference-parakeet-tdt-0.6b-v3-coreml"],
-            currentAppVersion: "1.0.25"
-        )
-        let downloader = LocalPrecisionFixtureDownloader(
-            modelDirectory: environment.modelDirectory
-        )
-        let manager = try LocalModelManager(
-            catalogProvider: catalog,
-            validators: [validator],
-            downloader: downloader,
-            verifier: SHA256ArtifactVerifier(),
-            repository: ApplicationSupportLocalModelRepository(
-                root: root,
-                appVersion: "1.0.25",
-                appBuild: "integration"
-            )
-        )
+        let (manager, downloader) = try makeManager(environment: environment, root: root)
         let installation = try await manager.install(PrecisionTranscriptionEngine.modelID)
         let vocabulary = installation.payloadRoot
             .appending(path: ParakeetPrecisionModelValidator.runtimeDirectoryName)
@@ -131,6 +93,33 @@ struct PrecisionTranscriptionIntegrationTests {
             return
         }
         #expect(await downloader.callCount == 21)
+    }
+
+    private func makeManager(
+        environment: PrecisionIntegrationEnvironment,
+        root: URL
+    ) throws -> (LocalModelManager, LocalPrecisionFixtureDownloader) {
+        let validator = ParakeetPrecisionModelValidator()
+        let catalog = try BundledLocalModelCatalog.production(
+            registeredValidatorKeys: [validator.key],
+            attributionIdentifiers: ["fluidinference-parakeet-tdt-0.6b-v3-coreml"],
+            currentAppVersion: "1.0.25"
+        )
+        let downloader = LocalPrecisionFixtureDownloader(
+            modelDirectory: environment.modelDirectory
+        )
+        let manager = try LocalModelManager(
+            catalogProvider: catalog,
+            validators: [validator],
+            downloader: downloader,
+            verifier: SHA256ArtifactVerifier(),
+            repository: ApplicationSupportLocalModelRepository(
+                root: root,
+                appVersion: "1.0.25",
+                appBuild: "integration"
+            )
+        )
+        return (manager, downloader)
     }
 }
 

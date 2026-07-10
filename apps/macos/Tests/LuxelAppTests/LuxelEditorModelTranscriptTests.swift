@@ -121,6 +121,9 @@ struct LuxelEditorModelTranscriptTests {
         )
     }
 
+}
+
+extension LuxelEditorModelTranscriptTests {
     @Test("transcript progress appears while local extraction is active")
     func transcriptProgressAppearsWhileExtractionIsActive() async throws {
         let helper = LuxelEditorModelTests()
@@ -269,7 +272,7 @@ struct LuxelEditorModelTranscriptTests {
         let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
         let transcriptService = SpyAudioTranscriptService(
             transcript: try helper.sampleTranscript(source: .microphone))
-        let authorizationService = StubSpeechRecognitionAuthorizationService(
+        let authorizationService = StubSpeechAuthorizationService(
             state: .notDetermined,
             requestedState: .authorized
         )
@@ -305,7 +308,7 @@ struct LuxelEditorModelTranscriptTests {
         let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
         let transcriptService = SpyAudioTranscriptService(
             transcript: try helper.sampleTranscript(source: .microphone))
-        let authorizationService = StubSpeechRecognitionAuthorizationService(
+        let authorizationService = StubSpeechAuthorizationService(
             state: .notDetermined,
             requestedState: .denied
         )

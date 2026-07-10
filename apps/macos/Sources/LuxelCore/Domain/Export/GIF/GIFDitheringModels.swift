@@ -95,14 +95,32 @@ public struct FloydSteinbergDitherer: Sendable {
 
                 let error = workingPixels[index].error(from: paletteColor)
                 diffuse(
-                    error, factor: 7.0 / 16.0, x: column + 1, y: row, frame: frame, pixels: &workingPixels)
-                diffuse(
-                    error, factor: 3.0 / 16.0, x: column - 1, y: row + 1, frame: frame, pixels: &workingPixels
+                    error,
+                    factor: 7.0 / 16.0,
+                    at: (column + 1, row),
+                    frame: frame,
+                    pixels: &workingPixels
                 )
                 diffuse(
-                    error, factor: 5.0 / 16.0, x: column, y: row + 1, frame: frame, pixels: &workingPixels)
+                    error,
+                    factor: 3.0 / 16.0,
+                    at: (column - 1, row + 1),
+                    frame: frame,
+                    pixels: &workingPixels
+                )
                 diffuse(
-                    error, factor: 1.0 / 16.0, x: column + 1, y: row + 1, frame: frame, pixels: &workingPixels
+                    error,
+                    factor: 5.0 / 16.0,
+                    at: (column, row + 1),
+                    frame: frame,
+                    pixels: &workingPixels
+                )
+                diffuse(
+                    error,
+                    factor: 1.0 / 16.0,
+                    at: (column + 1, row + 1),
+                    frame: frame,
+                    pixels: &workingPixels
                 )
             }
         }
@@ -113,11 +131,11 @@ public struct FloydSteinbergDitherer: Sendable {
     private func diffuse(
         _ error: DitherError,
         factor: Double,
-        x column: Int,
-        y row: Int,
+        at position: (column: Int, row: Int),
         frame: GIFFrameBitmap,
         pixels: inout [DitherWorkingPixel]
     ) {
+        let (column, row) = position
         guard column >= 0, column < frame.pixelSize.width, row >= 0, row < frame.pixelSize.height else {
             return
         }

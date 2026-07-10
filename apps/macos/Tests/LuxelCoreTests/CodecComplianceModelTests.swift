@@ -183,6 +183,9 @@ struct CodecComplianceModelTests {
         #expect(!ledger.entries[0].licenseText.contains("Swift Argument Parser"))
     }
 
+}
+
+extension CodecComplianceModelTests {
     @Test("license ledger markdown parser rejects unknown licenses")
     func licenseLedgerMarkdownParserRejectsUnknownLicenses() {
         let markdown = """

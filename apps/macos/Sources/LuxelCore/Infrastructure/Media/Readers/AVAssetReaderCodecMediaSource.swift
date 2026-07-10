@@ -4,16 +4,16 @@ import CoreVideo
 import Foundation
 
 public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked Sendable {
-    private let converter: I420Converter
-    private let videoCompositionFactory: AVFoundationVideoCompositionFactory
-    private let audioSampleRate = 48_000
-    private let audioChannelCount = 2
-    private let audioFramesPerChunk = 1_024
-    private var videoReader: AVAssetReader?
-    private var videoOutput: AVAssetReaderVideoCompositionOutput?
-    private var audioReader: AVAssetReader?
-    private var audioOutput: AVAssetReaderAudioMixOutput?
-    private var fallbackFrameDuration: TimeInterval = 0
+    let converter: I420Converter
+    let videoCompositionFactory: AVFoundationVideoCompositionFactory
+    let audioSampleRate = 48_000
+    let audioChannelCount = 2
+    let audioFramesPerChunk = 1_024
+    var videoReader: AVAssetReader?
+    var videoOutput: AVAssetReaderVideoCompositionOutput?
+    var audioReader: AVAssetReader?
+    var audioOutput: AVAssetReaderAudioMixOutput?
+    var fallbackFrameDuration: TimeInterval = 0
 
     public convenience init(converter: I420Converter = I420Converter()) {
         self.init(
@@ -56,50 +56,26 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
             composition.scaleTimeRange(sourceCompositionTimeRange, toDuration: outputDuration)
         }
 
-        let reader = try AVAssetReader(asset: composition)
-        let videoOutput = AVAssetReaderVideoCompositionOutput(
-            videoTracks: [compositionVideoTrack],
-            videoSettings: [
-                kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA)
-            ]
-        )
-        videoOutput.videoComposition = try await videoCompositionFactory.makeVideoComposition(
+        let videoOutput = try await makeVideoOutput(
             sourceVideoTrack: sourceVideoTrack,
             compositionVideoTrack: compositionVideoTrack,
             timeRange: outputCompositionTimeRange,
             outputPixelSize: outputPixelSize,
-            frameRate: request.frameRate,
-            shouldCrop: request.shouldCrop,
-            sourceCropRect: request.cropRect,
-            zoomBlocks: ZoomExportTimeMapper(
-                trimRange: request.timeRange,
-                speed: request.speed
-            ).map(request.zoomBlocks)
+            request: request
         )
-
-        guard reader.canAdd(videoOutput) else {
-            throw AVAssetReaderVideoCodecMediaSourceError.cannotAddVideoOutput
-        }
-
-        reader.add(videoOutput)
-
-        guard reader.startReading() else {
-            throw AVAssetReaderVideoCodecMediaSourceError.readerStartFailed(reader.errorDescription)
-        }
-
-        videoReader = reader
-        self.videoOutput = videoOutput
-        fallbackFrameDuration = 1 / Double(request.frameRate.framesPerSecond)
+        try startVideoReading(composition: composition, output: videoOutput, frameRate: request.frameRate)
 
         let includesAudio = !request.outputShouldMute
             && (input.preparedAudio != nil || !sourceAudioTracks.isEmpty)
         if includesAudio {
             try await prepareAudioReader(
                 sourceAudioTracks: sourceAudioTracks,
-                sourceTimeRange: sourceTimeRange,
-                sourceCompositionTimeRange: sourceCompositionTimeRange,
-                outputDuration: outputDuration,
-                speed: request.speed,
+                timing: CodecAudioTiming(
+                    sourceTimeRange: sourceTimeRange,
+                    sourceCompositionTimeRange: sourceCompositionTimeRange,
+                    outputDuration: outputDuration,
+                    speed: request.speed
+                ),
                 preparedAudio: input.preparedAudio
             )
         }
@@ -149,261 +125,19 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
             duration: audioDuration(for: sampleBuffer)
         )
     }
+}
 
-    private func firstVideoTrack(in asset: AVURLAsset) async throws -> AVAssetTrack {
-        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
-            throw AVAssetReaderVideoCodecMediaSourceError.missingVideoTrack
-        }
+struct CodecAudioTiming {
+    let sourceTimeRange: CMTimeRange
+    let sourceCompositionTimeRange: CMTimeRange
+    let outputDuration: CMTime
+    let speed: PlaybackSpeed
+}
 
-        return videoTrack
-    }
-
-    private func addVideoTrack(
-        to composition: AVMutableComposition,
-        from sourceVideoTrack: AVAssetTrack,
-        sourceTimeRange: CMTimeRange
-    ) throws -> AVMutableCompositionTrack {
-        guard
-            let videoTrack = composition.addMutableTrack(
-                withMediaType: .video,
-                preferredTrackID: kCMPersistentTrackID_Invalid
-            )
-        else {
-            throw AVAssetReaderVideoCodecMediaSourceError.cannotCreateVideoTrack
-        }
-
-        try videoTrack.insertTimeRange(sourceTimeRange, of: sourceVideoTrack, at: .zero)
-        return videoTrack
-    }
-
-    private func prepareAudioReader(
-        sourceAudioTracks: [AVAssetTrack],
-        sourceTimeRange: CMTimeRange,
-        sourceCompositionTimeRange: CMTimeRange,
-        outputDuration: CMTime,
-        speed: PlaybackSpeed,
-        preparedAudio: PreparedAudioAsset?
-    ) async throws {
-        let composition = AVMutableComposition()
-        let audioSourceTracks: [AVAssetTrack]
-        let audioSourceTimeRange: CMTimeRange
-        var retainedAudioAsset: AVURLAsset?
-        if let preparedAudio {
-            let audioAsset = AVURLAsset(url: preparedAudio.fileURL)
-            retainedAudioAsset = audioAsset
-            audioSourceTracks = try await audioAsset.loadTracks(withMediaType: .audio)
-            guard let sourceTrack = audioSourceTracks.first else {
-                throw AVAssetReaderCodecMediaSourceError.readFailed(
-                    "Prepared audio has no audio track."
-                )
-            }
-            let availableTimeRange = try await sourceTrack.load(.timeRange)
-            let requestedDuration = CMTime(
-                seconds: preparedAudio.duration,
-                preferredTimescale: 60_000
-            )
-            audioSourceTimeRange = CMTimeRange(
-                start: .zero,
-                duration: CMTimeMinimum(availableTimeRange.duration, requestedDuration)
-            )
-        } else {
-            audioSourceTracks = sourceAudioTracks
-            audioSourceTimeRange = sourceTimeRange
-        }
-
-        let compositionAudioTracks = try audioSourceTracks.map { sourceAudioTrack in
-            try addAudioTrack(
-                to: composition,
-                from: sourceAudioTrack,
-                sourceTimeRange: audioSourceTimeRange
-            )
-        }
-        withExtendedLifetime(retainedAudioAsset) {}
-
-        if speed != .normal {
-            composition.scaleTimeRange(sourceCompositionTimeRange, toDuration: outputDuration)
-        }
-
-        let audioReader = try AVAssetReader(asset: composition)
-        let audioOutput = AVAssetReaderAudioMixOutput(
-            audioTracks: compositionAudioTracks,
-            audioSettings: audioOutputSettings()
-        )
-        if speed != .normal {
-            audioOutput.audioMix = makeAudioMix(for: compositionAudioTracks)
-        }
-
-        guard audioReader.canAdd(audioOutput) else {
-            throw AVAssetReaderCodecMediaSourceError.cannotAddAudioOutput
-        }
-
-        audioReader.add(audioOutput)
-
-        guard audioReader.startReading() else {
-            throw AVAssetReaderCodecMediaSourceError.readerStartFailed(audioReader.errorDescription)
-        }
-
-        self.audioReader = audioReader
-        self.audioOutput = audioOutput
-    }
-
-    private func addAudioTrack(
-        to composition: AVMutableComposition,
-        from sourceAudioTrack: AVAssetTrack,
-        sourceTimeRange: CMTimeRange
-    ) throws -> AVMutableCompositionTrack {
-        guard
-            let audioTrack = composition.addMutableTrack(
-                withMediaType: .audio,
-                preferredTrackID: kCMPersistentTrackID_Invalid
-            )
-        else {
-            throw AVAssetReaderCodecMediaSourceError.cannotCreateAudioTrack
-        }
-
-        do {
-            try audioTrack.insertTimeRange(sourceTimeRange, of: sourceAudioTrack, at: .zero)
-        } catch {
-            throw AVAssetReaderCodecMediaSourceError.readFailed(
-                "Could not compose audio: \(error.localizedDescription)"
-            )
-        }
-        return audioTrack
-    }
-
-    private func audioOutputSettings() -> [String: Any] {
-        [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: audioSampleRate,
-            AVNumberOfChannelsKey: audioChannelCount,
-            AVLinearPCMBitDepthKey: 16,
-            AVLinearPCMIsFloatKey: false,
-            AVLinearPCMIsBigEndianKey: false,
-            AVLinearPCMIsNonInterleaved: false
-        ]
-    }
-
-    private func makeAudioMix(for audioTracks: [AVCompositionTrack]) -> AVAudioMix {
-        let audioMix = AVMutableAudioMix()
-        audioMix.inputParameters = audioTracks.map { audioTrack in
-            let parameters = AVMutableAudioMixInputParameters(track: audioTrack)
-            parameters.audioTimePitchAlgorithm = .timeDomain
-            return parameters
-        }
-        return audioMix
-    }
-
-    private func finishVideoIfNeeded(_ reader: AVAssetReader) throws {
-        switch reader.status {
-        case .failed:
-            resetVideoReader()
-            throw AVAssetReaderCodecMediaSourceError.readFailed(reader.errorDescription)
-        case .cancelled:
-            resetVideoReader()
-            throw CancellationError()
-        case .completed, .reading, .unknown:
-            resetVideoReader()
-        @unknown default:
-            resetVideoReader()
-        }
-    }
-
-    private func finishAudioIfNeeded(_ reader: AVAssetReader) throws {
-        switch reader.status {
-        case .failed:
-            resetAudioReader()
-            throw AVAssetReaderCodecMediaSourceError.readFailed(reader.errorDescription)
-        case .cancelled:
-            resetAudioReader()
-            throw CancellationError()
-        case .completed, .reading, .unknown:
-            resetAudioReader()
-        @unknown default:
-            resetAudioReader()
-        }
-    }
-
-    private func reset() {
-        resetVideoReader()
-        resetAudioReader()
-    }
-
-    private func resetVideoReader() {
-        videoReader?.cancelReading()
-        videoReader = nil
-        videoOutput = nil
-        fallbackFrameDuration = 0
-    }
-
-    private func resetAudioReader() {
-        audioReader?.cancelReading()
-        audioReader = nil
-        audioOutput = nil
-    }
-
-    private func presentationTime(for sampleBuffer: CMSampleBuffer) -> TimeInterval {
-        let seconds = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sampleBuffer))
-        return seconds.isFinite ? max(0, seconds) : 0
-    }
-
-    private func duration(for sampleBuffer: CMSampleBuffer) -> TimeInterval {
-        let seconds = CMTimeGetSeconds(CMSampleBufferGetDuration(sampleBuffer))
-        guard seconds.isFinite, seconds > 0 else {
-            return fallbackFrameDuration
-        }
-
-        return seconds
-    }
-
-    private func audioDuration(for sampleBuffer: CMSampleBuffer) -> TimeInterval {
-        let seconds = CMTimeGetSeconds(CMSampleBufferGetDuration(sampleBuffer))
-        if seconds.isFinite, seconds > 0 {
-            return seconds
-        }
-
-        let sampleCount = CMSampleBufferGetNumSamples(sampleBuffer)
-        return max(Double(sampleCount) / Double(audioSampleRate), 1 / Double(audioSampleRate))
-    }
-
-    private func pcmData(from sampleBuffer: CMSampleBuffer) throws -> Data {
-        guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
-            throw AVAssetReaderCodecMediaSourceError.missingAudioData
-        }
-
-        let dataLength = CMBlockBufferGetDataLength(blockBuffer)
-        guard dataLength > 0 else {
-            throw AVAssetReaderCodecMediaSourceError.missingAudioData
-        }
-
-        var data = Data(count: dataLength)
-        let status = data.withUnsafeMutableBytes { buffer in
-            guard let baseAddress = buffer.baseAddress else {
-                return OSStatus(paramErr)
-            }
-
-            return CMBlockBufferCopyDataBytes(
-                blockBuffer,
-                atOffset: 0,
-                dataLength: dataLength,
-                destination: baseAddress
-            )
-        }
-
-        guard status == noErr else {
-            throw AVAssetReaderCodecMediaSourceError.audioDataCopyFailed(status)
-        }
-
-        return data
-    }
-
-    private func frameCount(duration: TimeInterval, frameRate: FrameRate) -> Int {
-        max(1, Int((duration * Double(frameRate.framesPerSecond)).rounded()))
-    }
-
-    private func audioChunkCount(duration: TimeInterval) -> Int {
-        let chunkDuration = Double(audioFramesPerChunk) / Double(audioSampleRate)
-        return max(1, Int((duration / chunkDuration).rounded(.up)))
-    }
+struct CodecAudioSource {
+    let tracks: [AVAssetTrack]
+    let timeRange: CMTimeRange
+    let retainedAsset: AVURLAsset?
 }
 
 public typealias AVAssetReaderVideoCodecMediaSource = AVAssetReaderCodecMediaSource
@@ -420,10 +154,4 @@ public enum AVAssetReaderCodecMediaSourceError: Error, Equatable {
     case missingPixelBuffer
     case missingAudioData
     case audioDataCopyFailed(OSStatus)
-}
-
-extension AVAssetReader {
-    fileprivate var errorDescription: String {
-        error.map(String.init(describing:)) ?? "Unknown AVAssetReader error"
-    }
 }

@@ -73,8 +73,7 @@ public struct BundledLocalModelCatalog: LocalModelCatalogProviding, Sendable {
             throw LocalModelCatalogError.unsupportedSchema(catalog.schemaVersion)
         }
 
-        var modelIDs = Set<LocalModelID>()
-        var releaseIdentities = Set<String>()
+        var modelIDs = Set<LocalModelID>(); var releaseIdentities = Set<String>()
         for descriptor in catalog.models {
             guard modelIDs.insert(descriptor.id).inserted else {
                 throw LocalModelCatalogError.duplicateModelID(descriptor.id.rawValue)
@@ -122,13 +121,29 @@ public struct BundledLocalModelCatalog: LocalModelCatalogProviding, Sendable {
             try validate(url: descriptor.licenseURL, approvedOrigins: approvedOrigins)
         }
     }
+}
 
+private extension BundledLocalModelCatalog {
     private static func validate(
         _ release: LocalModelRelease,
         registeredValidatorKeys: Set<LocalModelValidatorKey>,
         attributionIdentifiers: Set<String>,
         approvedOrigins: Set<String>,
         currentAppVersion: String
+    ) throws {
+        try validateIdentityAndLanguage(release, registeredValidatorKeys: registeredValidatorKeys)
+        guard attributionIdentifiers.contains(release.attributionIdentifier) else {
+            throw LocalModelCatalogError.missingAttribution(release.attributionIdentifier)
+        }
+        try validateCompatibility(release, currentAppVersion: currentAppVersion)
+        try validate(url: release.modelCardURL, approvedOrigins: approvedOrigins)
+        try validatePayload(release)
+        try validateArtifacts(release.artifacts)
+    }
+
+    private static func validateIdentityAndLanguage(
+        _ release: LocalModelRelease,
+        registeredValidatorKeys: Set<LocalModelValidatorKey>
     ) throws {
         let repositoryParts = release.repository.split(separator: "/", omittingEmptySubsequences: false)
         guard repositoryParts.count == 2,
@@ -154,9 +169,12 @@ public struct BundledLocalModelCatalog: LocalModelCatalogProviding, Sendable {
         else {
             throw LocalModelCatalogError.invalidTotals
         }
-        guard attributionIdentifiers.contains(release.attributionIdentifier) else {
-            throw LocalModelCatalogError.missingAttribution(release.attributionIdentifier)
-        }
+    }
+
+    private static func validateCompatibility(
+        _ release: LocalModelRelease,
+        currentAppVersion: String
+    ) throws {
         guard let minimumVersion = semanticVersion(release.minimumAppVersion),
               let currentVersion = semanticVersion(currentAppVersion),
               !currentVersion.lexicographicallyPrecedes(minimumVersion),
@@ -172,7 +190,9 @@ public struct BundledLocalModelCatalog: LocalModelCatalogProviding, Sendable {
                 current: currentAppVersion
             )
         }
-        try validate(url: release.modelCardURL, approvedOrigins: approvedOrigins)
+    }
+
+    private static func validatePayload(_ release: LocalModelRelease) throws {
         guard release.minimumValidatorVersion > 0,
               release.expectedPayloadBytes > 0,
               release.requiredFreeBytes >= release.expectedPayloadBytes,
@@ -183,10 +203,12 @@ public struct BundledLocalModelCatalog: LocalModelCatalogProviding, Sendable {
         else {
             throw LocalModelCatalogError.invalidTotals
         }
+    }
 
+    private static func validateArtifacts(_ artifacts: [LocalModelArtifact]) throws {
         var paths = Set<String>()
         var foldedPaths = Set<String>()
-        for artifact in release.artifacts {
+        for artifact in artifacts {
             try validate(artifact)
             guard paths.insert(artifact.path).inserted else {
                 throw LocalModelCatalogError.duplicatePath(artifact.path)

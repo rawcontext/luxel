@@ -37,46 +37,46 @@ extension LuxelEditorModel {
         let sourceAudioTracks = source.audioTracks
 
         previewAudioMixTask = Task { [weak self] in
-            do {
-                // Debounce: trim/volume sliders reschedule this on every tick, and
-                // resolving gains can decode audio for peak analysis. Let rapid
-                // updates cancel each other during the sleep so only the final
-                // value pays for the analysis.
-                try await Task.sleep(for: .milliseconds(200))
+            await self?.resolvePreviewAudioMix(
+                request: request,
+                source: source,
+                sourceAudioTracks: sourceAudioTracks,
+                playerItem: playerItem,
+                taskID: taskID
+            )
+        }
+    }
 
-                guard let self else {
-                    return
-                }
-
-                let gains = try await self.audioMixResolutionService.resolvedGains(
-                    for: request,
-                    sourceAudioTracks: sourceAudioTracks
-                )
-                let audioMix = try await self.makePreviewAudioMix(
-                    for: playerItem,
-                    gain: gains[.system] ?? 1
-                )
-
-                guard !Task.isCancelled,
-                      self.currentPreviewAudioMixTaskID(source: source) == taskID,
-                      self.player.currentItem === playerItem
-                else {
-                    return
-                }
-
-                playerItem.audioMix = audioMix
-                self.previewAudioMixTask = nil
-            } catch is CancellationError {
-            } catch {
-                guard !Task.isCancelled,
-                      self?.player.currentItem === playerItem
-                else {
-                    return
-                }
-
-                playerItem.audioMix = nil
-                self?.previewAudioMixTask = nil
+    private func resolvePreviewAudioMix(
+        request: ExportRequest,
+        source: SourceMedia,
+        sourceAudioTracks: [AudioTrackKind],
+        playerItem: AVPlayerItem,
+        taskID: PreviewAudioMixTaskID
+    ) async {
+        do {
+            try await Task.sleep(for: .milliseconds(200))
+            let gains = try await audioMixResolutionService.resolvedGains(
+                for: request,
+                sourceAudioTracks: sourceAudioTracks
+            )
+            let audioMix = try await makePreviewAudioMix(
+                for: playerItem,
+                gain: gains[.system] ?? 1
+            )
+            guard !Task.isCancelled,
+                  currentPreviewAudioMixTaskID(source: source) == taskID,
+                  player.currentItem === playerItem
+            else {
+                return
             }
+            playerItem.audioMix = audioMix
+            previewAudioMixTask = nil
+        } catch is CancellationError {
+        } catch {
+            guard !Task.isCancelled, player.currentItem === playerItem else { return }
+            playerItem.audioMix = nil
+            previewAudioMixTask = nil
         }
     }
 

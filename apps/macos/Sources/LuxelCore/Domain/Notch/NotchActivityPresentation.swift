@@ -113,6 +113,13 @@ public enum NotchActivityPresentation {
             )
         case .paused(let elapsed):
             pausedViewModel(elapsed: elapsed, actionToReplace: recordingActionToReplace)
+        default:
+            remainingViewModel(for: activity)
+        }
+    }
+
+    private static func remainingViewModel(for activity: NotchActivity) -> NotchActivityViewModel {
+        switch activity {
         case .replayBuffering(let coverage):
             replayBufferingViewModel(coverage: coverage)
         case .processing:
@@ -125,9 +132,13 @@ public enum NotchActivityPresentation {
             errorViewModel(error: error)
         case .nowPlaying(let snapshot):
             nowPlayingViewModel(snapshot: snapshot)
+        case .dormant, .idleHover, .arming, .recording, .paused:
+            preconditionFailure("Primary notch activity was routed to the remaining activity mapper")
         }
     }
+}
 
+private extension NotchActivityPresentation {
     private static var dormantViewModel: NotchActivityViewModel {
         NotchActivityViewModel(
             collapsedTitle: "",

@@ -3,11 +3,11 @@ import Foundation
 public final class ApplicationSupportLocalModelRepository: LocalModelRepository, @unchecked Sendable {
     public static let installationSchemaVersion = 1
 
-    private let root: URL
-    private let fileManager: FileManager
-    private let appVersion: String
-    private let appBuild: String
-    private let now: @Sendable () -> Date
+    let root: URL
+    let fileManager: FileManager
+    let appVersion: String
+    let appBuild: String
+    let now: @Sendable () -> Date
 
     public init(
         root: URL,
@@ -132,24 +132,10 @@ public final class ApplicationSupportLocalModelRepository: LocalModelRepository,
         try fileManager.moveItem(at: prepared.payloadRoot, to: payloadRoot)
 
         let installedAt = now()
-        var receipt = InstallationReceipt(
-            schemaVersion: Self.installationSchemaVersion,
-            modelID: descriptor.id,
-            commit: release.commit,
-            repository: release.repository,
-            engineRevision: release.engineRevision,
-            validatorKey: release.validatorKey,
+        var receipt = installationReceipt(
+            descriptor: descriptor,
             validatorVersion: validatorVersion,
-            artifacts: release.artifacts.filter(\.retained),
-            logicalBytes: release.expectedPayloadBytes,
-            allocatedBytes: 0,
-            appVersion: appVersion,
-            appBuild: appBuild,
-            installedAt: installedAt,
-            lastValidatedAt: installedAt,
-            licenseIdentifier: release.licenseIdentifier,
-            attributionIdentifier: release.attributionIdentifier,
-            runtimeDirectoryName: release.runtimeDirectoryName
+            installedAt: installedAt
         )
         let receiptURL = promotionRoot.appending(path: "installation.json")
         try write(receipt, to: receiptURL)
@@ -214,30 +200,12 @@ public final class ApplicationSupportLocalModelRepository: LocalModelRepository,
         let retainedPaths = retainedArtifacts.map {
             "payload/\(release.runtimeDirectoryName)/\($0.path)"
         }
-        do {
-            try validateExactFiles(
-                at: releaseRoot,
-                expectedPaths: Set(["installation.json"] + retainedPaths),
-                expectedSizes: Dictionary(
-                    uniqueKeysWithValues: zip(
-                        retainedPaths,
-                        retainedArtifacts.map(\.byteCount)
-                    ))
-            )
-        } catch {
-            throw LocalModelFailure.installationCorrupt("Installed model files changed")
-        }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        let receipt: InstallationReceipt
-        do {
-            receipt = try decoder.decode(
-                InstallationReceipt.self,
-                from: Data(contentsOf: receiptURL)
-            )
-        } catch {
-            throw LocalModelFailure.installationCorrupt("Installation receipt is unreadable")
-        }
+        try validateInstalledFiles(
+            at: releaseRoot,
+            retainedPaths: retainedPaths,
+            retainedArtifacts: retainedArtifacts
+        )
+        let receipt = try readInstallationReceipt(at: receiptURL)
 
         guard receipt.schemaVersion == Self.installationSchemaVersion,
               receipt.modelID == descriptor.id,
@@ -264,216 +232,17 @@ public final class ApplicationSupportLocalModelRepository: LocalModelRepository,
             installedAt: receipt.installedAt
         )
     }
+
 }
 
-private extension ApplicationSupportLocalModelRepository {
-    private func validateExactFiles(
-        at root: URL,
-        expectedPaths: Set<String>,
-        expectedSizes: [String: Int64] = [:]
-    ) throws {
-        var actualPaths = Set<String>()
-        guard
-            let enumerator = fileManager.enumerator(
-                at: root,
-                includingPropertiesForKeys: [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey],
-                options: []
-            )
-        else {
-            throw LocalModelFailure.unexpectedFileSet
-        }
-
-        for case let url as URL in enumerator {
-            let values = try url.resourceValues(forKeys: [
-                .isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey
-            ])
-            guard values.isSymbolicLink != true else {
-                throw LocalModelFailure.invalidFileType
-            }
-            if values.isDirectory == true {
-                continue
-            }
-            guard values.isRegularFile == true else {
-                throw LocalModelFailure.invalidFileType
-            }
-            try prohibitExecutableFile(at: url)
-            let relative = relativePath(of: url, under: root)
-            actualPaths.insert(relative)
-            if let expectedSize = expectedSizes[relative] {
-                let attributes = try fileManager.attributesOfItem(atPath: url.path)
-                let actualSize = (attributes[.size] as? NSNumber)?.int64Value ?? -1
-                guard actualSize == expectedSize else {
-                    throw LocalModelFailure.unexpectedByteCount(
-                        expected: expectedSize,
-                        actual: actualSize
-                    )
-                }
-            }
-        }
-        guard actualPaths == expectedPaths else {
-            throw LocalModelFailure.unexpectedFileSet
-        }
-    }
-
-    private func prohibitExecutableContent(at root: URL) throws {
-        guard let enumerator = fileManager.enumerator(at: root, includingPropertiesForKeys: nil)
-        else {
-            throw LocalModelFailure.invalidFileType
-        }
-        for case let url as URL in enumerator {
-            var isDirectory = ObjCBool(false)
-            guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
-                continue
-            }
-            if !isDirectory.boolValue {
-                try prohibitExecutableFile(at: url)
-            }
-        }
-    }
-
-    private func prohibitExecutableFile(at url: URL) throws {
-        let attributes = try fileManager.attributesOfItem(atPath: url.path)
-        let permissions = (attributes[.posixPermissions] as? NSNumber)?.uint16Value ?? 0
-        guard permissions & 0o111 == 0 else {
-            throw LocalModelFailure.invalidFileType
-        }
-        let links = (attributes[.referenceCount] as? NSNumber)?.intValue ?? 1
-        guard links <= 1 else {
-            throw LocalModelFailure.invalidFileType
-        }
-
-        let handle = try FileHandle(forReadingFrom: url)
-        defer { try? handle.close() }
-        let prefix = try handle.read(upToCount: 4) ?? Data()
-        let forbiddenMagic: Set<[UInt8]> = [
-            [0xfe, 0xed, 0xfa, 0xce], [0xce, 0xfa, 0xed, 0xfe],
-            [0xfe, 0xed, 0xfa, 0xcf], [0xcf, 0xfa, 0xed, 0xfe],
-            [0xca, 0xfe, 0xba, 0xbe]
-        ]
-        guard !forbiddenMagic.contains(Array(prefix)),
-              !prefix.starts(with: Data([0x23, 0x21]))
-        else {
-            throw LocalModelFailure.invalidFileType
-        }
-    }
-
-    private func ensureRoot() throws {
-        try createPrivateDirectory(at: root)
-        try markExcludedFromBackup(root)
-    }
-
-    private func createPrivateDirectory(at directory: URL) throws {
-        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        var current = directory.standardizedFileURL.resolvingSymlinksInPath()
-        while current.path == root.path || current.path.hasPrefix(root.path + "/") {
-            try fileManager.setAttributes(
-                [.posixPermissions: NSNumber(value: Int16(0o700))],
-                ofItemAtPath: current.path
-            )
-            if current.path == root.path { break }
-            current = current.deletingLastPathComponent()
-        }
-    }
-
-    private func markExcludedFromBackup(_ url: URL) throws {
-        var values = URLResourceValues()
-        values.isExcludedFromBackup = true
-        var mutableURL = url
-        try mutableURL.setResourceValues(values)
-        guard
-            try mutableURL.resourceValues(forKeys: [.isExcludedFromBackupKey])
-                .isExcludedFromBackup == true
-        else {
-            throw LocalModelFailure.storageFailure("Could not exclude model storage from backup")
-        }
-    }
-
-    private func removeStaleStaging(for id: LocalModelID) throws {
-        let stagingRoot = try modelRoot(for: id)
-            .appending(path: "staging", directoryHint: .isDirectory)
-        guard fileManager.fileExists(atPath: stagingRoot.path) else {
-            return
-        }
-        try fileManager.removeItem(at: stagingRoot)
-    }
-
-    private func modelRoot(for id: LocalModelID) throws -> URL {
-        let url = root.appending(path: id.rawValue, directoryHint: .isDirectory)
-        try requireDescendant(url, of: root)
-        return url
-    }
-
-    private func releaseRoot(for id: LocalModelID, commit: String) throws -> URL {
-        let url = try modelRoot(for: id)
-            .appending(path: "releases", directoryHint: .isDirectory)
-            .appending(path: commit, directoryHint: .isDirectory)
-        try requireDescendant(url, of: root)
-        return url
-    }
-
-    private func requireDescendant(_ candidate: URL, of parent: URL) throws {
-        let parentPath = parent.standardizedFileURL.resolvingSymlinksInPath().path
-            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let candidatePath = candidate.standardizedFileURL.resolvingSymlinksInPath().path
-            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        guard candidatePath == parentPath || candidatePath.hasPrefix(parentPath + "/") else {
-            throw LocalModelFailure.storagePermission
-        }
-    }
-
-    private func removeIfEmpty(_ directory: URL) {
-        guard
-            let contents = try? fileManager.contentsOfDirectory(
-                at: directory,
-                includingPropertiesForKeys: nil
-            ), contents.isEmpty
-        else {
-            return
-        }
-        try? fileManager.removeItem(at: directory)
-    }
-
-    private func relativePath(of url: URL, under root: URL) -> String {
-        String(url.standardizedFileURL.path.dropFirst(root.standardizedFileURL.path.count + 1))
-    }
-
-    private func allocatedBytes(at root: URL) throws -> Int64 {
-        var total: Int64 = 0
-        let keys: Set<URLResourceKey> = [
-            .isRegularFileKey, .fileAllocatedSizeKey, .totalFileAllocatedSizeKey
-        ]
-        guard
-            let enumerator = fileManager.enumerator(
-                at: root,
-                includingPropertiesForKeys: Array(keys)
-            )
-        else {
-            return 0
-        }
-        for case let url as URL in enumerator {
-            let values = try url.resourceValues(forKeys: keys)
-            guard values.isRegularFile == true else { continue }
-            total += Int64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
-        }
-        return total
-    }
-
-    private func write<T: Encodable>(_ value: T, to url: URL) throws {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        encoder.dateEncodingStrategy = .iso8601
-        try encoder.encode(value).write(to: url, options: [.atomic])
-    }
-}
-
-private struct StagingOperationReceipt: Codable {
+struct StagingOperationReceipt: Codable {
     let schemaVersion: Int
     let modelID: LocalModelID
     let operationID: UUID
     let createdAt: Date
 }
 
-private struct InstallationReceipt: Codable {
+struct InstallationReceipt: Codable {
     let schemaVersion: Int
     let modelID: LocalModelID
     let commit: String

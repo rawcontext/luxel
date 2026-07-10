@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelPresentation
 import SwiftUI
 
 extension LuxelSettingsView {

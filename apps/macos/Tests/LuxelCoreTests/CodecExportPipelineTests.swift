@@ -308,7 +308,8 @@ private actor StubVideoEncoder: CodecVideoEncoder {
 
     func prepare(_ configuration: CodecVideoEncoderConfiguration) async throws {
         await events.append(
-            "video.prepare:\(configuration.pixelSize.width)x\(configuration.pixelSize.height):\(configuration.frameRate.framesPerSecond):\(configuration.quality.rawValue)"
+            "video.prepare:\(configuration.pixelSize.width)x\(configuration.pixelSize.height)"
+                + ":\(configuration.frameRate.framesPerSecond):\(configuration.quality.rawValue)"
         )
     }
 
@@ -341,7 +342,8 @@ private actor StubAudioEncoder: CodecAudioEncoder {
 
     func prepare(_ configuration: CodecAudioEncoderConfiguration) async throws {
         await events.append(
-            "audio.prepare:\(configuration.sampleRate):\(configuration.channelCount):\(configuration.quality.rawValue)"
+            "audio.prepare:\(configuration.sampleRate):\(configuration.channelCount)"
+                + ":\(configuration.quality.rawValue)"
         )
     }
 
@@ -371,8 +373,9 @@ private actor StubContainerMuxer: CodecContainerMuxer {
     }
 
     func begin(_ configuration: CodecMuxerConfiguration) async throws {
+        let tracks = configuration.tracks.map(\.rawValue).joined(separator: ",")
         await events.append(
-            "muxer.begin:\(configuration.format.rawValue):\(configuration.tracks.map(\.rawValue).joined(separator: ","))"
+            "muxer.begin:\(configuration.format.rawValue):\(tracks)"
         )
     }
 
@@ -387,39 +390,5 @@ private actor StubContainerMuxer: CodecContainerMuxer {
 
     func cancel() async {
         await events.append("muxer.cancel")
-    }
-}
-
-extension CodecAudioChunk {
-    fileprivate init(dataString: String, presentationTime: TimeInterval, duration: TimeInterval)
-    throws {
-        try self.init(
-            pcmData: Data(dataString.utf8),
-            presentationTime: presentationTime,
-            duration: duration
-        )
-    }
-}
-
-extension EncodedPacket {
-    fileprivate init(
-        dataString: String,
-        presentationTime: TimeInterval,
-        duration: TimeInterval,
-        isKeyFrame: Bool
-    ) throws {
-        try self.init(
-            data: Data(dataString.utf8),
-            presentationTime: presentationTime,
-            duration: duration,
-            isKeyFrame: isKeyFrame
-        )
-    }
-}
-
-extension TimeInterval {
-    fileprivate var shortText: String {
-        let rounded = (self * 1_000).rounded() / 1_000
-        return String(format: "%.3g", rounded)
     }
 }

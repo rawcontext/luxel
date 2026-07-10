@@ -6,37 +6,7 @@ import Testing
 struct KeystrokeTimelineRecordingServiceTests {
     @Test("recording maps source events into media timeline")
     func recordingMapsSourceEventsIntoMediaTimeline() async throws {
-        let source = StubKeystrokeEventSource(events: [
-            .keyDown(
-                wallTime: 9,
-                keyCode: 40,
-                characters: "k",
-                modifiers: [.command, .shift],
-                isRepeat: false
-            ),
-            .keyDown(
-                wallTime: 5.5,
-                keyCode: 8,
-                characters: "c",
-                modifiers: [],
-                isRepeat: false
-            ),
-            .flagsChanged(wallTime: 1, keyCode: 55, modifiers: [.command]),
-            .keyDown(
-                wallTime: 13,
-                keyCode: 9,
-                characters: "v",
-                modifiers: [],
-                isRepeat: false
-            ),
-            .keyDown(
-                wallTime: 9.5,
-                keyCode: 123,
-                characters: nil,
-                modifiers: [],
-                isRepeat: true
-            )
-        ])
+        let source = StubKeystrokeEventSource(events: sourceEvents())
         let service = KeystrokeTimelineRecordingService(eventSource: source)
         let request = try KeystrokeTimelineRecordingRequest(
             recordingDuration: 12,
@@ -68,6 +38,40 @@ struct KeystrokeTimelineRecordingServiceTests {
                 )
             ])
         #expect(timeline.pauses.isEmpty)
+    }
+
+    private func sourceEvents() -> [KeystrokeSourceEvent] {
+        [
+            .keyDown(
+                wallTime: 9,
+                keyCode: 40,
+                characters: "k",
+                modifiers: [.command, .shift],
+                isRepeat: false
+            ),
+            .keyDown(
+                wallTime: 5.5,
+                keyCode: 8,
+                characters: "c",
+                modifiers: [],
+                isRepeat: false
+            ),
+            .flagsChanged(wallTime: 1, keyCode: 55, modifiers: [.command]),
+            .keyDown(
+                wallTime: 13,
+                keyCode: 9,
+                characters: "v",
+                modifiers: [],
+                isRepeat: false
+            ),
+            .keyDown(
+                wallTime: 9.5,
+                keyCode: 123,
+                characters: nil,
+                modifiers: [],
+                isRepeat: true
+            )
+        ]
     }
 
     @Test("recording maps source pause windows into media timeline")

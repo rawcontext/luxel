@@ -86,38 +86,75 @@ extension LuxelMenuModel {
         openSettings: @escaping @MainActor () -> Void,
         showAreaCapturePicker: @escaping @MainActor () -> Void
     ) async {
+        let handledCaptureAction = await performNotchCaptureAction(
+            actionID,
+            showAreaCapturePicker: showAreaCapturePicker
+        )
+        if !handledCaptureAction {
+            await performNotchUtilityAction(
+                actionID,
+                openEditor: openEditor,
+                openSettings: openSettings
+            )
+        }
+        await refreshNotchSurface()
+    }
+
+    private func performNotchCaptureAction(
+        _ actionID: NotchActivityActionID,
+        showAreaCapturePicker: @escaping @MainActor () -> Void
+    ) async -> Bool {
         switch actionID {
-        case .recordArea:
-            guard canUseScreenDependentNotchAction else {
-                presentPermissionPrompt(forSource: .screenPixels)
-                break
-            }
-
-            showAreaCapturePicker()
-        case .recordWindow:
-            guard canUseScreenDependentNotchAction else {
-                presentPermissionPrompt(forSource: .screenPixels)
-                break
-            }
-
-            await startActiveWindowRecording(notchRecordingActionID: .recordWindow)
-        case .recordFullscreen:
-            guard canUseScreenDependentNotchAction else {
-                presentPermissionPrompt(forSource: .screenPixels)
-                break
-            }
-
-            await refreshCaptureTargets()
-            await startFullscreenRecording(notchRecordingActionID: .recordFullscreen)
         case .recordAudioOnly:
             guard canUseAudioOnlyButton else {
                 if let source = notchAudioCaptureRecoverySource() {
                     presentPermissionPrompt(forSource: source)
                 }
-                break
+                return true
             }
-
             await startAudioOnlyRecording(notchRecordingActionID: .recordAudioOnly)
+            return true
+        case .recordArea, .recordWindow, .recordFullscreen, .retry:
+            await performScreenDependentNotchAction(
+                actionID,
+                showAreaCapturePicker: showAreaCapturePicker
+            )
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func performScreenDependentNotchAction(
+        _ actionID: NotchActivityActionID,
+        showAreaCapturePicker: @escaping @MainActor () -> Void
+    ) async {
+        guard canUseScreenDependentNotchAction else {
+            presentPermissionPrompt(forSource: .screenPixels)
+            return
+        }
+        switch actionID {
+        case .recordArea:
+            showAreaCapturePicker()
+        case .recordWindow:
+            await startActiveWindowRecording(notchRecordingActionID: .recordWindow)
+        case .recordFullscreen:
+            await refreshCaptureTargets()
+            await startFullscreenRecording(notchRecordingActionID: .recordFullscreen)
+        case .retry:
+            await refreshCaptureTargets()
+            await startRecordingFromSelectedTarget()
+        default:
+            break
+        }
+    }
+
+    private func performNotchUtilityAction(
+        _ actionID: NotchActivityActionID,
+        openEditor: @escaping @MainActor (URL) -> Void,
+        openSettings: @escaping @MainActor () -> Void
+    ) async {
+        switch actionID {
         case .openSettings:
             openSettings()
         case .cancel:
@@ -125,28 +162,17 @@ extension LuxelMenuModel {
         case .pauseRecording, .resumeRecording:
             await pauseOrResumeRecording()
         case .stopRecording:
-            let stopAction = await stopRecording()
-            openRecordingIfNeeded(stopAction, openEditor: openEditor)
+            openRecordingIfNeeded(await stopRecording(), openEditor: openEditor)
         case .discardRecording:
             await discardActiveRecording()
-        case .toggleMute:
-            break
         case .cancelExport:
             cancelQuickExport()
-        case .retry:
-            guard canUseScreenDependentNotchAction else {
-                presentPermissionPrompt(forSource: .screenPixels)
-                break
-            }
-
-            await refreshCaptureTargets()
-            await startRecordingFromSelectedTarget()
-        case .quickGIF, .markMoment, .clipReplay, .pauseReplayBuffer, .cancelProcessing, .revealStorage,
-             .reveal, .copy, .openInEditor, .openInPreview, .save:
+        case .recordArea, .recordWindow, .recordFullscreen, .recordAudioOnly, .retry,
+             .toggleMute, .quickGIF, .markMoment, .clipReplay, .pauseReplayBuffer,
+             .cancelProcessing, .revealStorage, .reveal, .copy, .openInEditor,
+             .openInPreview, .save:
             break
         }
-
-        await refreshNotchSurface()
     }
 
     private func openRecordingIfNeeded(

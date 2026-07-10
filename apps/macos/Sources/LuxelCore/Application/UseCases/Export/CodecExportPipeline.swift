@@ -25,60 +25,8 @@ public struct CodecExportPipeline: Sendable {
         to outputFileURL: URL,
         progress: ProgressHandler? = nil
     ) async throws -> ExportedMedia {
-        let request = input.request
         do {
-            let outputPixelSize = try request.outputPixelSize
-            let sourceDescription = try await mediaSource.prepare(input)
-            try Task.checkCancellation()
-
-            try await videoEncoder.prepare(
-                CodecVideoEncoderConfiguration(
-                    pixelSize: outputPixelSize,
-                    frameRate: request.frameRate,
-                    quality: request.resolvedQuality
-                ))
-
-            let includesAudio = !request.outputShouldMute && sourceDescription.hasAudio
-            let audioEncoder = try await prepareAudioEncoder(
-                includesAudio: includesAudio,
-                sourceDescription: sourceDescription,
-                quality: request.resolvedQuality
-            )
-            let tracks: [CodecTrack] = includesAudio ? [.video, .audio] : [.video]
-
-            try await muxer.begin(
-                try CodecMuxerConfiguration(
-                    outputFileURL: outputFileURL,
-                    format: request.format,
-                    tracks: tracks,
-                    pixelSize: outputPixelSize,
-                    audioSampleRate: includesAudio ? sourceDescription.audioSampleRate : nil,
-                    audioChannelCount: includesAudio ? sourceDescription.audioChannelCount : nil
-                ))
-            await progress?(0)
-
-            let progressTracker = CodecExportProgressTracker(
-                totalUnits: sourceDescription.videoFrameCount
-                    + (includesAudio ? sourceDescription.audioChunkCount : 0),
-                progress: progress
-            )
-
-            try await writeSourcePackets(
-                includesAudio: includesAudio,
-                audioEncoder: audioEncoder,
-                progressTracker: progressTracker
-            )
-
-            try Task.checkCancellation()
-            try await muxer.finalize()
-            await progress?(1)
-
-            return ExportedMedia(
-                fileURL: outputFileURL,
-                format: request.format,
-                pixelSize: outputPixelSize,
-                shouldMute: request.outputShouldMute
-            )
+            return try await performExport(input, to: outputFileURL, progress: progress)
         } catch is CancellationError {
             await muxer.cancel()
             throw CancellationError()
@@ -86,6 +34,77 @@ public struct CodecExportPipeline: Sendable {
             await muxer.cancel()
             throw error
         }
+    }
+
+    private func performExport(
+        _ input: MediaExportInput,
+        to outputFileURL: URL,
+        progress: ProgressHandler?
+    ) async throws -> ExportedMedia {
+        let request = input.request
+        let outputPixelSize = try request.outputPixelSize
+        let sourceDescription = try await mediaSource.prepare(input)
+        try Task.checkCancellation()
+        try await videoEncoder.prepare(
+            CodecVideoEncoderConfiguration(
+                pixelSize: outputPixelSize,
+                frameRate: request.frameRate,
+                quality: request.resolvedQuality
+            )
+        )
+        let includesAudio = !request.outputShouldMute && sourceDescription.hasAudio
+        let audioEncoder = try await prepareAudioEncoder(
+            includesAudio: includesAudio,
+            sourceDescription: sourceDescription,
+            quality: request.resolvedQuality
+        )
+        try await beginMuxing(
+            request: request,
+            sourceDescription: sourceDescription,
+            outputPixelSize: outputPixelSize,
+            outputFileURL: outputFileURL,
+            includesAudio: includesAudio
+        )
+        await progress?(0)
+        let progressTracker = CodecExportProgressTracker(
+            totalUnits: sourceDescription.videoFrameCount
+                + (includesAudio ? sourceDescription.audioChunkCount : 0),
+            progress: progress
+        )
+        try await writeSourcePackets(
+            includesAudio: includesAudio,
+            audioEncoder: audioEncoder,
+            progressTracker: progressTracker
+        )
+        try Task.checkCancellation()
+        try await muxer.finalize()
+        await progress?(1)
+        return ExportedMedia(
+            fileURL: outputFileURL,
+            format: request.format,
+            pixelSize: outputPixelSize,
+            shouldMute: request.outputShouldMute
+        )
+    }
+
+    private func beginMuxing(
+        request: ExportRequest,
+        sourceDescription: CodecMediaSourceDescription,
+        outputPixelSize: PixelSize,
+        outputFileURL: URL,
+        includesAudio: Bool
+    ) async throws {
+        let tracks: [CodecTrack] = includesAudio ? [.video, .audio] : [.video]
+        try await muxer.begin(
+            try CodecMuxerConfiguration(
+                outputFileURL: outputFileURL,
+                format: request.format,
+                tracks: tracks,
+                pixelSize: outputPixelSize,
+                audioSampleRate: includesAudio ? sourceDescription.audioSampleRate : nil,
+                audioChannelCount: includesAudio ? sourceDescription.audioChannelCount : nil
+            )
+        )
     }
 
     public func export(

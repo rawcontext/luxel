@@ -40,6 +40,18 @@ extension LuxelEditorModelTests {
             dithering: .diffusion
         )
 
+        expectCapturedBatchExports(captured, expectedGIFOptions: expectedGIFOptions)
+        #expect(fileSystem.createdDirectories == [batchDirectory])
+        expectCompletedBatchPresentation(model, batchDirectory: batchDirectory)
+        model.openExportedFile()
+        #expect(fileActionClient.openedURLs == [batchDirectory])
+        #expect(rememberedFormats == [.hevc, .mp4, .gif])
+    }
+
+    private func expectCapturedBatchExports(
+        _ captured: [(request: ExportRequest, outputFileURL: URL)],
+        expectedGIFOptions: GIFRenderOptions
+    ) {
         let capturedByFormat = Dictionary(
             uniqueKeysWithValues: captured.map { ($0.request.format, $0) })
         #expect(Set(captured.map(\.request.format)) == [.hevc, .mp4, .gif])
@@ -52,7 +64,12 @@ extension LuxelEditorModelTests {
                 "/tmp/source Export/source Export H.264.mp4",
                 "/tmp/source Export/source Export GIF.gif"
             ])
-        #expect(fileSystem.createdDirectories == [batchDirectory])
+    }
+
+    private func expectCompletedBatchPresentation(
+        _ model: LuxelEditorModel,
+        batchDirectory: URL
+    ) {
         #expect(
             model.status
                 == .exportedBatch([
@@ -72,8 +89,5 @@ extension LuxelEditorModelTests {
                 "/tmp/source Export/source Export H.264.mp4",
                 "/tmp/source Export/source Export GIF.gif"
             ])
-        model.openExportedFile()
-        #expect(fileActionClient.openedURLs == [batchDirectory])
-        #expect(rememberedFormats == [.hevc, .mp4, .gif])
     }
 }

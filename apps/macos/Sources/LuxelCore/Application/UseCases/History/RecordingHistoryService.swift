@@ -278,7 +278,9 @@ public final class RecordingHistoryService: Sendable {
         store.activeRecording = nil
         return result
     }
+}
 
+private extension RecordingHistoryService {
     private func recordingExists(_ recording: PastRecording) -> Bool {
         guard fileSystem.fileExists(at: recording.fileURL) else {
             return false

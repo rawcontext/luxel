@@ -2,7 +2,7 @@ import Foundation
 import LuxelCore
 import OSLog
 
-private let luxelRecordingLogger = Logger(
+let luxelRecordingLogger = Logger(
     subsystem: Bundle.main.bundleIdentifier ?? "media.luxel.app",
     category: "Recording"
 )
@@ -345,312 +345,10 @@ extension LuxelMenuModel {
         }
     }
 
-    private func startRecording(
-        _ request: RecordingRequest,
-        noticeMessage: String? = nil,
-        latencySpan: RecordingStartLatencySpan? = nil,
-        notchRecordingActionID: NotchActivityActionID? = nil
-    ) async {
-        guard canBeginRecordingStart else {
-            if let latencySpan {
-                LuxelRecordingLatencyTelemetry.finishFailed(
-                    latencySpan, reason: "start-already-in-progress")
-            }
-            return
-        }
-
-        let preparedCamera = await preparingCameraCutoutIfNeeded(for: request)
-        let effectiveRequest = preparedCamera.request
-        recordingNoticeMessage = preparedCamera.noticeMessage ?? noticeMessage
-        recordingActionErrorMessage = nil
-        activeNotchRecordingActionID = notchRecordingActionID
-        recordingState = .starting
-        setCameraPreviewHoverControlsEnabled(false)
-
-        do {
-            await recordingFramePanelController.present(
-                for: effectiveRequest,
-                availableTargets: captureTargets,
-                exclusionRegistry: captureExclusionRegistry
-            )
-
-            let recordingName = effectiveRequest.outputFileURL.deletingPathExtension().lastPathComponent
-            let outputPlan = try recordingOutputFinalizationPlan(for: effectiveRequest.outputFileURL)
-            if let countdown = effectiveRequest.schedule?.countdown, countdown > 0 {
-                recordingState = .countingDown(startedAt: Date(), duration: countdown)
-            }
-
-            let startTask = Task<ActiveRecording, any Error> {
-                try await recordingLifecycleService.startRecording(
-                    effectiveRequest,
-                    name: recordingName,
-                    outputPlan: outputPlan
-                )
-            }
-            recordingStartTask = startTask
-            let activeRecording = try await withTaskCancellationHandler {
-                try await startTask.value
-            } onCancel: {
-                startTask.cancel()
-            }
-            recordingStartTask = nil
-            rememberLastCapture(from: effectiveRequest, capturedAt: activeRecording.date)
-            recordingState = .recording(
-                activeRecording,
-                RecordingMenuClock(startedAt: activeRecording.date)
-            )
-            await presentCameraPreviewForRecording(effectiveRequest)
-            if let latencySpan {
-                LuxelRecordingLatencyTelemetry.finishStarted(
-                    latencySpan,
-                    target: effectiveRequest.target
-                )
-            }
-        } catch is CancellationError {
-            recordingStartTask = nil
-            await recordingFramePanelController.close()
-            recordingState = .idle
-            syncCameraPreviewHoverControls()
-            if let latencySpan {
-                LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "start-canceled")
-            }
-        } catch {
-            recordingStartTask = nil
-            await recordingFramePanelController.close()
-            recordingState = .failed(errorMessage(error))
-            syncCameraPreviewHoverControls()
-            if let latencySpan {
-                LuxelRecordingLatencyTelemetry.finishFailed(latencySpan, reason: "recorder-start-failed")
-            }
-        }
-    }
-
-    private var canBeginRecordingStart: Bool {
-        switch recordingState {
-        case .idle, .failed:
-            true
-        case .starting, .countingDown, .recording, .pausing, .paused, .resuming, .stopping, .exporting:
-            false
-        }
-    }
-
-    func stopRecording() async -> RecordingStopAction? {
-        luxelRecordingLogger.info(
-            """
-      Stop recording requested recording_state=\(self.recordingState.loggingDescription, privacy: .public) \
-      has_active_recording=\(self.hasActiveRecording, privacy: .public)
-      """
-        )
-
-        if case .countingDown = recordingState {
-            recordingNoticeMessage = nil
-            recordingActionErrorMessage = nil
-            recordingState = .starting
-            recordingStartTask?.cancel()
-            luxelRecordingLogger.info("Stop recording cancelled countdown")
-            return nil
-        }
-
-        let previousRecordingState = recordingState
-        let activeRecording = previousRecordingState.activeRecording
-        let captureKind = activeRecording?.options.captureKind ?? .standard
-        recordingNoticeMessage = nil
-        recordingActionErrorMessage = nil
-        recordingState = .stopping
-        setCameraPreviewHoverControlsEnabled(false)
-        luxelRecordingLogger.info(
-            """
-      Stop recording transitioned to stopping previous_state=\(previousRecordingState.loggingDescription, privacy: .public) \
-      active_recording=\(activeRecording?.name ?? "none", privacy: .private) \
-      capture_kind=\(captureKind.loggingDescription, privacy: .public)
-      """
-        )
-
-        do {
-            if activeRecording?.options.isAudioOnly == true {
-                let recording = try await audioRecordingLifecycleService.stopRecording()
-                refreshRecentRecordings()
-                recordingState = .idle
-                syncCameraPreviewHoverControls()
-                luxelRecordingLogger.info(
-                    "Audio recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private)"
-                )
-                return .openEditor(recording.fileURL)
-            }
-
-            luxelRecordingLogger.info("Stop recording closing camera preview")
-            await closeCameraPreviewForRecordingStop()
-            luxelRecordingLogger.info("Stop recording camera preview closed")
-            luxelRecordingLogger.info("Stop recording stopping screen recorder")
-            let recording = try await recordingLifecycleService.stopRecording()
-            luxelRecordingLogger.info("Stop recording screen recorder stopped")
-            luxelRecordingLogger.info("Stop recording closing recording frame")
-            await recordingFramePanelController.close()
-            luxelRecordingLogger.info("Stop recording recording frame closed")
-            luxelRecordingLogger.info("Stop recording closing finished camera preview")
-            closeCameraPreviewForFinishedRecording()
-            luxelRecordingLogger.info("Stop recording finished camera preview closed")
-            refreshRecentRecordings()
-            luxelRecordingLogger.info(
-                """
-        Screen recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private) \
-        capture_kind=\(captureKind.loggingDescription, privacy: .public)
-        """
-            )
-
-            switch captureKind {
-            case .standard:
-                recordingState = .idle
-                syncCameraPreviewHoverControls()
-                luxelRecordingLogger.info("Stop recording completed action=openEditor")
-                return .openEditor(recording.primaryMediaURL)
-            case .quick(let presetID):
-                let stopAction = await runQuickExport(recording: recording, presetID: presetID)
-                syncCameraPreviewHoverControls()
-                luxelRecordingLogger.info(
-                    "Stop recording completed action=\(stopAction?.loggingDescription ?? "none", privacy: .public)"
-                )
-                return stopAction
-            }
-        } catch {
-            let message = errorMessage(error)
-            let nsError = error as NSError
-            recordingActionErrorMessage = message
-            if error.isTerminalRecordingStopFailure {
-                closeCameraPreviewForFinishedRecording()
-                recordingState = .idle
-                refreshRecentRecordings()
-            } else {
-                recordingState = previousRecordingState
-            }
-            syncCameraPreviewHoverControls()
-            luxelRecordingLogger.error(
-                """
-        Stop recording failed previous_state=\(previousRecordingState.loggingDescription, privacy: .public) \
-        restored_state=\(self.recordingState.loggingDescription, privacy: .public) \
-        error_domain=\(nsError.domain, privacy: .public) \
-        error_code=\(nsError.code, privacy: .public) \
-        message=\(message, privacy: .public)
-        """
-            )
-            return nil
-        }
-    }
-
-    func watchRecordingAutoStops(openRecording: @escaping @MainActor (URL) -> Void) async {
-        for await recording in recordingLifecycleService.autoStoppedRecordings {
-            await handleAutoStoppedRecording(recording, openRecording: openRecording)
-        }
-    }
-
-    func pauseOrResumeRecording() async {
-        switch recordingState {
-        case .recording:
-            await pauseRecording()
-        case .paused:
-            await resumeRecording()
-        case .idle, .starting, .countingDown, .pausing, .resuming, .stopping, .exporting, .failed:
-            return
-        }
-    }
-
-    func discardActiveRecording() async {
-        let stopAction = await stopRecording()
-        let fileURL: URL?
-
-        switch stopAction {
-        case .openEditor(let url), .quickExported(let url), .audioRecorded(let url):
-            fileURL = url
-        case .none:
-            fileURL = nil
-        }
-
-        guard let fileURL else {
-            return
-        }
-
-        refreshRecentRecordings()
-
-        guard
-            let recording = recentRecordings.first(where: { recording in
-                recording.fileURL == fileURL || recording.primaryMediaURL == fileURL
-            })
-        else {
-            return
-        }
-
-        do {
-            _ = try recordingHistoryService.discardRecording(recording)
-            refreshRecentRecordings()
-        } catch {
-            recordingActionErrorMessage = errorMessage(error)
-        }
-    }
-
-    private func handleAutoStoppedRecording(
-        _ recording: PastRecording,
-        openRecording: @escaping @MainActor (URL) -> Void
-    ) async {
-        guard recordingState.activeRecording?.fileURL == recording.fileURL else {
-            refreshRecentRecordings()
-            return
-        }
-
-        recordingNoticeMessage = nil
-        recordingActionErrorMessage = nil
-        recordingState = .stopping
-        await recordingFramePanelController.close()
-        closeCameraPreviewForFinishedRecording()
-        refreshRecentRecordings()
-
-        switch recording.options.captureKind {
-        case .standard:
-            recordingState = .idle
-            syncCameraPreviewHoverControls()
-            openRecording(recording.primaryMediaURL)
-        case .quick(let presetID):
-            _ = await runQuickExport(recording: recording, presetID: presetID)
-            syncCameraPreviewHoverControls()
-        }
-    }
-
-    private func pauseRecording() async {
-        guard case .recording(let activeRecording, let clock) = recordingState else {
-            return
-        }
-
-        recordingActionErrorMessage = nil
-        recordingState = .pausing(activeRecording, clock)
-
-        do {
-            try await recordingLifecycleService.pauseRecording()
-            recordingState = .paused(activeRecording, clock.paused(at: Date()))
-        } catch {
-            recordingActionErrorMessage = errorMessage(error)
-            recordingState = .recording(activeRecording, clock)
-        }
-    }
-
-    private func resumeRecording() async {
-        guard case .paused(let activeRecording, let clock) = recordingState else {
-            return
-        }
-
-        recordingActionErrorMessage = nil
-        recordingState = .resuming(activeRecording, clock)
-
-        do {
-            try await recordingLifecycleService.resumeRecording()
-            recordingState = .recording(activeRecording, clock.resumed(at: Date()))
-        } catch {
-            recordingActionErrorMessage = errorMessage(error)
-            recordingState = .paused(activeRecording, clock)
-        }
-    }
 }
 
 extension Error {
-    fileprivate var isTerminalRecordingStopFailure: Bool {
+    var isTerminalRecordingStopFailure: Bool {
         guard let lifecycleError = self as? RecordingLifecycleError else {
             return false
         }
@@ -664,7 +362,7 @@ extension Error {
 }
 
 extension QuickCaptureKind {
-    fileprivate var loggingDescription: String {
+    var loggingDescription: String {
         switch self {
         case .standard:
             "standard"
@@ -672,4 +370,10 @@ extension QuickCaptureKind {
             "quick"
         }
     }
+}
+
+struct RecordingStopContext {
+    let previousState: RecordingMenuState
+    let activeRecording: ActiveRecording?
+    let captureKind: QuickCaptureKind
 }

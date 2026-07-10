@@ -91,8 +91,15 @@ struct AnimatedFrameRenderer: Sendable {
             )
         }
 
+        return try GIFFrameBitmap(
+            pixelSize: outputPixelSize,
+            pixels: gifPixels(from: bytes, bytesPerPixel: bytesPerPixel)
+        )
+    }
+
+    private func gifPixels(from bytes: [UInt8], bytesPerPixel: Int) -> [GIFRGBAPixel] {
         var pixels: [GIFRGBAPixel] = []
-        pixels.reserveCapacity(outputPixelSize.width * outputPixelSize.height)
+        pixels.reserveCapacity(bytes.count / bytesPerPixel)
         for offset in stride(from: 0, to: bytes.count, by: bytesPerPixel) {
             let alpha = bytes[offset + 3]
             pixels.append(
@@ -104,7 +111,7 @@ struct AnimatedFrameRenderer: Sendable {
                 ))
         }
 
-        return try GIFFrameBitmap(pixelSize: outputPixelSize, pixels: pixels)
+        return pixels
     }
 
     private static func backgroundFillColor(_ matte: RGBColor?) -> CGColor {

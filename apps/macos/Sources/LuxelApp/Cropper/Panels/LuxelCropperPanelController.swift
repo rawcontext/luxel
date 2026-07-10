@@ -116,66 +116,16 @@ final class LuxelCropperPanelController {
             else {
                 continue
             }
-
-            let model = LuxelCropperModel(
+            let model = makeCropperModel(
                 display: display,
-                countdownDuration: presentation.countdownDuration,
-                stopAfterDuration: presentation.stopAfterDuration,
-                selectionPresetConfiguration: presentation.selectionPresetConfiguration,
-                initialSelection: presentation.restoreSelectionConfiguration.selection(
-                    for: display, targets: targets),
-                windowSnapFrames: CaptureWindowSnapFrameResolver.windowFrames(
-                    on: display,
-                    from: targets
-                ),
-                recordAudio: presentation.recordAudio,
-                canRecordAudio: presentation.canRecordAudio,
-                loupeAlwaysOn: presentation.loupeAlwaysOn,
-                dimOtherDisplays: presentation.dimOtherDisplays,
+                targets: targets,
                 displayFocus: displayFocus,
-                onCountdownDurationChange: presentation.onCountdownDurationChange,
-                onStopAfterDurationChange: presentation.onStopAfterDurationChange,
-                onRecordAudioChange: { isEnabled in
-                    presentation.onRecordAudioChange(isEnabled)
-                }
+                presentation: presentation
             )
-            let panel = LuxelCropperPanel(
-                contentRect: screen.frame,
-                styleMask: [.borderless],
-                backing: .buffered,
-                defer: false,
-                screen: screen
-            )
-            panel.onCancel = { [weak self] in
-                self?.close()
-            }
-            panel.level = Self.panelLevel
-            panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-            panel.backgroundColor = .clear
-            panel.isOpaque = false
-            panel.hasShadow = false
-            panel.contentView = NSHostingView(
-                rootView: LuxelCropperView(
-                    model: model,
-                    cameraConfiguration: presentation.cameraConfiguration,
-                    quickRecordingConfiguration: presentation.quickRecordingConfiguration,
-                    showsNotificationReminder: presentation.showsNotificationReminder,
-                    toolbarBottomInset: max(0, screen.visibleFrame.minY - screen.frame.minY),
-                    onCameraSelectionChange: presentation.onCameraSelectionChange,
-                    onCameraPreviewStyleChange: presentation.onCameraPreviewStyleChange,
-                    onNotificationReminderDismiss: presentation.onNotificationReminderDismiss,
-                    onCancel: { [weak self] in
-                        self?.close()
-                    },
-                    onSelect: { [weak self] draft in
-                        self?.close()
-                        presentation.onSelect(draft)
-                    },
-                    onQuickSelect: { [weak self] draft, presetID in
-                        self?.close()
-                        presentation.onQuickSelect(draft, presetID)
-                    }
-                )
+            let panel = makeCropperPanel(
+                screen: screen,
+                model: model,
+                presentation: presentation
             )
             panel.makeKeyAndOrderFront(nil)
             panels.append(panel)
@@ -188,6 +138,88 @@ final class LuxelCropperPanelController {
         } else {
             NSApplication.shared.activate(ignoringOtherApps: true)
         }
+    }
+
+    private func makeCropperModel(
+        display: DisplayBounds,
+        targets: [CaptureTargetOption],
+        displayFocus: CropperDisplayFocus,
+        presentation: CropperPanelPresentation
+    ) -> LuxelCropperModel {
+        LuxelCropperModel(
+            display: display,
+            countdownDuration: presentation.countdownDuration,
+            stopAfterDuration: presentation.stopAfterDuration,
+            selectionPresetConfiguration: presentation.selectionPresetConfiguration,
+            initialSelection: presentation.restoreSelectionConfiguration.selection(
+                for: display, targets: targets),
+            windowSnapFrames: CaptureWindowSnapFrameResolver.windowFrames(
+                on: display,
+                from: targets
+            ),
+            recordAudio: presentation.recordAudio,
+            canRecordAudio: presentation.canRecordAudio,
+            loupeAlwaysOn: presentation.loupeAlwaysOn,
+            dimOtherDisplays: presentation.dimOtherDisplays,
+            displayFocus: displayFocus,
+            onCountdownDurationChange: presentation.onCountdownDurationChange,
+            onStopAfterDurationChange: presentation.onStopAfterDurationChange,
+            onRecordAudioChange: presentation.onRecordAudioChange
+        )
+    }
+
+    private func makeCropperPanel(
+        screen: NSScreen,
+        model: LuxelCropperModel,
+        presentation: CropperPanelPresentation
+    ) -> LuxelCropperPanel {
+        let panel = LuxelCropperPanel(
+            contentRect: screen.frame,
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false,
+            screen: screen
+        )
+        panel.onCancel = { [weak self] in self?.close() }
+        panel.level = Self.panelLevel
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hasShadow = false
+        panel.contentView = NSHostingView(
+            rootView: cropperView(
+                screen: screen,
+                model: model,
+                presentation: presentation
+            )
+        )
+        return panel
+    }
+
+    private func cropperView(
+        screen: NSScreen,
+        model: LuxelCropperModel,
+        presentation: CropperPanelPresentation
+    ) -> LuxelCropperView {
+        LuxelCropperView(
+            model: model,
+            cameraConfiguration: presentation.cameraConfiguration,
+            quickRecordingConfiguration: presentation.quickRecordingConfiguration,
+            showsNotificationReminder: presentation.showsNotificationReminder,
+            toolbarBottomInset: max(0, screen.visibleFrame.minY - screen.frame.minY),
+            onCameraSelectionChange: presentation.onCameraSelectionChange,
+            onCameraPreviewStyleChange: presentation.onCameraPreviewStyleChange,
+            onNotificationReminderDismiss: presentation.onNotificationReminderDismiss,
+            onCancel: { [weak self] in self?.close() },
+            onSelect: { [weak self] draft in
+                self?.close()
+                presentation.onSelect(draft)
+            },
+            onQuickSelect: { [weak self] draft, presetID in
+                self?.close()
+                presentation.onQuickSelect(draft, presetID)
+            }
+        )
     }
 
     private func registerPanelsForCaptureExclusion() async {
@@ -251,17 +283,5 @@ private final class LuxelCropperPanel: NSPanel {
         }
 
         super.keyDown(with: event)
-    }
-}
-
-extension NSScreen {
-    fileprivate var displayID: DisplayID? {
-        guard
-            let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
-        else {
-            return nil
-        }
-
-        return DisplayID(screenNumber.uint32Value)
     }
 }

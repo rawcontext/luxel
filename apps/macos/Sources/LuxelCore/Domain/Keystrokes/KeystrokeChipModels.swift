@@ -18,74 +18,85 @@ public struct KeystrokeChipPlanner: Sendable {
         }
 
         let events = timeline.eventsOutsidePauses()
-        var plannedChips: [KeystrokeChip] = []
-        var typingRun = TypingRun()
-        var activeModifierHold: ModifierHold?
-        var index = events.startIndex
-
-        while index < events.endIndex {
-            let event = events[index]
-
-            switch event.kind {
-            case .flagsChanged:
-                try flushTypingRun(&typingRun, into: &plannedChips)
-                try handleFlagsChanged(
-                    event,
-                    activeModifierHold: &activeModifierHold,
-                    plannedChips: &plannedChips
-                )
-                index = events.index(after: index)
-
-            case .keyDown:
-                if let repeatGroup = repeatGroup(startingAt: index, in: events) {
-                    try flushTypingRun(&typingRun, into: &plannedChips)
-                    activeModifierHold = nil
-                    try appendChip(
-                        text: "\(repeatGroup.displayText)×\(repeatGroup.count)",
-                        kind: repeatGroup.kind,
-                        start: repeatGroup.start,
-                        into: &plannedChips
-                    )
-                    index = repeatGroup.endIndex
-                    continue
-                }
-
-                activeModifierHold = nil
-
-                if let shortcutText = shortcutText(for: event) {
-                    try flushTypingRun(&typingRun, into: &plannedChips)
-                    try appendChip(
-                        text: shortcutText,
-                        kind: .shortcut,
-                        start: event.time,
-                        into: &plannedChips
-                    )
-                } else if let typingText = typingText(for: event) {
-                    try appendTypingText(
-                        typingText,
-                        at: event.time,
-                        typingRun: &typingRun,
-                        plannedChips: &plannedChips
-                    )
-                } else if let specialText = specialText(for: event) {
-                    try flushTypingRun(&typingRun, into: &plannedChips)
-                    try appendChip(
-                        text: specialText,
-                        kind: .special,
-                        start: event.time,
-                        into: &plannedChips
-                    )
-                } else {
-                    try flushTypingRun(&typingRun, into: &plannedChips)
-                }
-
-                index = events.index(after: index)
-            }
+        var state = PlanningState(index: events.startIndex)
+        while state.index < events.endIndex {
+            try processCurrentEvent(in: events, state: &state)
         }
+        try flushTypingRun(&state.typingRun, into: &state.plannedChips)
+        try flushModifierHold(
+            state.activeModifierHold,
+            endingAt: events.last?.time,
+            into: &state.plannedChips
+        )
+        return state.plannedChips
+    }
+}
 
-        try flushTypingRun(&typingRun, into: &plannedChips)
-        try flushModifierHold(activeModifierHold, endingAt: events.last?.time, into: &plannedChips)
-        return plannedChips
+private extension KeystrokeChipPlanner {
+    private func processCurrentEvent(
+        in events: [KeystrokeEvent],
+        state: inout PlanningState
+    ) throws {
+        let event = events[state.index]
+        switch event.kind {
+        case .flagsChanged:
+            try flushTypingRun(&state.typingRun, into: &state.plannedChips)
+            try handleFlagsChanged(
+                event,
+                activeModifierHold: &state.activeModifierHold,
+                plannedChips: &state.plannedChips
+            )
+            state.index = events.index(after: state.index)
+        case .keyDown:
+            try handleKeyDown(event, in: events, state: &state)
+        }
+    }
+
+    private func handleKeyDown(
+        _ event: KeystrokeEvent,
+        in events: [KeystrokeEvent],
+        state: inout PlanningState
+    ) throws {
+        if let repeatGroup = repeatGroup(startingAt: state.index, in: events) {
+            try flushTypingRun(&state.typingRun, into: &state.plannedChips)
+            state.activeModifierHold = nil
+            try appendChip(
+                text: "\(repeatGroup.displayText)×\(repeatGroup.count)",
+                kind: repeatGroup.kind,
+                start: repeatGroup.start,
+                into: &state.plannedChips
+            )
+            state.index = repeatGroup.endIndex
+            return
+        }
+        state.activeModifierHold = nil
+        if let shortcutText = shortcutText(for: event) {
+            try flushTypingRun(&state.typingRun, into: &state.plannedChips)
+            try appendChip(
+                text: shortcutText,
+                kind: .shortcut,
+                start: event.time,
+                into: &state.plannedChips
+            )
+        } else if let typingText = typingText(for: event) {
+            try appendTypingText(
+                typingText,
+                at: event.time,
+                typingRun: &state.typingRun,
+                plannedChips: &state.plannedChips
+            )
+        } else if let specialText = specialText(for: event) {
+            try flushTypingRun(&state.typingRun, into: &state.plannedChips)
+            try appendChip(
+                text: specialText,
+                kind: .special,
+                start: event.time,
+                into: &state.plannedChips
+            )
+        } else {
+            try flushTypingRun(&state.typingRun, into: &state.plannedChips)
+        }
+        state.index = events.index(after: state.index)
     }
 
     private func handleFlagsChanged(
@@ -238,30 +249,7 @@ public struct KeystrokeChipPlanner: Sendable {
     }
 
     private func specialText(for event: KeystrokeEvent) -> String? {
-        switch event.keyCode {
-        case 36:
-            "⏎"
-        case 48:
-            "⇥"
-        case 49:
-            "␣"
-        case 51:
-            "⌫"
-        case 53:
-            "⎋"
-        case 117:
-            "⌦"
-        case 123:
-            "←"
-        case 124:
-            "→"
-        case 125:
-            "↓"
-        case 126:
-            "↑"
-        default:
-            nil
-        }
+        Self.specialTextByKeyCode[event.keyCode]
     }
 
     private func modifierText(_ modifiers: Set<KeystrokeModifier>) -> String {
@@ -350,6 +338,26 @@ public struct KeystrokeChipPlanner: Sendable {
         let start: TimeInterval
         let endIndex: [KeystrokeEvent].Index
     }
+
+    private struct PlanningState {
+        var plannedChips: [KeystrokeChip] = []
+        var typingRun = TypingRun()
+        var activeModifierHold: ModifierHold?
+        var index: [KeystrokeEvent].Index
+    }
+
+    private static let specialTextByKeyCode: [Int: String] = [
+        36: "⏎",
+        48: "⇥",
+        49: "␣",
+        51: "⌫",
+        53: "⎋",
+        117: "⌦",
+        123: "←",
+        124: "→",
+        125: "↓",
+        126: "↑"
+    ]
 }
 
 public enum KeystrokeOverlayAnchor: String, Codable, CaseIterable, Equatable, Sendable {

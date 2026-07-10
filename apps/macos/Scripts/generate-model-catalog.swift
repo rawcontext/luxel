@@ -10,7 +10,9 @@ enum CatalogToolError: Error, CustomStringConvertible {
     var description: String {
         switch self {
         case .usage:
-            "Usage: generate-model-catalog.swift verify [--catalog PATH] [--against-hub] | generate --catalog PATH --model-id ID --repository OWNER/NAME --revision FULL_COMMIT"
+            "Usage: generate-model-catalog.swift verify [--catalog PATH] [--against-hub] "
+                + "| generate --catalog PATH --model-id ID --repository OWNER/NAME "
+                + "--revision FULL_COMMIT"
         case .invalidCatalog(let message), .network(let message):
             message
         }
@@ -136,10 +138,8 @@ func validateDownloadedArtifact(_ url: URL) throws {
     let handle = try FileHandle(forReadingFrom: url)
     defer { try? handle.close() }
     let prefix = try handle.read(upToCount: 128) ?? Data()
-    guard
-        !String(decoding: prefix, as: UTF8.self)
-            .hasPrefix("version https://git-lfs.github.com/spec/v1")
-    else {
+    let prefixText = String(bytes: prefix, encoding: .utf8) ?? ""
+    guard !prefixText.hasPrefix("version https://git-lfs.github.com/spec/v1") else {
         throw CatalogToolError.invalidCatalog("Downloaded artifact is an LFS pointer")
     }
 }
@@ -229,6 +229,40 @@ func verifyAgainstHub(_ catalog: [String: Any], only modelID: String? = nil) thr
     }
 }
 
+func updateArtifactMetadata(
+    _ artifacts: [[String: Any]],
+    repository: String,
+    revision: String
+) throws -> (artifacts: [[String: Any]], total: Int64) {
+    let temporary = FileManager.default.temporaryDirectory.appending(
+        path: "luxel-model-catalog-\(UUID().uuidString)",
+        directoryHint: .isDirectory
+    )
+    defer { try? FileManager.default.removeItem(at: temporary) }
+
+    var artifacts = artifacts
+    var total: Int64 = 0
+    for index in artifacts.indices {
+        guard let path = artifacts[index]["path"] as? String else {
+            throw CatalogToolError.invalidCatalog("Catalog artifact path is invalid")
+        }
+        let destination = temporary.appending(path: path)
+        try download(hubURL(repository: repository, revision: revision, path: path), to: destination)
+        try validateDownloadedArtifact(destination)
+        guard
+            let bytes = try FileManager.default.attributesOfItem(atPath: destination.path)[.size]
+                .flatMap({ ($0 as? NSNumber)?.int64Value })
+        else {
+            throw CatalogToolError.invalidCatalog("Downloaded artifact size is unavailable")
+        }
+        artifacts[index]["byteCount"] = bytes
+        artifacts[index]["sha256"] = try sha256(destination)
+        total += bytes
+    }
+    artifacts.sort { ($0["path"] as? String ?? "") < ($1["path"] as? String ?? "") }
+    return (artifacts, total)
+}
+
 func generate(_ arguments: Arguments, catalog: [String: Any]) throws {
     guard let repository = arguments.repository,
           repository.split(separator: "/").count == 2,
@@ -252,34 +286,17 @@ func generate(_ arguments: Arguments, catalog: [String: Any]) throws {
     }
     var model = models[modelIndex]
     guard var release = model["currentRelease"] as? [String: Any],
-          var artifacts = release["artifacts"] as? [[String: Any]]
+          let existingArtifacts = release["artifacts"] as? [[String: Any]]
     else {
         throw CatalogToolError.invalidCatalog("Catalog release is invalid")
     }
-    let temporary = FileManager.default.temporaryDirectory.appending(
-        path: "luxel-model-catalog-\(UUID().uuidString)",
-        directoryHint: .isDirectory
+    let updatedArtifacts = try updateArtifactMetadata(
+        existingArtifacts,
+        repository: repository,
+        revision: revision
     )
-    defer { try? FileManager.default.removeItem(at: temporary) }
-    var total: Int64 = 0
-    for index in artifacts.indices {
-        guard let path = artifacts[index]["path"] as? String else {
-            throw CatalogToolError.invalidCatalog("Catalog artifact path is invalid")
-        }
-        let destination = temporary.appending(path: path)
-        try download(hubURL(repository: repository, revision: revision, path: path), to: destination)
-        try validateDownloadedArtifact(destination)
-        guard
-            let bytes = try FileManager.default.attributesOfItem(atPath: destination.path)[.size]
-                .flatMap({ ($0 as? NSNumber)?.int64Value })
-        else {
-            throw CatalogToolError.invalidCatalog("Downloaded artifact size is unavailable")
-        }
-        artifacts[index]["byteCount"] = bytes
-        artifacts[index]["sha256"] = try sha256(destination)
-        total += bytes
-    }
-    artifacts.sort { ($0["path"] as? String ?? "") < ($1["path"] as? String ?? "") }
+    let artifacts = updatedArtifacts.artifacts
+    let total = updatedArtifacts.total
     release["repository"] = repository
     release["commit"] = revision
     release["artifacts"] = artifacts

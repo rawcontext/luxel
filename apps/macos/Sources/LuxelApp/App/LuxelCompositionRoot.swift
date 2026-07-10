@@ -138,7 +138,7 @@ enum LuxelCompositionRoot {
         CommandLineToolInstallService(
             installer: BundledCommandLineToolInstaller(),
             homeDirectory: FileManager.default.homeDirectoryForCurrentUser,
-            destinationPicker: AppKitCommandLineToolInstallDestinationPicker(),
+            destinationPicker: CommandLineInstallDestinationPicker(),
             directoryAccessService: bookmarkedDirectoryAccessService()
         )
     }
@@ -172,7 +172,7 @@ enum LuxelCompositionRoot {
             audioTranscriptService: localAudioTranscriptService(),
             speakerNamingService: speakerVoiceNamingService(),
             speakerModelStore: speakerDiarizationModelStore,
-            speechRecognitionAuthorizationService: AppleSpeechRecognitionAuthorizationService(),
+            speechRecognitionAuthorizationService: AppleSpeechAuthorizationService(),
             transcriptEnginePreference: {
                 ((try? settingsStore().load()) ?? defaultSettings).transcriptEnginePreference
             },

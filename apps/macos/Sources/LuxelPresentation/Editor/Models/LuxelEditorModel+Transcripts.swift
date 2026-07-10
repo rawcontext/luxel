@@ -102,8 +102,7 @@ extension LuxelEditorModel {
 
         let sourceURL = source.fileURL
         speechRecognitionAuthorizationTask?.cancel()
-        speechRecognitionAuthorizationTask = Task {
-            [weak self, speechRecognitionAuthorizationService] in
+        speechRecognitionAuthorizationTask = Task { [weak self, speechRecognitionAuthorizationService] in
             let authorizationState = await speechRecognitionAuthorizationService.requestAuthorization()
             await MainActor.run {
                 guard !Task.isCancelled,
@@ -139,8 +138,7 @@ extension LuxelEditorModel {
 
         let sourceURL = source.fileURL
         speechRecognitionAuthorizationTask?.cancel()
-        speechRecognitionAuthorizationTask = Task {
-            [weak self, speechRecognitionAuthorizationService] in
+        speechRecognitionAuthorizationTask = Task { [weak self, speechRecognitionAuthorizationService] in
             let authorizationState =
                 await speechRecognitionAuthorizationService.currentAuthorizationState()
             await MainActor.run {
@@ -187,38 +185,45 @@ extension LuxelEditorModel {
                     ))
                 Self.logTranscriptResult(transcript)
                 await MainActor.run {
-                    guard !Task.isCancelled,
-                          self?.source?.fileURL == sourceURL
-                    else {
-                        return
-                    }
-
-                    self?.transcript = transcript
-                    self?.transcriptFailureMessage = nil
-                    self?.appliedSpeakerCountHint = speakerCountHint
-                    self?.isTranscriptExtractionActive = false
-                    self?.transcriptExtractionStartedAt = nil
-                    self?.transcriptTask = nil
-                    self?.stopSpeakerModelStatePolling()
+                    self?.applyTranscriptResult(
+                        transcript,
+                        sourceURL: sourceURL,
+                        speakerCountHint: speakerCountHint
+                    )
                 }
             } catch {
                 Self.logTranscriptFailure(error)
                 await MainActor.run {
-                    guard !Task.isCancelled,
-                          self?.source?.fileURL == sourceURL
-                    else {
-                        return
-                    }
-
-                    self?.transcript = nil
-                    self?.transcriptFailureMessage = error.localizedDescription
-                    self?.isTranscriptExtractionActive = false
-                    self?.transcriptExtractionStartedAt = nil
-                    self?.transcriptTask = nil
-                    self?.stopSpeakerModelStatePolling()
+                    self?.applyTranscriptFailure(error, sourceURL: sourceURL)
                 }
             }
         }
+    }
+
+    private func applyTranscriptResult(
+        _ transcript: TurnSegmentedTranscript?,
+        sourceURL: URL,
+        speakerCountHint: TranscriptSpeakerCountHint
+    ) {
+        guard !Task.isCancelled, source?.fileURL == sourceURL else { return }
+        self.transcript = transcript
+        transcriptFailureMessage = nil
+        appliedSpeakerCountHint = speakerCountHint
+        finishTranscriptExtraction()
+    }
+
+    private func applyTranscriptFailure(_ error: any Error, sourceURL: URL) {
+        guard !Task.isCancelled, source?.fileURL == sourceURL else { return }
+        transcript = nil
+        transcriptFailureMessage = error.localizedDescription
+        finishTranscriptExtraction()
+    }
+
+    private func finishTranscriptExtraction() {
+        isTranscriptExtractionActive = false
+        transcriptExtractionStartedAt = nil
+        transcriptTask = nil
+        stopSpeakerModelStatePolling()
     }
 
     public func refreshTranscriptionConfiguration() {
@@ -239,8 +244,10 @@ extension LuxelEditorModel {
 
     private static func logTranscriptResult(_ transcript: TurnSegmentedTranscript?) {
         if let transcript {
+            let spanCount = transcript.spans.count
+            let turnCount = transcript.turns.count
             transcriptLogger.info(
-                "Transcript extraction succeeded with \(transcript.spans.count, privacy: .public) spans and \(transcript.turns.count, privacy: .public) turns"
+                "Transcript success: \(spanCount, privacy: .public) spans, \(turnCount, privacy: .public) turns"
             )
         } else {
             transcriptLogger.notice("Transcript extraction completed without a displayable transcript")
@@ -248,8 +255,9 @@ extension LuxelEditorModel {
     }
 
     private static func logTranscriptFailure(_ error: any Error) {
+        let errorType = String(reflecting: type(of: error))
         transcriptLogger.error(
-            "Transcript extraction hidden after failure: \(String(reflecting: type(of: error)), privacy: .public) \(error.localizedDescription, privacy: .private)"
+            "Transcript failure \(errorType, privacy: .public): \(error.localizedDescription, privacy: .private)"
         )
     }
 }

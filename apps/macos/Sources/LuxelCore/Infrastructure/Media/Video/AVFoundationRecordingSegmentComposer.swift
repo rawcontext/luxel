@@ -55,18 +55,22 @@ public struct AVFoundationRecordingSegmentComposer {
             throw RecordingSegmentComposerError.unsupportedOutputFileType(AVFileType.mp4.rawValue)
         }
 
-        let replacementFileURL =
-            outputFileURL
-            .deletingLastPathComponent()
-            .appending(
-                path:
-                    ".\(outputFileURL.deletingPathExtension().lastPathComponent)-merged-\(UUID().uuidString)"
-            )
-            .appendingPathExtension(
-                outputFileURL.pathExtension.isEmpty ? "mp4" : outputFileURL.pathExtension)
+        let replacementFileURL = replacementFileURL(for: outputFileURL)
 
         try? fileManager.removeItem(at: replacementFileURL)
 
+        try await export(
+            exportSession,
+            to: replacementFileURL,
+            replacing: outputFileURL
+        )
+    }
+
+    private func export(
+        _ exportSession: AVAssetExportSession,
+        to replacementFileURL: URL,
+        replacing outputFileURL: URL
+    ) async throws {
         do {
             try await exportSession.export(to: replacementFileURL, as: .mp4)
             try replaceOutput(at: outputFileURL, with: replacementFileURL)
@@ -74,6 +78,17 @@ public struct AVFoundationRecordingSegmentComposer {
             try? fileManager.removeItem(at: replacementFileURL)
             throw error
         }
+    }
+
+    private func replacementFileURL(for outputFileURL: URL) -> URL {
+        outputFileURL
+            .deletingLastPathComponent()
+            .appending(
+                path:
+                    ".\(outputFileURL.deletingPathExtension().lastPathComponent)-merged-\(UUID().uuidString)"
+            )
+            .appendingPathExtension(
+                outputFileURL.pathExtension.isEmpty ? "mp4" : outputFileURL.pathExtension)
     }
 
     private func replaceOutput(at outputFileURL: URL, with replacementFileURL: URL) throws {

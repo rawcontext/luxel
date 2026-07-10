@@ -193,6 +193,9 @@ struct CaptureSelectionDraftTests {
         #expect(resized.topLeftSelection == (try CaptureRect(x: 100, y: 88, width: 400, height: 225)))
     }
 
+}
+
+extension CaptureSelectionDraftTests {
     @Test("exact selection replacement clamps to display and minimum size")
     func exactSelectionReplacementClampsToDisplayAndMinimumSize() throws {
         let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)

@@ -4,7 +4,7 @@ import LuxelCore
 import Testing
 
 @Suite("Hugging Face model transport", .serialized)
-struct HuggingFaceModelArtifactDownloadClientTests {
+struct HuggingFaceTransportTests {
     @Test("downloads the exact commit URL to a file and reports bytes")
     func downloadsExactCommitURL() async throws {
         let data = Data("fixture bytes".utf8)
@@ -27,7 +27,8 @@ struct HuggingFaceModelArtifactDownloadClientTests {
         let request = try #require(capture.request)
         #expect(
             request.url?.absoluteString
-                == "https://huggingface.co/Fixture/model/resolve/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/nested/payload.bin"
+                == "https://huggingface.co/Fixture/model/resolve/"
+                + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/nested/payload.bin"
         )
         #expect(request.value(forHTTPHeaderField: "User-Agent") == "LuxelTests/1")
         #expect((await progress.values).last == Int64(data.count))
@@ -253,8 +254,8 @@ private final class ModelDownloadURLProtocolStorage: @unchecked Sendable {
 private final class ModelDownloadURLProtocol: URLProtocol, @unchecked Sendable {
     static let storage = ModelDownloadURLProtocolStorage()
 
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override static func canInit(with request: URLRequest) -> Bool { true }
+    override static func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
         guard let url = request.url, let handler = Self.storage.handler else {

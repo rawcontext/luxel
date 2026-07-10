@@ -168,7 +168,7 @@ public enum AVAssetReaderAudioPeakAnalyzerError: Error, Equatable {
 }
 
 extension AVAssetReader {
-    fileprivate var errorDescription: String {
+    var errorDescription: String {
         error.map(String.init(describing:)) ?? "Unknown AVAssetReader error"
     }
 }

@@ -9,7 +9,8 @@ struct AutomationCommandTests {
         let url = try #require(
             URL(
                 string:
-                    "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3&x-success=luxel-callback://done"
+                    "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3"
+                    + "&x-success=luxel-callback://done"
             ))
 
         let invocation = try AutomationCommandParser.parse(url)
@@ -239,6 +240,9 @@ struct AutomationCommandTests {
         )
     }
 
+}
+
+extension AutomationCommandTests {
     @Test("transcription automation round-trips app-backed options")
     func transcriptionAutomationRoundTrips() throws {
         let options = AutomationTranscriptionOptions(

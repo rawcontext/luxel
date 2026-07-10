@@ -47,48 +47,11 @@ public struct ExportService: Sendable {
 
         return try await withTaskCancellationHandler {
             do {
-                let preparedAudio = try await audioPreparer.prepareAudio(
-                    for: [request]
-                ) { update in
-                    let value = update.progress
-                    if request.shouldApplyStudioVoice {
-                        await progress?(
-                            .enhancingAudio(format: request.format, progress: value)
-                        )
-                    } else {
-                        await progress?(
-                            ExportProgressSnapshot(
-                                phase: .preparing,
-                                actionTitle: "Preparing \(request.format.prettyName)",
-                                progress: value
-                            )
-                        )
-                    }
-                }
-                defer { preparedAudio.removeTemporaryFiles() }
-
-                try Task.checkCancellation()
-                await progress?(.exporting(format: request.format, progress: 0))
-
-                let exported = try await exporter.export(
-                    MediaExportInput(
-                        request: request,
-                        preparedAudio: preparedAudio.asset(forRequestAt: 0)
-                    ),
-                    to: outputURL
-                ) { value in
-                    await progress?(
-                        .exporting(
-                            format: request.format,
-                            progress: Self.clampedProgress(value)
-                        )
-                    )
-                }
-                let exportedWithFileSize = exported.withFileSizeBytes(fileSizeBytes(at: exported.fileURL))
-
-                try Task.checkCancellation()
-                await progress?(.completed(format: request.format))
-                return exportedWithFileSize
+                return try await exportWithPreparedAudio(
+                    request,
+                    to: outputURL,
+                    progress: progress
+                )
             } catch is CancellationError {
                 cleanup.removeOutput()
                 await progress?(.canceled(format: request.format))
@@ -108,8 +71,6 @@ public struct ExportService: Sendable {
         defaultName: String,
         progress: BatchProgressHandler? = nil
     ) async throws -> [ExportedMedia] {
-        var exportedByJobID = [ExportedMedia?](repeating: nil, count: batch.requests.count)
-
         for (jobID, request) in batch.requests.enumerated() {
             await progress?(
                 ExportBatchProgressSnapshot(
@@ -119,34 +80,73 @@ public struct ExportService: Sendable {
             )
         }
 
-        let preparedAudio = try await audioPreparer.prepareAudio(
-            for: batch.requests
-        ) { update in
+        let preparedAudio = try await prepareBatchAudio(batch, progress: progress)
+        defer { preparedAudio.removeTemporaryFiles() }
+        let exportedByJobID = try await exportBatchJobs(
+            batch,
+            preparedAudio: preparedAudio,
+            outputDirectory: outputDirectory,
+            defaultName: defaultName,
+            progress: progress
+        )
+        return exportedByJobID.compactMap { $0 }
+    }
+
+    private func exportWithPreparedAudio(
+        _ request: ExportRequest,
+        to outputURL: URL,
+        progress: ProgressHandler?
+    ) async throws -> ExportedMedia {
+        let preparedAudio = try await audioPreparer.prepareAudio(for: [request]) { update in
+            await progress?(preparationSnapshot(for: request, progress: update.progress))
+        }
+        defer { preparedAudio.removeTemporaryFiles() }
+        try Task.checkCancellation()
+        await progress?(.exporting(format: request.format, progress: 0))
+        let exported = try await exporter.export(
+            MediaExportInput(
+                request: request,
+                preparedAudio: preparedAudio.asset(forRequestAt: 0)
+            ),
+            to: outputURL
+        ) { value in
+            await progress?(
+                .exporting(format: request.format, progress: Self.clampedProgress(value))
+            )
+        }
+        let result = exported.withFileSizeBytes(fileSizeBytes(at: exported.fileURL))
+        try Task.checkCancellation()
+        await progress?(.completed(format: request.format))
+        return result
+    }
+
+    private func prepareBatchAudio(
+        _ batch: ExportBatch,
+        progress: BatchProgressHandler?
+    ) async throws -> PreparedExportAudioSet {
+        try await audioPreparer.prepareAudio(for: batch.requests) { update in
             for jobID in update.requestIndices {
                 let request = batch.requests[jobID]
-                let snapshot: ExportProgressSnapshot
-                if request.shouldApplyStudioVoice {
-                    snapshot = .enhancingAudio(
-                        format: request.format,
-                        progress: update.progress
-                    )
-                } else {
-                    snapshot = ExportProgressSnapshot(
-                        phase: .preparing,
-                        actionTitle: "Preparing \(request.format.prettyName)",
-                        progress: update.progress
-                    )
-                }
                 await progress?(
-                    ExportBatchProgressSnapshot(jobID: jobID, snapshot: snapshot)
+                    ExportBatchProgressSnapshot(
+                        jobID: jobID,
+                        snapshot: preparationSnapshot(for: request, progress: update.progress)
+                    )
                 )
             }
         }
-        defer { preparedAudio.removeTemporaryFiles() }
+    }
 
+    private func exportBatchJobs(
+        _ batch: ExportBatch,
+        preparedAudio: PreparedExportAudioSet,
+        outputDirectory: URL,
+        defaultName: String,
+        progress: BatchProgressHandler?
+    ) async throws -> [ExportedMedia?] {
+        var exportedByJobID = [ExportedMedia?](repeating: nil, count: batch.requests.count)
         try await withThrowingTaskGroup(of: (jobID: Int, exported: ExportedMedia).self) { group in
             var nextJobID = 0
-
             func addJob(_ jobID: Int) {
                 let request = batch.requests[jobID]
                 group.addTask {
@@ -161,23 +161,33 @@ public struct ExportService: Sendable {
                     return (jobID, exported)
                 }
             }
-
             while nextJobID < min(batch.requests.count, Self.maxConcurrentBatchJobs) {
                 addJob(nextJobID)
                 nextJobID += 1
             }
-
             while let result = try await group.next() {
                 exportedByJobID[result.jobID] = result.exported
-
                 if nextJobID < batch.requests.count {
                     addJob(nextJobID)
                     nextJobID += 1
                 }
             }
         }
+        return exportedByJobID
+    }
 
-        return exportedByJobID.compactMap { $0 }
+    private func preparationSnapshot(
+        for request: ExportRequest,
+        progress: Double
+    ) -> ExportProgressSnapshot {
+        if request.shouldApplyStudioVoice {
+            return .enhancingAudio(format: request.format, progress: progress)
+        }
+        return ExportProgressSnapshot(
+            phase: .preparing,
+            actionTitle: "Preparing \(request.format.prettyName)",
+            progress: progress
+        )
     }
 
     private func exportPrepared(
@@ -231,35 +241,14 @@ public struct ExportService: Sendable {
     }
 
     private func batchNameComponent(for format: ExportFormat) -> String {
-        switch format {
-        case .gif:
-            "GIF"
-        case .hevc:
-            "HEVC"
-        case .mp4:
-            "H.264"
-        case .proRes422:
-            "ProRes 422"
-        case .proRes4444:
-            "ProRes 4444"
-        case .av1:
-            "AV1"
-        case .webm:
-            "WebM"
-        case .apng:
-            "APNG"
-        case .m4a:
-            "M4A AAC"
-        case .alac:
-            "M4A ALAC"
-        case .wav:
-            "WAV"
-        case .caf:
-            "CAF"
-        case .flac:
-            "FLAC"
-        }
+        Self.batchNameComponents[format] ?? format.rawValue
     }
+
+    private static let batchNameComponents: [ExportFormat: String] = [
+        .gif: "GIF", .hevc: "HEVC", .mp4: "H.264", .proRes422: "ProRes 422",
+        .proRes4444: "ProRes 4444", .av1: "AV1", .webm: "WebM", .apng: "APNG",
+        .m4a: "M4A AAC", .alac: "M4A ALAC", .wav: "WAV", .caf: "CAF", .flac: "FLAC"
+    ]
 
     private func fileSizeBytes(at fileURL: URL) -> Int64? {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),

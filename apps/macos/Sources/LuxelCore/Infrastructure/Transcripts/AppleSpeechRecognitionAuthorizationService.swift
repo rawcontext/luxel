@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import Speech
 
-public struct AppleSpeechRecognitionAuthorizationService: SpeechRecognitionAuthorizationService {
+public struct AppleSpeechAuthorizationService: SpeechRecognitionAuthorizationService {
     public init() {}
 
     public func currentAuthorizationState() async -> SpeechRecognitionAuthorizationState {

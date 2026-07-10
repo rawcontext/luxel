@@ -15,7 +15,7 @@ struct LuxelEditorPrecisionTranscriptionTests {
         let transcriptService = SpyAudioTranscriptService(
             transcript: try helper.sampleTranscript(source: .microphone)
         )
-        let authorizationService = StubSpeechRecognitionAuthorizationService(
+        let authorizationService = StubSpeechAuthorizationService(
             state: .notDetermined,
             requestedState: .authorized
         )

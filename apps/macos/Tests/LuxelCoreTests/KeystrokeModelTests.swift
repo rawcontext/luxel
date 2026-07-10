@@ -152,6 +152,9 @@ struct KeystrokeModelTests {
         #expect(decoded == timeline)
     }
 
+}
+
+extension KeystrokeModelTests {
     @Test("chip planner renders shortcuts and modifier holds")
     func chipPlannerRendersShortcutsAndModifierHolds() throws {
         let timeline = try KeystrokeTimeline(events: [

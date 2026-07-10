@@ -190,7 +190,7 @@ private struct EBMLTestParser {
     }
 
     func string(_ element: WebMTestElement) -> String {
-        String(decoding: bytes[element.payloadRange], as: UTF8.self)
+        String(bytes: bytes[element.payloadRange], encoding: .utf8) ?? ""
     }
 
     func binary(_ element: WebMTestElement) -> Data {

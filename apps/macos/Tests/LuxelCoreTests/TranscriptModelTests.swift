@@ -74,70 +74,41 @@ struct TranscriptModelTests {
     func validatorRejectsInvalidCoverageAndSources() throws {
         let spans = try sampleSpans(source: .system)
 
-        #expect(throws: TranscriptModelError.duplicateSpan("span-0")) {
-            _ = try TranscriptSegmentationValidator.makeTranscript(
-                spans: spans,
-                candidates: [
-                    TranscriptTurnCandidate(
-                        id: "turn-0",
-                        spanIDs: ["span-0", "span-0"],
-                        start: 0,
-                        end: 0.4,
-                        text: "Hello Hello",
-                        source: .system
-                    )
-                ],
-                localeIdentifier: "en_US"
-            )
-        }
+        expectValidationError(
+            .duplicateSpan("span-0"), spans: spans,
+            candidate: TranscriptTurnCandidate(
+                id: "turn-0", spanIDs: ["span-0", "span-0"], start: 0, end: 0.4,
+                text: "Hello Hello", source: .system)
+        )
+        expectValidationError(
+            .reorderedSpan("span-1"), spans: spans,
+            candidate: TranscriptTurnCandidate(
+                id: "turn-0", spanIDs: ["span-1", "span-0"], start: 0.5, end: 0.4,
+                text: "there Hello", source: .system)
+        )
+        expectValidationError(
+            .missingSpan("span-1"), spans: spans,
+            candidate: TranscriptTurnCandidate(
+                id: "turn-0", spanIDs: ["span-0"], start: 0, end: 0.4,
+                text: "Hello", source: .system)
+        )
+        expectValidationError(
+            .inventedSource("turn-0"), spans: spans,
+            candidate: TranscriptTurnCandidate(
+                id: "turn-0", spanIDs: ["span-0", "span-1"], start: 0, end: 0.9,
+                text: "Hello there", source: .microphone)
+        )
+    }
 
-        #expect(throws: TranscriptModelError.reorderedSpan("span-1")) {
+    private func expectValidationError(
+        _ error: TranscriptModelError,
+        spans: [TimedTranscriptSpan],
+        candidate: TranscriptTurnCandidate
+    ) {
+        #expect(throws: error) {
             _ = try TranscriptSegmentationValidator.makeTranscript(
                 spans: spans,
-                candidates: [
-                    TranscriptTurnCandidate(
-                        id: "turn-0",
-                        spanIDs: ["span-1", "span-0"],
-                        start: 0.5,
-                        end: 0.4,
-                        text: "there Hello",
-                        source: .system
-                    )
-                ],
-                localeIdentifier: "en_US"
-            )
-        }
-
-        #expect(throws: TranscriptModelError.missingSpan("span-1")) {
-            _ = try TranscriptSegmentationValidator.makeTranscript(
-                spans: spans,
-                candidates: [
-                    TranscriptTurnCandidate(
-                        id: "turn-0",
-                        spanIDs: ["span-0"],
-                        start: 0,
-                        end: 0.4,
-                        text: "Hello",
-                        source: .system
-                    )
-                ],
-                localeIdentifier: "en_US"
-            )
-        }
-
-        #expect(throws: TranscriptModelError.inventedSource("turn-0")) {
-            _ = try TranscriptSegmentationValidator.makeTranscript(
-                spans: spans,
-                candidates: [
-                    TranscriptTurnCandidate(
-                        id: "turn-0",
-                        spanIDs: ["span-0", "span-1"],
-                        start: 0,
-                        end: 0.9,
-                        text: "Hello there",
-                        source: .microphone
-                    )
-                ],
+                candidates: [candidate],
                 localeIdentifier: "en_US"
             )
         }

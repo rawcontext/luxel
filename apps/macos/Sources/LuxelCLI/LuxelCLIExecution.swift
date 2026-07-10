@@ -92,6 +92,22 @@ public func runLuxelCommand(
     try opener.open(AutomationInvocationURLBuilder.url(for: waitingInvocation))
 
     let result = try receiver.wait(timeout: execution.timeout)
+    try emitLuxelCommandResult(
+        result,
+        execution: execution,
+        consumesResultFiles: consumesResultFiles,
+        suppressesSuccessOutput: suppressesSuccessOutput,
+        output: output
+    )
+}
+
+private func emitLuxelCommandResult(
+    _ result: LuxelCallbackResult,
+    execution: LuxelCommandExecutionArguments,
+    consumesResultFiles: Bool,
+    suppressesSuccessOutput: Bool,
+    output: (String) -> Void
+) throws {
     if case .resultFile(let path, _, let removeAfterRead) = result,
        consumesResultFiles {
         defer {
@@ -249,8 +265,10 @@ public final class LocalLuxelCallbackReceiver: LuxelCallbackReceiver, @unchecked
 
     private func receive(_ connection: NWConnection) {
         connection.start(queue: queue)
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 16_384) {
-            [weak self] data, _, _, error in
+        connection.receive(
+            minimumIncompleteLength: 1,
+            maximumLength: 16_384
+        ) { [weak self] data, _, _, error in
             guard let self else {
                 connection.cancel()
                 return

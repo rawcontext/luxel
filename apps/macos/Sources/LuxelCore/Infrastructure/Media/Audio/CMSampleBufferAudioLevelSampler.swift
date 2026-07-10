@@ -4,13 +4,7 @@ import Foundation
 
 enum CMSampleBufferAudioLevelSampler {
     static func sample(from sampleBuffer: CMSampleBuffer) -> AudioLevelSample? {
-        guard
-            let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer),
-            let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(formatDescription)?
-                .pointee,
-            streamDescription.mFormatID == kAudioFormatLinearPCM,
-            (streamDescription.mFormatFlags & kAudioFormatFlagIsBigEndian) == 0
-        else {
+        guard let streamDescription = linearPCMDescription(from: sampleBuffer) else {
             return nil
         }
 
@@ -19,6 +13,36 @@ enum CMSampleBufferAudioLevelSampler {
             return nil
         }
 
+        return withAudioBufferList(from: sampleBuffer) { audioBufferList in
+            accumulatedSample(
+                from: audioBufferList,
+                streamDescription: streamDescription,
+                bytesPerSample: bytesPerSample
+            )
+        }
+    }
+
+    private static func linearPCMDescription(
+        from sampleBuffer: CMSampleBuffer
+    ) -> AudioStreamBasicDescription? {
+        guard
+            let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer),
+            let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(
+                formatDescription
+            )?.pointee,
+            streamDescription.mFormatID == kAudioFormatLinearPCM,
+            (streamDescription.mFormatFlags & kAudioFormatFlagIsBigEndian) == 0
+        else {
+            return nil
+        }
+
+        return streamDescription
+    }
+
+    private static func withAudioBufferList<Result>(
+        from sampleBuffer: CMSampleBuffer,
+        _ body: (UnsafeMutablePointer<AudioBufferList>) -> Result?
+    ) -> Result? {
         var bufferListSize = 0
         var status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
             sampleBuffer,
@@ -58,6 +82,14 @@ enum CMSampleBufferAudioLevelSampler {
             return nil
         }
 
+        return body(audioBufferList)
+    }
+
+    private static func accumulatedSample(
+        from audioBufferList: UnsafeMutablePointer<AudioBufferList>,
+        streamDescription: AudioStreamBasicDescription,
+        bytesPerSample: Int
+    ) -> AudioLevelSample? {
         var accumulator = AudioLevelAccumulator()
         let buffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
         let isFloat = (streamDescription.mFormatFlags & kAudioFormatFlagIsFloat) != 0

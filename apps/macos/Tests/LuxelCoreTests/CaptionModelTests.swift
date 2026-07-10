@@ -211,6 +211,9 @@ struct CaptionModelTests {
         #expect(PlainTextCaptionSerializer.serialize(track) == "")
     }
 
+}
+
+extension CaptionModelTests {
     @Test("export time mapper trims and scales cues")
     func exportTimeMapperTrimsAndScalesCues() throws {
         let track = try CaptionTrack(

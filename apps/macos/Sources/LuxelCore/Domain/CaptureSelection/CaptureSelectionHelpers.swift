@@ -52,8 +52,10 @@ public enum CaptureSelectionBuilder {
                 width: width,
                 height: height,
                 aspectRatio: aspectRatio,
-                maxWidth: growsLeft ? clampedStart.xCoordinate : display.width - clampedStart.xCoordinate,
-                maxHeight: growsUp ? clampedStart.yCoordinate : display.height - clampedStart.yCoordinate,
+                maximum: (
+                    width: growsLeft ? clampedStart.xCoordinate : display.width - clampedStart.xCoordinate,
+                    height: growsUp ? clampedStart.yCoordinate : display.height - clampedStart.yCoordinate
+                ),
                 minimumSize: minimumSize
             )
         }
@@ -77,21 +79,20 @@ public enum CaptureSelectionBuilder {
         width: Int,
         height: Int,
         aspectRatio: CaptureAspectRatio,
-        maxWidth: Int,
-        maxHeight: Int,
+        maximum: (width: Int, height: Int),
         minimumSize: Int
     ) -> (width: Int, height: Int) {
         let ratio = aspectRatio.value
         var outputWidth = max(width, Int((Double(height) * ratio).rounded()))
         var outputHeight = Int((Double(outputWidth) / ratio).rounded())
 
-        if outputHeight > maxHeight {
-            outputHeight = max(minimumSize, maxHeight)
+        if outputHeight > maximum.height {
+            outputHeight = max(minimumSize, maximum.height)
             outputWidth = Int((Double(outputHeight) * ratio).rounded())
         }
 
-        if outputWidth > maxWidth {
-            outputWidth = max(minimumSize, maxWidth)
+        if outputWidth > maximum.width {
+            outputWidth = max(minimumSize, maximum.width)
             outputHeight = Int((Double(outputWidth) / ratio).rounded())
         }
 

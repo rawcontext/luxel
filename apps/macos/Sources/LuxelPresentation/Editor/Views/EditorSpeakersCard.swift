@@ -154,7 +154,9 @@ struct EditorSpeakersCard: View {
         }
     }
 
-    // MARK: - Rows
+}
+
+private extension EditorSpeakersCard {
 
     private func voiceHeader(_ voice: DetectedSpeakerVoice, showsMatchCheck: Bool = false)
     -> some View {

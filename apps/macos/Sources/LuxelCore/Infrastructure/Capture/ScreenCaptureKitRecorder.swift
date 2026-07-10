@@ -182,10 +182,6 @@ extension ScreenCaptureKitRecorder {
         return try await completion.value().filter
     }
 
-    private struct PreparedContentFilter: @unchecked Sendable {
-        let filter: SCContentFilter
-    }
-
     private func addStreamOutputs(
         to stream: SCStream,
         writer: ScreenCaptureKitRecordingWriter,
@@ -295,81 +291,6 @@ extension ScreenCaptureKitRecorder {
             } catch {
                 return
             }
-        }
-    }
-
-    private struct ScreenCaptureKitStreamHandle: @unchecked Sendable {
-        private let stream: SCStream
-
-        init(_ stream: SCStream) {
-            self.stream = stream
-        }
-
-        func stopCaptureIgnoringResult() {
-            stream.stopCapture { _ in }
-        }
-    }
-
-    private final class ScreenCaptureKitRecorderCompletion: @unchecked Sendable {
-        private let lock = NSLock()
-        private var continuation: CheckedContinuation<Void, any Error>?
-
-        init(_ continuation: CheckedContinuation<Void, any Error>) {
-            self.continuation = continuation
-        }
-
-        func resume(with result: Result<Void, any Error>) -> Bool {
-            let continuation = lock.withLock {
-                let continuation = self.continuation
-                self.continuation = nil
-                return continuation
-            }
-
-            guard let continuation else {
-                return false
-            }
-
-            continuation.resume(with: result)
-            return true
-        }
-    }
-
-    private final class ScreenCaptureKitContentFilterCompletion: @unchecked Sendable {
-        private let lock = NSLock()
-        private var continuation: CheckedContinuation<PreparedContentFilter, any Error>?
-        private var result: Result<PreparedContentFilter, any Error>?
-
-        func value() async throws -> PreparedContentFilter {
-            try await withCheckedThrowingContinuation { continuation in
-                let result: Result<PreparedContentFilter, any Error>? = lock.withLock {
-                    if let result = self.result {
-                        return result
-                    }
-
-                    self.continuation = continuation
-                    return nil
-                }
-
-                if let result {
-                    continuation.resume(with: result)
-                }
-            }
-        }
-
-        func resume(with result: Result<PreparedContentFilter, any Error>) -> Bool {
-            let continuation: CheckedContinuation<PreparedContentFilter, any Error>? = lock.withLock {
-                guard self.result == nil else {
-                    return nil
-                }
-
-                self.result = result
-                let continuation = self.continuation
-                self.continuation = nil
-                return continuation
-            }
-
-            continuation?.resume(with: result)
-            return true
         }
     }
 

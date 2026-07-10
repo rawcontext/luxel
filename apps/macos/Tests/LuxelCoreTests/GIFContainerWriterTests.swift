@@ -102,6 +102,9 @@ struct GIFContainerWriterTests {
         #expect(mismatchedPixelCount == 0)
     }
 
+}
+
+extension GIFContainerWriterTests {
     @Test("writer rejects invalid frame shape palette indexes and delay counts")
     func writerRejectsInvalidFrameShapePaletteIndexesAndDelayCounts() throws {
         let palette = try testPalette()
@@ -195,49 +198,14 @@ struct GIFContainerWriterTests {
         while offset < bytes.count {
             switch bytes[offset] {
             case 0x21:
-                let label = bytes[offset + 1]
-                if label == 0xF9 {
-                    let packed = bytes[offset + 3]
-                    graphicControls.append(
-                        GIFGraphicControl(
-                            disposal: Int((packed >> 2) & 0b0000_0111),
-                            delay: readUInt16(bytes, offset + 4),
-                            transparentColorIndex: bytes[offset + 6]
-                        ))
-                    offset += 8
-                } else if label == 0xFF {
-                    let blockSize = Int(bytes[offset + 2])
-                    let application =
-                        String(
-                            bytes: bytes[(offset + 3)..<(offset + 3 + blockSize)],
-                            encoding: .utf8
-                        ) ?? ""
-                    offset += 3 + blockSize
-                    if application == "NETSCAPE2.0",
-                       bytes[offset] == 3,
-                       bytes[offset + 1] == 1 {
-                        loopCount = readUInt16(bytes, offset + 2)
-                    }
-                    offset = skipSubblocks(bytes, from: offset)
-                } else {
-                    offset += 2
-                    offset = skipSubblocks(bytes, from: offset)
-                }
+                parseExtension(
+                    bytes,
+                    offset: &offset,
+                    loopCount: &loopCount,
+                    graphicControls: &graphicControls
+                )
             case 0x2C:
-                let packed = bytes[offset + 9]
-                imageDescriptors.append(
-                    GIFImageDescriptor(
-                        x: readUInt16(bytes, offset + 1),
-                        y: readUInt16(bytes, offset + 3),
-                        width: readUInt16(bytes, offset + 5),
-                        height: readUInt16(bytes, offset + 7)
-                    ))
-                offset += 10
-                if (packed & 0b1000_0000) != 0 {
-                    offset += 3 * (1 << (Int(packed & 0b0000_0111) + 1))
-                }
-                offset += 1
-                offset = skipSubblocks(bytes, from: offset)
+                imageDescriptors.append(parseImageDescriptor(bytes, offset: &offset))
             case 0x3B:
                 return ParsedGIF(
                     loopCount: loopCount,
@@ -259,6 +227,56 @@ struct GIFContainerWriterTests {
             graphicControls: graphicControls,
             imageDescriptors: imageDescriptors
         )
+    }
+
+    private func parseExtension(
+        _ bytes: [UInt8],
+        offset: inout Int,
+        loopCount: inout Int?,
+        graphicControls: inout [GIFGraphicControl]
+    ) {
+        let label = bytes[offset + 1]
+        if label == 0xF9 {
+            let packed = bytes[offset + 3]
+            graphicControls.append(
+                GIFGraphicControl(
+                    disposal: Int((packed >> 2) & 0b0000_0111),
+                    delay: readUInt16(bytes, offset + 4),
+                    transparentColorIndex: bytes[offset + 6]
+                ))
+            offset += 8
+        } else if label == 0xFF {
+            let blockSize = Int(bytes[offset + 2])
+            let application = String(
+                bytes: bytes[(offset + 3)..<(offset + 3 + blockSize)],
+                encoding: .utf8
+            ) ?? ""
+            offset += 3 + blockSize
+            if application == "NETSCAPE2.0", bytes[offset] == 3, bytes[offset + 1] == 1 {
+                loopCount = readUInt16(bytes, offset + 2)
+            }
+            offset = skipSubblocks(bytes, from: offset)
+        } else {
+            offset += 2
+            offset = skipSubblocks(bytes, from: offset)
+        }
+    }
+
+    private func parseImageDescriptor(_ bytes: [UInt8], offset: inout Int) -> GIFImageDescriptor {
+        let packed = bytes[offset + 9]
+        let descriptor = GIFImageDescriptor(
+            x: readUInt16(bytes, offset + 1),
+            y: readUInt16(bytes, offset + 3),
+            width: readUInt16(bytes, offset + 5),
+            height: readUInt16(bytes, offset + 7)
+        )
+        offset += 10
+        if (packed & 0b1000_0000) != 0 {
+            offset += 3 * (1 << (Int(packed & 0b0000_0111) + 1))
+        }
+        offset += 1
+        offset = skipSubblocks(bytes, from: offset)
+        return descriptor
     }
 
     private func skipSubblocks(_ bytes: [UInt8], from offset: Int) -> Int {

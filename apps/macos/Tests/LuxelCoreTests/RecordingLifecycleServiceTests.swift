@@ -7,532 +7,13 @@ struct RecordingLifecycleServiceTests {
 }
 
 extension RecordingLifecycleServiceTests {
-    @Test("start persists active recording before recorder starts")
-    func startPersistsActiveRecordingBeforeRecorderStarts() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder {
-            #expect(store.activeRecording?.name == "Manual Name")
-        }
-        let service = makeService(store: store, recorder: recorder)
-        let request = try makeRequest()
-
-        let activeRecording = try await service.startRecording(request, name: "Manual Name")
-
-        #expect(activeRecording.fileURL == request.outputFileURL)
-        #expect(activeRecording.name == "Manual Name")
-        #expect(store.activeRecording == activeRecording)
-        #expect(recorder.startCount == 1)
-        #expect(recorder.stopCount == 0)
-    }
-
-    @Test("start clears active recording when recorder fails")
-    func startClearsActiveRecordingWhenRecorderFails() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder(startError: StubCaptureRecorderError.startFailed)
-        let service = makeService(store: store, recorder: recorder)
-
-        await #expect(throws: StubCaptureRecorderError.startFailed) {
-            try await service.startRecording(try makeRequest())
-        }
-        #expect(store.activeRecording == nil)
-    }
-
-    @Test("recording pauses and resumes replay buffer")
-    func recordingPausesAndResumesReplayBuffer() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder()
-        let replayEngine = SpyRecordingLifecycleReplayEngine()
-        let replayBufferService = ReplayBufferService(engine: replayEngine)
-        let replayConfiguration = try ReplayBufferConfiguration(
-            bufferLength: 60,
-            source: .displayWithCursor,
-            frameRate: FrameRate(30)
-        )
-        try await replayBufferService.arm(configuration: replayConfiguration)
-        let service = makeService(
-            store: store,
-            recorder: recorder,
-            replayBufferService: replayBufferService
-        )
-
-        _ = try await service.startRecording(try makeRequest())
-        _ = try await service.stopRecording()
-
-        #expect(
-            replayEngine.commands() == [
-                .arm(replayConfiguration),
-                .pause(.recordingActive),
-                .resume
-            ])
-    }
-
-    @Test("start waits for countdown before active recording snapshot")
-    func startWaitsForCountdownBeforeActiveRecordingSnapshot() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let sleeper = SpyCountdownSleeper {
-            #expect(store.activeRecording == nil)
-        }
-        let recorder = SpyCaptureRecorder {
-            #expect(sleeper.sleepDurations == [3])
-            #expect(store.activeRecording != nil)
-        }
-        let service = makeService(
-            store: store,
-            recorder: recorder,
-            countdownSleeper: sleeper
-        )
-        let request = try makeRequest(schedule: RecordingSchedule(countdown: 3))
-
-        _ = try await service.startRecording(request)
-
-        #expect(sleeper.sleepDurations == [3])
-        #expect(recorder.startCount == 1)
-    }
-
-    @Test("cancelled countdown leaves no active recording")
-    func cancelledCountdownLeavesNoActiveRecording() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let sleeper = SpyCountdownSleeper(error: CancellationError())
-        let recorder = SpyCaptureRecorder()
-        let service = makeService(
-            store: store,
-            recorder: recorder,
-            countdownSleeper: sleeper
-        )
-
-        await #expect(throws: CancellationError.self) {
-            try await service.startRecording(try makeRequest(schedule: RecordingSchedule(countdown: 5)))
-        }
-
-        #expect(store.activeRecording == nil)
-        #expect(recorder.startCount == 0)
-    }
-
-    @Test("start records to staging while returning final recording URL")
-    func startRecordsToStagingWhileReturningFinalRecordingURL() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder()
-        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
-        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
-        let fileSystem = RecordingOutputFileSystem(existingFiles: [stagingURL])
-        let service = RecordingLifecycleService(
-            recorder: recorder,
-            history: makeHistory(store: store, fileSystem: fileSystem),
-            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
-        )
-        let request = try makeRequest(outputFileURL: finalURL)
-
-        let activeRecording = try await service.startRecording(
-            request,
-            outputPlan: RecordingOutputFinalizationPlan(
-                stagingFileURL: stagingURL,
-                finalFileURL: finalURL
-            )
-        )
-
-        #expect(activeRecording.fileURL == finalURL)
-        #expect(store.activeRecording?.fileURL == stagingURL)
-        #expect(recorder.startedRequests.map(\.outputFileURL) == [stagingURL])
-    }
-
-    @Test("stop finalizes staged recording to final URL")
-    func stopFinalizesStagedRecordingToFinalURL() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder()
-        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
-        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
-        let fileSystem = RecordingOutputFileSystem(existingFiles: [stagingURL])
-        let service = RecordingLifecycleService(
-            recorder: recorder,
-            history: makeHistory(store: store, fileSystem: fileSystem),
-            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
-        )
-        let request = try makeRequest(outputFileURL: finalURL)
-
-        _ = try await service.startRecording(
-            request,
-            outputPlan: RecordingOutputFinalizationPlan(
-                stagingFileURL: stagingURL,
-                finalFileURL: finalURL
-            )
-        )
-        let recording = try await service.stopRecording(recordingName: "Finished")
-
-        #expect(recording.fileURL == finalURL)
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings == [recording])
-        #expect(
-            fileSystem.movedFiles == [
-                RecordingOutputMove(sourceURL: stagingURL, destinationURL: finalURL)
-            ])
-    }
-
-    @Test("stop keeps staged recording when final move fails")
-    func stopKeepsStagedRecordingWhenFinalMoveFails() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder()
-        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
-        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
-        let fileSystem = RecordingOutputFileSystem(
-            existingFiles: [stagingURL],
-            moveError: StubRecordingOutputError.moveFailed
-        )
-        let service = RecordingLifecycleService(
-            recorder: recorder,
-            history: makeHistory(store: store, fileSystem: fileSystem),
-            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
-        )
-        let request = try makeRequest(outputFileURL: finalURL)
-
-        _ = try await service.startRecording(
-            request,
-            outputPlan: RecordingOutputFinalizationPlan(
-                stagingFileURL: stagingURL,
-                finalFileURL: finalURL
-            )
-        )
-        let recording = try await service.stopRecording()
-
-        #expect(recording.fileURL == stagingURL)
-        #expect(store.recordings == [recording])
-        #expect(fileSystem.movedFiles.isEmpty)
-    }
-
-    @Test("stop clears active recording when output finalization has no file")
-    func stopClearsActiveRecordingWhenOutputFinalizationHasNoFile() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder()
-        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
-        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
-        let fileSystem = RecordingOutputFileSystem(existingFiles: [])
-        let service = RecordingLifecycleService(
-            recorder: recorder,
-            history: makeHistory(store: store, fileSystem: fileSystem),
-            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
-        )
-        let request = try makeRequest(outputFileURL: finalURL)
-
-        _ = try await service.startRecording(
-            request,
-            outputPlan: RecordingOutputFinalizationPlan(
-                stagingFileURL: stagingURL,
-                finalFileURL: finalURL
-            )
-        )
-
-        await #expect(
-            throws: RecordingLifecycleError.outputFinalizationFailed(
-                "No recording output was produced. Try recording again."
-            )
-        ) {
-            try await service.stopRecording()
-        }
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings.isEmpty)
-        #expect(recorder.stopCount == 1)
-        #expect(fileSystem.movedFiles.isEmpty)
-    }
-
-    @Test("stop moves active recording into history after recorder stops")
-    func stopMovesActiveRecordingIntoHistoryAfterRecorderStops() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let fileURL = URL(fileURLWithPath: "/tmp/luxel.mp4")
-        let fileSystem = StubFileSystem(existingFiles: [fileURL])
-        let recorder = SpyCaptureRecorder()
-        let history = makeHistory(store: store, fileSystem: fileSystem)
-        let service = RecordingLifecycleService(recorder: recorder, history: history)
-        history.setCurrentRecording(
-            fileURL: fileURL, name: "Active", options: RecordingOptions(frameRate: 30))
-
-        let recording = try await service.stopRecording(recordingName: "Finished")
-
-        #expect(recording.fileURL == fileURL)
-        #expect(recording.name == "Finished")
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings == [recording])
-        #expect(recorder.stopCount == 1)
-    }
-
-    @Test("stop keeps active recording when recorder fails")
-    func stopKeepsActiveRecordingWhenRecorderFails() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder(stopError: StubCaptureRecorderError.stopFailed)
-        let history = makeHistory(store: store)
-        let service = RecordingLifecycleService(recorder: recorder, history: history)
-        history.setCurrentRecording(
-            fileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
-            name: "Active",
-            options: RecordingOptions(frameRate: 30)
-        )
-
-        await #expect(throws: StubCaptureRecorderError.stopFailed) {
-            try await service.stopRecording()
-        }
-        #expect(store.activeRecording?.name == "Active")
-        #expect(store.recordings.isEmpty)
-    }
-
-    @Test("pause forwards to recorder while preserving active recording")
-    func pauseForwardsToRecorderWhilePreservingActiveRecording() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder()
-        let history = makeHistory(store: store)
-        let service = RecordingLifecycleService(recorder: recorder, history: history)
-        let activeRecording = history.setCurrentRecording(
-            fileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
-            name: "Active",
-            options: RecordingOptions(frameRate: 30)
-        )
-
-        try await service.pauseRecording()
-
-        #expect(store.activeRecording == activeRecording)
-        #expect(store.recordings.isEmpty)
-        #expect(recorder.pauseCount == 1)
-        #expect(recorder.resumeCount == 0)
-    }
-
-    @Test("pause rejects missing active recording")
-    func pauseRejectsMissingActiveRecording() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder()
-        let service = makeService(store: store, recorder: recorder)
-
-        await #expect(throws: RecordingLifecycleError.noActiveRecording) {
-            try await service.pauseRecording()
-        }
-        #expect(recorder.pauseCount == 0)
-    }
-
-    @Test("pause keeps active recording when recorder fails")
-    func pauseKeepsActiveRecordingWhenRecorderFails() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder(pauseError: StubCaptureRecorderError.pauseFailed)
-        let history = makeHistory(store: store)
-        let service = RecordingLifecycleService(recorder: recorder, history: history)
-        let activeRecording = history.setCurrentRecording(
-            fileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
-            name: "Active",
-            options: RecordingOptions(frameRate: 30)
-        )
-
-        await #expect(throws: StubCaptureRecorderError.pauseFailed) {
-            try await service.pauseRecording()
-        }
-        #expect(store.activeRecording == activeRecording)
-        #expect(store.recordings.isEmpty)
-    }
-
-    @Test("resume forwards to recorder while preserving active recording")
-    func resumeForwardsToRecorderWhilePreservingActiveRecording() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder()
-        let history = makeHistory(store: store)
-        let service = RecordingLifecycleService(recorder: recorder, history: history)
-        let activeRecording = history.setCurrentRecording(
-            fileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
-            name: "Active",
-            options: RecordingOptions(frameRate: 30)
-        )
-
-        try await service.resumeRecording()
-
-        #expect(store.activeRecording == activeRecording)
-        #expect(store.recordings.isEmpty)
-        #expect(recorder.pauseCount == 0)
-        #expect(recorder.resumeCount == 1)
-    }
-
-    @Test("resume rejects missing active recording")
-    func resumeRejectsMissingActiveRecording() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder()
-        let service = makeService(store: store, recorder: recorder)
-
-        await #expect(throws: RecordingLifecycleError.noActiveRecording) {
-            try await service.resumeRecording()
-        }
-        #expect(recorder.resumeCount == 0)
-    }
-
-    @Test("resume keeps active recording when recorder fails")
-    func resumeKeepsActiveRecordingWhenRecorderFails() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = SpyCaptureRecorder(resumeError: StubCaptureRecorderError.resumeFailed)
-        let history = makeHistory(store: store)
-        let service = RecordingLifecycleService(recorder: recorder, history: history)
-        let activeRecording = history.setCurrentRecording(
-            fileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
-            name: "Active",
-            options: RecordingOptions(frameRate: 30)
-        )
-
-        await #expect(throws: StubCaptureRecorderError.resumeFailed) {
-            try await service.resumeRecording()
-        }
-        #expect(store.activeRecording == activeRecording)
-        #expect(store.recordings.isEmpty)
-    }
-
-    @Test("start schedules auto stop when request has max recorded duration")
-    func startSchedulesAutoStop() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
-        let scheduler = ManualAutoStopScheduler()
-        let service = makeService(
-            store: store,
-            recorder: SpyCaptureRecorder(),
-            dateProvider: dateProvider,
-            autoStopScheduler: scheduler
-        )
-        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
-
-        _ = try await service.startRecording(request)
-
-        #expect(scheduler.scheduledIntervals == [60])
-    }
-
-    @Test("auto stop uses normal stop path")
-    func autoStopUsesNormalStopPath() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
-        let scheduler = ManualAutoStopScheduler()
-        let recorder = SpyCaptureRecorder()
-        let service = makeService(
-            store: store,
-            recorder: recorder,
-            dateProvider: dateProvider,
-            autoStopScheduler: scheduler
-        )
-        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
-
-        let activeRecording = try await service.startRecording(request, name: "Timed")
-        await scheduler.fireScheduledTask(at: 0)
-
-        #expect(recorder.stopCount == 1)
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings == [activeRecording.pastRecording])
-    }
-
-    @Test("auto stop notifies recording completion")
-    func autoStopNotifiesRecordingCompletion() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
-        let scheduler = ManualAutoStopScheduler()
-        let notifier = SpyUserNotifier()
-        let service = makeService(
-            store: store,
-            recorder: SpyCaptureRecorder(),
-            dateProvider: dateProvider,
-            autoStopScheduler: scheduler,
-            userNotifier: notifier
-        )
-        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
-
-        _ = try await service.startRecording(request)
-        await scheduler.fireScheduledTask(at: 0)
-
-        #expect(await notifier.recordingAutoStoppedDurations() == [60])
-    }
-
-    @Test("auto stop publishes stopped recording")
-    func autoStopPublishesStoppedRecording() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
-        let scheduler = ManualAutoStopScheduler()
-        let service = makeService(
-            store: store,
-            recorder: SpyCaptureRecorder(),
-            dateProvider: dateProvider,
-            autoStopScheduler: scheduler
-        )
-        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
-        let stream = service.autoStoppedRecordings
-        let eventTask = Task<PastRecording?, Never> {
-            var iterator = stream.makeAsyncIterator()
-            return await iterator.next()
-        }
-
-        let activeRecording = try await service.startRecording(request)
-        await scheduler.fireScheduledTask(at: 0)
-
-        #expect(await eventTask.value == activeRecording.pastRecording)
-    }
-
-    @Test("pause suspends auto stop and resume schedules remaining recorded time")
-    func pauseSuspendsAutoStopAndResumeSchedulesRemainingRecordedTime() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
-        let scheduler = ManualAutoStopScheduler()
-        let service = makeService(
-            store: store,
-            recorder: SpyCaptureRecorder(),
-            dateProvider: dateProvider,
-            autoStopScheduler: scheduler
-        )
-        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
-
-        _ = try await service.startRecording(request)
-        dateProvider.setDate(Date(timeIntervalSince1970: 1_010))
-        try await service.pauseRecording()
-        dateProvider.setDate(Date(timeIntervalSince1970: 1_040))
-        try await service.resumeRecording()
-
-        #expect(scheduler.scheduledIntervals == [60, 50])
-        #expect(scheduler.isCanceled(at: 0))
-        #expect(!scheduler.isCanceled(at: 1))
-    }
-
-    @Test("manual stop cancels pending auto stop")
-    func manualStopCancelsPendingAutoStop() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
-        let scheduler = ManualAutoStopScheduler()
-        let recorder = SpyCaptureRecorder()
-        let service = makeService(
-            store: store,
-            recorder: recorder,
-            dateProvider: dateProvider,
-            autoStopScheduler: scheduler
-        )
-        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
-
-        _ = try await service.startRecording(request)
-        _ = try await service.stopRecording()
-        await scheduler.fireScheduledTask(at: 0)
-
-        #expect(recorder.stopCount == 1)
-        #expect(scheduler.isCanceled(at: 0))
-    }
-
-    @Test("manual stop does not notify recording auto stop")
-    func manualStopDoesNotNotifyRecordingAutoStop() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let dateProvider = MutableDateProvider(Date(timeIntervalSince1970: 1_000))
-        let scheduler = ManualAutoStopScheduler()
-        let notifier = SpyUserNotifier()
-        let service = makeService(
-            store: store,
-            recorder: SpyCaptureRecorder(),
-            dateProvider: dateProvider,
-            autoStopScheduler: scheduler,
-            userNotifier: notifier
-        )
-        let request = try makeRequest(schedule: RecordingSchedule(maxRecordedDuration: 60))
-
-        _ = try await service.startRecording(request)
-        _ = try await service.stopRecording()
-
-        #expect(await notifier.recordingAutoStoppedDurations().isEmpty)
-    }
-
-    private func makeService(
+    func makeService(
         store: InMemoryRecordingHistoryStore,
-        recorder: SpyCaptureRecorder,
-        dateProvider: any DateProvider = FixedDateProvider(
+        recorder: RecordingLifecycleRecorderSpy,
+        dateProvider: any DateProvider = RecordingLifecycleFixedDateProvider(
             date: Date(timeIntervalSince1970: 1_595_348_846)),
-        autoStopScheduler: any RecordingAutoStopScheduler = ManualAutoStopScheduler(),
-        countdownSleeper: any RecordingCountdownSleeper = SpyCountdownSleeper(),
+        autoStopScheduler: any RecordingAutoStopScheduler = RecordingLifecycleAutoStopScheduler(),
+        countdownSleeper: any RecordingCountdownSleeper = RecordingLifecycleCountdownSleeperSpy(),
         userNotifier: (any UserNotifier)? = nil,
         replayBufferService: ReplayBufferService? = nil
     ) -> RecordingLifecycleService {
@@ -547,12 +28,12 @@ extension RecordingLifecycleServiceTests {
         )
     }
 
-    private func makeHistory(
+    func makeHistory(
         store: InMemoryRecordingHistoryStore,
-        fileSystem: any FileSystem = StubFileSystem(existingFiles: [
+        fileSystem: any FileSystem = RecordingLifecycleStubFileSystem(existingFiles: [
             URL(fileURLWithPath: "/tmp/luxel.mp4")
         ]),
-        dateProvider: any DateProvider = FixedDateProvider(
+        dateProvider: any DateProvider = RecordingLifecycleFixedDateProvider(
             date: Date(timeIntervalSince1970: 1_595_348_846))
     ) -> RecordingHistoryService {
         RecordingHistoryService(
@@ -564,7 +45,7 @@ extension RecordingLifecycleServiceTests {
         )
     }
 
-    private func makeRequest(
+    func makeRequest(
         outputFileURL: URL = URL(fileURLWithPath: "/tmp/luxel.mp4"),
         schedule: RecordingSchedule? = nil
     ) throws -> RecordingRequest {
@@ -578,7 +59,7 @@ extension RecordingLifecycleServiceTests {
     }
 }
 
-private final class SpyCaptureRecorder: CaptureRecorder, @unchecked Sendable {
+final class RecordingLifecycleRecorderSpy: CaptureRecorder, @unchecked Sendable {
     private let onStart: @Sendable () -> Void
     private let startError: (any Error)?
     private let pauseError: (any Error)?
@@ -639,14 +120,14 @@ private final class SpyCaptureRecorder: CaptureRecorder, @unchecked Sendable {
     }
 }
 
-private enum StubCaptureRecorderError: Error, Equatable {
+enum RecordingLifecycleRecorderError: Error, Equatable {
     case startFailed
     case pauseFailed
     case resumeFailed
     case stopFailed
 }
 
-private enum SpyRecordingLifecycleReplayCommand: Equatable {
+enum RecordingLifecycleReplayCommand: Equatable {
     case arm(ReplayBufferConfiguration)
     case pause(ReplayBufferPauseReason)
     case resume
@@ -654,9 +135,9 @@ private enum SpyRecordingLifecycleReplayCommand: Equatable {
     case clip(TimeInterval)
 }
 
-private final class SpyRecordingLifecycleReplayEngine: ReplayBufferEngine, @unchecked Sendable {
+final class RecordingLifecycleReplayEngineSpy: ReplayBufferEngine, @unchecked Sendable {
     private let lock = NSLock()
-    private var recordedCommands: [SpyRecordingLifecycleReplayCommand] = []
+    private var recordedCommands: [RecordingLifecycleReplayCommand] = []
 
     var state: AsyncStream<ReplayBufferState> {
         AsyncStream { continuation in
@@ -685,20 +166,20 @@ private final class SpyRecordingLifecycleReplayEngine: ReplayBufferEngine, @unch
         return URL(fileURLWithPath: "/tmp/replay.mp4")
     }
 
-    func commands() -> [SpyRecordingLifecycleReplayCommand] {
+    func commands() -> [RecordingLifecycleReplayCommand] {
         lock.withLock {
             recordedCommands
         }
     }
 
-    private func append(_ command: SpyRecordingLifecycleReplayCommand) {
+    private func append(_ command: RecordingLifecycleReplayCommand) {
         lock.withLock {
             recordedCommands.append(command)
         }
     }
 }
 
-private final class SpyCountdownSleeper: RecordingCountdownSleeper, @unchecked Sendable {
+final class RecordingLifecycleCountdownSleeperSpy: RecordingCountdownSleeper, @unchecked Sendable {
     private let error: (any Error)?
     private let onSleep: @Sendable () -> Void
     private let lock = NSLock()
@@ -724,20 +205,20 @@ private final class SpyCountdownSleeper: RecordingCountdownSleeper, @unchecked S
     }
 }
 
-private enum StubRecordingOutputError: Error, Equatable {
+enum RecordingLifecycleOutputError: Error, Equatable {
     case moveFailed
     case missingSource
 }
 
-private struct RecordingOutputMove: Equatable {
+struct RecordingLifecycleOutputMove: Equatable {
     let sourceURL: URL
     let destinationURL: URL
 }
 
-private final class RecordingOutputFileSystem: FileSystem, @unchecked Sendable {
+final class RecordingLifecycleOutputFileSystem: FileSystem, @unchecked Sendable {
     private var existingFiles: Set<URL>
     private let moveError: (any Error)?
-    private(set) var movedFiles: [RecordingOutputMove] = []
+    private(set) var movedFiles: [RecordingLifecycleOutputMove] = []
 
     init(existingFiles: Set<URL>, moveError: (any Error)? = nil) {
         self.existingFiles = existingFiles
@@ -758,13 +239,13 @@ private final class RecordingOutputFileSystem: FileSystem, @unchecked Sendable {
         }
 
         guard existingFiles.contains(sourceURL) else {
-            throw StubRecordingOutputError.missingSource
+            throw RecordingLifecycleOutputError.missingSource
         }
 
         existingFiles.remove(sourceURL)
         existingFiles.insert(destinationURL)
         movedFiles.append(
-            RecordingOutputMove(
+            RecordingLifecycleOutputMove(
                 sourceURL: sourceURL,
                 destinationURL: destinationURL
             ))
@@ -779,7 +260,7 @@ private final class RecordingOutputFileSystem: FileSystem, @unchecked Sendable {
     func trashItem(at url: URL) throws {}
 }
 
-private struct FixedDateProvider: DateProvider {
+struct RecordingLifecycleFixedDateProvider: DateProvider {
     let date: Date
 
     func now() -> Date {
@@ -787,7 +268,7 @@ private struct FixedDateProvider: DateProvider {
     }
 }
 
-private final class MutableDateProvider: DateProvider, @unchecked Sendable {
+final class RecordingLifecycleMutableDateProvider: DateProvider, @unchecked Sendable {
     private let lock = NSLock()
     private var date: Date
 
@@ -808,9 +289,9 @@ private final class MutableDateProvider: DateProvider, @unchecked Sendable {
     }
 }
 
-private final class ManualAutoStopScheduler: RecordingAutoStopScheduler, @unchecked Sendable {
+final class RecordingLifecycleAutoStopScheduler: RecordingAutoStopScheduler, @unchecked Sendable {
     private let lock = NSLock()
-    private var scheduledTasks: [ManualAutoStopScheduledTask] = []
+    private var scheduledTasks: [RecordingLifecycleAutoStopScheduledTask] = []
 
     var scheduledIntervals: [TimeInterval] {
         lock.withLock {
@@ -822,8 +303,8 @@ private final class ManualAutoStopScheduler: RecordingAutoStopScheduler, @unchec
         after interval: TimeInterval,
         operation: @escaping @Sendable () async -> Void
     ) -> any RecordingAutoStopTask {
-        let task = ManualAutoStopTask()
-        let scheduledTask = ManualAutoStopScheduledTask(
+        let task = RecordingLifecycleAutoStopTask()
+        let scheduledTask = RecordingLifecycleAutoStopScheduledTask(
             interval: interval,
             task: task,
             operation: operation
@@ -859,13 +340,13 @@ private final class ManualAutoStopScheduler: RecordingAutoStopScheduler, @unchec
     }
 }
 
-private struct ManualAutoStopScheduledTask: Sendable {
+struct RecordingLifecycleAutoStopScheduledTask: Sendable {
     let interval: TimeInterval
-    let task: ManualAutoStopTask
+    let task: RecordingLifecycleAutoStopTask
     let operation: @Sendable () async -> Void
 }
 
-private final class ManualAutoStopTask: RecordingAutoStopTask, @unchecked Sendable {
+final class RecordingLifecycleAutoStopTask: RecordingAutoStopTask, @unchecked Sendable {
     private let lock = NSLock()
     private var canceled = false
 
@@ -882,7 +363,7 @@ private final class ManualAutoStopTask: RecordingAutoStopTask, @unchecked Sendab
     }
 }
 
-private actor SpyUserNotifier: UserNotifier {
+actor RecordingLifecycleUserNotifierSpy: UserNotifier {
     private var recordingDurations: [TimeInterval] = []
 
     func notifyExportCompleted(fileURL: URL, presetName: String) async throws {}
@@ -896,7 +377,7 @@ private actor SpyUserNotifier: UserNotifier {
     }
 }
 
-private final class StubFileSystem: FileSystem, @unchecked Sendable {
+final class RecordingLifecycleStubFileSystem: FileSystem, @unchecked Sendable {
     private let existingFiles: Set<URL>
 
     init(existingFiles: Set<URL>) {

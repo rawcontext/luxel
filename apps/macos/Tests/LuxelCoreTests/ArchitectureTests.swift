@@ -113,15 +113,12 @@ extension ArchitectureTests {
     func statusItemStartupDoesNotEnumerateCaptureTargets() throws {
         let source = try sourceText(
             for: [
-                "Sources/LuxelApp/App/LuxelStatusItemController.swift",
-                "Sources/LuxelApp/App/LuxelStatusItemController+Rendering.swift"
+                "Sources/LuxelApp/App/LuxelStatusItemController+Actions.swift"
             ],
             encoding: .utf8
         )
-        let startupRange = try #require(source.range(of: "private func startNotchSurface()"))
-        let nextFunctionRange = try #require(
-            source[startupRange.upperBound...].range(of: "private func "))
-        let startupSource = source[startupRange.lowerBound..<nextFunctionRange.lowerBound]
+        let startupRange = try #require(source.range(of: "func startNotchSurface()"))
+        let startupSource = source[startupRange.lowerBound...]
 
         #expect(startupSource.contains("await model.refreshPermissions()"))
         #expect(!startupSource.contains("refreshCaptureTargets()"))
@@ -156,7 +153,7 @@ extension ArchitectureTests {
     func notchActionIconsExposeHoverTooltips() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(
-                path: "Sources/LuxelApp/Notch/Panels/OverlayPanelNotchPresenter.swift"),
+                path: "Sources/LuxelApp/Notch/Panels/NotchOverlayViews.swift"),
             encoding: .utf8
         )
 
@@ -189,12 +186,12 @@ extension ArchitectureTests {
     func systemAudioFooterOffStateTogglesWithoutPermissionPrompt() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(
-                path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
+                path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu+Footer.swift"),
             encoding: .utf8
         )
-        let handlerRange = try #require(source.range(of: "private func handleSystemAudioFooterAction"))
+        let handlerRange = try #require(source.range(of: "func handleSystemAudioFooterAction"))
         let nextHandlerRange = try #require(
-            source[handlerRange.upperBound...].range(of: "private func handleMicrophoneFooterAction"))
+            source[handlerRange.upperBound...].range(of: "func handleMicrophoneFooterAction"))
         let handlerSource = String(source[handlerRange.lowerBound..<nextHandlerRange.lowerBound])
 
         #expect(
@@ -212,10 +209,11 @@ extension ArchitectureTests {
     @Test("permission prompts are hosted outside transient SwiftUI menu surfaces")
     func permissionPromptsAreHostedOutsideTransientSwiftUIMenuSurfaces() throws {
         let packageRoot = try packageRootURL()
-        let statusItemSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/App/LuxelStatusItemController.swift"),
-            encoding: .utf8
+        let statusItemSource = try sourceText(
+            for: [
+                "Sources/LuxelApp/App/LuxelStatusItemController.swift",
+                "Sources/LuxelApp/App/LuxelStatusItemController+Actions.swift"
+            ]
         )
         let menuSource = try String(
             contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
@@ -227,7 +225,7 @@ extension ArchitectureTests {
             encoding: .utf8
         )
 
-        #expect(statusItemSource.contains("private func presentPendingPermissionPromptIfNeeded()"))
+        #expect(statusItemSource.contains("func presentPendingPermissionPromptIfNeeded()"))
         #expect(statusItemSource.contains("let alert = NSAlert()"))
         #expect(
             statusItemSource.contains(
@@ -293,7 +291,9 @@ extension ArchitectureTests {
         let source = try sourceText(
             for: [
                 "Sources/LuxelApp/App/LuxelStatusItemController.swift",
-                "Sources/LuxelApp/App/LuxelStatusItemController+Rendering.swift"
+                "Sources/LuxelApp/App/LuxelStatusItemController+Rendering.swift",
+                "Sources/LuxelApp/App/LuxelStatusItemController+Actions.swift",
+                "Sources/LuxelApp/App/LuxelStatusItemController+Popover.swift"
             ],
             encoding: .utf8
         )
@@ -377,11 +377,10 @@ extension ArchitectureTests {
 
     @Test("screen recorder retains writer segment through finish completion")
     func screenRecorderRetainsWriterSegmentThroughFinishCompletion() throws {
-        let writerSource = try String(
-            contentsOf: packageRootURL().appending(
-                path: "Sources/LuxelCore/Infrastructure/Capture/ScreenCaptureKitRecordingWriter.swift"),
-            encoding: .utf8
-        )
+        let writerSource = try sourceText(for: [
+            "Sources/LuxelCore/Infrastructure/Capture/ScreenCaptureKitRecordingWriter.swift",
+            "Sources/LuxelCore/Infrastructure/Capture/ScreenCaptureKitRecordingWriterSupport.swift"
+        ])
 
         #expect(
             writerSource.contains(
@@ -389,384 +388,5 @@ extension ArchitectureTests {
                     + "            segment: self"))
         #expect(writerSource.contains("private let segment: RecordingWriterSegment"))
         #expect(writerSource.contains("withExtendedLifetime(segment)"))
-    }
-
-    @Test("cropper supports local selection undo and redo")
-    func cropperSupportsLocalSelectionUndoAndRedo() throws {
-        let packageRoot = try packageRootURL()
-        let modelSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
-            encoding: .utf8
-        )
-        let viewSource = try sourceContents(
-            under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
-
-        #expect(modelSource.contains("UndoStack<CropperUndoState>"))
-        #expect(modelSource.contains("selection: CaptureRect?"))
-        #expect(modelSource.contains("aspectRatioPreset: CaptureAspectRatioPreset"))
-        #expect(modelSource.contains("customAspectRatio: CaptureAspectRatio?"))
-        #expect(modelSource.contains("pushUndoState(coalescingToken: selectionDragCoalescingToken)"))
-        #expect(modelSource.contains("pushUndoState(coalescingToken: resizeDragCoalescingToken)"))
-        #expect(modelSource.contains("func applyCustomAspectRatio() -> Bool"))
-        #expect(modelSource.contains("func undoSelectionChange()"))
-        #expect(modelSource.contains("func redoSelectionChange()"))
-        #expect(viewSource.contains("model.finishUpdateSelection()"))
-        #expect(viewSource.contains("TextField(\"Custom W\", text: customAspectRatioWidthText)"))
-        #expect(viewSource.contains("TextField(\"Custom H\", text: customAspectRatioHeightText)"))
-        #expect(viewSource.contains("applyCustomAspectRatio()"))
-        #expect(viewSource.contains("model.undoSelectionChange()"))
-        #expect(viewSource.contains("model.redoSelectionChange()"))
-        #expect(viewSource.contains(".keyboardShortcut(\"z\", modifiers: .command)"))
-        #expect(viewSource.contains(".keyboardShortcut(\"z\", modifiers: [.command, .shift])"))
-    }
-
-    @Test("cropper renders snap guides while drawing selections")
-    func cropperRendersSnapGuidesWhileDrawingSelections() throws {
-        let packageRoot = try packageRootURL()
-        let modelSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
-            encoding: .utf8
-        )
-        let controllerSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
-            encoding: .utf8
-        )
-        let viewSource = try sourceContents(
-            under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
-
-        #expect(modelSource.contains("var snapGuides: [CaptureSnapGuide]"))
-        #expect(modelSource.contains("let windowSnapFrames: [CaptureRect]"))
-        #expect(modelSource.contains("SnapResolver.resolve("))
-        #expect(modelSource.contains("windowFrames: windowSnapFrames"))
-        #expect(modelSource.contains("screenFrames: [try displaySnapFrame]"))
-        #expect(modelSource.contains("snapGuides = snapResult.guides"))
-        #expect(modelSource.contains("snapGuides = []"))
-        #expect(controllerSource.contains("let targets = try await targetService.availableTargets()"))
-        #expect(controllerSource.contains("CaptureWindowSnapFrameResolver.windowFrames("))
-        #expect(viewSource.contains("snapGuidesOverlay(viewSize: geometry.size)"))
-        #expect(viewSource.contains("ForEach(Array(model.snapGuides.enumerated())"))
-        #expect(viewSource.contains("let flags = NSEvent.modifierFlags"))
-        #expect(viewSource.contains("flags.contains(.command)"))
-    }
-
-    @Test("cropper keeps active aspect ratio while drawing and resizing selections")
-    func cropperKeepsActiveAspectRatioWhileDrawingAndResizingSelections() throws {
-        let packageRoot = try packageRootURL()
-        let modelSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
-            encoding: .utf8
-        )
-        let activeAspectRatioUses =
-            modelSource.components(separatedBy: "aspectRatio: activeAspectRatio").count - 1
-
-        #expect(activeAspectRatioUses >= 2)
-        #expect(modelSource.contains("lockingAspectRatio: lockingAspectRatio"))
-    }
-
-    @Test("cropper restores last area selection when enabled")
-    func cropperRestoresLastAreaSelectionWhenEnabled() throws {
-        let packageRoot = try packageRootURL()
-        let modelSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
-            encoding: .utf8
-        )
-        let controllerSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
-            encoding: .utf8
-        )
-        let menuSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
-            encoding: .utf8
-        )
-        let shortcutsSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Shortcuts/LuxelShortcutInstaller.swift"),
-            encoding: .utf8
-        )
-        let presentationSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Presentation.swift"),
-            encoding: .utf8
-        )
-        let normalizedControllerSource = controllerSource.replacingOccurrences(
-            of: "\\s+",
-            with: " ",
-            options: .regularExpression
-        )
-
-        #expect(modelSource.contains("struct CropperRestoreSelectionConfiguration"))
-        #expect(
-            modelSource.contains(
-                "memory?.restoredTopLeftSelection(in: display, availableTargets: targets)"))
-        #expect(modelSource.contains("initialSelection: CaptureRect? = nil"))
-        #expect(modelSource.contains("selection: resolvedInitialSelection"))
-        #expect(
-            controllerSource.contains(
-                "restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled"))
-        #expect(
-            normalizedControllerSource.contains(
-                "initialSelection: presentation.restoreSelectionConfiguration.selection( for: display, targets: targets)"
-            )
-        )
-        #expect(presentationSource.contains("isEnabled: settings.restoreLastSelection"))
-        #expect(presentationSource.contains("memory: settings.lastCaptureMemory"))
-        #expect(
-            menuSource.contains(
-                "restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
-        #expect(
-            shortcutsSource.contains(
-                "restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
-    }
-
-    @Test("cropper dims inactive displays when configured")
-    func cropperDimsInactiveDisplaysWhenConfigured() throws {
-        let packageRoot = try packageRootURL()
-        let modelSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
-            encoding: .utf8
-        )
-        let controllerSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
-            encoding: .utf8
-        )
-        let viewSource = try sourceContents(
-            under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
-        let menuSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
-            encoding: .utf8
-        )
-        let shortcutsSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Shortcuts/LuxelShortcutInstaller.swift"),
-            encoding: .utf8
-        )
-
-        #expect(modelSource.contains("final class CropperDisplayFocus"))
-        #expect(
-            modelSource.contains(
-                "func dimsDisplay(_ displayID: DisplayID, dimOtherDisplays: Bool) -> Bool"))
-        #expect(modelSource.contains("var isDimmedByOtherDisplay: Bool"))
-        #expect(modelSource.contains("displayFocus.activate(display.id)"))
-        #expect(modelSource.contains("displayFocus.clear(ifMatching: display.id)"))
-        #expect(controllerSource.contains("let displayFocus = CropperDisplayFocus()"))
-        #expect(controllerSource.contains("dimOtherDisplays: dimOtherDisplays"))
-        #expect(viewSource.contains("Color.black.opacity(model.isDimmedByOtherDisplay ? 0.20 : 0.38)"))
-        #expect(
-            viewSource.contains("if let selection = model.selection, !model.isDimmedByOtherDisplay"))
-        #expect(menuSource.contains("dimOtherDisplays: model.settings.dimOtherDisplays"))
-        #expect(shortcutsSource.contains("dimOtherDisplays: model.settings.dimOtherDisplays"))
-    }
-
-    @Test("cropper shows loupe during precision selection")
-    func cropperShowsLoupeDuringPrecisionSelection() throws {
-        let packageRoot = try packageRootURL()
-        let modelSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Models/LuxelCropperModel.swift"),
-            encoding: .utf8
-        )
-        let controllerSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
-            encoding: .utf8
-        )
-        let viewSource = try sourceContents(
-            under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
-        let menuSource = try String(
-            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift"),
-            encoding: .utf8
-        )
-        let shortcutsSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Shortcuts/LuxelShortcutInstaller.swift"),
-            encoding: .utf8
-        )
-
-        #expect(modelSource.contains("var loupeSample: CaptureLoupeSample?"))
-        #expect(modelSource.contains("let loupeAlwaysOn: Bool"))
-        #expect(modelSource.contains("CaptureLoupeSampleResolver.sample("))
-        #expect(modelSource.contains("loupeSample = nil"))
-        #expect(controllerSource.contains("loupeAlwaysOn: Bool = false"))
-        #expect(controllerSource.contains("loupeAlwaysOn: loupeAlwaysOn"))
-        #expect(viewSource.contains("struct CropperLoupeView"))
-        #expect(viewSource.contains("struct CropperLoupeGrid"))
-        #expect(viewSource.contains("let isLoupeRequested = flags.contains(.option)"))
-        #expect(viewSource.contains("isSnappingDisabled: flags.contains(.command) || isLoupeActive"))
-        #expect(menuSource.contains("loupeAlwaysOn: model.settings.loupeAlwaysOn"))
-        #expect(shortcutsSource.contains("loupeAlwaysOn: model.settings.loupeAlwaysOn"))
-    }
-
-    @Test("recording FPS settings accept direct numeric entry")
-    func recordingFPSSettingsAcceptDirectNumericEntry() throws {
-        let packageRoot = try packageRootURL()
-        let settingsSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Settings/Views/LuxelSettingsView.swift"),
-            encoding: .utf8
-        )
-        let requestSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+RecordingRequests.swift"),
-            encoding: .utf8
-        )
-
-        #expect(settingsSource.contains("TextField("))
-        #expect(settingsSource.contains("value: recordingFrameRateSelection"))
-        #expect(settingsSource.contains("formatter: recordingFrameRateFormatter"))
-        #expect(settingsSource.contains("try model.settings.setRecordingFrameRate(frameRate)"))
-        #expect(settingsSource.contains("Use a whole number from 1 to 120 FPS."))
-        #expect(settingsSource.contains("Match Display Refresh Rate"))
-        #expect(requestSource.contains("settings.matchDisplayFrameRate ? FrameRate.fps120"))
-        #expect(!requestSource.contains("settings.record60FPS ? 60 : 30"))
-    }
-
-    @Test("settings pane does not activate capture resources")
-    func settingsPaneDoesNotActivateCaptureResources() throws {
-        let packageRoot = try packageRootURL()
-        let settingsSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Settings/Views/LuxelSettingsView.swift"),
-            encoding: .utf8
-        )
-
-        #expect(!settingsSource.contains("watchAudioLevels("))
-        #expect(!settingsSource.contains("AudioLevelMeterView("))
-        #expect(!settingsSource.contains("syncCameraPreviewPanelWithSettings("))
-    }
-
-    @Test("recording lifecycle owns camera preview activation")
-    func recordingLifecycleOwnsCameraPreviewActivation() throws {
-        let packageRoot = try packageRootURL()
-        let recordingSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Recording.swift"),
-            encoding: .utf8
-        )
-        let cameraSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Camera.swift"),
-            encoding: .utf8
-        )
-
-        let recorderStartRange = try #require(
-            recordingSource.range(of: "recordingLifecycleService.startRecording("))
-        let cutoutPreparationRange = try #require(
-            recordingSource.range(of: "await preparingCameraCutoutIfNeeded(for: request)"))
-        let cameraStartRange = try #require(
-            recordingSource.range(of: "await presentCameraPreviewForRecording(effectiveRequest)"))
-        let recordingCameraHelperRange = try #require(
-            cameraSource.range(
-                of: "func presentCameraPreviewForRecording(_ request: RecordingRequest) async")
-        )
-        let stopRecordingRange = try #require(recordingSource.range(of: "func stopRecording() async"))
-        let stopRecorderRange = try #require(
-            recordingSource[stopRecordingRange.lowerBound...].range(
-                of: "recordingLifecycleService.stopRecording()")
-        )
-        let stopCameraRange = try #require(
-            recordingSource[stopRecordingRange.lowerBound...].range(
-                of: "await closeCameraPreviewForRecordingStop()")
-        )
-        let recordingCameraHelperSource = String(cameraSource[recordingCameraHelperRange.lowerBound...])
-        let cameraPreviewPresentCallCount =
-            cameraSource
-            .components(separatedBy: "cameraPreviewPanelController.present(")
-            .count - 1
-
-        #expect(cutoutPreparationRange.lowerBound < recorderStartRange.lowerBound)
-        #expect(recorderStartRange.lowerBound < cameraStartRange.lowerBound)
-        #expect(stopCameraRange.lowerBound < stopRecorderRange.lowerBound)
-        #expect(recordingSource.contains("closeCameraPreviewForFinishedRecording()"))
-        #expect(
-            cameraSource.contains(
-                "func presentCameraPreviewForRecording(_ request: RecordingRequest) async"))
-        #expect(cameraPreviewPresentCallCount == 1)
-        #expect(!cameraSource.contains("syncCameraPreviewPanelWithSettings("))
-        #expect(recordingCameraHelperSource.contains("guard let camera = request.camera"))
-        #expect(recordingCameraHelperSource.contains("guard cameraStatus == .authorized"))
-        #expect(recordingCameraHelperSource.contains("cameraPreviewPanelController.close()"))
-        #expect(!recordingCameraHelperSource.contains("permissionClient.request(.camera)"))
-        #expect(recordingCameraHelperSource.contains("showsHoverControls: false"))
-        #expect(cameraSource.contains("func closeCameraPreviewForFinishedRecording()"))
-        #expect(cameraSource.contains("try await cameraPreviewPanelController.prepareCutout()"))
-        #expect(cameraSource.contains("request.replacingCamera("))
-    }
-
-    @Test("update settings milestone does not link Sparkle yet")
-    func updateSettingsMilestoneDoesNotLinkSparkleYet() throws {
-        let packageRoot = try packageRootURL()
-        let checkedURLs =
-            [packageRoot.appending(path: "Package.swift")]
-            + (try swiftFiles(under: packageRoot.appending(path: "Sources")))
-        let forbiddenSnippets = [
-            ".package(url: \"https://github.com/sparkle-project/Sparkle\"",
-            "import Sparkle",
-            "SPUUpdater",
-            "SPUStandardUpdaterController",
-            "SUUpdater"
-        ]
-
-        for fileURL in checkedURLs {
-            let contents = try String(contentsOf: fileURL, encoding: .utf8)
-            for forbiddenSnippet in forbiddenSnippets {
-                #expect(
-                    !contents.contains(forbiddenSnippet), "\(fileURL.path) contains \(forbiddenSnippet)")
-            }
-        }
-    }
-}
-
-extension ArchitectureTests {
-    private func swiftFiles(under directory: URL) throws -> [URL] {
-        guard
-            let enumerator = FileManager.default.enumerator(
-                at: directory,
-                includingPropertiesForKeys: [.isRegularFileKey]
-            )
-        else {
-            return []
-        }
-
-        return try enumerator.compactMap { item in
-            let url = try #require(item as? URL)
-            guard url.pathExtension == "swift" else {
-                return nil
-            }
-
-            return url
-        }
-    }
-
-    private func sourceContents(under directory: URL) throws -> String {
-        try swiftFiles(under: directory)
-            .map { try String(contentsOf: $0, encoding: .utf8) }
-            .joined(separator: "\n")
-    }
-
-    private func sourceText(for paths: [String], encoding: String.Encoding = .utf8) throws -> String {
-        let packageRoot = try packageRootURL()
-        return
-            try paths
-            .map { try String(contentsOf: packageRoot.appending(path: $0), encoding: encoding) }
-            .joined(separator: "\n")
-    }
-
-    private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
     }
 }

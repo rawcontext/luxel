@@ -158,12 +158,12 @@ struct AppBundleConfigurationTests {
     @Test("runtime and CLI have no implicit Precision model download path")
     func runtimeAndCLIHaveNoImplicitPrecisionDownloadPath() throws {
         let root = try packageRootURL()
-        let precisionRuntime = try String(
-            contentsOf: root.appending(
-                path: "Sources/LuxelCore/Infrastructure/Transcripts/PrecisionTranscription.swift"
-            ),
-            encoding: .utf8
-        )
+        let precisionRuntime = try [
+            "Sources/LuxelCore/Infrastructure/Transcripts/PrecisionTranscription.swift",
+            "Sources/LuxelCore/Infrastructure/Transcripts/ParakeetPrecisionModelValidator.swift"
+        ].map {
+            try String(contentsOf: root.appending(path: $0), encoding: .utf8)
+        }.joined(separator: "\n")
         let composition = try String(
             contentsOf: root.appending(
                 path: "Sources/LuxelApp/App/LuxelCompositionRoot+Models.swift"
@@ -184,6 +184,9 @@ struct AppBundleConfigurationTests {
         #expect(!cli.contains("PrecisionTranscriptionEngine"))
     }
 
+}
+
+extension AppBundleConfigurationTests {
     @Test("model catalog generator verifies the production catalog offline")
     func modelCatalogGeneratorVerifiesProductionCatalogOffline() throws {
         let root = try packageRootURL()

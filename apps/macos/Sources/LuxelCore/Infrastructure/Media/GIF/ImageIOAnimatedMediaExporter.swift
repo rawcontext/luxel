@@ -25,33 +25,43 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         imageGenerator.appliesPreferredTrackTransform = true
         imageGenerator.requestedTimeToleranceBefore = .zero
         imageGenerator.requestedTimeToleranceAfter = .zero
+        let context = ImageIOAnimatedExportContext(
+            request: request,
+            outputPixelSize: outputPixelSize,
+            schedule: schedule,
+            imageGenerator: imageGenerator
+        )
 
         if request.format == .gif {
             try await exportGIF(
-                request,
+                context,
                 to: outputFileURL,
-                outputPixelSize: outputPixelSize,
-                schedule: schedule,
-                imageGenerator: imageGenerator,
                 progress: progress
             )
-            return ExportedMedia(
-                fileURL: outputFileURL,
-                format: request.format,
-                pixelSize: outputPixelSize,
-                shouldMute: request.outputShouldMute
-            )
+        } else {
+            try await exportAPNG(context, to: outputFileURL, progress: progress)
         }
 
-        let loopMode = animatedLoopMode(for: request)
-        let frameTimes = try sequencedFrameTimes(schedule.frameTimes, loopMode: loopMode)
-        let destination = try makeDestination(
+        return ExportedMedia(
+            fileURL: outputFileURL,
             format: request.format,
-            outputFileURL: outputFileURL,
-            frameCount: frameTimes.count
+            pixelSize: outputPixelSize,
+            shouldMute: request.outputShouldMute
         )
-        let destinationProperties = destinationProperties(for: request.format, loopMode: loopMode)
-        CGImageDestinationSetProperties(destination, destinationProperties as CFDictionary)
+    }
+}
+
+private extension ImageIOAnimatedMediaExporter {
+    func exportAPNG(
+        _ context: ImageIOAnimatedExportContext,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws {
+        let request = context.request
+        let (destination, frameTimes) = try makeAPNGDestination(
+            context: context,
+            outputFileURL: outputFileURL
+        )
 
         try? FileManager.default.removeItem(at: outputFileURL)
 
@@ -61,7 +71,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
 
             await progress?(0)
             for (frameIndex, time) in frameTimes.enumerated() {
-                let frame = try await imageGenerator.image(at: time).image
+                let frame = try await context.imageGenerator.image(at: time).image
                 if !didBuildCameraPath {
                     cameraPath = try self.cameraPath(for: request, sourceFrame: frame)
                     didBuildCameraPath = true
@@ -69,7 +79,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
 
                 let renderedFrame = try AnimatedFrameRenderer().renderImage(
                     frame,
-                    outputPixelSize: outputPixelSize,
+                    outputPixelSize: context.outputPixelSize,
                     shouldCrop: request.shouldCrop,
                     sourceCropRect: request.cropRect,
                     cameraTransform: try cameraTransform(
@@ -81,7 +91,10 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
                 CGImageDestinationAddImage(
                     destination,
                     renderedFrame,
-                    frameProperties(for: request.format, frameDelay: schedule.frameDelay) as CFDictionary
+                    frameProperties(
+                        for: request.format,
+                        frameDelay: context.schedule.frameDelay
+                    ) as CFDictionary
                 )
                 await progress?(Double(frameIndex + 1) / Double(max(1, frameTimes.count)) * 0.95)
             }
@@ -94,23 +107,36 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
             try? FileManager.default.removeItem(at: outputFileURL)
             throw error
         }
-
-        return ExportedMedia(
-            fileURL: outputFileURL,
-            format: request.format,
-            pixelSize: outputPixelSize,
-            shouldMute: request.outputShouldMute
-        )
     }
 
-    private func exportGIF(
-        _ request: ExportRequest,
+    func makeAPNGDestination(
+        context: ImageIOAnimatedExportContext,
+        outputFileURL: URL
+    ) throws -> (CGImageDestination, [CMTime]) {
+        let loopMode = animatedLoopMode(for: context.request)
+        let frameTimes = try sequencedFrameTimes(
+            context.schedule.frameTimes,
+            loopMode: loopMode
+        )
+        let destination = try makeDestination(
+            format: context.request.format,
+            outputFileURL: outputFileURL,
+            frameCount: frameTimes.count
+        )
+        let properties = destinationProperties(
+            for: context.request.format,
+            loopMode: loopMode
+        )
+        CGImageDestinationSetProperties(destination, properties as CFDictionary)
+        return (destination, frameTimes)
+    }
+
+    func exportGIF(
+        _ context: ImageIOAnimatedExportContext,
         to outputFileURL: URL,
-        outputPixelSize: PixelSize,
-        schedule: AnimatedFrameSchedule,
-        imageGenerator: AVAssetImageGenerator,
         progress: MediaExportProgressHandler?
     ) async throws {
+        let request = context.request
         let options: GIFRenderOptions
         if let gifOptions = request.gifOptions {
             options = gifOptions
@@ -120,12 +146,8 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
 
         let encoder = NativeGIFEncoder()
         let baseFrames = try await renderedBitmaps(
-            for: schedule,
-            request: request,
-            outputPixelSize: outputPixelSize,
-            shouldCrop: request.shouldCrop,
+            context: context,
             backgroundMatte: options.backgroundMatte,
-            imageGenerator: imageGenerator,
             progress: { value in
                 await progress?(value * 0.9)
             }
@@ -134,9 +156,9 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         let frames = try encoder.sequencedFrames(from: baseFrames, loopMode: options.loopMode)
         await progress?(0.95)
         let data = try encoder.data(
-            pixelSize: outputPixelSize,
+            pixelSize: context.outputPixelSize,
             frames: frames,
-            frameDelay: schedule.frameDelay,
+            frameDelay: context.schedule.frameDelay,
             options: options
         )
         await progress?(0.98)
@@ -151,23 +173,20 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         }
     }
 
-    private func renderedBitmaps(
-        for schedule: AnimatedFrameSchedule,
-        request: ExportRequest,
-        outputPixelSize: PixelSize,
-        shouldCrop: Bool,
+    func renderedBitmaps(
+        context: ImageIOAnimatedExportContext,
         backgroundMatte: RGBColor?,
-        imageGenerator: AVAssetImageGenerator,
         progress: MediaExportProgressHandler?
     ) async throws -> [GIFFrameBitmap] {
+        let request = context.request
         var frames: [GIFFrameBitmap] = []
-        frames.reserveCapacity(schedule.frameTimes.count)
+        frames.reserveCapacity(context.schedule.frameTimes.count)
         var cameraPath: CameraPath?
         var didBuildCameraPath = false
 
         await progress?(0)
-        for (frameIndex, time) in schedule.frameTimes.enumerated() {
-            let frame = try await imageGenerator.image(at: time).image
+        for (frameIndex, time) in context.schedule.frameTimes.enumerated() {
+            let frame = try await context.imageGenerator.image(at: time).image
             if !didBuildCameraPath {
                 cameraPath = try self.cameraPath(for: request, sourceFrame: frame)
                 didBuildCameraPath = true
@@ -176,8 +195,8 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
             frames.append(
                 try AnimatedFrameRenderer().renderGIFBitmap(
                     frame,
-                    outputPixelSize: outputPixelSize,
-                    shouldCrop: shouldCrop,
+                    outputPixelSize: context.outputPixelSize,
+                    shouldCrop: request.shouldCrop,
                     sourceCropRect: request.cropRect,
                     backgroundMatte: backgroundMatte,
                     cameraTransform: try cameraTransform(
@@ -186,13 +205,15 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
                         cameraPath: cameraPath
                     )
                 ))
-            await progress?(Double(frameIndex + 1) / Double(max(1, schedule.frameTimes.count)))
+            await progress?(
+                Double(frameIndex + 1) / Double(max(1, context.schedule.frameTimes.count))
+            )
         }
 
         return frames
     }
 
-    private func cameraPath(
+    func cameraPath(
         for request: ExportRequest,
         sourceFrame: CGImage
     ) throws -> CameraPath? {
@@ -216,7 +237,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         )
     }
 
-    private func cameraTransform(
+    func cameraTransform(
         for sourceTime: CMTime,
         request: ExportRequest,
         cameraPath: CameraPath?
@@ -229,11 +250,11 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         return try cameraPath.transform(at: outputTime)
     }
 
-    private func animatedLoopMode(for request: ExportRequest) -> GIFLoopMode {
+    func animatedLoopMode(for request: ExportRequest) -> GIFLoopMode {
         request.gifOptions?.loopMode ?? .forever
     }
 
-    private func sequencedFrameTimes(
+    func sequencedFrameTimes(
         _ frameTimes: [CMTime],
         loopMode: GIFLoopMode
     ) throws -> [CMTime] {
@@ -242,7 +263,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         return frameIndexes.map { frameTimes[$0] }
     }
 
-    private func makeDestination(
+    func makeDestination(
         format: ExportFormat,
         outputFileURL: URL,
         frameCount: Int
@@ -271,7 +292,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         return destination
     }
 
-    private func destinationProperties(
+    func destinationProperties(
         for format: ExportFormat,
         loopMode: GIFLoopMode = .forever
     ) -> [CFString: Any] {
@@ -289,7 +310,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         }
     }
 
-    private func destinationPNGProperties(loopMode: GIFLoopMode) -> [CFString: Any] {
+    func destinationPNGProperties(loopMode: GIFLoopMode) -> [CFString: Any] {
         guard let loopCount = loopMode.imageIOLoopCount else {
             return [:]
         }
@@ -301,7 +322,7 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         ]
     }
 
-    private func frameProperties(
+    func frameProperties(
         for format: ExportFormat,
         frameDelay: TimeInterval
     ) -> [CFString: Any] {
@@ -325,6 +346,13 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
         }
     }
 
+}
+
+private struct ImageIOAnimatedExportContext {
+    let request: ExportRequest
+    let outputPixelSize: PixelSize
+    let schedule: AnimatedFrameSchedule
+    let imageGenerator: AVAssetImageGenerator
 }
 
 public enum ImageIOAnimatedMediaExporterError: Error, Equatable {

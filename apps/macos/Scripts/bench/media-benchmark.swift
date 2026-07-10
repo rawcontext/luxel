@@ -33,7 +33,7 @@ let benchDirectory = URL(
 let fixtureDirectory = benchDirectory.appendingPathComponent("fixtures")
 let outputDirectory = benchDirectory.appendingPathComponent("out")
 let baselineURL = benchDirectory.appendingPathComponent("baseline.json")
-let masterURL = fixtureDirectory.appendingPathComponent("master-1080p.mp4")
+let sourceFixtureURL = fixtureDirectory.appendingPathComponent("master-1080p.mp4")
 let speechURL = fixtureDirectory.appendingPathComponent("speech.wav")
 try FileManager.default.createDirectory(at: fixtureDirectory, withIntermediateDirectories: true)
 try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
@@ -94,8 +94,15 @@ func makeCodeImage() -> CGImage {
     return context.makeImage()!
 }
 
-func makeMasterFixture() async throws {
-    let writer = try AVAssetWriter(outputURL: masterURL, fileType: .mp4)
+struct FixtureWriterContext {
+    let writer: AVAssetWriter
+    let videoInput: AVAssetWriterInput
+    let adaptor: AVAssetWriterInputPixelBufferAdaptor
+    let audioInput: AVAssetWriterInput
+}
+
+func makeFixtureWriter() throws -> FixtureWriterContext {
+    let writer = try AVAssetWriter(outputURL: sourceFixtureURL, fileType: .mp4)
     let videoInput = AVAssetWriterInput(
         mediaType: .video,
         outputSettings: [
@@ -104,8 +111,6 @@ func makeMasterFixture() async throws {
             AVVideoHeightKey: fixtureSize.height,
             AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: 20_000_000]
         ])
-    // Polled below instead of using requestMediaDataWhenReady, which requires
-    // real-time mode for isReadyForMoreMediaData to become true on its own.
     videoInput.expectsMediaDataInRealTime = true
     let adaptor = AVAssetWriterInputPixelBufferAdaptor(
         assetWriterInput: videoInput,
@@ -125,23 +130,18 @@ func makeMasterFixture() async throws {
     audioInput.expectsMediaDataInRealTime = true
     writer.add(videoInput)
     writer.add(audioInput)
+    return FixtureWriterContext(
+        writer: writer,
+        videoInput: videoInput,
+        adaptor: adaptor,
+        audioInput: audioInput
+    )
+}
 
-    let speechAsset = AVURLAsset(url: speechURL)
-    let reader = try AVAssetReader(asset: speechAsset)
-    let speechTrack = try await speechAsset.loadTracks(withMediaType: .audio).first!
-    let readerOutput = AVAssetReaderTrackOutput(
-        track: speechTrack,
-        outputSettings: [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 48_000,
-            AVNumberOfChannelsKey: 2
-        ])
-    reader.add(readerOutput)
-
-    writer.startWriting()
-    reader.startReading()
-    writer.startSession(atSourceTime: .zero)
-
+func appendVideoFrames(
+    to adaptor: AVAssetWriterInputPixelBufferAdaptor,
+    videoInput: AVAssetWriterInput
+) {
     let codeImage = makeCodeImage()
     let frameCount = Int(fixtureDuration) * fixtureFPS
     for frame in 0..<frameCount {
@@ -158,8 +158,6 @@ func makeMasterFixture() async throws {
             bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
                 | CGImageByteOrderInfo.order32Little.rawValue)!
         let time = Double(frame) / Double(fixtureFPS)
-        // Slow upward scroll of the code image plus a small moving block:
-        // sharp text, large static regions, one mover — typical screen recording.
         let scroll = (time * 90).truncatingRemainder(dividingBy: 10_000)
         context.draw(
             codeImage,
@@ -177,7 +175,12 @@ func makeMasterFixture() async throws {
             withPresentationTime: CMTime(value: CMTimeValue(frame), timescale: CMTimeScale(fixtureFPS)))
     }
     videoInput.markAsFinished()
+}
 
+func appendAudioSamples(
+    from readerOutput: AVAssetReaderTrackOutput,
+    to audioInput: AVAssetWriterInput
+) {
     let cutoff = CMTime(seconds: fixtureDuration, preferredTimescale: 48_000)
     while let sample = readerOutput.copyNextSampleBuffer() {
         while !audioInput.isReadyForMoreMediaData { usleep(2000) }
@@ -185,10 +188,32 @@ func makeMasterFixture() async throws {
         audioInput.append(sample)
     }
     audioInput.markAsFinished()
+}
+
+func makeSourceFixture() async throws {
+    let context = try makeFixtureWriter()
+
+    let speechAsset = AVURLAsset(url: speechURL)
+    let reader = try AVAssetReader(asset: speechAsset)
+    let speechTrack = try await speechAsset.loadTracks(withMediaType: .audio).first!
+    let readerOutput = AVAssetReaderTrackOutput(
+        track: speechTrack,
+        outputSettings: [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 48_000,
+            AVNumberOfChannelsKey: 2
+        ])
+    reader.add(readerOutput)
+
+    context.writer.startWriting()
+    reader.startReading()
+    context.writer.startSession(atSourceTime: .zero)
+    appendVideoFrames(to: context.adaptor, videoInput: context.videoInput)
+    appendAudioSamples(from: readerOutput, to: context.audioInput)
     reader.cancelReading()
-    await writer.finishWriting()
-    guard writer.status == .completed else {
-        fatalError("fixture writer failed: \(String(describing: writer.error))")
+    await context.writer.finishWriting()
+    guard context.writer.status == .completed else {
+        fatalError("fixture writer failed: \(String(describing: context.writer.error))")
     }
 }
 
@@ -196,9 +221,9 @@ if !FileManager.default.fileExists(atPath: speechURL.path) {
     print("Generating speech fixture…")
     try makeSpeechFixture()
 }
-if !FileManager.default.fileExists(atPath: masterURL.path) {
+if !FileManager.default.fileExists(atPath: sourceFixtureURL.path) {
     print("Generating master video fixture…")
-    try await makeMasterFixture()
+    try await makeSourceFixture()
 }
 
 // MARK: - Benchmark cases
@@ -278,7 +303,7 @@ for benchCase in cases {
     for _ in 0..<max(runs, 1) {
         try? FileManager.default.removeItem(at: outputURL)
         let run = try timeCommand(
-            ["convert", masterURL.path, outputURL.path] + benchCase.arguments
+            ["convert", sourceFixtureURL.path, outputURL.path] + benchCase.arguments
                 + ["--overwrite", "--quiet"])
         guard run.status == 0 else { fatalError("luxel-cli convert failed for \(benchCase.name)") }
         best = min(best, run.seconds)

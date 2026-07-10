@@ -129,7 +129,9 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             camera
         }
     }
+}
 
+private extension CaptureCapabilityState {
     private static func screenPresentation(
         status: PermissionStatus
     ) -> CaptureSourcePermissionPresentation {
@@ -158,7 +160,8 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             message: LuxelLocalization.string(
                 "permissions.screen.off.message",
                 defaultValue:
-                    "macOS needs approval before Luxel can record your screen or system sound. If Luxel is not listed, click + and add the app."
+                    "macOS needs approval before Luxel can record your screen or system sound. "
+                    + "If Luxel is not listed, click + and add the app."
             ),
             actionTitle: LuxelLocalization.string(
                 "permissions.screen.enable",
@@ -173,23 +176,7 @@ public struct CaptureCapabilityState: Equatable, Sendable {
         recordsSystemAudio: Bool
     ) -> CaptureSourcePermissionPresentation {
         guard screenRecordingStatus == .authorized else {
-            return CaptureSourcePermissionPresentation(
-                source: .systemAudio,
-                phase: .needsGrant,
-                title: LuxelLocalization.string(
-                    "permissions.systemAudio.off.title",
-                    defaultValue: "System sound is off"),
-                message: LuxelLocalization.string(
-                    "permissions.systemAudio.grant.message",
-                    defaultValue:
-                        "Turn Luxel on for system audio in Screen & System Audio Recording. If Luxel is not listed, click + and add the app."
-                ),
-                actionTitle: LuxelLocalization.string(
-                    "permissions.systemAudio.enable",
-                    defaultValue: "Enable System Sound"),
-                systemImage: "speaker.slash.fill",
-                statusTitle: LuxelLocalization.string("status.required", defaultValue: "Required")
-            )
+            return systemAudioGrantPresentation()
         }
 
         guard recordsSystemAudio else {
@@ -202,7 +189,8 @@ public struct CaptureCapabilityState: Equatable, Sendable {
                 message: LuxelLocalization.string(
                     "permissions.systemAudio.off.message",
                     defaultValue:
-                        "System sound uses macOS Screen & System Audio Recording. Microphone uses a separate permission."
+                        "System sound uses macOS Screen & System Audio Recording. "
+                        + "Microphone uses a separate permission."
                 ),
                 actionTitle: LuxelLocalization.string(
                     "permissions.systemAudio.enable",
@@ -224,6 +212,29 @@ public struct CaptureCapabilityState: Equatable, Sendable {
             actionTitle: LuxelLocalization.string("common.turnOff", defaultValue: "Turn Off"),
             systemImage: "speaker.wave.2.fill",
             statusTitle: LuxelLocalization.string("status.ready", defaultValue: "Ready")
+        )
+    }
+
+    static func systemAudioGrantPresentation() -> CaptureSourcePermissionPresentation {
+        CaptureSourcePermissionPresentation(
+            source: .systemAudio,
+            phase: .needsGrant,
+            title: LuxelLocalization.string(
+                "permissions.systemAudio.off.title",
+                defaultValue: "System sound is off"
+            ),
+            message: LuxelLocalization.string(
+                "permissions.systemAudio.grant.message",
+                defaultValue:
+                    "Turn Luxel on for system audio in Screen & System Audio Recording. "
+                    + "If Luxel is not listed, click + and add the app."
+            ),
+            actionTitle: LuxelLocalization.string(
+                "permissions.systemAudio.enable",
+                defaultValue: "Enable System Sound"
+            ),
+            systemImage: "speaker.slash.fill",
+            statusTitle: LuxelLocalization.string("status.required", defaultValue: "Required")
         )
     }
 

@@ -171,7 +171,9 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
             height: preset.pixelSize.height
         )
     }
+}
 
+private extension CaptureSelectionDraft {
     private func freeformResize(
         dragging handle: CaptureResizeHandle,
         by delta: CaptureResizeDelta

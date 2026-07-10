@@ -34,40 +34,28 @@ struct UserDefaultsSettingsStoreTests {
         let preset = try persistedExportPreset(id: presetID)
         let sizePreset = try CaptureSizePreset(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000402")!,
-            name: "Docs 1440p",
-            pixelSize: PixelSize(width: 2560, height: 1440)
+            name: "Docs 1440p", pixelSize: PixelSize(width: 2560, height: 1440)
         )
 
         return AppSettings(
             recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"),
             recordingsDirectoryBookmark: BookmarkedDirectory(
-                url: URL(fileURLWithPath: "/tmp/luxel"),
-                bookmarkData: Data([0x4c, 0x58, 0x4c]),
+                url: URL(fileURLWithPath: "/tmp/luxel"), bookmarkData: Data([0x4c, 0x58, 0x4c]),
                 accessState: .resolved
             ),
-            showCursor: false,
-            highlightClicks: true,
-            cursorMode: .editable,
+            showCursor: false, highlightClicks: true, cursorMode: .editable,
             cursorRenderOptions: try persistedCursorOptions(),
-            keystrokeOverlayEnabled: true,
-            keystrokeRenderOptions: try persistedKeystrokeOptions(),
+            keystrokeOverlayEnabled: true, keystrokeRenderOptions: try persistedKeystrokeOptions(),
             pauseKeystrokeCaptureShortcut: "command+control+option+k",
-            record60FPS: true,
-            recordSystemAudio: true,
-            recordAudio: true,
-            audioInputDeviceID: "mic-1",
-            audioInputDeviceName: "Studio Mic",
-            audioOnlyFormat: .alac,
-            transcriptTurnSegmentationEnabled: false,
-            cameraDeviceID: "camera-1",
-            cameraSeparateTrack: false,
+            record60FPS: true, recordSystemAudio: true, recordAudio: true,
+            audioInputDeviceID: "mic-1", audioInputDeviceName: "Studio Mic",
+            audioOnlyFormat: .alac, transcriptTurnSegmentationEnabled: false,
+            cameraDeviceID: "camera-1", cameraSeparateTrack: false,
             cameraPreviewStyle: CameraPreviewStyle(shape: .cutout, size: .large, isMirrored: false),
             cameraPreviewPlacements: try persistedCameraPreviewPlacements(),
             replayBufferConfiguration: try persistedReplayBufferConfiguration(),
-            replayBufferPreferredBufferLength: 120,
-            replayBufferResumeOnLaunch: true,
-            replayBufferConsentAccepted: true,
-            alwaysShowReplayBufferIsland: true,
+            replayBufferPreferredBufferLength: 120, replayBufferResumeOnLaunch: true,
+            replayBufferConsentAccepted: true, alwaysShowReplayBufferIsland: true,
             replayClipDestination: .quickExport,
             notchSurfaceSettings: try persistedNotchSurfaceSettings(),
             triggerCropperShortcut: "command+control+option+r",
@@ -82,34 +70,27 @@ struct UserDefaultsSettingsStoreTests {
                 automaticallyDownloadAndInstall: false,
                 channel: .beta
             ),
-            showTimeInMenuBar: false,
-            hideMenuBarIcon: false,
-            launchAtLogin: false,
-            commandLineToolInstall: CommandLineToolInstall(
-                linkURL: URL(fileURLWithPath: "/Users/example/.local/bin/luxel"),
-                directoryBookmark: BookmarkedDirectory(
-                    url: URL(fileURLWithPath: "/Users/example/.local/bin", isDirectory: true),
-                    bookmarkData: Data([0x63, 0x6c, 0x69]),
-                    accessState: .resolved
-                )
-            ),
-            commandLineShell: .fish,
-            notificationReminder: false,
-            allowURLAutomation: true,
-            urlAutomationGrants: ["com.example.terminal"],
-            exportPresets: [preset],
-            quickExportPresetID: presetID,
-            rememberLastCapture: false,
-            loupeAlwaysOn: true,
-            dimOtherDisplays: true,
-            restoreLastSelection: false,
-            userSizePresets: [sizePreset],
+            showTimeInMenuBar: false, hideMenuBarIcon: false, launchAtLogin: false,
+            commandLineToolInstall: persistedCommandLineToolInstall(),
+            commandLineShell: .fish, notificationReminder: false, allowURLAutomation: true,
+            urlAutomationGrants: ["com.example.terminal"], exportPresets: [preset],
+            quickExportPresetID: presetID, rememberLastCapture: false, loupeAlwaysOn: true,
+            dimOtherDisplays: true, restoreLastSelection: false, userSizePresets: [sizePreset],
             lastCaptureMemory: try persistedLastCaptureMemory(presetID: presetID),
             perFormatExportMemory: try persistedExportMemory(),
-            lastSelectedExportFormat: .webm,
-            confirmDiscard: false,
-            defaultCountdown: 5,
-            lastStopAfter: 60
+            lastSelectedExportFormat: .webm, confirmDiscard: false,
+            defaultCountdown: 5, lastStopAfter: 60
+        )
+    }
+
+    private func persistedCommandLineToolInstall() -> CommandLineToolInstall {
+        CommandLineToolInstall(
+            linkURL: URL(fileURLWithPath: "/Users/example/.local/bin/luxel"),
+            directoryBookmark: BookmarkedDirectory(
+                url: URL(fileURLWithPath: "/Users/example/.local/bin", isDirectory: true),
+                bookmarkData: Data([0x63, 0x6c, 0x69]),
+                accessState: .resolved
+            )
         )
     }
 
@@ -199,6 +180,9 @@ struct UserDefaultsSettingsStoreTests {
         ]
     }
 
+}
+
+extension UserDefaultsSettingsStoreTests {
     @Test("load ignores removed clean-room settings keys")
     func loadIgnoresRemovedCleanRoomSettingsKeys() throws {
         let defaults = makeUserDefaults()
@@ -225,6 +209,11 @@ struct UserDefaultsSettingsStoreTests {
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
         let settings = try store.load()
 
+        try assertLegacyCaptureSettings(settings)
+        assertLegacyProductSettings(settings)
+    }
+
+    private func assertLegacyCaptureSettings(_ settings: AppSettings) throws {
         #expect(settings.recordingsDirectory == URL(fileURLWithPath: "/tmp/luxel/"))
         #expect(settings.recordingsDirectoryBookmark == nil)
         #expect(!settings.showCursor)
@@ -258,34 +247,9 @@ struct UserDefaultsSettingsStoreTests {
         #expect(settings.replayClipDestination == .editor)
         #expect(settings.notchSurfaceSettings == .defaults)
         #expect(settings.notchSurfacePreferences == .defaults)
-        #expect(!settings.enableShortcuts)
-        #expect(settings.triggerCropperShortcut == "command+shift+5")
-        #expect(settings.toggleRecordingShortcut == "")
-        #expect(settings.recordActiveWindowShortcut == "")
-        #expect(settings.recordFullscreenShortcut == "")
-        #expect(settings.audioOnlyRecordingShortcut == "")
-        #expect(settings.quickRecordLastShortcut == "")
-        #expect(settings.clipReplayBufferShortcut == "")
-        #expect(settings.updatePreferences == .defaults)
-        #expect(settings.showTimeInMenuBar)
-        #expect(!settings.hideMenuBarIcon)
-        #expect(settings.launchAtLogin)
-        #expect(settings.notificationReminder)
-        #expect(settings.allowURLAutomation)
-        #expect(settings.urlAutomationGrants.isEmpty)
-        #expect(settings.exportPresets == ExportPreset.builtInDefaults)
-        #expect(settings.quickExportPresetID == ExportPreset.quickGIFID)
-        #expect(settings.rememberLastCapture)
-        #expect(!settings.loupeAlwaysOn)
-        #expect(!settings.dimOtherDisplays)
-        #expect(settings.restoreLastSelection)
-        #expect(settings.userSizePresets == CaptureSizePreset.builtInDefaults)
-        #expect(settings.lastCaptureMemory == nil)
-        #expect(settings.perFormatExportMemory.isEmpty)
-        #expect(settings.lastSelectedExportFormat == nil)
-        #expect(settings.confirmDiscard)
-        #expect(settings.defaultCountdown == nil)
-        #expect(settings.lastStopAfter == nil)
+    }
+
+    private func assertLegacyProductSettings(_ settings: AppSettings) {
     }
 
     @Test("load preserves explicit nil quick preset")

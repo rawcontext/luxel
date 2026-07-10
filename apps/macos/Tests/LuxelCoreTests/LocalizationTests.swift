@@ -112,21 +112,8 @@ struct LocalizationTests {
 }
 
 private struct StringCatalog: Decodable {
-    struct Entry: Decodable {
-        struct Localization: Decodable {
-            struct StringUnit: Decodable {
-                let state: String
-                let value: String
-            }
-
-            let stringUnit: StringUnit
-        }
-
-        let localizations: [String: Localization]?
-    }
-
     let sourceLanguage: String
-    let strings: [String: Entry]
+    let strings: [String: StringCatalogEntry]
 
     var availableLocales: Set<String> {
         Set(
@@ -149,6 +136,19 @@ private struct StringCatalog: Decodable {
                 localization.stringUnit.value.isEmpty ? nil : locale
             } ?? [])
     }
+}
+
+private struct StringCatalogEntry: Decodable {
+    let localizations: [String: StringCatalogLocalization]?
+}
+
+private struct StringCatalogLocalization: Decodable {
+    let stringUnit: StringCatalogStringUnit
+}
+
+private struct StringCatalogStringUnit: Decodable {
+    let state: String
+    let value: String
 }
 
 private let packageRoot = URL(fileURLWithPath: #filePath)

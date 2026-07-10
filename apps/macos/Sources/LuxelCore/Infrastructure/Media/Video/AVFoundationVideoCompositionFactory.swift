@@ -10,7 +10,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         timeRange: CMTimeRange,
         outputPixelSize: PixelSize,
         frameRate: FrameRate,
-        shouldCrop: Bool,
+        shouldCrop: Bool = false,
         sourceCropRect: CaptureRect? = nil,
         zoomBlocks: [ZoomBlock] = []
     ) async throws -> AVVideoComposition {
@@ -20,14 +20,17 @@ struct AVFoundationVideoCompositionFactory: Sendable {
             sourceCropRect,
             presentationSize: geometry.presentationSize
         )
-        let layerInstruction = try layerInstruction(
-            trackID: compositionVideoTrack.trackID,
+        let instructionContext = VideoCompositionInstructionContext(
             geometry: geometry,
             outputSize: outputSize,
             shouldCrop: shouldCrop,
             spatialCropRect: spatialCropRect,
             timeRange: timeRange,
-            frameRate: frameRate,
+            frameRate: frameRate
+        )
+        let layerInstruction = try layerInstruction(
+            trackID: compositionVideoTrack.trackID,
+            context: instructionContext,
             zoomBlocks: zoomBlocks
         )
         let instructionConfiguration = AVVideoCompositionInstruction.Configuration(
@@ -72,12 +75,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
 
     private func layerInstruction(
         trackID: CMPersistentTrackID,
-        geometry: VideoCompositionGeometry,
-        outputSize: CGSize,
-        shouldCrop: Bool,
-        spatialCropRect: CGRect?,
-        timeRange: CMTimeRange,
-        frameRate: FrameRate,
+        context: VideoCompositionInstructionContext,
         zoomBlocks: [ZoomBlock]
     ) throws -> AVVideoCompositionLayerInstruction {
         var layerConfiguration = AVVideoCompositionLayerInstruction.Configuration(trackID: trackID)
@@ -85,10 +83,10 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         guard !zoomBlocks.isEmpty else {
             layerConfiguration.setTransform(
                 renderTransform(
-                    geometry: geometry,
-                    outputSize: outputSize,
-                    shouldCrop: shouldCrop,
-                    spatialCropRect: spatialCropRect,
+                    geometry: context.geometry,
+                    outputSize: context.outputSize,
+                    shouldCrop: context.shouldCrop,
+                    spatialCropRect: context.spatialCropRect,
                     cameraTransform: .identity
                 ),
                 at: .zero
@@ -98,17 +96,12 @@ struct AVFoundationVideoCompositionFactory: Sendable {
 
         let cameraPath = try CameraPath(
             blocks: zoomBlocks,
-            sourceSize: geometry.sourcePixelSize
+            sourceSize: context.geometry.sourcePixelSize
         )
         try addCameraRamps(
             to: &layerConfiguration,
             cameraPath: cameraPath,
-            geometry: geometry,
-            outputSize: outputSize,
-            shouldCrop: shouldCrop,
-            spatialCropRect: spatialCropRect,
-            timeRange: timeRange,
-            frameRate: frameRate
+            context: context
         )
 
         return AVVideoCompositionLayerInstruction(configuration: layerConfiguration)
@@ -117,59 +110,35 @@ struct AVFoundationVideoCompositionFactory: Sendable {
     private func addCameraRamps(
         to layerConfiguration: inout AVVideoCompositionLayerInstruction.Configuration,
         cameraPath: CameraPath,
-        geometry: VideoCompositionGeometry,
-        outputSize: CGSize,
-        shouldCrop: Bool,
-        spatialCropRect: CGRect?,
-        timeRange: CMTimeRange,
-        frameRate: FrameRate
+        context: VideoCompositionInstructionContext
     ) throws {
-        let frameDuration = CMTime(value: 1, timescale: CMTimeScale(frameRate.framesPerSecond))
-        var currentTime = timeRange.start
+        let frameDuration = CMTime(
+            value: 1,
+            timescale: CMTimeScale(context.frameRate.framesPerSecond)
+        )
+        var currentTime = context.timeRange.start
 
-        while CMTimeCompare(currentTime, timeRange.end) < 0 {
+        while CMTimeCompare(currentTime, context.timeRange.end) < 0 {
             let proposedEndTime = CMTimeAdd(currentTime, frameDuration)
             let nextTime =
-                CMTimeCompare(proposedEndTime, timeRange.end) > 0 ? timeRange.end : proposedEndTime
+                CMTimeCompare(proposedEndTime, context.timeRange.end) > 0
+                ? context.timeRange.end : proposedEndTime
             let rampTimeRange = CMTimeRange(
                 start: currentTime,
                 duration: CMTimeSubtract(nextTime, currentTime)
             )
-            let startTransform = try cameraPath.transform(at: outputSeconds(currentTime, in: timeRange))
-            let endTransform = try cameraPath.transform(at: outputSeconds(nextTime, in: timeRange))
-
-            layerConfiguration.addCropRectangleRamp(
-                AVVideoCompositionLayerInstruction.CropRectangleRamp(
-                    timeRange: rampTimeRange,
-                    start: sourceCropRect(
-                        for: startTransform, geometry: geometry, spatialCropRect: spatialCropRect),
-                    end: sourceCropRect(
-                        for: endTransform, geometry: geometry, spatialCropRect: spatialCropRect)
-                ))
-            layerConfiguration.addTransformRamp(
-                AVVideoCompositionLayerInstruction.TransformRamp(
-                    timeRange: rampTimeRange,
-                    start: renderTransform(
-                        geometry: geometry,
-                        outputSize: outputSize,
-                        shouldCrop: shouldCrop,
-                        spatialCropRect: spatialCropRect,
-                        cameraTransform: startTransform
-                    ),
-                    end: renderTransform(
-                        geometry: geometry,
-                        outputSize: outputSize,
-                        shouldCrop: shouldCrop,
-                        spatialCropRect: spatialCropRect,
-                        cameraTransform: endTransform
-                    )
-                ))
+            try addCameraRamp(
+                to: &layerConfiguration,
+                cameraPath: cameraPath,
+                context: context,
+                timeRange: rampTimeRange
+            )
 
             currentTime = nextTime
         }
     }
 
-    private func renderTransform(
+    func renderTransform(
         geometry: VideoCompositionGeometry,
         outputSize: CGSize,
         shouldCrop: Bool,
@@ -204,7 +173,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
             )
     }
 
-    private func sourceCropRect(
+    func sourceCropRect(
         for cameraTransform: CameraTransform,
         geometry: VideoCompositionGeometry,
         spatialCropRect: CGRect?
@@ -222,7 +191,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         return sourceCrop.intersection(CGRect(origin: .zero, size: geometry.naturalSize))
     }
 
-    private func presentationCropRect(
+    func presentationCropRect(
         for sourceRect: NormalizedRect,
         presentationSize: CGSize,
         spatialCropRect: CGRect?
@@ -262,7 +231,7 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         return clampedRect
     }
 
-    private func outputSeconds(_ time: CMTime, in timeRange: CMTimeRange) -> TimeInterval {
+    func outputSeconds(_ time: CMTime, in timeRange: CMTimeRange) -> TimeInterval {
         max(0, CMTimeSubtract(time, timeRange.start).seconds)
     }
 }
@@ -272,7 +241,7 @@ enum AVFoundationVideoCompositionFactoryError: Error, Equatable {
     case invalidCropRect
 }
 
-private struct VideoCompositionGeometry {
+struct VideoCompositionGeometry {
     let naturalSize: CGSize
     let sourceToPresentationTransform: CGAffineTransform
     let presentationSize: CGSize
@@ -285,4 +254,13 @@ private struct VideoCompositionGeometry {
             )
         }
     }
+}
+
+struct VideoCompositionInstructionContext {
+    let geometry: VideoCompositionGeometry
+    let outputSize: CGSize
+    let shouldCrop: Bool
+    let spatialCropRect: CGRect?
+    let timeRange: CMTimeRange
+    let frameRate: FrameRate
 }

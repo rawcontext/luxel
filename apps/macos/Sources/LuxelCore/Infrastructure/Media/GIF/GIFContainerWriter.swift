@@ -58,7 +58,7 @@ public struct GIFContainerWriter: Sendable {
         palette: GIFColorPalette,
         frames: [GIFFrameDelta],
         delays: GIFCentisecondDelayPlan,
-        loopMode: GIFLoopMode,
+        loopMode: GIFLoopMode = .forever,
         to outputFileURL: URL
     ) throws {
         let output = try data(

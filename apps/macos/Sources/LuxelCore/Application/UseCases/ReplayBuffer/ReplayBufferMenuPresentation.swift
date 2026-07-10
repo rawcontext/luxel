@@ -19,97 +19,7 @@ public struct ReplayBufferMenuPresentation: Equatable, Sendable {
             self = .hidden
             return
         }
-
-        let durationText = Self.durationText(configuration.bufferLength)
-        isVisible = true
-        clipActionTitle = LuxelLocalization.format(
-            "replayBuffer.action.clipLast",
-            defaultValue: "Clip Last %@",
-            durationText)
-
-        switch state {
-        case .disarmed:
-            statusText = LuxelLocalization.string(
-                "replayBuffer.status.ready",
-                defaultValue: "Replay Buffer Ready")
-            statusDetail = LuxelLocalization.format(
-                "replayBuffer.detail.durationFPS",
-                defaultValue: "%@ · %d FPS",
-                durationText,
-                configuration.frameRate.framesPerSecond)
-            pauseActionTitle = LuxelLocalization.string(
-                "replayBuffer.action.pause",
-                defaultValue: "Pause Replay Buffer")
-            canClip = false
-            canPause = false
-            pauseActionIsResume = false
-
-        case .starting(let since):
-            statusText = LuxelLocalization.string(
-                "replayBuffer.status.buffering",
-                defaultValue: "Replay Buffering")
-            statusDetail = LuxelLocalization.format(
-                "replayBuffer.detail.buffering",
-                defaultValue: "Buffering for %@ · %@ · %d FPS",
-                Self.elapsedText(from: since, to: now),
-                durationText,
-                configuration.frameRate.framesPerSecond)
-            pauseActionTitle = LuxelLocalization.string(
-                "replayBuffer.action.pause",
-                defaultValue: "Pause Replay Buffer")
-            canClip = false
-            canPause = false
-            pauseActionIsResume = false
-
-        case .buffering(let since):
-            statusText = LuxelLocalization.string(
-                "replayBuffer.status.buffering",
-                defaultValue: "Replay Buffering")
-            statusDetail = LuxelLocalization.format(
-                "replayBuffer.detail.buffering",
-                defaultValue: "Buffering for %@ · %@ · %d FPS",
-                Self.elapsedText(from: since, to: now),
-                durationText,
-                configuration.frameRate.framesPerSecond)
-            pauseActionTitle = LuxelLocalization.string(
-                "replayBuffer.action.pause",
-                defaultValue: "Pause Replay Buffer")
-            canClip = true
-            canPause = true
-            pauseActionIsResume = false
-
-        case .paused(let reason):
-            statusText = LuxelLocalization.string(
-                "replayBuffer.status.paused",
-                defaultValue: "Replay Buffer Paused")
-            statusDetail = LuxelLocalization.format(
-                "replayBuffer.detail.paused",
-                defaultValue: "%@ · %@ buffer",
-                Self.pauseReasonText(reason),
-                durationText)
-            pauseActionTitle = LuxelLocalization.string(
-                "replayBuffer.action.resume",
-                defaultValue: "Resume Replay Buffer")
-            canClip = false
-            canPause = reason == .user
-            pauseActionIsResume = true
-
-        case .clipping:
-            statusText = LuxelLocalization.string(
-                "replayBuffer.status.clipping",
-                defaultValue: "Clipping Replay Buffer")
-            statusDetail = LuxelLocalization.format(
-                "replayBuffer.detail.durationFPS",
-                defaultValue: "%@ · %d FPS",
-                durationText,
-                configuration.frameRate.framesPerSecond)
-            pauseActionTitle = LuxelLocalization.string(
-                "replayBuffer.action.pause",
-                defaultValue: "Pause Replay Buffer")
-            canClip = false
-            canPause = false
-            pauseActionIsResume = false
-        }
+        self = Self.presentation(configuration: configuration, state: state, now: now)
     }
 
     private init(
@@ -150,6 +60,141 @@ public struct ReplayBufferMenuPresentation: Equatable, Sendable {
             canClip: false,
             canPause: false,
             pauseActionIsResume: false
+        )
+    }
+
+    private static func presentation(
+        configuration: ReplayBufferConfiguration,
+        state: ReplayBufferState,
+        now: Date
+    ) -> Self {
+        let durationText = durationText(configuration.bufferLength)
+        switch state {
+        case .disarmed:
+            return standardPresentation(
+                statusKey: "replayBuffer.status.ready",
+                statusDefault: "Replay Buffer Ready",
+                configuration: configuration,
+                durationText: durationText
+            )
+        case .starting(let since):
+            return bufferingPresentation(
+                configuration: configuration,
+                durationText: durationText,
+                since: since,
+                now: now,
+                isReady: false
+            )
+        case .buffering(let since):
+            return bufferingPresentation(
+                configuration: configuration,
+                durationText: durationText,
+                since: since,
+                now: now,
+                isReady: true
+            )
+        case .paused(let reason):
+            return pausedPresentation(reason: reason, durationText: durationText)
+        case .clipping:
+            return standardPresentation(
+                statusKey: "replayBuffer.status.clipping",
+                statusDefault: "Clipping Replay Buffer",
+                configuration: configuration,
+                durationText: durationText
+            )
+        }
+    }
+
+    private static func standardPresentation(
+        statusKey: String,
+        statusDefault: String,
+        configuration: ReplayBufferConfiguration,
+        durationText: String
+    ) -> Self {
+        Self(
+            isVisible: true,
+            statusText: LuxelLocalization.string(statusKey, defaultValue: statusDefault),
+            statusDetail: LuxelLocalization.format(
+                "replayBuffer.detail.durationFPS",
+                defaultValue: "%@ · %d FPS",
+                durationText,
+                configuration.frameRate.framesPerSecond
+            ),
+            clipActionTitle: clipActionTitle(durationText),
+            pauseActionTitle: pauseActionTitle,
+            canClip: false,
+            canPause: false,
+            pauseActionIsResume: false
+        )
+    }
+
+    private static func bufferingPresentation(
+        configuration: ReplayBufferConfiguration,
+        durationText: String,
+        since: Date,
+        now: Date,
+        isReady: Bool
+    ) -> Self {
+        Self(
+            isVisible: true,
+            statusText: LuxelLocalization.string(
+                "replayBuffer.status.buffering",
+                defaultValue: "Replay Buffering"
+            ),
+            statusDetail: LuxelLocalization.format(
+                "replayBuffer.detail.buffering",
+                defaultValue: "Buffering for %@ · %@ · %d FPS",
+                elapsedText(from: since, to: now),
+                durationText,
+                configuration.frameRate.framesPerSecond
+            ),
+            clipActionTitle: clipActionTitle(durationText),
+            pauseActionTitle: pauseActionTitle,
+            canClip: isReady,
+            canPause: isReady,
+            pauseActionIsResume: false
+        )
+    }
+
+    private static func pausedPresentation(
+        reason: ReplayBufferPauseReason,
+        durationText: String
+    ) -> Self {
+        Self(
+            isVisible: true,
+            statusText: LuxelLocalization.string(
+                "replayBuffer.status.paused",
+                defaultValue: "Replay Buffer Paused"
+            ),
+            statusDetail: LuxelLocalization.format(
+                "replayBuffer.detail.paused",
+                defaultValue: "%@ · %@ buffer",
+                pauseReasonText(reason),
+                durationText
+            ),
+            clipActionTitle: clipActionTitle(durationText),
+            pauseActionTitle: LuxelLocalization.string(
+                "replayBuffer.action.resume",
+                defaultValue: "Resume Replay Buffer"
+            ),
+            canClip: false,
+            canPause: reason == .user,
+            pauseActionIsResume: true
+        )
+    }
+
+    private static func clipActionTitle(_ durationText: String) -> String {
+        LuxelLocalization.format(
+            "replayBuffer.action.clipLast",
+            defaultValue: "Clip Last %@",
+            durationText
+        )
+    }
+
+    private static var pauseActionTitle: String {
+        LuxelLocalization.string(
+            "replayBuffer.action.pause",
+            defaultValue: "Pause Replay Buffer"
         )
     }
 

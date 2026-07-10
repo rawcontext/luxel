@@ -7,546 +7,7 @@ struct RecordingHistoryTests {
 }
 
 extension RecordingHistoryTests {
-    @Test("getPastRecordings filters missing files and persists the filtered list")
-    func getPastRecordingsFiltersMissingFiles() {
-        let existingURL = URL(fileURLWithPath: "/tmp/existing.mp4")
-        let missingURL = URL(fileURLWithPath: "/tmp/missing.mp4")
-        let store = InMemoryRecordingHistoryStore(recordings: [
-            PastRecording(fileURL: existingURL, name: "Existing", date: Date(timeIntervalSince1970: 1)),
-            PastRecording(fileURL: missingURL, name: "Missing", date: Date(timeIntervalSince1970: 2))
-        ])
-        let service = makeService(store: store, existingFiles: [existingURL])
-
-        let recordings = service.getPastRecordings()
-
-        #expect(
-            recordings == [
-                PastRecording(fileURL: existingURL, name: "Existing", date: Date(timeIntervalSince1970: 1))
-            ])
-        #expect(store.recordings == recordings)
-    }
-
-    @Test("getPastRecordings keeps bundle root when primary media exists")
-    func getPastRecordingsKeepsBundleRootWhenPrimaryMediaExists() throws {
-        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
-        let cameraURL = rootURL.appendingPathComponent("camera.mov")
-        let cursorURL = rootURL.appendingPathComponent("cursor.json")
-        let manifest = try BundleManifest(sidecars: [
-            BundleSidecarManifest(kind: .camera),
-            BundleSidecarManifest(kind: .cursor)
-        ])
-        let recording = PastRecording(
-            fileURL: rootURL,
-            name: "Bundled",
-            date: Date(timeIntervalSince1970: 2),
-            bundleManifest: manifest
-        )
-        let service = makeService(
-            store: InMemoryRecordingHistoryStore(recordings: [recording]),
-            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov"), cameraURL, cursorURL]
-        )
-
-        let recordings = service.getPastRecordings()
-        #expect(recordings == [recording])
-        #expect(recordings.first?.primaryMediaURL == rootURL.appendingPathComponent("screen.mov"))
-    }
-
-    @Test("getPastRecordings drops missing bundle sidecars with diagnostics")
-    func getPastRecordingsDropsMissingBundleSidecarsWithDiagnostics() throws {
-        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
-        let camera = try BundleSidecarManifest(kind: .camera)
-        let cursor = try BundleSidecarManifest(kind: .cursor)
-        let manifest = try BundleManifest(sidecars: [camera, cursor])
-        let sanitizedManifest = try BundleManifest(sidecars: [camera])
-        let recording = PastRecording(
-            fileURL: rootURL,
-            name: "Bundled",
-            date: Date(timeIntervalSince1970: 2),
-            bundleManifest: manifest
-        )
-        let fileSystem = FakeFileSystem(existingFiles: [
-            rootURL,
-            rootURL.appendingPathComponent("screen.mov"),
-            rootURL.appendingPathComponent("camera.mov")
-        ])
-        let diagnosticClient = SpyRecordingDiagnosticClient()
-        let service = makeService(
-            store: InMemoryRecordingHistoryStore(recordings: [recording]),
-            fileSystem: fileSystem,
-            now: Date(timeIntervalSince1970: 10),
-            diagnosticClient: diagnosticClient
-        )
-
-        let recordings = service.getPastRecordings()
-
-        let expected = recording.replacingBundleManifest(sanitizedManifest)
-        #expect(recordings == [expected])
-        #expect(
-            diagnosticClient.diagnostics == [
-                CorruptRecordingDiagnostic(
-                    fileURL: rootURL.appendingPathComponent("cursor.json"),
-                    reason: "Missing bundle sidecar",
-                    recordedAt: Date(timeIntervalSince1970: 10)
-                )
-            ])
-        #expect(fileSystem.writtenData.map(\.url) == [rootURL.appendingPathComponent("bundle.json")])
-        let persistedManifest = try JSONDecoder().decode(
-            BundleManifest.self, from: try #require(fileSystem.writtenData.first?.data))
-        #expect(persistedManifest == sanitizedManifest)
-    }
-
-    @Test("getPastRecordings prunes bundle roots with missing primary media")
-    func getPastRecordingsPrunesBundleRootsWithMissingPrimaryMedia() throws {
-        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
-        let recording = PastRecording(
-            fileURL: rootURL,
-            name: "Bundled",
-            date: Date(timeIntervalSince1970: 2),
-            bundleManifest: try BundleManifest()
-        )
-        let store = InMemoryRecordingHistoryStore(recordings: [recording])
-        let service = makeService(store: store, existingFiles: [rootURL])
-
-        #expect(service.getPastRecordings().isEmpty)
-        #expect(store.recordings.isEmpty)
-    }
-
-    @Test("recoverActiveRecording returns none with no active recording")
-    func recoverActiveRecordingWithNoActiveRecording() async {
-        let store = InMemoryRecordingHistoryStore()
-        let service = makeService(store: store)
-
-        let result = await service.recoverActiveRecording()
-
-        #expect(result == .none)
-    }
-
-    @Test("recoverActiveRecording moves playable active recording into history")
-    func recoverActiveRecordingWithPlayableFile() async throws {
-        let fileURL = URL(fileURLWithPath: "/tmp/playable.mp4")
-        let date = Date(timeIntervalSince1970: 100)
-        let activeRecording = ActiveRecording(
-            fileURL: fileURL,
-            name: "Playable",
-            date: date,
-            options: RecordingOptions(frameRate: 30)
-        )
-        let store = InMemoryRecordingHistoryStore(activeRecording: activeRecording)
-        let service = makeService(store: store, existingFiles: [fileURL], probeResult: .playable)
-
-        let result = await service.recoverActiveRecording()
-
-        let expected = PastRecording(
-            fileURL: fileURL,
-            name: "Playable",
-            date: date,
-            options: activeRecording.options
-        )
-        #expect(result == .playable(expected))
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings == [expected])
-    }
-
-    @Test("recoverActiveRecording probes bundled primary media and stores root")
-    func recoverActiveRecordingProbesBundledPrimaryMediaAndStoresRoot() async throws {
-        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
-        let cameraURL = rootURL.appendingPathComponent("camera.mov")
-        let manifest = try BundleManifest(sidecars: [
-            BundleSidecarManifest(kind: .camera, syncOffsetMilliseconds: 12)
-        ])
-        let date = Date(timeIntervalSince1970: 100)
-        let activeRecording = ActiveRecording(
-            fileURL: rootURL,
-            name: "Bundled",
-            date: date,
-            options: RecordingOptions(frameRate: 30),
-            bundleManifest: manifest
-        )
-        let probe = SpyMediaProbe(result: .playable)
-        let store = InMemoryRecordingHistoryStore(activeRecording: activeRecording)
-        let service = makeService(
-            store: store,
-            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov"), cameraURL],
-            mediaProbe: probe
-        )
-
-        let result = await service.recoverActiveRecording()
-
-        let expected = PastRecording(
-            fileURL: rootURL,
-            name: "Bundled",
-            date: date,
-            options: activeRecording.options,
-            bundleManifest: manifest
-        )
-        #expect(probe.inspectedURLs == [rootURL.appendingPathComponent("screen.mov")])
-        #expect(result == .playable(expected))
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings == [expected])
-    }
-
-    @Test("recoverActiveRecording drops missing bundle sidecars")
-    func recoverActiveRecordingDropsMissingBundleSidecars() async throws {
-        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
-        let manifest = try BundleManifest(sidecars: [
-            BundleSidecarManifest(kind: .captions)
-        ])
-        let sanitizedManifest = try BundleManifest()
-        let date = Date(timeIntervalSince1970: 100)
-        let activeRecording = ActiveRecording(
-            fileURL: rootURL,
-            name: "Bundled",
-            date: date,
-            options: RecordingOptions(frameRate: 30),
-            bundleManifest: manifest
-        )
-        let diagnosticClient = SpyRecordingDiagnosticClient()
-        let store = InMemoryRecordingHistoryStore(activeRecording: activeRecording)
-        let service = makeService(
-            store: store,
-            existingFiles: [rootURL, rootURL.appendingPathComponent("screen.mov")],
-            now: Date(timeIntervalSince1970: 500),
-            probeResult: .playable,
-            diagnosticClient: diagnosticClient
-        )
-
-        let result = await service.recoverActiveRecording()
-
-        let expected = PastRecording(
-            fileURL: rootURL,
-            name: "Bundled",
-            date: date,
-            options: activeRecording.options,
-            bundleManifest: sanitizedManifest
-        )
-        #expect(result == .playable(expected))
-        #expect(store.recordings == [expected])
-        #expect(
-            diagnosticClient.diagnostics == [
-                CorruptRecordingDiagnostic(
-                    fileURL: rootURL.appendingPathComponent("captions.json"),
-                    reason: "Missing bundle sidecar",
-                    recordedAt: Date(timeIntervalSince1970: 500)
-                )
-            ])
-    }
-
-    @Test("recoverActiveRecording identifies known corrupt active recording without adding history")
-    func recoverActiveRecordingWithKnownCorruptFile() async {
-        let fileURL = URL(fileURLWithPath: "/tmp/corrupt.mp4")
-        let diagnosticClient = SpyRecordingDiagnosticClient()
-        let activeRecording = ActiveRecording(
-            fileURL: fileURL,
-            name: "Corrupt",
-            date: Date(timeIntervalSince1970: 100),
-            options: RecordingOptions(frameRate: 30)
-        )
-        let store = InMemoryRecordingHistoryStore(activeRecording: activeRecording)
-        let service = makeService(
-            store: store,
-            existingFiles: [fileURL],
-            probeResult: .corrupt(reason: "moov atom not found"),
-            diagnosticClient: diagnosticClient
-        )
-
-        let result = await service.recoverActiveRecording()
-
-        #expect(result == .knownCorrupt(fileURL: fileURL, reason: "moov atom not found"))
-        #expect(diagnosticClient.diagnostics.isEmpty)
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings.isEmpty)
-    }
-
-    @Test("recoverActiveRecording records diagnostics for unknown corrupt active recording")
-    func recoverActiveRecordingWithUnknownCorruptFile() async {
-        let fileURL = URL(fileURLWithPath: "/tmp/unknown-corrupt.mp4")
-        let now = Date(timeIntervalSince1970: 500)
-        let diagnosticClient = SpyRecordingDiagnosticClient()
-        let activeRecording = ActiveRecording(
-            fileURL: fileURL,
-            name: "Unknown Corrupt",
-            date: Date(timeIntervalSince1970: 100),
-            options: RecordingOptions(frameRate: 30)
-        )
-        let store = InMemoryRecordingHistoryStore(activeRecording: activeRecording)
-        let service = makeService(
-            store: store,
-            existingFiles: [fileURL],
-            now: now,
-            probeResult: .corrupt(reason: "unexpected decoder failure"),
-            diagnosticClient: diagnosticClient
-        )
-
-        let result = await service.recoverActiveRecording()
-
-        #expect(result == .unknownCorrupt(fileURL: fileURL, reason: "unexpected decoder failure"))
-        #expect(
-            diagnosticClient.diagnostics == [
-                CorruptRecordingDiagnostic(
-                    fileURL: fileURL,
-                    reason: "unexpected decoder failure",
-                    recordedAt: now
-                )
-            ])
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings.isEmpty)
-    }
-
-    @Test("setCurrentRecording stores generated timestamped name")
-    func setCurrentRecordingStoresGeneratedName() throws {
-        let fileURL = URL(fileURLWithPath: "/tmp/current.mp4")
-        let now = try #require(ISO8601DateFormatter().date(from: "2020-07-21T15:27:26Z"))
-        let store = InMemoryRecordingHistoryStore()
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = try #require(TimeZone(secondsFromGMT: -4 * 60 * 60))
-        let service = makeService(store: store, now: now, calendar: calendar)
-
-        service.setCurrentRecording(fileURL: fileURL, options: RecordingOptions(frameRate: 30))
-
-        #expect(
-            store.activeRecording
-                == ActiveRecording(
-                    fileURL: fileURL,
-                    name: "Luxel 2020-07-21 at 11.27.26",
-                    date: now,
-                    options: RecordingOptions(frameRate: 30)
-                ))
-    }
-
-    @Test("materializeRecordingBundle creates directory and manifest file")
-    func materializeRecordingBundleCreatesDirectoryAndManifestFile() throws {
-        let rootURL = URL(fileURLWithPath: "/tmp/Luxel Recording")
-        let fileSystem = FakeFileSystem()
-        let service = makeService(store: InMemoryRecordingHistoryStore(), fileSystem: fileSystem)
-
-        let bundle = try service.materializeRecordingBundle(
-            rootURL: rootURL,
-            sidecars: [
-                BundleSidecarManifest(kind: .camera, syncOffsetMilliseconds: 24),
-                BundleSidecarManifest(kind: .captions)
-            ]
-        )
-
-        #expect(fileSystem.createdDirectories == [rootURL])
-        #expect(fileSystem.writtenData.map(\.url) == [rootURL.appendingPathComponent("bundle.json")])
-        #expect(bundle.primaryURL == rootURL.appendingPathComponent("screen.mov"))
-        #expect(bundle.sidecarURL(for: .camera) == rootURL.appendingPathComponent("camera.mov"))
-        #expect(bundle.sidecarURL(for: .captions) == rootURL.appendingPathComponent("captions.json"))
-
-        let persistedManifest = try JSONDecoder().decode(
-            BundleManifest.self, from: try #require(fileSystem.writtenData.first?.data))
-        #expect(persistedManifest == bundle.manifest)
-    }
-
-    @Test("stopCurrentRecording moves active recording to front and can rename")
-    func stopCurrentRecordingMovesActiveRecordingToFront() {
-        let fileURL = URL(fileURLWithPath: "/tmp/current.mp4")
-        let firstDate = Date(timeIntervalSince1970: 100)
-        let stopDate = Date(timeIntervalSince1970: 200)
-        let activeRecording = ActiveRecording(
-            fileURL: fileURL,
-            name: "Original",
-            date: firstDate,
-            options: RecordingOptions(frameRate: 30)
-        )
-        let store = InMemoryRecordingHistoryStore(activeRecording: activeRecording)
-        let service = makeService(store: store, existingFiles: [fileURL], now: stopDate)
-
-        service.stopCurrentRecording(recordingName: "Renamed")
-
-        #expect(store.activeRecording == nil)
-        #expect(
-            store.recordings == [
-                PastRecording(
-                    fileURL: fileURL,
-                    name: "Renamed",
-                    date: stopDate,
-                    options: activeRecording.options
-                )
-            ])
-    }
-
-    @Test("cleanPastRecordings removes existing files and clears history")
-    func cleanPastRecordingsRemovesExistingFiles() throws {
-        let existingURL = URL(fileURLWithPath: "/tmp/existing.mp4")
-        let missingURL = URL(fileURLWithPath: "/tmp/missing.mp4")
-        let fileSystem = FakeFileSystem(existingFiles: [existingURL])
-        let store = InMemoryRecordingHistoryStore(recordings: [
-            PastRecording(fileURL: existingURL, name: "Existing", date: Date(timeIntervalSince1970: 1)),
-            PastRecording(fileURL: missingURL, name: "Missing", date: Date(timeIntervalSince1970: 2))
-        ])
-        let service = makeService(store: store, fileSystem: fileSystem)
-
-        try service.cleanPastRecordings()
-
-        #expect(fileSystem.removedFiles == [existingURL])
-        #expect(store.recordings.isEmpty)
-    }
-
-    @Test("discardRecording trashes existing file and removes history entry")
-    func discardRecordingTrashesFileAndRemovesHistoryEntry() throws {
-        let keptURL = URL(fileURLWithPath: "/tmp/kept.mp4")
-        let discardedURL = URL(fileURLWithPath: "/tmp/discarded.mp4")
-        let kept = PastRecording(fileURL: keptURL, name: "Kept", date: Date(timeIntervalSince1970: 1))
-        let discarded = PastRecording(
-            fileURL: discardedURL, name: "Discarded", date: Date(timeIntervalSince1970: 2))
-        let fileSystem = FakeFileSystem(existingFiles: [keptURL, discardedURL])
-        let store = InMemoryRecordingHistoryStore(recordings: [discarded, kept])
-        let service = makeService(store: store, fileSystem: fileSystem)
-
-        let recordings = try service.discardRecording(discarded)
-
-        #expect(fileSystem.trashedFiles == [discardedURL])
-        #expect(recordings == [kept])
-        #expect(store.recordings == [kept])
-    }
-
-    @Test("discardRecording keeps history entry when trash fails")
-    func discardRecordingKeepsHistoryWhenTrashFails() throws {
-        let fileURL = URL(fileURLWithPath: "/tmp/discarded.mp4")
-        let recording = PastRecording(
-            fileURL: fileURL, name: "Discarded", date: Date(timeIntervalSince1970: 2))
-        let fileSystem = FakeFileSystem(existingFiles: [fileURL], trashError: StubError.trashFailed)
-        let store = InMemoryRecordingHistoryStore(recordings: [recording])
-        let service = makeService(store: store, fileSystem: fileSystem)
-
-        #expect(throws: StubError.trashFailed) {
-            try service.discardRecording(recording)
-        }
-
-        #expect(fileSystem.trashedFiles == [fileURL])
-        #expect(store.recordings == [recording])
-    }
-
-    @Test("addRecording stores only existing files")
-    func addRecordingStoresOnlyExistingFiles() {
-        let fileURL = URL(fileURLWithPath: "/tmp/new.mp4")
-        let missingURL = URL(fileURLWithPath: "/tmp/missing.mp4")
-        let store = InMemoryRecordingHistoryStore()
-        let service = makeService(store: store, existingFiles: [fileURL])
-
-        let missing = PastRecording(
-            fileURL: missingURL, name: "Missing", date: Date(timeIntervalSince1970: 1))
-        let existing = PastRecording(
-            fileURL: fileURL, name: "Existing", date: Date(timeIntervalSince1970: 2))
-
-        #expect(service.addRecording(missing).isEmpty)
-        #expect(service.addRecording(existing) == [existing])
-        #expect(store.recordings == [existing])
-    }
-
-    @Test("addReplayClip stores timestamped recording history entry")
-    func addReplayClipStoresTimestampedRecordingHistoryEntry() throws {
-        let fileURL = URL(fileURLWithPath: "/tmp/replay.mp4")
-        let now = try #require(ISO8601DateFormatter().date(from: "2020-07-21T15:27:26Z"))
-        let store = InMemoryRecordingHistoryStore()
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = try #require(TimeZone(secondsFromGMT: -4 * 60 * 60))
-        let service = makeService(
-            store: store,
-            existingFiles: [fileURL],
-            now: now,
-            calendar: calendar
-        )
-
-        let recording = service.addReplayClip(fileURL: fileURL)
-
-        let expected = PastRecording(
-            fileURL: fileURL,
-            name: "Luxel Replay 2020-07-21 at 11.27.26",
-            date: now,
-            kind: .recording
-        )
-        #expect(recording == expected)
-        #expect(store.recordings == [expected])
-    }
-
-    @Test("addReplayClip skips missing files")
-    func addReplayClipSkipsMissingFiles() {
-        let fileURL = URL(fileURLWithPath: "/tmp/missing-replay.mp4")
-        let store = InMemoryRecordingHistoryStore()
-        let service = makeService(store: store)
-
-        let recording = service.addReplayClip(fileURL: fileURL, name: "Missing")
-
-        #expect(recording == nil)
-        #expect(store.recordings.isEmpty)
-    }
-
-    @Test("recordExport stores exported file metadata on matching history entry")
-    func recordExportStoresMetadata() throws {
-        let recordingURL = URL(fileURLWithPath: "/tmp/new.mp4")
-        let exportURL = URL(fileURLWithPath: "/tmp/new Quick GIF.gif")
-        let now = Date(timeIntervalSince1970: 300)
-        let recording = PastRecording(
-            fileURL: recordingURL,
-            name: "Existing",
-            date: Date(timeIntervalSince1970: 2)
-        )
-        let store = InMemoryRecordingHistoryStore(recordings: [recording])
-        let service = makeService(
-            store: store,
-            existingFiles: [recordingURL, exportURL],
-            now: now
-        )
-        let exportedMedia = try ExportedMedia(
-            fileURL: exportURL,
-            format: .gif,
-            pixelSize: PixelSize(width: 640, height: 360),
-            shouldMute: true,
-            fileSizeBytes: 42_000
-        )
-
-        let recordings = service.recordExport(exportedMedia, presetName: "Quick GIF", for: recording)
-
-        let expectedExport = RecordingExport(
-            fileURL: exportURL,
-            format: .gif,
-            fileSizeBytes: 42_000,
-            date: now,
-            presetName: "Quick GIF"
-        )
-        #expect(recordings == [recording.addingExport(expectedExport)])
-        #expect(store.recordings == recordings)
-    }
-
-    @Test("getPastRecordings prunes missing export history entries")
-    func getPastRecordingsPrunesMissingExports() {
-        let recordingURL = URL(fileURLWithPath: "/tmp/new.mp4")
-        let existingExportURL = URL(fileURLWithPath: "/tmp/new Quick GIF.gif")
-        let missingExportURL = URL(fileURLWithPath: "/tmp/new Missing.mp4")
-        let recording = PastRecording(
-            fileURL: recordingURL,
-            name: "Existing",
-            date: Date(timeIntervalSince1970: 2),
-            exports: [
-                RecordingExport(
-                    fileURL: existingExportURL,
-                    format: .gif,
-                    date: Date(timeIntervalSince1970: 3),
-                    presetName: "Quick GIF"
-                ),
-                RecordingExport(
-                    fileURL: missingExportURL,
-                    format: .mp4,
-                    date: Date(timeIntervalSince1970: 4),
-                    presetName: "Missing MP4"
-                )
-            ]
-        )
-        let store = InMemoryRecordingHistoryStore(recordings: [recording])
-        let service = makeService(store: store, existingFiles: [recordingURL, existingExportURL])
-
-        let recordings = service.getPastRecordings()
-
-        #expect(
-            recordings == [
-                recording.filteringExports { $0.fileURL == existingExportURL }
-            ])
-        #expect(store.recordings == recordings)
-    }
-
-    private func makeService(
+    func makeService(
         store: InMemoryRecordingHistoryStore,
         existingFiles: Set<URL> = [],
         now: Date = Date(timeIntervalSince1970: 0),
@@ -557,7 +18,7 @@ extension RecordingHistoryTests {
     ) -> RecordingHistoryService {
         makeService(
             store: store,
-            fileSystem: FakeFileSystem(existingFiles: existingFiles),
+            fileSystem: RecordingHistoryFakeFileSystem(existingFiles: existingFiles),
             now: now,
             probeResult: probeResult,
             mediaProbe: mediaProbe,
@@ -566,9 +27,9 @@ extension RecordingHistoryTests {
         )
     }
 
-    private func makeService(
+    func makeService(
         store: InMemoryRecordingHistoryStore,
-        fileSystem: FakeFileSystem,
+        fileSystem: RecordingHistoryFakeFileSystem,
         now: Date = Date(timeIntervalSince1970: 0),
         probeResult: MediaProbeResult = .playable,
         mediaProbe: (any MediaProbe)? = nil,
@@ -578,7 +39,7 @@ extension RecordingHistoryTests {
         RecordingHistoryService(
             store: store,
             fileSystem: fileSystem,
-            dateProvider: FixedDateProvider(now: now),
+            dateProvider: RecordingHistoryFixedDateProvider(now: now),
             mediaProbe: mediaProbe ?? StaticMediaProbe(result: probeResult),
             diagnosticClient: diagnosticClient,
             calendar: calendar
@@ -586,7 +47,7 @@ extension RecordingHistoryTests {
     }
 }
 
-private struct FixedDateProvider: DateProvider {
+struct RecordingHistoryFixedDateProvider: DateProvider {
     let nowValue: Date
 
     init(now: Date) {
@@ -598,14 +59,14 @@ private struct FixedDateProvider: DateProvider {
     }
 }
 
-private enum StubError: Error, Equatable {
+enum RecordingHistoryStubError: Error, Equatable {
     case trashFailed
 }
 
-private final class FakeFileSystem: FileSystem, @unchecked Sendable {
+final class RecordingHistoryFakeFileSystem: FileSystem, @unchecked Sendable {
     private var existingFiles: Set<URL>
     private(set) var createdDirectories: [URL] = []
-    private(set) var writtenData: [WrittenData] = []
+    private(set) var writtenData: [RecordingHistoryWrittenData] = []
     private(set) var removedFiles: [URL] = []
     private(set) var trashedFiles: [URL] = []
     private let trashError: Error?
@@ -627,7 +88,7 @@ private final class FakeFileSystem: FileSystem, @unchecked Sendable {
     func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
 
     func writeData(_ data: Data, to url: URL) throws {
-        writtenData.append(WrittenData(data: data, url: url))
+        writtenData.append(RecordingHistoryWrittenData(data: data, url: url))
         existingFiles.insert(url)
     }
 
@@ -647,12 +108,12 @@ private final class FakeFileSystem: FileSystem, @unchecked Sendable {
     }
 }
 
-private struct WrittenData: Equatable {
+struct RecordingHistoryWrittenData: Equatable {
     let data: Data
     let url: URL
 }
 
-private final class SpyRecordingDiagnosticClient: RecordingDiagnosticClient, @unchecked Sendable {
+final class RecordingHistoryDiagnosticSpy: RecordingDiagnosticClient, @unchecked Sendable {
     private let lock = NSLock()
     private var capturedDiagnostics: [CorruptRecordingDiagnostic] = []
 
@@ -669,7 +130,7 @@ private final class SpyRecordingDiagnosticClient: RecordingDiagnosticClient, @un
     }
 }
 
-private final class SpyMediaProbe: MediaProbe, @unchecked Sendable {
+final class RecordingHistoryMediaProbeSpy: MediaProbe, @unchecked Sendable {
     private let lock = NSLock()
     private let result: MediaProbeResult
     private var capturedURLs: [URL] = []

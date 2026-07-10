@@ -60,7 +60,8 @@ struct LuxelCLIExecutionTests {
 
         #expect(
             opener.openedURLs.map(\.absoluteString) == [
-                "luxel://latest?reveal=true&x-success=http://127.0.0.1:49152/success&x-error=http://127.0.0.1:49152/error"
+                "luxel://latest?reveal=true&x-success=http://127.0.0.1:49152/success"
+                    + "&x-error=http://127.0.0.1:49152/error"
             ])
         #expect(output == ["/tmp/latest.mp4"])
         #expect(receiver.didCancel)

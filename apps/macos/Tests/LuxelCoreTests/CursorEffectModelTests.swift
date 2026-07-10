@@ -189,6 +189,9 @@ struct CursorEffectModelTests {
         }
     }
 
+}
+
+extension CursorEffectModelTests {
     @Test("render options validate cursor click and spotlight values")
     func renderOptionsValidateValues() throws {
         let spotlight = try CursorSpotlightOptions(

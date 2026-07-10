@@ -26,12 +26,10 @@ extension LuxelMenuModel {
 
     func configureEditor(_ editorModel: LuxelEditorModel) {
         configuredEditorModel = editorModel
-        editorModel.configureExportMemory(settings.perFormatExportMemory) {
-            [weak self] format, memory in
+        editorModel.configureExportMemory(settings.perFormatExportMemory) { [weak self] format, memory in
             self?.rememberExportMemory(memory, for: format)
         }
-        editorModel.configureLastSelectedExportFormat(settings.lastSelectedExportFormat) {
-            [weak self] format in
+        editorModel.configureLastSelectedExportFormat(settings.lastSelectedExportFormat) { [weak self] format in
             self?.rememberLastSelectedExportFormat(format)
         }
         editorModel.configureDiscard(

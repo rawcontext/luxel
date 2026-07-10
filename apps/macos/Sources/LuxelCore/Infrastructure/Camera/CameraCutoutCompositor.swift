@@ -27,7 +27,7 @@ public final class CameraCutoutCompositor: @unchecked Sendable {
         outputSize: CGSize,
         isMirrored: Bool,
         timestamp: CMTime,
-        generation: UInt64
+        generation: UInt64 = 0
     ) throws -> CGImage {
         try lock.withLock {
             try compositeLocked(
@@ -47,7 +47,7 @@ public final class CameraCutoutCompositor: @unchecked Sendable {
         outputSize: CGSize,
         isMirrored: Bool,
         timestamp: CMTime,
-        generation: UInt64
+        generation: UInt64 = 0
     ) throws -> CGImage {
         guard outputSize.width > 0, outputSize.height > 0 else {
             throw CameraCutoutCompositorError.invalidOutputSize

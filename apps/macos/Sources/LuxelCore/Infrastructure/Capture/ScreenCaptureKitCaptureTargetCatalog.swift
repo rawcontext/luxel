@@ -21,11 +21,10 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
 
     public func snapshot() async throws -> CaptureTargetCatalogSnapshot {
         let content = try await SCShareableContent.current
-        let displayItems = try content.displays.enumerated().map {
-            index, display -> (
-                bounds: DisplayBounds,
-                target: CaptureTargetOption
-            ) in
+        let displayItems = try content.displays.enumerated().map { index, display -> (
+            bounds: DisplayBounds,
+            target: CaptureTargetOption
+        ) in
             let bounds = try displayBounds(for: display)
             return (bounds, try displayTarget(for: bounds, index: index))
         }

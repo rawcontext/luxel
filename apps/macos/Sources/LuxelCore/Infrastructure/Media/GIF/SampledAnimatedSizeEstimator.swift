@@ -132,27 +132,17 @@ extension SampledAnimatedSizeEstimator {
             totalFrameCount: totalFrameCount,
             requestedSampleCount: sampleFrameCount
         )
-        var sampleFrames: [CGImage] = []
-        var sampleByteCounts: [Int] = []
-
-        for index in sampleIndices {
-            try Task.checkCancellation()
-            let frame = try await renderedFrame(
-                atFrameIndex: index,
-                request: request,
-                outputPixelSize: outputPixelSize,
-                schedule: schedule,
-                imageGenerator: imageGenerator
-            )
-            sampleFrames.append(frame)
-            sampleByteCounts.append(
-                try encodedByteCount(
-                    frames: [frame],
-                    format: request.format,
-                    frameDelay: schedule.frameDelay,
-                    loopMode: loopMode
-                ))
-        }
+        let context = SampledAnimatedImageIOContext(
+            request: request,
+            outputPixelSize: outputPixelSize,
+            schedule: schedule,
+            imageGenerator: imageGenerator,
+            loopMode: loopMode
+        )
+        let (sampleFrames, sampleByteCounts) = try await sampledImageIOFrames(
+            at: sampleIndices,
+            context: context
+        )
 
         if sampleFrames.count == totalFrameCount {
             let frames = try sequencedFrames(sampleFrames, loopMode: loopMode)
@@ -205,29 +195,18 @@ extension SampledAnimatedSizeEstimator {
             requestedSampleCount: sampleFrameCount
         )
         let encoder = NativeGIFEncoder()
-        var sampleFrames: [GIFFrameBitmap] = []
-        var sampleByteCounts: [Int] = []
-
-        for index in sampleIndices {
-            try Task.checkCancellation()
-            let frame = try await renderedGIFFrame(
-                atFrameIndex: index,
-                request: request,
-                outputPixelSize: outputPixelSize,
-                schedule: schedule,
-                backgroundMatte: options.backgroundMatte,
-                imageGenerator: imageGenerator
-            )
-            sampleFrames.append(frame)
-            sampleByteCounts.append(
-                try gifEncodedByteCount(
-                    frames: [frame],
-                    outputPixelSize: outputPixelSize,
-                    frameDelay: schedule.frameDelay,
-                    options: options,
-                    encoder: encoder
-                ))
-        }
+        let context = SampledAnimatedGIFContext(
+            request: request,
+            outputPixelSize: outputPixelSize,
+            schedule: schedule,
+            imageGenerator: imageGenerator,
+            options: options,
+            encoder: encoder
+        )
+        let (sampleFrames, sampleByteCounts) = try await sampledGIFFrames(
+            at: sampleIndices,
+            context: context
+        )
 
         if sampleFrames.count == totalFrameCount {
             let frames = try encoder.sequencedFrames(from: sampleFrames, loopMode: options.loopMode)
@@ -242,13 +221,8 @@ extension SampledAnimatedSizeEstimator {
         }
 
         let adjacentPairs = try await gifAdjacentPairSizes(
-            request: request,
-            outputPixelSize: outputPixelSize,
             totalFrameCount: totalFrameCount,
-            schedule: schedule,
-            imageGenerator: imageGenerator,
-            options: options,
-            encoder: encoder
+            context: context
         )
         let model = try SampledAnimatedEstimateModel(
             totalFrameCount: try outputFrameCount(
@@ -318,13 +292,8 @@ extension SampledAnimatedSizeEstimator {
     }
 
     private func gifAdjacentPairSizes(
-        request: ExportRequest,
-        outputPixelSize: PixelSize,
         totalFrameCount: Int,
-        schedule: AnimatedFrameSchedule,
-        imageGenerator: AVAssetImageGenerator,
-        options: GIFRenderOptions,
-        encoder: NativeGIFEncoder
+        context: SampledAnimatedGIFContext
     ) async throws -> [SampledAnimatedAdjacentPairSize] {
         let pairStartIndices = adjacentPairStartIndices(totalFrameCount: totalFrameCount)
         var pairs: [SampledAnimatedAdjacentPairSize] = []
@@ -333,41 +302,41 @@ extension SampledAnimatedSizeEstimator {
             try Task.checkCancellation()
             let firstFrame = try await renderedGIFFrame(
                 atFrameIndex: startIndex,
-                request: request,
-                outputPixelSize: outputPixelSize,
-                schedule: schedule,
-                backgroundMatte: options.backgroundMatte,
-                imageGenerator: imageGenerator
+                request: context.request,
+                outputPixelSize: context.outputPixelSize,
+                schedule: context.schedule,
+                backgroundMatte: context.options.backgroundMatte,
+                imageGenerator: context.imageGenerator
             )
             let secondFrame = try await renderedGIFFrame(
                 atFrameIndex: startIndex + 1,
-                request: request,
-                outputPixelSize: outputPixelSize,
-                schedule: schedule,
-                backgroundMatte: options.backgroundMatte,
-                imageGenerator: imageGenerator
+                request: context.request,
+                outputPixelSize: context.outputPixelSize,
+                schedule: context.schedule,
+                backgroundMatte: context.options.backgroundMatte,
+                imageGenerator: context.imageGenerator
             )
-            let frameDelay = schedule.frameDelay
+            let frameDelay = context.schedule.frameDelay
             let firstBytes = try gifEncodedByteCount(
                 frames: [firstFrame],
-                outputPixelSize: outputPixelSize,
+                outputPixelSize: context.outputPixelSize,
                 frameDelay: frameDelay,
-                options: options,
-                encoder: encoder
+                options: context.options,
+                encoder: context.encoder
             )
             let secondBytes = try gifEncodedByteCount(
                 frames: [secondFrame],
-                outputPixelSize: outputPixelSize,
+                outputPixelSize: context.outputPixelSize,
                 frameDelay: frameDelay,
-                options: options,
-                encoder: encoder
+                options: context.options,
+                encoder: context.encoder
             )
             let combinedBytes = try gifEncodedByteCount(
                 frames: [firstFrame, secondFrame],
-                outputPixelSize: outputPixelSize,
+                outputPixelSize: context.outputPixelSize,
                 frameDelay: frameDelay,
-                options: options,
-                encoder: encoder
+                options: context.options,
+                encoder: context.encoder
             )
             pairs.append(
                 SampledAnimatedAdjacentPairSize(
