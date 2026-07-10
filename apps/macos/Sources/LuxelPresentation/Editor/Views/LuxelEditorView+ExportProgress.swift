@@ -5,34 +5,50 @@ extension LuxelEditorView {
     var exportProgressPanel: some View {
         LuxelGlassIsland(cornerRadius: 18) {
             VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    if showsExportPanelStatusIcon {
-                        Image(systemName: model.exportPanelSystemImage)
-                            .foregroundStyle(exportPanelTint)
-                            .frame(width: 18)
+                if model.isExporting, !model.exportJobs.isEmpty {
+                    if model.exportJobs.count > 1 {
+                        Text("Exporting \(model.exportJobs.count) files")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+
+                        ProgressView(value: model.exportProgressValue)
+                            .progressViewStyle(.linear)
+                            .accessibilityLabel("Overall export progress")
                     }
 
-                    Text(model.exportPanelTitle)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-
-                    Spacer(minLength: 8)
-                }
-
-                Text(model.exportPanelMessage)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-
-                if model.exportJobs.count > 1, model.isExporting || model.exportProgress != nil {
-                    ProgressView(value: model.exportProgressValue)
-                        .progressViewStyle(.linear)
-                }
-
-                if !model.exportJobs.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(model.exportJobs) { job in
-                            exportJobRow(job)
+                            exportJobRow(
+                                job,
+                                isProminent: model.exportJobs.count == 1
+                            )
+                        }
+                    }
+                } else {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        if showsExportPanelStatusIcon {
+                            Image(systemName: model.exportPanelSystemImage)
+                                .foregroundStyle(exportPanelTint)
+                                .frame(width: 18)
+                        }
+
+                        Text(model.exportPanelTitle)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+
+                        Spacer(minLength: 8)
+                    }
+
+                    Text(model.exportPanelMessage)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+
+                    if !model.exportJobs.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(model.exportJobs) { job in
+                                exportJobRow(job)
+                            }
                         }
                     }
                 }
@@ -137,30 +153,26 @@ extension LuxelEditorView {
         }
     }
 
-    func exportJobRow(_ job: ExportJobSnapshot) -> some View {
+    func exportJobRow(_ job: ExportJobSnapshot, isProminent: Bool = false) -> some View {
         HStack(spacing: 8) {
-            if showsExportJobStatusIcon(job) {
-                Image(systemName: exportJobSystemImage(job))
-                    .foregroundStyle(exportJobTint(job))
-                    .frame(width: 18)
-            }
-
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(job.format.prettyName)
-                        .font(.caption)
+                        .font(isProminent ? .subheadline : .caption)
                         .fontWeight(.semibold)
 
                     Spacer(minLength: 8)
 
                     Text(job.statusSummary)
-                        .font(.caption2)
+                        .font(isProminent ? .caption : .caption2)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
 
                 ProgressView(value: job.progressValue)
                     .progressViewStyle(.linear)
+                    .accessibilityLabel(job.format.prettyName)
+                    .accessibilityValue(job.statusSummary)
             }
 
             if job.fileURL != nil {
@@ -175,35 +187,7 @@ extension LuxelEditorView {
         }
     }
 
-    func exportJobSystemImage(_ job: ExportJobSnapshot) -> String {
-        switch job.progress?.phase {
-        case .preparing, .enhancingAudio, .exporting:
-            "arrow.triangle.2.circlepath"
-        case .completed:
-            "checkmark.circle"
-        case .canceled:
-            "xmark.circle"
-        case .none:
-            "clock"
-        }
-    }
-
     var showsExportPanelStatusIcon: Bool {
         model.exportPanelSystemImage != "checkmark.circle"
-    }
-
-    func showsExportJobStatusIcon(_ job: ExportJobSnapshot) -> Bool {
-        job.progress?.phase != .completed
-    }
-
-    func exportJobTint(_ job: ExportJobSnapshot) -> Color {
-        switch job.progress?.phase {
-        case .completed:
-            .green
-        case .canceled:
-            .secondary
-        default:
-            .accentColor
-        }
     }
 }
