@@ -60,6 +60,10 @@ if [[ -d "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" ]]; then
 	mkdir -p "${APP_PATH}/Contents/Resources/Models"
 	cp -R "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" "${APP_PATH}/Contents/Resources/Models/"
 fi
+if [[ -d "${PACKAGE_ROOT}/Vendor/Models/studio-voice" ]]; then
+	mkdir -p "${APP_PATH}/Contents/Resources/Models"
+	cp -R "${PACKAGE_ROOT}/Vendor/Models/studio-voice" "${APP_PATH}/Contents/Resources/Models/"
+fi
 if [[ -f "${CLI_MANPAGE}" ]]; then
 	mkdir -p "${APP_PATH}/Contents/Resources/man/man1"
 	cp "${CLI_MANPAGE}" "${APP_PATH}/Contents/Resources/man/man1/luxel.1"

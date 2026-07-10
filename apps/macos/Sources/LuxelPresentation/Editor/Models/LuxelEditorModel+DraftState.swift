@@ -25,6 +25,7 @@ extension LuxelEditorModel {
             shouldMute: shouldMute,
             audioVolume: audioVolume,
             normalizeAudio: normalizeAudio,
+            studioVoiceEnabled: studioVoiceEnabled,
             shouldCrop: shouldCrop,
             quality: quality,
             gifLoopModeKind: gifLoopModeKind,
@@ -71,6 +72,7 @@ extension LuxelEditorModel {
         }
         audioVolume = min(max(state.audioVolume, 0), 2)
         normalizeAudio = state.normalizeAudio
+        studioVoiceEnabled = state.studioVoiceEnabled
         shouldCrop = state.shouldCrop
         exportProgress = nil
         schedulePreviewAudioMixUpdate()

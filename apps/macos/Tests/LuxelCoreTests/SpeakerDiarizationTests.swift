@@ -105,6 +105,36 @@ struct TranscriptServiceDiarizationTests {
         #expect(cache.savedRequests.first?.speakerCountHint == .exact(5))
     }
 
+    @Test("uses one microphone speaker and the selected hint for separate system audio")
+    func usesSourceSpecificHintsForSeparateTracks() async throws {
+        let diarizer = SpySpeakerDiarizer(segments: [])
+        let modelStore = StubSpeakerModelStore(initiallyReady: true)
+        let cache = KeyedMemoryTranscriptCache()
+        let service = makeService(
+            diarizer: diarizer,
+            modelStore: modelStore,
+            mode: .enabled,
+            cache: cache,
+            audioTrackInspector: DualTrackInspector()
+        )
+
+        _ = try await service.transcript(
+            for: makeRequest(
+                recordingAudioMode: .systemAndMicrophone(deviceID: nil),
+                speakerCountHint: .exact(5)
+            ))
+
+        let requests = await diarizer.requests
+        let hintByTrack = Dictionary(
+            uniqueKeysWithValues: requests.compactMap { request in
+                request.audioTrackIndex.map { ($0, request.speakerCountHint) }
+            }
+        )
+        #expect(hintByTrack[0] == .exact(5))
+        #expect(hintByTrack[1] == .exact(1))
+        #expect(cache.savedRequests.first?.speakerCountHint == .exact(5))
+    }
+
     @Test("returns non-diarized transcript under the non-diarized key when diarization fails")
     func fallsBackWhenDiarizationFails() async throws {
         let diarizer = FailingSpeakerDiarizer()
@@ -195,12 +225,13 @@ struct TranscriptServiceDiarizationTests {
     // MARK: Helpers
 
     private func makeRequest(
+        recordingAudioMode: RecordingAudioMode = .microphone(deviceID: nil),
         speakerCountHint: TranscriptSpeakerCountHint = .automatic
     ) -> AudioTranscriptRequest {
         AudioTranscriptRequest(
             audioURL: URL(fileURLWithPath: "/tmp/diarized-recording.m4a"),
             locale: Locale(identifier: "en_US"),
-            sourceContext: TranscriptSourceContext(recordingAudioMode: .microphone(deviceID: nil)),
+            sourceContext: TranscriptSourceContext(recordingAudioMode: recordingAudioMode),
             speakerCountHint: speakerCountHint
         )
     }
@@ -210,7 +241,8 @@ struct TranscriptServiceDiarizationTests {
         modelStore: any SpeakerDiarizationModelStore,
         mode: TranscriptSpeakerDiarizationMode,
         cache: any TranscriptCache = KeyedMemoryTranscriptCache(),
-        provenance: TranscriptionProvenance = .appleSpeech
+        provenance: TranscriptionProvenance = .appleSpeech,
+        audioTrackInspector: any AudioTrackInspector = SingleTrackInspector()
     ) -> LocalAudioTranscriptService {
         LocalAudioTranscriptService(
             transcriber: SingleSpanTranscriber(),
@@ -219,7 +251,7 @@ struct TranscriptServiceDiarizationTests {
             speakerDiarizationMode: { mode },
             transcriptionProvenance: { provenance },
             cache: cache,
-            audioTrackInspector: SingleTrackInspector(),
+            audioTrackInspector: audioTrackInspector,
             speakerDiarizer: diarizer,
             speakerModelStore: modelStore
         )
@@ -259,6 +291,16 @@ private struct PassthroughTurnSegmenter: TranscriptTurnSegmenter {
 private struct SingleTrackInspector: AudioTrackInspector {
     func audioTrackCount(in audioURL: URL) async throws -> Int {
         1
+    }
+}
+
+private struct DualTrackInspector: AudioTrackInspector {
+    func audioTrackCount(in audioURL: URL) async throws -> Int {
+        2
+    }
+
+    func audioTrackLayout(in audioURL: URL) async throws -> AudioTrackLayout {
+        AudioTrackLayout(trackKinds: [.system, .microphone])
     }
 }
 

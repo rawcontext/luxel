@@ -30,9 +30,10 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
         self.videoCompositionFactory = videoCompositionFactory
     }
 
-    public func prepare(_ request: ExportRequest) async throws -> CodecMediaSourceDescription {
+    public func prepare(_ input: MediaExportInput) async throws -> CodecMediaSourceDescription {
         reset()
 
+        let request = input.request
         let outputPixelSize = try request.outputPixelSize
         let asset = AVURLAsset(url: request.inputFileURL)
         let sourceVideoTrack = try await firstVideoTrack(in: asset)
@@ -90,14 +91,16 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
         self.videoOutput = videoOutput
         fallbackFrameDuration = 1 / Double(request.frameRate.framesPerSecond)
 
-        let includesAudio = !request.outputShouldMute && !sourceAudioTracks.isEmpty
+        let includesAudio = !request.outputShouldMute
+            && (input.preparedAudio != nil || !sourceAudioTracks.isEmpty)
         if includesAudio {
-            try prepareAudioReader(
+            try await prepareAudioReader(
                 sourceAudioTracks: sourceAudioTracks,
                 sourceTimeRange: sourceTimeRange,
                 sourceCompositionTimeRange: sourceCompositionTimeRange,
                 outputDuration: outputDuration,
-                speed: request.speed
+                speed: request.speed,
+                preparedAudio: input.preparedAudio
             )
         }
 
@@ -178,16 +181,44 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
         sourceTimeRange: CMTimeRange,
         sourceCompositionTimeRange: CMTimeRange,
         outputDuration: CMTime,
-        speed: PlaybackSpeed
-    ) throws {
+        speed: PlaybackSpeed,
+        preparedAudio: PreparedAudioAsset?
+    ) async throws {
         let composition = AVMutableComposition()
-        let compositionAudioTracks = try sourceAudioTracks.map { sourceAudioTrack in
+        let audioSourceTracks: [AVAssetTrack]
+        let audioSourceTimeRange: CMTimeRange
+        var retainedAudioAsset: AVURLAsset?
+        if let preparedAudio {
+            let audioAsset = AVURLAsset(url: preparedAudio.fileURL)
+            retainedAudioAsset = audioAsset
+            audioSourceTracks = try await audioAsset.loadTracks(withMediaType: .audio)
+            guard let sourceTrack = audioSourceTracks.first else {
+                throw AVAssetReaderCodecMediaSourceError.readFailed(
+                    "Prepared audio has no audio track."
+                )
+            }
+            let availableTimeRange = try await sourceTrack.load(.timeRange)
+            let requestedDuration = CMTime(
+                seconds: preparedAudio.duration,
+                preferredTimescale: 60_000
+            )
+            audioSourceTimeRange = CMTimeRange(
+                start: .zero,
+                duration: CMTimeMinimum(availableTimeRange.duration, requestedDuration)
+            )
+        } else {
+            audioSourceTracks = sourceAudioTracks
+            audioSourceTimeRange = sourceTimeRange
+        }
+
+        let compositionAudioTracks = try audioSourceTracks.map { sourceAudioTrack in
             try addAudioTrack(
                 to: composition,
                 from: sourceAudioTrack,
-                sourceTimeRange: sourceTimeRange
+                sourceTimeRange: audioSourceTimeRange
             )
         }
+        withExtendedLifetime(retainedAudioAsset) {}
 
         if speed != .normal {
             composition.scaleTimeRange(sourceCompositionTimeRange, toDuration: outputDuration)
@@ -230,7 +261,13 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
             throw AVAssetReaderCodecMediaSourceError.cannotCreateAudioTrack
         }
 
-        try audioTrack.insertTimeRange(sourceTimeRange, of: sourceAudioTrack, at: .zero)
+        do {
+            try audioTrack.insertTimeRange(sourceTimeRange, of: sourceAudioTrack, at: .zero)
+        } catch {
+            throw AVAssetReaderCodecMediaSourceError.readFailed(
+                "Could not compose audio: \(error.localizedDescription)"
+            )
+        }
         return audioTrack
     }
 

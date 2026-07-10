@@ -144,6 +144,11 @@ struct KnownSpeakerMatcherTests {
 
 @Suite("Known speaker profile store")
 struct FileKnownSpeakerProfileStoreTests {
+    private struct StoredLibraryDocument: Codable {
+        let schemaVersion: Int
+        let profiles: [KnownSpeakerProfile]
+    }
+
     private func makeStore() throws -> (FileKnownSpeakerProfileStore, URL) {
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "LuxelKnownSpeakerTests-\(UUID().uuidString)")
@@ -161,6 +166,30 @@ struct FileKnownSpeakerProfileStoreTests {
                 )
             ]
         )
+    }
+
+    private func writeStoredProfiles(
+        _ profiles: [KnownSpeakerProfile],
+        to directory: URL
+    ) throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        try encoder.encode(
+            StoredLibraryDocument(
+                schemaVersion: FileKnownSpeakerProfileStore.schemaVersion,
+                profiles: profiles
+            )
+        ).write(to: directory.appending(path: "known-speakers.json"))
+    }
+
+    private func storedProfiles(in directory: URL) throws -> [KnownSpeakerProfile] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(
+            StoredLibraryDocument.self,
+            from: Data(contentsOf: directory.appending(path: "known-speakers.json"))
+        ).profiles
     }
 
     @Test("saves loads renames and deletes profiles with revision updates")
@@ -218,6 +247,56 @@ struct FileKnownSpeakerProfileStoreTests {
         let afterMetadata = try store.save(profile)
 
         #expect(afterMetadata.revision == initial.revision)
+    }
+
+    @Test("migrates duplicate names without losing speaker data or double-counting recordings")
+    func migratesDuplicateNames() throws {
+        let (store, directory) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let recordingURL = URL(fileURLWithPath: "/tmp/shared-recording.m4a")
+        let firstClip = try KnownSpeakerExampleClip(
+            audioURL: directory.appending(path: "first.m4a"),
+            duration: 3,
+            sourceRecordingURL: recordingURL
+        )
+        let duplicateClip = try KnownSpeakerExampleClip(
+            audioURL: directory.appending(path: "duplicate.m4a"),
+            duration: 4,
+            sourceRecordingURL: recordingURL
+        )
+        let firstCreatedAt = Date(timeIntervalSince1970: 100)
+        let duplicateUpdatedAt = Date(timeIntervalSince1970: 300)
+        var first = try sampleProfile(named: "Jordan Smith")
+        first.exampleClips = [firstClip]
+        first.matchedRecordingCount = 2
+        first.lastMatchedAt = Date(timeIntervalSince1970: 200)
+        first.createdAt = firstCreatedAt
+        first.updatedAt = Date(timeIntervalSince1970: 200)
+        var duplicate = try sampleProfile(named: "  JORDAN   SMITH  ")
+        duplicate.exampleClips = [duplicateClip]
+        duplicate.matchedRecordingCount = 1
+        duplicate.lastMatchedAt = duplicateUpdatedAt
+        duplicate.createdAt = Date(timeIntervalSince1970: 250)
+        duplicate.updatedAt = duplicateUpdatedAt
+        try writeStoredProfiles([first, duplicate], to: directory)
+
+        let migrated = try store.library()
+        let profile = try #require(migrated.profiles.first)
+        #expect(migrated.profiles.count == 1)
+        #expect(profile.id == first.id)
+        #expect(profile.displayName == "Jordan Smith")
+        #expect(
+            Set(profile.embeddings.map(\.id))
+                == [first.embeddings[0].id, duplicate.embeddings[0].id]
+        )
+        #expect(Set(profile.exampleClips.map(\.id)) == [firstClip.id, duplicateClip.id])
+        #expect(profile.matchedRecordingCount == 2)
+        #expect(profile.lastMatchedAt == duplicateUpdatedAt)
+        #expect(profile.createdAt == firstCreatedAt)
+        #expect(profile.updatedAt == duplicateUpdatedAt)
+
+        #expect(try storedProfiles(in: directory) == migrated.profiles)
     }
 
     @Test("imports example clips into library-owned storage")
@@ -289,6 +368,30 @@ struct SpeakerVoiceNamingServiceTests {
         #expect(voices.count == 1)
         #expect(voice.totalSpeakingTime == 4)
         #expect(voice.turnCount == 2)
+    }
+
+    @Test("saving a duplicate name enrolls the voice into the existing profile")
+    func savingDuplicateNameReusesExistingProfile() async throws {
+        let fixture = try makeNamingFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+
+        let service = SpeakerVoiceNamingService(
+            artifactsStore: fixture.artifactsStore,
+            profileStore: fixture.profileStore
+        )
+        let result = try await service.saveAsNewKnownSpeaker(
+            named: "  jordan   smith ",
+            speakerID: "speaker-1",
+            transcript: sampleMergeTranscript(profileID: fixture.profileID),
+            audioURL: fixture.audioURL
+        )
+
+        #expect(result.profile.id == fixture.profileID)
+        #expect(result.profile.displayName == "Jordan Smith")
+        #expect(result.profile.embeddings.count == 2)
+        #expect(result.transcript.speakers.map(\.id) == ["speaker-0"])
+        #expect(result.transcript.spans.map(\.speakerID) == ["speaker-0", "speaker-0"])
+        #expect(try fixture.profileStore.library().profiles.count == 1)
     }
 
     private func makeNamingFixture() throws -> NamingFixture {

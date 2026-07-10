@@ -206,6 +206,18 @@ struct AppBundleConfigurationTests {
         #expect(script.contains("ThirdPartyLicenses.md"))
     }
 
+    @Test("signed app scripts bundle Studio Voice model resources")
+    func signedAppScriptsBundleStudioVoiceResources() throws {
+        for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
+            let scriptURL = try packageRootURL().appending(path: "Scripts/\(scriptName)")
+            let script = try String(contentsOf: scriptURL, encoding: .utf8)
+
+            #expect(script.contains("Vendor/Models/studio-voice"))
+            #expect(script.contains("Contents/Resources/Models"))
+            #expect(script.contains("ThirdPartyLicenses.md"))
+        }
+    }
+
     @Test("local build script uses a development app identity by default")
     func localBuildScriptUsesDevelopmentAppIdentityByDefault() throws {
         let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")

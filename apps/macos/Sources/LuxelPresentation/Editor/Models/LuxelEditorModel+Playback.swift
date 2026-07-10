@@ -67,6 +67,29 @@ extension LuxelEditorModel {
         }
     }
 
+    func togglePlayback() {
+        guard hasSource else {
+            return
+        }
+
+        if playbackRequested {
+            player.pause()
+            playbackRequested = false
+        } else {
+            startPlayback()
+        }
+    }
+
+    func startPlayback() {
+        guard hasSource else {
+            return
+        }
+
+        seekPlaybackIntoTrimRangeIfNeeded()
+        player.rate = Float(playbackSpeed.value)
+        playbackRequested = true
+    }
+
     func scrub(to seconds: TimeInterval) {
         guard hasSource, seconds.isFinite else {
             return

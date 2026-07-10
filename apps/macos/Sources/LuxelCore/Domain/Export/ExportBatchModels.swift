@@ -219,6 +219,7 @@ public enum ExportPresetError: Error, Equatable {
 
 public enum ExportProgressPhase: String, Codable, Equatable, Sendable {
     case preparing
+    case enhancingAudio
     case exporting
     case completed
     case canceled
@@ -247,6 +248,19 @@ public struct ExportProgressSnapshot: Codable, Equatable, Sendable {
         ExportProgressSnapshot(
             phase: .exporting,
             actionTitle: "Exporting \(format.prettyName)",
+            progress: progress
+        )
+    }
+
+    public static func enhancingAudio(
+        format: ExportFormat,
+        progress: Double
+    ) -> ExportProgressSnapshot {
+        ExportProgressSnapshot(
+            phase: .enhancingAudio,
+            actionTitle: LuxelLocalization.string(
+                "export.job.enhancingAudio",
+                defaultValue: "Enhancing audio…"),
             progress: progress
         )
     }

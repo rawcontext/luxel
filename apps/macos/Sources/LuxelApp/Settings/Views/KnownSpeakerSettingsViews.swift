@@ -4,18 +4,6 @@ import LuxelPresentation
 import SwiftUI
 
 enum KnownSpeakerAccent {
-    static let palette: [Color] = [
-        Color(red: 0.44, green: 0.85, blue: 0.95),
-        Color(red: 0.62, green: 0.58, blue: 1.0),
-        Color(red: 0.95, green: 0.77, blue: 0.44),
-        Color(red: 0.55, green: 0.9, blue: 0.6),
-        Color(red: 0.96, green: 0.56, blue: 0.62)
-    ]
-
-    static func accent(at index: Int) -> Color {
-        palette[abs(index) % palette.count]
-    }
-
     static func initials(for name: String) -> String {
         let words = name.split(separator: " ").prefix(2)
         let initials = words.compactMap(\.first).map(String.init).joined()
@@ -37,7 +25,6 @@ final class SettingsClipPlayer {
 
 struct KnownSpeakerSettingsRow: View {
     let profile: KnownSpeakerProfile
-    let accent: Color
     let isExpanded: Bool
     let onToggleExpanded: () -> Void
     let onRename: (String) -> Void
@@ -115,7 +102,8 @@ struct KnownSpeakerSettingsRow: View {
     }
 
     private var avatar: some View {
-        Text(KnownSpeakerAccent.initials(for: profile.displayName))
+        let accent = TranscriptSpeakerPalette.dotColor(for: profile.displayName)
+        return Text(KnownSpeakerAccent.initials(for: profile.displayName))
             .font(.system(size: 11.5, weight: .bold))
             .foregroundStyle(accent)
             .frame(width: 32, height: 32)
@@ -150,10 +138,16 @@ struct KnownSpeakerSettingsRow: View {
                         .tracking(0.8)
                         .foregroundStyle(.white.opacity(0.45))
                         .padding(.trailing, 2)
+                        .fixedSize(horizontal: true, vertical: false)
 
-                    ForEach(profile.exampleClips) { clip in
-                        exampleClipChip(clip)
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 6) {
+                            ForEach(profile.exampleClips) { clip in
+                                exampleClipChip(clip)
+                            }
+                        }
                     }
+                    .scrollIndicators(.never)
                 }
             }
 
@@ -193,6 +187,7 @@ struct KnownSpeakerSettingsRow: View {
             Text(clipDurationText(clip.duration))
                 .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.85))
+                .lineLimit(1)
 
             Button {
                 onRemoveClip(clip.id)
@@ -206,6 +201,7 @@ struct KnownSpeakerSettingsRow: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
+        .fixedSize(horizontal: true, vertical: false)
         .background {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(.white.opacity(0.08))

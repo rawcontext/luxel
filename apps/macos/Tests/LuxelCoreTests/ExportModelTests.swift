@@ -121,6 +121,8 @@ extension ExportModelTests {
         #expect(request.speed == .normal)
         #expect(request.gifOptions == nil)
         #expect(request.audioMix == nil)
+        #expect(!request.studioVoiceEnabled)
+        #expect(!request.shouldApplyStudioVoice)
         #expect(request.cropRect == nil)
         #expect(request.cursorOptions == nil)
         #expect(request.keystrokeOptions == nil)
@@ -163,6 +165,29 @@ extension ExportModelTests {
         #expect(decoded == request)
         #expect(decoded.audioMix == audioMix)
         #expect(!decoded.outputShouldMute)
+    }
+
+    @Test("export request round trips Studio Voice and derives effective use")
+    func exportRequestRoundTripsStudioVoice() throws {
+        let request = try makeRequest(format: .mp4, studioVoiceEnabled: true)
+
+        let data = try JSONEncoder().encode(request)
+        let decoded = try JSONDecoder().decode(ExportRequest.self, from: data)
+
+        #expect(decoded == request)
+        #expect(decoded.studioVoiceEnabled)
+        #expect(decoded.shouldApplyStudioVoice)
+
+        for format in [ExportFormat.gif, .apng] {
+            #expect(!(try makeRequest(format: format, studioVoiceEnabled: true)).shouldApplyStudioVoice)
+        }
+        #expect(
+            !(try makeRequest(
+                format: .mp4,
+                shouldMute: true,
+                studioVoiceEnabled: true
+            )).shouldApplyStudioVoice
+        )
     }
 
     @Test("export request round trips source crop rect")
@@ -339,6 +364,7 @@ extension ExportModelTests {
     func progressSnapshotsExposeActionTextAndClampProgress() {
         let preparing = ExportProgressSnapshot.preparing(format: .mp4)
         let exporting = ExportProgressSnapshot.exporting(format: .gif, progress: 1.5)
+        let enhancing = ExportProgressSnapshot.enhancingAudio(format: .mp4, progress: -1)
         let canceled = ExportProgressSnapshot.canceled(format: .hevc)
 
         #expect(preparing.phase == .preparing)
@@ -347,6 +373,9 @@ extension ExportModelTests {
         #expect(exporting.phase == .exporting)
         #expect(exporting.actionTitle == "Exporting GIF")
         #expect(exporting.progress == 1)
+        #expect(enhancing.phase == .enhancingAudio)
+        #expect(enhancing.actionTitle == "Enhancing audio…")
+        #expect(enhancing.progress == 0)
         #expect(canceled.phase == .canceled)
         #expect(canceled.actionTitle == "Canceled MP4 (HEVC)")
     }
@@ -420,6 +449,7 @@ extension ExportModelTests {
         height: Int = 200,
         shouldMute: Bool = false,
         audioMix: AudioMixPlan? = nil,
+        studioVoiceEnabled: Bool = false,
         quality: ExportQuality = .balanced,
         speed: PlaybackSpeed = .normal,
         gifOptions: GIFRenderOptions? = nil,
@@ -438,6 +468,7 @@ extension ExportModelTests {
             timeRange: TimeRange(start: 0, end: 10),
             shouldMute: shouldMute,
             audioMix: audioMix,
+            studioVoiceEnabled: studioVoiceEnabled,
             shouldCrop: true,
             cropRect: cropRect,
             quality: quality,

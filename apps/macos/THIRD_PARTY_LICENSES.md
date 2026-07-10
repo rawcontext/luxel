@@ -9,6 +9,8 @@ Luxel ships the following third-party components:
 5. FluidAudio — Apache License 2.0 — local speaker diarization engine
 6. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
 7. FluidInference parakeet-tdt-0.6b-v3-coreml — CC-BY-4.0 — optional downloaded Precision Transcription model
+8. aufklarer/DeepFilterNet3-CoreML — Apache License 2.0 — bundled Studio Voice Core ML model
+9. soniqo/speech-swift — Apache License 2.0 — adapted Studio Voice signal-processing runtime
 
 The full license text and attribution for each component follow, in the same order.
 
@@ -281,7 +283,8 @@ diarization feature (tracked in docs/plans/optional-speaker-diarization.md).
 Luxel offers the immutable `FluidInference/parakeet-tdt-0.6b-v3-coreml`
 release at commit `aed02740059203c4a87495924f685de3722ae9ce` as the optional
 Precision Transcription model. The model bytes are downloaded directly from
-Hugging Face only after user confirmation and are not included in Luxel.app.
+Hugging Face when the user enables Precision Transcription and are not included
+in Luxel.app.
 
 License: Creative Commons Attribution 4.0 International (CC-BY-4.0), https://creativecommons.org/licenses/by/4.0/
 
@@ -293,10 +296,37 @@ Model card: https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml/tr
 
 Base model: https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3
 
+## aufklarer/DeepFilterNet3-CoreML (bundled model)
+
+Luxel bundles the `aufklarer/DeepFilterNet3-CoreML` model at revision
+`937bad9811f1ffc1a06ea0d676461b080b2bdc93` in
+`Contents/Resources/Models/studio-voice` for local Studio Voice export.
+
+License: Apache License 2.0 (selected for the dual-licensed DeepFilterNet model
+weights and the Core ML conversion; full text reproduced below)
+
+Base model: Rikorose/DeepFilterNet3
+
+Model card: https://huggingface.co/aufklarer/DeepFilterNet3-CoreML
+
+## soniqo/speech-swift (adapted runtime)
+
+Luxel includes a modified, narrow adaptation of the DeepFilterNet3 signal
+processing code from `soniqo/speech-swift` v0.0.21 at revision
+`7609977be837a6529bd04300c6b963e735300070`. The adaptation removes MLX,
+downloader, cache, and unrelated speech-model dependencies; it loads only the
+explicit model and auxiliary-data URLs supplied by Luxel and processes bounded
+PCM windows.
+
+License: Apache License 2.0 (full text reproduced below)
+
+Upstream: https://github.com/soniqo/speech-swift
+
 ## Apache License, Version 2.0
 
 The following license text applies to Swift Argument Parser (together with the
-Runtime Library Exception noted above) and to FluidAudio.
+Runtime Library Exception noted above), FluidAudio, DeepFilterNet3-CoreML, and
+the adapted speech-swift runtime.
 
                                  Apache License
                            Version 2.0, January 2004

@@ -124,6 +124,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
     public let frameRate: FrameRate?
     public let shouldMute: Bool
     public let audioMix: AudioMixPlan?
+    public let studioVoiceEnabled: Bool
     public let shouldCrop: Bool
     public let cropRect: CaptureRect?
     public let quality: ExportQuality
@@ -143,6 +144,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         frameRate: FrameRate? = nil,
         shouldMute: Bool = false,
         audioMix: AudioMixPlan? = nil,
+        studioVoiceEnabled: Bool = false,
         shouldCrop: Bool = false,
         cropRect: CaptureRect? = nil,
         quality: ExportQuality = .balanced,
@@ -161,6 +163,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         self.frameRate = frameRate
         self.shouldMute = shouldMute
         self.audioMix = audioMix
+        self.studioVoiceEnabled = studioVoiceEnabled
         self.shouldCrop = shouldCrop
         self.cropRect = cropRect
         self.quality = quality
@@ -181,6 +184,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         case frameRate
         case shouldMute
         case audioMix
+        case studioVoiceEnabled
         case shouldCrop
         case cropRect
         case quality
@@ -203,6 +207,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         frameRate = try container.decodeIfPresent(FrameRate.self, forKey: .frameRate)
         shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
         audioMix = try container.decodeIfPresent(AudioMixPlan.self, forKey: .audioMix)
+        studioVoiceEnabled = try container.decodeIfPresent(Bool.self, forKey: .studioVoiceEnabled) ?? false
         shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
         cropRect = try container.decodeIfPresent(CaptureRect.self, forKey: .cropRect)
         quality =
@@ -231,6 +236,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
                 timeRange: trimRange ?? TimeRange(start: 0, end: source.duration),
                 shouldMute: shouldMute || !source.hasAudio,
                 audioMix: audioMix,
+                studioVoiceEnabled: studioVoiceEnabled,
                 shouldCrop: shouldCrop,
                 cropRect: cropRect,
                 quality: quality,

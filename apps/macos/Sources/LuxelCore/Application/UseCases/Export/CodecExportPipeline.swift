@@ -21,13 +21,14 @@ public struct CodecExportPipeline: Sendable {
     }
 
     public func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: ProgressHandler? = nil
     ) async throws -> ExportedMedia {
+        let request = input.request
         do {
             let outputPixelSize = try request.outputPixelSize
-            let sourceDescription = try await mediaSource.prepare(request)
+            let sourceDescription = try await mediaSource.prepare(input)
             try Task.checkCancellation()
 
             try await videoEncoder.prepare(
@@ -85,6 +86,21 @@ public struct CodecExportPipeline: Sendable {
             await muxer.cancel()
             throw error
         }
+    }
+
+    public func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: ProgressHandler? = nil
+    ) async throws -> ExportedMedia {
+        guard !request.shouldApplyStudioVoice else {
+            throw MediaExporterError.preparedAudioRequired
+        }
+        return try await export(
+            MediaExportInput(request: request),
+            to: outputFileURL,
+            progress: progress
+        )
     }
 
     private func prepareAudioEncoder(
