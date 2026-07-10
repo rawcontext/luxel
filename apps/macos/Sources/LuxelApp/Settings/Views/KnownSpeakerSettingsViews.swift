@@ -138,10 +138,16 @@ struct KnownSpeakerSettingsRow: View {
                         .tracking(0.8)
                         .foregroundStyle(.white.opacity(0.45))
                         .padding(.trailing, 2)
+                        .fixedSize(horizontal: true, vertical: false)
 
-                    ForEach(profile.exampleClips) { clip in
-                        exampleClipChip(clip)
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 6) {
+                            ForEach(profile.exampleClips) { clip in
+                                exampleClipChip(clip)
+                            }
+                        }
                     }
+                    .scrollIndicators(.never)
                 }
             }
 
@@ -181,6 +187,7 @@ struct KnownSpeakerSettingsRow: View {
             Text(clipDurationText(clip.duration))
                 .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.85))
+                .lineLimit(1)
 
             Button {
                 onRemoveClip(clip.id)
@@ -194,6 +201,7 @@ struct KnownSpeakerSettingsRow: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
+        .fixedSize(horizontal: true, vertical: false)
         .background {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(.white.opacity(0.08))
