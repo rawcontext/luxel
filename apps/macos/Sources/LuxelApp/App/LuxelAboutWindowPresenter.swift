@@ -24,7 +24,7 @@ final class LuxelAboutWindowPresenter {
         let window = NSWindow(contentViewController: hostingController)
         window.title = "About \(metadata.displayName)"
         window.styleMask = [.titled, .closable]
-        window.setContentSize(NSSize(width: 360, height: 300))
+        window.setContentSize(NSSize(width: 360, height: 380))
         window.center()
         window.isReleasedWhenClosed = false
         self.window = window
@@ -60,6 +60,19 @@ private struct LuxelAboutView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            VStack(spacing: 8) {
+                Link("luxel.media", destination: LuxelAboutLinks.website)
+
+                HStack(spacing: 12) {
+                    Link("Report an Issue", destination: LuxelAboutLinks.support)
+                    Link("Request a Feature", destination: LuxelAboutLinks.support)
+                }
+
+                Button("View on the App Store", action: openAppStoreListing)
+                    .buttonStyle(.link)
+            }
+            .font(.callout)
+
             Button {
                 isShowingAcknowledgements = true
             } label: {
@@ -72,4 +85,25 @@ private struct LuxelAboutView: View {
             CodecAcknowledgementsView(text: CodecAcknowledgementsResource.bundledText())
         }
     }
+
+    private func openAppStoreListing() {
+        guard let appStoreApplicationURL = NSWorkspace.shared.urlForApplication(
+                withBundleIdentifier: "com.apple.AppStore")
+        else {
+            return
+        }
+
+        NSWorkspace.shared.open(
+            [LuxelAboutLinks.appStore],
+            withApplicationAt: appStoreApplicationURL,
+            configuration: NSWorkspace.OpenConfiguration()
+        )
+    }
+}
+
+private enum LuxelAboutLinks {
+    static let website = URL(string: "https://luxel.media")!
+    static let support = URL(string: "https://luxel.media/support")!
+    static let appStore = URL(
+        string: "https://apps.apple.com/us/app/luxel/id6780682473?mt=12")!
 }
