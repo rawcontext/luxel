@@ -61,7 +61,7 @@ private struct LuxelAboutView: View {
             }
 
             VStack(spacing: 8) {
-                Link("Luxel.media", destination: LuxelAboutLinks.website)
+                Link("luxel.media", destination: LuxelAboutLinks.website)
 
                 HStack(spacing: 12) {
                     Link("Report an Issue", destination: LuxelAboutLinks.support)
