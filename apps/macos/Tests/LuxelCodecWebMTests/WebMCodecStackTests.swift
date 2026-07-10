@@ -1,9 +1,11 @@
+import AVFAudio
+import AudioToolbox
 import Foundation
 import LuxelCodecWebM
 import LuxelCore
 import Testing
 
-@Suite("WebM codec stack")
+@Suite("WebM codec stack", .serialized)
 struct WebMCodecStackTests {
     @Test("codec pipeline writes a WebM file with real VP9 and Opus packets")
     func codecPipelineWritesWebMFile() async throws {
@@ -79,6 +81,46 @@ struct WebMCodecStackTests {
         let document = try WebMTestDocument(data: data)
         try assertTracks(in: document, includeAudio: true)
         try assertCuesResolveToClusters(in: document)
+    }
+
+    @Test("media exporter consumes prepared audio when the source has no audio")
+    func mediaExporterConsumesPreparedAudio() async throws {
+        let outputURL = temporaryWebMURL()
+        let preparedURL = FileManager.default.temporaryDirectory
+            .appending(path: "webm-prepared-\(UUID().uuidString).caf")
+        defer {
+            try? FileManager.default.removeItem(at: outputURL)
+            try? FileManager.default.removeItem(at: preparedURL)
+        }
+        try writeSilentPreparedPCM(to: preparedURL, duration: 0.3)
+        let request = try ExportRequest(
+            inputFileURL: fixtureURL("input.mp4"),
+            format: .webm,
+            pixelSize: PixelSize(width: 320, height: 180),
+            frameRate: FrameRate(10),
+            timeRange: TimeRange(start: 1, end: 1.3),
+            shouldMute: false,
+            studioVoiceEnabled: true,
+            shouldCrop: false
+        )
+
+        let exported = try await WebMMediaExporter().export(
+            MediaExportInput(
+                request: request,
+                preparedAudio: PreparedAudioAsset(
+                    fileURL: preparedURL,
+                    duration: 0.3,
+                    sampleRate: 48_000,
+                    channelCount: 2
+                )
+            ),
+            to: outputURL
+        )
+        let data = try Data(contentsOf: outputURL)
+
+        #expect(!exported.shouldMute)
+        #expect(data.contains(Data("A_OPUS".utf8)))
+        try assertTracks(in: WebMTestDocument(data: data), includeAudio: true)
     }
 
     @Test("codec adapter registration exposes WebM")
@@ -274,6 +316,35 @@ private func packageRootURL() throws -> URL {
     return url.deletingLastPathComponent()
 }
 
+private func writeSilentPreparedPCM(to url: URL, duration: TimeInterval) throws {
+    let format = try #require(
+        AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 48_000,
+            channels: 2,
+            interleaved: false
+        )
+    )
+    let frameCount = AVAudioFrameCount(duration * 48_000)
+    let buffer = try #require(
+        AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
+    )
+    buffer.frameLength = frameCount
+    let file = try AVAudioFile(
+        forWriting: url,
+        settings: [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 48_000,
+            AVNumberOfChannelsKey: 2,
+            AVLinearPCMBitDepthKey: 32,
+            AVLinearPCMIsFloatKey: true
+        ],
+        commonFormat: .pcmFormatFloat32,
+        interleaved: false
+    )
+    try file.write(from: buffer)
+}
+
 private func fakeVideoPacket(index: Int, byteCount: Int, keyframeInterval: Int) throws
 -> EncodedPacket {
     try EncodedPacket(
@@ -447,8 +518,9 @@ private actor StubWebMMediaSource: CodecMediaSource {
         self.pixelSize = pixelSize
     }
 
-    func prepare(_ request: ExportRequest) async throws -> CodecMediaSourceDescription {
-        try CodecMediaSourceDescription(
+    func prepare(_ input: MediaExportInput) async throws -> CodecMediaSourceDescription {
+        let request = input.request
+        return try CodecMediaSourceDescription(
             videoFrameCount: 1,
             audioChunkCount: request.outputShouldMute ? 0 : 1,
             audioSampleRate: request.outputShouldMute ? nil : 48_000,
@@ -500,7 +572,7 @@ private actor PatternWebMMediaSource: CodecMediaSource {
         self.frameCount = frameCount
     }
 
-    func prepare(_ request: ExportRequest) async throws -> CodecMediaSourceDescription {
+    func prepare(_ input: MediaExportInput) async throws -> CodecMediaSourceDescription {
         try CodecMediaSourceDescription(videoFrameCount: frameCount)
     }
 

@@ -489,6 +489,13 @@ extension LuxelEditorView {
         .accessibilityLabel("Quality")
     }
 
+    private var studioVoiceAccessibilityHint: LocalizedStringKey {
+        """
+        Runs locally, is intended for speech, and is applied only during export. \
+        Music and sound effects may change.
+        """
+    }
+
     private var audioExportControls: some View {
         VStack(alignment: .leading, spacing: 10) {
             Toggle("Include Audio", isOn: includeAudioSelection)
@@ -519,6 +526,19 @@ extension LuxelEditorView {
                     Toggle("Normalize Audio", isOn: normalizeAudioSelection)
                         .toggleStyle(LuxelGlassCheckboxToggleStyle())
                         .disabled(!model.canAdjustAudioMix)
+
+                    Toggle("Studio Voice", isOn: studioVoiceSelection)
+                        .toggleStyle(LuxelGlassCheckboxToggleStyle())
+                        .disabled(!model.canUseStudioVoice)
+                        .help("Reduce background noise and improve spoken audio during export.")
+                        .accessibilityHint(studioVoiceAccessibilityHint)
+
+                    if model.studioVoiceEnabled {
+                        Text("Applied to the exported audio; preview is unchanged.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.white.opacity(0.45))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
         }

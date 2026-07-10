@@ -177,7 +177,7 @@ extension LuxelEditorView {
 
     func exportJobSystemImage(_ job: ExportJobSnapshot) -> String {
         switch job.progress?.phase {
-        case .preparing, .exporting:
+        case .preparing, .enhancingAudio, .exporting:
             "arrow.triangle.2.circlepath"
         case .completed:
             "checkmark.circle"

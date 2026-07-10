@@ -273,10 +273,11 @@ private actor SpyMediaExporter: MediaExporter {
     }
 
     func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
+        let request = input.request
         captured = (request, outputFileURL)
         for value in reportedProgress {
             await progress?(value)

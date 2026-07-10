@@ -235,7 +235,8 @@ private actor StubCodecMediaSource: CodecMediaSource {
         initialAudioChunkCount = audioChunks.count
     }
 
-    func prepare(_ request: ExportRequest) async throws -> CodecMediaSourceDescription {
+    func prepare(_ input: MediaExportInput) async throws -> CodecMediaSourceDescription {
+        let request = input.request
         await events.append("source.prepare:\(request.format.rawValue)")
         return try CodecMediaSourceDescription(
             videoFrameCount: initialVideoFrameCount,
@@ -275,7 +276,8 @@ private actor BlockingCodecMediaSource: CodecMediaSource {
         self.firstFrame = firstFrame
     }
 
-    func prepare(_ request: ExportRequest) async throws -> CodecMediaSourceDescription {
+    func prepare(_ input: MediaExportInput) async throws -> CodecMediaSourceDescription {
+        let request = input.request
         await events.append("source.prepare:\(request.format.rawValue)")
         return try CodecMediaSourceDescription(videoFrameCount: 2)
     }

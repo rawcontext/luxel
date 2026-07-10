@@ -6,7 +6,7 @@ import Foundation
 import LuxelCore
 import Testing
 
-@Suite("AVFoundation media exporter")
+@Suite("AVFoundation media exporter", .serialized)
 struct AVFoundationMediaExporterTests {
 }
 
@@ -191,6 +191,54 @@ extension AVFoundationMediaExporterTests {
 
         #expect(baselinePeak > 0.01)
         #expect(quietPeak < baselinePeak * 0.4)
+    }
+
+    @Test("native video and audio-only exports replace source audio with prepared PCM")
+    func nativeExportsUsePreparedAudio() async throws {
+        let preparedURL = temporaryOutputURL(fileExtension: "caf")
+        let videoOutputURL = temporaryOutputURL(fileExtension: "mp4")
+        let audioOutputURL = temporaryOutputURL(fileExtension: "wav")
+        defer {
+            try? FileManager.default.removeItem(at: preparedURL)
+            try? FileManager.default.removeItem(at: videoOutputURL)
+            try? FileManager.default.removeItem(at: audioOutputURL)
+        }
+        try writeSilentPCMFixture(to: preparedURL, duration: 0.4)
+        let prepared = PreparedAudioAsset(
+            fileURL: preparedURL,
+            duration: 0.4,
+            sampleRate: 48_000,
+            channelCount: 2
+        )
+        let inputURL = try fixtureURL("input@2x.mp4")
+
+        for (format, outputURL) in [
+            (ExportFormat.mp4, videoOutputURL),
+            (.wav, audioOutputURL)
+        ] {
+            let request = try ExportRequest(
+                inputFileURL: inputURL,
+                format: format,
+                pixelSize: PixelSize(width: 320, height: 180),
+                frameRate: FrameRate(30),
+                timeRange: TimeRange(start: 1, end: 1.4),
+                shouldMute: false,
+                studioVoiceEnabled: true,
+                shouldCrop: false
+            )
+
+            _ = try await AVFoundationMediaExporter().export(
+                MediaExportInput(request: request, preparedAudio: prepared),
+                to: outputURL
+            )
+            let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: outputURL)
+            let peak = try await audioPeak(at: outputURL, duration: request.outputDuration)
+
+            #expect(source.hasAudio)
+            #expect(source.duration > 0.35)
+            #expect(source.duration < 0.45)
+            #expect(peak < 0.000_1)
+        }
     }
 
     @Test("native audio exports trim audio-only source")
@@ -595,6 +643,36 @@ extension AVFoundationMediaExporterTests {
                 AVNumberOfChannelsKey: 1,
                 AVEncoderBitRateKey: 64_000
             ]
+        )
+        try file.write(from: buffer)
+    }
+
+    private func writeSilentPCMFixture(to fileURL: URL, duration: TimeInterval) throws {
+        let sampleRate = 48_000.0
+        let frameCount = AVAudioFrameCount(sampleRate * duration)
+        let format = try #require(
+            AVAudioFormat(
+                commonFormat: .pcmFormatFloat32,
+                sampleRate: sampleRate,
+                channels: 2,
+                interleaved: false
+            )
+        )
+        let buffer = try #require(
+            AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
+        )
+        buffer.frameLength = frameCount
+        let file = try AVAudioFile(
+            forWriting: fileURL,
+            settings: [
+                AVFormatIDKey: kAudioFormatLinearPCM,
+                AVSampleRateKey: sampleRate,
+                AVNumberOfChannelsKey: 2,
+                AVLinearPCMBitDepthKey: 32,
+                AVLinearPCMIsFloatKey: true
+            ],
+            commonFormat: .pcmFormatFloat32,
+            interleaved: false
         )
         try file.write(from: buffer)
     }

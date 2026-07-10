@@ -1,0 +1,35 @@
+{
+  "repository": "aufklarer/DeepFilterNet3-CoreML",
+  "revision": "937bad9811f1ffc1a06ea0d676461b080b2bdc93",
+  "sourceURL": "https://huggingface.co/aufklarer/DeepFilterNet3-CoreML/tree/937bad9811f1ffc1a06ea0d676461b080b2bdc93",
+  "license": "Apache-2.0",
+  "sampleRate": 48000,
+  "runtime": "Adapted from soniqo/speech-swift v0.0.21 (7609977be837a6529bd04300c6b963e735300070)",
+  "files": [
+    {
+      "path": "DeepFilterNet3.mlmodelc/analytics/coremldata.bin",
+      "byteCount": 243,
+      "sha256": "6dc4207ced0fda3bd22928770b2a775b36cdf80938eb27074807121824a446cf"
+    },
+    {
+      "path": "DeepFilterNet3.mlmodelc/coremldata.bin",
+      "byteCount": 415,
+      "sha256": "b1b2798fa27abb01f31871914ba956c2c098235d4af14c41336278fab70492ca"
+    },
+    {
+      "path": "DeepFilterNet3.mlmodelc/model.mil",
+      "byteCount": 161550,
+      "sha256": "ab6aadbc10e99866eff644385eb90b0326f0a3f57382a319f49444a31ebe1c14"
+    },
+    {
+      "path": "DeepFilterNet3.mlmodelc/weights/weight.bin",
+      "byteCount": 2181056,
+      "sha256": "6b6adf3f78972bd1caed73e9e9e4eabd65590dcc9a86e41ae00e22b7c63a0018"
+    },
+    {
+      "path": "auxiliary.npz",
+      "byteCount": 128774,
+      "sha256": "332f9e9c4ee639e9edd61b27a873e84270b1aab1355c728b97efe7bb1d1563a1"
+    }
+  ]
+}

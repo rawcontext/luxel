@@ -8,15 +8,12 @@ import UniformTypeIdentifiers
 public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
     public init() {}
 
-    public func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
-        try await export(request, to: outputFileURL, progress: nil)
-    }
-
     public func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
+        let request = input.request
         guard request.format == .gif || request.format == .apng else {
             throw ImageIOAnimatedMediaExporterError.unsupportedFormat(request.format)
         }

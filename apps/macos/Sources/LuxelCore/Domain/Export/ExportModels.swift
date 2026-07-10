@@ -331,6 +331,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
     public let timeRange: TimeRange
     public let shouldMute: Bool
     public let audioMix: AudioMixPlan?
+    public let studioVoiceEnabled: Bool
     public let shouldCrop: Bool
     public let cropRect: CaptureRect?
     public let quality: ExportQuality
@@ -350,6 +351,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         timeRange: TimeRange,
         shouldMute: Bool,
         audioMix: AudioMixPlan? = nil,
+        studioVoiceEnabled: Bool = false,
         shouldCrop: Bool,
         cropRect: CaptureRect? = nil,
         quality: ExportQuality = .balanced,
@@ -368,6 +370,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         self.timeRange = timeRange
         self.shouldMute = shouldMute
         self.audioMix = audioMix
+        self.studioVoiceEnabled = studioVoiceEnabled
         self.shouldCrop = shouldCrop
         self.cropRect = cropRect
         self.quality = quality
@@ -388,6 +391,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         case timeRange
         case shouldMute
         case audioMix
+        case studioVoiceEnabled
         case shouldCrop
         case cropRect
         case quality
@@ -410,6 +414,7 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         timeRange = try container.decode(TimeRange.self, forKey: .timeRange)
         shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
         audioMix = try container.decodeIfPresent(AudioMixPlan.self, forKey: .audioMix)
+        studioVoiceEnabled = try container.decodeIfPresent(Bool.self, forKey: .studioVoiceEnabled) ?? false
         shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
         cropRect = try container.decodeIfPresent(CaptureRect.self, forKey: .cropRect)
         quality =
@@ -444,6 +449,15 @@ public struct ExportRequest: Codable, Equatable, Sendable {
 
     public var outputShouldMute: Bool {
         shouldMute || audioMix?.isMuted == true || format.dropsAudio
+    }
+
+    public var shouldApplyStudioVoice: Bool {
+        studioVoiceEnabled && !outputShouldMute && !format.dropsAudio
+    }
+
+    public var requiresAudioPreparation: Bool {
+        !outputShouldMute && !format.dropsAudio
+            && (shouldApplyStudioVoice || audioMix != nil)
     }
 
     public var outputDuration: TimeInterval {

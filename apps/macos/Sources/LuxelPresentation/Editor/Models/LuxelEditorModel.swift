@@ -41,6 +41,7 @@ public final class LuxelEditorModel {
     var shouldMute = false
     var audioVolume = 1.0
     var normalizeAudio = false
+    var studioVoiceEnabled = false
     var shouldCrop = true
     var quality: ExportQuality = .balanced
     var gifLoopModeKind: EditorGIFLoopModeKind = .forever
@@ -274,6 +275,10 @@ extension LuxelEditorModel {
     }
 
     var canAdjustAudioMix: Bool {
+        includesAudio
+    }
+
+    var canUseStudioVoice: Bool {
         includesAudio
     }
 
@@ -642,6 +647,7 @@ extension LuxelEditorModel {
             applyFrameRate(Self.defaultFrameRate)
             applyExportMemory(for: format)
             shouldMute = media.isAudioOnly ? false : !media.hasAudio || format.dropsAudio
+            studioVoiceEnabled = false
             let item = AVPlayerItem(url: fileURL)
             item.audioTimePitchAlgorithm = .timeDomain
             player.replaceCurrentItem(with: item)
@@ -654,6 +660,7 @@ extension LuxelEditorModel {
             }
         } catch {
             source = nil
+            studioVoiceEnabled = false
             previewAudioMixTask?.cancel()
             previewAudioMixTask = nil
             speechRecognitionAuthorizationTask?.cancel()
@@ -885,6 +892,15 @@ extension LuxelEditorModel {
 
         normalizeAudio = normalize
         schedulePreviewAudioMixUpdate()
+        recordEditorDraftChange()
+    }
+
+    func setStudioVoiceEnabled(_ enabled: Bool) {
+        guard studioVoiceEnabled != enabled else {
+            return
+        }
+
+        studioVoiceEnabled = enabled
         recordEditorDraftChange()
     }
 

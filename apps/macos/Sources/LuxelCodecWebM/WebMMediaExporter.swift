@@ -5,10 +5,11 @@ public struct WebMMediaExporter: MediaExporter, Sendable {
     public init() {}
 
     public func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
+        let request = input.request
         guard request.format == .webm else {
             throw WebMCodecError.unsupportedFormat(request.format)
         }
@@ -18,7 +19,7 @@ public struct WebMMediaExporter: MediaExporter, Sendable {
             videoEncoder: VPXVideoEncoder(),
             audioEncoder: OpusAudioEncoder(),
             muxer: WebMMuxer()
-        ).export(request, to: outputFileURL, progress: progress)
+        ).export(input, to: outputFileURL, progress: progress)
     }
 }
 

@@ -24,17 +24,14 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         self.videoCompositionFactory = videoCompositionFactory
     }
 
-    public func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
-        try await export(request, to: outputFileURL, progress: nil)
-    }
-
     public func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
+        let request = input.request
         if request.format.isAudioOnlyFormat {
-            return try await exportAudioOnly(request, to: outputFileURL, progress: progress)
+            return try await exportAudioOnly(input, to: outputFileURL, progress: progress)
         }
 
         let plan = try planFactory.makePlan(for: request, outputFileURL: outputFileURL)
@@ -51,7 +48,12 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         )
         let compositionAudioTracks: [AVMutableCompositionTrack]
 
-        if !plan.shouldMute {
+        if !plan.shouldMute, let preparedAudio = input.preparedAudio {
+            compositionAudioTracks = try await addPreparedAudioTracks(
+                to: composition,
+                preparedAudio: preparedAudio
+            )
+        } else if !plan.shouldMute {
             compositionAudioTracks = try await addAudioTracks(
                 to: composition,
                 from: asset,
@@ -82,7 +84,8 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         exportSession.timeRange = outputCompositionTimeRange
         exportSession.audioMix = try await makeAudioMix(
             for: compositionAudioTracks,
-            request: request
+            request: request,
+            appliesGain: input.preparedAudio == nil
         )
         exportSession.shouldOptimizeForNetworkUse = true
 
@@ -97,10 +100,11 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
     }
 
     private func exportAudioOnly(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
+        let request = input.request
         let plan = try planFactory.makePlan(for: request, outputFileURL: outputFileURL)
         let asset = AVURLAsset(url: plan.inputFileURL)
         let composition = AVMutableComposition()
@@ -109,7 +113,12 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         let outputCompositionTimeRange = CMTimeRange(start: .zero, duration: outputDuration)
         let compositionAudioTracks: [AVMutableCompositionTrack]
 
-        if !plan.shouldMute {
+        if !plan.shouldMute, let preparedAudio = input.preparedAudio {
+            compositionAudioTracks = try await addPreparedAudioTracks(
+                to: composition,
+                preparedAudio: preparedAudio
+            )
+        } else if !plan.shouldMute {
             compositionAudioTracks = try await addAudioTracks(
                 to: composition,
                 from: asset,
@@ -129,7 +138,8 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
 
         let audioMix = try await makeAudioMix(
             for: compositionAudioTracks,
-            request: request
+            request: request,
+            appliesGain: input.preparedAudio == nil
         )
         try await runAudioOnlyExport(
             composition: composition,
@@ -251,25 +261,47 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
         return audioTracks
     }
 
+    private func addPreparedAudioTracks(
+        to composition: AVMutableComposition,
+        preparedAudio: PreparedAudioAsset
+    ) async throws -> [AVMutableCompositionTrack] {
+        let asset = AVURLAsset(url: preparedAudio.fileURL)
+        let timeRange = CMTimeRange(
+            start: .zero,
+            duration: CMTime(seconds: preparedAudio.duration, preferredTimescale: 60_000)
+        )
+        return try await addAudioTracks(
+            to: composition,
+            from: asset,
+            sourceTimeRange: timeRange
+        )
+    }
+
     private func makeAudioMix(
         for audioTracks: [AVMutableCompositionTrack],
-        request: ExportRequest
+        request: ExportRequest,
+        appliesGain: Bool
     ) async throws -> AVAudioMix? {
         guard !audioTracks.isEmpty else {
             return nil
         }
 
-        let sourceAudioTracks: [AudioTrackKind] = [.system]
-        let mixPlan =
-            request.audioMix
-            ?? AudioMixPlan(
-                tracks: sourceAudioTracks.map { AudioTrackMix(kind: $0) }
+        let systemGain: Double
+        if appliesGain {
+            let sourceAudioTracks: [AudioTrackKind] = [.system]
+            let mixPlan =
+                request.audioMix
+                ?? AudioMixPlan(
+                    tracks: sourceAudioTracks.map { AudioTrackMix(kind: $0) }
+                )
+            systemGain = try await resolvedSystemGain(
+                for: mixPlan,
+                request: request,
+                sourceAudioTracks: sourceAudioTracks
             )
-        let systemGain = try await resolvedSystemGain(
-            for: mixPlan,
-            request: request,
-            sourceAudioTracks: sourceAudioTracks
-        )
+        } else {
+            systemGain = 1
+        }
         guard request.speed != .normal || systemGain != 1 else {
             return nil
         }

@@ -151,6 +151,7 @@ enum LuxelCompositionRoot {
         LuxelEditorModel(
             exportService: ExportService(
                 exporter: codecAdapterRegistry.mediaExporter(nativeExporter: NativeMediaExporter()),
+                audioPreparer: exportAudioPreparer(),
                 fileSystem: LocalFileSystem()
             ),
             exportSizeEstimationService: ExportSizeEstimationService(
@@ -183,6 +184,7 @@ enum LuxelCompositionRoot {
             metadataReader: AVFoundationMediaMetadataReader(),
             exportService: ExportService(
                 exporter: codecAdapterRegistry.mediaExporter(nativeExporter: NativeMediaExporter()),
+                audioPreparer: exportAudioPreparer(),
                 fileSystem: LocalFileSystem()
             ),
             fileWorkflowService: fileWorkflowService,
@@ -197,6 +199,18 @@ enum LuxelCompositionRoot {
             ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Movies")
 
         return moviesDirectory.appending(path: "Luxel")
+    }
+
+    private static func exportAudioPreparer() -> ExportAudioPreparationService {
+        ExportAudioPreparationService(
+            enhancer: DeepFilterNetStudioVoiceEnhancer(
+                locator: BundledStudioVoiceModelLocator(
+                    modelDirectoryURL: Bundle.main.resourceURL?
+                        .appending(path: "Models", directoryHint: .isDirectory)
+                        .appending(path: "studio-voice", directoryHint: .isDirectory)
+                )
+            )
+        )
     }
 
     static var recordingStagingDirectory: URL {

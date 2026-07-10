@@ -1,9 +1,11 @@
+import AVFAudio
+import AudioToolbox
 import Foundation
 import LuxelCodecAV1
 import LuxelCore
 import Testing
 
-@Suite("AV1 codec stack")
+@Suite("AV1 codec stack", .serialized)
 struct AV1CodecStackTests {
     @Test("codec pipeline writes an AV1 MP4 file")
     func codecPipelineWritesAV1MP4File() async throws {
@@ -89,6 +91,47 @@ struct AV1CodecStackTests {
         #expect(output.contains("\"codec_name\": \"aac\""))
     }
 
+    @Test("media exporter consumes prepared audio when the source has no audio")
+    func mediaExporterConsumesPreparedAudio() async throws {
+        let outputURL = temporaryAV1URL()
+        let preparedURL = FileManager.default.temporaryDirectory
+            .appending(path: "av1-prepared-\(UUID().uuidString).caf")
+        defer {
+            try? FileManager.default.removeItem(at: outputURL)
+            try? FileManager.default.removeItem(at: preparedURL)
+        }
+        try writeSilentPreparedPCM(to: preparedURL, duration: 0.3)
+        let request = try ExportRequest(
+            inputFileURL: fixtureURL("input.mp4"),
+            format: .av1,
+            pixelSize: PixelSize(width: 320, height: 180),
+            frameRate: FrameRate(10),
+            timeRange: TimeRange(start: 1, end: 1.3),
+            shouldMute: false,
+            studioVoiceEnabled: true,
+            shouldCrop: false,
+            quality: .compact
+        )
+
+        let exported = try await AV1MediaExporter().export(
+            MediaExportInput(
+                request: request,
+                preparedAudio: PreparedAudioAsset(
+                    fileURL: preparedURL,
+                    duration: 0.3,
+                    sampleRate: 48_000,
+                    channelCount: 2
+                )
+            ),
+            to: outputURL
+        )
+        let data = try Data(contentsOf: outputURL)
+
+        #expect(!exported.shouldMute)
+        #expect(data.contains(Data("av01".utf8)))
+        #expect(data.contains(Data("mp4a".utf8)))
+    }
+
     @Test("SVT encoder emits AV1 packets")
     func svtEncoderEmitsAV1Packets() async throws {
         let pixelSize = try PixelSize(width: 64, height: 64)
@@ -126,7 +169,7 @@ private actor StubAV1MediaSource: CodecMediaSource {
         self.audioChunkCount = audioChunkCount
     }
 
-    func prepare(_ request: ExportRequest) async throws -> CodecMediaSourceDescription {
+    func prepare(_ input: MediaExportInput) async throws -> CodecMediaSourceDescription {
         try CodecMediaSourceDescription(
             videoFrameCount: frameCount,
             audioChunkCount: audioChunkCount,
@@ -180,6 +223,51 @@ private func temporaryAV1URL() -> URL {
     FileManager.default.temporaryDirectory
         .appending(path: UUID().uuidString)
         .appendingPathExtension("mp4")
+}
+
+private func fixtureURL(_ fileName: String) throws -> URL {
+    try packageRootURL()
+        .appending(path: "Tests/Fixtures")
+        .appending(path: fileName)
+}
+
+private func packageRootURL() throws -> URL {
+    var url = URL(fileURLWithPath: #filePath)
+    while url.lastPathComponent != "Tests" {
+        let next = url.deletingLastPathComponent()
+        try #require(next.path != url.path)
+        url = next
+    }
+    return url.deletingLastPathComponent()
+}
+
+private func writeSilentPreparedPCM(to url: URL, duration: TimeInterval) throws {
+    let format = try #require(
+        AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 48_000,
+            channels: 2,
+            interleaved: false
+        )
+    )
+    let frameCount = AVAudioFrameCount(duration * 48_000)
+    let buffer = try #require(
+        AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
+    )
+    buffer.frameLength = frameCount
+    let file = try AVAudioFile(
+        forWriting: url,
+        settings: [
+            AVFormatIDKey: kAudioFormatLinearPCM,
+            AVSampleRateKey: 48_000,
+            AVNumberOfChannelsKey: 2,
+            AVLinearPCMBitDepthKey: 32,
+            AVLinearPCMIsFloatKey: true
+        ],
+        commonFormat: .pcmFormatFloat32,
+        interleaved: false
+    )
+    try file.write(from: buffer)
 }
 
 private func executablePath(named name: String) -> String? {

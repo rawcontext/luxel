@@ -711,6 +711,17 @@ private struct LuxelHeadlessExportRunner: Sendable {
             try WebMCodecAdapter.registration()
         ])
         let exporter = registry.mediaExporter(nativeExporter: NativeMediaExporter())
+        let exportService = ExportService(
+            exporter: exporter,
+            audioPreparer: ExportAudioPreparationService(
+                enhancer: DeepFilterNetStudioVoiceEnhancer(
+                    locator: BundledStudioVoiceModelLocator(
+                        modelDirectoryURL: studioVoiceModelDirectory()
+                    )
+                )
+            ),
+            fileSystem: LocalFileSystem()
+        )
         let progress = LuxelTerminalProgressReporter(
             label: "Exporting \(request.format.prettyName)",
             isEnabled: showProgress && LuxelTerminalProgressReporter.defaultIsEnabled
@@ -718,8 +729,12 @@ private struct LuxelHeadlessExportRunner: Sendable {
 
         progress.start()
         do {
-            let exported = try await exporter.export(request, to: outputURL) { value in
-                progress.update(value)
+            let exported = try await exportService.export(
+                request,
+                to: outputURL.deletingLastPathComponent(),
+                defaultName: outputURL.deletingPathExtension().lastPathComponent
+            ) { snapshot in
+                progress.update(snapshot.progress)
             }
             progress.finish()
             return LuxelHeadlessExportResult(
@@ -729,6 +744,26 @@ private struct LuxelHeadlessExportRunner: Sendable {
             progress.fail()
             throw error
         }
+    }
+
+    private func studioVoiceModelDirectory() -> URL? {
+        if let resourceURL = Bundle.main.resourceURL {
+            let bundled = resourceURL
+                .appendingPathComponent("Models", isDirectory: true)
+                .appendingPathComponent("studio-voice", isDirectory: true)
+            if FileManager.default.fileExists(atPath: bundled.path) {
+                return bundled
+            }
+        }
+
+        let executableURL = URL(fileURLWithPath: CommandLine.arguments[0]).standardizedFileURL
+        let embedded = executableURL
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Resources", isDirectory: true)
+            .appendingPathComponent("Models", isDirectory: true)
+            .appendingPathComponent("studio-voice", isDirectory: true)
+        return FileManager.default.fileExists(atPath: embedded.path) ? embedded : nil
     }
 
     private func printExportResult(_ result: LuxelHeadlessExportResult, json: Bool) throws {

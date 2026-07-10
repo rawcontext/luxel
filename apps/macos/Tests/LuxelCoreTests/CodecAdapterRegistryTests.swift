@@ -122,11 +122,12 @@ struct CodecAdapterRegistryTests {
 
 private struct StubMediaExporter: MediaExporter {
     func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
-        try ExportedMedia(
+        let request = input.request
+        return try ExportedMedia(
             fileURL: outputFileURL,
             format: request.format,
             pixelSize: request.outputPixelSize,
@@ -139,10 +140,11 @@ private actor SpyMediaExporter: MediaExporter {
     private var requests: [ExportRequest] = []
 
     func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
+        let request = input.request
         requests.append(request)
         return try await StubMediaExporter().export(request, to: outputFileURL)
     }
