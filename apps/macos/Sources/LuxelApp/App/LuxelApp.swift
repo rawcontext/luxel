@@ -148,8 +148,17 @@ private enum LuxelAppPurchaseGuard {
 }
 
 @MainActor
-private final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
+final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
     var openFiles: (([URL], NSRunningApplication?) -> Void)?
+
+    func application(_: NSApplication, open urls: [URL]) {
+        let fileURLs = urls.filter(\.isFileURL)
+        guard !fileURLs.isEmpty else {
+            return
+        }
+
+        openFiles?(fileURLs, NSWorkspace.shared.frontmostApplication)
+    }
 
     func application(_ sender: NSApplication, openFiles filenames: [String]) {
         let fileURLs = filenames.map { URL(fileURLWithPath: $0) }
