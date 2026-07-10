@@ -167,7 +167,7 @@
         "provider" : "huggingFace",
         "repository" : "FluidInference/parakeet-tdt-0.6b-v3-coreml",
         "requiredFreeBytes" : 1050000000,
-        "runtimeDirectoryName" : "parakeet-tdt-0.6b-v3-coreml",
+        "runtimeDirectoryName" : "parakeet-tdt-0.6b-v3",
         "supportedLanguageCodes" : [
           "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fr", "hr", "hu",
           "it", "lt", "lv", "mt", "nl", "pl", "pt", "ro", "ru", "sk", "sl", "sv", "uk"

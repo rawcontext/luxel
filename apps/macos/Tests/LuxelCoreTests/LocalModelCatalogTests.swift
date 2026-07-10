@@ -17,6 +17,8 @@ struct LocalModelCatalogTests {
         #expect(descriptor.id == PrecisionTranscriptionEngine.modelID)
         #expect(release.commit == "aed02740059203c4a87495924f685de3722ae9ce")
         #expect(release.repository == "FluidInference/parakeet-tdt-0.6b-v3-coreml")
+        #expect(
+            release.runtimeDirectoryName == ParakeetPrecisionModelValidator.runtimeDirectoryName)
         #expect(release.expectedPayloadBytes == 483_105_645)
         #expect(release.artifactCount == 21)
         #expect(release.artifacts.count == 21)

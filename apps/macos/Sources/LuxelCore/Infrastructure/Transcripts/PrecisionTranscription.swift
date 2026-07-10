@@ -268,6 +268,7 @@ public struct ParakeetPrecisionModelValidator: LocalModelValidating {
     public static let validatorKey = LocalModelValidatorKey(
         rawValue: "precision-transcription.parakeet-tdt-v3"
     )
+    public static let runtimeDirectoryName = Repo.parakeetV3.folderName
     public let key = Self.validatorKey
     public let version = 1
 
@@ -279,6 +280,11 @@ public struct ParakeetPrecisionModelValidator: LocalModelValidating {
         preparedOutput: URL
     ) async throws -> LocalModelPreparedPayload {
         FluidAudioOfflinePolicy.enable()
+        guard release.runtimeDirectoryName == Self.runtimeDirectoryName else {
+            throw LocalModelFailure.invalidCatalog(
+                "Precision Transcription runtime directory does not match FluidAudio"
+            )
+        }
         let runtimeDirectory = preparedOutput.appending(
             path: release.runtimeDirectoryName,
             directoryHint: .isDirectory
@@ -491,7 +497,7 @@ public actor PrecisionTranscriptionEngine: PrecisionRecognizing {
         }
         do {
             let runtimeDirectory = lease.payloadRoot.appending(
-                path: "parakeet-tdt-0.6b-v3-coreml",
+                path: ParakeetPrecisionModelValidator.runtimeDirectoryName,
                 directoryHint: .isDirectory
             )
             guard

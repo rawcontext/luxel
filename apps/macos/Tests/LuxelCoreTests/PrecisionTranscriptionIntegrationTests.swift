@@ -112,7 +112,7 @@ struct PrecisionTranscriptionIntegrationTests {
         )
         let installation = try await manager.install(PrecisionTranscriptionEngine.modelID)
         let vocabulary = installation.payloadRoot
-            .appending(path: "parakeet-tdt-0.6b-v3-coreml")
+            .appending(path: ParakeetPrecisionModelValidator.runtimeDirectoryName)
             .appending(path: "parakeet_vocab.json")
         let originalSize = try Data(contentsOf: vocabulary).count
         try Data(repeating: 0x20, count: originalSize).write(to: vocabulary, options: .atomic)
