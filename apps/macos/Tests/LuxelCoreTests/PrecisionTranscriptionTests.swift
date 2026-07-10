@@ -84,6 +84,31 @@ struct PrecisionTranscriptionTests {
         }
     }
 
+    @Test("token mapper accepts empty transcription without timings")
+    func tokenMapperAcceptsEmptyTranscriptionWithoutTimings() throws {
+        #expect(try PrecisionTokenTimingMapper.map([], expectedText: "").isEmpty)
+        #expect(try PrecisionTokenTimingMapper.map([], expectedText: " \n").isEmpty)
+    }
+
+    @Test("token mapper accepts overlapping punctuation within a word")
+    func tokenMapperAcceptsOverlappingPunctuationWithinWord() throws {
+        let words = try PrecisionTokenTimingMapper.map(
+            [
+                PrecisionTokenTiming(token: " Al", start: 0.88, end: 1.2, confidence: 0.79),
+                PrecisionTokenTiming(token: "rig", start: 1.2, end: 1.52, confidence: 1),
+                PrecisionTokenTiming(token: "ht", start: 1.52, end: 1.6, confidence: 1),
+                PrecisionTokenTiming(token: ",", start: 1.52, end: 1.6, confidence: 0.729),
+                PrecisionTokenTiming(token: " next", start: 1.6, end: 2, confidence: 1)
+            ],
+            expectedText: "Alright, next"
+        )
+
+        #expect(words.map(\.text) == ["Alright,", "next"])
+        #expect(words[0].start == 0.88)
+        #expect(words[0].end == 1.6)
+        #expect(words[1].start == words[0].end)
+    }
+
     @Test("token mapper rejects missing mismatched and materially overlapping timings")
     func tokenMapperRejectsInvalidTimingOutput() {
         #expect(throws: PrecisionTranscriptionError.missingTokenTimings) {
@@ -168,28 +193,7 @@ struct PrecisionTranscriptionTests {
             modelRevision: "revision",
             configurationRevision: "config"
         )
-        let recognizer = PrecisionRecognizerStub(
-            result: PrecisionRecognitionResult(
-                text: "Hello world.",
-                words: [
-                    PrecisionRecognizedWord(
-                        text: "Hello",
-                        start: 0,
-                        end: 0.4,
-                        confidence: 0.9
-                    ),
-                    PrecisionRecognizedWord(
-                        text: "world.",
-                        start: 0.4,
-                        end: 1,
-                        confidence: 0.8
-                    )
-                ],
-                language: Locale.LanguageCode("en"),
-                confidence: 0.85,
-                provenance: provenance
-            )
-        )
+        let recognizer = makePrecisionRecognizer(provenance: provenance)
         let audioURL = URL(fileURLWithPath: "/tmp/precision-adapter.m4a")
         let spans = try await PrecisionTimedSpeechTranscriber(engine: recognizer).transcribe(
             TimedSpeechTranscriptionRequest(
@@ -217,124 +221,27 @@ struct PrecisionTranscriptionTests {
         #expect(progress.values == [0.2, 1])
     }
 
-    @Test("caption provenance survives Codable editing and time mapping")
-    func captionProvenanceSurvivesPersistenceAndEditing() throws {
-        let provenance = TranscriptionProvenance(
-            engine: .parakeetTDTv3,
-            modelRevision: "revision",
-            configurationRevision: "config"
-        )
-        let track = try CaptionTrack(
-            cues: [
-                CaptionCue(timeRange: TimeRange(start: 1, end: 2), text: "Hello")
-            ],
-            language: Locale.LanguageCode("en"),
-            sourceTrack: .system,
-            transcriptionProvenance: provenance
-        )
-        let decoded = try JSONDecoder().decode(
-            CaptionTrack.self,
-            from: JSONEncoder().encode(track)
-        )
-        let edited = try CaptionTrackEditor(track: decoded).replacingCue(
-            at: 0,
-            with: CaptionCue(timeRange: TimeRange(start: 1, end: 2), text: "Edited")
-        )
-        let mapped = try CaptionExportTimeMapper(
-            trimRange: TimeRange(start: 0.5, end: 2.5)
-        ).map(edited)
-        #expect(mapped.transcriptionProvenance == provenance)
-    }
-
-    @Test("transcript cache separates Apple and Precision provenance")
-    func transcriptCacheSeparatesEngineProvenance() throws {
-        let directory = FileManager.default.temporaryDirectory.appending(
-            path: "PrecisionCacheTests-\(UUID().uuidString)",
-            directoryHint: .isDirectory
-        )
-        let audioURL = directory.appending(path: "audio.m4a")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try Data("audio".utf8).write(to: audioURL)
-        let cache = ApplicationSupportTranscriptCache(
-            cacheDirectory: directory.appending(path: "cache"))
-        let transcript = try sampleTranscript(provenance: .appleSpeech)
-        let appleRequest = AudioTranscriptRequest(
-            audioURL: audioURL,
-            transcriptionProvenance: .appleSpeech
-        )
-        let precisionProvenance = TranscriptionProvenance(
-            engine: .parakeetTDTv3,
-            modelRevision: "revision",
-            configurationRevision: "config"
-        )
-        let precisionRequest = AudioTranscriptRequest(
-            audioURL: audioURL,
-            transcriptionProvenance: precisionProvenance
-        )
-        try cache.save(transcript, for: appleRequest)
-        try cache.save(
-            sampleTranscript(provenance: precisionProvenance),
-            for: precisionRequest
-        )
-
-        #expect(try cache.load(for: appleRequest)?.transcriptionProvenance == .appleSpeech)
-        #expect(try cache.load(for: precisionRequest)?.transcriptionProvenance == precisionProvenance)
-        let files = try FileManager.default.contentsOfDirectory(
-            at: directory.appending(path: "cache"),
-            includingPropertiesForKeys: nil
-        )
-        #expect(files.count == 2)
-    }
-
-    @Test("schema 3 transcript cache documents are ignored")
-    func schemaThreeCacheDocumentsAreIgnored() throws {
-        let directory = FileManager.default.temporaryDirectory.appending(
-            path: "PrecisionOldCacheTests-\(UUID().uuidString)",
-            directoryHint: .isDirectory
-        )
-        let audioURL = directory.appending(path: "audio.m4a")
-        let cacheDirectory = directory.appending(path: "cache")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try Data("audio".utf8).write(to: audioURL)
-        let cache = ApplicationSupportTranscriptCache(cacheDirectory: cacheDirectory)
-        let request = AudioTranscriptRequest(audioURL: audioURL)
-        try cache.save(sampleTranscript(provenance: .appleSpeech), for: request)
-        let cacheFile = try #require(
-            FileManager.default.contentsOfDirectory(
-                at: cacheDirectory,
-                includingPropertiesForKeys: nil
-            ).first
-        )
-        var document = try #require(
-            JSONSerialization.jsonObject(with: Data(contentsOf: cacheFile)) as? [String: Any]
-        )
-        document["schemaVersion"] = 3
-        try JSONSerialization.data(withJSONObject: document).write(to: cacheFile)
-
-        #expect(try cache.load(for: request) == nil)
-    }
-
-    private func sampleTranscript(
+    private func makePrecisionRecognizer(
         provenance: TranscriptionProvenance
-    ) throws -> TurnSegmentedTranscript {
-        let span = try TimedTranscriptSpan(id: "span-0", text: "Hello", start: 0, end: 1)
-        return try TurnSegmentedTranscript(
-            spans: [span],
-            turns: [
-                TranscriptTurn(
-                    id: "turn-0",
-                    spanIDs: [span.id],
-                    start: 0,
-                    end: 1,
-                    text: "Hello"
-                )
-            ],
-            localeIdentifier: "en-US",
-            transcriptionProvenance: provenance
+    ) -> PrecisionRecognizerStub {
+        PrecisionRecognizerStub(
+            result: PrecisionRecognitionResult(
+                text: "Hello world.",
+                words: [
+                    PrecisionRecognizedWord(
+                        text: "Hello", start: 0, end: 0.4, confidence: 0.9
+                    ),
+                    PrecisionRecognizedWord(
+                        text: "world.", start: 0.4, end: 1, confidence: 0.8
+                    )
+                ],
+                language: Locale.LanguageCode("en"),
+                confidence: 0.85,
+                provenance: provenance
+            )
         )
     }
 }
-
 private actor TimedTranscriberSpy: TimedSpeechTranscriber {
     private(set) var callCount = 0
     private let error: PrecisionTranscriptionError?

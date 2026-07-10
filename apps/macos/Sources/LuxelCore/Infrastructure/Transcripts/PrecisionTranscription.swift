@@ -1,243 +1,6 @@
 import FluidAudio
 import Foundation
 
-public enum PrecisionTranscriptionError: Error, Equatable, Sendable {
-    case modelNotInstalled
-    case modelCorrupt
-    case unsupportedLanguage(String)
-    case unsupportedHardware
-    case missingTokenTimings
-    case invalidTokenTimings
-    case textReconstructionMismatch
-    case inferenceFailed
-    case appleCaptionTranscriberUnavailable
-}
-
-extension PrecisionTranscriptionError: LocalizedError {
-    public var errorDescription: String? {
-        switch self {
-        case .modelNotInstalled:
-            "Precision Transcription is not installed. Open Settings to download it or switch to Apple Speech."
-        case .modelCorrupt:
-            "The Precision Transcription model needs repair. Re-download it in Settings or switch to Apple Speech."
-        case .unsupportedLanguage(let code):
-            "Precision Transcription does not support \(code). Choose a supported language or switch to Apple Speech."
-        case .unsupportedHardware:
-            "Precision Transcription requires Apple silicon. Switch to Apple Speech on this Mac."
-        case .missingTokenTimings, .invalidTokenTimings, .textReconstructionMismatch:
-            "Precision Transcription returned invalid word timings. Retry or switch to Apple Speech."
-        case .inferenceFailed:
-            "Precision Transcription failed. Retry or switch to Apple Speech."
-        case .appleCaptionTranscriberUnavailable:
-            "Caption transcription is not available with Apple Speech in this version of Luxel."
-        }
-    }
-}
-
-public enum PrecisionTranscriptionLanguageCatalog {
-    public static let supportedCodes: Set<String> = [
-        "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fr", "hr", "hu",
-        "it", "lt", "lv", "mt", "nl", "pl", "pt", "ro", "ru", "sk", "sl", "sv", "uk"
-    ]
-
-    public static func languageCode(for locale: Locale) throws -> Locale.LanguageCode {
-        guard let languageCode = locale.language.languageCode,
-              supportedCodes.contains(languageCode.identifier.lowercased())
-        else {
-            let requested = locale.language.languageCode?.identifier ?? locale.identifier
-            throw PrecisionTranscriptionError.unsupportedLanguage(requested)
-        }
-        return languageCode
-    }
-
-    static func fluidLanguage(for locale: Locale) throws -> Language {
-        let languageCode = try languageCode(for: locale)
-        guard let language = Language(rawValue: languageCode.identifier.lowercased()) else {
-            throw PrecisionTranscriptionError.unsupportedLanguage(languageCode.identifier)
-        }
-        return language
-    }
-}
-
-public struct PrecisionTokenTiming: Equatable, Sendable {
-    public let token: String
-    public let start: TimeInterval
-    public let end: TimeInterval
-    public let confidence: Double
-
-    public init(token: String, start: TimeInterval, end: TimeInterval, confidence: Double) {
-        self.token = token
-        self.start = start
-        self.end = end
-        self.confidence = confidence
-    }
-}
-
-public struct PrecisionRecognizedWord: Equatable, Sendable {
-    public let text: String
-    public let start: TimeInterval
-    public let end: TimeInterval
-    public let confidence: Double
-
-    public init(text: String, start: TimeInterval, end: TimeInterval, confidence: Double) {
-        self.text = text
-        self.start = start
-        self.end = end
-        self.confidence = confidence
-    }
-
-    public func timedSpan(id: String, source: TranscriptSourceLabel?) throws -> TimedTranscriptSpan {
-        try TimedTranscriptSpan(
-            id: id,
-            text: text,
-            start: start,
-            end: end,
-            confidence: confidence,
-            source: source
-        )
-    }
-
-    public func captionWord() throws -> RecognizedWord {
-        try RecognizedWord(
-            start: start,
-            duration: end - start,
-            text: text,
-            confidence: confidence
-        )
-    }
-}
-
-public enum PrecisionTokenTimingMapper {
-    private static let boundary = "▁"
-    private static let epsilon: TimeInterval = 0.001
-    private static let ignoredTokens: Set<String> = ["", "<blank>", "<pad>"]
-
-    public static func map(
-        _ timings: [PrecisionTokenTiming],
-        expectedText: String
-    ) throws -> [PrecisionRecognizedWord] {
-        let content = timings.filter { !ignoredTokens.contains($0.token) }
-        guard !content.isEmpty else {
-            throw PrecisionTranscriptionError.missingTokenTimings
-        }
-
-        var validated: [PrecisionTokenTiming] = []
-        var previousEnd: TimeInterval?
-        for timing in content {
-            guard timing.start.isFinite,
-                  timing.end.isFinite,
-                  timing.confidence.isFinite,
-                  timing.start >= 0,
-                  timing.end > timing.start,
-                  (0...1).contains(timing.confidence)
-            else {
-                throw PrecisionTranscriptionError.invalidTokenTimings
-            }
-
-            var start = timing.start
-            if let previousEnd, start < previousEnd {
-                guard previousEnd - start <= epsilon, timing.end > previousEnd else {
-                    throw PrecisionTranscriptionError.invalidTokenTimings
-                }
-                start = previousEnd
-            }
-            let adjusted = PrecisionTokenTiming(
-                token: timing.token,
-                start: start,
-                end: timing.end,
-                confidence: timing.confidence
-            )
-            validated.append(adjusted)
-            previousEnd = adjusted.end
-        }
-
-        let decoded = validated.map(\.token).joined()
-            .replacingOccurrences(of: boundary, with: " ")
-        guard normalize(decoded) == normalize(expectedText) else {
-            throw PrecisionTranscriptionError.textReconstructionMismatch
-        }
-
-        var groups: [[PrecisionTokenTiming]] = []
-        for timing in validated {
-            let startsWord =
-                timing.token.hasPrefix(boundary)
-                || timing.token.first?.isWhitespace == true
-            if startsWord || groups.isEmpty {
-                groups.append([timing])
-            } else {
-                groups[groups.count - 1].append(timing)
-            }
-        }
-
-        let words = try groups.map { group -> PrecisionRecognizedWord in
-            let text = group.map(\.token).joined()
-                .replacingOccurrences(of: boundary, with: " ")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty, let first = group.first, let last = group.last else {
-                throw PrecisionTranscriptionError.invalidTokenTimings
-            }
-            let totalDuration = group.reduce(0) { $0 + ($1.end - $1.start) }
-            guard totalDuration > 0 else {
-                throw PrecisionTranscriptionError.invalidTokenTimings
-            }
-            let confidence =
-                group.reduce(0) {
-                    $0 + $1.confidence * ($1.end - $1.start)
-                } / totalDuration
-            return PrecisionRecognizedWord(
-                text: text,
-                start: first.start,
-                end: last.end,
-                confidence: confidence
-            )
-        }
-
-        for pair in zip(words, words.dropFirst()) where pair.1.start < pair.0.end {
-            throw PrecisionTranscriptionError.invalidTokenTimings
-        }
-        guard normalize(words.map(\.text).joined(separator: " ")) == normalize(expectedText) else {
-            throw PrecisionTranscriptionError.textReconstructionMismatch
-        }
-        return words
-    }
-
-    private static func normalize(_ text: String) -> String {
-        text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-}
-
-public struct PrecisionRecognitionResult: Equatable, Sendable {
-    public let text: String
-    public let words: [PrecisionRecognizedWord]
-    public let language: Locale.LanguageCode
-    public let confidence: Double
-    public let provenance: TranscriptionProvenance
-
-    public init(
-        text: String,
-        words: [PrecisionRecognizedWord],
-        language: Locale.LanguageCode,
-        confidence: Double,
-        provenance: TranscriptionProvenance
-    ) {
-        self.text = text
-        self.words = words
-        self.language = language
-        self.confidence = confidence
-        self.provenance = provenance
-    }
-}
-
-public protocol PrecisionRecognizing: Sendable {
-    func recognize(
-        audioURL: URL,
-        audioTrackIndex: Int?,
-        locale: Locale,
-        progress: @escaping @Sendable (Double) -> Void
-    ) async throws -> PrecisionRecognitionResult
-}
-
 private final class PrecisionProgressRelay: @unchecked Sendable {
     private let lock = NSLock()
     private var lastValue = 0.0
@@ -255,66 +18,6 @@ private final class PrecisionProgressRelay: @unchecked Sendable {
             return true
         }
         if shouldEmit { progress(clamped) }
-    }
-}
-
-public enum FluidAudioOfflinePolicy {
-    public static func enable() {
-        ModelHub.offlineMode = true
-    }
-}
-
-public struct ParakeetPrecisionModelValidator: LocalModelValidating {
-    public static let validatorKey = LocalModelValidatorKey(
-        rawValue: "precision-transcription.parakeet-tdt-v3"
-    )
-    public static let runtimeDirectoryName = Repo.parakeetV3.folderName
-    public let key = Self.validatorKey
-    public let version = 1
-
-    public init() {}
-
-    public func prepareAndValidate(
-        release: LocalModelRelease,
-        stagedPayload: URL,
-        preparedOutput: URL
-    ) async throws -> LocalModelPreparedPayload {
-        FluidAudioOfflinePolicy.enable()
-        guard release.runtimeDirectoryName == Self.runtimeDirectoryName else {
-            throw LocalModelFailure.invalidCatalog(
-                "Precision Transcription runtime directory does not match FluidAudio"
-            )
-        }
-        let runtimeDirectory = preparedOutput.appending(
-            path: release.runtimeDirectoryName,
-            directoryHint: .isDirectory
-        )
-        do {
-            try FileManager.default.copyItem(at: stagedPayload, to: runtimeDirectory)
-            guard
-                AsrModels.modelsExist(
-                    at: runtimeDirectory,
-                    version: .v3,
-                    encoderPrecision: .int8
-                )
-            else {
-                throw PrecisionTranscriptionError.modelCorrupt
-            }
-            _ = try await AsrModels.load(
-                from: runtimeDirectory,
-                version: .v3,
-                encoderPrecision: .int8
-            )
-            return LocalModelPreparedPayload(payloadRoot: preparedOutput)
-        } catch is CancellationError {
-            throw LocalModelFailure.canceled
-        } catch let failure as LocalModelFailure {
-            throw failure
-        } catch {
-            throw LocalModelFailure.validationFailed(
-                "Precision Transcription could not load its local files"
-            )
-        }
     }
 }
 
@@ -396,7 +99,9 @@ public actor PrecisionTranscriptionEngine: PrecisionRecognizing {
         await unloadRuntime()
         await leaveSerialGate()
     }
+}
 
+private extension PrecisionTranscriptionEngine {
     private func unloadRuntime() async {
         guard let loadedRuntime else { return }
         await loadedRuntime.manager.cleanup()
@@ -417,15 +122,10 @@ public actor PrecisionTranscriptionEngine: PrecisionRecognizing {
         let languageCode = try PrecisionTranscriptionLanguageCatalog.languageCode(for: locale)
         let fluidLanguage = try PrecisionTranscriptionLanguageCatalog.fluidLanguage(for: locale)
         let runtime = try await runtime(for: languageCode.identifier.lowercased())
-        let transcriptionURL: URL
-        if let audioTrackIndex {
-            transcriptionURL = try await audioSegmentExporter.isolatedTrackURL(
-                from: audioURL,
-                audioTrackIndex: audioTrackIndex
-            )
-        } else {
-            transcriptionURL = audioURL
-        }
+        let transcriptionURL = try await transcriptionURL(
+            audioURL: audioURL,
+            audioTrackIndex: audioTrackIndex
+        )
         defer {
             if transcriptionURL != audioURL {
                 try? FileManager.default.removeItem(at: transcriptionURL)
@@ -433,15 +133,10 @@ public actor PrecisionTranscriptionEngine: PrecisionRecognizing {
         }
 
         let progressRelay = PrecisionProgressRelay(progress: progress)
-        let stream = await runtime.manager.transcriptionProgressStream
-        let progressTask = Task {
-            do {
-                for try await fraction in stream {
-                    progressRelay.emit(min(max(fraction, 0), 1) * 0.9)
-                }
-            } catch {
-            }
-        }
+        let progressTask = await transcriptionProgressTask(
+            manager: runtime.manager,
+            relay: progressRelay
+        )
         defer { progressTask.cancel() }
 
         var decoderState = try TdtDecoderState()
@@ -450,11 +145,8 @@ public actor PrecisionTranscriptionEngine: PrecisionRecognizing {
             decoderState: &decoderState,
             language: fluidLanguage
         )
-        guard let timings = result.tokenTimings else {
-            throw PrecisionTranscriptionError.missingTokenTimings
-        }
         let words = try PrecisionTokenTimingMapper.map(
-            timings.map {
+            (result.tokenTimings ?? []).map {
                 PrecisionTokenTiming(
                     token: $0.token,
                     start: $0.startTime,
@@ -478,6 +170,34 @@ public actor PrecisionTranscriptionEngine: PrecisionRecognizing {
         )
     }
 
+    private func transcriptionProgressTask(
+        manager: AsrManager,
+        relay: PrecisionProgressRelay
+    ) async -> Task<Void, Never> {
+        let stream = await manager.transcriptionProgressStream
+        return Task {
+            do {
+                for try await fraction in stream {
+                    relay.emit(min(max(fraction, 0), 1) * 0.9)
+                }
+            } catch {
+            }
+        }
+    }
+
+    private func transcriptionURL(
+        audioURL: URL,
+        audioTrackIndex: Int?
+    ) async throws -> URL {
+        guard let audioTrackIndex else {
+            return audioURL
+        }
+        return try await audioSegmentExporter.isolatedTrackURL(
+            from: audioURL,
+            audioTrackIndex: audioTrackIndex
+        )
+    }
+
     private func runtime(for languageCode: String) async throws -> LoadedRuntime {
         if let loadedRuntime, loadedRuntime.languageCode == languageCode {
             return loadedRuntime
@@ -496,32 +216,7 @@ public actor PrecisionTranscriptionEngine: PrecisionRecognizing {
             }
         }
         do {
-            let runtimeDirectory = lease.payloadRoot.appending(
-                path: ParakeetPrecisionModelValidator.runtimeDirectoryName,
-                directoryHint: .isDirectory
-            )
-            guard
-                AsrModels.modelsExist(
-                    at: runtimeDirectory,
-                    version: .v3,
-                    encoderPrecision: .int8
-                )
-            else {
-                throw PrecisionTranscriptionError.modelCorrupt
-            }
-            let models = try await AsrModels.load(
-                from: runtimeDirectory,
-                version: .v3,
-                encoderPrecision: .int8
-            )
-            let manager = AsrManager(
-                config: ASRConfig(
-                    melChunkContext: languageCode == "en",
-                    dualDecodeArbitration: false
-                )
-            )
-            try await manager.loadModels(models)
-            let runtime = LoadedRuntime(manager: manager, lease: lease, languageCode: languageCode)
+            let runtime = try await loadRuntime(lease: lease, languageCode: languageCode)
             loadedRuntime = runtime
             return runtime
         } catch is CancellationError {
@@ -532,6 +227,36 @@ public actor PrecisionTranscriptionEngine: PrecisionRecognizing {
             await modelManager.release(lease)
             throw error
         }
+    }
+
+    private func loadRuntime(
+        lease: LocalModelLease,
+        languageCode: String
+    ) async throws -> LoadedRuntime {
+        let runtimeDirectory = lease.payloadRoot.appending(
+            path: ParakeetPrecisionModelValidator.runtimeDirectoryName,
+            directoryHint: .isDirectory
+        )
+        guard AsrModels.modelsExist(
+            at: runtimeDirectory,
+            version: .v3,
+            encoderPrecision: .int8
+        ) else {
+            throw PrecisionTranscriptionError.modelCorrupt
+        }
+        let models = try await AsrModels.load(
+            from: runtimeDirectory,
+            version: .v3,
+            encoderPrecision: .int8
+        )
+        let manager = AsrManager(
+            config: ASRConfig(
+                melChunkContext: languageCode == "en",
+                dualDecodeArbitration: false
+            )
+        )
+        try await manager.loadModels(models)
+        return LoadedRuntime(manager: manager, lease: lease, languageCode: languageCode)
     }
 
     private func enterSerialGate() async throws {
