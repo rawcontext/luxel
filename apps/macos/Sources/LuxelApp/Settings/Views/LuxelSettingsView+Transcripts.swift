@@ -110,7 +110,6 @@ extension LuxelSettingsView {
 
                             KnownSpeakerSettingsRow(
                                 profile: profile,
-                                accent: KnownSpeakerAccent.accent(at: index),
                                 isExpanded: model.expandedKnownSpeakerID == profile.id,
                                 onToggleExpanded: {
                                     withAnimation(.easeInOut(duration: 0.16)) {

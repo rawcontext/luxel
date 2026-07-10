@@ -39,6 +39,7 @@ public final class FileKnownSpeakerProfileStore: KnownSpeakerProfileStore, @unch
         } else {
             profiles.append(profile)
         }
+        profiles = Self.mergingDuplicateProfiles(profiles)
 
         try writeProfiles(profiles)
         return KnownSpeakerLibrary(profiles: profiles, revision: Self.revision(for: profiles))
@@ -112,7 +113,11 @@ public final class FileKnownSpeakerProfileStore: KnownSpeakerProfileStore, @unch
             throw TranscriptModelError.unsupportedCacheSchemaVersion(document.schemaVersion)
         }
 
-        return document.profiles
+        let profiles = Self.mergingDuplicateProfiles(document.profiles)
+        if profiles != document.profiles {
+            try writeProfiles(profiles)
+        }
+        return profiles
     }
 
     private func writeProfiles(_ profiles: [KnownSpeakerProfile]) throws {
@@ -143,6 +148,69 @@ public final class FileKnownSpeakerProfileStore: KnownSpeakerProfileStore, @unch
         }
 
         return String(hash, radix: 16)
+    }
+
+    private static func mergingDuplicateProfiles(
+        _ profiles: [KnownSpeakerProfile]
+    ) -> [KnownSpeakerProfile] {
+        var merged: [KnownSpeakerProfile] = []
+        var indexByName: [String: Int] = [:]
+
+        for profile in profiles {
+            let name = normalizedName(profile.displayName)
+            guard let existingIndex = indexByName[name] else {
+                indexByName[name] = merged.count
+                merged.append(profile)
+                continue
+            }
+
+            merged[existingIndex] = merging(merged[existingIndex], with: profile)
+        }
+
+        return merged
+    }
+
+    private static func normalizedName(_ name: String) -> String {
+        name.precomposedStringWithCanonicalMapping
+            .split(whereSeparator: \.isWhitespace)
+            .joined(separator: " ")
+            .lowercased(with: Locale(identifier: "en_US_POSIX"))
+    }
+
+    private static func merging(
+        _ canonical: KnownSpeakerProfile,
+        with duplicate: KnownSpeakerProfile
+    ) -> KnownSpeakerProfile {
+        var profile = canonical
+        let canonicalRecordings = sourceRecordings(for: canonical)
+        let duplicateRecordings = sourceRecordings(for: duplicate)
+        let untrackedCanonicalMatches =
+            canonical.matchedRecordingCount - canonicalRecordings.count
+        let untrackedDuplicateMatches =
+            duplicate.matchedRecordingCount - duplicateRecordings.count
+
+        var embeddingIDs = Set(profile.embeddings.map(\.id))
+        profile.embeddings.append(contentsOf: duplicate.embeddings.filter {
+            embeddingIDs.insert($0.id).inserted
+        })
+        var clipIDs = Set(profile.exampleClips.map(\.id))
+        profile.exampleClips.append(contentsOf: duplicate.exampleClips.filter {
+            clipIDs.insert($0.id).inserted
+        })
+        profile.matchedRecordingCount =
+            canonicalRecordings.union(duplicateRecordings).count
+            + untrackedCanonicalMatches
+            + untrackedDuplicateMatches
+        profile.lastMatchedAt = [canonical.lastMatchedAt, duplicate.lastMatchedAt]
+            .compactMap { $0 }
+            .max()
+        profile.createdAt = min(canonical.createdAt, duplicate.createdAt)
+        profile.updatedAt = max(canonical.updatedAt, duplicate.updatedAt)
+        return profile
+    }
+
+    private static func sourceRecordings(for profile: KnownSpeakerProfile) -> Set<URL> {
+        Set(profile.exampleClips.compactMap(\.sourceRecordingURL))
     }
 }
 

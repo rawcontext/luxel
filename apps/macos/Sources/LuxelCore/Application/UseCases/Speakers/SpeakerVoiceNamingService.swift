@@ -110,15 +110,19 @@ public struct SpeakerVoiceNamingService: Sendable {
             matchedRecordingCount: 1,
             lastMatchedAt: Date()
         )
-        try profileStore.save(profile)
+        let library = try profileStore.save(profile)
+        guard let savedProfile = library.profiles.first(where: {
+            $0.embeddings.contains { $0.id == embedding.id }
+        }) else {
+            throw KnownSpeakerError.profileNotFound(profile.id)
+        }
 
-        let updated = try transcript.replacingSpeakerLabel(
-            TranscriptSpeakerLabel(
-                id: speakerID,
-                displayName: profile.displayName,
-                knownSpeakerID: profile.id
-            ))
-        return (updated, profile)
+        let updated = try assigning(
+            speakerID: speakerID,
+            to: savedProfile,
+            in: transcript
+        )
+        return (updated, savedProfile)
     }
 
     public func attach(
@@ -143,6 +147,14 @@ public struct SpeakerVoiceNamingService: Sendable {
         profile.updatedAt = Date()
         try profileStore.save(profile)
 
+        return try assigning(speakerID: speakerID, to: profile, in: transcript)
+    }
+
+    private func assigning(
+        speakerID: String,
+        to profile: KnownSpeakerProfile,
+        in transcript: TurnSegmentedTranscript
+    ) throws -> TurnSegmentedTranscript {
         let updatedLabel = try TranscriptSpeakerLabel(
             id: speakerID,
             displayName: profile.displayName,
@@ -155,7 +167,6 @@ public struct SpeakerVoiceNamingService: Sendable {
         })?.id else {
             return updatedTranscript
         }
-
         return try updatedTranscript.mergingSpeaker(id: speakerID, into: existingSpeakerID)
     }
 
