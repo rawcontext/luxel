@@ -155,7 +155,7 @@ extension LuxelSettingsView {
                 if let progress = precisionModelProgress {
                     ProgressView(value: progress.fractionCompleted)
                     Text(
-                        "\(byteString(progress.completedBytes)) of \(byteString(progress.totalBytes))"
+                        "\(progressByteString(progress.completedBytes)) of \(progressByteString(progress.totalBytes))"
                     )
                     .font(.system(size: 11, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.45))
@@ -302,6 +302,13 @@ extension LuxelSettingsView {
 
     private func byteString(_ bytes: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+
+    private func progressByteString(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        formatter.zeroPadsFractionDigits = true
+        return formatter.string(fromByteCount: bytes)
     }
 
     private var identifySpeakersBinding: Binding<Bool> {

@@ -24,6 +24,8 @@ struct PrecisionSettingsConfigurationTests {
         #expect(!source.contains("Remove Precision Transcription?"))
         #expect(source.contains("model.installAndEnablePrecisionTranscription()"))
         #expect(source.contains("model.removePrecisionModel()"))
+        #expect(source.contains("progressByteString(progress.completedBytes)"))
+        #expect(source.contains("formatter.zeroPadsFractionDigits = true"))
 
         let localizationCatalog = try String(
             contentsOf: packageRoot.appending(
