@@ -114,6 +114,17 @@ enum LuxelCompositionRoot {
         CaptureTargetService(catalog: catalog)
     }
 
+    @MainActor
+    static func cameraPreviewPanelController() -> CameraPreviewPanelController {
+        let modelURL = Bundle.main.resourceURL?
+            .appending(path: "Models", directoryHint: .isDirectory)
+            .appending(path: "modnet", directoryHint: .isDirectory)
+            .appending(path: "MODNetPortraitMatting.mlmodelc", directoryHint: .isDirectory)
+        return CameraPreviewPanelController {
+            MODNetPortraitMattingProcessor(modelURL: modelURL)
+        }
+    }
+
     static func purchaseGateService() -> PurchaseGateService {
         #if LUXEL_MAC_APP_STORE
         PurchaseGateService(gate: MacAppStorePaidAppPurchaseGate())

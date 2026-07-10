@@ -359,7 +359,9 @@ extension LuxelMenuModel {
             return
         }
 
-        recordingNoticeMessage = noticeMessage
+        let preparedCamera = await preparingCameraCutoutIfNeeded(for: request)
+        let effectiveRequest = preparedCamera.request
+        recordingNoticeMessage = preparedCamera.noticeMessage ?? noticeMessage
         recordingActionErrorMessage = nil
         activeNotchRecordingActionID = notchRecordingActionID
         recordingState = .starting
@@ -367,20 +369,20 @@ extension LuxelMenuModel {
 
         do {
             await recordingFramePanelController.present(
-                for: request,
+                for: effectiveRequest,
                 availableTargets: captureTargets,
                 exclusionRegistry: captureExclusionRegistry
             )
 
-            let recordingName = request.outputFileURL.deletingPathExtension().lastPathComponent
-            let outputPlan = try recordingOutputFinalizationPlan(for: request.outputFileURL)
-            if let countdown = request.schedule?.countdown, countdown > 0 {
+            let recordingName = effectiveRequest.outputFileURL.deletingPathExtension().lastPathComponent
+            let outputPlan = try recordingOutputFinalizationPlan(for: effectiveRequest.outputFileURL)
+            if let countdown = effectiveRequest.schedule?.countdown, countdown > 0 {
                 recordingState = .countingDown(startedAt: Date(), duration: countdown)
             }
 
             let startTask = Task<ActiveRecording, any Error> {
                 try await recordingLifecycleService.startRecording(
-                    request,
+                    effectiveRequest,
                     name: recordingName,
                     outputPlan: outputPlan
                 )
@@ -392,14 +394,17 @@ extension LuxelMenuModel {
                 startTask.cancel()
             }
             recordingStartTask = nil
-            rememberLastCapture(from: request, capturedAt: activeRecording.date)
+            rememberLastCapture(from: effectiveRequest, capturedAt: activeRecording.date)
             recordingState = .recording(
                 activeRecording,
                 RecordingMenuClock(startedAt: activeRecording.date)
             )
-            await presentCameraPreviewForRecording(request)
+            await presentCameraPreviewForRecording(effectiveRequest)
             if let latencySpan {
-                LuxelRecordingLatencyTelemetry.finishStarted(latencySpan, target: request.target)
+                LuxelRecordingLatencyTelemetry.finishStarted(
+                    latencySpan,
+                    target: effectiveRequest.target
+                )
             }
         } catch is CancellationError {
             recordingStartTask = nil

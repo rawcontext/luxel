@@ -1,8 +1,46 @@
+import Foundation
 import LuxelCore
 import Testing
 
 @Suite("Webcam overlay models")
 struct WebcamOverlayModelTests {
+    @Test("camera shapes preserve legacy values and stable display order")
+    func cameraShapesPreserveLegacyValuesAndStableDisplayOrder() throws {
+        #expect(CameraOverlayShape.allCases == [.circle, .roundedRect, .square, .cutout])
+        #expect(try JSONDecoder().decode(CameraOverlayShape.self, from: Data(#""circle""#.utf8)) == .circle)
+        #expect(
+            try JSONDecoder().decode(
+                CameraOverlayShape.self,
+                from: Data(#""roundedRect""#.utf8)
+            ) == .roundedRect
+        )
+        #expect(!CameraOverlayShape.square.usesPortraitMatting)
+        #expect(CameraOverlayShape.cutout.usesPortraitMatting)
+    }
+
+    @Test("new camera shapes round trip through preview options and overlay plans")
+    func newCameraShapesRoundTripThroughPreviewOptionsAndOverlayPlans() throws {
+        for shape in [CameraOverlayShape.square, .cutout] {
+            let options = CameraRecordingOptions(
+                deviceID: "camera-1",
+                isEnabled: true,
+                previewStyle: CameraPreviewStyle(shape: shape, size: .large, isMirrored: false)
+            )
+            let decodedOptions = try JSONDecoder().decode(
+                CameraRecordingOptions.self,
+                from: JSONEncoder().encode(options)
+            )
+            #expect(decodedOptions == options)
+
+            let plan = try CameraOverlayPlan(shape: shape)
+            let decodedPlan = try JSONDecoder().decode(
+                CameraOverlayPlan.self,
+                from: JSONEncoder().encode(plan)
+            )
+            #expect(decodedPlan == plan)
+        }
+    }
+
     @Test("camera recording options expose defaults and normalize empty device ID")
     func cameraRecordingOptionsExposeDefaults() {
         let defaults = CameraRecordingOptions()

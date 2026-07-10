@@ -42,7 +42,7 @@ struct LastCaptureRecordingPlannerTests {
             deviceID: "camera-1",
             isEnabled: true,
             recordsSeparateTrack: false,
-            previewStyle: CameraPreviewStyle(shape: .roundedRect, size: .small, isMirrored: false)
+            previewStyle: CameraPreviewStyle(shape: .cutout, size: .small, isMirrored: false)
         )
         let memory = LastCaptureMemory(
             target: .area(displayID: displayID, rect: rect),

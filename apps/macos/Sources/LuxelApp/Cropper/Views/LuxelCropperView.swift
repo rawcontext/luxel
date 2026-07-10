@@ -414,12 +414,7 @@ extension LuxelCropperView {
                                 Text(shape.settingsLabel)
                             }
                         }
-                        .help(
-                            LuxelLocalization.format(
-                                "cameraOverlay.shape.optionHelp",
-                                defaultValue: "Set the camera overlay shape to %@.",
-                                shape.settingsLabel)
-                        )
+                        .help(shape.settingsHelp)
                     }
                 } label: {
                     Label("Shape", systemImage: "circle")

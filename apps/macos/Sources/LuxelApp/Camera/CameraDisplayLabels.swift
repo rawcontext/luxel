@@ -27,10 +27,29 @@ extension CameraOverlayShape {
     var settingsLabel: String {
         switch self {
         case .circle:
-            "Squircle"
+            LuxelLocalization.string("cameraOverlay.shape.squircle", defaultValue: "Squircle")
         case .roundedRect:
-            "Rounded"
+            LuxelLocalization.string("cameraOverlay.shape.rounded", defaultValue: "Rounded")
+        case .square:
+            LuxelLocalization.string("cameraOverlay.shape.square", defaultValue: "Square")
+        case .cutout:
+            LuxelLocalization.string("cameraOverlay.shape.cutout", defaultValue: "Cutout")
         }
+    }
+
+    var settingsHelp: String {
+        if usesPortraitMatting {
+            return LuxelLocalization.string(
+                "cameraOverlay.shape.cutoutHelp",
+                defaultValue: "Remove the camera background and show only the presenter."
+            )
+        }
+
+        return LuxelLocalization.format(
+            "cameraOverlay.shape.optionHelp",
+            defaultValue: "Set the camera overlay shape to %@.",
+            settingsLabel
+        )
     }
 }
 

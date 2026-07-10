@@ -61,7 +61,7 @@ struct UserDefaultsSettingsStoreTests {
             transcriptTurnSegmentationEnabled: false,
             cameraDeviceID: "camera-1",
             cameraSeparateTrack: false,
-            cameraPreviewStyle: CameraPreviewStyle(shape: .roundedRect, size: .large, isMirrored: false),
+            cameraPreviewStyle: CameraPreviewStyle(shape: .cutout, size: .large, isMirrored: false),
             cameraPreviewPlacements: try persistedCameraPreviewPlacements(),
             replayBufferConfiguration: try persistedReplayBufferConfiguration(),
             replayBufferPreferredBufferLength: 120,

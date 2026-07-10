@@ -658,8 +658,10 @@ extension ArchitectureTests {
 
         let recorderStartRange = try #require(
             recordingSource.range(of: "recordingLifecycleService.startRecording("))
+        let cutoutPreparationRange = try #require(
+            recordingSource.range(of: "await preparingCameraCutoutIfNeeded(for: request)"))
         let cameraStartRange = try #require(
-            recordingSource.range(of: "await presentCameraPreviewForRecording(request)"))
+            recordingSource.range(of: "await presentCameraPreviewForRecording(effectiveRequest)"))
         let recordingCameraHelperRange = try #require(
             cameraSource.range(
                 of: "func presentCameraPreviewForRecording(_ request: RecordingRequest) async")
@@ -679,6 +681,7 @@ extension ArchitectureTests {
             .components(separatedBy: "cameraPreviewPanelController.present(")
             .count - 1
 
+        #expect(cutoutPreparationRange.lowerBound < recorderStartRange.lowerBound)
         #expect(recorderStartRange.lowerBound < cameraStartRange.lowerBound)
         #expect(stopCameraRange.lowerBound < stopRecorderRange.lowerBound)
         #expect(recordingSource.contains("closeCameraPreviewForFinishedRecording()"))
@@ -693,6 +696,8 @@ extension ArchitectureTests {
         #expect(!recordingCameraHelperSource.contains("permissionClient.request(.camera)"))
         #expect(recordingCameraHelperSource.contains("showsHoverControls: false"))
         #expect(cameraSource.contains("func closeCameraPreviewForFinishedRecording()"))
+        #expect(cameraSource.contains("try await cameraPreviewPanelController.prepareCutout()"))
+        #expect(cameraSource.contains("request.replacingCamera("))
     }
 
     @Test("update settings milestone does not link Sparkle yet")

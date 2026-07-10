@@ -281,7 +281,7 @@ extension LuxelSettingsView {
 
         SettingsIslandGroup(
             "Camera",
-            footer: "Camera controls are available after you choose a camera."
+            footer: cameraSettingsFooter
         ) {
             SettingsRow("Camera") {
                 SettingsMenuPicker(
@@ -296,7 +296,7 @@ extension LuxelSettingsView {
             LuxelGlassRowDivider()
 
             SettingsRow("Shape") {
-                LuxelGlassSegmentedPicker(
+                SettingsMenuPicker(
                     selection: cameraPreviewShapeSelection,
                     options: Array(CameraOverlayShape.allCases)
                 ) { shape in
@@ -305,7 +305,7 @@ extension LuxelSettingsView {
             }
             .disabled(model.settings.cameraDeviceID == nil)
             .opacity(model.settings.cameraDeviceID == nil ? 0.45 : 1)
-            .help("Choose the shape of the camera overlay.")
+            .help(model.settings.cameraPreviewStyle.shape.settingsHelp)
 
             LuxelGlassRowDivider()
 
@@ -342,6 +342,14 @@ extension LuxelSettingsView {
         }
         options.append(contentsOf: model.cameraDevices.map(\.id))
         return options
+    }
+
+    private var cameraSettingsFooter: String {
+        if model.settings.cameraPreviewStyle.shape.usesPortraitMatting {
+            return model.settings.cameraPreviewStyle.shape.settingsHelp
+        }
+
+        return "Camera controls are available after you choose a camera."
     }
 
     private func cameraDeviceLabel(_ deviceID: String?) -> String {

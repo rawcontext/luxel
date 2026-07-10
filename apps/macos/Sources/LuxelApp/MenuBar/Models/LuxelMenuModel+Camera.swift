@@ -71,10 +71,39 @@ extension LuxelMenuModel {
             onPlacementChange: { [weak self] displayID, placement in
                 self?.saveCameraPreviewPlacement(displayID: displayID, placement: placement)
             },
+            onCutoutFailure: { [weak self] in
+                self?.recordingNoticeMessage = Self.cameraCutoutUnavailableNotice
+            },
             onClose: { [weak self] in
                 self?.disableCameraPreviewFromPanel()
             }
         )
+    }
+
+    func preparingCameraCutoutIfNeeded(
+        for request: RecordingRequest
+    ) async -> (request: RecordingRequest, noticeMessage: String?) {
+        guard let camera = request.camera,
+              camera.isEnabled,
+              camera.previewStyle.shape.usesPortraitMatting
+        else {
+            return (request, nil)
+        }
+
+        do {
+            try await cameraPreviewPanelController.prepareCutout()
+            return (request, nil)
+        } catch {
+            let fallbackStyle = CameraPreviewStyle(
+                shape: .circle,
+                size: camera.previewStyle.size,
+                isMirrored: camera.previewStyle.isMirrored
+            )
+            return (
+                request.replacingCamera(camera.replacingPreviewStyle(fallbackStyle)),
+                Self.cameraCutoutUnavailableNotice
+            )
+        }
     }
 
     func enableDefaultCameraSource() async {
@@ -170,6 +199,13 @@ extension LuxelMenuModel {
         return CaptureTargetScreenRectResolver.rect(
             for: target,
             availableTargets: captureTargets
+        )
+    }
+
+    private static var cameraCutoutUnavailableNotice: String {
+        LuxelLocalization.string(
+            "cameraOverlay.cutout.unavailable",
+            defaultValue: "Camera background removal was unavailable. Showing Squircle instead."
         )
     }
 }

@@ -494,7 +494,7 @@ extension SettingsTests {
     @Test("camera recording options derive from camera settings")
     func cameraRecordingOptionsDeriveFromCameraSettings() {
         let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
-        let previewStyle = CameraPreviewStyle(shape: .roundedRect, size: .large, isMirrored: false)
+        let previewStyle = CameraPreviewStyle(shape: .square, size: .large, isMirrored: false)
         let settings = AppSettings(
             recordingsDirectory: directory,
             cameraDeviceID: "camera-1",

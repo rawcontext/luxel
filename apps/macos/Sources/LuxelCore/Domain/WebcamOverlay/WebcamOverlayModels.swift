@@ -41,6 +41,15 @@ public struct CameraRecordingOptions: Codable, Equatable, Sendable {
     private static func nonEmpty(_ value: String) -> String? {
         value.isEmpty ? nil : value
     }
+
+    public func replacingPreviewStyle(_ previewStyle: CameraPreviewStyle) -> CameraRecordingOptions {
+        CameraRecordingOptions(
+            deviceID: deviceID,
+            isEnabled: isEnabled,
+            recordsSeparateTrack: recordsSeparateTrack,
+            previewStyle: previewStyle
+        )
+    }
 }
 
 public struct CameraPreviewStyle: Codable, Equatable, Sendable {
@@ -168,6 +177,12 @@ public enum CameraOverlayAnchor: String, Codable, CaseIterable, Equatable, Senda
 public enum CameraOverlayShape: String, Codable, CaseIterable, Equatable, Sendable {
     case circle
     case roundedRect
+    case square
+    case cutout
+
+    public var usesPortraitMatting: Bool {
+        self == .cutout
+    }
 }
 
 public struct NormalizedPoint: Codable, Equatable, Sendable {

@@ -96,6 +96,9 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
-        .testTarget(name: "LuxelAppTests", dependencies: ["LuxelPresentation", "LuxelCore"])
+        .testTarget(
+            name: "LuxelAppTests",
+            dependencies: ["LuxelApp", "LuxelPresentation", "LuxelCore"]
+        )
     ]
 )

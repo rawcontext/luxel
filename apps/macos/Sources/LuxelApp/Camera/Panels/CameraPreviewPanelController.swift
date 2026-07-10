@@ -1,15 +1,29 @@
 import AVFoundation
 import AppKit
 import LuxelCore
+import OSLog
 
 @MainActor
 final class CameraPreviewPanelController {
     private let sessionQueue = DispatchQueue(label: "app.luxel.cameraPreview.session")
+    private let portraitMattingProcessorFactory: @MainActor () -> MODNetPortraitMattingProcessor?
+    private var portraitMattingProcessor: MODNetPortraitMattingProcessor?
     private var panel: NSPanel?
     private var session: AVCaptureSession?
+    private var cutoutPipeline: CameraCutoutSessionPipeline?
+    private var cutoutObserverTokens: [NSObjectProtocol] = []
+    private var onCutoutFailure: (@MainActor () -> Void)?
     private var panelOriginsByDisplayID: [DisplayID: NSPoint] = [:]
     private var snapRect: NSRect?
     private var onPlacementChange: (@MainActor (DisplayID, CameraPreviewPlacement) -> Void)?
+
+    init(
+        portraitMattingProcessorFactory: @escaping @MainActor () -> MODNetPortraitMattingProcessor? = {
+            nil
+        }
+    ) {
+        self.portraitMattingProcessorFactory = portraitMattingProcessorFactory
+    }
 
     func present(
         deviceID: String,
@@ -19,6 +33,7 @@ final class CameraPreviewPanelController {
         showsHoverControls: Bool = true,
         onPlacementChange: @escaping @MainActor (DisplayID, CameraPreviewPlacement) -> Void = { _, _ in
         },
+        onCutoutFailure: @escaping @MainActor () -> Void = {},
         onClose: @escaping @MainActor () -> Void = {}
     ) {
         let preferredDisplayID = panel.flatMap { Self.screen(containing: $0.frame)?.displayID }
@@ -26,6 +41,7 @@ final class CameraPreviewPanelController {
         panelOriginsByDisplayID = placements.mapValues(\.point)
         self.snapRect = snapRect
         self.onPlacementChange = onPlacementChange
+        self.onCutoutFailure = onCutoutFailure
 
         guard let device = Self.captureDevice(deviceID: deviceID) else {
             NSSound.beep()
@@ -33,12 +49,24 @@ final class CameraPreviewPanelController {
         }
 
         do {
-            let session = try Self.makeSession(device: device)
-            let frame = panelFrame(size: style.size.panelSize, preferredDisplayID: preferredDisplayID)
+            let requestedCutout = style.shape.usesPortraitMatting
+            let usesCutout = requestedCutout && portraitMattingProcessor?.isPrepared == true
+            let effectiveStyle = requestedCutout && !usesCutout ? style.replacingShape(.circle) : style
+            let cutoutPipeline = usesCutout
+                ? makeCutoutPipeline(style: effectiveStyle)
+                : nil
+            let session = try Self.makeSession(
+                device: device,
+                videoOutput: cutoutPipeline?.videoOutput
+            )
+            let frame = panelFrame(
+                size: effectiveStyle.size.panelSize,
+                preferredDisplayID: preferredDisplayID
+            )
             let panel = Self.makePanel(
                 frame: frame,
                 session: session,
-                style: style,
+                style: effectiveStyle,
                 showsHoverControls: showsHoverControls,
                 snapOrigin: { [weak self] frame in
                     Self.snappedOrigin(for: frame, snapRect: self?.snapRect)
@@ -52,7 +80,14 @@ final class CameraPreviewPanelController {
 
             self.session = session
             self.panel = panel
+            self.cutoutPipeline = cutoutPipeline
             rememberPanelOrigin(frame: panel.frame)
+            if let cutoutPipeline {
+                observeCutoutFailures(session: session, device: device)
+                cutoutPipeline.start()
+            } else if style.shape.usesPortraitMatting {
+                onCutoutFailure()
+            }
 
             let sessionHandle = CameraCaptureSessionHandle(session)
             sessionQueue.async { [sessionHandle] in
@@ -84,11 +119,15 @@ final class CameraPreviewPanelController {
 
     private func closePanelAndTakeSession() -> AVCaptureSession? {
         rememberPanelOrigin()
+        cutoutPipeline?.stop()
+        cutoutPipeline = nil
+        removeCutoutObservers()
         (panel?.contentView as? CameraPreviewPanelView)?.detachPreviewSession()
         panel?.close()
         panel = nil
         snapRect = nil
         onPlacementChange = nil
+        onCutoutFailure = nil
 
         let session = session
         self.session = nil
@@ -132,7 +171,10 @@ final class CameraPreviewPanelController {
         rememberPanelOrigin(frame: frame)
     }
 
-    private static func makeSession(device: AVCaptureDevice) throws -> AVCaptureSession {
+    private static func makeSession(
+        device: AVCaptureDevice,
+        videoOutput: AVCaptureVideoDataOutput?
+    ) throws -> AVCaptureSession {
         let session = AVCaptureSession()
         let input = try AVCaptureDeviceInput(device: device)
 
@@ -141,9 +183,14 @@ final class CameraPreviewPanelController {
         if session.canAddInput(input) {
             session.addInput(input)
         }
+        if let videoOutput, session.canAddOutput(videoOutput) {
+            session.addOutput(videoOutput)
+        }
         session.commitConfiguration()
 
-        guard !session.inputs.isEmpty else {
+        guard !session.inputs.isEmpty,
+              videoOutput == nil || session.outputs.contains(where: { $0 === videoOutput })
+        else {
             throw CameraPreviewPanelError.cannotAddInput
         }
 
@@ -326,10 +373,104 @@ final class CameraPreviewPanelController {
 
     private static let edgeMargin: CGFloat = 28
     private static let cornerSnapDistance: CGFloat = 56
+    private static let logger = Logger(subsystem: "media.luxel.app", category: "CameraCutout")
+}
+
+extension CameraPreviewPanelController {
+    func prepareCutout() async throws {
+        if portraitMattingProcessor == nil {
+            portraitMattingProcessor = portraitMattingProcessorFactory()
+        }
+        guard let portraitMattingProcessor else {
+            throw MODNetPortraitMattingError.missingModel
+        }
+
+        try await Task.detached(priority: .userInitiated) {
+            try portraitMattingProcessor.prepare()
+        }.value
+    }
+
+    private func makeCutoutPipeline(style: CameraPreviewStyle) -> CameraCutoutSessionPipeline? {
+        guard let portraitMattingProcessor else {
+            return nil
+        }
+
+        return CameraCutoutSessionPipeline(
+            processor: portraitMattingProcessor,
+            outputSize: style.size.panelSize,
+            isMirrored: style.isMirrored,
+            onImage: { [weak self] image in
+                Task { @MainActor [weak self] in
+                    (self?.panel?.contentView as? CameraPreviewPanelView)?.presentCutout(image)
+                }
+            },
+            onFailure: { [weak self] error in
+                Task { @MainActor [weak self] in
+                    self?.handleCutoutFailure(error)
+                }
+            }
+        )
+    }
+
+    private func handleCutoutFailure(_ error: any Error) {
+        guard let session, let cutoutPipeline else {
+            return
+        }
+
+        Self.logger.error(
+            "Camera Cutout fell back to Squircle: \(error.localizedDescription, privacy: .public)"
+        )
+        cutoutPipeline.stop()
+        self.cutoutPipeline = nil
+        removeCutoutObservers()
+        (panel?.contentView as? CameraPreviewPanelView)?.showDirectFallback(session: session)
+        onCutoutFailure?()
+    }
+
+    private func observeCutoutFailures(session: AVCaptureSession, device: AVCaptureDevice) {
+        let center = NotificationCenter.default
+        cutoutObserverTokens = [
+            center.addObserver(
+                forName: AVCaptureSession.wasInterruptedNotification,
+                object: session,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.handleCutoutFailure(CameraPreviewPanelError.sessionInterrupted)
+                }
+            },
+            center.addObserver(
+                forName: AVCaptureSession.runtimeErrorNotification,
+                object: session,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.handleCutoutFailure(CameraPreviewPanelError.sessionInterrupted)
+                }
+            },
+            center.addObserver(
+                forName: AVCaptureDevice.wasDisconnectedNotification,
+                object: device,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.handleCutoutFailure(CameraPreviewPanelError.deviceDisconnected)
+                }
+            }
+        ]
+    }
+
+    private func removeCutoutObservers() {
+        let center = NotificationCenter.default
+        cutoutObserverTokens.forEach(center.removeObserver)
+        cutoutObserverTokens = []
+    }
 }
 
 private enum CameraPreviewPanelError: Error {
     case cannotAddInput
+    case sessionInterrupted
+    case deviceDisconnected
 }
 
 private struct CameraCaptureSessionHandle: @unchecked Sendable {
@@ -347,11 +488,13 @@ private struct CameraCaptureSessionHandle: @unchecked Sendable {
 }
 
 private final class CameraPreviewPanelView: NSView {
-    private let previewLayer: AVCaptureVideoPreviewLayer
+    private var previewLayer: AVCaptureVideoPreviewLayer?
+    private var cutoutLayer: CameraCutoutPreviewLayer?
     private let glassBorderLayer = CALayer()
     private let glassHighlightLayer = CALayer()
     private let closeButton = NSButton(frame: .zero)
-    private let style: CameraPreviewStyle
+    private let isMirrored: Bool
+    private var effectiveShape: CameraOverlayShape
     private let snapOrigin: (NSRect) -> NSPoint
     private let onMove: (NSRect) -> Void
     private let onClose: @MainActor () -> Void
@@ -369,19 +512,28 @@ private final class CameraPreviewPanelView: NSView {
         onMove: @escaping (NSRect) -> Void,
         onClose: @escaping @MainActor () -> Void
     ) {
-        self.previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        self.style = style
+        self.previewLayer = style.shape.usesPortraitMatting
+            ? nil
+            : AVCaptureVideoPreviewLayer(session: session)
+        self.cutoutLayer = style.shape.usesPortraitMatting ? CameraCutoutPreviewLayer() : nil
+        self.isMirrored = style.isMirrored
+        self.effectiveShape = style.shape
         self.showsHoverControls = showsHoverControls
         self.snapOrigin = snapOrigin
         self.onMove = onMove
         self.onClose = onClose
         super.init(frame: .zero)
         wantsLayer = true
-        previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.transform =
-            style.isMirrored ? CATransform3DMakeScale(-1, 1, 1) : CATransform3DIdentity
-        layer?.addSublayer(previewLayer)
+        if let previewLayer {
+            configurePreviewLayer(previewLayer)
+            layer?.addSublayer(previewLayer)
+        }
+        if let cutoutLayer {
+            layer?.addSublayer(cutoutLayer)
+        }
         configureGlassBorderLayers()
+        glassBorderLayer.isHidden = style.shape.usesPortraitMatting
+        glassHighlightLayer.isHidden = style.shape.usesPortraitMatting
         layer?.addSublayer(glassBorderLayer)
         layer?.addSublayer(glassHighlightLayer)
         configureCloseButton()
@@ -396,12 +548,13 @@ private final class CameraPreviewPanelView: NSView {
 
     override func layout() {
         super.layout()
-        let cornerRadius = style.shape.cornerRadius(for: bounds.size)
+        let cornerRadius = effectiveShape.cornerRadius(for: bounds.size)
 
-        previewLayer.frame = bounds
-        previewLayer.cornerRadius = cornerRadius
-        previewLayer.cornerCurve = .continuous
-        previewLayer.masksToBounds = true
+        previewLayer?.frame = bounds
+        previewLayer?.cornerRadius = cornerRadius
+        previewLayer?.cornerCurve = .continuous
+        previewLayer?.masksToBounds = true
+        cutoutLayer?.frame = bounds
         closeButton.frame = closeButtonFrame()
         layer?.cornerRadius = cornerRadius
         layer?.cornerCurve = .continuous
@@ -444,7 +597,26 @@ private final class CameraPreviewPanelView: NSView {
     }
 
     func detachPreviewSession() {
-        previewLayer.session = nil
+        previewLayer?.session = nil
+        cutoutLayer?.clear()
+    }
+
+    func presentCutout(_ image: CGImage) {
+        cutoutLayer?.present(image)
+    }
+
+    func showDirectFallback(session: AVCaptureSession) {
+        cutoutLayer?.clear()
+        cutoutLayer?.removeFromSuperlayer()
+        cutoutLayer = nil
+        effectiveShape = .circle
+        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        configurePreviewLayer(previewLayer)
+        layer?.insertSublayer(previewLayer, at: 0)
+        self.previewLayer = previewLayer
+        glassBorderLayer.isHidden = false
+        glassHighlightLayer.isHidden = false
+        needsLayout = true
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -492,6 +664,12 @@ private final class CameraPreviewPanelView: NSView {
         closeButton.target = self
         closeButton.action = #selector(closePreview)
         closeButton.toolTip = "Close Camera Preview"
+    }
+
+    private func configurePreviewLayer(_ previewLayer: AVCaptureVideoPreviewLayer) {
+        previewLayer.videoGravity = .resizeAspectFill
+        previewLayer.transform =
+            isMirrored ? CATransform3DMakeScale(-1, 1, 1) : CATransform3DIdentity
     }
 
     private func configureGlassBorderLayers() {
@@ -570,7 +748,15 @@ extension CameraOverlayShape {
             min(size.width, size.height) * 0.18
         case .roundedRect:
             16
+        case .square, .cutout:
+            0
         }
+    }
+}
+
+private extension CameraPreviewStyle {
+    func replacingShape(_ shape: CameraOverlayShape) -> CameraPreviewStyle {
+        CameraPreviewStyle(shape: shape, size: size, isMirrored: isMirrored)
     }
 }
 

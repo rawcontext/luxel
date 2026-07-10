@@ -28,6 +28,7 @@ struct LuxelApp: App {
         let model = LuxelMenuModel(
             captureTargetService: captureTargetService,
             captureExclusionRegistry: captureExclusionRegistry,
+            cameraPreviewPanelController: LuxelCompositionRoot.cameraPreviewPanelController(),
             errorReporter: errorReporter
         )
         let editorModel = LuxelCompositionRoot.editorModel(errorReporter: errorReporter)
