@@ -58,6 +58,7 @@ public final class LuxelEditorModel {
     var isTranscriptExtractionActive = false
     var isTranscriptPanelVisible = false
     var transcriptExtractionStartedAt: Date?
+    var transcriptFailureMessage: String?
     var detectedSpeakerVoices: [DetectedSpeakerVoice] = []
     var knownSpeakerOptions: [KnownSpeakerProfile] = []
     var ignoredSpeakerVoiceIDs: Set<String> = []
@@ -106,6 +107,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored var speakerModelStatePollingTask: Task<Void, Never>?
     @ObservationIgnored let speechRecognitionAuthorizationService:
         (any SpeechRecognitionAuthorizationService)?
+    @ObservationIgnored let transcriptEnginePreference: @Sendable () -> TranscriptEnginePreference
     @ObservationIgnored let fileSystem: any FileSystem
     @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService?
     var playbackRequested = false
@@ -154,6 +156,9 @@ public final class LuxelEditorModel {
         speakerModelStore: (any SpeakerDiarizationModelStore)? = nil,
         speechRecognitionAuthorizationService:
             (any SpeechRecognitionAuthorizationService)? = nil,
+        transcriptEnginePreference: @escaping @Sendable () -> TranscriptEnginePreference = {
+            .appleSpeech
+        },
         fileSystem: any FileSystem = LocalFileSystem(),
         codecAvailability: CodecAvailability = .none,
         directoryAccessService: BookmarkedDirectoryAccessService? = nil,
@@ -174,6 +179,7 @@ public final class LuxelEditorModel {
         self.speakerNamingService = speakerNamingService
         self.speakerModelStore = speakerModelStore
         self.speechRecognitionAuthorizationService = speechRecognitionAuthorizationService
+        self.transcriptEnginePreference = transcriptEnginePreference
         self.fileSystem = fileSystem
         self.directoryAccessService = directoryAccessService
         self.configuredSupportedFormats = codecAvailability.availableExportFormats
@@ -621,6 +627,7 @@ extension LuxelEditorModel {
         isTranscriptExtractionActive = false
         isTranscriptPanelVisible = false
         transcriptExtractionStartedAt = nil
+        transcriptFailureMessage = nil
         speechRecognitionAuthorizationState = nil
         resetSpeakerCountControls()
         self.transcriptSourceContext = transcriptSourceContext
@@ -664,6 +671,7 @@ extension LuxelEditorModel {
             isTranscriptExtractionActive = false
             isTranscriptPanelVisible = false
             transcriptExtractionStartedAt = nil
+            transcriptFailureMessage = nil
             speechRecognitionAuthorizationState = nil
             resetSpeakerCountControls()
             player.replaceCurrentItem(with: nil)

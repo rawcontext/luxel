@@ -22,8 +22,11 @@ extension LocalAudioTranscriptService {
                 diarizer: diarizer,
                 modelStore: modelStore
             )
-            try cache.save(transcript, for: request)
-            return transcript
+            let identified = try transcript.replacingTranscriptionProvenance(
+                request.transcriptionProvenance
+            )
+            try cache.save(identified, for: request)
+            return identified
         } catch is CancellationError {
             throw CancellationError()
         } catch {
@@ -34,11 +37,14 @@ extension LocalAudioTranscriptService {
                 mode: request.turnSegmentationMode,
                 locale: request.locale
             )
+            let identified = try transcript.replacingTranscriptionProvenance(
+                request.transcriptionProvenance
+            )
             try cache.save(
-                transcript,
+                identified,
                 for: request.replacingSpeakerDiarizationMode(.disabled)
             )
-            return transcript
+            return identified
         }
     }
 

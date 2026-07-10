@@ -39,6 +39,15 @@ public enum AutomationCallbackURLBuilder {
             return appendingQueryItem(name: "recordingID", value: id, to: callback)
         case .file(let url):
             return appendingQueryItem(name: "filePath", value: url.path, to: callback)
+        case .resultFile(let url, let contentType, let removeAfterRead):
+            return appendingQueryItems(
+                [
+                    URLQueryItem(name: "resultPath", value: url.path),
+                    URLQueryItem(name: "contentType", value: contentType),
+                    URLQueryItem(name: "removeAfterRead", value: removeAfterRead ? "true" : "false")
+                ],
+                to: callback
+            )
         }
     }
 
@@ -51,12 +60,16 @@ public enum AutomationCallbackURLBuilder {
     }
 
     private static func appendingQueryItem(name: String, value: String, to url: URL) -> URL {
+        appendingQueryItems([URLQueryItem(name: name, value: value)], to: url)
+    }
+
+    private static func appendingQueryItems(_ items: [URLQueryItem], to url: URL) -> URL {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return url
         }
 
         var queryItems = components.queryItems ?? []
-        queryItems.append(URLQueryItem(name: name, value: value))
+        queryItems.append(contentsOf: items)
         components.queryItems = queryItems
         return components.url ?? url
     }
@@ -69,6 +82,7 @@ public enum AutomationCommand: Equatable, Sendable {
     case clip(seconds: Int?)
     case preferences(AutomationPreferencesPane?)
     case latest(reveal: Bool)
+    case transcribe(AutomationTranscriptionOptions)
 
     public func requiresAutomationPermission(hasActiveRecording: Bool) -> Bool {
         switch self {
@@ -76,14 +90,14 @@ public enum AutomationCommand: Equatable, Sendable {
             false
         case .toggle:
             !hasActiveRecording
-        case .record, .clip:
+        case .record, .clip, .transcribe:
             true
         }
     }
 
     public func requiresStartConfirmation(hasActiveRecording: Bool) -> Bool {
         switch self {
-        case .record, .clip:
+        case .record, .clip, .transcribe:
             true
         case .toggle:
             !hasActiveRecording
@@ -106,7 +120,37 @@ public enum AutomationCommand: Equatable, Sendable {
             "open Luxel settings"
         case .latest:
             "open the latest recording"
+        case .transcribe:
+            "transcribe a local media file"
         }
+    }
+}
+
+public struct AutomationTranscriptionOptions: Equatable, Sendable {
+    public let inputURL: URL
+    public let localeIdentifier: String?
+    public let outputURL: URL?
+    public let semanticTurns: Bool
+    public let diarize: Bool
+    public let json: Bool
+    public let overwrite: Bool
+
+    public init(
+        inputURL: URL,
+        localeIdentifier: String? = nil,
+        outputURL: URL? = nil,
+        semanticTurns: Bool = false,
+        diarize: Bool = false,
+        json: Bool = false,
+        overwrite: Bool = false
+    ) {
+        self.inputURL = inputURL.standardizedFileURL
+        self.localeIdentifier = localeIdentifier
+        self.outputURL = outputURL?.standardizedFileURL
+        self.semanticTurns = semanticTurns
+        self.diarize = diarize
+        self.json = json
+        self.overwrite = overwrite
     }
 }
 

@@ -48,7 +48,8 @@ struct TranscribeRecordingServiceTests {
             ])
         #expect(
             progressRecorder.snapshots == [
-                SpeechTranscriptionProgress(fractionCompleted: 0.25),
+                SpeechTranscriptionProgress(fractionCompleted: 0.2375),
+                SpeechTranscriptionProgress(fractionCompleted: 0.95),
                 SpeechTranscriptionProgress(fractionCompleted: 1)
             ])
     }

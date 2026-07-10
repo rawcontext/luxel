@@ -1,5 +1,31 @@
 import Foundation
 
+public enum TranscriptEngine: String, Codable, Equatable, Sendable {
+    case appleSpeech
+    case parakeetTDTv3
+}
+
+public struct TranscriptionProvenance: Codable, Equatable, Sendable {
+    public let engine: TranscriptEngine
+    public let modelRevision: String?
+    public let configurationRevision: String?
+
+    public init(
+        engine: TranscriptEngine,
+        modelRevision: String? = nil,
+        configurationRevision: String? = nil
+    ) {
+        self.engine = engine
+        self.modelRevision = modelRevision
+        self.configurationRevision = configurationRevision
+    }
+
+    public static let appleSpeech = TranscriptionProvenance(
+        engine: .appleSpeech,
+        configurationRevision: "apple-speech-adapter-v1"
+    )
+}
+
 public enum TranscriptSourceLabel: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
     case system
     case microphone
@@ -156,12 +182,14 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
     public let turns: [TranscriptTurn]
     public let localeIdentifier: String
     public let speakers: [TranscriptSpeakerLabel]
+    public let transcriptionProvenance: TranscriptionProvenance?
 
     public init(
         spans: [TimedTranscriptSpan],
         turns: [TranscriptTurn],
         localeIdentifier: String,
-        speakers: [TranscriptSpeakerLabel] = []
+        speakers: [TranscriptSpeakerLabel] = [],
+        transcriptionProvenance: TranscriptionProvenance? = nil
     ) throws {
         guard !spans.isEmpty, !turns.isEmpty, !localeIdentifier.isEmpty else {
             throw TranscriptModelError.invalidTranscript
@@ -171,6 +199,7 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
         self.turns = turns
         self.localeIdentifier = localeIdentifier
         self.speakers = speakers
+        self.transcriptionProvenance = transcriptionProvenance
         try TranscriptSegmentationValidator.validate(transcript: self)
     }
 
@@ -181,6 +210,10 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
         localeIdentifier = try container.decode(String.self, forKey: .localeIdentifier)
         speakers =
             try container.decodeIfPresent([TranscriptSpeakerLabel].self, forKey: .speakers) ?? []
+        transcriptionProvenance = try container.decodeIfPresent(
+            TranscriptionProvenance.self,
+            forKey: .transcriptionProvenance
+        )
     }
 
     public func span(for id: String) -> TimedTranscriptSpan? {
@@ -210,7 +243,8 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
             spans: spans,
             turns: turns,
             localeIdentifier: localeIdentifier,
-            speakers: speakers.map { $0.id == label.id ? label : $0 }
+            speakers: speakers.map { $0.id == label.id ? label : $0 },
+            transcriptionProvenance: transcriptionProvenance
         )
     }
 
@@ -238,7 +272,20 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
                     $0.speakerID == speakerID ? targetSpeakerID : $0.speakerID)
             },
             localeIdentifier: localeIdentifier,
-            speakers: speakers.filter { $0.id != speakerID }
+            speakers: speakers.filter { $0.id != speakerID },
+            transcriptionProvenance: transcriptionProvenance
+        )
+    }
+
+    public func replacingTranscriptionProvenance(
+        _ provenance: TranscriptionProvenance?
+    ) throws -> TurnSegmentedTranscript {
+        try TurnSegmentedTranscript(
+            spans: spans,
+            turns: turns,
+            localeIdentifier: localeIdentifier,
+            speakers: speakers,
+            transcriptionProvenance: provenance
         )
     }
 }

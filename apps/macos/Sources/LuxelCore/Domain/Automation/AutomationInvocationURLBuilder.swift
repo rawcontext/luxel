@@ -27,6 +27,8 @@ public enum AutomationInvocationURLBuilder {
             "preferences"
         case .latest:
             "latest"
+        case .transcribe:
+            "transcribe"
         }
     }
 
@@ -44,7 +46,34 @@ public enum AutomationInvocationURLBuilder {
             pane.map { [URLQueryItem(name: "pane", value: $0.rawValue)] } ?? []
         case .latest(let reveal):
             reveal ? [URLQueryItem(name: "reveal", value: "true")] : []
+        case .transcribe(let options):
+            transcriptionQueryItems(for: options)
         }
+    }
+
+    private static func transcriptionQueryItems(
+        for options: AutomationTranscriptionOptions
+    ) -> [URLQueryItem] {
+        var items = [URLQueryItem(name: "input", value: options.inputURL.path)]
+        if let localeIdentifier = options.localeIdentifier {
+            items.append(URLQueryItem(name: "locale", value: localeIdentifier))
+        }
+        if let outputURL = options.outputURL {
+            items.append(URLQueryItem(name: "output", value: outputURL.path))
+        }
+        if options.semanticTurns {
+            items.append(URLQueryItem(name: "semanticTurns", value: "true"))
+        }
+        if options.diarize {
+            items.append(URLQueryItem(name: "diarize", value: "true"))
+        }
+        if options.json {
+            items.append(URLQueryItem(name: "json", value: "true"))
+        }
+        if options.overwrite {
+            items.append(URLQueryItem(name: "overwrite", value: "true"))
+        }
+        return items
     }
 
     private static func recordingQueryItems(for options: AutomationRecordingOptions) -> [URLQueryItem] {
@@ -92,8 +121,8 @@ public enum AutomationInvocationURLBuilder {
     }
 }
 
-private extension AutomationRecordingFrameRate {
-    var queryValue: String {
+extension AutomationRecordingFrameRate {
+    fileprivate var queryValue: String {
         switch self {
         case .fixed(let frameRate):
             String(frameRate.framesPerSecond)

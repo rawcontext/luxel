@@ -35,6 +35,7 @@ public struct LuxelCommandExecutionArguments: ParsableArguments {
 
 public enum LuxelCallbackResult: Equatable {
     case success(filePath: String?, recordingID: String?)
+    case resultFile(path: String, contentType: String?, removeAfterRead: Bool)
     case failure(errorMessage: String)
 }
 
@@ -51,6 +52,8 @@ public func runLuxelCommand(
     callbackReceiverFactory: () throws -> any LuxelCallbackReceiver = {
         try LocalLuxelCallbackReceiver()
     },
+    consumesResultFiles: Bool = false,
+    suppressesSuccessOutput: Bool = false,
     output: (String) -> Void = { print($0) }
 ) throws {
     if execution.printURL {
@@ -89,6 +92,23 @@ public func runLuxelCommand(
     try opener.open(AutomationInvocationURLBuilder.url(for: waitingInvocation))
 
     let result = try receiver.wait(timeout: execution.timeout)
+    if case .resultFile(let path, _, let removeAfterRead) = result,
+       consumesResultFiles {
+        defer {
+            if removeAfterRead {
+                try? FileManager.default.removeItem(atPath: path)
+            }
+        }
+        let data = try Data(contentsOf: URL(fileURLWithPath: path))
+        guard let value = String(data: data, encoding: .utf8) else {
+            throw LuxelCLIError.invalidCallbackRequest
+        }
+        output(value.trimmingCharacters(in: .newlines))
+        return
+    }
+    if suppressesSuccessOutput, case .success = result {
+        return
+    }
     if execution.json {
         output(try LuxelCommandResultFormatter.jsonString(for: result))
     } else if let line = LuxelCommandResultFormatter.plainString(for: result) {
@@ -105,6 +125,8 @@ public enum LuxelCommandResultFormatter {
         switch result {
         case .success(let filePath, let recordingID):
             filePath ?? recordingID
+        case .resultFile(let path, _, _):
+            path
         case .failure:
             nil
         }
@@ -118,6 +140,13 @@ public enum LuxelCommandResultFormatter {
                 "status": "ok",
                 "filePath": filePath,
                 "recordingID": recordingID
+            ].compactMapValues(\.self)
+        case .resultFile(let path, let contentType, let removeAfterRead):
+            object = [
+                "status": "ok",
+                "resultPath": path,
+                "contentType": contentType,
+                "removeAfterRead": removeAfterRead ? "true" : "false"
             ].compactMapValues(\.self)
         case .failure(let errorMessage):
             object = [
@@ -292,7 +321,14 @@ public final class LocalLuxelCallbackReceiver: LuxelCallbackReceiver, @unchecked
         }
 
         return .success(
-            .success(
+            query["resultPath"].map {
+                .resultFile(
+                    path: $0,
+                    contentType: query["contentType"],
+                    removeAfterRead: query["removeAfterRead"] == "true"
+                )
+            }
+            ?? .success(
                 filePath: query["filePath"],
                 recordingID: query["recordingID"]
             ))

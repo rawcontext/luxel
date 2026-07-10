@@ -89,6 +89,18 @@ public enum AutomationCommandParser {
             return .preferences(try preferencesPane(in: query))
         case "latest":
             return .latest(reveal: try optionalBoolean("reveal", in: query) ?? false)
+        case "transcribe":
+            return .transcribe(
+                AutomationTranscriptionOptions(
+                    inputURL: try requiredFileURL("input", in: query),
+                    localeIdentifier: nonEmpty(query.value(for: "locale")),
+                    outputURL: try optionalFileURL("output", in: query),
+                    semanticTurns: try optionalBoolean("semanticTurns", in: query) ?? false,
+                    diarize: try optionalBoolean("diarize", in: query) ?? false,
+                    json: try optionalBoolean("json", in: query) ?? false,
+                    overwrite: try optionalBoolean("overwrite", in: query) ?? false
+                )
+            )
         default:
             throw AutomationCommandParseError.unknownAction(action)
         }
@@ -249,6 +261,27 @@ public enum AutomationCommandParser {
         }
 
         return URL(fileURLWithPath: expandedPath).standardizedFileURL
+    }
+
+    private static func requiredFileURL(_ name: String, in query: AutomationQuery) throws -> URL {
+        guard let url = try optionalFileURL(name, in: query) else {
+            throw AutomationCommandParseError.missingParameter(name)
+        }
+        return url
+    }
+
+    private static func optionalFileURL(_ name: String, in query: AutomationQuery) throws -> URL? {
+        guard let value = nonEmpty(query.value(for: name)) else {
+            return nil
+        }
+        if let url = URL(string: value), url.isFileURL, !url.path.isEmpty {
+            return url.standardizedFileURL
+        }
+        let expanded = (value as NSString).expandingTildeInPath
+        guard expanded.hasPrefix("/") else {
+            throw AutomationCommandParseError.invalidParameter(name)
+        }
+        return URL(fileURLWithPath: expanded).standardizedFileURL
     }
 
     private static func callbackURL(

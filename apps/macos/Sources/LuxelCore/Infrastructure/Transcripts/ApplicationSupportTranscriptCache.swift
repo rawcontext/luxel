@@ -1,7 +1,7 @@
 import Foundation
 
 public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecked Sendable {
-    public static let schemaVersion = 3
+    public static let schemaVersion = 4
 
     private let cacheDirectory: URL
     private let fileManager: FileManager
@@ -35,7 +35,8 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
             spans: document.transcript.spans,
             turns: document.transcript.turns,
             localeIdentifier: document.transcript.localeIdentifier,
-            speakers: document.transcript.speakers
+            speakers: document.transcript.speakers,
+            transcriptionProvenance: document.transcript.transcriptionProvenance
         )
     }
 
@@ -71,6 +72,9 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
             request.locale.identifier,
             request.sourceContext.cacheIdentifier,
             request.turnSegmentationMode.rawValue,
+            request.transcriptionProvenance.engine.rawValue,
+            request.transcriptionProvenance.modelRevision ?? "",
+            request.transcriptionProvenance.configurationRevision ?? "",
             request.speakerDiarizationMode.rawValue,
             request.speakerModelRevision ?? "",
             request.speakerLibraryRevision ?? "",

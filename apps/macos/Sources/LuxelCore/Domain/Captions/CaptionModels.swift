@@ -24,17 +24,20 @@ public struct CaptionTrack: Codable, Equatable, Sendable {
     public let cues: [CaptionCue]
     public let language: Locale.LanguageCode
     public let sourceTrack: AudioTrackKind?
+    public let transcriptionProvenance: TranscriptionProvenance?
 
     public init(
         cues: [CaptionCue],
         language: Locale.LanguageCode,
-        sourceTrack: AudioTrackKind? = nil
+        sourceTrack: AudioTrackKind? = nil,
+        transcriptionProvenance: TranscriptionProvenance? = nil
     ) throws {
         try Self.validate(cues)
 
         self.cues = cues
         self.language = language
         self.sourceTrack = sourceTrack
+        self.transcriptionProvenance = transcriptionProvenance
     }
 
     private static func validate(_ cues: [CaptionCue]) throws {
@@ -128,7 +131,8 @@ public struct CaptionTrackEditor: Equatable, Sendable {
         try CaptionTrack(
             cues: cues,
             language: track.language,
-            sourceTrack: track.sourceTrack
+            sourceTrack: track.sourceTrack,
+            transcriptionProvenance: track.transcriptionProvenance
         )
     }
 }
@@ -181,7 +185,8 @@ public struct CaptionExportTimeMapper: Equatable, Sendable {
                 try map(cue)
             },
             language: track.language,
-            sourceTrack: track.sourceTrack
+            sourceTrack: track.sourceTrack,
+            transcriptionProvenance: track.transcriptionProvenance
         )
     }
 

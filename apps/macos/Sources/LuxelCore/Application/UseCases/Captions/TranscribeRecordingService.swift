@@ -54,17 +54,25 @@ public struct TranscribeRecordingService: Sendable {
                 preferredLanguage: request.preferredLanguage,
                 sourceTrack: request.sourceTrack
             ),
-            progress: progress
+            progress: {
+                progress(
+                    SpeechTranscriptionProgress(
+                        fractionCompleted: $0.fractionCompleted * 0.95
+                    )
+                )
+            }
         )
         let cues = try cueBuilder.buildCues(from: transcription.words)
         let track = try CaptionTrack(
             cues: cues,
             language: transcription.language,
-            sourceTrack: request.sourceTrack
+            sourceTrack: request.sourceTrack,
+            transcriptionProvenance: transcription.provenance
         )
         let updatedBundle = try request.recordingBundle.map { bundle in
             try sidecarPersistence?.save(track, in: bundle) ?? bundle
         }
+        progress(SpeechTranscriptionProgress(fractionCompleted: 1))
 
         return TranscribedRecording(track: track, updatedBundle: updatedBundle)
     }

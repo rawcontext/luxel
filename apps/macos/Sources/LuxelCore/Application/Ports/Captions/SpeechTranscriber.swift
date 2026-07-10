@@ -37,12 +37,15 @@ public struct SpeechTranscriptionProgress: Equatable, Sendable {
 public struct SpeechTranscriptionResult: Equatable, Sendable {
     public let words: [RecognizedWord]
     public let language: Locale.LanguageCode
+    public let provenance: TranscriptionProvenance?
 
     public init(
         words: [RecognizedWord],
-        language: Locale.LanguageCode
+        language: Locale.LanguageCode,
+        provenance: TranscriptionProvenance? = nil
     ) {
         self.words = words
         self.language = language
+        self.provenance = provenance
     }
 }

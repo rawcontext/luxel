@@ -10,6 +10,7 @@ CLI_ENTITLEMENTS="${PACKAGE_ROOT}/Configuration/Luxel/LuxelCLI.MacAppStore.entit
 THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
 STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
+PRECISION_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-precision-model-bundle.sh"
 OUTPUT_DIR="${OUTPUT_DIR:-${PACKAGE_ROOT}/.build/mas}"
 APP_PATH="${APP_PATH:-${OUTPUT_DIR}/${APP_NAME}.app}"
 PKG_PATH="${PKG_PATH:-${OUTPUT_DIR}/${APP_NAME}.pkg}"
@@ -205,6 +206,8 @@ if [[ ! -d "${APP_PATH}/Contents/Resources/Luxel_LuxelCore.bundle" ]]; then
 	exit 1
 fi
 
+"${PRECISION_MODEL_AUDITOR}" "${APP_PATH}"
+
 chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 chmod +x "${APP_PATH}/Contents/MacOS/luxel-cli"
 
@@ -245,5 +248,6 @@ productbuild \
 	"${PKG_PATH}"
 
 pkgutil --check-signature "${PKG_PATH}" >/dev/null
+"${PRECISION_MODEL_AUDITOR}" "${PKG_PATH}"
 
 echo "${PKG_PATH}"

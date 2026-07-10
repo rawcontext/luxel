@@ -7,4 +7,17 @@ public protocol AutomationCommandExecutor: Sendable {
     func clipReplayBuffer(seconds: Int?) async throws -> AutomationExecutionResult
     func openPreferences(_ pane: AutomationPreferencesPane?) async throws -> AutomationExecutionResult
     func openLatestRecording(reveal: Bool) async throws -> AutomationExecutionResult
+    func transcribe(_ options: AutomationTranscriptionOptions) async throws
+    -> AutomationExecutionResult
+}
+
+public enum AutomationCommandExecutorError: Error, Equatable, Sendable {
+    case unsupportedCommand
+}
+
+extension AutomationCommandExecutor {
+    public func transcribe(_ options: AutomationTranscriptionOptions) async throws
+    -> AutomationExecutionResult {
+        throw AutomationCommandExecutorError.unsupportedCommand
+    }
 }

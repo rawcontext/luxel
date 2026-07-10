@@ -4,6 +4,7 @@ public enum AutomationExecutionResult: Equatable, Sendable {
     case accepted
     case recording(id: String)
     case file(URL)
+    case resultFile(URL, contentType: String, removeAfterRead: Bool)
 }
 
 public enum AutomationServiceResult: Equatable, Sendable {
@@ -54,6 +55,8 @@ public final class AutomationService: Sendable {
             try await executor.openPreferences(pane)
         case .latest(let reveal):
             try await executor.openLatestRecording(reveal: reveal)
+        case .transcribe(let options):
+            try await executor.transcribe(options)
         }
     }
 }

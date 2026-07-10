@@ -9,7 +9,8 @@ extension LuxelEditorModel {
     var canTranscribeSource: Bool {
         source?.hasAudio == true
             && audioTranscriptService != nil
-            && speechRecognitionAuthorizationService != nil
+            && (transcriptEnginePreference() == .precision
+                    || speechRecognitionAuthorizationService != nil)
     }
 
     var canShowVideoTranscriptToggle: Bool {
@@ -27,6 +28,7 @@ extension LuxelEditorModel {
     var shouldShowSpeechRecognitionPrompt: Bool {
         isTranscriptPanelVisible
             && canTranscribeSource
+            && transcriptEnginePreference() == .appleSpeech
             && (speechRecognitionAuthorizationState == .notDetermined
                     || speechRecognitionAuthorizationState == .denied)
     }
@@ -37,6 +39,10 @@ extension LuxelEditorModel {
             && isTranscriptExtractionActive
             && visibleTranscript == nil
             && !shouldShowSpeechRecognitionPrompt
+    }
+
+    var shouldShowTranscriptFailure: Bool {
+        isTranscriptPanelVisible && transcriptFailureMessage != nil
     }
 
     func seekToTranscriptTurn(_ turn: TranscriptTurn) {
@@ -65,7 +71,9 @@ extension LuxelEditorModel {
             return
         }
 
-        if speechRecognitionAuthorizationState == .authorized {
+        transcriptFailureMessage = nil
+        if transcriptEnginePreference() == .precision
+            || speechRecognitionAuthorizationState == .authorized {
             scheduleTranscriptExtraction(sourceContext: transcriptSourceContext)
         } else {
             prepareTranscriptExtraction(sourceContext: transcriptSourceContext)
@@ -83,6 +91,7 @@ extension LuxelEditorModel {
     func enableSpeechRecognition() {
         guard canTranscribeSource,
               isTranscriptPanelVisible,
+              transcriptEnginePreference() == .appleSpeech,
               let source,
               let speechRecognitionAuthorizationService,
               speechRecognitionAuthorizationState == .notDetermined
@@ -115,12 +124,18 @@ extension LuxelEditorModel {
 
     func prepareTranscriptExtraction(sourceContext: TranscriptSourceContext) {
         transcriptSourceContext = sourceContext
-        guard canTranscribeSource,
-              let source,
-              let speechRecognitionAuthorizationService
-        else {
+        guard canTranscribeSource, let source else {
             return
         }
+
+        if transcriptEnginePreference() == .precision {
+            speechRecognitionAuthorizationTask?.cancel()
+            speechRecognitionAuthorizationTask = nil
+            speechRecognitionAuthorizationState = nil
+            scheduleTranscriptExtraction(sourceContext: sourceContext)
+            return
+        }
+        guard let speechRecognitionAuthorizationService else { return }
 
         let sourceURL = source.fileURL
         speechRecognitionAuthorizationTask?.cancel()
@@ -148,7 +163,8 @@ extension LuxelEditorModel {
         guard canTranscribeSource,
               let source,
               let audioTranscriptService,
-              speechRecognitionAuthorizationState == .authorized
+              transcriptEnginePreference() == .precision
+                || speechRecognitionAuthorizationState == .authorized
         else {
             return
         }
@@ -156,6 +172,7 @@ extension LuxelEditorModel {
         let sourceURL = source.fileURL
         let speakerCountHint = selectedSpeakerCountHint
         transcriptTask?.cancel()
+        transcriptFailureMessage = nil
         isTranscriptExtractionActive = true
         transcriptExtractionStartedAt = Date()
         startSpeakerModelStatePolling()
@@ -177,6 +194,7 @@ extension LuxelEditorModel {
                     }
 
                     self?.transcript = transcript
+                    self?.transcriptFailureMessage = nil
                     self?.appliedSpeakerCountHint = speakerCountHint
                     self?.isTranscriptExtractionActive = false
                     self?.transcriptExtractionStartedAt = nil
@@ -193,6 +211,7 @@ extension LuxelEditorModel {
                     }
 
                     self?.transcript = nil
+                    self?.transcriptFailureMessage = error.localizedDescription
                     self?.isTranscriptExtractionActive = false
                     self?.transcriptExtractionStartedAt = nil
                     self?.transcriptTask = nil
@@ -200,6 +219,22 @@ extension LuxelEditorModel {
                 }
             }
         }
+    }
+
+    public func refreshTranscriptionConfiguration() {
+        transcriptTask?.cancel()
+        transcriptTask = nil
+        speechRecognitionAuthorizationTask?.cancel()
+        speechRecognitionAuthorizationTask = nil
+        transcript = nil
+        transcriptFailureMessage = nil
+        isTranscriptExtractionActive = false
+        transcriptExtractionStartedAt = nil
+        speechRecognitionAuthorizationState = nil
+        stopSpeakerModelStatePolling()
+
+        guard isTranscriptPanelVisible else { return }
+        prepareTranscriptExtraction(sourceContext: transcriptSourceContext)
     }
 
     private static func logTranscriptResult(_ transcript: TurnSegmentedTranscript?) {

@@ -150,6 +150,7 @@ extension LuxelEditorView {
     private var showsTranscriptContent: Bool {
         model.shouldShowSpeechRecognitionPrompt
             || model.shouldShowTranscriptProgress
+            || model.shouldShowTranscriptFailure
             || model.visibleTranscript != nil
     }
 

@@ -154,6 +154,8 @@ extension LuxelMenuModel {
                 reveal: reveal,
                 openRecording: openRecording
             )
+        case .transcribe(let options):
+            return try await runAutomationTranscription(options)
         }
     }
 
@@ -390,6 +392,11 @@ private final class LuxelAutomationCommandExecutor: AutomationCommandExecutor, @
 
     func openLatestRecording(reveal: Bool) async throws -> AutomationExecutionResult {
         try await execute(.latest(reveal: reveal))
+    }
+
+    func transcribe(_ options: AutomationTranscriptionOptions) async throws
+    -> AutomationExecutionResult {
+        try await execute(.transcribe(options))
     }
 }
 

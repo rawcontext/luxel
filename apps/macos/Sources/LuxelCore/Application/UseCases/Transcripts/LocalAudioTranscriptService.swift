@@ -9,6 +9,7 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
     private let turnSegmentationMode: @Sendable () -> TranscriptTurnSegmentationMode
     private let speakerDiarizationMode: @Sendable () -> TranscriptSpeakerDiarizationMode
     private let transcriptLocaleOverride: @Sendable () -> Locale?
+    private let transcriptionProvenance: @Sendable () async throws -> TranscriptionProvenance
     let cache: any TranscriptCache
     private let audioTrackInspector: any AudioTrackInspector
     private let speakerDiarizer: (any SpeakerDiarizer)?
@@ -28,6 +29,9 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
             .disabled
         },
         transcriptLocaleOverride: @escaping @Sendable () -> Locale? = { nil },
+        transcriptionProvenance: @escaping @Sendable () async throws -> TranscriptionProvenance = {
+            .appleSpeech
+        },
         cache: any TranscriptCache,
         audioTrackInspector: any AudioTrackInspector,
         speakerDiarizer: (any SpeakerDiarizer)? = nil,
@@ -42,6 +46,7 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
         self.turnSegmentationMode = turnSegmentationMode
         self.speakerDiarizationMode = speakerDiarizationMode
         self.transcriptLocaleOverride = transcriptLocaleOverride
+        self.transcriptionProvenance = transcriptionProvenance
         self.cache = cache
         self.audioTrackInspector = audioTrackInspector
         self.speakerDiarizer = speakerDiarizer
@@ -53,7 +58,7 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
 
     public func transcript(for request: AudioTranscriptRequest) async throws
     -> TurnSegmentedTranscript? {
-        let effectiveRequest = await effectiveRequest(for: request)
+        let effectiveRequest = try await effectiveRequest(for: request)
         if let cached = try cache.load(for: effectiveRequest) {
             return cached
         }
@@ -79,21 +84,27 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
               let speakerDiarizer,
               let speakerModelStore
         else {
-            let transcript = try await segmentedTranscript(
+            let segmented = try await segmentedTranscript(
                 spans: stableSpans,
                 mode: effectiveRequest.turnSegmentationMode,
                 locale: effectiveRequest.locale
+            )
+            let transcript = try segmented.replacingTranscriptionProvenance(
+                effectiveRequest.transcriptionProvenance
             )
             try cache.save(transcript, for: effectiveRequest)
             return transcript
         }
 
-        return try await diarizedOrFallbackTranscript(
+        let diarized = try await diarizedOrFallbackTranscript(
             spans: stableSpans,
             extractionPlans: extractionPlans,
             request: effectiveRequest,
             diarizer: speakerDiarizer,
             modelStore: speakerModelStore
+        )
+        return try diarized.replacingTranscriptionProvenance(
+            effectiveRequest.transcriptionProvenance
         )
     }
 
@@ -101,7 +112,7 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
         _ transcript: TurnSegmentedTranscript,
         for request: AudioTranscriptRequest
     ) async throws {
-        try cache.save(transcript, for: await effectiveRequest(for: request))
+        try cache.save(transcript, for: try await effectiveRequest(for: request))
     }
 
     private func extractSpans(
@@ -119,7 +130,8 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
                             audioURL: request.audioURL,
                             locale: request.locale,
                             source: plan.source,
-                            audioTrackIndex: plan.audioTrackIndex
+                            audioTrackIndex: plan.audioTrackIndex,
+                            transcriptionProvenance: request.transcriptionProvenance
                         ))
                     return (planIndex, extracted)
                 }
@@ -134,12 +146,15 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
         }
     }
 
-    private func effectiveRequest(for request: AudioTranscriptRequest) async
+    private func effectiveRequest(for request: AudioTranscriptRequest) async throws
     -> AudioTranscriptRequest {
         var effective = request.replacingTurnSegmentationMode(turnSegmentationMode())
         if let locale = transcriptLocaleOverride() {
             effective = effective.replacingLocale(locale)
         }
+        effective = effective.replacingTranscriptionProvenance(
+            try await transcriptionProvenance()
+        )
 
         let diarizationRequested =
             speakerDiarizationMode() == .enabled

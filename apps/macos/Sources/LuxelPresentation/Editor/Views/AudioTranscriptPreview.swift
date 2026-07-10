@@ -21,6 +21,8 @@ struct AudioTranscriptPreview: View {
             speechRecognitionPrompt
         } else if model.shouldShowTranscriptProgress {
             transcriptProgress
+        } else if model.shouldShowTranscriptFailure {
+            transcriptFailure
         } else if let transcript = model.visibleTranscript {
             VStack {
                 transcriptCard(transcript)
@@ -62,6 +64,8 @@ struct AudioTranscriptPreview: View {
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel(transcriptProgressTitle(at: timeline.date))
                 }
+            } else if model.shouldShowTranscriptFailure {
+                transcriptFailureRow
             }
 
             if let transcript = model.visibleTranscript {
@@ -139,6 +143,34 @@ struct AudioTranscriptPreview: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(true)
+    }
+
+    private var transcriptFailure: some View {
+        VStack {
+            transcriptFailureRow
+                .frame(maxWidth: Layout.progressCardMaxWidth)
+                .padding(.horizontal, Layout.transcriptHorizontalPadding)
+                .padding(.top, Layout.transcriptTopPadding)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var transcriptFailureRow: some View {
+        LuxelGlassIsland(cornerRadius: 18) {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Transcription unavailable", systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 13, weight: .semibold))
+                Text(model.transcriptFailureMessage ?? "Transcription failed.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.7))
+                Button("Retry") {
+                    model.refreshTranscriptionConfiguration()
+                }
+                .buttonStyle(.glass)
+            }
+            .padding(14)
+        }
     }
 
     private func transcriptCard(_ transcript: TurnSegmentedTranscript) -> some View {

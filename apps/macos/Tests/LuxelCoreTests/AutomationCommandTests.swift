@@ -239,6 +239,65 @@ struct AutomationCommandTests {
         )
     }
 
+    @Test("transcription automation round-trips app-backed options")
+    func transcriptionAutomationRoundTrips() throws {
+        let options = AutomationTranscriptionOptions(
+            inputURL: URL(fileURLWithPath: "/tmp/input.m4a"),
+            localeIdentifier: "es-ES",
+            outputURL: URL(fileURLWithPath: "/tmp/output.json"),
+            semanticTurns: true,
+            diarize: true,
+            json: true,
+            overwrite: true
+        )
+        let invocation = AutomationInvocation(command: .transcribe(options))
+        let url = AutomationInvocationURLBuilder.url(for: invocation)
+        #expect(url.host == "transcribe")
+        #expect(try AutomationCommandParser.parse(url) == invocation)
+    }
+
+    @Test("transcription automation requires user permission")
+    func transcriptionAutomationRequiresPermission() {
+        let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp"))
+        let command = AutomationCommand.transcribe(
+            AutomationTranscriptionOptions(inputURL: URL(fileURLWithPath: "/tmp/input.m4a"))
+        )
+        #expect(
+            AutomationPolicy.evaluate(
+                command: command,
+                settings: settings,
+                context: AutomationPolicyContext()
+            )
+            == .confirm(
+                AutomationPolicyPrompt(
+                    title: "Allow Automation Request?",
+                    message: "Another app wants to transcribe a local media file."
+                )
+            )
+        )
+    }
+
+    @Test("callback builder carries result-file metadata without content in the URL")
+    func callbackBuilderCarriesResultFileMetadata() throws {
+        let base = try #require(URL(string: "http://127.0.0.1:1234/success"))
+        let resultURL = URL(fileURLWithPath: "/tmp/transcript.json")
+        let callback = try #require(
+            AutomationCallbackURLBuilder.successURL(
+                for: .resultFile(
+                    resultURL,
+                    contentType: "application/json",
+                    removeAfterRead: true
+                ),
+                callback: base
+            )
+        )
+        let query = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems
+        #expect(query?.first { $0.name == "resultPath" }?.value == resultURL.path)
+        #expect(query?.first { $0.name == "contentType" }?.value == "application/json")
+        #expect(query?.first { $0.name == "removeAfterRead" }?.value == "true")
+        #expect(!callback.absoluteString.contains("transcriptText"))
+    }
+
     @Test("policy allows safe commands by default")
     func policyAllowsSafeCommandsByDefault() {
         let settings = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"))

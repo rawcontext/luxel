@@ -10,6 +10,7 @@ THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
 CLI_MANPAGE="${PACKAGE_ROOT}/Documentation/luxel.1"
 STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
+PRECISION_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-precision-model-bundle.sh"
 APP_BUNDLE_IDENTIFIER="${APP_BUNDLE_IDENTIFIER:-media.luxel.app.dev}"
 APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-Luxel Dev}"
 APP_URL_SCHEME="${APP_URL_SCHEME:-luxel-dev}"
@@ -111,6 +112,8 @@ PY
 fi
 chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 chmod +x "${APP_PATH}/Contents/MacOS/luxel-cli"
+
+"${PRECISION_MODEL_AUDITOR}" "${APP_PATH}"
 
 xcrun strip -x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 xcrun strip -x "${APP_PATH}/Contents/MacOS/luxel-cli"

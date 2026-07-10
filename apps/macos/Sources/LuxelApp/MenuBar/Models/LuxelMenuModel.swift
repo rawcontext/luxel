@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelPresentation
 import Observation
 
 struct ReplayBufferConsentPrompt: Equatable {
@@ -42,12 +43,21 @@ final class LuxelMenuModel {
     var commandLineToolInstallStatus: CommandLineToolInstallStatus?
     var knownSpeakers: [KnownSpeakerProfile] = []
     var expandedKnownSpeakerID: UUID?
+    var precisionModelState: LocalModelInstallationState = .notInstalled(
+        expectedDownloadBytes: 483_105_645,
+        requiredFreeBytes: 1_050_000_000
+    )
+    var precisionModelErrorMessage: String?
     let appMetadata: AppMetadata
 
     @ObservationIgnored let speakerDiarizationModelStore: any SpeakerDiarizationModelStore =
         LuxelCompositionRoot.speakerDiarizationModelStore
     @ObservationIgnored let knownSpeakerProfileStore: any KnownSpeakerProfileStore =
         LuxelCompositionRoot.knownSpeakerProfileStore()
+    @ObservationIgnored let localModelManager: any LocalModelManaging =
+        LuxelCompositionRoot.localModelManager
+    @ObservationIgnored let precisionTranscriptionEngine =
+        LuxelCompositionRoot.precisionTranscriptionEngine
 
     @ObservationIgnored let settingsStore: any SettingsStore
     @ObservationIgnored let permissionClient: any PermissionClient
@@ -83,6 +93,9 @@ final class LuxelMenuModel {
     @ObservationIgnored let errorReporter: any ErrorReporter
     @ObservationIgnored var notchPresentationState: NotchPresentationState = .collapsed
     @ObservationIgnored var activeNotchRecordingActionID: NotchActivityActionID?
+    @ObservationIgnored var precisionModelTask: Task<Void, Never>?
+    @ObservationIgnored var localModelStateTask: Task<Void, Never>?
+    @ObservationIgnored weak var configuredEditorModel: LuxelEditorModel?
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
@@ -215,5 +228,6 @@ final class LuxelMenuModel {
         reconcileLaunchAtLoginWithSettings()
         reconcileCommandLineToolInstallWithBundle()
         prepareSpeakerModelIfNeeded()
+        observeLocalModelState()
     }
 }

@@ -161,6 +161,9 @@ enum LuxelCompositionRoot {
             speakerNamingService: speakerVoiceNamingService(),
             speakerModelStore: speakerDiarizationModelStore,
             speechRecognitionAuthorizationService: AppleSpeechRecognitionAuthorizationService(),
+            transcriptEnginePreference: {
+                ((try? settingsStore().load()) ?? defaultSettings).transcriptEnginePreference
+            },
             codecAvailability: codecAdapterRegistry.availability,
             directoryAccessService: bookmarkedDirectoryAccessService(),
             errorReporter: errorReporter

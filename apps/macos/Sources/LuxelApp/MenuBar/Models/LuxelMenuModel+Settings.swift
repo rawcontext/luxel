@@ -25,6 +25,7 @@ extension LuxelMenuModel {
     }
 
     func configureEditor(_ editorModel: LuxelEditorModel) {
+        configuredEditorModel = editorModel
         editorModel.configureExportMemory(settings.perFormatExportMemory) {
             [weak self] format, memory in
             self?.rememberExportMemory(memory, for: format)

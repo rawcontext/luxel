@@ -4,6 +4,25 @@ import Testing
 
 @Suite("Settings")
 struct SettingsTests {
+    @Test("transcript engine defaults and missing-key migration stay on Apple Speech")
+    func transcriptEngineDefaultsAndMigratesToAppleSpeech() throws {
+        let defaults = AppSettings.defaults(recordingsDirectory: URL(fileURLWithPath: "/tmp"))
+        #expect(defaults.transcriptEnginePreference == .appleSpeech)
+
+        let data = try JSONSerialization.data(withJSONObject: [
+            "recordingsDirectory": "file:///tmp"
+        ])
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
+        #expect(decoded.transcriptEnginePreference == .appleSpeech)
+
+        var precision = defaults
+        precision.transcriptEnginePreference = .precision
+        let roundTrip = try JSONDecoder().decode(
+            AppSettings.self,
+            from: JSONEncoder().encode(precision)
+        )
+        #expect(roundTrip.transcriptEnginePreference == .precision)
+    }
 }
 
 extension SettingsTests {

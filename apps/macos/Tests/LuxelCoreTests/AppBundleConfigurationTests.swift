@@ -67,7 +67,8 @@ struct AppBundleConfigurationTests {
         #expect(entitlements["com.apple.security.assets.movies.read-write"] as? Bool == true)
         #expect(entitlements["com.apple.security.files.bookmarks.app-scope"] as? Bool == true)
         #expect(entitlements["com.apple.security.files.user-selected.read-write"] as? Bool == true)
-        #expect(entitlements["com.apple.security.network.client"] == nil)
+        #expect(entitlements["com.apple.security.network.client"] as? Bool == true)
+        #expect(entitlements["com.apple.security.network.server"] == nil)
     }
 
     @Test("Mac App Store CLI entitlements sandbox terminal-facing command")
@@ -76,7 +77,123 @@ struct AppBundleConfigurationTests {
 
         #expect(entitlements["com.apple.security.app-sandbox"] as? Bool == true)
         #expect(entitlements["com.apple.security.network.server"] as? Bool == true)
+        #expect(entitlements["com.apple.security.network.client"] == nil)
         #expect(entitlements["com.apple.security.inherit"] == nil)
+    }
+
+    @Test("downloadable precision model artifacts stay out of the source bundle and vendor tree")
+    func downloadablePrecisionModelArtifactsStayOutOfDistributionInputs() throws {
+        let root = try packageRootURL()
+        for relativePath in ["Sources", "Vendor"] {
+            let directory = root.appending(path: relativePath, directoryHint: .isDirectory)
+            guard
+                let enumerator = FileManager.default.enumerator(
+                    at: directory, includingPropertiesForKeys: nil)
+            else { continue }
+            for case let url as URL in enumerator {
+                let path = url.path
+                #expect(!path.contains("parakeet-tdt-0.6b-v3-coreml"))
+                #expect(!path.hasSuffix("Encoder.mlmodelc"))
+                #expect(!path.hasSuffix("JointDecisionv3.mlmodelc"))
+                #expect(!path.contains("aed02740059203c4a87495924f685de3722ae9ce"))
+            }
+        }
+    }
+
+    @Test("signed app and Mac App Store builders audit Precision model exclusion")
+    func distributionBuildersAuditPrecisionModelExclusion() throws {
+        let root = try packageRootURL()
+        let auditPath = "Scripts/audit-precision-model-bundle.sh"
+        let audit = try String(
+            contentsOf: root.appending(path: auditPath),
+            encoding: .utf8
+        )
+        let developerBuilder = try String(
+            contentsOf: root.appending(path: "Scripts/build-luxel-app.sh"),
+            encoding: .utf8
+        )
+        let storeBuilder = try String(
+            contentsOf: root.appending(path: "Scripts/build-luxel-mas-pkg.sh"),
+            encoding: .utf8
+        )
+
+        #expect(audit.contains("Encoder\\.mlmodelc"))
+        #expect(audit.contains("JointDecisionv3\\.mlmodelc"))
+        #expect(audit.contains("aed02740059203c4a87495924f685de3722ae9ce"))
+        #expect(developerBuilder.contains("audit-precision-model-bundle.sh"))
+        #expect(storeBuilder.contains("\"${PRECISION_MODEL_AUDITOR}\" \"${APP_PATH}\""))
+        #expect(storeBuilder.contains("\"${PRECISION_MODEL_AUDITOR}\" \"${PKG_PATH}\""))
+    }
+
+    @Test("Precision model bundle auditor rejects forbidden payload paths")
+    func precisionModelBundleAuditorRejectsForbiddenPaths() throws {
+        let root = try packageRootURL()
+        let fixture = FileManager.default.temporaryDirectory.appending(
+            path: "LuxelBundleAudit-\(UUID().uuidString)",
+            directoryHint: .isDirectory
+        )
+        defer { try? FileManager.default.removeItem(at: fixture) }
+        try FileManager.default.createDirectory(at: fixture, withIntermediateDirectories: true)
+        let auditor = root.appending(path: "Scripts/audit-precision-model-bundle.sh")
+
+        let clean = Process()
+        clean.executableURL = auditor
+        clean.arguments = [fixture.path]
+        try clean.run()
+        clean.waitUntilExit()
+        #expect(clean.terminationStatus == 0)
+
+        try FileManager.default.createDirectory(
+            at: fixture.appending(path: "Encoder.mlmodelc"),
+            withIntermediateDirectories: true
+        )
+        let forbidden = Process()
+        forbidden.executableURL = auditor
+        forbidden.arguments = [fixture.path]
+        try forbidden.run()
+        forbidden.waitUntilExit()
+        #expect(forbidden.terminationStatus != 0)
+    }
+
+    @Test("runtime and CLI have no implicit Precision model download path")
+    func runtimeAndCLIHaveNoImplicitPrecisionDownloadPath() throws {
+        let root = try packageRootURL()
+        let precisionRuntime = try String(
+            contentsOf: root.appending(
+                path: "Sources/LuxelCore/Infrastructure/Transcripts/PrecisionTranscription.swift"
+            ),
+            encoding: .utf8
+        )
+        let composition = try String(
+            contentsOf: root.appending(
+                path: "Sources/LuxelApp/App/LuxelCompositionRoot+Models.swift"
+            ),
+            encoding: .utf8
+        )
+        let cli = try String(
+            contentsOf: root.appending(path: "Sources/LuxelCLI/LuxelCLIHeadless.swift"),
+            encoding: .utf8
+        )
+
+        #expect(!precisionRuntime.contains("downloadAndLoad"))
+        #expect(!precisionRuntime.contains("resolve/main"))
+        #expect(precisionRuntime.contains("ModelHub.offlineMode = true"))
+        #expect(composition.contains("FluidAudioOfflinePolicy.enable()"))
+        #expect(!cli.contains("AsrModels"))
+        #expect(!cli.contains("HuggingFaceModelArtifactDownloadClient"))
+        #expect(!cli.contains("PrecisionTranscriptionEngine"))
+    }
+
+    @Test("model catalog generator verifies the production catalog offline")
+    func modelCatalogGeneratorVerifiesProductionCatalogOffline() throws {
+        let root = try packageRootURL()
+        let process = Process()
+        process.currentDirectoryURL = root
+        process.executableURL = root.appending(path: "Scripts/generate-model-catalog.swift")
+        process.arguments = ["verify"]
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
     }
 
     @Test("build script bundles third-party license ledger as app resource")

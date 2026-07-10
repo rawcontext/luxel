@@ -8,6 +8,7 @@ Luxel ships the following third-party components:
 4. Swift Argument Parser — Apache License 2.0 (with Runtime Library Exception) — bundled `luxel` command-line tool
 5. FluidAudio — Apache License 2.0 — local speaker diarization engine
 6. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
+7. FluidInference parakeet-tdt-0.6b-v3-coreml — CC-BY-4.0 — optional downloaded Precision Transcription model
 
 The full license text and attribution for each component follow, in the same order.
 
@@ -274,6 +275,23 @@ Model card: https://huggingface.co/FluidInference/speaker-diarization-coreml
 Note: bundling is redistribution under CC-BY-4.0. Attribution and
 redistribution behavior must be reviewed by product/legal before shipping the
 diarization feature (tracked in docs/plans/optional-speaker-diarization.md).
+
+## FluidInference parakeet-tdt-0.6b-v3-coreml (downloaded model)
+
+Luxel offers the immutable `FluidInference/parakeet-tdt-0.6b-v3-coreml`
+release at commit `aed02740059203c4a87495924f685de3722ae9ce` as the optional
+Precision Transcription model. The model bytes are downloaded directly from
+Hugging Face only after user confirmation and are not included in Luxel.app.
+
+License: Creative Commons Attribution 4.0 International (CC-BY-4.0), https://creativecommons.org/licenses/by/4.0/
+
+Attribution: FluidInference and NVIDIA Parakeet contributors. Luxel uses the
+published Core ML INT8 encoder conversion without modifying the downloaded
+artifact bytes.
+
+Model card: https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml/tree/aed02740059203c4a87495924f685de3722ae9ce
+
+Base model: https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3
 
 ## Apache License, Version 2.0
 

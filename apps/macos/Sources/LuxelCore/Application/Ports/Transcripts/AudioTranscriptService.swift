@@ -42,6 +42,7 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
     public let speakerCountHint: TranscriptSpeakerCountHint
     public let speakerModelRevision: String?
     public let speakerLibraryRevision: String?
+    public let transcriptionProvenance: TranscriptionProvenance
 
     public init(
         audioURL: URL,
@@ -51,7 +52,8 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
         speakerDiarizationMode: TranscriptSpeakerDiarizationMode = .disabled,
         speakerCountHint: TranscriptSpeakerCountHint = .automatic,
         speakerModelRevision: String? = nil,
-        speakerLibraryRevision: String? = nil
+        speakerLibraryRevision: String? = nil,
+        transcriptionProvenance: TranscriptionProvenance = .appleSpeech
     ) {
         self.audioURL = audioURL
         self.locale = locale
@@ -61,6 +63,7 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
         self.speakerCountHint = speakerCountHint.normalized
         self.speakerModelRevision = speakerModelRevision
         self.speakerLibraryRevision = speakerLibraryRevision
+        self.transcriptionProvenance = transcriptionProvenance
     }
 
     public func replacingTurnSegmentationMode(
@@ -74,7 +77,8 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
             speakerDiarizationMode: speakerDiarizationMode,
             speakerCountHint: speakerCountHint,
             speakerModelRevision: speakerModelRevision,
-            speakerLibraryRevision: speakerLibraryRevision
+            speakerLibraryRevision: speakerLibraryRevision,
+            transcriptionProvenance: transcriptionProvenance
         )
     }
 
@@ -91,7 +95,8 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
             speakerDiarizationMode: speakerDiarizationMode,
             speakerCountHint: speakerCountHint,
             speakerModelRevision: speakerDiarizationMode == .enabled ? modelRevision : nil,
-            speakerLibraryRevision: speakerDiarizationMode == .enabled ? libraryRevision : nil
+            speakerLibraryRevision: speakerDiarizationMode == .enabled ? libraryRevision : nil,
+            transcriptionProvenance: transcriptionProvenance
         )
     }
 
@@ -106,7 +111,8 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
             speakerDiarizationMode: speakerDiarizationMode,
             speakerCountHint: speakerCountHint,
             speakerModelRevision: speakerModelRevision,
-            speakerLibraryRevision: speakerLibraryRevision
+            speakerLibraryRevision: speakerLibraryRevision,
+            transcriptionProvenance: transcriptionProvenance
         )
     }
 
@@ -119,7 +125,24 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
             speakerDiarizationMode: speakerDiarizationMode,
             speakerCountHint: speakerCountHint,
             speakerModelRevision: speakerModelRevision,
-            speakerLibraryRevision: speakerLibraryRevision
+            speakerLibraryRevision: speakerLibraryRevision,
+            transcriptionProvenance: transcriptionProvenance
+        )
+    }
+
+    public func replacingTranscriptionProvenance(
+        _ transcriptionProvenance: TranscriptionProvenance
+    ) -> AudioTranscriptRequest {
+        AudioTranscriptRequest(
+            audioURL: audioURL,
+            locale: locale,
+            sourceContext: sourceContext,
+            turnSegmentationMode: turnSegmentationMode,
+            speakerDiarizationMode: speakerDiarizationMode,
+            speakerCountHint: speakerCountHint,
+            speakerModelRevision: speakerModelRevision,
+            speakerLibraryRevision: speakerLibraryRevision,
+            transcriptionProvenance: transcriptionProvenance
         )
     }
 }
@@ -163,17 +186,20 @@ public struct TimedSpeechTranscriptionRequest: Equatable, Sendable {
     public let locale: Locale
     public let source: TranscriptSourceLabel?
     public let audioTrackIndex: Int?
+    public let transcriptionProvenance: TranscriptionProvenance
 
     public init(
         audioURL: URL,
         locale: Locale,
         source: TranscriptSourceLabel? = nil,
-        audioTrackIndex: Int? = nil
+        audioTrackIndex: Int? = nil,
+        transcriptionProvenance: TranscriptionProvenance = .appleSpeech
     ) {
         self.audioURL = audioURL
         self.locale = locale
         self.source = source
         self.audioTrackIndex = audioTrackIndex
+        self.transcriptionProvenance = transcriptionProvenance
     }
 }
 

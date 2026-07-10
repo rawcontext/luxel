@@ -23,6 +23,7 @@ extension AppSettings {
         case transcriptTurnSegmentationEnabled
         case transcriptSpeakerDiarizationEnabled
         case transcriptLanguageIdentifier
+        case transcriptEnginePreference
         case cameraDeviceID
         case cameraSeparateTrack
         case cameraPreviewStyle
@@ -112,16 +113,11 @@ extension AppSettings {
         audioInputDeviceID = audioInput.id
         audioInputDeviceName = audioInput.name
         audioOnlyFormat = recording.audioOnlyFormat
-        transcriptTurnSegmentationEnabled =
-            try container.decodeIfPresent(Bool.self, forKey: .transcriptTurnSegmentationEnabled)
-            ?? false
-        transcriptSpeakerDiarizationEnabled =
-            try container.decodeIfPresent(
-                Bool.self, forKey: .transcriptSpeakerDiarizationEnabled)
-            ?? true
-        transcriptLanguageIdentifier =
-            try container.decodeIfPresent(String.self, forKey: .transcriptLanguageIdentifier)
-            .flatMap(Self.nonEmpty)
+        let transcription = try Self.decodeTranscriptionSettings(from: container)
+        transcriptTurnSegmentationEnabled = transcription.turnSegmentationEnabled
+        transcriptSpeakerDiarizationEnabled = transcription.speakerDiarizationEnabled
+        transcriptLanguageIdentifier = transcription.languageIdentifier
+        transcriptEnginePreference = transcription.enginePreference
         let capture = try Self.decodeCaptureSurfaceSettings(from: container)
         cameraDeviceID = capture.cameraDeviceID
         cameraSeparateTrack = capture.cameraSeparateTrack
@@ -188,6 +184,29 @@ extension AppSettings {
             recordsAudio: container.decodeIfPresent(Bool.self, forKey: .recordAudio) ?? false,
             audioOnlyFormat: container.decodeIfPresent(
                 AudioRecordingFormat.self, forKey: .audioOnlyFormat) ?? .aac
+        )
+    }
+
+    private static func decodeTranscriptionSettings(
+        from container: AppSettingsDecoder
+    ) throws -> TranscriptSettings {
+        try TranscriptSettings(
+            turnSegmentationEnabled: container.decodeIfPresent(
+                Bool.self,
+                forKey: .transcriptTurnSegmentationEnabled
+            ) ?? false,
+            speakerDiarizationEnabled: container.decodeIfPresent(
+                Bool.self,
+                forKey: .transcriptSpeakerDiarizationEnabled
+            ) ?? true,
+            languageIdentifier: container.decodeIfPresent(
+                String.self,
+                forKey: .transcriptLanguageIdentifier
+            ).flatMap(Self.nonEmpty),
+            enginePreference: container.decodeIfPresent(
+                TranscriptEnginePreference.self,
+                forKey: .transcriptEnginePreference
+            ) ?? .appleSpeech
         )
     }
 
@@ -418,6 +437,13 @@ private struct RecordingSettings {
 private struct AudioInputSettings {
     let id: String?
     let name: String?
+}
+
+private struct TranscriptSettings {
+    let turnSegmentationEnabled: Bool
+    let speakerDiarizationEnabled: Bool
+    let languageIdentifier: String?
+    let enginePreference: TranscriptEnginePreference
 }
 
 private struct CaptureSurfaceSettings {

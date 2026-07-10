@@ -5,6 +5,39 @@ import Testing
 
 @Suite("Luxel CLI execution")
 struct LuxelCLIExecutionTests {
+    @Test("app-backed result files are printed and removed after consumption")
+    func appBackedResultFilesAreConsumed() throws {
+        let resultURL = FileManager.default.temporaryDirectory.appending(
+            path: "LuxelCLIResult-\(UUID().uuidString).txt"
+        )
+        try Data("precision transcript\n".utf8).write(to: resultURL)
+        let receiver = StubLuxelCallbackReceiver(
+            result: .resultFile(
+                path: resultURL.path,
+                contentType: "text/plain",
+                removeAfterRead: true
+            )
+        )
+        var output: [String] = []
+
+        try runLuxelCommand(
+            AutomationInvocation(
+                command: .transcribe(
+                    AutomationTranscriptionOptions(
+                        inputURL: URL(fileURLWithPath: "/tmp/input.m4a")
+                    )
+                )
+            ),
+            execution: LuxelCommandExecutionArguments(wait: true, json: false),
+            opener: SpyLuxelURLOpener(),
+            callbackReceiverFactory: { receiver },
+            consumesResultFiles: true,
+            output: { output.append($0) }
+        )
+
+        #expect(output == ["precision transcript"])
+        #expect(!FileManager.default.fileExists(atPath: resultURL.path))
+    }
     @Test("wait mode installs local callbacks before opening URL")
     func waitModeInstallsLocalCallbacksBeforeOpeningURL() throws {
         let opener = SpyLuxelURLOpener()

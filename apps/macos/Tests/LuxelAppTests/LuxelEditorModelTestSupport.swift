@@ -25,6 +25,9 @@ extension LuxelEditorModelTests {
         lastSelectedExportFormat: ExportFormat? = nil,
         onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil,
         onLastSelectedExportFormatChange: (@MainActor (ExportFormat) -> Void)? = nil,
+        transcriptEnginePreference: @escaping @Sendable () -> TranscriptEnginePreference = {
+            .appleSpeech
+        },
         errorReporter: any ErrorReporter = NoopErrorReporter()
     ) -> LuxelEditorModel {
         LuxelEditorModel(
@@ -51,6 +54,7 @@ extension LuxelEditorModelTests {
             audioPeakAnalyzer: audioPeakAnalyzer,
             audioTranscriptService: audioTranscriptService,
             speechRecognitionAuthorizationService: speechRecognitionAuthorizationService,
+            transcriptEnginePreference: transcriptEnginePreference,
             fileSystem: fileSystem,
             codecAvailability: codecAvailability,
             directoryAccessService: directoryAccessService,

@@ -21,22 +21,45 @@ extension LuxelCompositionRoot {
         )
     }
 
-    static func localAudioTranscriptService() -> LocalAudioTranscriptService {
+    static func localAudioTranscriptService(
+        turnSegmentationModeOverride: TranscriptTurnSegmentationMode? = nil,
+        speakerDiarizationModeOverride: TranscriptSpeakerDiarizationMode? = nil,
+        transcriptLocaleOverride: (@Sendable () -> Locale?)? = nil
+    ) -> LocalAudioTranscriptService {
         let settingsStore = settingsStore()
+        let precisionEngine = precisionTranscriptionEngine
+        let provenanceResolver = selectedTranscriptionProvenanceResolver(
+            settingsStore: settingsStore
+        )
         return LocalAudioTranscriptService(
-            transcriber: AppleSpeechTranscriptExtractor(),
+            transcriber: SelectedEngineTimedSpeechTranscriber(
+                appleSpeech: AppleSpeechTranscriptExtractor(),
+                precision: PrecisionTimedSpeechTranscriber(engine: precisionEngine)
+            ),
             turnSegmenter: AppleIntelligenceTurnSegmenter(),
             turnSegmentationMode: {
+                if let turnSegmentationModeOverride {
+                    return turnSegmentationModeOverride
+                }
                 let settings = (try? settingsStore.load()) ?? defaultSettings
                 return settings.transcriptTurnSegmentationEnabled ? .semantic : .raw
             },
             speakerDiarizationMode: {
+                if let speakerDiarizationModeOverride {
+                    return speakerDiarizationModeOverride
+                }
                 let settings = (try? settingsStore.load()) ?? defaultSettings
                 return settings.transcriptSpeakerDiarizationEnabled ? .enabled : .disabled
             },
             transcriptLocaleOverride: {
+                if let transcriptLocaleOverride {
+                    return transcriptLocaleOverride()
+                }
                 let settings = (try? settingsStore.load()) ?? defaultSettings
                 return settings.transcriptLanguageIdentifier.map(Locale.init(identifier:))
+            },
+            transcriptionProvenance: {
+                try await provenanceResolver.resolve()
             },
             cache: ApplicationSupportTranscriptCache(cacheDirectory: transcriptCacheDirectory),
             audioTrackInspector: AVFoundationAudioTrackInspector(),

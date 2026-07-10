@@ -59,6 +59,29 @@ struct TranscriptServiceDiarizationTests {
         #expect(savedRequests.first?.speakerModelRevision == StubSpeakerModelStore.revision)
     }
 
+    @Test("diarized transcript and cache preserve ASR provenance")
+    func diarizedTranscriptPreservesASRProvenance() async throws {
+        let provenance = TranscriptionProvenance(
+            engine: .parakeetTDTv3,
+            modelRevision: "precision-revision",
+            configurationRevision: "precision-config"
+        )
+        let cache = KeyedMemoryTranscriptCache()
+        let service = makeService(
+            diarizer: SpySpeakerDiarizer(segments: []),
+            modelStore: StubSpeakerModelStore(initiallyReady: true),
+            mode: .enabled,
+            cache: cache,
+            provenance: provenance
+        )
+
+        let transcript = try #require(try await service.transcript(for: makeRequest()))
+        let cached = try #require(try cache.load(for: cache.savedRequests[0]))
+
+        #expect(transcript.transcriptionProvenance == provenance)
+        #expect(cached.transcriptionProvenance == provenance)
+    }
+
     @Test("passes speaker count hints through diarization and cache")
     func passesSpeakerCountHintsThroughDiarizationAndCache() async throws {
         let diarizer = SpySpeakerDiarizer(
@@ -186,13 +209,15 @@ struct TranscriptServiceDiarizationTests {
         diarizer: any SpeakerDiarizer,
         modelStore: any SpeakerDiarizationModelStore,
         mode: TranscriptSpeakerDiarizationMode,
-        cache: any TranscriptCache = KeyedMemoryTranscriptCache()
+        cache: any TranscriptCache = KeyedMemoryTranscriptCache(),
+        provenance: TranscriptionProvenance = .appleSpeech
     ) -> LocalAudioTranscriptService {
         LocalAudioTranscriptService(
             transcriber: SingleSpanTranscriber(),
             turnSegmenter: PassthroughTurnSegmenter(),
             turnSegmentationMode: { .raw },
             speakerDiarizationMode: { mode },
+            transcriptionProvenance: { provenance },
             cache: cache,
             audioTrackInspector: SingleTrackInspector(),
             speakerDiarizer: diarizer,
@@ -286,7 +311,8 @@ private actor StubSpeakerModelStore: SpeakerDiarizationModelStore {
     }
 
     func currentState() -> SpeakerDiarizationModelState {
-        isReady ? .ready(installedBytes: 1000, modelRevision: Self.revision)
+        isReady
+            ? .ready(installedBytes: 1000, modelRevision: Self.revision)
             : .notDownloaded(expectedBytes: 1000)
     }
 
