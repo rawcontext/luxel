@@ -1,8 +1,11 @@
 import AppKit
+import LuxelCore
 import QuartzCore
 
 @MainActor
 final class CameraCutoutPreviewLayer: CALayer {
+    private var presentedFrame: CameraCutoutCompositedFrame?
+
     override init() {
         super.init()
         backgroundColor = NSColor.clear.cgColor
@@ -19,11 +22,13 @@ final class CameraCutoutPreviewLayer: CALayer {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func present(_ image: CGImage) {
-        contents = image
+    func present(_ frame: CameraCutoutCompositedFrame) {
+        presentedFrame = frame
+        contents = frame.image
     }
 
     func clear() {
         contents = nil
+        presentedFrame = nil
     }
 }

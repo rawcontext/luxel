@@ -6,7 +6,7 @@ import Testing
 struct WebcamOverlayModelTests {
     @Test("camera shapes preserve legacy values and stable display order")
     func cameraShapesPreserveLegacyValuesAndStableDisplayOrder() throws {
-        #expect(CameraOverlayShape.allCases == [.circle, .roundedRect, .square, .cutout])
+        #expect(CameraOverlayShape.allCases == [.circle, .roundedRect, .square])
         #expect(try JSONDecoder().decode(CameraOverlayShape.self, from: Data(#""circle""#.utf8)) == .circle)
         #expect(
             try JSONDecoder().decode(
@@ -14,30 +14,57 @@ struct WebcamOverlayModelTests {
                 from: Data(#""roundedRect""#.utf8)
             ) == .roundedRect
         )
-        #expect(!CameraOverlayShape.square.usesPortraitMatting)
-        #expect(CameraOverlayShape.cutout.usesPortraitMatting)
+        let legacyCutout = try JSONDecoder().decode(
+            CameraPreviewStyle.self,
+            from: Data(#"{"shape":"cutout","size":"large","isMirrored":false}"#.utf8)
+        )
+        #expect(legacyCutout.shape == .circle)
+        #expect(legacyCutout.backgroundEffect == .portraitCutout)
+
+        let encodedPlan = try JSONEncoder().encode(CameraOverlayPlan())
+        var legacyPlanObject = try #require(
+            JSONSerialization.jsonObject(with: encodedPlan) as? [String: Any]
+        )
+        legacyPlanObject["shape"] = "cutout"
+        legacyPlanObject.removeValue(forKey: "backgroundEffect")
+        let legacyPlan = try JSONDecoder().decode(
+            CameraOverlayPlan.self,
+            from: JSONSerialization.data(withJSONObject: legacyPlanObject)
+        )
+        #expect(legacyPlan.shape == .circle)
+        #expect(legacyPlan.backgroundEffect == .portraitCutout)
     }
 
-    @Test("new camera shapes round trip through preview options and overlay plans")
-    func newCameraShapesRoundTripThroughPreviewOptionsAndOverlayPlans() throws {
-        for shape in [CameraOverlayShape.square, .cutout] {
-            let options = CameraRecordingOptions(
-                deviceID: "camera-1",
-                isEnabled: true,
-                previewStyle: CameraPreviewStyle(shape: shape, size: .large, isMirrored: false)
-            )
-            let decodedOptions = try JSONDecoder().decode(
-                CameraRecordingOptions.self,
-                from: JSONEncoder().encode(options)
-            )
-            #expect(decodedOptions == options)
+    @Test("camera shapes and background effects round trip independently")
+    func cameraShapesAndBackgroundEffectsRoundTripIndependently() throws {
+        for shape in CameraOverlayShape.allCases {
+            for backgroundEffect in CameraBackgroundEffect.allCases {
+                let options = CameraRecordingOptions(
+                    deviceID: "camera-1",
+                    isEnabled: true,
+                    previewStyle: CameraPreviewStyle(
+                        shape: shape,
+                        size: .large,
+                        isMirrored: false,
+                        backgroundEffect: backgroundEffect
+                    )
+                )
+                let decodedOptions = try JSONDecoder().decode(
+                    CameraRecordingOptions.self,
+                    from: JSONEncoder().encode(options)
+                )
+                #expect(decodedOptions == options)
 
-            let plan = try CameraOverlayPlan(shape: shape)
-            let decodedPlan = try JSONDecoder().decode(
-                CameraOverlayPlan.self,
-                from: JSONEncoder().encode(plan)
-            )
-            #expect(decodedPlan == plan)
+                let plan = try CameraOverlayPlan(
+                    shape: shape,
+                    backgroundEffect: backgroundEffect
+                )
+                let decodedPlan = try JSONDecoder().decode(
+                    CameraOverlayPlan.self,
+                    from: JSONEncoder().encode(plan)
+                )
+                #expect(decodedPlan == plan)
+            }
         }
     }
 

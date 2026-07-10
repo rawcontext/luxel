@@ -40,6 +40,46 @@ extension LuxelCropperView {
                 }
                 .help("Set the camera overlay shape.")
 
+                Button {
+                    toggleCameraBackgroundEffect(.portraitCutout)
+                } label: {
+                    let title = LuxelLocalization.string(
+                        "cameraOverlay.shape.cutout",
+                        defaultValue: "Cutout"
+                    )
+                    if cameraConfiguration.previewStyle.backgroundEffect == .portraitCutout {
+                        Label(title, systemImage: "checkmark")
+                    } else {
+                        Text(title)
+                    }
+                }
+                .help(
+                    LuxelLocalization.string(
+                        "cameraOverlay.shape.cutoutHelp",
+                        defaultValue: "Remove the camera background and show only the presenter."
+                    )
+                )
+
+                Button {
+                    toggleCameraBackgroundEffect(.greenScreen)
+                } label: {
+                    let title = LuxelLocalization.string(
+                        "cameraOverlay.background.greenScreen",
+                        defaultValue: "Green Screen"
+                    )
+                    if cameraConfiguration.previewStyle.backgroundEffect == .greenScreen {
+                        Label(title, systemImage: "checkmark")
+                    } else {
+                        Text(title)
+                    }
+                }
+                .help(
+                    LuxelLocalization.string(
+                        "cameraOverlay.background.greenScreenHelp",
+                        defaultValue: "Remove a green-screen background with chroma key."
+                    )
+                )
+
                 Menu {
                     ForEach(CameraPreviewSize.allCases, id: \.self) { size in
                         Button {

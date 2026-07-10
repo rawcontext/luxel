@@ -47,10 +47,14 @@ final class CameraPreviewPanelView: NSView {
         onMove: @escaping (NSRect) -> Void,
         onClose: @escaping @MainActor () -> Void
     ) {
-        self.previewLayer = style.shape.usesPortraitMatting
+        self.previewLayer =
+            style.backgroundEffect.removesBackground
             ? nil
             : AVCaptureVideoPreviewLayer(session: session)
-        self.cutoutLayer = style.shape.usesPortraitMatting ? CameraCutoutPreviewLayer() : nil
+        self.cutoutLayer =
+            style.backgroundEffect.removesBackground
+            ? CameraCutoutPreviewLayer()
+            : nil
         self.isMirrored = style.isMirrored
         self.effectiveShape = style.shape
         self.showsHoverControls = showsHoverControls
@@ -67,8 +71,8 @@ final class CameraPreviewPanelView: NSView {
             layer?.addSublayer(cutoutLayer)
         }
         configureGlassBorderLayers()
-        glassBorderLayer.isHidden = style.shape.usesPortraitMatting
-        glassHighlightLayer.isHidden = style.shape.usesPortraitMatting
+        glassBorderLayer.isHidden = style.backgroundEffect.removesBackground
+        glassHighlightLayer.isHidden = style.backgroundEffect.removesBackground
         layer?.addSublayer(glassBorderLayer)
         layer?.addSublayer(glassHighlightLayer)
         configureCloseButton()
@@ -90,6 +94,8 @@ final class CameraPreviewPanelView: NSView {
         previewLayer?.cornerCurve = .continuous
         previewLayer?.masksToBounds = true
         cutoutLayer?.frame = bounds
+        cutoutLayer?.cornerRadius = cornerRadius
+        cutoutLayer?.cornerCurve = .continuous
         closeButton.frame = closeButtonFrame()
         layer?.cornerRadius = cornerRadius
         layer?.cornerCurve = .continuous
@@ -136,15 +142,14 @@ final class CameraPreviewPanelView: NSView {
         cutoutLayer?.clear()
     }
 
-    func presentCutout(_ image: CGImage) {
-        cutoutLayer?.present(image)
+    func presentCutout(_ frame: CameraCutoutCompositedFrame) {
+        cutoutLayer?.present(frame)
     }
 
     func showDirectFallback(session: AVCaptureSession) {
         cutoutLayer?.clear()
         cutoutLayer?.removeFromSuperlayer()
         cutoutLayer = nil
-        effectiveShape = .circle
         let previewLayer = AVCaptureVideoPreviewLayer(session: session)
         configurePreviewLayer(previewLayer)
         layer?.insertSublayer(previewLayer, at: 0)
@@ -283,7 +288,7 @@ extension CameraOverlayShape {
             min(size.width, size.height) * 0.18
         case .roundedRect:
             16
-        case .square, .cutout:
+        case .square:
             0
         }
     }
@@ -291,6 +296,20 @@ extension CameraOverlayShape {
 
 extension CameraPreviewStyle {
     func replacingShape(_ shape: CameraOverlayShape) -> CameraPreviewStyle {
-        CameraPreviewStyle(shape: shape, size: size, isMirrored: isMirrored)
+        CameraPreviewStyle(
+            shape: shape,
+            size: size,
+            isMirrored: isMirrored,
+            backgroundEffect: backgroundEffect
+        )
+    }
+
+    func replacingBackgroundEffect(_ backgroundEffect: CameraBackgroundEffect) -> CameraPreviewStyle {
+        CameraPreviewStyle(
+            shape: shape,
+            size: size,
+            isMirrored: isMirrored,
+            backgroundEffect: backgroundEffect
+        )
     }
 }

@@ -85,7 +85,11 @@ let package = Package(
         .binaryTarget(name: "CVPX", path: "Vendor/Artifacts/CVPX.xcframework"),
         .binaryTarget(name: "COpus", path: "Vendor/Artifacts/COpus.xcframework"),
         .binaryTarget(name: "CSVTAV1", path: "Vendor/Artifacts/CSVTAV1.xcframework"),
-        .testTarget(name: "LuxelCoreTests", dependencies: ["LuxelCore"]),
+        .testTarget(
+            name: "LuxelCoreTests",
+            dependencies: ["LuxelCore"],
+            resources: [.process("Fixtures")]
+        ),
         .testTarget(name: "LuxelCodecAV1Tests", dependencies: ["LuxelCodecAV1"]),
         .testTarget(name: "LuxelCodecWebMTests", dependencies: ["LuxelCodecWebM"]),
         .testTarget(

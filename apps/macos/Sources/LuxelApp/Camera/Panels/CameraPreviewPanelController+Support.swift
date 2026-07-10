@@ -167,7 +167,8 @@ extension CameraPreviewPanelController {
                 in: rect
             ),
             constrainedOrigin(
-                NSPoint(x: rect.maxX - size.width - edgeMargin, y: rect.maxY - size.height - edgeMargin),
+                NSPoint(
+                    x: rect.maxX - size.width - edgeMargin, y: rect.maxY - size.height - edgeMargin),
                 size: size,
                 in: rect
             )
@@ -234,18 +235,24 @@ extension CameraPreviewPanelController {
         }.value
     }
 
-    func makeCutoutPipeline(style: CameraPreviewStyle) -> CameraCutoutSessionPipeline? {
-        guard let portraitMattingProcessor else {
+    func makeBackgroundEffectPipeline(
+        style: CameraPreviewStyle
+    ) -> CameraBackgroundEffectSessionPipeline? {
+        if style.backgroundEffect.usesPortraitMatting, portraitMattingProcessor == nil {
             return nil
         }
 
-        return CameraCutoutSessionPipeline(
+        let telemetry = CameraBackgroundEffectTelemetry(effect: style.backgroundEffect)
+        return CameraBackgroundEffectSessionPipeline(
+            effect: style.backgroundEffect,
             processor: portraitMattingProcessor,
+            telemetry: telemetry,
             outputSize: style.size.panelSize,
             isMirrored: style.isMirrored,
-            onImage: { [weak self] image in
+            onFrame: { [weak self] frame in
                 Task { @MainActor [weak self] in
-                    (self?.panel?.contentView as? CameraPreviewPanelView)?.presentCutout(image)
+                    (self?.panel?.contentView as? CameraPreviewPanelView)?.presentCutout(frame)
+                    telemetry.recordPresentation(sourceTimestamp: frame.sourceTimestamp)
                 }
             },
             onFailure: { [weak self] error in
@@ -257,15 +264,15 @@ extension CameraPreviewPanelController {
     }
 
     func handleCutoutFailure(_ error: any Error) {
-        guard let session, let cutoutPipeline else {
+        guard let session, let backgroundEffectPipeline else {
             return
         }
 
         Self.logger.error(
-            "Camera Cutout fell back to Squircle: \(error.localizedDescription, privacy: .public)"
+            "Camera background effect fell back to direct preview: \(error.localizedDescription, privacy: .public)"
         )
-        cutoutPipeline.stop()
-        self.cutoutPipeline = nil
+        backgroundEffectPipeline.stop()
+        self.backgroundEffectPipeline = nil
         removeCutoutObservers()
         (panel?.contentView as? CameraPreviewPanelView)?.showDirectFallback(session: session)
         onCutoutFailure?()

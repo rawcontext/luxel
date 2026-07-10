@@ -180,7 +180,20 @@ extension LuxelCropperView {
         let updatedStyle = CameraPreviewStyle(
             shape: shape,
             size: style.size,
-            isMirrored: style.isMirrored
+            isMirrored: style.isMirrored,
+            backgroundEffect: style.backgroundEffect
+        )
+        updateCameraPreviewStyle(updatedStyle, from: cameraConfiguration)
+    }
+
+    func toggleCameraBackgroundEffect(_ effect: CameraBackgroundEffect) {
+        let cameraConfiguration = effectiveCameraConfiguration
+        let style = cameraConfiguration.previewStyle
+        let updatedStyle = CameraPreviewStyle(
+            shape: style.shape,
+            size: style.size,
+            isMirrored: style.isMirrored,
+            backgroundEffect: style.backgroundEffect == effect ? .none : effect
         )
         updateCameraPreviewStyle(updatedStyle, from: cameraConfiguration)
     }
@@ -191,7 +204,8 @@ extension LuxelCropperView {
         let updatedStyle = CameraPreviewStyle(
             shape: style.shape,
             size: size,
-            isMirrored: style.isMirrored
+            isMirrored: style.isMirrored,
+            backgroundEffect: style.backgroundEffect
         )
         updateCameraPreviewStyle(updatedStyle, from: cameraConfiguration)
     }
@@ -202,7 +216,8 @@ extension LuxelCropperView {
         let updatedStyle = CameraPreviewStyle(
             shape: style.shape,
             size: style.size,
-            isMirrored: isMirrored
+            isMirrored: isMirrored,
+            backgroundEffect: style.backgroundEffect
         )
         updateCameraPreviewStyle(updatedStyle, from: cameraConfiguration)
     }

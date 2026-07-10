@@ -10,7 +10,7 @@ final class CameraPreviewPanelController {
     var portraitMattingProcessor: MODNetPortraitMattingProcessor?
     var panel: NSPanel?
     var session: AVCaptureSession?
-    var cutoutPipeline: CameraCutoutSessionPipeline?
+    var backgroundEffectPipeline: CameraBackgroundEffectSessionPipeline?
     var cutoutObserverTokens: [NSObjectProtocol] = []
     var onCutoutFailure: (@MainActor () -> Void)?
     var panelOriginsByDisplayID: [DisplayID: NSPoint] = [:]
@@ -18,9 +18,10 @@ final class CameraPreviewPanelController {
     var onPlacementChange: (@MainActor (DisplayID, CameraPreviewPlacement) -> Void)?
 
     init(
-        portraitMattingProcessorFactory: @escaping @MainActor () -> MODNetPortraitMattingProcessor? = {
-            nil
-        }
+        portraitMattingProcessorFactory:
+            @escaping @MainActor () -> MODNetPortraitMattingProcessor? = {
+                nil
+            }
     ) {
         self.portraitMattingProcessorFactory = portraitMattingProcessorFactory
     }
@@ -67,14 +68,30 @@ final class CameraPreviewPanelController {
         device: AVCaptureDevice,
         presentation: CameraPanelPresentation
     ) throws {
-        let requestedCutout = presentation.style.shape.usesPortraitMatting
-        let usesCutout = requestedCutout && portraitMattingProcessor?.isPrepared == true
-        let style = requestedCutout && !usesCutout
-            ? presentation.style.replacingShape(.circle)
+        let requestedBackgroundEffect = presentation.style.backgroundEffect.removesBackground
+        let usesBackgroundEffect =
+            switch presentation.style.backgroundEffect {
+            case .none:
+                false
+            case .portraitCutout:
+                portraitMattingProcessor?.isPrepared == true
+            case .greenScreen:
+                true
+            }
+        let style =
+            requestedBackgroundEffect && !usesBackgroundEffect
+            ? presentation.style.replacingBackgroundEffect(.none)
             : presentation.style
-        let cutoutPipeline = usesCutout ? makeCutoutPipeline(style: style) : nil
-        let session = try Self.makeSession(device: device, videoOutput: cutoutPipeline?.videoOutput)
-        let frame = panelFrame(size: style.size.panelSize, preferredDisplayID: presentation.preferredDisplayID)
+        let backgroundEffectPipeline =
+            usesBackgroundEffect
+            ? makeBackgroundEffectPipeline(style: style)
+            : nil
+        let session = try Self.makeSession(
+            device: device,
+            videoOutput: backgroundEffectPipeline?.videoOutput
+        )
+        let frame = panelFrame(
+            size: style.size.panelSize, preferredDisplayID: presentation.preferredDisplayID)
         let panel = Self.makePanel(
             frame: frame,
             session: session,
@@ -92,27 +109,27 @@ final class CameraPreviewPanelController {
         finishPresentation(
             panel: panel,
             session: session,
-            pipeline: cutoutPipeline,
+            pipeline: backgroundEffectPipeline,
             device: device,
-            requestedCutout: requestedCutout
+            requestedBackgroundEffect: requestedBackgroundEffect
         )
     }
 
     private func finishPresentation(
         panel: NSPanel,
         session: AVCaptureSession,
-        pipeline: CameraCutoutSessionPipeline?,
+        pipeline: CameraBackgroundEffectSessionPipeline?,
         device: AVCaptureDevice,
-        requestedCutout: Bool
+        requestedBackgroundEffect: Bool
     ) {
         self.session = session
         self.panel = panel
-        cutoutPipeline = pipeline
+        backgroundEffectPipeline = pipeline
         rememberPanelOrigin(frame: panel.frame)
         if let pipeline {
             observeCutoutFailures(session: session, device: device)
             pipeline.start()
-        } else if requestedCutout {
+        } else if requestedBackgroundEffect {
             onCutoutFailure?()
         }
         let sessionHandle = CameraCaptureSessionHandle(session)
@@ -140,8 +157,8 @@ final class CameraPreviewPanelController {
 
     private func closePanelAndTakeSession() -> AVCaptureSession? {
         rememberPanelOrigin()
-        cutoutPipeline?.stop()
-        cutoutPipeline = nil
+        backgroundEffectPipeline?.stop()
+        backgroundEffectPipeline = nil
         removeCutoutObservers()
         (panel?.contentView as? CameraPreviewPanelView)?.detachPreviewSession()
         panel?.close()

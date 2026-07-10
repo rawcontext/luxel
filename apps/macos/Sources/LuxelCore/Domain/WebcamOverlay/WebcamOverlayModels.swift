@@ -56,15 +56,71 @@ public struct CameraPreviewStyle: Codable, Equatable, Sendable {
     public let shape: CameraOverlayShape
     public let size: CameraPreviewSize
     public let isMirrored: Bool
+    public let backgroundEffect: CameraBackgroundEffect
 
     public init(
         shape: CameraOverlayShape = .circle,
         size: CameraPreviewSize = .medium,
-        isMirrored: Bool = true
+        isMirrored: Bool = true,
+        backgroundEffect: CameraBackgroundEffect = .none
     ) {
         self.shape = shape
         self.size = size
         self.isMirrored = isMirrored
+        self.backgroundEffect = backgroundEffect
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case shape
+        case size
+        case isMirrored
+        case backgroundEffect
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let shapeRawValue = try container.decodeIfPresent(String.self, forKey: .shape)
+            ?? CameraOverlayShape.circle.rawValue
+        let isLegacyCutout = shapeRawValue == "cutout"
+        let decodedShape = CameraOverlayShape(rawValue: shapeRawValue)
+        guard isLegacyCutout || decodedShape != nil else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .shape,
+                in: container,
+                debugDescription: "Unknown camera overlay shape: \(shapeRawValue)"
+            )
+        }
+        self.init(
+            shape: decodedShape ?? .circle,
+            size: try container.decodeIfPresent(CameraPreviewSize.self, forKey: .size) ?? .medium,
+            isMirrored: try container.decodeIfPresent(Bool.self, forKey: .isMirrored) ?? true,
+            backgroundEffect: try container.decodeIfPresent(
+                CameraBackgroundEffect.self,
+                forKey: .backgroundEffect
+            ) ?? (isLegacyCutout ? .portraitCutout : .none)
+        )
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(shape, forKey: .shape)
+        try container.encode(size, forKey: .size)
+        try container.encode(isMirrored, forKey: .isMirrored)
+        try container.encode(backgroundEffect, forKey: .backgroundEffect)
+    }
+}
+
+public enum CameraBackgroundEffect: String, Codable, CaseIterable, Equatable, Sendable {
+    case none
+    case portraitCutout
+    case greenScreen
+
+    public var usesPortraitMatting: Bool {
+        self == .portraitCutout
+    }
+
+    public var removesBackground: Bool {
+        self != .none
     }
 }
 
@@ -79,12 +135,14 @@ public struct CameraOverlayPlan: Codable, Equatable, Sendable {
     public let widthFraction: Double
     public let shape: CameraOverlayShape
     public let showsBorder: Bool
+    public let backgroundEffect: CameraBackgroundEffect
 
     public init(
         placement: CameraOverlayPlacement = .anchor(.bottomRight),
         widthFraction: Double = 0.25,
         shape: CameraOverlayShape = .circle,
-        showsBorder: Bool = true
+        showsBorder: Bool = true,
+        backgroundEffect: CameraBackgroundEffect = .none
     ) throws {
         guard widthFraction.isFinite, (0.15...0.4).contains(widthFraction) else {
             throw WebcamOverlayModelError.invalidWidthFraction
@@ -94,6 +152,49 @@ public struct CameraOverlayPlan: Codable, Equatable, Sendable {
         self.widthFraction = widthFraction
         self.shape = shape
         self.showsBorder = showsBorder
+        self.backgroundEffect = backgroundEffect
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case placement
+        case widthFraction
+        case shape
+        case showsBorder
+        case backgroundEffect
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let shapeRawValue = try container.decodeIfPresent(String.self, forKey: .shape)
+            ?? CameraOverlayShape.circle.rawValue
+        let isLegacyCutout = shapeRawValue == "cutout"
+        let decodedShape = CameraOverlayShape(rawValue: shapeRawValue)
+        guard isLegacyCutout || decodedShape != nil else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .shape,
+                in: container,
+                debugDescription: "Unknown camera overlay shape: \(shapeRawValue)"
+            )
+        }
+        try self.init(
+            placement: container.decode(CameraOverlayPlacement.self, forKey: .placement),
+            widthFraction: container.decode(Double.self, forKey: .widthFraction),
+            shape: decodedShape ?? .circle,
+            showsBorder: container.decodeIfPresent(Bool.self, forKey: .showsBorder) ?? true,
+            backgroundEffect: container.decodeIfPresent(
+                CameraBackgroundEffect.self,
+                forKey: .backgroundEffect
+            ) ?? (isLegacyCutout ? .portraitCutout : .none)
+        )
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(placement, forKey: .placement)
+        try container.encode(widthFraction, forKey: .widthFraction)
+        try container.encode(shape, forKey: .shape)
+        try container.encode(showsBorder, forKey: .showsBorder)
+        try container.encode(backgroundEffect, forKey: .backgroundEffect)
     }
 
     public func rect(in outputSize: PixelSize) throws -> CaptureRect {
@@ -178,11 +279,6 @@ public enum CameraOverlayShape: String, Codable, CaseIterable, Equatable, Sendab
     case circle
     case roundedRect
     case square
-    case cutout
-
-    public var usesPortraitMatting: Bool {
-        self == .cutout
-    }
 }
 
 public struct NormalizedPoint: Codable, Equatable, Sendable {

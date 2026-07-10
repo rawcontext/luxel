@@ -85,7 +85,7 @@ extension LuxelMenuModel {
     ) async -> (request: RecordingRequest, noticeMessage: String?) {
         guard let camera = request.camera,
               camera.isEnabled,
-              camera.previewStyle.shape.usesPortraitMatting
+              camera.previewStyle.backgroundEffect.usesPortraitMatting
         else {
             return (request, nil)
         }
@@ -95,9 +95,10 @@ extension LuxelMenuModel {
             return (request, nil)
         } catch {
             let fallbackStyle = CameraPreviewStyle(
-                shape: .circle,
+                shape: camera.previewStyle.shape,
                 size: camera.previewStyle.size,
-                isMirrored: camera.previewStyle.isMirrored
+                isMirrored: camera.previewStyle.isMirrored,
+                backgroundEffect: .none
             )
             return (
                 request.replacingCamera(camera.replacingPreviewStyle(fallbackStyle)),
@@ -205,7 +206,8 @@ extension LuxelMenuModel {
     private static var cameraCutoutUnavailableNotice: String {
         LuxelLocalization.string(
             "cameraOverlay.cutout.unavailable",
-            defaultValue: "Camera background removal was unavailable. Showing Squircle instead."
+            defaultValue:
+                "Camera background removal was unavailable. Showing the camera without it."
         )
     }
 }

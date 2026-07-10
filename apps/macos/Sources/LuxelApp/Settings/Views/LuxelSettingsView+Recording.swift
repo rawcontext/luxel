@@ -36,7 +36,8 @@ extension LuxelSettingsView {
                         .font(.system(size: 11.5))
                         .foregroundStyle(.red)
                 } else if model.settings.matchDisplayFrameRate {
-                    LuxelGlassSectionFooter("Frame rate follows the display's supported refresh rate.")
+                    LuxelGlassSectionFooter(
+                        "Frame rate follows the display's supported refresh rate.")
                 } else {
                     LuxelGlassSectionFooter("Use a whole number from 1 to 120 FPS.")
                 }
@@ -113,6 +114,40 @@ extension LuxelSettingsView {
 
             LuxelGlassRowDivider()
 
+            settingsToggleRow(
+                LuxelLocalization.string(
+                    "cameraOverlay.shape.cutout",
+                    defaultValue: "Cutout"
+                ),
+                isOn: cameraPreviewCutoutSelection
+            )
+            .disabled(model.settings.cameraDeviceID == nil)
+            .help(
+                LuxelLocalization.string(
+                    "cameraOverlay.shape.cutoutHelp",
+                    defaultValue: "Remove the camera background and show only the presenter."
+                )
+            )
+
+            LuxelGlassRowDivider()
+
+            settingsToggleRow(
+                LuxelLocalization.string(
+                    "cameraOverlay.background.greenScreen",
+                    defaultValue: "Green Screen"
+                ),
+                isOn: cameraPreviewGreenScreenSelection
+            )
+            .disabled(model.settings.cameraDeviceID == nil)
+            .help(
+                LuxelLocalization.string(
+                    "cameraOverlay.background.greenScreenHelp",
+                    defaultValue: "Remove a green-screen background with chroma key."
+                )
+            )
+
+            LuxelGlassRowDivider()
+
             SettingsRow("Size") {
                 LuxelGlassSegmentedPicker(
                     selection: cameraPreviewSizeSelection,
@@ -149,11 +184,20 @@ extension LuxelSettingsView {
     }
 
     var cameraSettingsFooter: String {
-        if model.settings.cameraPreviewStyle.shape.usesPortraitMatting {
-            return model.settings.cameraPreviewStyle.shape.settingsHelp
+        switch model.settings.cameraPreviewStyle.backgroundEffect {
+        case .portraitCutout:
+            return LuxelLocalization.string(
+                "cameraOverlay.shape.cutoutHelp",
+                defaultValue: "Remove the camera background and show only the presenter."
+            )
+        case .greenScreen:
+            return LuxelLocalization.string(
+                "cameraOverlay.background.greenScreenHelp",
+                defaultValue: "Remove a green-screen background with chroma key."
+            )
+        case .none:
+            return "Camera controls are available after you choose a camera."
         }
-
-        return "Camera controls are available after you choose a camera."
     }
 
     func cameraDeviceLabel(_ deviceID: String?) -> String {

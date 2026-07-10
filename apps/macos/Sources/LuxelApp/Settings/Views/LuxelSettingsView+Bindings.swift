@@ -124,9 +124,18 @@ extension LuxelSettingsView {
             model.settings.cameraPreviewStyle = CameraPreviewStyle(
                 shape: shape,
                 size: style.size,
-                isMirrored: style.isMirrored
+                isMirrored: style.isMirrored,
+                backgroundEffect: style.backgroundEffect
             )
         }
+    }
+
+    var cameraPreviewCutoutSelection: Binding<Bool> {
+        backgroundEffectSelection(.portraitCutout)
+    }
+
+    var cameraPreviewGreenScreenSelection: Binding<Bool> {
+        backgroundEffectSelection(.greenScreen)
     }
 
     var cameraPreviewSizeSelection: Binding<CameraPreviewSize> {
@@ -137,7 +146,8 @@ extension LuxelSettingsView {
             model.settings.cameraPreviewStyle = CameraPreviewStyle(
                 shape: style.shape,
                 size: size,
-                isMirrored: style.isMirrored
+                isMirrored: style.isMirrored,
+                backgroundEffect: style.backgroundEffect
             )
         }
     }
@@ -150,7 +160,22 @@ extension LuxelSettingsView {
             model.settings.cameraPreviewStyle = CameraPreviewStyle(
                 shape: style.shape,
                 size: style.size,
-                isMirrored: isMirrored
+                isMirrored: isMirrored,
+                backgroundEffect: style.backgroundEffect
+            )
+        }
+    }
+
+    private func backgroundEffectSelection(_ effect: CameraBackgroundEffect) -> Binding<Bool> {
+        Binding {
+            model.settings.cameraPreviewStyle.backgroundEffect == effect
+        } set: { isEnabled in
+            let style = model.settings.cameraPreviewStyle
+            model.settings.cameraPreviewStyle = CameraPreviewStyle(
+                shape: style.shape,
+                size: style.size,
+                isMirrored: style.isMirrored,
+                backgroundEffect: isEnabled ? effect : .none
             )
         }
     }
@@ -163,7 +188,8 @@ extension LuxelSettingsView {
         let configuration =
             model.settings.replayBufferConfiguration ?? ReplayBufferConfiguration.defaults
         guard
-            let updatedFrameRate = try? FrameRate(frameRate ?? configuration.frameRate.framesPerSecond),
+            let updatedFrameRate = try? FrameRate(
+                frameRate ?? configuration.frameRate.framesPerSecond),
             let updatedConfiguration = try? ReplayBufferConfiguration(
                 bufferLength: bufferLength ?? configuration.bufferLength,
                 source: configuration.source,

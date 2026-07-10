@@ -51,7 +51,7 @@ struct UserDefaultsSettingsStoreTests {
             audioInputDeviceID: "mic-1", audioInputDeviceName: "Studio Mic",
             audioOnlyFormat: .alac, transcriptTurnSegmentationEnabled: false,
             cameraDeviceID: "camera-1", cameraSeparateTrack: false,
-            cameraPreviewStyle: CameraPreviewStyle(shape: .cutout, size: .large, isMirrored: false),
+            cameraPreviewStyle: CameraPreviewStyle(shape: .square, size: .large, isMirrored: false, backgroundEffect: .portraitCutout),
             cameraPreviewPlacements: try persistedCameraPreviewPlacements(),
             replayBufferConfiguration: try persistedReplayBufferConfiguration(),
             replayBufferPreferredBufferLength: 120, replayBufferResumeOnLaunch: true,

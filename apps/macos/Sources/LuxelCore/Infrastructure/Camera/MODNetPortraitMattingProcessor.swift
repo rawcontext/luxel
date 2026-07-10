@@ -7,6 +7,7 @@ import OSLog
 public enum MODNetPortraitMattingError: Error, Equatable {
     case missingModel
     case cannotCreateInputBuffer
+    case cannotCreateOutputBuffer
     case missingInputFeature
     case missingOutputFeature
     case invalidOutputDimensions(width: Int, height: Int)
@@ -23,6 +24,10 @@ public final class MODNetPortraitMattingProcessor: @unchecked Sendable {
     private let configuration: MLModelConfiguration
     private var model: MLModel?
     private var inputBuffer: CVPixelBuffer?
+    private var outputBufferPool: CVPixelBufferPool?
+    private var outputBuffers: [CVPixelBuffer] = []
+    private var nextOutputBufferIndex = 0
+    private var predictionCount = 0
 
     public init(modelURL: URL?, computeUnits: MLComputeUnits = .all) {
         self.modelURL = modelURL
@@ -59,11 +64,7 @@ public final class MODNetPortraitMattingProcessor: @unchecked Sendable {
             let model = try loadedModel()
             let buffer = try reusableInputBuffer()
             renderCenterCrop(cameraFrame, to: buffer)
-            let predictionStart = ContinuousClock.now
             let matte = try predict(model: model, inputBuffer: buffer)
-            Self.logger.debug(
-                "MODNet prediction completed in \(predictionStart.duration(to: .now).milliseconds, privacy: .public) ms"
-            )
             return matte
         }
     }
@@ -132,7 +133,10 @@ public final class MODNetPortraitMattingProcessor: @unchecked Sendable {
         let input = try MLDictionaryFeatureProvider(dictionary: [
             Self.inputName: MLFeatureValue(pixelBuffer: inputBuffer)
         ])
-        let features = try model.prediction(from: input)
+        let outputBuffer = try reusableOutputBuffer()
+        let options = MLPredictionOptions()
+        options.outputBackings = [Self.outputName: outputBuffer]
+        let features = try model.prediction(from: input, options: options)
         guard let matte = features.featureValue(for: Self.outputName)?.imageBufferValue else {
             throw MODNetPortraitMattingError.missingOutputFeature
         }
@@ -145,8 +149,61 @@ public final class MODNetPortraitMattingProcessor: @unchecked Sendable {
         guard format == kCVPixelFormatType_OneComponent16Half else {
             throw MODNetPortraitMattingError.invalidOutputPixelFormat(format)
         }
-        try Self.validateAlpha(matte)
+        predictionCount += 1
+        if predictionCount == 1 || predictionCount.isMultiple(of: Self.alphaValidationInterval) {
+            try Self.validateAlpha(matte)
+        }
         return matte
+    }
+
+    private func reusableOutputBuffer() throws -> CVPixelBuffer {
+        if outputBuffers.isEmpty {
+            try makeOutputBufferPool()
+        }
+        guard !outputBuffers.isEmpty else {
+            throw MODNetPortraitMattingError.cannotCreateOutputBuffer
+        }
+        let buffer = outputBuffers[nextOutputBufferIndex]
+        nextOutputBufferIndex = (nextOutputBufferIndex + 1) % outputBuffers.count
+        return buffer
+    }
+
+    private func makeOutputBufferPool() throws {
+        let poolAttributes: [CFString: Any] = [
+            kCVPixelBufferPoolMinimumBufferCountKey: Self.outputBufferCount
+        ]
+        let bufferAttributes: [CFString: Any] = [
+            kCVPixelBufferWidthKey: Self.inputSize,
+            kCVPixelBufferHeightKey: Self.inputSize,
+            kCVPixelBufferPixelFormatTypeKey: kCVPixelFormatType_OneComponent16Half,
+            kCVPixelBufferIOSurfacePropertiesKey: [:]
+        ]
+        var pool: CVPixelBufferPool?
+        let poolStatus = CVPixelBufferPoolCreate(
+            kCFAllocatorDefault,
+            poolAttributes as CFDictionary,
+            bufferAttributes as CFDictionary,
+            &pool
+        )
+        guard poolStatus == kCVReturnSuccess, let pool else {
+            throw MODNetPortraitMattingError.cannotCreateOutputBuffer
+        }
+
+        var buffers: [CVPixelBuffer] = []
+        for _ in 0..<Self.outputBufferCount {
+            var buffer: CVPixelBuffer?
+            let status = CVPixelBufferPoolCreatePixelBuffer(
+                kCFAllocatorDefault,
+                pool,
+                &buffer
+            )
+            guard status == kCVReturnSuccess, let buffer else {
+                throw MODNetPortraitMattingError.cannotCreateOutputBuffer
+            }
+            buffers.append(buffer)
+        }
+        outputBufferPool = pool
+        outputBuffers = buffers
     }
 
     private static func validateAlpha(_ matte: CVPixelBuffer) throws {
@@ -183,6 +240,8 @@ public final class MODNetPortraitMattingProcessor: @unchecked Sendable {
 
     private static let inputName = "cameraImage"
     private static let outputName = "alphaMatte"
+    private static let outputBufferCount = 3
+    private static let alphaValidationInterval = 30
     private static let inputExtent = CGRect(x: 0, y: 0, width: inputSize, height: inputSize)
     private static let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
     private static let logger = Logger(subsystem: "media.luxel.app", category: "CameraCutout")

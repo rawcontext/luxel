@@ -11,10 +11,6 @@ struct CameraCutoutFrame: @unchecked Sendable {
     let timestamp: CMTime
 }
 
-struct CameraCutoutRenderedFrame: @unchecked Sendable {
-    let image: CGImage
-}
-
 struct CameraCutoutSchedulerSnapshot: Equatable, Sendable {
     let inFlightCount: Int
     let pendingCount: Int
@@ -69,7 +65,6 @@ final class CameraCutoutFrameScheduler<Frame: Sendable, Output: Sendable>: @unch
             if isProcessing {
                 if pendingFrame != nil {
                     droppedFrameCount += 1
-                    Self.logger.debug("Dropped stale Cutout camera frame")
                 }
                 pendingFrame = frame
                 return nil
@@ -164,9 +159,10 @@ final class CameraCutoutFrameScheduler<Frame: Sendable, Output: Sendable>: @unch
 
 final class CameraCutoutCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate,
                                          @unchecked Sendable {
-    private let scheduler: CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutRenderedFrame>
+    private let scheduler:
+        CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>
 
-    init(scheduler: CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutRenderedFrame>) {
+    init(scheduler: CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>) {
         self.scheduler = scheduler
     }
 
@@ -187,37 +183,70 @@ final class CameraCutoutCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampl
     }
 }
 
-final class CameraCutoutSessionPipeline: @unchecked Sendable {
+final class CameraBackgroundEffectSessionPipeline: @unchecked Sendable {
     let videoOutput: AVCaptureVideoDataOutput
 
     private let captureQueue = DispatchQueue(label: "media.luxel.cameraCutout.capture")
     private let compositor: CameraCutoutCompositor
-    private let scheduler: CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutRenderedFrame>
+    private let scheduler:
+        CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>
     private let captureDelegate: CameraCutoutCaptureDelegate
+    private let telemetry: CameraBackgroundEffectTelemetry
 
     init(
-        processor: MODNetPortraitMattingProcessor,
+        effect: CameraBackgroundEffect,
+        processor: MODNetPortraitMattingProcessor?,
+        telemetry: CameraBackgroundEffectTelemetry,
         outputSize: CGSize,
         isMirrored: Bool,
-        onImage: @escaping @Sendable (CGImage) -> Void,
+        onFrame: @escaping @Sendable (CameraCutoutCompositedFrame) -> Void,
         onFailure: @escaping @Sendable (any Error) -> Void
     ) {
         let compositor = CameraCutoutCompositor()
+        if effect == .greenScreen {
+            compositor.prepareGreenScreen()
+        }
         self.compositor = compositor
-        scheduler = CameraCutoutFrameScheduler(
+        self.telemetry = telemetry
+        scheduler = CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>(
             process: { frame, generation in
-                let matte = try processor.alphaMatte(for: frame.pixelBuffer)
-                let image = try compositor.composite(
-                    cameraFrame: frame.pixelBuffer,
-                    alphaMatte: matte,
-                    outputSize: outputSize,
-                    isMirrored: isMirrored,
-                    timestamp: frame.timestamp,
-                    generation: generation
-                )
-                return CameraCutoutRenderedFrame(image: image)
+                try telemetry.measureProcessing {
+                    let output: CameraCutoutCompositedFrame?
+                    switch effect {
+                    case .none:
+                        output = nil
+                    case .portraitCutout:
+                        guard let processor else {
+                            throw MODNetPortraitMattingError.missingModel
+                        }
+                        let matte = try processor.alphaMatte(for: frame.pixelBuffer)
+                        output = try compositor.compositePortraitFrame(
+                            cameraFrame: frame.pixelBuffer,
+                            alphaMatte: matte,
+                            outputSize: outputSize,
+                            isMirrored: isMirrored,
+                            timestamp: frame.timestamp,
+                            generation: generation
+                        )
+                    case .greenScreen:
+                        output = try compositor.compositeGreenScreenFrame(
+                            cameraFrame: frame.pixelBuffer,
+                            outputSize: outputSize,
+                            isMirrored: isMirrored,
+                            timestamp: frame.timestamp
+                        )
+                    }
+                    if output == nil, effect != .none {
+                        telemetry.recordRenderDrop()
+                    }
+                    return output
+                }
             },
-            onOutput: { frame in onImage(frame.image) },
+            onOutput: { frame in
+                if let frame {
+                    onFrame(frame)
+                }
+            },
             onFailure: onFailure
         )
         captureDelegate = CameraCutoutCaptureDelegate(scheduler: scheduler)
@@ -236,7 +265,9 @@ final class CameraCutoutSessionPipeline: @unchecked Sendable {
 
     func stop() {
         videoOutput.setSampleBufferDelegate(nil, queue: nil)
+        let droppedFrameCount = scheduler.snapshot.droppedFrameCount
         scheduler.stop()
         compositor.reset()
+        telemetry.stop(droppedFrameCount: droppedFrameCount)
     }
 }
