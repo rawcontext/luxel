@@ -24,6 +24,8 @@ struct ExportJobSnapshot: Identifiable, Equatable {
         switch progress.phase {
         case .preparing:
             return LuxelLocalization.string("export.job.preparing", defaultValue: "Preparing")
+        case .enhancingAudio:
+            return "\(Int((progress.progress * 100).rounded()))%"
         case .exporting:
             return "\(Int((progress.progress * 100).rounded()))%"
         case .completed:

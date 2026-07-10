@@ -101,6 +101,7 @@ extension LuxelEditorModelTests {
         #expect(model.format == .m4a)
         #expect(model.selectedFormats == [.m4a])
         #expect(model.includesAudio)
+        #expect(model.canUseStudioVoice)
         #expect(!model.canToggleAudioInclusion)
         #expect(!model.canGrabFrame)
         #expect(!model.sourceSummary.contains("1x1"))

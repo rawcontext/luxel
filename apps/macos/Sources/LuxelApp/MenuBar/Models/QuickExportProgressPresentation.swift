@@ -8,6 +8,11 @@ struct QuickExportProgressPresentation: Equatable {
         switch snapshot.phase {
         case .preparing:
             "Preparing \(presetName)"
+        case .enhancingAudio:
+            LuxelLocalization.string(
+                "export.job.enhancingAudio",
+                defaultValue: "Enhancing audio…"
+            )
         case .exporting:
             "Exporting \(presetName)"
         case .completed:
@@ -23,7 +28,7 @@ struct QuickExportProgressPresentation: Equatable {
 
     var canCancel: Bool {
         switch snapshot.phase {
-        case .preparing, .exporting:
+        case .preparing, .enhancingAudio, .exporting:
             true
         case .completed, .canceled:
             false

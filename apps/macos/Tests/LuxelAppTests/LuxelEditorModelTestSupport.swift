@@ -9,6 +9,7 @@ extension LuxelEditorModelTests {
     func makeModel(
         metadataReader: any MediaMetadataReader = StubMetadataReader(),
         exporter: any MediaExporter = StubMediaExporter(),
+        audioPreparer: any ExportAudioPreparing = StubExportAudioPreparer(),
         exportSizeEstimator: any ExportSizeEstimator = StubExportSizeEstimator(),
         fileSystem: any FileSystem = StubFileSystem(),
         fileActionClient: any ExportedFileActionClient = StubExportedFileActionClient(),
@@ -31,6 +32,7 @@ extension LuxelEditorModelTests {
             metadataReader: metadataReader,
             exportService: ExportService(
                 exporter: exporter,
+                audioPreparer: audioPreparer,
                 fileSystem: fileSystem
             ),
             exportSizeEstimationService: ExportSizeEstimationService(
@@ -206,6 +208,20 @@ extension LuxelEditorModelTests {
     }
 }
 
+struct StubExportAudioPreparer: ExportAudioPreparing {
+    func prepareAudio(
+        for requests: [ExportRequest],
+        progress: ExportAudioPreparationProgressHandler?
+    ) async throws -> PreparedExportAudioSet {
+        for (index, request) in requests.enumerated() where request.requiresAudioPreparation {
+            await progress?(
+                ExportAudioPreparationProgress(requestIndices: [index], progress: 1)
+            )
+        }
+        return PreparedExportAudioSet()
+    }
+}
+
 enum StubError: Error {
     case importFailed
     case trashFailed
@@ -261,10 +277,11 @@ struct StubMediaExporter: MediaExporter {
     }
 
     func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
+        let request = input.request
         if let exportedMedia {
             return exportedMedia
         }
@@ -282,10 +299,11 @@ actor SpyMediaExporter: MediaExporter {
     private var captured: [(request: ExportRequest, outputFileURL: URL)] = []
 
     func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
+        let request = input.request
         captured.append((request, outputFileURL))
         return ExportedMedia(
             fileURL: outputFileURL,

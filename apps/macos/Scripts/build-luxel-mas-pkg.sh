@@ -147,6 +147,10 @@ if [[ -d "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" ]]; then
 	mkdir -p "${APP_PATH}/Contents/Resources/Models"
 	cp -R "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" "${APP_PATH}/Contents/Resources/Models/"
 fi
+if [[ -d "${PACKAGE_ROOT}/Vendor/Models/studio-voice" ]]; then
+	mkdir -p "${APP_PATH}/Contents/Resources/Models"
+	cp -R "${PACKAGE_ROOT}/Vendor/Models/studio-voice" "${APP_PATH}/Contents/Resources/Models/"
+fi
 "${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
 find "${BIN_DIR}" -maxdepth 1 -name '*.bundle' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
 find "${BIN_DIR}" -maxdepth 2 -name '*.lproj' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;

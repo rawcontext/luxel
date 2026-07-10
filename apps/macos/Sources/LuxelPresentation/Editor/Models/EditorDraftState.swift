@@ -15,6 +15,7 @@ struct EditorDraftState: Equatable, Sendable {
         shouldMute: false,
         audioVolume: 1,
         normalizeAudio: false,
+        studioVoiceEnabled: false,
         shouldCrop: true,
         quality: .balanced,
         gifLoopModeKind: .forever,
@@ -34,6 +35,7 @@ struct EditorDraftState: Equatable, Sendable {
     let shouldMute: Bool
     let audioVolume: Double
     let normalizeAudio: Bool
+    let studioVoiceEnabled: Bool
     let shouldCrop: Bool
     let quality: ExportQuality
     let gifLoopModeKind: EditorGIFLoopModeKind

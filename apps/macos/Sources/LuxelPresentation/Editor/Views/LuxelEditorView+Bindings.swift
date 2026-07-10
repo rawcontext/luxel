@@ -34,6 +34,14 @@ extension LuxelEditorView {
         }
     }
 
+    var studioVoiceSelection: Binding<Bool> {
+        Binding {
+            model.studioVoiceEnabled
+        } set: { enabled in
+            model.setStudioVoiceEnabled(enabled)
+        }
+    }
+
     var qualitySelection: Binding<ExportQuality> {
         Binding {
             model.quality

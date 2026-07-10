@@ -609,6 +609,7 @@ extension LuxelEditorModel {
 
     func clearSource() {
         source = nil
+        studioVoiceEnabled = false
         recordingNavigationIndex = nil
         exportProgress = nil
         exportJobs = []
@@ -904,6 +905,7 @@ extension LuxelEditorModel {
             frameRate: FrameRate(frameRate),
             shouldMute: hasAudioOnlySource ? false : shouldMute,
             audioMix: currentAudioMixPlan(),
+            studioVoiceEnabled: studioVoiceEnabled,
             shouldCrop: hasVideoSource && shouldCrop,
             quality: quality,
             speed: playbackSpeed,
@@ -920,6 +922,7 @@ extension LuxelEditorModel {
             timeRange: TimeRange(start: trimStart, end: trimEnd),
             shouldMute: source.isAudioOnly ? false : shouldMute,
             audioMix: currentAudioMixPlan(),
+            studioVoiceEnabled: studioVoiceEnabled,
             shouldCrop: source.hasVideo && shouldCrop,
             quality: quality,
             speed: playbackSpeed,

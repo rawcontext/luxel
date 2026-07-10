@@ -5,10 +5,11 @@ public struct AV1MediaExporter: MediaExporter, Sendable {
     public init() {}
 
     public func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia {
+        let request = input.request
         guard request.format == .av1 else {
             throw AV1CodecError.unsupportedFormat(request.format)
         }
@@ -18,7 +19,7 @@ public struct AV1MediaExporter: MediaExporter, Sendable {
             videoEncoder: SVTAV1VideoEncoder(),
             audioEncoder: PCM16AudioPassthroughEncoder(),
             muxer: AV1MP4Muxer()
-        ).export(request, to: outputFileURL, progress: progress)
+        ).export(input, to: outputFileURL, progress: progress)
     }
 }
 

@@ -46,6 +46,20 @@ public struct AudioMixResolutionService: Sendable {
         return mixPlan.resolvedGains(measuredPeaks: measuredPeaks)
     }
 
+    public func resolvedGains(
+        for request: ExportRequest,
+        measuredPeaks: [AudioTrackKind: Double]
+    ) -> [AudioTrackKind: Double] {
+        let mixPlan = request.audioMix ?? AudioMixPlan(
+            tracks: [AudioTrackMix(kind: .system)]
+        )
+        guard !request.outputShouldMute else {
+            return mutedGains(for: mixPlan)
+        }
+
+        return mixPlan.resolvedGains(measuredPeaks: measuredPeaks)
+    }
+
     private static func defaultMixPlan(for sourceAudioTracks: [AudioTrackKind]) -> AudioMixPlan {
         AudioMixPlan(tracks: sourceAudioTracks.map { AudioTrackMix(kind: $0) })
     }

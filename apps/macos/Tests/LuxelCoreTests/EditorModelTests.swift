@@ -20,6 +20,7 @@ struct EditorModelTests {
         #expect(request.timeRange == fullRange)
         #expect(!request.shouldMute)
         #expect(request.audioMix == nil)
+        #expect(!request.studioVoiceEnabled)
         #expect(!request.shouldCrop)
         #expect(request.cropRect == nil)
         #expect(request.quality == .balanced)
@@ -69,6 +70,7 @@ struct EditorModelTests {
             frameRate: FrameRate(12),
             shouldMute: true,
             audioMix: audioMix,
+            studioVoiceEnabled: true,
             shouldCrop: true,
             cropRect: cropRect,
             quality: .high,
@@ -95,6 +97,7 @@ struct EditorModelTests {
         #expect(request.timeRange == trimRange)
         #expect(request.outputShouldMute)
         #expect(request.audioMix == audioMix)
+        #expect(request.studioVoiceEnabled)
         #expect(request.shouldCrop)
         #expect(request.cropRect == cropRect)
         #expect(request.quality == .high)
@@ -130,6 +133,7 @@ struct EditorModelTests {
         #expect(draft.speed == .normal)
         #expect(draft.gifOptions == nil)
         #expect(draft.audioMix == nil)
+        #expect(!draft.studioVoiceEnabled)
         #expect(draft.cropRect == nil)
         #expect(draft.cursorOptions == nil)
         #expect(draft.keystrokeOptions == nil)
@@ -140,6 +144,7 @@ struct EditorModelTests {
         #expect(try draft.exportRequest.speed == .normal)
         #expect(try draft.exportRequest.gifOptions == nil)
         #expect(try draft.exportRequest.audioMix == nil)
+        #expect(try !draft.exportRequest.studioVoiceEnabled)
         #expect(try draft.exportRequest.cursorOptions == nil)
         #expect(try draft.exportRequest.keystrokeOptions == nil)
         #expect(try draft.exportRequest.captionOptions == nil)

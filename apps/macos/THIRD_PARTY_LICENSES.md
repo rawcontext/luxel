@@ -8,6 +8,8 @@ Luxel ships the following third-party components:
 4. Swift Argument Parser — Apache License 2.0 (with Runtime Library Exception) — bundled `luxel` command-line tool
 5. FluidAudio — Apache License 2.0 — local speaker diarization engine
 6. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
+7. aufklarer/DeepFilterNet3-CoreML — Apache License 2.0 — bundled Studio Voice Core ML model
+8. soniqo/speech-swift — Apache License 2.0 — adapted Studio Voice signal-processing runtime
 
 The full license text and attribution for each component follow, in the same order.
 
@@ -275,10 +277,37 @@ Note: bundling is redistribution under CC-BY-4.0. Attribution and
 redistribution behavior must be reviewed by product/legal before shipping the
 diarization feature (tracked in docs/plans/optional-speaker-diarization.md).
 
+## aufklarer/DeepFilterNet3-CoreML (bundled model)
+
+Luxel bundles the `aufklarer/DeepFilterNet3-CoreML` model at revision
+`937bad9811f1ffc1a06ea0d676461b080b2bdc93` in
+`Contents/Resources/Models/studio-voice` for local Studio Voice export.
+
+License: Apache License 2.0 (selected for the dual-licensed DeepFilterNet model
+weights and the Core ML conversion; full text reproduced below)
+
+Base model: Rikorose/DeepFilterNet3
+
+Model card: https://huggingface.co/aufklarer/DeepFilterNet3-CoreML
+
+## soniqo/speech-swift (adapted runtime)
+
+Luxel includes a modified, narrow adaptation of the DeepFilterNet3 signal
+processing code from `soniqo/speech-swift` v0.0.21 at revision
+`7609977be837a6529bd04300c6b963e735300070`. The adaptation removes MLX,
+downloader, cache, and unrelated speech-model dependencies; it loads only the
+explicit model and auxiliary-data URLs supplied by Luxel and processes bounded
+PCM windows.
+
+License: Apache License 2.0 (full text reproduced below)
+
+Upstream: https://github.com/soniqo/speech-swift
+
 ## Apache License, Version 2.0
 
 The following license text applies to Swift Argument Parser (together with the
-Runtime Library Exception noted above) and to FluidAudio.
+Runtime Library Exception noted above), FluidAudio, DeepFilterNet3-CoreML, and
+the adapted speech-swift runtime.
 
                                  Apache License
                            Version 2.0, January 2004

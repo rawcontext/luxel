@@ -1,8 +1,10 @@
+import AVFAudio
+import AudioToolbox
 import Foundation
 import LuxelCore
 import Testing
 
-@Suite("AVAssetReader codec media source")
+@Suite("AVAssetReader codec media source", .serialized)
 struct AVAssetReaderCodecMediaSourceTests {
     @Test("source emits output-sized I420 frames")
     func sourceEmitsOutputSizedI420Frames() async throws {
@@ -75,6 +77,38 @@ struct AVAssetReaderCodecMediaSourceTests {
         #expect(try await mediaSource.nextAudioChunk() == nil)
     }
 
+    @Test("source reads full zero-based prepared PCM instead of original audio")
+    func sourceReadsPreparedAudio() async throws {
+        let preparedURL = FileManager.default.temporaryDirectory
+            .appending(path: "codec-prepared-\(UUID().uuidString).caf")
+        defer { try? FileManager.default.removeItem(at: preparedURL) }
+        try writeSilentPCM(to: preparedURL, duration: 0.3)
+        let request = try makeRequest(
+            fileName: "input@2x.mp4",
+            pixelSize: PixelSize(width: 320, height: 180)
+        )
+        let mediaSource = AVAssetReaderCodecMediaSource()
+
+        let description = try await mediaSource.prepare(
+            MediaExportInput(
+                request: request,
+                preparedAudio: PreparedAudioAsset(
+                    fileURL: preparedURL,
+                    duration: 0.3,
+                    sampleRate: 48_000,
+                    channelCount: 2
+                )
+            )
+        )
+        _ = try await collectVideoFrames(from: mediaSource)
+        let chunks = try await collectAudioChunks(from: mediaSource)
+
+        #expect(description.hasAudio)
+        #expect(!chunks.isEmpty)
+        #expect(chunks[0].presentationTime == 0)
+        #expect(chunks.flatMap { $0.pcmData }.allSatisfy { $0 == 0 })
+    }
+
     private func collectVideoFrames(
         from mediaSource: AVAssetReaderCodecMediaSource
     ) async throws -> [CodecVideoFrame] {
@@ -119,6 +153,35 @@ struct AVAssetReaderCodecMediaSourceTests {
         try packageRootURL()
             .appending(path: "Tests/Fixtures")
             .appending(path: fileName)
+    }
+
+    private func writeSilentPCM(to url: URL, duration: TimeInterval) throws {
+        let format = try #require(
+            AVAudioFormat(
+                commonFormat: .pcmFormatFloat32,
+                sampleRate: 48_000,
+                channels: 2,
+                interleaved: false
+            )
+        )
+        let frameCount = AVAudioFrameCount(duration * 48_000)
+        let buffer = try #require(
+            AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
+        )
+        buffer.frameLength = frameCount
+        let file = try AVAudioFile(
+            forWriting: url,
+            settings: [
+                AVFormatIDKey: kAudioFormatLinearPCM,
+                AVSampleRateKey: 48_000,
+                AVNumberOfChannelsKey: 2,
+                AVLinearPCMBitDepthKey: 32,
+                AVLinearPCMIsFloatKey: true
+            ],
+            commonFormat: .pcmFormatFloat32,
+            interleaved: false
+        )
+        try file.write(from: buffer)
     }
 
     private func packageRootURL() throws -> URL {

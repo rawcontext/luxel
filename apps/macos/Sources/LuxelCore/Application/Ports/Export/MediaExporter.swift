@@ -34,9 +34,38 @@ public struct ExportedMedia: Equatable, Sendable {
 
 public typealias MediaExportProgressHandler = @Sendable (Double) async -> Void
 
+public struct PreparedAudioAsset: Equatable, Sendable {
+    public let fileURL: URL
+    public let duration: TimeInterval
+    public let sampleRate: Int
+    public let channelCount: Int
+
+    public init(
+        fileURL: URL,
+        duration: TimeInterval,
+        sampleRate: Int,
+        channelCount: Int
+    ) {
+        self.fileURL = fileURL
+        self.duration = duration
+        self.sampleRate = sampleRate
+        self.channelCount = channelCount
+    }
+}
+
+public struct MediaExportInput: Sendable {
+    public let request: ExportRequest
+    public let preparedAudio: PreparedAudioAsset?
+
+    public init(request: ExportRequest, preparedAudio: PreparedAudioAsset? = nil) {
+        self.request = request
+        self.preparedAudio = preparedAudio
+    }
+}
+
 public protocol MediaExporter: Sendable {
     func export(
-        _ request: ExportRequest,
+        _ input: MediaExportInput,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
     ) async throws -> ExportedMedia
@@ -46,4 +75,28 @@ extension MediaExporter {
     public func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
         try await export(request, to: outputFileURL, progress: nil)
     }
+
+    public func export(
+        _ request: ExportRequest,
+        to outputFileURL: URL,
+        progress: MediaExportProgressHandler?
+    ) async throws -> ExportedMedia {
+        guard !request.shouldApplyStudioVoice else {
+            throw MediaExporterError.preparedAudioRequired
+        }
+
+        return try await export(
+            MediaExportInput(request: request),
+            to: outputFileURL,
+            progress: progress
+        )
+    }
+
+    public func export(_ input: MediaExportInput, to outputFileURL: URL) async throws -> ExportedMedia {
+        try await export(input, to: outputFileURL, progress: nil)
+    }
+}
+
+public enum MediaExporterError: Error, Equatable {
+    case preparedAudioRequired
 }
