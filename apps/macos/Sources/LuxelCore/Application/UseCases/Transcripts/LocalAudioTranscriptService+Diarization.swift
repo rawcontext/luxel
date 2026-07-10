@@ -107,12 +107,16 @@ extension LocalAudioTranscriptService {
         let namespaceBySource = extractionPlans.count > 1
         var collection = DiarizationCollection()
         for plan in extractionPlans {
+            let speakerCountHint =
+                namespaceBySource && plan.source == .microphone
+                ? TranscriptSpeakerCountHint.exact(1)
+                : request.speakerCountHint
             let output = try await diarizer.diarize(
                 SpeakerDiarizationRequest(
                     audioURL: request.audioURL,
                     audioTrackIndex: plan.audioTrackIndex,
                     modelRevision: request.speakerModelRevision,
-                    speakerCountHint: request.speakerCountHint
+                    speakerCountHint: speakerCountHint
                 ))
             let namespace = namespaceBySource ? plan.source?.rawValue : nil
             let segments = output.segments.map {
