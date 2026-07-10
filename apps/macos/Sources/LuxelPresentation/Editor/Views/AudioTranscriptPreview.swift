@@ -51,6 +51,7 @@ struct AudioTranscriptPreview: View {
                     }
                     .buttonStyle(.glassProminent)
                     .controlSize(.regular)
+                    .help("Turn speech recognition on for this recording.")
 
                     if model.canCloseTranscriptPanel {
                         closeTranscriptButton
@@ -131,6 +132,7 @@ struct AudioTranscriptPreview: View {
                 }
                 .buttonStyle(.glassProminent)
                 .controlSize(.regular)
+                .help("Turn speech recognition on for this recording.")
 
                 if model.canCloseTranscriptPanel {
                     closeTranscriptButton
@@ -168,6 +170,7 @@ struct AudioTranscriptPreview: View {
                     model.refreshTranscriptionConfiguration()
                 }
                 .buttonStyle(.glass)
+                .help("Try generating the transcript again.")
             }
             .padding(14)
         }

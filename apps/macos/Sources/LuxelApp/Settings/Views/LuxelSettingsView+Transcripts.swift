@@ -145,11 +145,11 @@ extension LuxelSettingsView {
                     }
 
                     Spacer(minLength: 16)
-
                     Toggle("Precision Transcription", isOn: precisionToggleBinding)
                         .toggleStyle(LuxelGlassSwitchToggleStyle(showsLabel: false))
                         .disabled(precisionToggleIsLocked)
                         .accessibilityLabel("Precision Transcription")
+                        .help("Install, enable, or remove higher-accuracy local transcription.")
                 }
 
                 if let progress = precisionModelProgress {

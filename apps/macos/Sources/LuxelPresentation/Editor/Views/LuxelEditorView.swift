@@ -326,6 +326,7 @@ extension LuxelEditorView {
                     .onExitCommand {
                         cancelFileNameEdit(source)
                     }
+                    .help("Edit the recording filename.")
             } else {
                 Button {
                     beginFileNameEdit(source)
@@ -461,6 +462,7 @@ extension LuxelEditorView {
         .menuStyle(.button)
         .buttonStyle(.plain)
         .fixedSize()
+        .help("Choose the export file format.")
     }
 
     private func formatMenuTitle(for format: ExportFormat) -> String {
@@ -488,6 +490,7 @@ extension LuxelEditorView {
         .buttonStyle(.plain)
         .fixedSize()
         .accessibilityLabel("Quality")
+        .help("Choose the export quality and file size.")
     }
 
     private var studioVoiceAccessibilityHint: LocalizedStringKey {
@@ -502,6 +505,7 @@ extension LuxelEditorView {
             Toggle("Include Audio", isOn: includeAudioSelection)
                 .toggleStyle(LuxelGlassCheckboxToggleStyle())
                 .disabled(!model.canToggleAudioInclusion)
+                .help("Include the source audio in the export.")
 
             if model.includesAudio {
                 VStack(alignment: .leading, spacing: 8) {
@@ -523,23 +527,18 @@ extension LuxelEditorView {
                     )
                     .controlSize(.small)
                     .disabled(!model.canAdjustAudioMix)
+                    .help("Adjust the exported audio volume.")
 
                     Toggle("Normalize Audio", isOn: normalizeAudioSelection)
                         .toggleStyle(LuxelGlassCheckboxToggleStyle())
                         .disabled(!model.canAdjustAudioMix)
+                        .help("Raise or lower audio to a safe peak level.")
 
                     Toggle("Studio Voice", isOn: studioVoiceSelection)
                         .toggleStyle(LuxelGlassCheckboxToggleStyle())
                         .disabled(!model.canUseStudioVoice)
                         .help("Reduce background noise and improve spoken audio during export.")
                         .accessibilityHint(studioVoiceAccessibilityHint)
-
-                    if model.studioVoiceEnabled {
-                        Text("Applied to the exported audio; preview is unchanged.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.45))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
                 }
             }
         }
@@ -560,6 +559,7 @@ extension LuxelEditorView {
         }
         .buttonStyle(LuxelGlassPillButtonStyle())
         .disabled(!model.canSaveOriginal)
+        .help("Save an unchanged copy of the recording.")
     }
 
     private var exportButton: some View {
@@ -575,6 +575,7 @@ extension LuxelEditorView {
         }
         .buttonStyle(LuxelGlassPillButtonStyle(isProminent: true))
         .disabled(!model.canExport)
+        .help("Export with the selected settings.")
     }
 
     private var gifControls: some View {
@@ -587,6 +588,7 @@ extension LuxelEditorView {
                     kind.label
                 }
                 .accessibilityLabel("Loop")
+                .help("Choose how the GIF repeats.")
             }
 
             if model.gifLoopModeKind == .count {
@@ -596,6 +598,7 @@ extension LuxelEditorView {
                             .font(.system(size: 12, design: .monospaced))
                             .foregroundStyle(.white.opacity(0.9))
                     }
+                    .help("Set how many times the GIF repeats.")
                 }
             }
 
@@ -607,6 +610,7 @@ extension LuxelEditorView {
                     gifDitheringLabel(mode)
                 }
                 .accessibilityLabel("Dithering")
+                .help("Control how GIF colors are blended.")
             }
         }
     }
@@ -645,6 +649,7 @@ extension LuxelEditorView {
                     slider: Slider(
                         value: trimStartSelection, in: 0...max(model.duration, model.minimumTrimDuration))
                 )
+                .help("Choose where the exported clip starts.")
 
                 timelineSliderRow(
                     "End",
@@ -654,6 +659,7 @@ extension LuxelEditorView {
                         in: model.minimumTrimDuration...max(model.duration, model.minimumTrimDuration)
                     )
                 )
+                .help("Choose where the exported clip ends.")
 
                 HStack {
                     Text("Output Duration")
@@ -683,11 +689,13 @@ extension LuxelEditorView {
                             preset?.label ?? "Custom"
                         }
                         .accessibilityLabel("Size")
+                        .help("Choose how much to resize exported video.")
                     }
 
                     controlRow("Fit") {
                         Toggle("Crop to Fill", isOn: shouldCropSelection)
                             .toggleStyle(LuxelGlassCheckboxToggleStyle())
+                            .help("Crop the video to fill the output dimensions.")
                     }
 
                     LuxelGlassRowDivider()
@@ -697,7 +705,7 @@ extension LuxelEditorView {
                             "Width",
                             value: outputWidthSelection,
                             range: 1...8192,
-                            unitHelp: "Pixels",
+                            help: "Set the exported width in pixels.",
                             step: 2,
                             shiftedStep: 100
                         )
@@ -708,7 +716,7 @@ extension LuxelEditorView {
                             "Height",
                             value: outputHeightSelection,
                             range: 1...8192,
-                            unitHelp: "Pixels",
+                            help: "Set the exported height in pixels.",
                             step: 2,
                             shiftedStep: 100
                         )
@@ -719,7 +727,7 @@ extension LuxelEditorView {
                             "Frame Rate",
                             value: frameRateSelection,
                             range: 1...model.maximumFrameRate,
-                            unitHelp: "Frames per second",
+                            help: "Set the exported frame rate.",
                             step: 1,
                             shiftedStep: 10
                         )
@@ -733,7 +741,7 @@ extension LuxelEditorView {
                         "Speed",
                         value: playbackSpeedSelection,
                         range: 0.1...10,
-                        unitHelp: "Playback speed multiplier",
+                        help: "Set the exported playback speed.",
                         step: 0.1,
                         shiftedStep: 0.5
                     )
@@ -775,7 +783,7 @@ extension LuxelEditorView {
                         .contentShape(Capsule(style: .continuous))
                     }
                     .buttonStyle(.plain)
-                    .help(model.outputDirectory.path)
+                    .help("Choose where to save the exported file.")
                 }
             }
         }
@@ -839,7 +847,7 @@ extension LuxelEditorView {
         _ title: String,
         value: Binding<Int>,
         range: ClosedRange<Int>,
-        unitHelp: String,
+        help: LocalizedStringKey,
         step: Int,
         shiftedStep: Int
     ) -> some View {
@@ -857,14 +865,14 @@ extension LuxelEditorView {
             value.wrappedValue = max(
                 range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep))
         }
-        .help(unitHelp)
+        .help(help)
     }
 
     private func doubleStepperField(
         _ title: String,
         value: Binding<Double>,
         range: ClosedRange<Double>,
-        unitHelp: String,
+        help: LocalizedStringKey,
         step: Double,
         shiftedStep: Double
     ) -> some View {
@@ -882,7 +890,7 @@ extension LuxelEditorView {
             value.wrappedValue = roundedSpeed(
                 max(range.lowerBound, value.wrappedValue - currentStep(step, shiftedStep)))
         }
-        .help(unitHelp)
+        .help(help)
     }
 
     private func currentStep<T>(_ step: T, _ shiftedStep: T) -> T {

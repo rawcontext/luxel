@@ -89,6 +89,7 @@ struct EditorSpeakersCard: View {
             .labelsHidden()
             .pickerStyle(.segmented)
             .controlSize(.small)
+            .help("Choose how Luxel estimates the number of speakers.")
 
             switch model.speakerCountMode {
             case .automatic:
@@ -290,6 +291,7 @@ struct EditorSpeakersCard: View {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(.black.opacity(0.22))
         }
+        .help("Enter a name for this voice.")
     }
 
     private func saveButton(for voice: DetectedSpeakerVoice, trimmedName: String) -> some View {

@@ -301,6 +301,7 @@ private struct TranscriptSearchControl: View {
                     .onSubmit {
                         selectNext()
                     }
+                    .help("Search the transcript.")
 
                 Text(counterText)
                     .font(.system(size: 10.5, weight: .semibold).monospacedDigit())

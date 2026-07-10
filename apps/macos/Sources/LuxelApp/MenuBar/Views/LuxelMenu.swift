@@ -252,6 +252,7 @@ extension LuxelMenu {
         .buttonStyle(.plain)
         .luxelIslandControlGroupBackground(cornerRadius: Self.deviceControlCornerRadius)
         .frame(height: Self.deviceControlHeight)
+        .help("More Luxel actions.")
     }
 
     private var microphoneFooterControl: some View {

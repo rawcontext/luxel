@@ -49,6 +49,7 @@ struct EditorDisclosureCard<Content: View>: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .help(disclosureHelp)
 
             if isExpanded {
                 content
@@ -58,5 +59,9 @@ struct EditorDisclosureCard<Content: View>: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var disclosureHelp: LocalizedStringKey {
+        isExpanded ? "Collapse these options." : "Expand these options."
     }
 }

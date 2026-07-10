@@ -3214,61 +3214,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "Größe des exportierten Videos auswählen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "Elige cuánto se redimensiona el vídeo exportado."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "Choisissez le redimensionnement de la vidéo exportée."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "Scegli quanto ridimensionare il video esportato."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "書き出すビデオのサイズ変更量を選択します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "내보낼 비디오의 크기 조절 정도를 선택합니다."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "Chọn mức thay đổi kích thước video xuất."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "选择导出视频的缩放程度。"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "Escolha quanto redimensionar o vídeo exportado."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose how much to resize exported video."
+            "value": "Escolha quanto redimensionar o vídeo exportado."
           }
         }
       }
@@ -3569,61 +3569,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "Dateiformat für den Export auswählen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "Elige el formato del archivo exportado."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "Choisissez le format du fichier exporté."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "Scegli il formato del file da esportare."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "書き出すファイル形式を選択します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "내보낼 파일 형식을 선택합니다."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "Chọn định dạng tệp xuất."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "选择导出文件格式。"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "Escolha o formato do arquivo exportado."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose the export file format."
+            "value": "Escolha o formato do ficheiro exportado."
           }
         }
       }
@@ -35164,61 +35164,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "Hintergrundgeräusche reduzieren und Sprache beim Export verbessern."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "Reduce el ruido de fondo y mejora la voz durante la exportación."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "Réduisez le bruit de fond et améliorez la voix lors de l’exportation."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "Riduci il rumore di fondo e migliora il parlato durante l’esportazione."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "書き出し時に背景ノイズを減らし、音声を聞き取りやすくします。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "내보낼 때 배경 소음을 줄이고 음성을 개선합니다."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "Giảm tiếng ồn nền và cải thiện lời nói khi xuất."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "导出时减少背景噪音并改善语音。"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "Reduza o ruído de fundo e melhore a fala durante a exportação."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduce background noise and improve spoken audio during export."
+            "value": "Reduza o ruído de fundo e melhore a fala durante a exportação."
           }
         }
       }
@@ -35235,132 +35235,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
+            "value": "Wird lokal ausgeführt, ist für Sprache vorgesehen und nur beim Export aktiv. Musik und Soundeffekte können sich verändern."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
+            "value": "Se ejecuta localmente, está pensado para voz y solo se aplica al exportar. La música y los efectos de sonido pueden cambiar."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
+            "value": "Fonctionne localement, est conçu pour la voix et ne s’applique que lors de l’exportation. La musique et les effets sonores peuvent changer."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
+            "value": "Funziona localmente, è pensato per il parlato e viene applicato solo durante l’esportazione. Musica ed effetti sonori potrebbero cambiare."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
+            "value": "ローカルで実行され、音声向けで、書き出し時にのみ適用されます。音楽や効果音が変化する場合があります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
+            "value": "로컬에서 실행되며 음성용이고 내보낼 때만 적용됩니다. 음악과 음향 효과가 달라질 수 있습니다."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
+            "value": "Chạy cục bộ, dành cho giọng nói và chỉ áp dụng khi xuất. Nhạc và hiệu ứng âm thanh có thể thay đổi."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
+            "value": "在本机运行，专为语音设计，并且仅在导出时应用。音乐和音效可能会发生变化。"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
+            "value": "É executado localmente, foi criado para fala e só é aplicado durante a exportação. Músicas e efeitos sonoros podem mudar."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Runs locally, is intended for speech, and is applied only during export. Music and sound effects may change."
-          }
-        }
-      }
-    },
-    "Applied to the exported audio; preview is unchanged.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applied to the exported audio; preview is unchanged."
+            "value": "É executado localmente, foi concebido para fala e só é aplicado durante a exportação. A música e os efeitos sonoros podem mudar."
           }
         }
       }
@@ -35929,6 +35858,1994 @@
           "stringUnit": {
             "state": "translated",
             "value": "Studio Voice could not create its temporary export audio."
+          }
+        }
+      }
+    },
+    "Edit the recording filename.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit the recording filename."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dateinamen der Aufnahme bearbeiten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar el nombre de archivo de la grabación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifier le nom du fichier de l’enregistrement."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modifica il nome file della registrazione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録画のファイル名を編集します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "녹화 파일 이름을 편집합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉnh sửa tên tệp bản ghi."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑录制文件名。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edite o nome do arquivo da gravação."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edite o nome do ficheiro da gravação."
+          }
+        }
+      }
+    },
+    "Choose the export quality and file size.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the export quality and file size."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportqualität und Dateigröße auswählen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige la calidad de exportación y el tamaño de archivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez la qualité d’exportation et la taille du fichier."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli la qualità di esportazione e le dimensioni del file."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出し品質とファイルサイズを選択します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내보내기 품질과 파일 크기를 선택합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn chất lượng xuất và kích thước tệp."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择导出质量和文件大小。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha a qualidade da exportação e o tamanho do arquivo."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha a qualidade da exportação e o tamanho do ficheiro."
+          }
+        }
+      }
+    },
+    "Include the source audio in the export.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Include the source audio in the export."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quellaudio in den Export aufnehmen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluye el audio original en la exportación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluez l’audio source dans l’exportation."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includi l’audio sorgente nell’esportazione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "元の音声を書き出しに含めます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "원본 오디오를 내보내기에 포함합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bao gồm âm thanh nguồn trong bản xuất."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在导出中包含源音频。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inclua o áudio original na exportação."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inclua o áudio de origem na exportação."
+          }
+        }
+      }
+    },
+    "Adjust the exported audio volume.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust the exported audio volume."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lautstärke des exportierten Audios anpassen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajusta el volumen del audio exportado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglez le volume de l’audio exporté."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regola il volume dell’audio esportato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出す音声の音量を調整します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내보낼 오디오 음량을 조절합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điều chỉnh âm lượng của âm thanh xuất."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "调整导出音频的音量。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajuste o volume do áudio exportado."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajuste o volume do áudio exportado."
+          }
+        }
+      }
+    },
+    "Raise or lower audio to a safe peak level.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise or lower audio to a safe peak level."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio auf einen sicheren Spitzenpegel anheben oder absenken."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sube o baja el audio hasta un nivel máximo seguro."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Augmentez ou réduisez l’audio jusqu’à un niveau de crête sûr."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alza o abbassa l’audio a un livello di picco sicuro."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声を安全なピークレベルに調整します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오를 안전한 최대 레벨로 높이거나 낮춥니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tăng hoặc giảm âm thanh đến mức đỉnh an toàn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将音频提高或降低到安全的峰值电平。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aumente ou reduza o áudio até um nível de pico seguro."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aumente ou reduza o áudio até um nível de pico seguro."
+          }
+        }
+      }
+    },
+    "Save an unchanged copy of the recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save an unchanged copy of the recording."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine unveränderte Kopie der Aufnahme sichern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guarda una copia sin cambios de la grabación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrez une copie inchangée de l’enregistrement."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva una copia invariata della registrazione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録画の変更されていないコピーを保存します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "녹화의 변경되지 않은 사본을 저장합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu một bản sao không thay đổi của bản ghi."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存一份未经更改的录制副本。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salve uma cópia inalterada da gravação."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guarde uma cópia inalterada da gravação."
+          }
+        }
+      }
+    },
+    "Export with the selected settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export with the selected settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit den ausgewählten Einstellungen exportieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporta con los ajustes seleccionados."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportez avec les réglages sélectionnés."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esporta con le impostazioni selezionate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選択した設定で書き出します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 설정으로 내보냅니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xuất với các cài đặt đã chọn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用所选设置导出。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporte com as configurações selecionadas."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporte com as definições selecionadas."
+          }
+        }
+      }
+    },
+    "Choose how the GIF repeats.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose how the GIF repeats."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Festlegen, wie sich das GIF wiederholt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige cómo se repite el GIF."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez le mode de répétition du GIF."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli come ripetere la GIF."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIFの繰り返し方法を選択します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF 반복 방식을 선택합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn cách GIF lặp lại."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择 GIF 的重复方式。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha como o GIF se repete."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha como o GIF se repete."
+          }
+        }
+      }
+    },
+    "Set how many times the GIF repeats.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set how many times the GIF repeats."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anzahl der GIF-Wiederholungen festlegen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Define cuántas veces se repite el GIF."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Définissez le nombre de répétitions du GIF."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imposta quante volte ripetere la GIF."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIFの繰り返し回数を設定します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF 반복 횟수를 설정합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt số lần GIF lặp lại."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置 GIF 的重复次数。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina quantas vezes o GIF se repete."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina quantas vezes o GIF se repete."
+          }
+        }
+      }
+    },
+    "Control how GIF colors are blended.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control how GIF colors are blended."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Festlegen, wie GIF-Farben gemischt werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controla cómo se mezclan los colores del GIF."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contrôlez le mélange des couleurs du GIF."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controlla come vengono miscelati i colori della GIF."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIFの色の混合方法を調整します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GIF 색상 혼합 방식을 조절합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm soát cách pha trộn màu GIF."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "控制 GIF 颜色的混合方式。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controle como as cores do GIF são misturadas."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controle como as cores do GIF são misturadas."
+          }
+        }
+      }
+    },
+    "Choose where the exported clip starts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose where the exported clip starts."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startpunkt des exportierten Clips auswählen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige dónde empieza el clip exportado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez le début du clip exporté."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli il punto iniziale della clip esportata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出すクリップの開始位置を選択します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내보낼 클립의 시작 지점을 선택합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn điểm bắt đầu của đoạn clip xuất."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择导出片段的开始位置。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha onde o clipe exportado começa."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha onde o clipe exportado começa."
+          }
+        }
+      }
+    },
+    "Choose where the exported clip ends.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose where the exported clip ends."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endpunkt des exportierten Clips auswählen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige dónde termina el clip exportado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez la fin du clip exporté."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli il punto finale della clip esportata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出すクリップの終了位置を選択します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내보낼 클립의 끝 지점을 선택합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn điểm kết thúc của đoạn clip xuất."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择导出片段的结束位置。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha onde o clipe exportado termina."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha onde o clipe exportado termina."
+          }
+        }
+      }
+    },
+    "Crop the video to fill the output dimensions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crop the video to fill the output dimensions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video zuschneiden, um die Ausgabeabmessungen auszufüllen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recorta el vídeo para llenar las dimensiones de salida."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recadrez la vidéo pour remplir les dimensions de sortie."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ritaglia il video per riempire le dimensioni di output."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出力サイズを埋めるようにビデオを切り抜きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "출력 크기를 채우도록 비디오를 자릅니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cắt video để lấp đầy kích thước đầu ra."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "裁剪视频以填满输出尺寸。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recorte o vídeo para preencher as dimensões de saída."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recorte o vídeo para preencher as dimensões de saída."
+          }
+        }
+      }
+    },
+    "Set the exported width in pixels.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the exported width in pixels."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportbreite in Pixeln festlegen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Define el ancho exportado en píxeles."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Définissez la largeur exportée en pixels."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imposta la larghezza esportata in pixel."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出す幅をピクセル単位で設定します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내보낼 너비를 픽셀 단위로 설정합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt chiều rộng xuất theo pixel."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置导出的宽度（像素）。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina a largura exportada em pixels."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina a largura exportada em píxeis."
+          }
+        }
+      }
+    },
+    "Set the exported height in pixels.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the exported height in pixels."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exporthöhe in Pixeln festlegen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Define el alto exportado en píxeles."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Définissez la hauteur exportée en pixels."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imposta l’altezza esportata in pixel."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出す高さをピクセル単位で設定します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내보낼 높이를 픽셀 단위로 설정합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt chiều cao xuất theo pixel."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置导出的高度（像素）。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina a altura exportada em pixels."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina a altura exportada em píxeis."
+          }
+        }
+      }
+    },
+    "Set the exported frame rate.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the exported frame rate."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildrate für den Export festlegen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Define la frecuencia de fotogramas exportada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Définissez la fréquence d’images exportée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imposta la frequenza fotogrammi esportata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出すフレームレートを設定します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내보낼 프레임률을 설정합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt tốc độ khung hình xuất."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置导出帧率。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina a taxa de quadros da exportação."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina a taxa de fotogramas da exportação."
+          }
+        }
+      }
+    },
+    "Set the exported playback speed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set the exported playback speed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiedergabegeschwindigkeit für den Export festlegen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Define la velocidad de reproducción exportada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Définissez la vitesse de lecture exportée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imposta la velocità di riproduzione esportata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出す再生速度を設定します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내보낼 재생 속도를 설정합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đặt tốc độ phát khi xuất."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置导出播放速度。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina a velocidade de reprodução da exportação."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defina a velocidade de reprodução da exportação."
+          }
+        }
+      }
+    },
+    "Choose where to save the exported file.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose where to save the exported file."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speicherort für die exportierte Datei auswählen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige dónde guardar el archivo exportado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez où enregistrer le fichier exporté."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli dove salvare il file esportato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "書き出したファイルの保存先を選択します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내보낸 파일을 저장할 위치를 선택합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn nơi lưu tệp xuất."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择导出文件的保存位置。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha onde salvar o arquivo exportado."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha onde guardar o ficheiro exportado."
+          }
+        }
+      }
+    },
+    "Choose how Luxel estimates the number of speakers.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose how Luxel estimates the number of speakers."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Festlegen, wie Luxel die Anzahl der Sprecher schätzt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige cómo calcula Luxel el número de hablantes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez comment Luxel estime le nombre de locuteurs."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli come Luxel stima il numero di parlanti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luxelが話者数を推定する方法を選択します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luxel이 화자 수를 추정하는 방식을 선택합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn cách Luxel ước tính số người nói."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择 Luxel 估算说话者人数的方式。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha como o Luxel estima o número de falantes."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha como o Luxel estima o número de oradores."
+          }
+        }
+      }
+    },
+    "Enter a name for this voice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a name for this voice."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einen Namen für diese Stimme eingeben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce un nombre para esta voz."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez un nom pour cette voix."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci un nome per questa voce."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この声の名前を入力します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 음성의 이름을 입력합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập tên cho giọng nói này."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入此声音的名称。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite um nome para esta voz."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduza um nome para esta voz."
+          }
+        }
+      }
+    },
+    "Collapse these options.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapse these options."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Optionen einklappen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contrae estas opciones."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réduisez ces options."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprimi queste opzioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "これらのオプションを折りたたみます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 옵션을 접습니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu gọn các tùy chọn này."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "收起这些选项。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recolha estas opções."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recolha estas opções."
+          }
+        }
+      }
+    },
+    "Expand these options.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expand these options."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Optionen ausklappen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expande estas opciones."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Développez ces options."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espandi queste opzioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "これらのオプションを展開します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 옵션을 펼칩니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở rộng các tùy chọn này."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "展开这些选项。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expanda estas opções."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expanda estas opções."
+          }
+        }
+      }
+    },
+    "Turn speech recognition on for this recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn speech recognition on for this recording."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spracherkennung für diese Aufnahme aktivieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activa el reconocimiento de voz para esta grabación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activez la reconnaissance vocale pour cet enregistrement."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attiva il riconoscimento vocale per questa registrazione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この録画の音声認識をオンにします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 녹화에서 음성 인식을 켭니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật nhận dạng giọng nói cho bản ghi này."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为此录制开启语音识别。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ative o reconhecimento de fala para esta gravação."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ative o reconhecimento de voz para esta gravação."
+          }
+        }
+      }
+    },
+    "Try generating the transcript again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try generating the transcript again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transkript erneut erstellen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a intentar generar la transcripción."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Essayez à nouveau de générer la transcription."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova di nuovo a generare la trascrizione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字起こしをもう一度生成します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "대본을 다시 생성합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử tạo lại bản chép lời."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再次尝试生成转录。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tente gerar a transcrição novamente."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tente gerar novamente a transcrição."
+          }
+        }
+      }
+    },
+    "Search the transcript.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search the transcript."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transkript durchsuchen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busca en la transcripción."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recherchez dans la transcription."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca nella trascrizione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字起こしを検索します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "대본을 검색합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm kiếm bản chép lời."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索转录。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesquise na transcrição."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pesquise na transcrição."
+          }
+        }
+      }
+    },
+    "Install, enable, or remove higher-accuracy local transcription.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install, enable, or remove higher-accuracy local transcription."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Transkription mit höherer Genauigkeit installieren, aktivieren oder entfernen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instala, activa o elimina la transcripción local de mayor precisión."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installez, activez ou supprimez la transcription locale plus précise."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installa, attiva o rimuovi la trascrizione locale ad alta precisione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "高精度なローカル文字起こしをインストール、有効化、または削除します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "더 정확한 로컬 전사를 설치, 활성화 또는 제거합니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt, bật hoặc gỡ bỏ tính năng chép lời cục bộ có độ chính xác cao hơn."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安装、启用或移除更高精度的本地转录功能。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instale, ative ou remova a transcrição local de maior precisão."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instale, ative ou remova a transcrição local de maior precisão."
+          }
+        }
+      }
+    },
+    "More Luxel actions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More Luxel actions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weitere Luxel-Aktionen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más acciones de Luxel."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autres actions Luxel."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altre azioni di Luxel."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luxelのその他の操作。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luxel 추가 작업입니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các tác vụ Luxel khác."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多 Luxel 操作。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais ações do Luxel."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais ações do Luxel."
+          }
+        }
+      }
+    },
+    "Overall export progress": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overall export progress"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesamter Exportfortschritt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progreso general de la exportación"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progression globale de l’exportation"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avanzamento complessivo dell’esportazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全体の書き出し進行状況"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전체 내보내기 진행률"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiến trình xuất tổng thể"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "总体导出进度"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progresso geral da exportação"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progresso geral da exportação"
           }
         }
       }
