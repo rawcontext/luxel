@@ -55,6 +55,17 @@ extension LuxelEditorModel {
         format == .gif
     }
 
+    var activeKeystrokeChips: [KeystrokeChip] {
+        guard let keystrokeTimeline,
+              let keystrokeOptions,
+              let chips = try? KeystrokeChipPlanner(renderOptions: keystrokeOptions)
+                .plannedChips(for: keystrokeTimeline)
+        else {
+            return []
+        }
+        return KeystrokeOverlayLayout.activeChips(at: currentPlaybackTime, in: chips)
+    }
+
     var gifLoopMode: GIFLoopMode {
         switch gifLoopModeKind {
         case .forever:

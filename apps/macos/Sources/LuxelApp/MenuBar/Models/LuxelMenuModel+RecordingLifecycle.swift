@@ -10,6 +10,10 @@ extension LuxelMenuModel {
         latencySpan: RecordingStartLatencySpan? = nil,
         notchRecordingActionID: NotchActivityActionID? = nil
     ) async {
+        if request.captureKeystrokes, inputMonitoringStatus != .authorized {
+            presentPermissionPrompt(for: .inputMonitoring)
+            return
+        }
         guard canBeginRecordingStart else {
             if let latencySpan {
                 LuxelRecordingLatencyTelemetry.finishFailed(
@@ -41,6 +45,11 @@ extension LuxelMenuModel {
     }
 
     func beginRecording(_ request: RecordingRequest) async throws -> ActiveRecording {
+        if request.captureKeystrokes {
+            await keystrokeLivePreviewPanelController.prepareForCapture(
+                isEnabled: settings.keystrokeLivePreviewEnabled
+            )
+        }
         await recordingFramePanelController.present(
             for: request,
             availableTargets: captureTargets,
@@ -78,6 +87,9 @@ extension LuxelMenuModel {
             RecordingMenuClock(startedAt: activeRecording.date)
         )
         await presentCameraPreviewForRecording(request)
+        if request.captureKeystrokes {
+            keystrokeRecordingSession.start()
+        }
         if let latencySpan {
             LuxelRecordingLatencyTelemetry.finishStarted(latencySpan, target: request.target)
         }
@@ -89,6 +101,8 @@ extension LuxelMenuModel {
         cancellation: Bool
     ) async {
         recordingStartTask = nil
+        keystrokeRecordingSession.cancel()
+        await keystrokeLivePreviewPanelController.close()
         await recordingFramePanelController.close()
         if cancellation {
             recordingState = .idle
@@ -127,7 +141,7 @@ extension LuxelMenuModel {
         do {
             return try await finishRecordingStop(context)
         } catch {
-            handleRecordingStopFailure(error, context: context)
+            await handleRecordingStopFailure(error, context: context)
             return nil
         }
     }
@@ -176,6 +190,7 @@ extension LuxelMenuModel {
 
     func finishAudioRecordingStop() async throws -> RecordingStopAction {
         let recording = try await audioRecordingLifecycleService.stopRecording()
+        await finishKeystrokeCapture(for: recording)
         refreshRecentRecordings()
         recordingState = .idle
         syncCameraPreviewHoverControls()
@@ -191,6 +206,7 @@ extension LuxelMenuModel {
         luxelRecordingLogger.info("Stop recording closing camera preview")
         await closeCameraPreviewForRecordingStop()
         let recording = try await recordingLifecycleService.stopRecording()
+        await finishKeystrokeCapture(for: recording)
         await recordingFramePanelController.close()
         closeCameraPreviewForFinishedRecording()
         refreshRecentRecordings()
@@ -201,6 +217,18 @@ extension LuxelMenuModel {
       """
         )
         return recording
+    }
+
+    func finishKeystrokeCapture(for recording: PastRecording) async {
+        guard recording.options.captureKeystrokes else {
+            return
+        }
+        do {
+            _ = try await keystrokeRecordingSession.stopAndSave(nextTo: recording.primaryMediaURL)
+        } catch {
+            recordingNoticeMessage = "The recording was saved, but its keystroke data could not be saved."
+        }
+        await keystrokeLivePreviewPanelController.close()
     }
 
     func recordingStopAction(
@@ -222,11 +250,13 @@ extension LuxelMenuModel {
     func handleRecordingStopFailure(
         _ error: any Error,
         context: RecordingStopContext
-    ) {
+    ) async {
         let message = errorMessage(error)
         let nsError = error as NSError
         recordingActionErrorMessage = message
         if error.isTerminalRecordingStopFailure {
+            keystrokeRecordingSession.cancel()
+            await keystrokeLivePreviewPanelController.close()
             closeCameraPreviewForFinishedRecording()
             recordingState = .idle
             refreshRecentRecordings()
@@ -259,6 +289,16 @@ extension LuxelMenuModel {
         case .idle, .starting, .countingDown, .pausing, .resuming, .stopping, .exporting, .failed:
             return
         }
+    }
+
+    func toggleKeystrokeCapturePause() {
+        guard recordingState.activeRecording?.options.captureKeystrokes == true else {
+            return
+        }
+        keystrokeRecordingSession.toggleUserPause()
+        recordingNoticeMessage = keystrokeRecordingSession.isUserPaused
+            ? "Keystroke capture paused."
+            : "Keystroke capture resumed."
     }
 
     func discardActiveRecording() async {
@@ -307,6 +347,9 @@ extension LuxelMenuModel {
         recordingActionErrorMessage = nil
         recordingState = .stopping
         await recordingFramePanelController.close()
+        if recording.options.captureKeystrokes {
+            await finishKeystrokeCapture(for: recording)
+        }
         closeCameraPreviewForFinishedRecording()
         refreshRecentRecordings()
 
@@ -331,6 +374,7 @@ extension LuxelMenuModel {
 
         do {
             try await recordingLifecycleService.pauseRecording()
+            keystrokeRecordingSession.recordingDidPause()
             recordingState = .paused(activeRecording, clock.paused(at: Date()))
         } catch {
             recordingActionErrorMessage = errorMessage(error)
@@ -348,6 +392,7 @@ extension LuxelMenuModel {
 
         do {
             try await recordingLifecycleService.resumeRecording()
+            keystrokeRecordingSession.recordingDidResume()
             recordingState = .recording(activeRecording, clock.resumed(at: Date()))
         } catch {
             recordingActionErrorMessage = errorMessage(error)

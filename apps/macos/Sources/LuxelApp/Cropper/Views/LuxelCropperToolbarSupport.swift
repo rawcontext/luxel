@@ -104,6 +104,12 @@ extension LuxelCropperView {
         }
     }
 
+    var captureKeystrokes: Binding<Bool> {
+        Binding {
+            model.capturesKeystrokes
+        } set: { model.setCaptureKeystrokes($0) }
+    }
+
     @ViewBuilder
     func cameraDeviceButton(title: String, deviceID: String?) -> some View {
         Button {

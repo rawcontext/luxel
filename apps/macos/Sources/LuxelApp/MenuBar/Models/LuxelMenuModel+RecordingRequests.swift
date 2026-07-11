@@ -68,7 +68,8 @@ extension LuxelMenuModel {
                 outputFileURL: try nextAudioRecordingFileURL(
                     now: Date(), format: settings.audioOnlyFormat),
                 audio: resolvedAudio.mode,
-                format: settings.audioOnlyFormat
+                format: settings.audioOnlyFormat,
+                captureKeystrokes: settings.keystrokeOverlayEnabled
             ),
             resolvedAudio.noticeMessage
         )

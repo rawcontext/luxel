@@ -46,6 +46,7 @@ extension SettingsTests {
         #expect(settings.cursorMode == .baked)
         #expect(settings.cursorRenderOptions == .standard)
         #expect(!settings.keystrokeOverlayEnabled)
+        #expect(settings.keystrokeLivePreviewEnabled)
         #expect(settings.keystrokeRenderOptions == .standard)
         #expect(settings.pauseKeystrokeCaptureShortcut == "")
         #expect(settings.record60FPS)

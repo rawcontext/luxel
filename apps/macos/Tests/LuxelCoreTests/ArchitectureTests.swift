@@ -103,10 +103,80 @@ extension ArchitectureTests {
         #expect(
             permissionSource.contains("CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined"))
         #expect(!permissionSource.contains("CGRequestScreenCaptureAccess"))
+        #expect(permissionSource.contains("CGRequestListenEventAccess"))
         #expect(!permissionSource.contains("AVAudioApplication.requestRecordPermission"))
         #expect(!permissionSource.contains("AVCaptureDevice.requestAccess"))
         #expect(!permissionSource.contains("SCShareableContent.current"))
         #expect(!speechSource.contains("SFSpeechRecognizer.requestAuthorization"))
+    }
+
+    @Test("CGEventTap remains isolated to the keystroke adapter")
+    func eventTapRemainsIsolatedToKeystrokeAdapter() throws {
+        let sourceDirectory = try packageRootURL().appending(path: "Sources")
+        let allowedPath = "Infrastructure/Keystrokes/CGEventTapKeystrokeRecorder.swift"
+
+        for fileURL in try swiftFiles(under: sourceDirectory) {
+            let contents = try String(contentsOf: fileURL, encoding: .utf8)
+            guard contents.contains("CGEvent.tapCreate")
+                    || contents.contains(".tapDisabledByTimeout")
+                    || contents.contains("CGEvent.tapEnable")
+            else {
+                continue
+            }
+
+            #expect(fileURL.path.hasSuffix(allowedPath), "\(fileURL.path) owns event-tap symbols")
+        }
+    }
+
+    @Test("keystroke adapter recovers disabled taps and checks secure input")
+    func keystrokeAdapterRecoversDisabledTapsAndChecksSecureInput() throws {
+        let source = try sourceText(for: [
+            "Sources/LuxelCore/Infrastructure/Keystrokes/CGEventTapKeystrokeRecorder.swift"
+        ])
+
+        #expect(source.contains("type == .tapDisabledByTimeout"))
+        #expect(source.contains("type == .tapDisabledByUserInput"))
+        #expect(source.contains("CGEvent.tapEnable(tap: eventTap, enable: true)"))
+        #expect(source.contains("IsSecureEventInputEnabled()"))
+        #expect(source.contains("Timer.scheduledTimer(withTimeInterval: 1"))
+    }
+
+    @Test("keystroke lifecycle and compositor cover every visual export path")
+    func keystrokeLifecycleAndCompositorCoverEveryVisualExportPath() throws {
+        let lifecycle = try sourceText(for: [
+            "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+RecordingLifecycle.swift"
+        ])
+        let avFoundation = try sourceText(for: [
+            "Sources/LuxelCore/Infrastructure/Media/Export/AVFoundationMediaExporter.swift"
+        ])
+        let codecs = try sourceText(for: [
+            "Sources/LuxelCore/Infrastructure/Media/Readers/AVAssetReaderCodecMediaSource+Composition.swift"
+        ])
+        let videoComposition = try sourceText(for: [
+            "Sources/LuxelCore/Infrastructure/Media/Video/AVFoundationVideoCompositionFactory.swift"
+        ])
+        let animated = try sourceText(for: [
+            "Sources/LuxelCore/Infrastructure/Media/GIF/ImageIOAnimatedMediaExporter.swift"
+        ])
+
+        let recorderStart = try #require(lifecycle.range(of: "keystrokeRecordingSession.start()"))
+        let captureStart = try #require(
+            lifecycle.range(of: "recordingLifecycleService.startRecording("))
+        let previewPreparation = try #require(
+            lifecycle.range(of: "keystrokeLivePreviewPanelController.prepareForCapture("))
+        #expect(previewPreparation.lowerBound < captureStart.lowerBound)
+        #expect(captureStart.lowerBound < recorderStart.lowerBound)
+        #expect(lifecycle.contains("keystrokeRecordingSession.stopAndSave"))
+        #expect(lifecycle.contains("finishAudioRecordingStop"))
+        #expect(lifecycle.contains("await finishKeystrokeCapture(for: recording)"))
+        #expect(lifecycle.contains("keystrokeRecordingSession.recordingDidPause()"))
+        #expect(lifecycle.contains("keystrokeRecordingSession.recordingDidResume()"))
+        #expect(avFoundation.contains("keystrokeTimeline: keystrokeTimeline"))
+        #expect(avFoundation.contains("keystrokeTimelineMapper: request.timelineMapper"))
+        #expect(codecs.contains("keystrokeTimeline: try? KeystrokeSidecarFileLoader"))
+        #expect(codecs.contains("keystrokeTimelineMapper: request.timelineMapper"))
+        #expect(videoComposition.contains("timelineMapper.mapSourceRange(chip.timeRange)"))
+        #expect(animated.components(separatedBy: "keystrokeCompositor.composite").count - 1 == 2)
     }
 
     @Test("status item startup does not enumerate capture targets")
@@ -250,7 +320,10 @@ extension ArchitectureTests {
             source[handlerRange.upperBound...].range(of: "func sourcePermissionPresentation"))
         let handlerSource = String(source[handlerRange.lowerBound..<nextRange.lowerBound])
 
-        #expect(!handlerSource.contains("permissionClient.request"))
+        #expect(handlerSource.contains("permissionClient.request(.inputMonitoring)"))
+        #expect(!handlerSource.contains("permissionClient.request(.screenRecording)"))
+        #expect(!handlerSource.contains("permissionClient.request(.microphone)"))
+        #expect(!handlerSource.contains("permissionClient.request(.camera)"))
         #expect(handlerSource.contains("await permissionClient.openSettings(for: prompt.permission)"))
         #expect(handlerSource.contains("permissionStatus(for: prompt.permission) != .authorized"))
     }

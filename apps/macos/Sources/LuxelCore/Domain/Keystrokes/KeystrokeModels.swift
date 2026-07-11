@@ -81,6 +81,7 @@ public struct KeystrokePauseInterval: Codable, Equatable, Sendable {
 
 public enum KeystrokePauseCause: String, Codable, CaseIterable, Equatable, Sendable {
     case user
+    case recording
     case secureInput
 }
 
@@ -166,6 +167,10 @@ public struct KeystrokeSidecarDocument: Codable, Equatable, Sendable {
 
         self.schemaVersion = schemaVersion
         self.timeline = try container.decode(KeystrokeTimeline.self, forKey: .timeline)
+    }
+
+    public static func sidecarURL(nextTo mediaURL: URL) -> URL {
+        mediaURL.deletingPathExtension().appendingPathExtension("keystrokes.json")
     }
 }
 

@@ -77,6 +77,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var cursorMode: CursorMode
     public var cursorRenderOptions: CursorRenderOptions
     public var keystrokeOverlayEnabled: Bool
+    public var keystrokeLivePreviewEnabled: Bool
     public var keystrokeRenderOptions: KeystrokeRenderOptions
     public var pauseKeystrokeCaptureShortcut: String
     public var record60FPS: Bool
@@ -167,6 +168,7 @@ extension AppSettings {
         cursorMode: CursorMode? = nil,
         cursorRenderOptions: CursorRenderOptions? = nil,
         keystrokeOverlayEnabled: Bool = false,
+        keystrokeLivePreviewEnabled: Bool = true,
         keystrokeRenderOptions: KeystrokeRenderOptions = .standard,
         pauseKeystrokeCaptureShortcut: String = "",
         record60FPS: Bool = true,
@@ -237,7 +239,9 @@ extension AppSettings {
         self.recordingsDirectory = recordingsDirectory; self.recordingsDirectoryBookmark = recordingsDirectoryBookmark
         self.showCursor = showCursor; self.highlightClicks = highlightClicks
         self.cursorMode = resolvedCursorMode; self.cursorRenderOptions = renderOptions
-        self.keystrokeOverlayEnabled = keystrokeOverlayEnabled; self.keystrokeRenderOptions = keystrokeRenderOptions
+        self.keystrokeOverlayEnabled = keystrokeOverlayEnabled
+        self.keystrokeLivePreviewEnabled = keystrokeLivePreviewEnabled
+        self.keystrokeRenderOptions = keystrokeRenderOptions
         self.pauseKeystrokeCaptureShortcut = pauseKeystrokeCaptureShortcut
         self.record60FPS = frameRate.framesPerSecond == 60; self.recordingFrameRate = frameRate
         self.matchDisplayFrameRate = matchDisplayFrameRate; self.loopExports = loopExports

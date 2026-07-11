@@ -88,6 +88,15 @@ extension LuxelMenuModel {
         }
     }
 
+    func removeKeystrokeData(from recording: PastRecording) {
+        do {
+            try recordingHistoryService.removeKeystrokeData(from: recording)
+            refreshRecentRecordings()
+        } catch {
+            recordingActionErrorMessage = errorMessage(error)
+        }
+    }
+
     func transcriptSourceContext(for mediaURL: URL) -> TranscriptSourceContext {
         let standardizedURL = mediaURL.standardizedFileURL
         let recordings = recentRecordings + recordingHistoryService.getPastRecordings()

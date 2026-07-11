@@ -84,6 +84,15 @@ extension LuxelSettingsView {
                 ),
                 selection: $model.settings.clipReplayBufferShortcut,
                 presets: AppKeyboardShortcutPresets.clipReplayBuffer
+            ),
+            shortcutCommand(
+                ShortcutCommandMetadata(
+                    id: "pause-keystroke-capture", title: "Pause Keystroke Capture",
+                    detail: "Pause or resume keystroke capture during a recording.",
+                    group: "Recording"
+                ),
+                selection: $model.settings.pauseKeystrokeCaptureShortcut,
+                presets: []
             )
         ]
     }

@@ -25,6 +25,7 @@ final class LuxelCropperPanelController {
         countdownDuration: TimeInterval? = nil,
         stopAfterDuration: TimeInterval? = nil,
         canRecordAudio: Bool = false,
+        canCaptureKeystrokes: Bool = false,
         cameraConfiguration: CropperCameraConfiguration = CropperCameraConfiguration(
             selectedDeviceID: nil,
             devices: [],
@@ -41,12 +42,14 @@ final class LuxelCropperPanelController {
             ),
         restoreSelectionConfiguration: CropperRestoreSelectionConfiguration = .disabled,
         recordAudio: Bool = false,
+        captureKeystrokes: Bool = false,
         loupeAlwaysOn: Bool = false,
         dimOtherDisplays: Bool = false,
         showsNotificationReminder: Bool = false,
         onCountdownDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping @MainActor (TimeInterval?) -> Void = { _ in },
         onRecordAudioChange: @escaping @MainActor (Bool) -> Void = { _ in },
+        onCaptureKeystrokesChange: @escaping @MainActor (Bool) -> Void = { _ in },
         onCameraSelectionChange: @escaping @MainActor (String?) -> Void = { _ in },
         onCameraPreviewStyleChange: @escaping @MainActor (CameraPreviewStyle) -> Void = { _ in },
         onNotificationReminderDismiss: @escaping @MainActor () -> Void = {},
@@ -63,17 +66,20 @@ final class LuxelCropperPanelController {
                     countdownDuration: countdownDuration,
                     stopAfterDuration: stopAfterDuration,
                     canRecordAudio: canRecordAudio,
+                    canCaptureKeystrokes: canCaptureKeystrokes,
                     cameraConfiguration: cameraConfiguration,
                     quickRecordingConfiguration: quickRecordingConfiguration,
                     selectionPresetConfiguration: selectionPresetConfiguration,
                     restoreSelectionConfiguration: restoreSelectionConfiguration,
                     recordAudio: recordAudio,
+                    captureKeystrokes: captureKeystrokes,
                     loupeAlwaysOn: loupeAlwaysOn,
                     dimOtherDisplays: dimOtherDisplays,
                     showsNotificationReminder: showsNotificationReminder,
                     onCountdownDurationChange: onCountdownDurationChange,
                     onStopAfterDurationChange: onStopAfterDurationChange,
                     onRecordAudioChange: onRecordAudioChange,
+                    onCaptureKeystrokesChange: onCaptureKeystrokesChange,
                     onCameraSelectionChange: onCameraSelectionChange,
                     onCameraPreviewStyleChange: onCameraPreviewStyleChange,
                     onNotificationReminderDismiss: onNotificationReminderDismiss,
@@ -158,13 +164,16 @@ final class LuxelCropperPanelController {
                 from: targets
             ),
             recordAudio: presentation.recordAudio,
+            captureKeystrokes: presentation.captureKeystrokes,
             canRecordAudio: presentation.canRecordAudio,
+            canCaptureKeystrokes: presentation.canCaptureKeystrokes,
             loupeAlwaysOn: presentation.loupeAlwaysOn,
             dimOtherDisplays: presentation.dimOtherDisplays,
             displayFocus: displayFocus,
             onCountdownDurationChange: presentation.onCountdownDurationChange,
             onStopAfterDurationChange: presentation.onStopAfterDurationChange,
-            onRecordAudioChange: presentation.onRecordAudioChange
+            onRecordAudioChange: presentation.onRecordAudioChange,
+            onCaptureKeystrokesChange: presentation.onCaptureKeystrokesChange
         )
     }
 
@@ -243,17 +252,20 @@ private struct CropperPanelPresentation {
     let countdownDuration: TimeInterval?
     let stopAfterDuration: TimeInterval?
     let canRecordAudio: Bool
+    let canCaptureKeystrokes: Bool
     let cameraConfiguration: CropperCameraConfiguration
     let quickRecordingConfiguration: CropperQuickRecordingConfiguration
     let selectionPresetConfiguration: CropperSelectionPresetConfiguration
     let restoreSelectionConfiguration: CropperRestoreSelectionConfiguration
     let recordAudio: Bool
+    let captureKeystrokes: Bool
     let loupeAlwaysOn: Bool
     let dimOtherDisplays: Bool
     let showsNotificationReminder: Bool
     let onCountdownDurationChange: @MainActor (TimeInterval?) -> Void
     let onStopAfterDurationChange: @MainActor (TimeInterval?) -> Void
     let onRecordAudioChange: @MainActor (Bool) -> Void
+    let onCaptureKeystrokesChange: @MainActor (Bool) -> Void
     let onCameraSelectionChange: @MainActor (String?) -> Void
     let onCameraPreviewStyleChange: @MainActor (CameraPreviewStyle) -> Void
     let onNotificationReminderDismiss: @MainActor () -> Void

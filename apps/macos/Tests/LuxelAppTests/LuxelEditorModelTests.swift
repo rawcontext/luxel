@@ -11,6 +11,67 @@ struct LuxelEditorModelTests {
 }
 
 extension LuxelEditorModelTests {
+    @Test("opening a keystroke sidecar enables preview controls and export options")
+    func openingKeystrokeSidecarEnablesPreviewAndExportOptions() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sourceURL = directory.appendingPathComponent("source.mp4")
+        let timeline = try KeystrokeTimeline(events: [
+            KeystrokeEvent(
+                time: 0.25,
+                kind: .keyDown,
+                keyCode: 8,
+                characters: "c",
+                modifiers: [.command]
+            )
+        ])
+        try JSONEncoder().encode(KeystrokeSidecarDocument(timeline: timeline)).write(
+            to: KeystrokeSidecarDocument.sidecarURL(nextTo: sourceURL)
+        )
+        let model = makeModel()
+
+        await model.open(fileURL: sourceURL, outputDirectory: directory)
+        model.currentPlaybackTime = 0.5
+
+        #expect(model.keystrokeTimeline == timeline)
+        #expect(model.keystrokeOptions == .standard)
+        #expect(model.activeKeystrokeChips.map(\.text) == ["⌘C"])
+        let source = try #require(model.source)
+        #expect(try model.makeExportRequest(source: source, format: .mp4).keystrokeOptions == .standard)
+    }
+
+    @Test("editor removal clears bundle keystrokes from disk and manifest")
+    func editorRemovalClearsBundleKeystrokesAndManifest() async throws {
+        let directory = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sourceURL = directory.appendingPathComponent("screen.mov")
+        FileManager.default.createFile(atPath: sourceURL.path, contents: Data())
+        let manifest = try BundleManifest(
+            primaryFileName: sourceURL.lastPathComponent,
+            sidecars: [BundleSidecarManifest(kind: .keystrokes)]
+        )
+        let manifestURL = directory.appendingPathComponent(BundleManifest.fileName)
+        let sidecarURL = directory.appendingPathComponent("keystrokes.json")
+        try JSONEncoder().encode(manifest).write(to: manifestURL, options: .atomic)
+        try JSONEncoder().encode(
+            KeystrokeSidecarDocument(timeline: KeystrokeTimeline())
+        ).write(to: sidecarURL, options: .atomic)
+        let model = makeModel(fileSystem: LocalFileSystem())
+        await model.open(fileURL: sourceURL, outputDirectory: directory)
+        #expect(model.keystrokeTimeline != nil)
+
+        model.removeKeystrokeData()
+
+        let updatedManifest = try JSONDecoder().decode(
+            BundleManifest.self,
+            from: Data(contentsOf: manifestURL)
+        )
+        #expect(updatedManifest.sidecar(for: .keystrokes) == nil)
+        #expect(!FileManager.default.fileExists(atPath: sidecarURL.path))
+        #expect(try KeystrokeSidecarFileLoader().load(nextTo: sourceURL) == nil)
+        #expect(model.keystrokeTimeline == nil)
+    }
+
     @Test("completed export shows progress panel actions")
     func completedExportShowsProgressPanelActions() async throws {
         let exportedURL = URL(fileURLWithPath: "/tmp/source Export.mp4")

@@ -11,6 +11,51 @@ struct AVFoundationMediaExporterTests {
 }
 
 extension AVFoundationMediaExporterTests {
+    @Test("MP4 export renders keystroke chips only during their mapped interval")
+    func mp4ExportRendersKeystrokeChipsOnlyDuringMappedInterval() async throws {
+        let inputURL = temporaryOutputURL(fileExtension: "mp4")
+        let overlayURL = temporaryOutputURL(fileExtension: "mp4")
+        let sidecarURL = KeystrokeSidecarDocument.sidecarURL(nextTo: inputURL)
+        defer {
+            for url in [inputURL, overlayURL, sidecarURL] {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+        try await writeSplitColorMovie(to: inputURL)
+        let timeline = try KeystrokeTimeline(events: [
+            KeystrokeEvent(
+                time: 0.1,
+                kind: .keyDown,
+                keyCode: 40,
+                characters: "k",
+                modifiers: [.command]
+            )
+        ])
+        try JSONEncoder().encode(KeystrokeSidecarDocument(timeline: timeline))
+            .write(to: sidecarURL, options: .atomic)
+        let overlayRequest = try ExportRequest(
+            inputFileURL: inputURL,
+            format: .mp4,
+            pixelSize: PixelSize(width: 64, height: 64),
+            frameRate: FrameRate(10),
+            timeRange: TimeRange(start: 0, end: 0.8),
+            shouldMute: true,
+            shouldCrop: false,
+            keystrokeOptions: KeystrokeRenderOptions(displayDuration: 0.5)
+        )
+
+        _ = try await AVFoundationMediaExporter().export(overlayRequest, to: overlayURL)
+
+        let overlayActive = try await framePixelData(at: overlayURL, time: 0.3)
+        let overlayBefore = try await framePixelData(at: overlayURL, time: 0)
+        let overlayAfter = try await framePixelData(at: overlayURL, time: 0.7)
+        let activeDifference = meanAbsolutePixelDifference(overlayActive, overlayBefore)
+        let outsideDifference = meanAbsolutePixelDifference(overlayBefore, overlayAfter)
+        #expect(activeDifference > 5)
+        #expect(outsideDifference < 2)
+        #expect(activeDifference > outsideDifference * 10)
+    }
+
     @Test("mp4 export trims resizes changes frame rate and keeps audio")
     func mp4ExportTrimsResizesChangesFrameRateAndKeepsAudio() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")

@@ -38,6 +38,9 @@ struct LuxelShortcutInstaller: View {
             .onChange(of: model.settings.clipReplayBufferShortcut) {
                 configureShortcut()
             }
+            .onChange(of: model.settings.pauseKeystrokeCaptureShortcut) {
+                configureShortcut()
+            }
     }
 
     private func configureShortcut() {
@@ -55,7 +58,8 @@ struct LuxelShortcutInstaller: View {
             fullscreenRecordingShortcutRegistration(),
             audioOnlyRecordingShortcutRegistration(),
             quickRecordLastShortcutRegistration(),
-            clipReplayBufferShortcutRegistration()
+            clipReplayBufferShortcutRegistration(),
+            pauseKeystrokeCaptureShortcutRegistration()
         ]
     }
 
@@ -69,16 +73,19 @@ struct LuxelShortcutInstaller: View {
                 countdownDuration: model.settings.defaultCountdown,
                 stopAfterDuration: model.settings.lastStopAfter,
                 canRecordAudio: model.microphoneStatus == .authorized,
+                canCaptureKeystrokes: model.inputMonitoringStatus == .authorized,
                 quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
                 selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
                 restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
                 recordAudio: model.captureCapabilities.microphoneTrackAvailable,
+                captureKeystrokes: model.settings.keystrokeOverlayEnabled,
                 loupeAlwaysOn: model.settings.loupeAlwaysOn,
                 dimOtherDisplays: model.settings.dimOtherDisplays,
                 showsNotificationReminder: false,
                 onCountdownDurationChange: saveDefaultCountdown,
                 onStopAfterDurationChange: saveStopAfterDuration,
                 onRecordAudioChange: saveRecordAudio,
+                onCaptureKeystrokesChange: saveCaptureKeystrokes,
                 onNotificationReminderDismiss: model.dismissNotificationReminder,
                 onQuickSelect: startQuickRecording,
                 onSelect: startRecording
@@ -156,6 +163,12 @@ struct LuxelShortcutInstaller: View {
         }
     }
 
+    private func pauseKeystrokeCaptureShortcutRegistration() -> LuxelShortcutRegistration {
+        LuxelShortcutRegistration(rawShortcut: model.settings.pauseKeystrokeCaptureShortcut) {
+            model.toggleKeystrokeCapturePause()
+        }
+    }
+
     private func saveDefaultCountdown(_ duration: TimeInterval?) {
         model.settings.defaultCountdown = duration
         model.saveSettings()
@@ -173,6 +186,11 @@ struct LuxelShortcutInstaller: View {
         }
 
         model.settings.recordAudio = isEnabled
+        model.saveSettings()
+    }
+
+    private func saveCaptureKeystrokes(_ isEnabled: Bool) {
+        model.settings.keystrokeOverlayEnabled = isEnabled
         model.saveSettings()
     }
 

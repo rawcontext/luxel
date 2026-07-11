@@ -45,7 +45,8 @@ struct UserDefaultsSettingsStoreTests {
             ),
             showCursor: false, highlightClicks: true, cursorMode: .editable,
             cursorRenderOptions: try persistedCursorOptions(),
-            keystrokeOverlayEnabled: true, keystrokeRenderOptions: try persistedKeystrokeOptions(),
+            keystrokeOverlayEnabled: true, keystrokeLivePreviewEnabled: false,
+            keystrokeRenderOptions: try persistedKeystrokeOptions(),
             pauseKeystrokeCaptureShortcut: "command+control+option+k",
             record60FPS: true, recordSystemAudio: true, recordAudio: true,
             audioInputDeviceID: "mic-1", audioInputDeviceName: "Studio Mic",
@@ -222,6 +223,7 @@ extension UserDefaultsSettingsStoreTests {
         #expect(settings.cursorRenderOptions.isVisible == false)
         #expect(settings.cursorRenderOptions.clickStyle == .ringRipple)
         #expect(!settings.keystrokeOverlayEnabled)
+        #expect(settings.keystrokeLivePreviewEnabled)
         #expect(settings.keystrokeRenderOptions == .standard)
         #expect(settings.pauseKeystrokeCaptureShortcut == "")
         #expect(settings.record60FPS)

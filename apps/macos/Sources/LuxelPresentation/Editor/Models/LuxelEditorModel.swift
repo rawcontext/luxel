@@ -76,6 +76,8 @@ public final class LuxelEditorModel {
     var isSpeakerModelPreparing = false
     var speechRecognitionAuthorizationState: SpeechRecognitionAuthorizationState?
     var currentPlaybackTime: TimeInterval = 0
+    var keystrokeTimeline: KeystrokeTimeline?
+    var keystrokeOptions: KeystrokeRenderOptions?
     let configuredSupportedFormats: [ExportFormat]
     var exportProgress: ExportProgressSnapshot?
     var exportJobs: [ExportJobSnapshot] = []

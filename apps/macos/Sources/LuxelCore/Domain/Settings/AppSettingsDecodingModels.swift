@@ -9,6 +9,7 @@ extension AppSettings {
         case cursorMode
         case cursorRenderOptions
         case keystrokeOverlayEnabled
+        case keystrokeLivePreviewEnabled
         case keystrokeRenderOptions
         case pauseKeystrokeCaptureShortcut
         case record60FPS
@@ -76,6 +77,7 @@ struct CursorSettings {
     let mode: CursorMode
     let renderOptions: CursorRenderOptions
     let keystrokeOverlayEnabled: Bool
+    let keystrokeLivePreviewEnabled: Bool
     let keystrokeRenderOptions: KeystrokeRenderOptions
     let pauseKeystrokeCaptureShortcut: String
 }

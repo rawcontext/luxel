@@ -37922,6 +37922,214 @@
           }
         }
       }
+    },
+    "Allow keystroke capture?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Allow keystroke capture?" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Tastenerfassung erlauben?" } },
+        "es": { "stringUnit": { "state": "translated", "value": "¿Permitir la captura de teclas?" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Autoriser la capture des frappes ?" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Consentire l’acquisizione dei tasti?" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キー入力の取得を許可しますか？" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "키 입력 캡처를 허용할까요?" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Cho phép ghi lại thao tác phím?" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "允许捕捉按键吗？" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Permitir captura de teclas?" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Permitir a captura de teclas?" } }
+      }
+    },
+    "Capture Keystrokes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Capture Keystrokes" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Tastenanschläge erfassen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Capturar pulsaciones de teclas" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Capturer les frappes" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Acquisisci tasti" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キー入力を取得" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "키 입력 캡처" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ghi lại thao tác phím" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "捕捉按键" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Capturar teclas" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Capturar teclas" } }
+      }
+    },
+    "Capture typed characters and shortcut identities with this recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Capture typed characters and shortcut identities with this recording." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Getippte Zeichen und Tastenkürzel für diese Aufnahme erfassen." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Captura caracteres escritos y atajos de teclado con esta grabación." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Capturer les caractères saisis et les raccourcis clavier avec cet enregistrement." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Acquisisci i caratteri digitati e le scorciatoie da tastiera con questa registrazione." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この収録で入力文字とキーボードショートカットを取得します。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 녹화에서 입력한 문자와 키보드 단축키를 캡처합니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ghi lại các ký tự đã nhập và phím tắt cùng bản ghi này." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "在此录制中捕捉输入的字符和键盘快捷键。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Capture caracteres digitados e atalhos de teclado nesta gravação." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Capture carateres introduzidos e atalhos de teclado nesta gravação." } }
+      }
+    },
+    "Display Duration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Display Duration" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Anzeigedauer" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Duración de visualización" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Durée d’affichage" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Durata visualizzazione" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "表示時間" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "표시 시간" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Thời lượng hiển thị" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "显示时长" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Duração da exibição" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Duração da apresentação" } }
+      }
+    },
+    "Input Monitoring is off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Input Monitoring is off" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Eingabeüberwachung ist deaktiviert" } },
+        "es": { "stringUnit": { "state": "translated", "value": "La monitorización de entrada está desactivada" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "La surveillance des entrées est désactivée" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Il monitoraggio input è disattivato" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "入力監視がオフです" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "입력 모니터링이 꺼져 있습니다" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Giám sát đầu vào đang tắt" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "输入监控已关闭" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "O Monitoramento de Entrada está desativado" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "A Monitorização de Entrada está desativada" } }
+      }
+    },
+    "Keystroke capture ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Keystroke capture ready" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Tastenerfassung ist bereit" } },
+        "es": { "stringUnit": { "state": "translated", "value": "La captura de teclas está lista" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "La capture des frappes est prête" } },
+        "it": { "stringUnit": { "state": "translated", "value": "L’acquisizione dei tasti è pronta" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キー入力を取得できます" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "키 입력 캡처 준비 완료" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Sẵn sàng ghi lại thao tác phím" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "按键捕捉已就绪" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Captura de teclas pronta" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Captura de teclas pronta" } }
+      }
+    },
+    "Pause Keystroke Capture": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pause Keystroke Capture" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Tastenerfassung anhalten" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Pausar captura de teclas" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Suspendre la capture des frappes" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Sospendi acquisizione tasti" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キー入力の取得を一時停止" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "키 입력 캡처 일시 정지" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Tạm dừng ghi lại thao tác phím" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "暂停捕捉按键" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Pausar captura de teclas" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Pausar captura de teclas" } }
+      }
+    },
+    "Permanently delete the locally stored keystroke sidecar for this recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Permanently delete the locally stored keystroke sidecar for this recording." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Die lokal gespeicherte Tasteneingabe-Sidecar-Datei für diese Aufnahme dauerhaft löschen." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Elimina permanentemente el archivo auxiliar de pulsaciones almacenado localmente para esta grabación." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Supprimer définitivement le fichier annexe de frappes stocké localement pour cet enregistrement." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Elimina definitivamente il file sidecar dei tasti archiviato localmente per questa registrazione." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この収録用にローカル保存されたキー入力サイドカーファイルを完全に削除します。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 녹화를 위해 로컬에 저장된 키 입력 사이드카를 영구적으로 삭제합니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Xóa vĩnh viễn tệp phụ thao tác phím được lưu cục bộ cho bản ghi này." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "永久删除为此录制本地存储的按键附属文件。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Exclua permanentemente o arquivo auxiliar de teclas armazenado localmente para esta gravação." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Elimine permanentemente o ficheiro auxiliar de teclas armazenado localmente para esta gravação." } }
+      }
+    },
+    "Remove Keystroke Data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove Keystroke Data" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Tasteneingabedaten entfernen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Eliminar datos de pulsaciones" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Supprimer les données de frappe" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Rimuovi dati dei tasti" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キー入力データを削除" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "키 입력 데이터 제거" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Xóa dữ liệu thao tác phím" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "移除按键数据" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Remover dados de teclas" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Remover dados de teclas" } }
+      }
+    },
+    "Show captured keystrokes on screen without including the preview in recordings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show captured keystrokes on screen without including the preview in recordings." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Erfasste Tasten auf dem Bildschirm anzeigen, ohne die Vorschau in Aufnahmen einzuschließen." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Muestra las teclas capturadas en pantalla sin incluir la vista previa en las grabaciones." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Afficher les frappes capturées à l’écran sans inclure l’aperçu dans les enregistrements." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Mostra sullo schermo i tasti acquisiti senza includere l’anteprima nelle registrazioni." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "取得したキー入力を、収録には含めず画面上に表示します。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "캡처한 키 입력을 녹화에 포함하지 않고 화면에 표시합니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Hiển thị thao tác phím đã ghi trên màn hình mà không đưa phần xem trước vào bản ghi." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "在屏幕上显示捕捉的按键，但不将预览包含在录制中。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Mostre as teclas capturadas na tela sem incluir a prévia nas gravações." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Mostre as teclas capturadas no ecrã sem incluir a pré-visualização nas gravações." } }
+      }
+    },
+    "Show Keystrokes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show Keystrokes" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Tastenanschläge anzeigen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Mostrar pulsaciones" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Afficher les frappes" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Mostra tasti" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キー入力を表示" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "키 입력 표시" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Hiển thị thao tác phím" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "显示按键" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Mostrar teclas" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Mostrar teclas" } }
+      }
+    },
+    "Show Live Keystroke Preview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show Live Keystroke Preview" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Live-Vorschau der Tastenanschläge anzeigen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Mostrar vista previa de teclas en directo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Afficher l’aperçu en direct des frappes" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Mostra anteprima tasti in tempo reale" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "キー入力のライブプレビューを表示" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "실시간 키 입력 미리보기 표시" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Hiển thị bản xem trước thao tác phím trực tiếp" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "显示按键实时预览" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Mostrar prévia de teclas ao vivo" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Mostrar pré-visualização de teclas em direto" } }
+      }
+    },
+    "Store typed characters and shortcut identities locally with new recordings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Store typed characters and shortcut identities locally with new recordings." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Getippte Zeichen und Tastenkürzel lokal mit neuen Aufnahmen speichern." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Almacena localmente los caracteres escritos y los atajos de teclado con las nuevas grabaciones." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Stocker localement les caractères saisis et les raccourcis clavier avec les nouveaux enregistrements." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Archivia localmente i caratteri digitati e le scorciatoie da tastiera con le nuove registrazioni." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "入力文字とキーボードショートカットを新しい収録と一緒にローカル保存します。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "입력한 문자와 키보드 단축키를 새 녹화와 함께 로컬에 저장합니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Lưu cục bộ các ký tự đã nhập và phím tắt cùng bản ghi mới." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "将输入的字符和键盘快捷键与新录制一起存储在本地。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Armazene localmente caracteres digitados e atalhos de teclado com novas gravações." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Armazene localmente carateres introduzidos e atalhos de teclado com novas gravações." } }
+      }
     }
   },
   "version": "1.0"

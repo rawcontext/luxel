@@ -19,6 +19,20 @@ extension LuxelSettingsView {
 
                 LuxelGlassRowDivider()
 
+                settingsToggleRow("Capture Keystrokes", isOn: keystrokeCaptureSelection)
+                    .help("Store typed characters and shortcut identities locally with new recordings.")
+
+                LuxelGlassRowDivider()
+
+                settingsToggleRow(
+                    "Show Live Keystroke Preview",
+                    isOn: $model.settings.keystrokeLivePreviewEnabled
+                )
+                .disabled(!model.settings.keystrokeOverlayEnabled)
+                .help("Show captured keystrokes on screen without including the preview in recordings.")
+
+                LuxelGlassRowDivider()
+
                 recordingFrameRateSettings
 
                 LuxelGlassRowDivider()
@@ -169,7 +183,7 @@ extension LuxelSettingsView {
     }
 
     func settingsToggleRow(_ title: String, isOn: Binding<Bool>) -> some View {
-        Toggle(title, isOn: isOn)
+        Toggle(LocalizedStringKey(title), isOn: isOn)
             .toggleStyle(LuxelGlassSwitchToggleStyle())
             .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
     }

@@ -25,16 +25,26 @@ public struct KeystrokeTimelineRecordingService: Sendable {
 
     public func recordTimeline(_ request: KeystrokeTimelineRecordingRequest) async throws
     -> KeystrokeTimeline {
+        var events: [KeystrokeSourceEvent] = []
+        for await event in eventSource.events() {
+            events.append(event)
+        }
+
+        return try timeline(from: events, request: request)
+    }
+
+    public func timeline(
+        from events: [KeystrokeSourceEvent],
+        request: KeystrokeTimelineRecordingRequest
+    ) throws -> KeystrokeTimeline {
         let mapper = try MediaTimeMapper(
             recordingDuration: request.recordingDuration,
             pauses: request.pauses
         )
         var builder = KeystrokeTimelineRecordingBuilder(mapper: mapper)
-
-        for await event in eventSource.events() {
+        for event in events {
             try builder.append(event)
         }
-
         return try builder.timeline()
     }
 
@@ -125,9 +135,20 @@ private struct KeystrokeTimelineRecordingBuilder {
     }
 
     func timeline() throws -> KeystrokeTimeline {
-        try KeystrokeTimeline(
+        var resolvedPauses = pauses
+        for (cause, starts) in pauseStarts {
+            for start in starts where mapper.mediaDuration > start {
+                resolvedPauses.append(
+                    KeystrokePauseInterval(
+                        timeRange: try TimeRange(start: start, end: mapper.mediaDuration),
+                        cause: cause
+                    )
+                )
+            }
+        }
+        return try KeystrokeTimeline(
             events: events.sorted { $0.time < $1.time },
-            pauses: pauses.sorted { $0.timeRange.start < $1.timeRange.start }
+            pauses: resolvedPauses.sorted { $0.timeRange.start < $1.timeRange.start }
         )
     }
 }

@@ -148,6 +148,25 @@ extension LuxelCropperView {
         .help(recordAudioHelp)
     }
 
+    var keystrokeCaptureToggle: some View {
+        Button {
+            captureKeystrokes.wrappedValue.toggle()
+        } label: {
+            toolbarCircleLabel(
+                model.capturesKeystrokes ? "Keystrokes On" : "Keystrokes Off",
+                systemImage: model.capturesKeystrokes ? "keyboard.fill" : "keyboard",
+                isActive: model.capturesKeystrokes,
+                isDisabled: !model.canCaptureKeystrokes
+            )
+        }
+        .buttonStyle(.plain)
+        .frame(width: Self.toolbarCircleSide, height: Self.toolbarCircleSide)
+        .disabled(!model.canCaptureKeystrokes)
+        .accessibilityLabel("Capture Keystrokes")
+        .accessibilityValue(model.capturesKeystrokes ? "On" : "Off")
+        .help("Capture typed characters and shortcut identities with this recording.")
+    }
+
     var notificationReminderPanel: some View {
         GlassPanel {
             HStack(spacing: 10) {

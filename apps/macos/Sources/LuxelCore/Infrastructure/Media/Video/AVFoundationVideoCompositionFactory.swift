@@ -2,6 +2,7 @@ import AVFoundation
 import CoreGraphics
 import CoreMedia
 import Foundation
+import QuartzCore
 
 struct AVFoundationVideoCompositionFactory: Sendable {
     func makeVideoComposition(
@@ -12,7 +13,10 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         frameRate: FrameRate,
         shouldCrop: Bool = false,
         sourceCropRect: CaptureRect? = nil,
-        zoomBlocks: [ZoomBlock] = []
+        zoomBlocks: [ZoomBlock] = [],
+        keystrokeTimeline: KeystrokeTimeline? = nil,
+        keystrokeOptions: KeystrokeRenderOptions? = nil,
+        keystrokeTimelineMapper: EditedTimelineMapper? = nil
     ) async throws -> AVVideoComposition {
         let outputSize = CGSize(width: outputPixelSize.width, height: outputPixelSize.height)
         let geometry = try await compositionGeometry(sourceVideoTrack: sourceVideoTrack)
@@ -44,7 +48,93 @@ struct AVFoundationVideoCompositionFactory: Sendable {
             renderSize: outputSize
         )
 
-        return AVVideoComposition(configuration: compositionConfiguration)
+        let composition = AVVideoComposition(configuration: compositionConfiguration)
+        return await addingKeystrokeOverlay(
+            to: composition,
+            outputSize: outputSize,
+            timeline: keystrokeTimeline,
+            options: keystrokeOptions,
+            timelineMapper: keystrokeTimelineMapper
+        )
+    }
+
+    @MainActor
+    private func addingKeystrokeOverlay(
+        to composition: AVVideoComposition,
+        outputSize: CGSize,
+        timeline: KeystrokeTimeline?,
+        options: KeystrokeRenderOptions?,
+        timelineMapper: EditedTimelineMapper?
+    ) -> AVVideoComposition {
+        guard let timeline,
+              let options,
+              let timelineMapper,
+              options.isVisible,
+              let chips = try? KeystrokeChipPlanner(renderOptions: options)
+                .plannedChips(for: timeline),
+              !chips.isEmpty,
+              let mutable = composition.mutableCopy() as? AVMutableVideoComposition
+        else {
+            return composition
+        }
+
+        let parentLayer = CALayer()
+        parentLayer.frame = CGRect(origin: .zero, size: outputSize)
+        let videoLayer = CALayer()
+        videoLayer.frame = parentLayer.bounds
+        parentLayer.addSublayer(videoLayer)
+        let renderer = KeystrokeChipImageRenderer()
+
+        for chip in chips {
+            guard let outputRanges = try? timelineMapper.mapSourceRange(chip.timeRange),
+                  !outputRanges.isEmpty,
+                  let image = renderer.image(for: chip, options: options)
+            else {
+                continue
+            }
+
+            let size = CGSize(width: image.width, height: image.height)
+            let activeChips = KeystrokeOverlayLayout.activeChips(
+                at: chip.timeRange.start,
+                in: chips
+            )
+            let stackIndex = activeChips.firstIndex(of: chip) ?? 0
+            var origin = KeystrokeOverlayLayout.origin(
+                overlaySize: size,
+                frameSize: outputSize,
+                anchor: options.anchor
+            )
+            let stackOffset = CGFloat(stackIndex) * (size.height + 8)
+            switch options.anchor {
+            case .bottomLeft, .bottomCenter, .bottomRight:
+                origin.y += stackOffset
+            case .topLeft, .topCenter, .topRight:
+                origin.y -= stackOffset
+            }
+            for outputRange in outputRanges {
+                let layer = CALayer()
+                layer.contents = image
+                layer.contentsGravity = .resizeAspect
+                layer.frame = CGRect(origin: origin, size: size)
+                layer.opacity = 0
+
+                let animation = CAKeyframeAnimation(keyPath: "opacity")
+                animation.values = [0, 1, 1, 0]
+                animation.keyTimes = [0, 0.01, 0.82, 1]
+                animation.beginTime = AVCoreAnimationBeginTimeAtZero + outputRange.start
+                animation.duration = max(0.01, outputRange.duration)
+                animation.fillMode = .both
+                animation.isRemovedOnCompletion = false
+                layer.add(animation, forKey: "keystrokeVisibility")
+                parentLayer.addSublayer(layer)
+            }
+        }
+
+        mutable.animationTool = AVVideoCompositionCoreAnimationTool(
+            postProcessingAsVideoLayer: videoLayer,
+            in: parentLayer
+        )
+        return mutable
     }
 
     private func compositionGeometry(sourceVideoTrack: AVAssetTrack) async throws

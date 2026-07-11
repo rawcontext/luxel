@@ -99,13 +99,16 @@ final class LuxelCropperModel {
     var stopAfterDuration: TimeInterval?
     var customStopAfterText: String
     var recordsAudio: Bool
+    var capturesKeystrokes: Bool
     var errorMessage: String?
     @ObservationIgnored let onCountdownDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored let onStopAfterDurationChange: (TimeInterval?) -> Void
     @ObservationIgnored let onRecordAudioChange: (Bool) -> Void
+    @ObservationIgnored let onCaptureKeystrokesChange: (Bool) -> Void
     @ObservationIgnored let sizePresets: [CaptureSizePreset]
     @ObservationIgnored let windowSnapFrames: [CaptureRect]
     let canRecordAudio: Bool
+    let canCaptureKeystrokes: Bool
     let loupeAlwaysOn: Bool
     let dimOtherDisplays: Bool
     let displayFocus: CropperDisplayFocus
@@ -127,13 +130,16 @@ final class LuxelCropperModel {
         initialSelection: CaptureRect? = nil,
         windowSnapFrames: [CaptureRect] = [],
         recordAudio: Bool = false,
+        captureKeystrokes: Bool = false,
         canRecordAudio: Bool = false,
+        canCaptureKeystrokes: Bool = false,
         loupeAlwaysOn: Bool = false,
         dimOtherDisplays: Bool = false,
         displayFocus: CropperDisplayFocus = CropperDisplayFocus(),
         onCountdownDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
         onStopAfterDurationChange: @escaping (TimeInterval?) -> Void = { _ in },
-        onRecordAudioChange: @escaping (Bool) -> Void = { _ in }
+        onRecordAudioChange: @escaping (Bool) -> Void = { _ in },
+        onCaptureKeystrokesChange: @escaping (Bool) -> Void = { _ in }
     ) {
         let resolvedInitialSelection = Self.validInitialSelection(initialSelection, display: display)
 
@@ -143,15 +149,18 @@ final class LuxelCropperModel {
         self.stopAfterDuration = stopAfterDuration
         self.customStopAfterText = stopAfterDuration.map(RecordingDurationText.format) ?? "1:00"
         self.recordsAudio = recordAudio
+        self.capturesKeystrokes = captureKeystrokes
         self.sizePresets = selectionPresetConfiguration.sizePresets
         self.windowSnapFrames = windowSnapFrames
         self.canRecordAudio = canRecordAudio
+        self.canCaptureKeystrokes = canCaptureKeystrokes
         self.loupeAlwaysOn = loupeAlwaysOn
         self.dimOtherDisplays = dimOtherDisplays
         self.displayFocus = displayFocus
         self.onCountdownDurationChange = onCountdownDurationChange
         self.onStopAfterDurationChange = onStopAfterDurationChange
         self.onRecordAudioChange = onRecordAudioChange
+        self.onCaptureKeystrokesChange = onCaptureKeystrokesChange
         if resolvedInitialSelection != nil {
             displayFocus.activate(display.id)
         }
@@ -239,6 +248,17 @@ extension LuxelCropperModel {
 
         recordsAudio = isEnabled
         onRecordAudioChange(isEnabled)
+    }
+
+    func setCaptureKeystrokes(_ isEnabled: Bool) {
+        guard capturesKeystrokes != isEnabled else {
+            return
+        }
+        guard !isEnabled || canCaptureKeystrokes else {
+            return
+        }
+        capturesKeystrokes = isEnabled
+        onCaptureKeystrokesChange(isEnabled)
     }
 
     func setCustomStopAfterText(_ text: String) {

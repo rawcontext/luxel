@@ -210,17 +210,20 @@ extension LuxelMenu {
             countdownDuration: model.settings.defaultCountdown,
             stopAfterDuration: model.settings.lastStopAfter,
             canRecordAudio: model.microphoneStatus == .authorized,
+            canCaptureKeystrokes: model.inputMonitoringStatus == .authorized,
             cameraConfiguration: model.cropperCameraConfiguration(),
             quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
             selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
             restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
             recordAudio: model.captureCapabilities.microphoneTrackAvailable,
+            captureKeystrokes: model.settings.keystrokeOverlayEnabled,
             loupeAlwaysOn: model.settings.loupeAlwaysOn,
             dimOtherDisplays: model.settings.dimOtherDisplays,
             showsNotificationReminder: false,
             onCountdownDurationChange: updateCropperCountdown,
             onStopAfterDurationChange: updateCropperStopAfter,
             onRecordAudioChange: updateCropperAudio,
+            onCaptureKeystrokesChange: updateCropperKeystrokes,
             onCameraSelectionChange: updateCropperCamera,
             onCameraPreviewStyleChange: updateCropperCameraStyle,
             onNotificationReminderDismiss: model.dismissNotificationReminder,
@@ -253,6 +256,11 @@ extension LuxelMenu {
             return
         }
         model.settings.recordAudio = isEnabled
+        model.saveSettings()
+    }
+
+    func updateCropperKeystrokes(_ isEnabled: Bool) {
+        model.settings.keystrokeOverlayEnabled = isEnabled
         model.saveSettings()
     }
 

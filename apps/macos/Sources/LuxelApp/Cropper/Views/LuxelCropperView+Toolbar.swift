@@ -35,6 +35,7 @@ extension LuxelCropperView {
             toolbarDivider
 
             recordAudioToggle
+            keystrokeCaptureToggle
             cameraMenu
             countdownMenu
             stopAfterMenu

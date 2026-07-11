@@ -369,13 +369,13 @@ public enum KeystrokeOverlayAnchor: String, Codable, CaseIterable, Equatable, Se
     case bottomRight
 }
 
-public enum KeystrokeOverlaySize: String, Codable, CaseIterable, Equatable, Sendable {
+public enum KeystrokeOverlaySize: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
     case small
     case medium
     case large
 }
 
-public enum KeystrokeOverlayTheme: String, Codable, CaseIterable, Equatable, Sendable {
+public enum KeystrokeOverlayTheme: String, Codable, CaseIterable, Equatable, Hashable, Sendable {
     case darkGlass
     case lightGlass
     case highContrast
