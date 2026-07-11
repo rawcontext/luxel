@@ -67,6 +67,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Use Context7 for Documentation - Always query context7 for up-to-date library/service/API docs.
 - Ground Assumptions with Research - Use web search to verify syntax, patterns, version compatibility, and best practices instead of making assumptions.
 - Trust self-documenting code. Do not add comments that restate what the code does. Only add comments when explaining why something non-obvious is necessary.
+- Treat localization as part of implementing UI copy, not as a cleanup discovered during final validation. Whenever adding or changing user-facing text or accessibility labels, values, hints, or help text, update `apps/macos/Sources/LuxelCore/Resources/Localizable.xcstrings` in the same change and provide a non-empty value for every locale in `LuxelLocalization.supportedLocales`. Run `(cd apps/macos && swift test --filter LocalizationTests)` before the full test and lint passes.
 - Do NOT modify linting rules or code coverage requirements without explicit approval.
 - Avoid mentioning your guiding principles they are for your inner monologue, not for the user.
 
