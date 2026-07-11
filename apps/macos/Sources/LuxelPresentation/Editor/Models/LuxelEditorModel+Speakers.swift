@@ -193,8 +193,7 @@ extension LuxelEditorModel {
         transcriptExtractionProgress = nil
         stopSpeakerModelStatePolling()
 
-        if transcriptEnginePreference() == .precision
-            || speechRecognitionAuthorizationState == .authorized {
+        if speechRecognitionAuthorizationState == .authorized {
             scheduleTranscriptExtraction(sourceContext: transcriptSourceContext)
         } else {
             prepareTranscriptExtraction(sourceContext: transcriptSourceContext)

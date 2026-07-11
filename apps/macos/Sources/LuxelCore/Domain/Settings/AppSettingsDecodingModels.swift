@@ -24,7 +24,6 @@ extension AppSettings {
         case transcriptTurnSegmentationEnabled
         case transcriptSpeakerDiarizationEnabled
         case transcriptLanguageIdentifier
-        case transcriptEnginePreference
         case cameraDeviceID
         case cameraSeparateTrack
         case cameraPreviewStyle
@@ -118,7 +117,6 @@ struct TranscriptSettings {
     let turnSegmentationEnabled: Bool
     let speakerDiarizationEnabled: Bool
     let languageIdentifier: String?
-    let enginePreference: TranscriptEnginePreference
 }
 
 struct CaptureSurfaceSettings {

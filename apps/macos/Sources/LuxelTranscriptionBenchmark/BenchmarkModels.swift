@@ -22,15 +22,10 @@ struct Engine: Decodable {
     let encoderPrecision: String?
     let encoderComputeUnits: String?
     let melChunkContext: Bool?
-    let speakerModelDirectory: String?
-    let semanticTurns: Bool?
-    let diarize: Bool?
 }
 
 enum EngineKind: String, Decodable {
     case appleSpeech
-    case luxelPipeline
-    case luxelPrecision
     case parakeet
     case parakeetUnified
 }

@@ -45,22 +45,12 @@ final class LuxelMenuModel {
     var commandLineToolInstallStatus: CommandLineToolInstallStatus?
     var knownSpeakers: [KnownSpeakerProfile] = []
     var expandedKnownSpeakerID: UUID?
-    var precisionModelState: LocalModelInstallationState = .notInstalled(
-        expectedDownloadBytes: 483_105_645,
-        requiredFreeBytes: 1_050_000_000
-    )
-    var precisionModelErrorMessage: String?
     let appMetadata: AppMetadata
 
     @ObservationIgnored let speakerDiarizationModelStore: any SpeakerDiarizationModelStore =
         LuxelCompositionRoot.speakerDiarizationModelStore
     @ObservationIgnored let knownSpeakerProfileStore: any KnownSpeakerProfileStore =
         LuxelCompositionRoot.knownSpeakerProfileStore()
-    @ObservationIgnored let localModelManager: any LocalModelManaging =
-        LuxelCompositionRoot.localModelManager
-    @ObservationIgnored let precisionTranscriptionEngine =
-        LuxelCompositionRoot.precisionTranscriptionEngine
-
     @ObservationIgnored let settingsStore: any SettingsStore
     @ObservationIgnored let permissionClient: any PermissionClient
     @ObservationIgnored let launchAtLoginService: LaunchAtLoginService
@@ -95,8 +85,6 @@ final class LuxelMenuModel {
     @ObservationIgnored let errorReporter: any ErrorReporter
     @ObservationIgnored var notchPresentationState: NotchPresentationState = .collapsed
     @ObservationIgnored var activeNotchRecordingActionID: NotchActivityActionID?
-    @ObservationIgnored var precisionModelTask: Task<Void, Never>?
-    @ObservationIgnored var localModelStateTask: Task<Void, Never>?
     @ObservationIgnored weak var configuredEditorModel: LuxelEditorModel?
     @ObservationIgnored lazy var keystrokeLivePreviewPanelController =
         KeystrokeLivePreviewPanelController(exclusionRegistry: captureExclusionRegistry)
@@ -237,7 +225,6 @@ final class LuxelMenuModel {
         reconcileLaunchAtLoginWithSettings()
         reconcileCommandLineToolInstallWithBundle()
         prepareSpeakerModelIfNeeded()
-        observeLocalModelState()
     }
 
     private static func makeRecordingLifecycleServices(

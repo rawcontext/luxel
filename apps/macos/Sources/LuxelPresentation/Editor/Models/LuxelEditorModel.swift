@@ -123,7 +123,6 @@ public final class LuxelEditorModel {
     @ObservationIgnored var speakerModelStatePollingTask: Task<Void, Never>?
     @ObservationIgnored let speechRecognitionAuthorizationService:
         (any SpeechRecognitionAuthorizationService)?
-    @ObservationIgnored let transcriptEnginePreference: @Sendable () -> TranscriptEnginePreference
     @ObservationIgnored let fileSystem: any FileSystem
     @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService?
     var playbackRequested = false
@@ -180,9 +179,6 @@ public final class LuxelEditorModel {
         speakerModelStore: (any SpeakerDiarizationModelStore)? = nil,
         speechRecognitionAuthorizationService:
             (any SpeechRecognitionAuthorizationService)? = nil,
-        transcriptEnginePreference: @escaping @Sendable () -> TranscriptEnginePreference = {
-            .appleSpeech
-        },
         fileSystem: any FileSystem = LocalFileSystem(),
         codecAvailability: CodecAvailability = .none,
         directoryAccessService: BookmarkedDirectoryAccessService? = nil,
@@ -203,7 +199,6 @@ public final class LuxelEditorModel {
         self.speakerNamingService = speakerNamingService
         self.speakerModelStore = speakerModelStore
         self.speechRecognitionAuthorizationService = speechRecognitionAuthorizationService
-        self.transcriptEnginePreference = transcriptEnginePreference
         self.fileSystem = fileSystem
         self.directoryAccessService = directoryAccessService
         self.configuredSupportedFormats = codecAvailability.availableExportFormats

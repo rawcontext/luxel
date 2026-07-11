@@ -149,6 +149,12 @@ extension LuxelMenuModel {
         applyLaunchAtLogin(enabled)
     }
 
+    func applyTranscriptLanguage(_ identifier: String?) {
+        settings.transcriptLanguageIdentifier = identifier
+        saveSettings()
+        configuredEditorModel?.refreshTranscriptionConfiguration()
+    }
+
     private func applyLaunchAtLogin(_ enabled: Bool) {
         do {
             if launchAtLoginService.isEnabled() != enabled {

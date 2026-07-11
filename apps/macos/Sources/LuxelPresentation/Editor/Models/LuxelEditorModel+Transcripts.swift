@@ -9,8 +9,7 @@ extension LuxelEditorModel {
     var canTranscribeSource: Bool {
         source?.hasAudio == true
             && audioTranscriptService != nil
-            && (transcriptEnginePreference() == .precision
-                    || speechRecognitionAuthorizationService != nil)
+            && speechRecognitionAuthorizationService != nil
     }
 
     var canShowVideoTranscriptToggle: Bool {
@@ -28,7 +27,6 @@ extension LuxelEditorModel {
     var shouldShowSpeechRecognitionPrompt: Bool {
         isTranscriptPanelVisible
             && canTranscribeSource
-            && transcriptEnginePreference() == .appleSpeech
             && (speechRecognitionAuthorizationState == .notDetermined
                     || speechRecognitionAuthorizationState == .denied)
     }
@@ -167,8 +165,7 @@ extension LuxelEditorModel {
         }
 
         transcriptFailureMessage = nil
-        if transcriptEnginePreference() == .precision
-            || speechRecognitionAuthorizationState == .authorized {
+        if speechRecognitionAuthorizationState == .authorized {
             scheduleTranscriptExtraction(sourceContext: transcriptSourceContext)
         } else {
             prepareTranscriptExtraction(sourceContext: transcriptSourceContext)
@@ -186,7 +183,6 @@ extension LuxelEditorModel {
     func enableSpeechRecognition() {
         guard canTranscribeSource,
               isTranscriptPanelVisible,
-              transcriptEnginePreference() == .appleSpeech,
               let source,
               let speechRecognitionAuthorizationService,
               speechRecognitionAuthorizationState == .notDetermined
@@ -222,13 +218,6 @@ extension LuxelEditorModel {
             return
         }
 
-        if transcriptEnginePreference() == .precision {
-            speechRecognitionAuthorizationTask?.cancel()
-            speechRecognitionAuthorizationTask = nil
-            speechRecognitionAuthorizationState = nil
-            scheduleTranscriptExtraction(sourceContext: sourceContext)
-            return
-        }
         guard let speechRecognitionAuthorizationService else { return }
 
         let sourceURL = source.fileURL
@@ -256,8 +245,7 @@ extension LuxelEditorModel {
         guard canTranscribeSource,
               let source,
               let audioTranscriptService,
-              transcriptEnginePreference() == .precision
-                || speechRecognitionAuthorizationState == .authorized
+              speechRecognitionAuthorizationState == .authorized
         else {
             return
         }

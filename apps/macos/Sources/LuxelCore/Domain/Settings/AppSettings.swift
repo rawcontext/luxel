@@ -43,11 +43,6 @@ public enum AppSettingsError: Error, Equatable {
     case invalidRecordingFrameRate
 }
 
-public enum TranscriptEnginePreference: String, Codable, Equatable, Sendable {
-    case appleSpeech
-    case precision
-}
-
 public struct AppSettings: Codable, Equatable, Sendable {
     public static let recordingFrameRateRange = 1...120
 
@@ -92,7 +87,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var transcriptTurnSegmentationEnabled: Bool
     public var transcriptSpeakerDiarizationEnabled: Bool
     public var transcriptLanguageIdentifier: String?
-    public var transcriptEnginePreference: TranscriptEnginePreference
     public var cameraDeviceID: String?
     public var cameraSeparateTrack: Bool
     public var cameraPreviewStyle: CameraPreviewStyle
@@ -183,7 +177,6 @@ extension AppSettings {
         transcriptTurnSegmentationEnabled: Bool = false,
         transcriptSpeakerDiarizationEnabled: Bool = true,
         transcriptLanguageIdentifier: String? = nil,
-        transcriptEnginePreference: TranscriptEnginePreference = .appleSpeech,
         cameraDeviceID: String? = nil,
         cameraSeparateTrack: Bool = true,
         cameraPreviewStyle: CameraPreviewStyle = CameraPreviewStyle(),
@@ -252,7 +245,6 @@ extension AppSettings {
         self.transcriptSpeakerDiarizationEnabled = transcriptSpeakerDiarizationEnabled
         self.transcriptLanguageIdentifier = transcriptLanguageIdentifier.flatMap(Self.nonEmpty)
         self.cameraDeviceID = cameraDeviceID.flatMap(Self.nonEmpty); self.cameraPreviewStyle = cameraPreviewStyle
-        self.transcriptEnginePreference = transcriptEnginePreference
         self.cameraPreviewPlacements = cameraPreviewPlacements
         self.replayBufferConfiguration = replayBufferConfiguration
         self.replayBufferPreferredBufferLength = bufferLength

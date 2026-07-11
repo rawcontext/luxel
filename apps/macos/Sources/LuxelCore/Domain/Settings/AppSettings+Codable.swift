@@ -27,7 +27,6 @@ extension AppSettings {
         transcriptTurnSegmentationEnabled = transcription.turnSegmentationEnabled
         transcriptSpeakerDiarizationEnabled = transcription.speakerDiarizationEnabled
         transcriptLanguageIdentifier = transcription.languageIdentifier
-        transcriptEnginePreference = transcription.enginePreference
         cameraDeviceID = capture.cameraDeviceID; cameraSeparateTrack = capture.cameraSeparateTrack
         cameraPreviewStyle = capture.cameraPreviewStyle; cameraPreviewPlacements = capture.cameraPreviewPlacements
         replayBufferConfiguration = capture.replayBufferConfiguration
@@ -123,11 +122,7 @@ extension AppSettings {
             languageIdentifier: container.decodeIfPresent(
                 String.self,
                 forKey: .transcriptLanguageIdentifier
-            ).flatMap(Self.nonEmpty),
-            enginePreference: container.decodeIfPresent(
-                TranscriptEnginePreference.self,
-                forKey: .transcriptEnginePreference
-            ) ?? .appleSpeech
+            ).flatMap(Self.nonEmpty)
         )
     }
 

@@ -27,15 +27,8 @@ extension LuxelCompositionRoot {
         transcriptLocaleOverride: (@Sendable () -> Locale?)? = nil
     ) -> LocalAudioTranscriptService {
         let settingsStore = settingsStore()
-        let precisionEngine = precisionTranscriptionEngine
-        let provenanceResolver = selectedTranscriptionProvenanceResolver(
-            settingsStore: settingsStore
-        )
         return LocalAudioTranscriptService(
-            transcriber: SelectedEngineTimedSpeechTranscriber(
-                appleSpeech: AppleSpeechTranscriptExtractor(),
-                precision: PrecisionTimedSpeechTranscriber(engine: precisionEngine)
-            ),
+            transcriber: AppleSpeechTranscriptExtractor(),
             turnSegmenter: AppleIntelligenceTurnSegmenter(),
             turnSegmentationMode: {
                 if let turnSegmentationModeOverride {
@@ -59,7 +52,7 @@ extension LuxelCompositionRoot {
                 return settings.transcriptLanguageIdentifier.map(Locale.init(identifier:))
             },
             transcriptionProvenance: {
-                try await provenanceResolver.resolve()
+                .appleSpeech
             },
             cache: ApplicationSupportTranscriptCache(cacheDirectory: transcriptCacheDirectory),
             audioTrackInspector: AVFoundationAudioTrackInspector(),

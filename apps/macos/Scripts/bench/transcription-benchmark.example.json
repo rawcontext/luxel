@@ -15,14 +15,9 @@
       "kind": "appleSpeech"
     },
     {
-      "id": "luxel-precision-production",
-      "kind": "luxelPrecision",
-      "modelDirectory": "~/Library/Application Support/Luxel/Models/Downloaded"
-    },
-    {
       "id": "parakeet-v3-int8",
       "kind": "parakeet",
-      "modelDirectory": "~/Library/Application Support/Luxel/Models/Downloaded/precision-transcription.parakeet-tdt-0.6b-v3-int8/releases/REVISION/payload/parakeet-tdt-0.6b-v3",
+      "modelDirectory": "/absolute/path/to/parakeet-tdt-0.6b-v3-coreml",
       "modelVersion": "v3",
       "encoderPrecision": "int8",
       "encoderComputeUnits": "cpuAndNeuralEngine",

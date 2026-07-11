@@ -93,29 +93,6 @@ actor ParakeetBenchmarkEngine: BenchmarkEngine {
     }
 }
 
-actor LuxelPrecisionBenchmarkEngine: BenchmarkEngine {
-    private let engine: PrecisionTranscriptionEngine
-
-    init(modelsRoot: URL) throws {
-        let manager = try makeProductionModelManager(modelsRoot: modelsRoot)
-        engine = PrecisionTranscriptionEngine(modelManager: manager)
-    }
-
-    func load() {}
-
-    func transcribe(audioURL: URL, locale: Locale) async throws -> String {
-        try await engine.recognize(
-            audioURL: audioURL,
-            audioTrackIndex: nil,
-            locale: locale
-        ).text
-    }
-
-    func unload() async {
-        await engine.unload()
-    }
-}
-
 actor ParakeetUnifiedBenchmarkEngine: BenchmarkEngine {
     private let manager: UnifiedAsrManager
     private let modelDirectory: URL
@@ -157,74 +134,6 @@ actor ParakeetUnifiedBenchmarkEngine: BenchmarkEngine {
     }
 }
 
-final class EmptyTranscriptCache: TranscriptCache, @unchecked Sendable {
-    func load(for request: AudioTranscriptRequest) throws -> TurnSegmentedTranscript? { nil }
-    func save(_ transcript: TurnSegmentedTranscript, for request: AudioTranscriptRequest) throws {}
-}
-
-actor LuxelPipelineBenchmarkEngine: BenchmarkEngine {
-    private let service: LocalAudioTranscriptService
-    private let provenance: TranscriptionProvenance
-    private let semanticTurns: Bool
-    private let diarize: Bool
-    private let engine: PrecisionTranscriptionEngine
-
-    init(
-        modelsRoot: URL,
-        speakerModelsDirectory: URL?,
-        semanticTurns: Bool,
-        diarize: Bool
-    ) throws {
-        let manager = try makeProductionModelManager(modelsRoot: modelsRoot)
-        let engine = PrecisionTranscriptionEngine(modelManager: manager)
-        let provenance = TranscriptionProvenance(
-            engine: .parakeetTDTv3,
-            modelRevision: "aed02740059203c4a87495924f685de3722ae9ce",
-            configurationRevision: PrecisionTranscriptionEngine.configurationRevision
-        )
-        let speakerModelStore = speakerModelsDirectory.map {
-            FluidAudioSpeakerDiarizationModelStore(modelsDirectory: $0)
-        }
-        self.engine = engine
-        self.provenance = provenance
-        self.semanticTurns = semanticTurns
-        self.diarize = diarize
-        service = LocalAudioTranscriptService(
-            transcriber: PrecisionTimedSpeechTranscriber(engine: engine),
-            turnSegmenter: AppleIntelligenceTurnSegmenter(),
-            turnSegmentationMode: { semanticTurns ? .semantic : .raw },
-            speakerDiarizationMode: { diarize ? .enabled : .disabled },
-            transcriptionProvenance: { provenance },
-            cache: EmptyTranscriptCache(),
-            audioTrackInspector: AVFoundationAudioTrackInspector(),
-            speakerDiarizer: speakerModelsDirectory.map {
-                FluidAudioSpeakerDiarizer(modelsDirectory: $0)
-            },
-            speakerModelStore: speakerModelStore
-        )
-    }
-
-    func load() {}
-
-    func transcribe(audioURL: URL, locale: Locale) async throws -> String {
-        let transcript = try await service.transcript(
-            for: AudioTranscriptRequest(
-                audioURL: audioURL,
-                locale: locale,
-                sourceContext: .unknown,
-                turnSegmentationMode: semanticTurns ? .semantic : .raw,
-                speakerDiarizationMode: diarize ? .enabled : .disabled,
-                transcriptionProvenance: provenance
-            )
-        )
-        return transcript?.spans.map(\.text).joined(separator: " ") ?? ""
-    }
-
-    func unload() async {
-        await engine.unload()
-    }
-}
-
 func makeBenchmarkEngine(
     _ configuration: Engine,
     relativeTo directory: URL
@@ -232,19 +141,6 @@ func makeBenchmarkEngine(
     switch configuration.kind {
     case .appleSpeech:
         AppleSpeechBenchmarkEngine()
-    case .luxelPipeline:
-        try LuxelPipelineBenchmarkEngine(
-            modelsRoot: requiredModelDirectory(configuration, relativeTo: directory),
-            speakerModelsDirectory: configuration.speakerModelDirectory.map {
-                BenchmarkSupport.resolve($0, relativeTo: directory)
-            },
-            semanticTurns: configuration.semanticTurns ?? false,
-            diarize: configuration.diarize ?? false
-        )
-    case .luxelPrecision:
-        try LuxelPrecisionBenchmarkEngine(
-            modelsRoot: requiredModelDirectory(configuration, relativeTo: directory)
-        )
     case .parakeet:
         ParakeetBenchmarkEngine(
             configuration: configuration,
@@ -263,33 +159,6 @@ private func requiredModelDirectory(_ engine: Engine, relativeTo directory: URL)
         throw BenchmarkError.missingModelDirectory(engine.id)
     }
     return BenchmarkSupport.resolve(path, relativeTo: directory)
-}
-
-private func makeProductionModelManager(modelsRoot: URL) throws -> LocalModelManager {
-    FluidAudioOfflinePolicy.enable()
-    let appVersion = Bundle.main.object(
-        forInfoDictionaryKey: "CFBundleShortVersionString"
-    ) as? String ?? "1.0.0"
-    let appBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
-    let validator = ParakeetPrecisionModelValidator()
-    let catalog = try BundledLocalModelCatalog.production(
-        registeredValidatorKeys: [validator.key],
-        attributionIdentifiers: ["fluidinference-parakeet-tdt-0.6b-v3-coreml"],
-        currentAppVersion: appVersion
-    )
-    return try LocalModelManager(
-        catalogProvider: catalog,
-        validators: [validator],
-        downloader: HuggingFaceModelArtifactDownloadClient(
-            userAgent: "LuxelTranscriptionBenchmark/\(appVersion)"
-        ),
-        verifier: SHA256ArtifactVerifier(),
-        repository: ApplicationSupportLocalModelRepository(
-            root: modelsRoot,
-            appVersion: appVersion,
-            appBuild: appBuild
-        )
-    )
 }
 
 private func parsedComputeUnits(_ value: String?) throws -> MLComputeUnits? {
