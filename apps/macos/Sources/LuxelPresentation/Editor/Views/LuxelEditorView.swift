@@ -89,7 +89,18 @@ extension LuxelEditorView {
                 transcriptPreviewControls
             }
 
-            videoFrame
+            ScrollView {
+                VStack(spacing: 10) {
+                    if showsTranscriptContent {
+                        AudioTranscriptPreview(model: model)
+                    }
+
+                    videoFrame
+                        .containerRelativeFrame(.vertical)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .scrollIndicators(.hidden)
         }
         .frame(minWidth: 540, maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -118,8 +129,6 @@ extension LuxelEditorView {
                 ProgressView()
                     .controlSize(.large)
             }
-
-            AudioTranscriptPreview(model: model)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

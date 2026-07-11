@@ -7,7 +7,6 @@ struct AudioTranscriptPreview: View {
         static let transcriptCardHeight: CGFloat = 300
         static let transcriptCardMaxWidth: CGFloat = 640
         static let transcriptHorizontalPadding: CGFloat = 24
-        static let transcriptTopPadding: CGFloat = 86
         static let progressCardMaxWidth: CGFloat = 360
         static let transcriptSpansPerChunk = 32
     }
@@ -24,17 +23,10 @@ struct AudioTranscriptPreview: View {
         } else if model.shouldShowTranscriptFailure {
             transcriptFailure
         } else if let transcript = model.visibleTranscript {
-            VStack {
-                transcriptCard(transcript)
-                    .frame(maxWidth: Layout.transcriptCardMaxWidth)
-                    .frame(height: Layout.transcriptCardHeight)
-                    .padding(.horizontal, Layout.transcriptHorizontalPadding)
-                    .padding(.top, Layout.transcriptTopPadding)
-
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .allowsHitTesting(true)
+            transcriptCard(transcript)
+                .frame(maxWidth: Layout.transcriptCardMaxWidth)
+                .frame(height: Layout.transcriptCardHeight)
+                .padding(.horizontal, Layout.transcriptHorizontalPadding)
         }
     }
 
@@ -81,18 +73,11 @@ struct AudioTranscriptPreview: View {
 
     private var transcriptProgress: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
-            VStack {
-                transcriptProgressRow(at: timeline.date)
-                    .frame(maxWidth: Layout.progressCardMaxWidth)
-                    .padding(.horizontal, Layout.transcriptHorizontalPadding)
-                    .padding(.top, Layout.transcriptTopPadding)
-
-                Spacer()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .allowsHitTesting(model.canCloseTranscriptPanel)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(transcriptProgressTitle(at: timeline.date))
+            transcriptProgressRow(at: timeline.date)
+                .frame(maxWidth: Layout.progressCardMaxWidth)
+                .padding(.horizontal, Layout.transcriptHorizontalPadding)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(transcriptProgressTitle(at: timeline.date))
         }
     }
 
@@ -121,41 +106,31 @@ struct AudioTranscriptPreview: View {
     }
 
     private var speechRecognitionPrompt: some View {
-        VStack {
-            HStack {
-                Spacer()
+        HStack {
+            Spacer()
 
-                Button {
-                    model.enableSpeechRecognition()
-                } label: {
-                    Label("Enable Speech Recognition", systemImage: "waveform")
-                }
-                .buttonStyle(.glassProminent)
-                .controlSize(.regular)
-                .help("Turn speech recognition on for this recording.")
-
-                if model.canCloseTranscriptPanel {
-                    closeTranscriptButton
-                }
+            Button {
+                model.enableSpeechRecognition()
+            } label: {
+                Label("Enable Speech Recognition", systemImage: "waveform")
             }
-            .padding(.top, 14)
-            .padding(.trailing, 16)
+            .buttonStyle(.glassProminent)
+            .controlSize(.regular)
+            .help("Turn speech recognition on for this recording.")
+
+            if model.canCloseTranscriptPanel {
+                closeTranscriptButton
+            }
 
             Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .allowsHitTesting(true)
+        .padding(.horizontal, Layout.transcriptHorizontalPadding)
     }
 
     private var transcriptFailure: some View {
-        VStack {
-            transcriptFailureRow
-                .frame(maxWidth: Layout.progressCardMaxWidth)
-                .padding(.horizontal, Layout.transcriptHorizontalPadding)
-                .padding(.top, Layout.transcriptTopPadding)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        transcriptFailureRow
+            .frame(maxWidth: Layout.progressCardMaxWidth)
+            .padding(.horizontal, Layout.transcriptHorizontalPadding)
     }
 
     private var transcriptFailureRow: some View {
