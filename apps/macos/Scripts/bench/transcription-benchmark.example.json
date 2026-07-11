@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "runs": 3,
+  "fixtures": [
+    {
+      "id": "clean-english",
+      "audioPath": "/absolute/path/to/audio.wav",
+      "reference": "The exact words spoken in the audio.",
+      "locale": "en_US"
+    }
+  ],
+  "engines": [
+    {
+      "id": "apple-speech",
+      "kind": "appleSpeech"
+    },
+    {
+      "id": "luxel-precision-production",
+      "kind": "luxelPrecision",
+      "modelDirectory": "~/Library/Application Support/Luxel/Models/Downloaded"
+    },
+    {
+      "id": "parakeet-v3-int8",
+      "kind": "parakeet",
+      "modelDirectory": "~/Library/Application Support/Luxel/Models/Downloaded/precision-transcription.parakeet-tdt-0.6b-v3-int8/releases/REVISION/payload/parakeet-tdt-0.6b-v3",
+      "modelVersion": "v3",
+      "encoderPrecision": "int8",
+      "encoderComputeUnits": "cpuAndNeuralEngine",
+      "melChunkContext": true
+    },
+    {
+      "id": "parakeet-unified-int8",
+      "kind": "parakeetUnified",
+      "modelDirectory": "/absolute/path/to/parakeet-unified-en-0.6b-coreml",
+      "encoderPrecision": "int8",
+      "encoderComputeUnits": "cpuAndNeuralEngine"
+    }
+  ]
+}

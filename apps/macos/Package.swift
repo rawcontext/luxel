@@ -13,7 +13,11 @@ let package = Package(
         .library(name: "LuxelCodecWebM", targets: ["LuxelCodecWebM"]),
         .library(name: "LuxelCodecAV1", targets: ["LuxelCodecAV1"]),
         .executable(name: "Luxel", targets: ["LuxelApp"]),
-        .executable(name: "luxel-cli", targets: ["LuxelCLIExecutable"])
+        .executable(name: "luxel-cli", targets: ["LuxelCLIExecutable"]),
+        .executable(
+            name: "luxel-transcription-benchmark",
+            targets: ["LuxelTranscriptionBenchmark"]
+        )
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.8.2"),
@@ -30,6 +34,13 @@ let package = Package(
             ]
         ),
         .executableTarget(name: "LuxelCLIExecutable", dependencies: ["LuxelCLI"]),
+        .executableTarget(
+            name: "LuxelTranscriptionBenchmark",
+            dependencies: [
+                "LuxelCore",
+                .product(name: "FluidAudio", package: "FluidAudio")
+            ]
+        ),
         .target(
             name: "LuxelCLI",
             dependencies: [
