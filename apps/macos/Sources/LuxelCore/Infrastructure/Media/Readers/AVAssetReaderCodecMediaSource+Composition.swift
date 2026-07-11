@@ -29,7 +29,8 @@ extension AVAssetReaderCodecMediaSource {
             sourceCropRect: request.cropRect,
             zoomBlocks: ZoomExportTimeMapper(
                 trimRange: request.timeRange,
-                speed: request.speed
+                speed: request.speed,
+                editPlan: request.editPlan
             ).map(request.zoomBlocks)
         )
         return output
@@ -66,7 +67,7 @@ extension AVAssetReaderCodecMediaSource {
     func addVideoTrack(
         to composition: AVMutableComposition,
         from sourceVideoTrack: AVAssetTrack,
-        sourceTimeRange: CMTimeRange
+        sourceSegments: [SourceMediaSegment]
     ) throws -> AVMutableCompositionTrack {
         guard
             let videoTrack = composition.addMutableTrack(
@@ -77,7 +78,13 @@ extension AVAssetReaderCodecMediaSource {
             throw AVAssetReaderVideoCodecMediaSourceError.cannotCreateVideoTrack
         }
 
-        try videoTrack.insertTimeRange(sourceTimeRange, of: sourceVideoTrack, at: .zero)
+        for segment in sourceSegments {
+            try videoTrack.insertTimeRange(
+                segment.cmTimeRange,
+                of: sourceVideoTrack,
+                at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
+            )
+        }
         return videoTrack
     }
 
@@ -90,14 +97,14 @@ extension AVAssetReaderCodecMediaSource {
         let source = try await audioSource(
             preparedAudio: preparedAudio,
             sourceAudioTracks: sourceAudioTracks,
-            sourceTimeRange: timing.sourceTimeRange
+            sourceSegments: timing.sourceSegments
         )
 
         let compositionAudioTracks = try source.tracks.map { sourceAudioTrack in
             try addAudioTrack(
                 to: composition,
                 from: sourceAudioTrack,
-                sourceTimeRange: source.timeRange
+                sourceSegments: source.sourceSegments
             )
         }
         withExtendedLifetime(source.retainedAsset) {}
@@ -135,12 +142,12 @@ extension AVAssetReaderCodecMediaSource {
     func audioSource(
         preparedAudio: PreparedAudioAsset?,
         sourceAudioTracks: [AVAssetTrack],
-        sourceTimeRange: CMTimeRange
+        sourceSegments: [SourceMediaSegment]
     ) async throws -> CodecAudioSource {
         guard let preparedAudio else {
             return CodecAudioSource(
                 tracks: sourceAudioTracks,
-                timeRange: sourceTimeRange,
+                sourceSegments: sourceSegments,
                 retainedAsset: nil
             )
         }
@@ -158,10 +165,15 @@ extension AVAssetReaderCodecMediaSource {
         )
         return CodecAudioSource(
             tracks: tracks,
-            timeRange: CMTimeRange(
-                start: .zero,
-                duration: CMTimeMinimum(availableTimeRange.duration, requestedDuration)
-            ),
+            sourceSegments: [
+                SourceMediaSegment(
+                    sourceRange: try TimeRange(
+                        start: 0,
+                        end: CMTimeMinimum(availableTimeRange.duration, requestedDuration).seconds
+                    ),
+                    outputStart: 0
+                )
+            ],
             retainedAsset: asset
         )
     }
@@ -169,7 +181,7 @@ extension AVAssetReaderCodecMediaSource {
     func addAudioTrack(
         to composition: AVMutableComposition,
         from sourceAudioTrack: AVAssetTrack,
-        sourceTimeRange: CMTimeRange
+        sourceSegments: [SourceMediaSegment]
     ) throws -> AVMutableCompositionTrack {
         guard
             let audioTrack = composition.addMutableTrack(
@@ -181,7 +193,13 @@ extension AVAssetReaderCodecMediaSource {
         }
 
         do {
-            try audioTrack.insertTimeRange(sourceTimeRange, of: sourceAudioTrack, at: .zero)
+            for segment in sourceSegments {
+                try audioTrack.insertTimeRange(
+                    segment.cmTimeRange,
+                    of: sourceAudioTrack,
+                    at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
+                )
+            }
         } catch {
             throw AVAssetReaderCodecMediaSourceError.readFailed(
                 "Could not compose audio: \(error.localizedDescription)"
@@ -210,5 +228,14 @@ extension AVAssetReaderCodecMediaSource {
             return parameters
         }
         return audioMix
+    }
+}
+
+private extension SourceMediaSegment {
+    var cmTimeRange: CMTimeRange {
+        CMTimeRange(
+            start: CMTime(seconds: sourceRange.start, preferredTimescale: 60_000),
+            duration: CMTime(seconds: sourceRange.duration, preferredTimescale: 60_000)
+        )
     }
 }

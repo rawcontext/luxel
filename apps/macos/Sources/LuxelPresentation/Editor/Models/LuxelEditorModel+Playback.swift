@@ -14,7 +14,11 @@ extension LuxelEditorModel {
     }
 
     func handlePlaybackTime(_ currentTime: TimeInterval) {
-        currentPlaybackTime = currentTime
+        if transcriptEditPlan.cuts.isEmpty {
+            currentPlaybackTime = currentTime
+        } else if let sourceTime = previewTimelineMapper.sourceTime(forOutputTime: currentTime) {
+            currentPlaybackTime = sourceTime
+        }
 
         guard playbackRequested else {
             return
@@ -24,6 +28,16 @@ extension LuxelEditorModel {
     }
 
     func seekPlaybackIntoTrimRangeIfNeeded(currentTime: TimeInterval? = nil) {
+        if !transcriptEditPlan.cuts.isEmpty {
+            let seconds = currentTime ?? CMTimeGetSeconds(player.currentTime())
+            let outputDuration = (try? previewTimelineMapper.unscaledOutputDuration) ?? 0
+            guard seconds.isFinite, seconds < 0 || seconds >= outputDuration else {
+                return
+            }
+            enqueuePlayerSeek(to: 0)
+            return
+        }
+
         guard let loop = playbackLoop else {
             return
         }
@@ -97,7 +111,11 @@ extension LuxelEditorModel {
 
         let target = min(max(seconds, 0), duration)
         currentPlaybackTime = target
-        enqueuePlayerSeek(to: target)
+        enqueuePlayerSeek(
+            to: transcriptEditPlan.cuts.isEmpty
+                ? target
+                : previewOutputTime(forSourceTime: target)
+        )
     }
 
     var playbackLoop: EditorPlaybackLoop? {

@@ -223,7 +223,8 @@ private extension ImageIOAnimatedMediaExporter {
 
         let blocks = try ZoomExportTimeMapper(
             trimRange: request.timeRange,
-            speed: request.speed
+            speed: request.speed,
+            editPlan: request.editPlan
         )
         .map(request.zoomBlocks)
 
@@ -246,7 +247,11 @@ private extension ImageIOAnimatedMediaExporter {
             return .identity
         }
 
-        let outputTime = max(0, (sourceTime.seconds - request.timeRange.start) / request.speed.value)
+        guard let outputTime = request.timelineMapper.outputTime(
+            forSourceTime: sourceTime.seconds
+        ) else {
+            return .identity
+        }
         return try cameraPath.transform(at: outputTime)
     }
 

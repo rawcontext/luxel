@@ -1,3 +1,4 @@
+import AppKit
 import LuxelCore
 import SwiftUI
 
@@ -7,35 +8,51 @@ struct TranscriptDisplayPlan {
     private let chunkIDBySpanID: [String: String]
     private let searchTurns: [TranscriptSearchTurn]
 
-    init(transcript: TurnSegmentedTranscript, spansPerChunk: Int) {
+    init(
+        transcript: TurnSegmentedTranscript,
+        sentences: [TranscriptEditableSentence],
+        sentencesPerChunk: Int
+    ) {
         let spansByID = Dictionary(uniqueKeysWithValues: transcript.spans.map { ($0.id, $0) })
-        let maxSpanCount = max(1, spansPerChunk)
+        let visibleSpanIDs = Set(sentences.flatMap(\.spanIDs))
+        let maxSentenceCount = max(1, sentencesPerChunk)
         var chunks: [TranscriptDisplayChunk] = []
         var chunkIDBySpanID: [String: String] = [:]
         var searchTurns: [TranscriptSearchTurn] = []
 
         for turn in transcript.turns {
-            let spans = turn.spanIDs.compactMap { spansByID[$0] }
+            let turnSentences = sentences.filter { $0.turnID == turn.id }
+            guard !turnSentences.isEmpty else {
+                continue
+            }
+            let spans = turn.spanIDs.compactMap { spansByID[$0] }.filter {
+                visibleSpanIDs.contains($0.id)
+            }
             searchTurns.append(TranscriptSearchTurn(turn: turn, spans: spans))
             var chunkIndex = 0
-            var startIndex = spans.startIndex
+            var startIndex = turnSentences.startIndex
 
-            while startIndex < spans.endIndex {
+            while startIndex < turnSentences.endIndex {
                 let endIndex =
-                    spans.index(startIndex, offsetBy: maxSpanCount, limitedBy: spans.endIndex)
-                    ?? spans.endIndex
-                let chunkSpans = Array(spans[startIndex..<endIndex])
+                    turnSentences.index(
+                        startIndex,
+                        offsetBy: maxSentenceCount,
+                        limitedBy: turnSentences.endIndex
+                    ) ?? turnSentences.endIndex
+                let chunkSentences = Array(turnSentences[startIndex..<endIndex])
                 let chunkID = chunkIndex == 0 ? turn.id : "\(turn.id)-chunk-\(chunkIndex)"
 
                 chunks.append(
                     TranscriptDisplayChunk(
                         id: chunkID,
                         turn: turn,
-                        spans: chunkSpans,
+                        sentences: chunkSentences,
                         showsHeader: chunkIndex == 0
                     ))
-                for span in chunkSpans {
-                    chunkIDBySpanID[span.id] = chunkID
+                for sentence in chunkSentences {
+                    for spanID in sentence.spanIDs {
+                        chunkIDBySpanID[spanID] = chunkID
+                    }
                 }
 
                 chunkIndex += 1
@@ -93,7 +110,7 @@ struct TranscriptDisplayPlan {
 struct TranscriptDisplayChunk: Identifiable {
     let id: String
     let turn: TranscriptTurn
-    let spans: [TimedTranscriptSpan]
+    let sentences: [TranscriptEditableSentence]
     let showsHeader: Bool
 }
 
@@ -148,9 +165,10 @@ struct TranscriptChunkView: View {
     let speakerChip: TranscriptSpeakerChip?
     let isActiveTurn: Bool
     let activeSpanID: String?
+    let selectedSentenceIDs: Set<TranscriptEditableSentence.ID>
     let matchedSearchSpanIDs: Set<String>
     let currentSearchSpanIDs: Set<String>
-    let seekToSpan: (TimedTranscriptSpan) -> Void
+    let selectSentence: (TranscriptEditableSentence, Bool) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: chunk.showsHeader ? 6 : 0) {
@@ -208,14 +226,15 @@ struct TranscriptChunkView: View {
             }
 
             TranscriptSpanFlowLayout(horizontalSpacing: 4, verticalSpacing: 7) {
-                ForEach(chunk.spans) { span in
-                    TranscriptSpanButton(
-                        span: span,
+                ForEach(chunk.sentences) { sentence in
+                    TranscriptSentenceButton(
+                        sentence: sentence,
                         isActiveTurn: isActiveTurn,
-                        isActiveSpan: span.id == activeSpanID,
-                        isSearchMatch: matchedSearchSpanIDs.contains(span.id),
-                        isCurrentSearchMatch: currentSearchSpanIDs.contains(span.id),
-                        seekToSpan: seekToSpan
+                        isActiveSpan: sentence.spanIDs.contains(activeSpanID ?? ""),
+                        isSelected: selectedSentenceIDs.contains(sentence.id),
+                        isSearchMatch: !matchedSearchSpanIDs.isDisjoint(with: sentence.spanIDs),
+                        isCurrentSearchMatch: !currentSearchSpanIDs.isDisjoint(with: sentence.spanIDs),
+                        selectSentence: selectSentence
                     )
                 }
             }
@@ -227,19 +246,21 @@ struct TranscriptChunkView: View {
     }
 }
 
-private struct TranscriptSpanButton: View {
-    let span: TimedTranscriptSpan
+private struct TranscriptSentenceButton: View {
+    let sentence: TranscriptEditableSentence
     let isActiveTurn: Bool
     let isActiveSpan: Bool
+    let isSelected: Bool
     let isSearchMatch: Bool
     let isCurrentSearchMatch: Bool
-    let seekToSpan: (TimedTranscriptSpan) -> Void
+    let selectSentence: (TranscriptEditableSentence, Bool) -> Void
 
     var body: some View {
         Button {
-            seekToSpan(span)
+            let extendsSelection = NSApp.currentEvent?.modifierFlags.contains(.shift) == true
+            selectSentence(sentence, extendsSelection)
         } label: {
-            Text(span.text)
+            Text(sentence.text)
                 .font(.system(size: 13))
                 .foregroundStyle(
                     isActiveSpan || isActiveTurn || isSearchMatch
@@ -256,17 +277,22 @@ private struct TranscriptSpanButton: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .help(
             LuxelLocalization.format(
                 "transcript.jumpToTime.help",
                 defaultValue: "Jump to %@",
-                formatTranscriptTime(span.start))
+                formatTranscriptTime(sentence.sourceRange.start))
         )
     }
 
     private var spanBackground: Color {
         if isCurrentSearchMatch {
             return .white.opacity(0.3)
+        }
+
+        if isSelected {
+            return .blue.opacity(0.4)
         }
 
         if isSearchMatch {

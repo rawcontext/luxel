@@ -4,37 +4,57 @@ import SwiftUI
 
 struct TranscriptCardContent: View {
     let transcript: TurnSegmentedTranscript
+    let sentences: [TranscriptEditableSentence]
     let activeTurnID: String?
     let activeSpanID: String?
     let spansPerChunk: Int
+    let selectedSentenceIDs: Set<TranscriptEditableSentence.ID>
+    let cutCount: Int
+    let editStatusMessage: String?
+    let canDeleteSelectedSentence: Bool
     let canClose: Bool
     let closeTranscript: () -> Void
-    let seekToSpan: (TimedTranscriptSpan) -> Void
+    let selectSentence: (TranscriptEditableSentence, Bool) -> Void
+    let deleteSelectedSentence: () -> Void
 
-    @State private var displayPlan: TranscriptDisplayPlan
-    @State private var searchQuery = ""
-    @State private var selectedSearchMatchID: String?
-    @State private var searchMatches: [TranscriptSearchMatch]
+    @State var displayPlan: TranscriptDisplayPlan
+    @State var searchQuery = ""
+    @State var selectedSearchMatchID: String?
+    @State var searchMatches: [TranscriptSearchMatch]
+    @FocusState var transcriptListIsFocused: Bool
 
     init(
         transcript: TurnSegmentedTranscript,
+        sentences: [TranscriptEditableSentence],
         activeTurnID: String?,
         activeSpanID: String?,
         spansPerChunk: Int,
+        selectedSentenceIDs: Set<TranscriptEditableSentence.ID>,
+        cutCount: Int,
+        editStatusMessage: String?,
+        canDeleteSelectedSentence: Bool,
         canClose: Bool,
         closeTranscript: @escaping () -> Void,
-        seekToSpan: @escaping (TimedTranscriptSpan) -> Void
+        selectSentence: @escaping (TranscriptEditableSentence, Bool) -> Void,
+        deleteSelectedSentence: @escaping () -> Void
     ) {
         self.transcript = transcript
+        self.sentences = sentences
         self.activeTurnID = activeTurnID
         self.activeSpanID = activeSpanID
         self.spansPerChunk = spansPerChunk
+        self.selectedSentenceIDs = selectedSentenceIDs
+        self.cutCount = cutCount
+        self.editStatusMessage = editStatusMessage
+        self.canDeleteSelectedSentence = canDeleteSelectedSentence
         self.canClose = canClose
         self.closeTranscript = closeTranscript
-        self.seekToSpan = seekToSpan
+        self.selectSentence = selectSentence
+        self.deleteSelectedSentence = deleteSelectedSentence
         let displayPlan = TranscriptDisplayPlan(
             transcript: transcript,
-            spansPerChunk: spansPerChunk
+            sentences: sentences,
+            sentencesPerChunk: spansPerChunk
         )
         _displayPlan = State(
             initialValue: displayPlan)
@@ -54,10 +74,25 @@ struct TranscriptCardContent: View {
             updateSearchMatches(query: query)
         }
         .onChange(of: transcript) { _, transcript in
-            rebuildDisplayPlan(transcript: transcript, spansPerChunk: spansPerChunk)
+            rebuildDisplayPlan(
+                transcript: transcript,
+                sentences: sentences,
+                spansPerChunk: spansPerChunk
+            )
+        }
+        .onChange(of: sentences) { _, sentences in
+            rebuildDisplayPlan(
+                transcript: transcript,
+                sentences: sentences,
+                spansPerChunk: spansPerChunk
+            )
         }
         .onChange(of: spansPerChunk) { _, spansPerChunk in
-            rebuildDisplayPlan(transcript: transcript, spansPerChunk: spansPerChunk)
+            rebuildDisplayPlan(
+                transcript: transcript,
+                sentences: sentences,
+                spansPerChunk: spansPerChunk
+            )
         }
     }
 
@@ -71,6 +106,19 @@ struct TranscriptCardContent: View {
                 speakerCountChip
             }
 
+            if cutCount > 0 {
+                Text("\(cutCount) \(cutCount == 1 ? "cut" : "cuts")")
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+
+            if let editStatusMessage {
+                Text(editStatusMessage)
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .lineLimit(1)
+            }
+
             Spacer(minLength: 8)
 
             TranscriptSearchControl(
@@ -82,13 +130,23 @@ struct TranscriptCardContent: View {
             )
 
             Button {
-                copyTranscript(transcript)
+                copyTranscript(transcript, sentences: sentences)
             } label: {
                 Image(systemName: "doc.on.doc")
             }
             .buttonStyle(LuxelGlassCircleButtonStyle())
             .help("Copy transcript")
             .accessibilityLabel("Copy transcript")
+
+            Button {
+                deleteSelectedSentence()
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(LuxelGlassCircleButtonStyle())
+            .disabled(!canDeleteSelectedSentence)
+            .help("Cut selected transcript sentence")
+            .accessibilityLabel("Cut selected transcript sentence")
 
             if canClose {
                 Button {
@@ -150,9 +208,13 @@ struct TranscriptCardContent: View {
                         speakerChip: speakerChipInfo(for: chunk.turn),
                         isActiveTurn: chunk.turn.id == activeTurnID,
                         activeSpanID: activeSpanID,
+                        selectedSentenceIDs: selectedSentenceIDs,
                         matchedSearchSpanIDs: matchedSearchSpanIDs,
                         currentSearchSpanIDs: currentSearchSpanIDs,
-                        seekToSpan: seekToSpan
+                        selectSentence: { sentence, extendingSelection in
+                            transcriptListIsFocused = true
+                            selectSentence(sentence, extendingSelection)
+                        }
                     )
                     .id(chunk.id)
                     .listRowInsets(EdgeInsets(top: 1, leading: 14, bottom: 1, trailing: 14))
@@ -164,6 +226,14 @@ struct TranscriptCardContent: View {
             .scrollContentBackground(.hidden)
             .scrollIndicators(.never)
             .environment(\.defaultMinListRowHeight, 0)
+            .focusable()
+            .focused($transcriptListIsFocused)
+            .onDeleteCommand {
+                guard canDeleteSelectedSentence else {
+                    return
+                }
+                deleteSelectedSentence()
+            }
             .onChange(of: scrollTargetID) { _, targetID in
                 guard let targetID else {
                     return
@@ -176,182 +246,10 @@ struct TranscriptCardContent: View {
         }
     }
 
-    private var selectedSearchMatchIndex: Int? {
-        guard let selectedSearchMatchID else {
-            return nil
-        }
-
-        return searchMatches.firstIndex { $0.id == selectedSearchMatchID }
-    }
-
-    private func rebuildDisplayPlan(transcript: TurnSegmentedTranscript, spansPerChunk: Int) {
-        displayPlan = TranscriptDisplayPlan(
-            transcript: transcript,
-            spansPerChunk: spansPerChunk
-        )
-        updateSearchMatches(query: searchQuery)
-    }
-
-    private func updateSearchMatches(query: String) {
-        let matches = displayPlan.searchMatches(for: query)
-        searchMatches = matches
-
-        if matches.isEmpty {
-            selectedSearchMatchID = nil
-        } else if let selectedSearchMatchID,
-                  matches.contains(where: { $0.id == selectedSearchMatchID }) {
-        } else {
-            selectedSearchMatchID = matches[0].id
-        }
-    }
-
-    private func selectPreviousSearchMatch() {
-        guard !searchMatches.isEmpty else {
-            selectedSearchMatchID = nil
-            return
-        }
-
-        let selectedIndex = selectedSearchMatchIndex ?? 0
-        let previousIndex =
-            selectedIndex == 0 ? searchMatches.index(before: searchMatches.endIndex) : selectedIndex - 1
-        selectedSearchMatchID = searchMatches[previousIndex].id
-    }
-
-    private func selectNextSearchMatch() {
-        guard !searchMatches.isEmpty else {
-            selectedSearchMatchID = nil
-            return
-        }
-
-        let selectedIndex =
-            selectedSearchMatchIndex ?? searchMatches.index(before: searchMatches.endIndex)
-        let nextIndex = searchMatches.index(after: selectedIndex)
-        selectedSearchMatchID = searchMatches[nextIndex == searchMatches.endIndex ? 0 : nextIndex].id
-    }
-
-    private func speakerChipInfo(for turn: TranscriptTurn) -> TranscriptSpeakerChip? {
-        guard let speakerID = turn.speakerID,
-              let index = transcript.speakers.firstIndex(where: { $0.id == speakerID })
-        else {
-            return nil
-        }
-
-        return TranscriptSpeakerChip(
-            displayName: transcript.speakers[index].displayName,
-            dotColor: TranscriptSpeakerPalette.dotColor(
-                for: transcript.speakers[index].displayName),
-            textColor: TranscriptSpeakerPalette.textColor(
-                for: transcript.speakers[index].displayName)
-        )
-    }
-
-    private func copyTranscript(_ transcript: TurnSegmentedTranscript) {
-        // Non-diarized transcripts copy exactly as before; speaker/source
-        // prefixes appear only when speaker labels exist.
-        let text = transcript.turns.map { turn in
-            guard !transcript.speakers.isEmpty else {
-                return turn.text
-            }
-
-            var labels: [String] = []
-            if let speaker = transcript.speaker(for: turn.speakerID) {
-                labels.append(speaker.displayName)
-            }
-            if let source = turn.source {
-                labels.append(source.displayName)
-            }
-
-            guard !labels.isEmpty else {
-                return turn.text
-            }
-
-            return "\(labels.joined(separator: " — ")): \(turn.text)"
-        }
-        .joined(separator: "\n\n")
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
-    }
 }
 
 struct TranscriptSpeakerChip: Equatable {
     let displayName: String
     let dotColor: Color
     let textColor: Color
-}
-
-private struct TranscriptSearchControl: View {
-    @Binding var query: String
-
-    let selectedMatchIndex: Int?
-    let matchCount: Int
-    let selectPrevious: () -> Void
-    let selectNext: () -> Void
-
-    var body: some View {
-        HStack(spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.45))
-
-                TextField("Search", text: $query)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .onSubmit {
-                        selectNext()
-                    }
-                    .help("Search the transcript.")
-
-                Text(counterText)
-                    .font(.system(size: 10.5, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(counterForegroundStyle)
-                    .layoutPriority(1)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .frame(width: 170)
-            .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.black.opacity(0.22))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-                    }
-            }
-
-            if matchCount > 0 {
-                Button(action: selectPrevious) {
-                    Image(systemName: "chevron.up")
-                }
-                .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
-                .help("Previous match")
-                .accessibilityLabel("Previous transcript search match")
-
-                Button(action: selectNext) {
-                    Image(systemName: "chevron.down")
-                }
-                .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
-                .help("Next match")
-                .accessibilityLabel("Next transcript search match")
-            }
-        }
-        .animation(.easeOut(duration: 0.15), value: matchCount > 0)
-    }
-
-    private var counterText: String {
-        if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "0/0"
-        }
-
-        return "\(selectedMatchIndex.map { $0 + 1 } ?? 0)/\(matchCount)"
-    }
-
-    private var counterForegroundStyle: Color {
-        if matchCount == 0, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return .red
-        }
-
-        return .white.opacity(0.4)
-    }
 }

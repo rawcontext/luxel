@@ -53,6 +53,72 @@ extension LuxelEditorModel {
         seekToTranscriptTime(span.start)
     }
 
+    func selectTranscriptSentence(
+        _ sentence: TranscriptEditableSentence,
+        extendingSelection: Bool = false
+    ) {
+        let sentences = visibleTranscriptSentences
+        guard let selectedIndex = sentences.firstIndex(where: { $0.id == sentence.id }) else {
+            return
+        }
+
+        if extendingSelection,
+           let transcriptSelectionAnchorID,
+           let anchorIndex = sentences.firstIndex(where: { $0.id == transcriptSelectionAnchorID }) {
+            selectedTranscriptSentenceIDs = Set(
+                sentences[min(anchorIndex, selectedIndex)...max(anchorIndex, selectedIndex)].map(\.id)
+            )
+        } else {
+            selectedTranscriptSentenceIDs = [sentence.id]
+            transcriptSelectionAnchorID = sentence.id
+        }
+        transcriptEditStatusMessage = nil
+        seekToTranscriptTime(sentence.sourceRange.start)
+    }
+
+    func deleteSelectedTranscriptSentence() {
+        guard let transcript, !selectedTranscriptSentenceIDs.isEmpty else {
+            return
+        }
+
+        do {
+            let trimRange = try TimeRange(start: trimStart, end: trimEnd)
+            guard let cut = try TranscriptSentenceCutPlanner().cut(
+                transcript: transcript,
+                sentenceIDs: visibleTranscriptSentences.compactMap {
+                    selectedTranscriptSentenceIDs.contains($0.id) ? $0.id : nil
+                },
+                trimRange: trimRange,
+                editPlan: transcriptEditPlan,
+                minimumRetainedDuration: minimumTrimDuration
+            ),
+            let updatedPlan = try transcriptEditPlan.inserting(
+                cut,
+                within: trimRange,
+                minimumRetainedDuration: minimumTrimDuration
+            )
+            else {
+                transcriptEditStatusMessage = "That sentence is already cut."
+                return
+            }
+
+            transcriptEditPlan = updatedPlan
+            let selectedCount = selectedTranscriptSentenceIDs.count
+            selectedTranscriptSentenceIDs = []
+            transcriptSelectionAnchorID = nil
+            transcriptEditStatusMessage = selectedCount == 1
+                ? "Sentence cut"
+                : "\(selectedCount) sentences cut"
+            exportEstimatesByFormat = [:]
+            rebuildEditedPreview()
+            recordEditorDraftChange()
+        } catch TimelineEditingError.insufficientRetainedDuration {
+            transcriptEditStatusMessage = "Keep at least part of the recording."
+        } catch {
+            transcriptEditStatusMessage = "Could not cut that sentence."
+        }
+    }
+
     func toggleTranscriptPanel() {
         if isTranscriptPanelVisible, hasVideoSource {
             hideTranscriptPanel()

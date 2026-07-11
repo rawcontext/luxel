@@ -30,7 +30,8 @@ extension LuxelEditorModel {
             quality: quality,
             gifLoopModeKind: gifLoopModeKind,
             gifLoopCount: gifLoopCount,
-            gifDithering: gifDithering
+            gifDithering: gifDithering,
+            transcriptEditPlan: transcriptEditPlan
         )
     }
 
@@ -63,6 +64,11 @@ extension LuxelEditorModel {
         gifLoopModeKind = state.gifLoopModeKind
         gifLoopCount = min(max(state.gifLoopCount, 1), 100)
         gifDithering = state.gifDithering
+        let editPlanChanged = transcriptEditPlan != state.transcriptEditPlan
+        transcriptEditPlan = state.transcriptEditPlan
+        selectedTranscriptSentenceIDs = []
+        transcriptSelectionAnchorID = nil
+        transcriptEditStatusMessage = nil
         shouldMute = state.shouldMute
         if hasAudioOnlySource {
             shouldMute = false
@@ -76,7 +82,11 @@ extension LuxelEditorModel {
         shouldCrop = state.shouldCrop
         exportProgress = nil
         schedulePreviewAudioMixUpdate()
-        seekPlaybackIntoTrimRangeIfNeeded()
+        if editPlanChanged {
+            rebuildEditedPreview()
+        } else {
+            seekPlaybackIntoTrimRangeIfNeeded()
+        }
     }
 
     func currentExportMemory(for format: ExportFormat) throws -> ExportMemory {

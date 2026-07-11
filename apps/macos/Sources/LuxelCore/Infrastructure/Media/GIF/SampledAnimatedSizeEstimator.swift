@@ -63,6 +63,7 @@ extension SampledAnimatedSizeEstimator {
             framesPerSecond: request.frameRate.framesPerSecond,
             trimStart: request.timeRange.start,
             trimEnd: request.timeRange.end,
+            cuts: request.editPlan.cuts.map(SampledAnimatedCutCacheKey.init),
             speed: request.speed.value,
             shouldCrop: request.shouldCrop,
             quality: request.resolvedQuality,

@@ -12,13 +12,23 @@ struct AnimatedFrameSchedule: Equatable, Sendable {
         let sourceFrameRate = max(1, sourceFrameRate)
         let effectiveFrameRate = requestedFrameRate * speed
         let decimation = max(1, Int((effectiveFrameRate / sourceFrameRate).rounded(.up)))
+        let unscaledDuration = (try? request.timelineMapper.unscaledOutputDuration) ?? 0
         let candidateFrameCount = max(
-            1, Int((request.timeRange.duration * requestedFrameRate).rounded()))
+            1, Int((unscaledDuration * requestedFrameRate).rounded()))
         let indices = stride(from: 0, to: candidateFrameCount, by: decimation)
+        let mapper = EditedTimelineMapper(
+            trimRange: request.timeRange,
+            editPlan: request.editPlan
+        )
 
-        frameTimes = indices.map { index in
-            CMTime(
-                seconds: request.timeRange.start + (Double(index) / requestedFrameRate),
+        frameTimes = indices.compactMap { index in
+            guard let sourceTime = mapper.sourceTime(
+                forOutputTime: Double(index) / requestedFrameRate
+            ) else {
+                return nil
+            }
+            return CMTime(
+                seconds: sourceTime,
                 preferredTimescale: 600
             )
         }

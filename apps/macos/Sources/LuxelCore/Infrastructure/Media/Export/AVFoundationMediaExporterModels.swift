@@ -11,6 +11,12 @@ struct AVFoundationVideoExportComposition {
     let timeRange: CMTimeRange
 }
 
+struct AVFoundationAudioExportComposition {
+    let composition: AVMutableComposition
+    let audioTracks: [AVMutableCompositionTrack]
+    let timeRange: CMTimeRange
+}
+
 struct AVFoundationAudioExportContext {
     let composition: AVMutableComposition
     let audioTracks: [AVMutableCompositionTrack]

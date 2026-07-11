@@ -97,18 +97,59 @@ extension LuxelEditorModel {
     }
 
     var outputDurationSummary: String {
-        formatTime(max(minimumTrimDuration, trimEnd - trimStart) / playbackSpeed.value)
+        formatTime((try? editedTimelineMapper.outputDuration) ?? minimumTrimDuration)
+    }
+
+    var editedTimelineMapper: EditedTimelineMapper {
+        guard let trimRange = try? TimeRange(start: trimStart, end: trimEnd) else {
+            preconditionFailure("Editor trim state must remain valid.")
+        }
+        return EditedTimelineMapper(
+            trimRange: trimRange,
+            editPlan: transcriptEditPlan,
+            speed: playbackSpeed
+        )
+    }
+
+    var previewTimelineMapper: EditedTimelineMapper {
+        EditedTimelineMapper(
+            trimRange: editedTimelineMapper.trimRange,
+            editPlan: transcriptEditPlan
+        )
+    }
+
+    var editableTranscriptSentences: [TranscriptEditableSentence] {
+        guard let transcript else {
+            return []
+        }
+        return (try? TranscriptSentenceIndex(transcript: transcript).sentences) ?? []
+    }
+
+    var visibleTranscriptSentences: [TranscriptEditableSentence] {
+        editableTranscriptSentences.filter { !transcriptEditPlan.removes($0.sourceRange) }
+    }
+
+    var canDeleteSelectedTranscriptSentence: Bool {
+        !isExporting && !selectedTranscriptSentenceIDs.isEmpty
+            && selectedTranscriptSentenceIDs.isSubset(
+                of: Set(visibleTranscriptSentences.map(\.id))
+            )
     }
 
     var activeTranscriptTurnID: String? {
-        visibleTranscript?.turns.first {
-            $0.start <= currentPlaybackTime && currentPlaybackTime < $0.end
+        let visibleSpanIDs = Set(visibleTranscriptSentences.flatMap(\.spanIDs))
+        return visibleTranscript?.turns.first {
+            !$0.spanIDs.allSatisfy { !visibleSpanIDs.contains($0) }
+                && $0.start <= currentPlaybackTime
+                && currentPlaybackTime < $0.end
         }?.id
     }
 
     var activeTranscriptSpanID: String? {
-        visibleTranscript?.spans.first {
-            $0.start <= currentPlaybackTime && currentPlaybackTime < $0.end
+        let visibleSpanIDs = Set(visibleTranscriptSentences.flatMap(\.spanIDs))
+        return visibleTranscript?.spans.first {
+            visibleSpanIDs.contains($0.id) &&
+                $0.start <= currentPlaybackTime && currentPlaybackTime < $0.end
         }?.id
     }
 
@@ -129,7 +170,7 @@ extension LuxelEditorModel {
     }
 
     var canExport: Bool {
-        hasSource && !isExporting
+        hasSource && !isExporting && isEditedPreviewReady
     }
 
     var canSaveOriginal: Bool {

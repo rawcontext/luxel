@@ -26,16 +26,16 @@ public struct AVAssetReaderAudioPeakAnalyzer: AudioPeakAnalyzer {
             return 0
         }
 
-        let sourceTimeRange = CMTimeRange(
-            start: CMTime(seconds: request.timeRange.start, preferredTimescale: 600),
-            duration: CMTime(seconds: request.timeRange.duration, preferredTimescale: 600)
-        )
+        let sourceSegments = try EditedTimelineMapper(
+            trimRange: request.timeRange,
+            editPlan: request.editPlan
+        ).sourceSegments
         let composition = AVMutableComposition()
         let compositionAudioTracks = try sourceAudioTracks.map { sourceAudioTrack in
             try addAudioTrack(
                 to: composition,
                 from: sourceAudioTrack,
-                sourceTimeRange: sourceTimeRange
+                sourceSegments: sourceSegments
             )
         }
 
@@ -76,7 +76,7 @@ public struct AVAssetReaderAudioPeakAnalyzer: AudioPeakAnalyzer {
     private func addAudioTrack(
         to composition: AVMutableComposition,
         from sourceAudioTrack: AVAssetTrack,
-        sourceTimeRange: CMTimeRange
+        sourceSegments: [SourceMediaSegment]
     ) throws -> AVMutableCompositionTrack {
         guard
             let audioTrack = composition.addMutableTrack(
@@ -87,7 +87,22 @@ public struct AVAssetReaderAudioPeakAnalyzer: AudioPeakAnalyzer {
             throw AVAssetReaderAudioPeakAnalyzerError.cannotCreateAudioTrack
         }
 
-        try audioTrack.insertTimeRange(sourceTimeRange, of: sourceAudioTrack, at: .zero)
+        for segment in sourceSegments {
+            try audioTrack.insertTimeRange(
+                CMTimeRange(
+                    start: CMTime(
+                        seconds: segment.sourceRange.start,
+                        preferredTimescale: 60_000
+                    ),
+                    duration: CMTime(
+                        seconds: segment.sourceRange.duration,
+                        preferredTimescale: 60_000
+                    )
+                ),
+                of: sourceAudioTrack,
+                at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
+            )
+        }
         return audioTrack
     }
 

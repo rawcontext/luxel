@@ -46,6 +46,11 @@ public struct ExportBatch: Codable, Equatable, Sendable {
             throw ExportModelError.mixedExportBatchTimeRanges
         }
 
+        let editPlan = firstRequest.editPlan
+        guard requests.allSatisfy({ $0.editPlan == editPlan }) else {
+            throw ExportModelError.mixedExportBatchEditPlans
+        }
+
         self.requests = requests
     }
 }
@@ -291,4 +296,5 @@ public enum ExportModelError: Error, Equatable {
     case emptyExportBatch
     case mixedExportBatchSources
     case mixedExportBatchTimeRanges
+    case mixedExportBatchEditPlans
 }

@@ -266,6 +266,9 @@ extension LuxelEditorModel {
     }
 
     var currentFrameTime: TimeInterval {
+        if !transcriptEditPlan.cuts.isEmpty {
+            return currentPlaybackTime
+        }
         let seconds = CMTimeGetSeconds(player.currentTime())
         let finiteSeconds = seconds.isFinite ? seconds : trimStart
         return min(max(finiteSeconds, 0), max(duration, 0))
@@ -287,7 +290,14 @@ extension LuxelEditorModel {
         speechRecognitionAuthorizationTask = nil
         transcriptTask?.cancel()
         transcriptTask = nil
+        previewCompositionTask?.cancel()
+        previewCompositionTask = nil
         transcript = nil
+        transcriptEditPlan = .empty
+        selectedTranscriptSentenceIDs = []
+        transcriptSelectionAnchorID = nil
+        transcriptEditStatusMessage = nil
+        isEditedPreviewReady = true
         isTranscriptExtractionActive = false
         transcriptExtractionStartedAt = nil
         speechRecognitionAuthorizationState = nil

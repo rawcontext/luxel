@@ -6,6 +6,7 @@ struct ExportEstimateTaskID: Equatable, Hashable {
     let formats: [ExportFormat]
     let trimStart: TimeInterval
     let trimEnd: TimeInterval
+    let transcriptCuts: [TranscriptCut]
     let outputWidth: Int
     let outputHeight: Int
     let frameRate: Int
@@ -16,4 +17,9 @@ struct ExportEstimateTaskID: Equatable, Hashable {
     let gifDithering: GIFDitheringMode?
     let shouldMute: Bool
     let shouldCrop: Bool
+
+    struct TranscriptCut: Equatable, Hashable {
+        let start: TimeInterval
+        let end: TimeInterval
+    }
 }

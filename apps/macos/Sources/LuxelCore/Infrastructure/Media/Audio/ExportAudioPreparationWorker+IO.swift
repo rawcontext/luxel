@@ -14,21 +14,13 @@ extension ExportAudioPreparationWorker {
             throw ExportAudioPreparationError.missingAudioTrack
         }
 
-        let sourceTimeRange = CMTimeRange(
-            start: CMTime(seconds: request.timeRange.start, preferredTimescale: 60_000),
-            duration: CMTime(seconds: request.timeRange.duration, preferredTimescale: 60_000)
-        )
+        let sourceSegments = try request.timelineMapper.sourceSegments
         let composition = AVMutableComposition()
-        let tracks = try sourceTracks.map { sourceTrack in
-            guard let track = composition.addMutableTrack(
-                withMediaType: .audio,
-                preferredTrackID: kCMPersistentTrackID_Invalid
-            ) else {
-                throw ExportAudioPreparationError.unsupportedAudioLayout
-            }
-            try track.insertTimeRange(sourceTimeRange, of: sourceTrack, at: .zero)
-            return track
-        }
+        let tracks = try addAudioTracks(
+            sourceTracks,
+            sourceSegments: sourceSegments,
+            to: composition
+        )
 
         let reader = try AVAssetReader(asset: composition)
         let output = AVAssetReaderAudioMixOutput(
@@ -50,6 +42,38 @@ extension ExportAudioPreparationWorker {
         }
         reader.add(output)
         return (reader, output)
+    }
+
+    private func addAudioTracks(
+        _ sourceTracks: [AVAssetTrack],
+        sourceSegments: [SourceMediaSegment],
+        to composition: AVMutableComposition
+    ) throws -> [AVMutableCompositionTrack] {
+        try sourceTracks.map { sourceTrack in
+            guard let track = composition.addMutableTrack(
+                withMediaType: .audio,
+                preferredTrackID: kCMPersistentTrackID_Invalid
+            ) else {
+                throw ExportAudioPreparationError.unsupportedAudioLayout
+            }
+            for segment in sourceSegments {
+                try track.insertTimeRange(
+                    CMTimeRange(
+                        start: CMTime(
+                            seconds: segment.sourceRange.start,
+                            preferredTimescale: 60_000
+                        ),
+                        duration: CMTime(
+                            seconds: segment.sourceRange.duration,
+                            preferredTimescale: 60_000
+                        )
+                    ),
+                    of: sourceTrack,
+                    at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
+                )
+            }
+            return track
+        }
     }
 
     func channels(from sampleBuffer: CMSampleBuffer) throws -> [[Float]] {

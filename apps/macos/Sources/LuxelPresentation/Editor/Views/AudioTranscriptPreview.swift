@@ -157,15 +157,26 @@ struct AudioTranscriptPreview: View {
 
         let content = TranscriptCardContent(
             transcript: transcript,
+            sentences: model.visibleTranscriptSentences,
             activeTurnID: activeTurnID,
             activeSpanID: activeSpanID,
             spansPerChunk: Layout.transcriptSpansPerChunk,
+            selectedSentenceIDs: model.selectedTranscriptSentenceIDs,
+            cutCount: model.transcriptEditPlan.cuts.count,
+            editStatusMessage: model.transcriptEditStatusMessage,
+            canDeleteSelectedSentence: model.canDeleteSelectedTranscriptSentence,
             canClose: model.canCloseTranscriptPanel,
             closeTranscript: {
                 model.hideTranscriptPanel()
             },
-            seekToSpan: { span in
-                model.seekToTranscriptSpan(span)
+            selectSentence: { sentence, extendingSelection in
+                model.selectTranscriptSentence(
+                    sentence,
+                    extendingSelection: extendingSelection
+                )
+            },
+            deleteSelectedSentence: {
+                model.deleteSelectedTranscriptSentence()
             }
         )
 

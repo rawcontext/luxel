@@ -54,7 +54,8 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
             sourceCropRect: request.cropRect,
             zoomBlocks: ZoomExportTimeMapper(
                 trimRange: request.timeRange,
-                speed: request.speed
+                speed: request.speed,
+                editPlan: request.editPlan
             ).map(request.zoomBlocks)
         )
         exportSession.timeRange = prepared.timeRange

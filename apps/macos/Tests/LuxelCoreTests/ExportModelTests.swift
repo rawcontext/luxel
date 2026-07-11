@@ -129,6 +129,38 @@ extension ExportModelTests {
         #expect(request.captionOptions == nil)
         #expect(request.cameraOverlay == nil)
         #expect(request.zoomBlocks.isEmpty)
+        #expect(request.editPlan == .empty)
+    }
+
+    @Test("export request round trips transcript edit plan and derives duration")
+    func exportRequestRoundTripsEditPlan() throws {
+        let editPlan = try TimelineEditPlan(cuts: [
+            TimelineCut(
+                id: "sentence",
+                sourceRange: TimeRange(start: 2, end: 4),
+                kind: .transcriptSentence,
+                transcriptSpanIDs: ["span"]
+            )
+        ])
+        let request = try ExportRequest(
+            inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
+            format: .mp4,
+            pixelSize: PixelSize(width: 100, height: 200),
+            frameRate: FrameRate(30),
+            timeRange: TimeRange(start: 0, end: 10),
+            shouldMute: false,
+            shouldCrop: true,
+            speed: PlaybackSpeed(2),
+            editPlan: editPlan
+        )
+
+        let decoded = try JSONDecoder().decode(
+            ExportRequest.self,
+            from: JSONEncoder().encode(request)
+        )
+
+        #expect(decoded == request)
+        #expect(decoded.outputDuration == 4)
     }
 
     @Test("export request round trips GIF options")

@@ -77,6 +77,38 @@ struct AVAssetReaderCodecMediaSourceTests {
         #expect(try await mediaSource.nextAudioChunk() == nil)
     }
 
+    @Test("source stitches kept video and audio segments")
+    func sourceAppliesTimelineCuts() async throws {
+        let mediaSource = AVAssetReaderCodecMediaSource()
+        let request = try ExportRequest(
+            inputFileURL: fixtureURL("input@2x.mp4"),
+            format: .webm,
+            pixelSize: PixelSize(width: 320, height: 180),
+            frameRate: FrameRate(10),
+            timeRange: TimeRange(start: 1, end: 1.3),
+            shouldMute: false,
+            shouldCrop: true,
+            editPlan: TimelineEditPlan(cuts: [
+                TimelineCut(
+                    id: "middle",
+                    sourceRange: TimeRange(start: 1.1, end: 1.2),
+                    kind: .transcriptSentence
+                )
+            ])
+        )
+
+        let description = try await mediaSource.prepare(request)
+        let frames = try await collectVideoFrames(from: mediaSource)
+        let chunks = try await collectAudioChunks(from: mediaSource)
+
+        #expect(description.videoFrameCount == 2)
+        #expect(frames.count == 2)
+        #expect(!chunks.isEmpty)
+        #expect(abs(frames[0].presentationTime) < 0.02)
+        #expect(zip(frames, frames.dropFirst()).allSatisfy { $0.presentationTime < $1.presentationTime })
+        #expect(zip(chunks, chunks.dropFirst()).allSatisfy { $0.presentationTime <= $1.presentationTime })
+    }
+
     @Test("source reads full zero-based prepared PCM instead of original audio")
     func sourceReadsPreparedAudio() async throws {
         let preparedURL = FileManager.default.temporaryDirectory

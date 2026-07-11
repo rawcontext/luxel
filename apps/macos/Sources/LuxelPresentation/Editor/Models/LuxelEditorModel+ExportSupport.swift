@@ -278,6 +278,7 @@ extension LuxelEditorModel {
             shouldCrop: hasVideoSource && shouldCrop,
             quality: quality,
             speed: playbackSpeed,
+            editPlan: transcriptEditPlan,
             gifOptions: try currentGIFOptions(for: format)
         )
     }
@@ -295,6 +296,7 @@ extension LuxelEditorModel {
             shouldCrop: source.hasVideo && shouldCrop,
             quality: quality,
             speed: playbackSpeed,
+            editPlan: transcriptEditPlan,
             gifOptions: try currentGIFOptions(for: format)
         )
     }

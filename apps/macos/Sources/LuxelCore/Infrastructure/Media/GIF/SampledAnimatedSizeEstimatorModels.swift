@@ -70,6 +70,7 @@ struct SampledAnimatedSizeEstimateCacheKey: Hashable, Sendable {
     let framesPerSecond: Int
     let trimStart: TimeInterval
     let trimEnd: TimeInterval
+    let cuts: [SampledAnimatedCutCacheKey]
     let speed: Double
     let shouldCrop: Bool
     let quality: ExportQuality
@@ -79,6 +80,16 @@ struct SampledAnimatedSizeEstimateCacheKey: Hashable, Sendable {
     let gifLossyTolerance: Int?
     let gifBackgroundMatte: RGBColor?
     let zoomBlocks: [SampledAnimatedZoomBlockCacheKey]
+}
+
+struct SampledAnimatedCutCacheKey: Hashable, Sendable {
+    let start: TimeInterval
+    let end: TimeInterval
+
+    init(_ cut: TimelineCut) {
+        start = cut.sourceRange.start
+        end = cut.sourceRange.end
+    }
 }
 
 struct SampledAnimatedZoomBlockCacheKey: Hashable, Sendable {

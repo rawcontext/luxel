@@ -262,8 +262,11 @@ extension LuxelEditorModel {
     func seekToTranscriptTime(_ time: TimeInterval) {
         currentPlaybackTime = time
         let shouldStartPlayback = !playbackRequested
+        let playerTime = transcriptEditPlan.cuts.isEmpty
+            ? time
+            : previewOutputTime(forSourceTime: time)
         player.seek(
-            to: CMTime(seconds: time, preferredTimescale: 600),
+            to: CMTime(seconds: playerTime, preferredTimescale: 600),
             toleranceBefore: .zero,
             toleranceAfter: .zero
         ) { [weak self] finished in
