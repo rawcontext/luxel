@@ -259,9 +259,9 @@ extension LuxelEditorModel {
         isSpeakerModelPreparing = false
     }
 
-    func seekToTranscriptTime(_ time: TimeInterval) {
+    func seekToTranscriptTime(_ time: TimeInterval, autoPlay: Bool = true) {
         currentPlaybackTime = time
-        let shouldStartPlayback = !playbackRequested
+        let shouldStartPlayback = autoPlay && !playbackRequested
         let playerTime = transcriptEditPlan.cuts.isEmpty
             ? time
             : previewOutputTime(forSourceTime: time)

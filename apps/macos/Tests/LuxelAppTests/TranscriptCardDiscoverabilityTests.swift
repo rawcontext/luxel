@@ -89,6 +89,31 @@ struct TranscriptCardDiscoverabilityTests {
         #expect(card.cutRestoreLabel(item) == "Restore “remove these words” (1:01–1:03)")
     }
 
+    @Test("auto-play is enabled by default and persists user changes")
+    func autoPlayPreference() throws {
+        let suiteName = "TranscriptCardAutoPlayTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let initial = try content(guidanceDefaults: defaults, deleteSelectedWord: { false })
+        #expect(initial.isTranscriptAutoPlayEnabled)
+
+        initial.isTranscriptAutoPlayEnabled = false
+
+        let reopened = try content(guidanceDefaults: defaults, deleteSelectedWord: { false })
+        #expect(!reopened.isTranscriptAutoPlayEnabled)
+
+        let source = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/TranscriptCardContent.swift"
+            ),
+            encoding: .utf8
+        )
+        #expect(source.contains("Toggle(\"Auto-play\""))
+        #expect(source.contains(".toggleStyle(.checkbox)"))
+        #expect(source.contains("isTranscriptAutoPlayEnabled"))
+    }
+
     private func content(
         guidanceDefaults: UserDefaults = .standard,
         deleteSelectedWord: @escaping () -> Bool
@@ -122,7 +147,7 @@ struct TranscriptCardDiscoverabilityTests {
             canClose: false,
             guidanceDefaults: guidanceDefaults,
             closeTranscript: {},
-            selectWord: { _, _ in },
+            selectWord: { _, _, _ in },
             deleteSelectedWord: deleteSelectedWord,
             undoLastCut: {},
             restoreCut: { _ in }
