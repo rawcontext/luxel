@@ -55,7 +55,8 @@ extension LuxelEditorModel {
 
     func selectTranscriptWord(
         _ word: TranscriptEditableWord,
-        extendingSelection: Bool = false
+        extendingSelection: Bool = false,
+        autoPlay: Bool = true
     ) {
         let words = visibleTranscriptWords
         guard let selectedIndex = cachedVisibleTranscriptWordIndexByID[word.id] else {
@@ -73,7 +74,7 @@ extension LuxelEditorModel {
             transcriptWordSelectionAnchorID = word.id
         }
         transcriptEditStatusMessage = nil
-        seekToTranscriptTime(word.sourceRange.start)
+        seekToTranscriptTime(word.sourceRange.start, autoPlay: autoPlay)
     }
 
     @discardableResult

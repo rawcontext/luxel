@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import LuxelCore
 import Testing
@@ -7,6 +8,34 @@ import Testing
 @MainActor
 @Suite("Luxel editor transcript editing")
 struct LuxelEditorTranscriptEditingTests {
+    @Test("word selection respects transcript auto-play preference")
+    func wordSelectionRespectsAutoPlayPreference() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
+        let source = try SourceMedia(
+            fileURL: sourceURL,
+            duration: 12,
+            pixelSize: PixelSize(width: 1280, height: 720),
+            nominalFrameRate: FrameRate(30),
+            hasAudio: true
+        )
+        let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.player = ImmediateSeekPlayer()
+        model.transcript = try editableTranscript()
+        let words = model.editableTranscriptWords
+
+        model.selectTranscriptWord(words[0], autoPlay: false)
+        await Task.yield()
+        #expect(!model.playbackRequested)
+        #expect(model.currentPlaybackTime == words[0].sourceRange.start)
+
+        model.selectTranscriptWord(words[1])
+        await Task.yield()
+        #expect(model.playbackRequested)
+        #expect(model.currentPlaybackTime == words[1].sourceRange.start)
+    }
+
     @Test("word cuts are non-destructive undoable and exported for audio and video")
     func wordCutsApplyToAudioAndVideo() async throws {
         let helper = LuxelEditorModelTests()
@@ -212,5 +241,16 @@ struct LuxelEditorTranscriptEditingTests {
             ],
             localeIdentifier: "en_US"
         )
+    }
+}
+
+private final class ImmediateSeekPlayer: AVPlayer, @unchecked Sendable {
+    override func seek(
+        to time: CMTime,
+        toleranceBefore: CMTime,
+        toleranceAfter: CMTime,
+        completionHandler: @escaping @Sendable (Bool) -> Void
+    ) {
+        completionHandler(true)
     }
 }
