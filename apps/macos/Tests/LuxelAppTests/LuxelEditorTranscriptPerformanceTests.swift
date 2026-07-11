@@ -59,7 +59,7 @@ struct LuxelEditorTranscriptPerformanceTests {
                     canUndoLastCut: false,
                     canClose: false,
                     closeTranscript: {},
-                    selectWord: { _, _ in },
+                    selectWord: { _, _, _ in },
                     deleteSelectedWord: { false },
                     undoLastCut: {},
                     restoreCut: { _ in }

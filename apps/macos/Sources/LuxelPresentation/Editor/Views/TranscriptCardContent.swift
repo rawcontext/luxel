@@ -6,6 +6,10 @@ enum TranscriptEditingGuidance {
     static let dismissalDefaultsKey = "transcriptEditingGuidanceDismissed"
 }
 
+enum TranscriptPlaybackPreferences {
+    static let autoPlayDefaultsKey = "transcriptAutoPlayEnabled"
+}
+
 struct TranscriptCardContent: View {
     let transcript: TurnSegmentedTranscript
     let words: [TranscriptEditableWord]
@@ -20,7 +24,7 @@ struct TranscriptCardContent: View {
     let canUndoLastCut: Bool
     let canClose: Bool
     let closeTranscript: () -> Void
-    let selectWord: (TranscriptEditableWord, Bool) -> Void
+    let selectWord: (TranscriptEditableWord, Bool, Bool) -> Void
     let deleteSelectedWord: () -> Bool
     let undoLastCut: () -> Void
     let restoreCut: (String) -> Void
@@ -31,6 +35,7 @@ struct TranscriptCardContent: View {
     @State var searchMatches: [TranscriptSearchMatch] = []
     @FocusState var transcriptListIsFocused: Bool
     @AppStorage var isEditingGuidanceDismissed: Bool
+    @AppStorage var isTranscriptAutoPlayEnabled: Bool
 
     init(
         transcript: TurnSegmentedTranscript,
@@ -47,7 +52,7 @@ struct TranscriptCardContent: View {
         canClose: Bool,
         guidanceDefaults: UserDefaults = .standard,
         closeTranscript: @escaping () -> Void,
-        selectWord: @escaping (TranscriptEditableWord, Bool) -> Void,
+        selectWord: @escaping (TranscriptEditableWord, Bool, Bool) -> Void,
         deleteSelectedWord: @escaping () -> Bool,
         undoLastCut: @escaping () -> Void,
         restoreCut: @escaping (String) -> Void
@@ -72,6 +77,11 @@ struct TranscriptCardContent: View {
         _isEditingGuidanceDismissed = AppStorage(
             wrappedValue: false,
             TranscriptEditingGuidance.dismissalDefaultsKey,
+            store: guidanceDefaults
+        )
+        _isTranscriptAutoPlayEnabled = AppStorage(
+            wrappedValue: true,
+            TranscriptPlaybackPreferences.autoPlayDefaultsKey,
             store: guidanceDefaults
         )
     }
@@ -166,6 +176,13 @@ struct TranscriptCardContent: View {
             .help("Copy transcript")
             .accessibilityLabel("Copy transcript")
 
+            Toggle("Auto-play", isOn: $isTranscriptAutoPlayEnabled)
+                .toggleStyle(.checkbox)
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.8))
+                .fixedSize()
+                .help("Automatically start playback when selecting a transcript word.")
+
             if canDeleteSelectedWord {
                 Button {
                     performCut()
@@ -224,7 +241,11 @@ struct TranscriptCardContent: View {
                         currentSearchSpanIDs: currentSearchSpanIDs,
                         selectWord: { word, extendingSelection in
                             transcriptListIsFocused = true
-                            selectWord(word, extendingSelection)
+                            selectWord(
+                                word,
+                                extendingSelection,
+                                isTranscriptAutoPlayEnabled
+                            )
                         }
                     )
                     .id(chunk.id)

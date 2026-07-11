@@ -171,10 +171,11 @@ struct AudioTranscriptPreview: View {
             closeTranscript: {
                 model.hideTranscriptPanel()
             },
-            selectWord: { word, extendingSelection in
+            selectWord: { word, extendingSelection, autoPlay in
                 model.selectTranscriptWord(
                     word,
-                    extendingSelection: extendingSelection
+                    extendingSelection: extendingSelection,
+                    autoPlay: autoPlay
                 )
             },
             deleteSelectedWord: {

@@ -38354,6 +38354,38 @@
         "pt-BR": { "stringUnit": { "state": "translated", "value": "Pressione Delete para cortar as palavras selecionadas. A gravação original fica segura." } },
         "pt-PT": { "stringUnit": { "state": "translated", "value": "Prima Delete para cortar as palavras selecionadas. A gravação original permanece segura." } }
       }
+    },
+    "Auto-play": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Auto-play" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Automatisch abspielen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Reproducción automática" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Lecture automatique" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Riproduzione automatica" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "自動再生" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "자동 재생" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Tự động phát" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "自动播放" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Reprodução automática" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Reprodução automática" } }
+      }
+    },
+    "Automatically start playback when selecting a transcript word.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Automatically start playback when selecting a transcript word." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Wiedergabe automatisch starten, wenn ein Wort im Transkript ausgewählt wird." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Inicia automáticamente la reproducción al seleccionar una palabra de la transcripción." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Démarre automatiquement la lecture lors de la sélection d’un mot dans la transcription." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Avvia automaticamente la riproduzione quando selezioni una parola della trascrizione." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "文字起こしの単語を選択したときに自動的に再生を開始します。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "트랜스크립트에서 단어를 선택하면 자동으로 재생을 시작합니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Tự động bắt đầu phát khi chọn một từ trong bản chép lời." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "选择转录中的词语时自动开始播放。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Inicia automaticamente a reprodução ao selecionar uma palavra da transcrição." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Inicia automaticamente a reprodução ao selecionar uma palavra da transcrição." } }
+      }
     }
   },
   "version": "1.0"
