@@ -60,6 +60,8 @@ extension LuxelEditorModel {
         transcriptSelectionAnchorID = nil
         transcriptEditStatusMessage = nil
         isEditedPreviewReady = true
+        keystrokeTimeline = nil
+        keystrokeOptions = nil
         isTranscriptExtractionActive = false
         isTranscriptPanelVisible = false
         transcriptExtractionStartedAt = nil
@@ -80,6 +82,8 @@ extension LuxelEditorModel {
             for: media
         )
         source = media
+        keystrokeTimeline = try? KeystrokeSidecarFileLoader().load(nextTo: fileURL)
+        keystrokeOptions = keystrokeTimeline == nil ? nil : .standard
         self.transcriptSourceContext = resolvedTranscriptSourceContext
         applySupportedFormatForSource()
         trimStart = 0
@@ -119,6 +123,8 @@ extension LuxelEditorModel {
         transcriptSelectionAnchorID = nil
         transcriptEditStatusMessage = nil
         isEditedPreviewReady = true
+        keystrokeTimeline = nil
+        keystrokeOptions = nil
         isTranscriptExtractionActive = false
         isTranscriptPanelVisible = false
         transcriptExtractionStartedAt = nil

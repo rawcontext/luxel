@@ -20,3 +20,20 @@ public enum KeystrokeSourceEvent: Equatable, Sendable {
 public protocol KeystrokeEventSource: Sendable {
     func events() -> AsyncStream<KeystrokeSourceEvent>
 }
+
+public enum KeystrokeCaptureStatus: Equatable, Sendable {
+    case idle
+    case active
+    case paused(KeystrokePauseCause)
+    case permissionDenied
+    case eventDeliveryRecovered
+    case eventDeliveryUnavailable
+}
+
+public protocol KeystrokeCaptureEventSource: KeystrokeEventSource {
+    var statusUpdates: AsyncStream<KeystrokeCaptureStatus> { get }
+
+    func setUserPaused(_ isPaused: Bool)
+    func setRecordingPaused(_ isPaused: Bool)
+    func stop()
+}

@@ -22,11 +22,13 @@ public struct AudioRecordingRequest: Codable, Equatable, Sendable {
     public let outputFileURL: URL
     public let audio: RecordingAudioMode
     public let format: AudioRecordingFormat
+    public let captureKeystrokes: Bool
 
     public init(
         outputFileURL: URL,
         audio: RecordingAudioMode,
-        format: AudioRecordingFormat = .aac
+        format: AudioRecordingFormat = .aac,
+        captureKeystrokes: Bool = false
     ) throws {
         guard audio != .none else {
             throw AudioRecordingRequestError.missingAudioSource
@@ -35,11 +37,13 @@ public struct AudioRecordingRequest: Codable, Equatable, Sendable {
         self.outputFileURL = outputFileURL
         self.audio = audio
         self.format = format
+        self.captureKeystrokes = captureKeystrokes
     }
 
     public var recordingOptions: RecordingOptions {
         RecordingOptions(
             frameRate: 0,
+            captureKeystrokes: captureKeystrokes,
             audio: audio,
             isAudioOnly: true
         )
@@ -49,7 +53,28 @@ public struct AudioRecordingRequest: Codable, Equatable, Sendable {
         try AudioRecordingRequest(
             outputFileURL: outputFileURL,
             audio: audio,
-            format: format
+            format: format,
+            captureKeystrokes: captureKeystrokes
+        )
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case outputFileURL
+        case audio
+        case format
+        case captureKeystrokes
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        try self.init(
+            outputFileURL: container.decode(URL.self, forKey: .outputFileURL),
+            audio: container.decode(RecordingAudioMode.self, forKey: .audio),
+            format: container.decodeIfPresent(AudioRecordingFormat.self, forKey: .format) ?? .aac,
+            captureKeystrokes: container.decodeIfPresent(
+                Bool.self,
+                forKey: .captureKeystrokes
+            ) ?? false
         )
     }
 }

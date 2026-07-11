@@ -3,6 +3,76 @@ import LuxelCore
 import SwiftUI
 
 extension LuxelEditorView {
+    var keystrokeControls: some View {
+        editorDisclosureCard("Keystrokes") {
+            VStack(alignment: .leading, spacing: 12) {
+                controlRow("Show") {
+                    Toggle("Show Keystrokes", isOn: keystrokesVisibleSelection)
+                        .labelsHidden()
+                        .toggleStyle(LuxelGlassCheckboxToggleStyle())
+                }
+
+                controlRow("Position") {
+                    editorMenuPicker(
+                        selection: keystrokeAnchorSelection,
+                        options: KeystrokeOverlayAnchor.allCases
+                    ) { keystrokeAnchorLabel($0) }
+                }
+
+                controlRow("Size") {
+                    editorMenuPicker(
+                        selection: keystrokeSizeSelection,
+                        options: KeystrokeOverlaySize.allCases
+                    ) { $0.rawValue.capitalized }
+                }
+
+                controlRow("Theme") {
+                    editorMenuPicker(
+                        selection: keystrokeThemeSelection,
+                        options: KeystrokeOverlayTheme.allCases
+                    ) { keystrokeThemeLabel($0) }
+                }
+
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack {
+                        Text("Display Duration")
+                        Spacer()
+                        Text("\(keystrokeDurationSelection.wrappedValue, specifier: "%.1f") s")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: keystrokeDurationSelection, in: 0.5...5, step: 0.1)
+                }
+
+                Button("Remove Keystroke Data", role: .destructive) {
+                    model.removeKeystrokeData()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.red)
+                .help("Permanently delete the locally stored keystroke sidecar for this recording.")
+            }
+        }
+    }
+
+    private func keystrokeAnchorLabel(_ anchor: KeystrokeOverlayAnchor) -> String {
+        switch anchor {
+        case .topLeft: "Top Left"
+        case .topCenter: "Top Center"
+        case .topRight: "Top Right"
+        case .bottomLeft: "Bottom Left"
+        case .bottomCenter: "Bottom Center"
+        case .bottomRight: "Bottom Right"
+        }
+    }
+
+    private func keystrokeThemeLabel(_ theme: KeystrokeOverlayTheme) -> String {
+        switch theme {
+        case .darkGlass: "Dark Glass"
+        case .lightGlass: "Light Glass"
+        case .highContrast: "High Contrast"
+        }
+    }
+
     var timelineControls: some View {
         editorDisclosureCard("Timeline") {
             VStack(alignment: .leading, spacing: 9) {

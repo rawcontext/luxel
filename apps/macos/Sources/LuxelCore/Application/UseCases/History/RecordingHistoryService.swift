@@ -173,6 +173,7 @@ public final class RecordingHistoryService: Sendable {
         let validRecordings = getPastRecordings()
 
         for recording in validRecordings {
+            _ = try removeKeystrokeSidecar(for: recording)
             try fileSystem.removeFile(at: recording.fileURL)
         }
 
@@ -187,10 +188,23 @@ public final class RecordingHistoryService: Sendable {
             return validRecordings
         }
 
+        _ = try removeKeystrokeSidecar(for: recording)
         try fileSystem.trashItem(at: recording.fileURL)
         let remainingRecordings = validRecordings.filter { $0.fileURL != recording.fileURL }
         store.recordings = remainingRecordings
         return remainingRecordings
+    }
+
+    public func removeKeystrokeData(from recording: PastRecording) throws {
+        let updatedManifest = try removeKeystrokeSidecar(for: recording)
+        guard let updatedManifest else {
+            return
+        }
+        store.recordings = store.recordings.map { storedRecording in
+            storedRecording.fileURL == recording.fileURL
+                ? storedRecording.replacingBundleManifest(updatedManifest)
+                : storedRecording
+        }
     }
 
     @discardableResult
@@ -281,6 +295,12 @@ public final class RecordingHistoryService: Sendable {
 }
 
 private extension RecordingHistoryService {
+    private func removeKeystrokeSidecar(for recording: PastRecording) throws -> BundleManifest? {
+        try KeystrokeSidecarRemovalService(fileSystem: fileSystem, mode: .trash)
+            .remove(nextTo: recording.primaryMediaURL, bundle: recording.bundle)
+            .updatedBundleManifest
+    }
+
     private func recordingExists(_ recording: PastRecording) -> Bool {
         guard fileSystem.fileExists(at: recording.fileURL) else {
             return false

@@ -15,11 +15,18 @@ public struct ApplePermissionClient: PermissionClient {
             return AVAudioApplication.shared.recordPermission.permissionStatus
         case .camera:
             return AVCaptureDevice.authorizationStatus(for: .video).permissionStatus
+        case .inputMonitoring:
+            return CGPreflightListenEventAccess() ? .authorized : .notDetermined
         }
     }
 
     public func request(_ permission: SystemPermission) async -> PermissionStatus {
-        await status(for: permission)
+        switch permission {
+        case .inputMonitoring:
+            return CGRequestListenEventAccess() ? .authorized : .denied
+        case .screenRecording, .microphone, .camera:
+            return await status(for: permission)
+        }
     }
 
     @MainActor
@@ -73,6 +80,8 @@ extension SystemPermission {
             "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
         case .camera:
             "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera"
+        case .inputMonitoring:
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
         }
     }
 }

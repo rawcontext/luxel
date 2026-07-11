@@ -151,6 +151,34 @@ struct KeystrokeTimelineRecordingServiceTests {
         #expect(document.timeline.events.map(\.time) == [0.25])
     }
 
+    @Test("an active secure-input pause closes at recording end")
+    func activeSecureInputPauseClosesAtRecordingEnd() async throws {
+        let service = KeystrokeTimelineRecordingService(
+            eventSource: StubKeystrokeEventSource(events: [
+                .pauseStarted(wallTime: 1, cause: .secureInput),
+                .keyDown(
+                    wallTime: 2,
+                    keyCode: 0,
+                    characters: "a",
+                    modifiers: [],
+                    isRepeat: false
+                )
+            ])
+        )
+
+        let timeline = try await service.recordTimeline(
+            KeystrokeTimelineRecordingRequest(recordingDuration: 3)
+        )
+
+        #expect(timeline.pauses == [
+            KeystrokePauseInterval(
+                timeRange: try TimeRange(start: 1, end: 3),
+                cause: .secureInput
+            )
+        ])
+        #expect(timeline.eventsOutsidePauses().isEmpty)
+    }
+
     @Test("saving requires a sidecar persistence service")
     func savingRequiresSidecarPersistenceService() async throws {
         let service = KeystrokeTimelineRecordingService(

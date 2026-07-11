@@ -7,8 +7,29 @@ struct PermissionClientTests {
     func permissionsAndStatusesAreValueModels() {
         #expect(SystemPermission.screenRecording != .microphone)
         #expect(SystemPermission.camera != .microphone)
+        #expect(SystemPermission.inputMonitoring != .screenRecording)
         #expect(PermissionStatus.notDetermined != .authorized)
         #expect(PermissionStatus.denied != .restricted)
+    }
+
+    @Test("input monitoring guidance explains consent and recovery")
+    func inputMonitoringGuidanceExplainsConsentAndRecovery() {
+        let consent = PermissionGuidanceService().guidance(
+            for: .inputMonitoring,
+            status: .notDetermined
+        )
+        let denied = PermissionGuidanceService().guidance(
+            for: .inputMonitoring,
+            status: .denied
+        )
+
+        #expect(consent.action == .request)
+        #expect(consent.message.contains("typed characters"))
+        #expect(consent.message.contains("locally"))
+        #expect(consent.message.contains("pause"))
+        #expect(denied.action == .openSettings)
+        #expect(denied.message.contains("Input Monitoring"))
+        #expect(denied.message.contains("relaunch"))
     }
 
     @Test(

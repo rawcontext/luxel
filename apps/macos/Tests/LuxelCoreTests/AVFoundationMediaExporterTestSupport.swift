@@ -2,7 +2,9 @@ import AVFAudio
 import AppKit
 import AVFoundation
 import CoreMedia
+import CoreGraphics
 import Foundation
+import ImageIO
 import LuxelCore
 import Testing
 
@@ -237,6 +239,45 @@ extension AVFoundationMediaExporterTests {
             green: Int((color.greenComponent * 255).rounded()),
             blue: Int((color.blueComponent * 255).rounded())
         )
+    }
+
+    func framePixelData(at fileURL: URL, time: TimeInterval) async throws -> Data {
+        let frame = try await AVFoundationFrameGrabber().grab(
+            FrameGrabRequest(sourceFileURL: fileURL, time: time)
+        )
+        let source = try #require(CGImageSourceCreateWithData(frame.data as CFData, nil))
+        let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        let bytesPerRow = image.width * 4
+        var pixels = Data(count: bytesPerRow * image.height)
+        let rendered = pixels.withUnsafeMutableBytes { bytes -> Bool in
+            guard let baseAddress = bytes.baseAddress,
+                  let context = CGContext(
+                    data: baseAddress,
+                    width: image.width,
+                    height: image.height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: bytesPerRow,
+                    space: CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                  )
+            else {
+                return false
+            }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            return true
+        }
+        try #require(rendered)
+        return pixels
+    }
+
+    func meanAbsolutePixelDifference(_ first: Data, _ second: Data) -> Double {
+        guard first.count == second.count, !first.isEmpty else {
+            return .infinity
+        }
+        let total = zip(first, second).reduce(0) { partialResult, pair in
+            partialResult + abs(Int(pair.0) - Int(pair.1))
+        }
+        return Double(total) / Double(first.count)
     }
 
     func audioPeak(at fileURL: URL, duration: TimeInterval) async throws -> Double {

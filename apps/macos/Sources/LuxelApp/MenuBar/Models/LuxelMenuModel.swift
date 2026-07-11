@@ -15,6 +15,8 @@ final class LuxelMenuModel {
     var screenRecordingStatus: PermissionStatus = .unknown
     var microphoneStatus: PermissionStatus = .unknown
     var cameraStatus: PermissionStatus = .unknown
+    var inputMonitoringStatus: PermissionStatus = .unknown
+    var keystrokeCaptureStatus: KeystrokeCaptureStatus = .idle
     var audioLevelSample: AudioLevelSample = .silent
     var audioInputDevices: [AudioInputDeviceOption] = [.systemDefault]
     var cameraDevices: [CameraDeviceOption] = []
@@ -96,6 +98,39 @@ final class LuxelMenuModel {
     @ObservationIgnored var precisionModelTask: Task<Void, Never>?
     @ObservationIgnored var localModelStateTask: Task<Void, Never>?
     @ObservationIgnored weak var configuredEditorModel: LuxelEditorModel?
+    @ObservationIgnored lazy var keystrokeLivePreviewPanelController =
+        KeystrokeLivePreviewPanelController(exclusionRegistry: captureExclusionRegistry)
+    @ObservationIgnored lazy var keystrokeRecordingSession: any KeystrokeRecordingSessionControlling =
+        KeystrokeRecordingSession(
+            onStatus: { [weak self] (status: KeystrokeCaptureStatus) in
+                self?.keystrokeCaptureStatus = status
+                switch status {
+                case .paused(.secureInput):
+                    self?.recordingNoticeMessage = "Keystrokes paused while secure input is active."
+                case .permissionDenied:
+                    self?.recordingNoticeMessage =
+                        "Keystroke capture is unavailable. Allow Input Monitoring, then relaunch Luxel."
+                case .eventDeliveryUnavailable:
+                    self?.recordingNoticeMessage =
+                        "macOS stopped delivering keystrokes. The screen recording is still running."
+                case .eventDeliveryRecovered:
+                    self?.recordingNoticeMessage =
+                        "Keystroke capture was briefly interrupted and recovered."
+                case .idle, .active, .paused(.user), .paused(.recording):
+                    break
+                }
+            },
+            onChips: { [weak self] chips in
+                guard let self else { return }
+                Task {
+                    await self.keystrokeLivePreviewPanelController.present(
+                        chips: chips,
+                        options: self.settings.keystrokeRenderOptions,
+                        isEnabled: self.settings.keystrokeLivePreviewEnabled
+                    )
+                }
+            }
+        )
 
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),

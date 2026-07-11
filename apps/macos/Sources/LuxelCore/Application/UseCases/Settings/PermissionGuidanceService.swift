@@ -35,6 +35,8 @@ public struct PermissionGuidanceService: Sendable {
             microphoneGuidance(status: status)
         case .camera:
             cameraGuidance(status: status)
+        case .inputMonitoring:
+            inputMonitoringGuidance(status: status)
         }
     }
 
@@ -214,5 +216,33 @@ public struct PermissionGuidanceService: Sendable {
         }
 
         return cameraGuidance(status: status)
+    }
+
+    private func inputMonitoringGuidance(status: PermissionStatus) -> PermissionGuidance {
+        switch status {
+        case .authorized:
+            PermissionGuidance(
+                title: "Keystroke capture ready",
+                message: "Luxel can capture key identities while an enabled recording is active.",
+                actionTitle: "OK",
+                action: .request
+            )
+        case .notDetermined:
+            PermissionGuidance(
+                title: "Allow keystroke capture?",
+                message: "Luxel stores typed characters and shortcut identities locally with the recording. "
+                    + "You can pause capture at any time and remove the data later.",
+                actionTitle: "Continue",
+                action: .request
+            )
+        case .denied, .restricted, .unknown:
+            PermissionGuidance(
+                title: "Input Monitoring is off",
+                message: "Turn Luxel on in Input Monitoring, then return and try again. "
+                    + "If permission is already on but capture remains unavailable, relaunch Luxel.",
+                actionTitle: "Open System Settings",
+                action: .openSettings
+            )
+        }
     }
 }

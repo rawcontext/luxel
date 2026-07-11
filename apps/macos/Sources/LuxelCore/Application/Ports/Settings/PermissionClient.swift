@@ -4,6 +4,7 @@ public enum SystemPermission: Codable, Equatable, Sendable {
     case screenRecording
     case microphone
     case camera
+    case inputMonitoring
 }
 
 public enum PermissionStatus: Codable, Equatable, Sendable {

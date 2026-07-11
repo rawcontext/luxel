@@ -31,7 +31,12 @@ extension AVAssetReaderCodecMediaSource {
                 trimRange: request.timeRange,
                 speed: request.speed,
                 editPlan: request.editPlan
-            ).map(request.zoomBlocks)
+            ).map(request.zoomBlocks),
+            keystrokeTimeline: try? KeystrokeSidecarFileLoader().load(
+                nextTo: request.inputFileURL
+            ),
+            keystrokeOptions: request.keystrokeOptions,
+            keystrokeTimelineMapper: request.timelineMapper
         )
         return output
     }

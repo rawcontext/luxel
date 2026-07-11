@@ -279,7 +279,8 @@ extension LuxelEditorModel {
             quality: quality,
             speed: playbackSpeed,
             editPlan: transcriptEditPlan,
-            gifOptions: try currentGIFOptions(for: format)
+            gifOptions: try currentGIFOptions(for: format),
+            keystrokeOptions: keystrokeOptions
         )
     }
 
@@ -297,7 +298,8 @@ extension LuxelEditorModel {
             quality: quality,
             speed: playbackSpeed,
             editPlan: transcriptEditPlan,
-            gifOptions: try currentGIFOptions(for: format)
+            gifOptions: try currentGIFOptions(for: format),
+            keystrokeOptions: keystrokeOptions
         )
     }
 

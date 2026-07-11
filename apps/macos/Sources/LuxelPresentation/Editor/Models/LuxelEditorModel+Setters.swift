@@ -202,6 +202,42 @@ extension LuxelEditorModel {
         recordEditorDraftChange()
     }
 
+    func updateKeystrokeOptions(
+        isVisible: Bool? = nil,
+        anchor: KeystrokeOverlayAnchor? = nil,
+        size: KeystrokeOverlaySize? = nil,
+        theme: KeystrokeOverlayTheme? = nil,
+        displayDuration: TimeInterval? = nil
+    ) {
+        guard let current = keystrokeOptions,
+              let updated = try? KeystrokeRenderOptions(
+                isVisible: isVisible ?? current.isVisible,
+                anchor: anchor ?? current.anchor,
+                size: size ?? current.size,
+                theme: theme ?? current.theme,
+                displayDuration: displayDuration ?? current.displayDuration
+              )
+        else {
+            return
+        }
+        keystrokeOptions = updated
+        exportProgress = nil
+    }
+
+    func removeKeystrokeData() {
+        guard let source else {
+            return
+        }
+        do {
+            _ = try KeystrokeSidecarRemovalService(fileSystem: fileSystem, mode: .delete)
+                .remove(nextTo: source.fileURL)
+            keystrokeTimeline = nil
+            keystrokeOptions = nil
+        } catch {
+            status = .failed(errorMessage(error))
+        }
+    }
+
     func undoEditorChange() {
         guard let state = editorUndoStack.undo() else {
             return

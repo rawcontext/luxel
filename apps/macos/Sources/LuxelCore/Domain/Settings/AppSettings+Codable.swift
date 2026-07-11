@@ -16,6 +16,7 @@ extension AppSettings {
         showCursor = cursor.showCursor; highlightClicks = cursor.highlightClicks
         cursorMode = cursor.mode; cursorRenderOptions = cursor.renderOptions
         keystrokeOverlayEnabled = cursor.keystrokeOverlayEnabled
+        keystrokeLivePreviewEnabled = cursor.keystrokeLivePreviewEnabled
         keystrokeRenderOptions = cursor.keystrokeRenderOptions
         pauseKeystrokeCaptureShortcut = cursor.pauseKeystrokeCaptureShortcut
         record60FPS = recording.records60FPS; recordingFrameRate = recording.frameRate
@@ -70,6 +71,9 @@ extension AppSettings {
             keystrokeOverlayEnabled: container.decodeIfPresent(
                 Bool.self, forKey: .keystrokeOverlayEnabled
             ) ?? false,
+            keystrokeLivePreviewEnabled: container.decodeIfPresent(
+                Bool.self, forKey: .keystrokeLivePreviewEnabled
+            ) ?? true,
             keystrokeRenderOptions: container.decodeIfPresent(
                 KeystrokeRenderOptions.self,
                 forKey: .keystrokeRenderOptions

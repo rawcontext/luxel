@@ -68,6 +68,10 @@ private extension ImageIOAnimatedMediaExporter {
         do {
             var cameraPath: CameraPath?
             var didBuildCameraPath = false
+            let keystrokeTimeline = try? KeystrokeSidecarFileLoader().load(
+                nextTo: request.inputFileURL
+            )
+            let keystrokeCompositor = await KeystrokeFrameCompositor()
 
             await progress?(0)
             for (frameIndex, time) in frameTimes.enumerated() {
@@ -77,7 +81,7 @@ private extension ImageIOAnimatedMediaExporter {
                     didBuildCameraPath = true
                 }
 
-                let renderedFrame = try AnimatedFrameRenderer().renderImage(
+                let baseFrame = try AnimatedFrameRenderer().renderImage(
                     frame,
                     outputPixelSize: context.outputPixelSize,
                     shouldCrop: request.shouldCrop,
@@ -87,6 +91,12 @@ private extension ImageIOAnimatedMediaExporter {
                         request: request,
                         cameraPath: cameraPath
                     )
+                )
+                let renderedFrame = await keystrokeCompositor.composite(
+                    baseFrame,
+                    timeline: keystrokeTimeline,
+                    options: request.keystrokeOptions,
+                    at: time.seconds
                 )
                 CGImageDestinationAddImage(
                     destination,
@@ -183,6 +193,10 @@ private extension ImageIOAnimatedMediaExporter {
         frames.reserveCapacity(context.schedule.frameTimes.count)
         var cameraPath: CameraPath?
         var didBuildCameraPath = false
+        let keystrokeTimeline = try? KeystrokeSidecarFileLoader().load(
+            nextTo: request.inputFileURL
+        )
+        let keystrokeCompositor = await KeystrokeFrameCompositor()
 
         await progress?(0)
         for (frameIndex, time) in context.schedule.frameTimes.enumerated() {
@@ -192,19 +206,31 @@ private extension ImageIOAnimatedMediaExporter {
                 didBuildCameraPath = true
             }
 
+            let baseFrame = try AnimatedFrameRenderer().renderImage(
+                frame,
+                outputPixelSize: context.outputPixelSize,
+                shouldCrop: request.shouldCrop,
+                sourceCropRect: request.cropRect,
+                cameraTransform: try cameraTransform(
+                    for: time,
+                    request: request,
+                    cameraPath: cameraPath
+                )
+            )
+            let compositedFrame = await keystrokeCompositor.composite(
+                baseFrame,
+                timeline: keystrokeTimeline,
+                options: request.keystrokeOptions,
+                at: time.seconds
+            )
             frames.append(
                 try AnimatedFrameRenderer().renderGIFBitmap(
-                    frame,
+                    compositedFrame,
                     outputPixelSize: context.outputPixelSize,
-                    shouldCrop: request.shouldCrop,
-                    sourceCropRect: request.cropRect,
-                    backgroundMatte: backgroundMatte,
-                    cameraTransform: try cameraTransform(
-                        for: time,
-                        request: request,
-                        cameraPath: cameraPath
-                    )
-                ))
+                    shouldCrop: false,
+                    backgroundMatte: backgroundMatte
+                )
+            )
             await progress?(
                 Double(frameIndex + 1) / Double(max(1, context.schedule.frameTimes.count))
             )

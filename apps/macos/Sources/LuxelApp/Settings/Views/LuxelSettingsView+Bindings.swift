@@ -4,6 +4,22 @@ import LuxelPresentation
 import SwiftUI
 
 extension LuxelSettingsView {
+    var keystrokeCaptureSelection: Binding<Bool> {
+        Binding {
+            model.settings.keystrokeOverlayEnabled
+        } set: { isEnabled in
+            guard isEnabled else {
+                model.settings.keystrokeOverlayEnabled = false
+                return
+            }
+            guard model.inputMonitoringStatus == .authorized else {
+                model.presentPermissionPrompt(for: .inputMonitoring)
+                return
+            }
+            model.settings.keystrokeOverlayEnabled = true
+        }
+    }
+
     var replayBufferEnabled: Binding<Bool> {
         Binding {
             model.settings.replayBufferConfiguration != nil

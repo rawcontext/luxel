@@ -218,6 +218,13 @@ extension LuxelMenu {
             .help("Show in Finder")
         }
         .padding(EdgeInsets(top: 6, leading: 7, bottom: 6, trailing: 6))
+        .contextMenu {
+            if recording.options.captureKeystrokes {
+                Button("Remove Keystroke Data", role: .destructive) {
+                    model.removeKeystrokeData(from: recording)
+                }
+            }
+        }
     }
 
 }

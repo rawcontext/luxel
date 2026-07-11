@@ -6,20 +6,27 @@ extension LuxelMenuModel {
         screenRecordingStatus = await permissionClient.status(for: .screenRecording)
         microphoneStatus = await permissionClient.status(for: .microphone)
         cameraStatus = await permissionClient.status(for: .camera)
+        let refreshedInputMonitoringStatus = await permissionClient.status(for: .inputMonitoring)
+        if inputMonitoringStatus != .denied || refreshedInputMonitoringStatus == .authorized {
+            inputMonitoringStatus = refreshedInputMonitoringStatus
+        }
     }
 
     func presentPermissionPrompt(for permission: SystemPermission) {
-        let source =
-            switch permission {
-            case .screenRecording:
-                CapturePermissionSource.screenPixels
-            case .microphone:
-                CapturePermissionSource.microphone
-            case .camera:
-                CapturePermissionSource.camera
-            }
-
-        presentPermissionPrompt(forSource: source)
+        switch permission {
+        case .screenRecording:
+            presentPermissionPrompt(forSource: .screenPixels)
+        case .microphone:
+            presentPermissionPrompt(forSource: .microphone)
+        case .camera:
+            presentPermissionPrompt(forSource: .camera)
+        case .inputMonitoring:
+            permissionPrompt = PermissionPrompt(
+                source: nil,
+                permission: permission,
+                guidance: permissionGuidance(for: permission)
+            )
+        }
     }
 
     func presentPermissionPrompt(forSource source: CapturePermissionSource) {
@@ -39,13 +46,22 @@ extension LuxelMenuModel {
         await performGuidanceAction(prompt)
         await refreshPermissions()
         await openSettingsAfterDeniedRequest(prompt)
-        await refreshCaptureSource(prompt.source)
+        if prompt.permission == .inputMonitoring, inputMonitoringStatus == .authorized {
+            settings.keystrokeOverlayEnabled = true
+            saveSettings()
+        }
+        if let source = prompt.source {
+            await refreshCaptureSource(source)
+        }
     }
 
     private func performGuidanceAction(_ prompt: PermissionPrompt) async {
         switch prompt.guidance.action {
         case .request:
             try? await Task.sleep(nanoseconds: 200_000_000)
+            if prompt.permission == .inputMonitoring {
+                inputMonitoringStatus = await permissionClient.request(.inputMonitoring)
+            }
             if permissionStatus(for: prompt.permission) != .authorized {
                 await refreshPermissions()
             }
@@ -53,7 +69,9 @@ extension LuxelMenuModel {
             try? await Task.sleep(nanoseconds: 200_000_000)
             await permissionClient.openSettings(for: prompt.permission)
         case .enableSource:
-            enableCaptureSource(prompt.source)
+            if let source = prompt.source {
+                enableCaptureSource(source)
+            }
         }
     }
 
@@ -153,6 +171,8 @@ extension LuxelMenuModel {
             microphoneStatus
         case .camera:
             cameraStatus
+        case .inputMonitoring:
+            inputMonitoringStatus
         }
     }
 }

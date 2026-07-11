@@ -132,6 +132,29 @@ extension RecordingHistoryTests {
         #expect(store.recordings == [recording])
     }
 
+    @Test("discard recording trashes its keystroke sidecar")
+    func discardRecordingTrashesKeystrokeSidecar() throws {
+        let mediaURL = URL(fileURLWithPath: "/tmp/with-keys.mp4")
+        let sidecarURL = KeystrokeSidecarDocument.sidecarURL(nextTo: mediaURL)
+        let recording = PastRecording(
+            fileURL: mediaURL,
+            name: "With Keys",
+            date: Date(timeIntervalSince1970: 2),
+            options: RecordingOptions(frameRate: 30, captureKeystrokes: true)
+        )
+        let fileSystem = RecordingHistoryFakeFileSystem(
+            existingFiles: [mediaURL, sidecarURL]
+        )
+        let service = makeService(
+            store: InMemoryRecordingHistoryStore(recordings: [recording]),
+            fileSystem: fileSystem
+        )
+
+        _ = try service.discardRecording(recording)
+
+        #expect(fileSystem.trashedFiles == [sidecarURL, mediaURL])
+    }
+
     @Test("addRecording stores only existing files")
     func addRecordingStoresOnlyExistingFiles() {
         let fileURL = URL(fileURLWithPath: "/tmp/new.mp4")

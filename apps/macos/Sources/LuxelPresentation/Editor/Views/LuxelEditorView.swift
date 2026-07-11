@@ -129,6 +129,18 @@ extension LuxelEditorView {
                 ProgressView()
                     .controlSize(.large)
             }
+            if let options = model.keystrokeOptions,
+               options.isVisible,
+               !model.activeKeystrokeChips.isEmpty {
+                KeystrokeChipStackView(chips: model.activeKeystrokeChips, options: options)
+                    .padding(28)
+                    .frame(
+                        maxWidth: .infinity,
+                        maxHeight: .infinity,
+                        alignment: keystrokePreviewAlignment(options.anchor)
+                    )
+                    .allowsHitTesting(false)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -267,6 +279,9 @@ extension LuxelEditorView {
                     exportProgressPanel
                 }
                 timelineControls
+                if model.keystrokeTimeline != nil {
+                    keystrokeControls
+                }
                 outputControls
                 if let sidebarStatusMessage = model.sidebarStatusMessage {
                     statusControls(sidebarStatusMessage)
@@ -275,6 +290,23 @@ extension LuxelEditorView {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollIndicators(.hidden)
+    }
+
+    private func keystrokePreviewAlignment(_ anchor: KeystrokeOverlayAnchor) -> Alignment {
+        switch anchor {
+        case .topLeft:
+            .topLeading
+        case .topCenter:
+            .top
+        case .topRight:
+            .topTrailing
+        case .bottomLeft:
+            .bottomLeading
+        case .bottomCenter:
+            .bottom
+        case .bottomRight:
+            .bottomTrailing
+        }
     }
 
 }

@@ -205,17 +205,23 @@ extension LuxelStatusItemController {
             countdownDuration: model.settings.defaultCountdown,
             stopAfterDuration: model.settings.lastStopAfter,
             canRecordAudio: model.microphoneStatus == .authorized,
+            canCaptureKeystrokes: model.inputMonitoringStatus == .authorized,
             cameraConfiguration: model.cropperCameraConfiguration(),
             quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
             selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
             restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
             recordAudio: model.captureCapabilities.microphoneTrackAvailable,
+            captureKeystrokes: model.settings.keystrokeOverlayEnabled,
             loupeAlwaysOn: model.settings.loupeAlwaysOn,
             dimOtherDisplays: model.settings.dimOtherDisplays,
             showsNotificationReminder: false,
             onCountdownDurationChange: { [weak self] in self?.updateCropperCountdown($0) },
             onStopAfterDurationChange: { [weak self] in self?.updateCropperStopAfter($0) },
             onRecordAudioChange: { [weak self] in self?.updateCropperAudio($0) },
+            onCaptureKeystrokesChange: { [weak self] isEnabled in
+                self?.model.settings.keystrokeOverlayEnabled = isEnabled
+                self?.model.saveSettings()
+            },
             onCameraSelectionChange: { [weak self] in self?.updateCropperCamera($0) },
             onCameraPreviewStyleChange: { [weak self] in self?.updateCropperCameraStyle($0) },
             onNotificationReminderDismiss: { [weak model] in model?.dismissNotificationReminder() },
