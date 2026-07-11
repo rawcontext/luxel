@@ -6257,73 +6257,73 @@
         }
       }
     },
-    "Cut selected transcript sentence": {
+    "Cut selected transcript word": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cut selected transcript sentence"
+            "value": "Cut selected transcript word"
           }
         }
       }
