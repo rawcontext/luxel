@@ -16,7 +16,40 @@ extension ExportAudioPreparationWorker {
 
         let sourceSegments = try request.timelineMapper.sourceSegments
         let composition = AVMutableComposition()
-        let tracks = try sourceTracks.map { sourceTrack in
+        let tracks = try addAudioTracks(
+            sourceTracks,
+            sourceSegments: sourceSegments,
+            to: composition
+        )
+
+        let reader = try AVAssetReader(asset: composition)
+        let output = AVAssetReaderAudioMixOutput(
+            audioTracks: tracks,
+            audioSettings: [
+                AVFormatIDKey: kAudioFormatLinearPCM,
+                AVSampleRateKey: ExportAudioPreparationService.sampleRate,
+                AVNumberOfChannelsKey: ExportAudioPreparationService.channelCount,
+                AVLinearPCMBitDepthKey: 32,
+                AVLinearPCMIsFloatKey: true,
+                AVLinearPCMIsBigEndianKey: false,
+                AVLinearPCMIsNonInterleaved: true
+            ]
+        )
+        guard reader.canAdd(output) else {
+            throw ExportAudioPreparationError.sourceReadFailed(
+                "AVAssetReader could not add the audio output."
+            )
+        }
+        reader.add(output)
+        return (reader, output)
+    }
+
+    private func addAudioTracks(
+        _ sourceTracks: [AVAssetTrack],
+        sourceSegments: [SourceMediaSegment],
+        to composition: AVMutableComposition
+    ) throws -> [AVMutableCompositionTrack] {
+        try sourceTracks.map { sourceTrack in
             guard let track = composition.addMutableTrack(
                 withMediaType: .audio,
                 preferredTrackID: kCMPersistentTrackID_Invalid
@@ -41,27 +74,6 @@ extension ExportAudioPreparationWorker {
             }
             return track
         }
-
-        let reader = try AVAssetReader(asset: composition)
-        let output = AVAssetReaderAudioMixOutput(
-            audioTracks: tracks,
-            audioSettings: [
-                AVFormatIDKey: kAudioFormatLinearPCM,
-                AVSampleRateKey: ExportAudioPreparationService.sampleRate,
-                AVNumberOfChannelsKey: ExportAudioPreparationService.channelCount,
-                AVLinearPCMBitDepthKey: 32,
-                AVLinearPCMIsFloatKey: true,
-                AVLinearPCMIsBigEndianKey: false,
-                AVLinearPCMIsNonInterleaved: true
-            ]
-        )
-        guard reader.canAdd(output) else {
-            throw ExportAudioPreparationError.sourceReadFailed(
-                "AVAssetReader could not add the audio output."
-            )
-        }
-        reader.add(output)
-        return (reader, output)
     }
 
     func channels(from sampleBuffer: CMSampleBuffer) throws -> [[Float]] {

@@ -4,7 +4,7 @@ import LuxelCore
 import Testing
 
 @Suite("Editor preview asset builder")
-struct AVFoundationEditorPreviewAssetBuilderTests {
+struct EditorPreviewAssetBuilderTests {
     @Test("builds stitched video and audio preview tracks")
     func buildsStitchedPreviewTracks() async throws {
         let asset = try await AVFoundationEditorPreviewAssetBuilder().makePreviewAsset(

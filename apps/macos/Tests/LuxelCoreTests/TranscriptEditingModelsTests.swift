@@ -79,6 +79,39 @@ struct TranscriptEditingModelsTests {
         )
     }
 
+    @Test("planner combines a contiguous sentence group into one cut")
+    func plansContiguousSentenceGroup() throws {
+        let transcript = try sampleTranscript()
+        let sentences = try TranscriptSentenceIndex(transcript: transcript).sentences
+
+        let cut = try TranscriptSentenceCutPlanner().cut(
+            transcript: transcript,
+            sentenceIDs: Array(sentences[0...1].map(\.id)),
+            trimRange: TimeRange(start: 0, end: 4),
+            editPlan: .empty,
+            minimumRetainedDuration: 0.1
+        )
+
+        #expect(cut?.sourceRange == (try TimeRange(start: 0, end: 2.3)))
+        #expect(cut?.transcriptSpanIDs == ["s0", "s1", "s2", "s3", "s4"])
+    }
+
+    @Test("planner rejects a noncontiguous sentence group")
+    func rejectsNoncontiguousSentenceGroup() throws {
+        let transcript = try sampleTranscript()
+        let sentences = try TranscriptSentenceIndex(transcript: transcript).sentences
+
+        #expect(throws: TimelineEditingError.noncontiguousTranscriptSelection) {
+            _ = try TranscriptSentenceCutPlanner().cut(
+                transcript: transcript,
+                sentenceIDs: [sentences[0].id, sentences[2].id],
+                trimRange: TimeRange(start: 0, end: 4),
+                editPlan: .empty,
+                minimumRetainedDuration: 0.1
+            )
+        }
+    }
+
     private func sampleTranscript() throws -> TurnSegmentedTranscript {
         let spans = try [
             span("s0", "Hello", 0, 0.4),

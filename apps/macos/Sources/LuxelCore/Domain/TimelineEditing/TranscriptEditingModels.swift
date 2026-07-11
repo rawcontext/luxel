@@ -77,18 +77,48 @@ public struct TranscriptSentenceCutPlanner: Equatable, Sendable {
         editPlan: TimelineEditPlan,
         minimumRetainedDuration: TimeInterval
     ) throws -> TimelineCut? {
-        let sentences = try TranscriptSentenceIndex(transcript: transcript).sentences
-        guard let sentence = sentences.first(where: { $0.id == sentenceID }),
-              !editPlan.removes(sentence.sourceRange)
+        try cut(
+            transcript: transcript,
+            sentenceIDs: [sentenceID],
+            trimRange: trimRange,
+            editPlan: editPlan,
+            minimumRetainedDuration: minimumRetainedDuration
+        )
+    }
+
+    public func cut(
+        transcript: TurnSegmentedTranscript,
+        sentenceIDs: [TranscriptEditableSentence.ID],
+        trimRange: TimeRange,
+        editPlan: TimelineEditPlan,
+        minimumRetainedDuration: TimeInterval
+    ) throws -> TimelineCut? {
+        let sentences = try TranscriptSentenceIndex(transcript: transcript).sentences.filter {
+            !editPlan.removes($0.sourceRange)
+        }
+        let selectedIDs = Set(sentenceIDs)
+        let selectedIndexes = sentences.indices.filter { selectedIDs.contains(sentences[$0].id) }
+        guard let firstIndex = selectedIndexes.first, let lastIndex = selectedIndexes.last else {
+            return nil
+        }
+        guard selectedIndexes == Array(firstIndex...lastIndex) else {
+            throw TimelineEditingError.noncontiguousTranscriptSelection
+        }
+        let selectedSentences = Array(sentences[firstIndex...lastIndex])
+        guard let first = selectedSentences.first,
+              let last = selectedSentences.last
         else {
             return nil
         }
 
         let cut = try TimelineCut(
-            id: "transcript-\(sentence.id)",
-            sourceRange: sentence.sourceRange,
+            id: "transcript-\(first.id)-\(last.id)",
+            sourceRange: TimeRange(
+                start: first.sourceRange.start,
+                end: last.sourceRange.end
+            ),
             kind: .transcriptSentence,
-            transcriptSpanIDs: sentence.spanIDs
+            transcriptSpanIDs: selectedSentences.flatMap(\.spanIDs)
         )
         guard try editPlan.inserting(
             cut,

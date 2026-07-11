@@ -1,3 +1,4 @@
+import AppKit
 import LuxelCore
 import SwiftUI
 
@@ -164,10 +165,10 @@ struct TranscriptChunkView: View {
     let speakerChip: TranscriptSpeakerChip?
     let isActiveTurn: Bool
     let activeSpanID: String?
-    let selectedSentenceID: TranscriptEditableSentence.ID?
+    let selectedSentenceIDs: Set<TranscriptEditableSentence.ID>
     let matchedSearchSpanIDs: Set<String>
     let currentSearchSpanIDs: Set<String>
-    let selectSentence: (TranscriptEditableSentence) -> Void
+    let selectSentence: (TranscriptEditableSentence, Bool) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: chunk.showsHeader ? 6 : 0) {
@@ -230,7 +231,7 @@ struct TranscriptChunkView: View {
                         sentence: sentence,
                         isActiveTurn: isActiveTurn,
                         isActiveSpan: sentence.spanIDs.contains(activeSpanID ?? ""),
-                        isSelected: sentence.id == selectedSentenceID,
+                        isSelected: selectedSentenceIDs.contains(sentence.id),
                         isSearchMatch: !matchedSearchSpanIDs.isDisjoint(with: sentence.spanIDs),
                         isCurrentSearchMatch: !currentSearchSpanIDs.isDisjoint(with: sentence.spanIDs),
                         selectSentence: selectSentence
@@ -252,11 +253,12 @@ private struct TranscriptSentenceButton: View {
     let isSelected: Bool
     let isSearchMatch: Bool
     let isCurrentSearchMatch: Bool
-    let selectSentence: (TranscriptEditableSentence) -> Void
+    let selectSentence: (TranscriptEditableSentence, Bool) -> Void
 
     var body: some View {
         Button {
-            selectSentence(sentence)
+            let extendsSelection = NSApp.currentEvent?.modifierFlags.contains(.shift) == true
+            selectSentence(sentence, extendsSelection)
         } label: {
             Text(sentence.text)
                 .font(.system(size: 13))

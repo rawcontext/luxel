@@ -53,18 +53,31 @@ extension LuxelEditorModel {
         seekToTranscriptTime(span.start)
     }
 
-    func selectTranscriptSentence(_ sentence: TranscriptEditableSentence) {
-        guard visibleTranscriptSentences.contains(where: { $0.id == sentence.id }) else {
+    func selectTranscriptSentence(
+        _ sentence: TranscriptEditableSentence,
+        extendingSelection: Bool = false
+    ) {
+        let sentences = visibleTranscriptSentences
+        guard let selectedIndex = sentences.firstIndex(where: { $0.id == sentence.id }) else {
             return
         }
 
-        selectedTranscriptSentenceID = sentence.id
+        if extendingSelection,
+           let transcriptSelectionAnchorID,
+           let anchorIndex = sentences.firstIndex(where: { $0.id == transcriptSelectionAnchorID }) {
+            selectedTranscriptSentenceIDs = Set(
+                sentences[min(anchorIndex, selectedIndex)...max(anchorIndex, selectedIndex)].map(\.id)
+            )
+        } else {
+            selectedTranscriptSentenceIDs = [sentence.id]
+            transcriptSelectionAnchorID = sentence.id
+        }
         transcriptEditStatusMessage = nil
         seekToTranscriptTime(sentence.sourceRange.start)
     }
 
     func deleteSelectedTranscriptSentence() {
-        guard let transcript, let selectedTranscriptSentenceID else {
+        guard let transcript, !selectedTranscriptSentenceIDs.isEmpty else {
             return
         }
 
@@ -72,7 +85,9 @@ extension LuxelEditorModel {
             let trimRange = try TimeRange(start: trimStart, end: trimEnd)
             guard let cut = try TranscriptSentenceCutPlanner().cut(
                 transcript: transcript,
-                sentenceID: selectedTranscriptSentenceID,
+                sentenceIDs: visibleTranscriptSentences.compactMap {
+                    selectedTranscriptSentenceIDs.contains($0.id) ? $0.id : nil
+                },
                 trimRange: trimRange,
                 editPlan: transcriptEditPlan,
                 minimumRetainedDuration: minimumTrimDuration
@@ -88,8 +103,12 @@ extension LuxelEditorModel {
             }
 
             transcriptEditPlan = updatedPlan
-            self.selectedTranscriptSentenceID = nil
-            transcriptEditStatusMessage = "Sentence cut"
+            let selectedCount = selectedTranscriptSentenceIDs.count
+            selectedTranscriptSentenceIDs = []
+            transcriptSelectionAnchorID = nil
+            transcriptEditStatusMessage = selectedCount == 1
+                ? "Sentence cut"
+                : "\(selectedCount) sentences cut"
             exportEstimatesByFormat = [:]
             rebuildEditedPreview()
             recordEditorDraftChange()

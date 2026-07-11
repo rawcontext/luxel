@@ -15,6 +15,7 @@ extension LuxelEditorModel {
         let wasPlaying = playbackRequested
 
         guard !plan.cuts.isEmpty else {
+            isEditedPreviewReady = true
             let item = AVPlayerItem(url: sourceURL)
             item.audioTimePitchAlgorithm = .timeDomain
             player.replaceCurrentItem(with: item)
@@ -23,10 +24,13 @@ extension LuxelEditorModel {
         }
 
         guard let segments = try? previewTimelineMapper.sourceSegments else {
+            isEditedPreviewReady = false
             transcriptEditStatusMessage = "Could not build the edited preview."
             return
         }
 
+        isEditedPreviewReady = false
+        transcriptEditStatusMessage = "Updating edited preview…"
         previewCompositionTask = Task { [weak self] in
             do {
                 let asset = try await AVFoundationEditorPreviewAssetBuilder().makePreviewAsset(
@@ -34,35 +38,53 @@ extension LuxelEditorModel {
                     sourceSegments: segments
                 )
                 try Task.checkCancellation()
-                guard let self,
-                      self.source?.fileURL == sourceURL,
-                      self.transcriptEditPlan == plan
-                else {
-                    return
-                }
-
-                let item = AVPlayerItem(asset: asset)
-                item.audioTimePitchAlgorithm = .timeDomain
-                self.player.replaceCurrentItem(with: item)
-                let outputTime = self.previewOutputTime(forSourceTime: sourceTime)
-                self.currentPlaybackTime =
-                    self.previewTimelineMapper.sourceTime(forOutputTime: outputTime)
-                    ?? self.trimStart
-                self.enqueuePreviewSeek(to: outputTime, resume: wasPlaying)
-                self.previewCompositionTask = nil
+                self?.applyEditedPreview(
+                    asset,
+                    sourceURL: sourceURL,
+                    plan: plan,
+                    sourceTime: sourceTime,
+                    wasPlaying: wasPlaying
+                )
             } catch is CancellationError {
-                self?.previewCompositionTask = nil
             } catch {
-                guard let self, self.source?.fileURL == sourceURL else {
-                    return
-                }
-                let item = AVPlayerItem(url: sourceURL)
-                item.audioTimePitchAlgorithm = .timeDomain
-                self.player.replaceCurrentItem(with: item)
-                self.transcriptEditStatusMessage = "Edited preview unavailable; export is still available."
-                self.previewCompositionTask = nil
+                self?.applyEditedPreviewFailure(sourceURL: sourceURL)
             }
         }
+    }
+
+    private func applyEditedPreview(
+        _ asset: AVComposition,
+        sourceURL: URL,
+        plan: TimelineEditPlan,
+        sourceTime: TimeInterval,
+        wasPlaying: Bool
+    ) {
+        guard source?.fileURL == sourceURL, transcriptEditPlan == plan else {
+            return
+        }
+
+        let item = AVPlayerItem(asset: asset)
+        item.audioTimePitchAlgorithm = .timeDomain
+        player.replaceCurrentItem(with: item)
+        let outputTime = previewOutputTime(forSourceTime: sourceTime)
+        currentPlaybackTime =
+            previewTimelineMapper.sourceTime(forOutputTime: outputTime) ?? trimStart
+        enqueuePreviewSeek(to: outputTime, resume: wasPlaying)
+        isEditedPreviewReady = true
+        transcriptEditStatusMessage = "Sentence cut"
+        previewCompositionTask = nil
+    }
+
+    private func applyEditedPreviewFailure(sourceURL: URL) {
+        guard source?.fileURL == sourceURL else {
+            return
+        }
+        let item = AVPlayerItem(url: sourceURL)
+        item.audioTimePitchAlgorithm = .timeDomain
+        player.replaceCurrentItem(with: item)
+        transcriptEditStatusMessage = "Edited preview unavailable; undo the cut to export."
+        isEditedPreviewReady = false
+        previewCompositionTask = nil
     }
 
     func previewOutputTime(forSourceTime sourceTime: TimeInterval) -> TimeInterval {

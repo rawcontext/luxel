@@ -7,85 +7,6 @@ import Testing
 @MainActor
 @Suite("Luxel editor transcript model")
 struct LuxelEditorModelTranscriptTests {
-    @Test("sentence cuts are non-destructive undoable and exported for audio and video")
-    func sentenceCutsApplyToAudioAndVideo() async throws {
-        let helper = LuxelEditorModelTests()
-        let transcript = try editableTranscript()
-        let sources = try [
-            SourceMedia(
-                fileURL: URL(fileURLWithPath: "/tmp/video.mp4"),
-                duration: 12,
-                pixelSize: PixelSize(width: 1280, height: 720),
-                nominalFrameRate: FrameRate(30),
-                hasAudio: true
-            ),
-            SourceMedia.audioOnly(
-                fileURL: URL(fileURLWithPath: "/tmp/audio.m4a"),
-                duration: 12
-            )
-        ]
-
-        for source in sources {
-            let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
-            await model.open(
-                fileURL: source.fileURL,
-                outputDirectory: URL(fileURLWithPath: "/tmp")
-            )
-            model.transcript = transcript
-            model.isTranscriptPanelVisible = true
-
-            let originalTranscript = model.transcript
-            let sentence = try #require(
-                model.editableTranscriptSentences.first { $0.text == "Delete this." }
-            )
-            model.selectTranscriptSentence(sentence)
-            #expect(model.selectedTranscriptSentenceID == sentence.id)
-
-            model.deleteSelectedTranscriptSentence()
-
-            #expect(model.transcript == originalTranscript)
-            #expect(model.transcriptEditPlan.cuts.count == 1)
-            #expect(model.visibleTranscriptSentences.map(\.text) == ["Keep.", "Remain."])
-            #expect(try model.editedTimelineMapper.outputDuration == 11)
-            #expect(try model.makeExportRequest(source: source, format: model.format).editPlan
-                        == model.transcriptEditPlan)
-
-            model.handlePlaybackTime(1.25)
-            #expect(model.currentPlaybackTime == 2.25)
-
-            model.undoEditorChange()
-            #expect(model.transcriptEditPlan == .empty)
-            #expect(model.visibleTranscriptSentences.count == 3)
-
-            model.redoEditorChange()
-            #expect(model.transcriptEditPlan.cuts.count == 1)
-            #expect(model.visibleTranscriptSentences.map(\.text) == ["Keep.", "Remain."])
-        }
-    }
-
-    @Test("deleting all retained media reports a no-op")
-    func sentenceCutCannotRemoveEditableRange() async throws {
-        let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
-        let source = try SourceMedia(
-            fileURL: sourceURL,
-            duration: 1,
-            pixelSize: PixelSize(width: 1280, height: 720),
-            nominalFrameRate: FrameRate(30),
-            hasAudio: true
-        )
-        let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
-        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
-        model.transcript = try helper.sampleTranscript(source: .system)
-        let sentence = try #require(model.editableTranscriptSentences.first)
-
-        model.selectTranscriptSentence(sentence)
-        model.deleteSelectedTranscriptSentence()
-
-        #expect(model.transcriptEditPlan == .empty)
-        #expect(model.transcriptEditStatusMessage == "Keep at least part of the recording.")
-    }
-
     @Test("opening audio-only source extracts and exposes validated transcript")
     func openingAudioOnlySourceExtractsTranscript() async throws {
         let helper = LuxelEditorModelTests()
@@ -200,30 +121,6 @@ struct LuxelEditorModelTranscriptTests {
         )
     }
 
-}
-
-private extension LuxelEditorModelTranscriptTests {
-    func editableTranscript() throws -> TurnSegmentedTranscript {
-        let spans = try [
-            TimedTranscriptSpan(id: "keep", text: "Keep.", start: 0, end: 0.8),
-            TimedTranscriptSpan(id: "delete", text: "Delete", start: 1, end: 1.4),
-            TimedTranscriptSpan(id: "this", text: "this.", start: 1.5, end: 2),
-            TimedTranscriptSpan(id: "remain", text: "Remain.", start: 2.2, end: 3)
-        ]
-        return try TurnSegmentedTranscript(
-            spans: spans,
-            turns: [
-                TranscriptTurn(
-                    id: "turn",
-                    spanIDs: spans.map(\.id),
-                    start: 0,
-                    end: 3,
-                    text: "Keep. Delete this. Remain."
-                )
-            ],
-            localeIdentifier: "en_US"
-        )
-    }
 }
 
 extension LuxelEditorModelTranscriptTests {

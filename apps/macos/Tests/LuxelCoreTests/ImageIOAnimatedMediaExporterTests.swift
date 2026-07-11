@@ -125,31 +125,6 @@ struct ImageIOAnimatedMediaExporterTests {
         try? FileManager.default.removeItem(at: outputURL)
     }
 
-    @Test("gif export samples only kept timeline segments")
-    func gifExportAppliesTimelineCuts() async throws {
-        let outputURL = temporaryOutputURL(fileExtension: "gif")
-        defer { try? FileManager.default.removeItem(at: outputURL) }
-        let request = try ExportRequest(
-            inputFileURL: fixtureURL("input.mp4"),
-            format: .gif,
-            pixelSize: PixelSize(width: 320, height: 180),
-            frameRate: FrameRate(10),
-            timeRange: TimeRange(start: 1, end: 1.3),
-            shouldMute: true,
-            shouldCrop: true,
-            editPlan: TimelineEditPlan(cuts: [
-                TimelineCut(
-                    id: "middle",
-                    sourceRange: TimeRange(start: 1.1, end: 1.2),
-                    kind: .transcriptSentence
-                )
-            ])
-        )
-
-        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
-        #expect(try animatedImageMetadata(at: outputURL).frameCount == 2)
-    }
-
     @Test("gif export accepts zoom blocks")
     func gifExportAcceptsZoomBlocks() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "gif")

@@ -108,7 +108,9 @@ public struct TimelineEditPlan: Codable, Equatable, Sendable {
             editPlan: updated,
             speed: .normal
         )
-        guard try mapper.unscaledOutputDuration >= minimumRetainedDuration else {
+        guard let retainedDuration = try? mapper.unscaledOutputDuration,
+              retainedDuration >= minimumRetainedDuration
+        else {
             throw TimelineEditingError.insufficientRetainedDuration
         }
 
@@ -282,4 +284,5 @@ public enum TimelineEditingError: Error, Equatable, Sendable {
     case duplicateCutID
     case noRetainedMedia
     case insufficientRetainedDuration
+    case noncontiguousTranscriptSelection
 }

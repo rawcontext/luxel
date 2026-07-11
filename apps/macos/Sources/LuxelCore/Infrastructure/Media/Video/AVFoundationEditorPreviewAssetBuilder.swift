@@ -11,6 +11,7 @@ public struct AVFoundationEditorPreviewAssetBuilder: Sendable {
     ) async throws -> AVComposition {
         let asset = AVURLAsset(url: inputFileURL)
         let composition = AVMutableComposition()
+        var didCreateTrack = false
 
         for mediaType in [AVMediaType.video, .audio] {
             for sourceTrack in try await asset.loadTracks(withMediaType: mediaType) {
@@ -18,8 +19,9 @@ public struct AVFoundationEditorPreviewAssetBuilder: Sendable {
                     withMediaType: mediaType,
                     preferredTrackID: kCMPersistentTrackID_Invalid
                 ) else {
-                    throw AVFoundationEditorPreviewAssetBuilderError.cannotCreateTrack
+                    throw AVFoundationPreviewBuilderError.cannotCreateTrack
                 }
+                didCreateTrack = true
 
                 for segment in sourceSegments {
                     try track.insertTimeRange(
@@ -44,10 +46,15 @@ public struct AVFoundationEditorPreviewAssetBuilder: Sendable {
             }
         }
 
+        guard didCreateTrack else {
+            throw AVFoundationPreviewBuilderError.missingTracks
+        }
+
         return composition
     }
 }
 
-public enum AVFoundationEditorPreviewAssetBuilderError: Error, Equatable {
+public enum AVFoundationPreviewBuilderError: Error, Equatable {
     case cannotCreateTrack
+    case missingTracks
 }

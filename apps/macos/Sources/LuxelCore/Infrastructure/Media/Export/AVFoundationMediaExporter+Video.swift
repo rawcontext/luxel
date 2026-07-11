@@ -59,6 +59,40 @@ extension AVFoundationMediaExporter {
         let request = input.request
         let plan = try planFactory.makePlan(for: request, outputFileURL: outputFileURL)
         let asset = AVURLAsset(url: plan.inputFileURL)
+        let prepared = try await makeAudioOnlyExportComposition(
+            input: input,
+            asset: asset
+        )
+        let audioMix = try await makeAudioMix(
+            for: prepared.audioTracks,
+            request: request,
+            appliesGain: input.preparedAudio == nil
+        )
+        try await runAudioOnlyExport(
+            context: AVFoundationAudioExportContext(
+                composition: prepared.composition,
+                audioTracks: prepared.audioTracks,
+                timeRange: prepared.timeRange,
+                outputFileURL: plan.outputFileURL,
+                format: request.format,
+                audioMix: audioMix
+            ),
+            progress: progress
+        )
+
+        return ExportedMedia(
+            fileURL: plan.outputFileURL,
+            format: request.format,
+            pixelSize: plan.outputPixelSize,
+            shouldMute: plan.shouldMute
+        )
+    }
+
+    private func makeAudioOnlyExportComposition(
+        input: MediaExportInput,
+        asset: AVURLAsset
+    ) async throws -> AVFoundationAudioExportComposition {
+        let request = input.request
         let composition = AVMutableComposition()
         let sourceSegments = try request.timelineMapper.sourceSegments
         let sourceCompositionTimeRange = CMTimeRange(
@@ -69,15 +103,14 @@ extension AVFoundationMediaExporter {
             )
         )
         let outputDuration = CMTime(seconds: request.outputDuration, preferredTimescale: 60_000)
-        let outputCompositionTimeRange = CMTimeRange(start: .zero, duration: outputDuration)
         let compositionAudioTracks: [AVMutableCompositionTrack]
 
-        if !plan.shouldMute, let preparedAudio = input.preparedAudio {
+        if !request.outputShouldMute, let preparedAudio = input.preparedAudio {
             compositionAudioTracks = try await addPreparedAudioTracks(
                 to: composition,
                 preparedAudio: preparedAudio
             )
-        } else if !plan.shouldMute {
+        } else if !request.outputShouldMute {
             compositionAudioTracks = try await addAudioTracks(
                 to: composition,
                 from: asset,
@@ -95,28 +128,10 @@ extension AVFoundationMediaExporter {
             composition.scaleTimeRange(sourceCompositionTimeRange, toDuration: outputDuration)
         }
 
-        let audioMix = try await makeAudioMix(
-            for: compositionAudioTracks,
-            request: request,
-            appliesGain: input.preparedAudio == nil
-        )
-        try await runAudioOnlyExport(
-            context: AVFoundationAudioExportContext(
-                composition: composition,
-                audioTracks: compositionAudioTracks,
-                timeRange: outputCompositionTimeRange,
-                outputFileURL: plan.outputFileURL,
-                format: request.format,
-                audioMix: audioMix
-            ),
-            progress: progress
-        )
-
-        return ExportedMedia(
-            fileURL: plan.outputFileURL,
-            format: request.format,
-            pixelSize: plan.outputPixelSize,
-            shouldMute: plan.shouldMute
+        return AVFoundationAudioExportComposition(
+            composition: composition,
+            audioTracks: compositionAudioTracks,
+            timeRange: CMTimeRange(start: .zero, duration: outputDuration)
         )
     }
 

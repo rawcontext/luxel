@@ -61,8 +61,10 @@ public final class LuxelEditorModel {
     var transcriptExtractionStartedAt: Date?
     var transcriptFailureMessage: String?
     var transcriptEditPlan: TimelineEditPlan = .empty
-    var selectedTranscriptSentenceID: TranscriptEditableSentence.ID?
+    var selectedTranscriptSentenceIDs: Set<TranscriptEditableSentence.ID> = []
+    var transcriptSelectionAnchorID: TranscriptEditableSentence.ID?
     var transcriptEditStatusMessage: String?
+    var isEditedPreviewReady = true
     var detectedSpeakerVoices: [DetectedSpeakerVoice] = []
     var knownSpeakerOptions: [KnownSpeakerProfile] = []
     var ignoredSpeakerVoiceIDs: Set<String> = []

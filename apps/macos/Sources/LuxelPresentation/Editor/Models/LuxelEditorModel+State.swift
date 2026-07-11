@@ -130,10 +130,10 @@ extension LuxelEditorModel {
     }
 
     var canDeleteSelectedTranscriptSentence: Bool {
-        guard !isExporting, let selectedTranscriptSentenceID else {
-            return false
-        }
-        return visibleTranscriptSentences.contains { $0.id == selectedTranscriptSentenceID }
+        !isExporting && !selectedTranscriptSentenceIDs.isEmpty
+            && selectedTranscriptSentenceIDs.isSubset(
+                of: Set(visibleTranscriptSentences.map(\.id))
+            )
     }
 
     var activeTranscriptTurnID: String? {
@@ -170,7 +170,7 @@ extension LuxelEditorModel {
     }
 
     var canExport: Bool {
-        hasSource && !isExporting
+        hasSource && !isExporting && isEditedPreviewReady
     }
 
     var canSaveOriginal: Bool {

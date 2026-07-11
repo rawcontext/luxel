@@ -97,7 +97,7 @@ extension LuxelEditorModel {
     }
 
     func startExport() {
-        guard let source else {
+        guard canExport, let source else {
             return
         }
 

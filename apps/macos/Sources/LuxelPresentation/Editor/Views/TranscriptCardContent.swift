@@ -8,20 +8,20 @@ struct TranscriptCardContent: View {
     let activeTurnID: String?
     let activeSpanID: String?
     let spansPerChunk: Int
-    let selectedSentenceID: TranscriptEditableSentence.ID?
+    let selectedSentenceIDs: Set<TranscriptEditableSentence.ID>
     let cutCount: Int
     let editStatusMessage: String?
     let canDeleteSelectedSentence: Bool
     let canClose: Bool
     let closeTranscript: () -> Void
-    let selectSentence: (TranscriptEditableSentence) -> Void
+    let selectSentence: (TranscriptEditableSentence, Bool) -> Void
     let deleteSelectedSentence: () -> Void
 
-    @State private var displayPlan: TranscriptDisplayPlan
-    @State private var searchQuery = ""
-    @State private var selectedSearchMatchID: String?
-    @State private var searchMatches: [TranscriptSearchMatch]
-    @FocusState private var transcriptListIsFocused: Bool
+    @State var displayPlan: TranscriptDisplayPlan
+    @State var searchQuery = ""
+    @State var selectedSearchMatchID: String?
+    @State var searchMatches: [TranscriptSearchMatch]
+    @FocusState var transcriptListIsFocused: Bool
 
     init(
         transcript: TurnSegmentedTranscript,
@@ -29,13 +29,13 @@ struct TranscriptCardContent: View {
         activeTurnID: String?,
         activeSpanID: String?,
         spansPerChunk: Int,
-        selectedSentenceID: TranscriptEditableSentence.ID?,
+        selectedSentenceIDs: Set<TranscriptEditableSentence.ID>,
         cutCount: Int,
         editStatusMessage: String?,
         canDeleteSelectedSentence: Bool,
         canClose: Bool,
         closeTranscript: @escaping () -> Void,
-        selectSentence: @escaping (TranscriptEditableSentence) -> Void,
+        selectSentence: @escaping (TranscriptEditableSentence, Bool) -> Void,
         deleteSelectedSentence: @escaping () -> Void
     ) {
         self.transcript = transcript
@@ -43,7 +43,7 @@ struct TranscriptCardContent: View {
         self.activeTurnID = activeTurnID
         self.activeSpanID = activeSpanID
         self.spansPerChunk = spansPerChunk
-        self.selectedSentenceID = selectedSentenceID
+        self.selectedSentenceIDs = selectedSentenceIDs
         self.cutCount = cutCount
         self.editStatusMessage = editStatusMessage
         self.canDeleteSelectedSentence = canDeleteSelectedSentence
@@ -208,12 +208,12 @@ struct TranscriptCardContent: View {
                         speakerChip: speakerChipInfo(for: chunk.turn),
                         isActiveTurn: chunk.turn.id == activeTurnID,
                         activeSpanID: activeSpanID,
-                        selectedSentenceID: selectedSentenceID,
+                        selectedSentenceIDs: selectedSentenceIDs,
                         matchedSearchSpanIDs: matchedSearchSpanIDs,
                         currentSearchSpanIDs: currentSearchSpanIDs,
-                        selectSentence: { sentence in
+                        selectSentence: { sentence, extendingSelection in
                             transcriptListIsFocused = true
-                            selectSentence(sentence)
+                            selectSentence(sentence, extendingSelection)
                         }
                     )
                     .id(chunk.id)
@@ -246,195 +246,10 @@ struct TranscriptCardContent: View {
         }
     }
 
-    private var selectedSearchMatchIndex: Int? {
-        guard let selectedSearchMatchID else {
-            return nil
-        }
-
-        return searchMatches.firstIndex { $0.id == selectedSearchMatchID }
-    }
-
-    private func rebuildDisplayPlan(
-        transcript: TurnSegmentedTranscript,
-        sentences: [TranscriptEditableSentence],
-        spansPerChunk: Int
-    ) {
-        displayPlan = TranscriptDisplayPlan(
-            transcript: transcript,
-            sentences: sentences,
-            sentencesPerChunk: spansPerChunk
-        )
-        updateSearchMatches(query: searchQuery)
-    }
-
-    private func updateSearchMatches(query: String) {
-        let matches = displayPlan.searchMatches(for: query)
-        searchMatches = matches
-
-        if matches.isEmpty {
-            selectedSearchMatchID = nil
-        } else if let selectedSearchMatchID,
-                  matches.contains(where: { $0.id == selectedSearchMatchID }) {
-        } else {
-            selectedSearchMatchID = matches[0].id
-        }
-    }
-
-    private func selectPreviousSearchMatch() {
-        guard !searchMatches.isEmpty else {
-            selectedSearchMatchID = nil
-            return
-        }
-
-        let selectedIndex = selectedSearchMatchIndex ?? 0
-        let previousIndex =
-            selectedIndex == 0 ? searchMatches.index(before: searchMatches.endIndex) : selectedIndex - 1
-        selectedSearchMatchID = searchMatches[previousIndex].id
-    }
-
-    private func selectNextSearchMatch() {
-        guard !searchMatches.isEmpty else {
-            selectedSearchMatchID = nil
-            return
-        }
-
-        let selectedIndex =
-            selectedSearchMatchIndex ?? searchMatches.index(before: searchMatches.endIndex)
-        let nextIndex = searchMatches.index(after: selectedIndex)
-        selectedSearchMatchID = searchMatches[nextIndex == searchMatches.endIndex ? 0 : nextIndex].id
-    }
-
-    private func speakerChipInfo(for turn: TranscriptTurn) -> TranscriptSpeakerChip? {
-        guard let speakerID = turn.speakerID,
-              let index = transcript.speakers.firstIndex(where: { $0.id == speakerID })
-        else {
-            return nil
-        }
-
-        return TranscriptSpeakerChip(
-            displayName: transcript.speakers[index].displayName,
-            dotColor: TranscriptSpeakerPalette.dotColor(
-                for: transcript.speakers[index].displayName),
-            textColor: TranscriptSpeakerPalette.textColor(
-                for: transcript.speakers[index].displayName)
-        )
-    }
-
-    private func copyTranscript(
-        _ transcript: TurnSegmentedTranscript,
-        sentences: [TranscriptEditableSentence]
-    ) {
-        let text = transcript.turns.compactMap { turn -> String? in
-            let turnText = sentences
-                .filter { $0.turnID == turn.id }
-                .map(\.text)
-                .joined(separator: " ")
-            guard !turnText.isEmpty else {
-                return nil
-            }
-            guard !transcript.speakers.isEmpty else {
-                return turnText
-            }
-
-            var labels: [String] = []
-            if let speaker = transcript.speaker(for: turn.speakerID) {
-                labels.append(speaker.displayName)
-            }
-            if let source = turn.source {
-                labels.append(source.displayName)
-            }
-
-            guard !labels.isEmpty else {
-                return turnText
-            }
-
-            return "\(labels.joined(separator: " — ")): \(turnText)"
-        }
-        .joined(separator: "\n\n")
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
-    }
 }
 
 struct TranscriptSpeakerChip: Equatable {
     let displayName: String
     let dotColor: Color
     let textColor: Color
-}
-
-private struct TranscriptSearchControl: View {
-    @Binding var query: String
-
-    let selectedMatchIndex: Int?
-    let matchCount: Int
-    let selectPrevious: () -> Void
-    let selectNext: () -> Void
-
-    var body: some View {
-        HStack(spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.45))
-
-                TextField("Search", text: $query)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .onSubmit {
-                        selectNext()
-                    }
-                    .help("Search the transcript.")
-
-                Text(counterText)
-                    .font(.system(size: 10.5, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(counterForegroundStyle)
-                    .layoutPriority(1)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .frame(width: 170)
-            .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(.black.opacity(0.22))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-                    }
-            }
-
-            if matchCount > 0 {
-                Button(action: selectPrevious) {
-                    Image(systemName: "chevron.up")
-                }
-                .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
-                .help("Previous match")
-                .accessibilityLabel("Previous transcript search match")
-
-                Button(action: selectNext) {
-                    Image(systemName: "chevron.down")
-                }
-                .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
-                .help("Next match")
-                .accessibilityLabel("Next transcript search match")
-            }
-        }
-        .animation(.easeOut(duration: 0.15), value: matchCount > 0)
-    }
-
-    private var counterText: String {
-        if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "0/0"
-        }
-
-        return "\(selectedMatchIndex.map { $0 + 1 } ?? 0)/\(matchCount)"
-    }
-
-    private var counterForegroundStyle: Color {
-        if matchCount == 0, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return .red
-        }
-
-        return .white.opacity(0.4)
-    }
 }

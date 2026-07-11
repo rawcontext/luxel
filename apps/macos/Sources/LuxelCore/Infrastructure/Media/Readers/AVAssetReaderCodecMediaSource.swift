@@ -39,28 +39,21 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
         let sourceVideoTrack = try await firstVideoTrack(in: asset)
         let sourceAudioTracks = try await asset.loadTracks(withMediaType: .audio)
         let composition = AVMutableComposition()
-        let sourceSegments = try request.timelineMapper.sourceSegments
-        let unscaledDuration = try request.timelineMapper.unscaledOutputDuration
-        let sourceCompositionTimeRange = CMTimeRange(
-            start: .zero,
-            duration: CMTime(seconds: unscaledDuration, preferredTimescale: 60_000)
-        )
-        let outputDuration = CMTime(seconds: request.outputDuration, preferredTimescale: 60_000)
-        let outputCompositionTimeRange = CMTimeRange(start: .zero, duration: outputDuration)
+        let timing = try codecTimelineTiming(for: request)
         let compositionVideoTrack = try addVideoTrack(
             to: composition,
             from: sourceVideoTrack,
-            sourceSegments: sourceSegments
+            sourceSegments: timing.sourceSegments
         )
 
         if request.speed != .normal {
-            composition.scaleTimeRange(sourceCompositionTimeRange, toDuration: outputDuration)
+            composition.scaleTimeRange(timing.sourceTimeRange, toDuration: timing.outputDuration)
         }
 
         let videoOutput = try await makeVideoOutput(
             sourceVideoTrack: sourceVideoTrack,
             compositionVideoTrack: compositionVideoTrack,
-            timeRange: outputCompositionTimeRange,
+            timeRange: CMTimeRange(start: .zero, duration: timing.outputDuration),
             outputPixelSize: outputPixelSize,
             request: request
         )
@@ -72,9 +65,9 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
             try await prepareAudioReader(
                 sourceAudioTracks: sourceAudioTracks,
                 timing: CodecAudioTiming(
-                    sourceSegments: sourceSegments,
-                    sourceCompositionTimeRange: sourceCompositionTimeRange,
-                    outputDuration: outputDuration,
+                    sourceSegments: timing.sourceSegments,
+                    sourceCompositionTimeRange: timing.sourceTimeRange,
+                    outputDuration: timing.outputDuration,
                     speed: request.speed
                 ),
                 preparedAudio: input.preparedAudio
@@ -86,6 +79,21 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
             audioChunkCount: includesAudio ? audioChunkCount(duration: request.outputDuration) : 0,
             audioSampleRate: includesAudio ? audioSampleRate : nil,
             audioChannelCount: includesAudio ? audioChannelCount : nil
+        )
+    }
+
+    private func codecTimelineTiming(for request: ExportRequest) throws -> CodecTimelineTiming {
+        let unscaledDuration = try request.timelineMapper.unscaledOutputDuration
+        return CodecTimelineTiming(
+            sourceSegments: try request.timelineMapper.sourceSegments,
+            sourceTimeRange: CMTimeRange(
+                start: .zero,
+                duration: CMTime(seconds: unscaledDuration, preferredTimescale: 60_000)
+            ),
+            outputDuration: CMTime(
+                seconds: request.outputDuration,
+                preferredTimescale: 60_000
+            )
         )
     }
 
@@ -133,6 +141,12 @@ struct CodecAudioTiming {
     let sourceCompositionTimeRange: CMTimeRange
     let outputDuration: CMTime
     let speed: PlaybackSpeed
+}
+
+private struct CodecTimelineTiming {
+    let sourceSegments: [SourceMediaSegment]
+    let sourceTimeRange: CMTimeRange
+    let outputDuration: CMTime
 }
 
 struct CodecAudioSource {

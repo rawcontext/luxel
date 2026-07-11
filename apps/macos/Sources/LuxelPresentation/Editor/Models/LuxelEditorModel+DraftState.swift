@@ -66,7 +66,8 @@ extension LuxelEditorModel {
         gifDithering = state.gifDithering
         let editPlanChanged = transcriptEditPlan != state.transcriptEditPlan
         transcriptEditPlan = state.transcriptEditPlan
-        selectedTranscriptSentenceID = nil
+        selectedTranscriptSentenceIDs = []
+        transcriptSelectionAnchorID = nil
         transcriptEditStatusMessage = nil
         shouldMute = state.shouldMute
         if hasAudioOnlySource {

@@ -294,8 +294,10 @@ extension LuxelEditorModel {
         previewCompositionTask = nil
         transcript = nil
         transcriptEditPlan = .empty
-        selectedTranscriptSentenceID = nil
+        selectedTranscriptSentenceIDs = []
+        transcriptSelectionAnchorID = nil
         transcriptEditStatusMessage = nil
+        isEditedPreviewReady = true
         isTranscriptExtractionActive = false
         transcriptExtractionStartedAt = nil
         speechRecognitionAuthorizationState = nil

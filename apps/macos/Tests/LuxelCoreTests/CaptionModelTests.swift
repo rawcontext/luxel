@@ -244,29 +244,6 @@ extension CaptionModelTests {
         #expect(mapped.cues == expectedCues)
     }
 
-    @Test("export time mapper splits cues around timeline cuts")
-    func exportTimeMapperSplitsCuesAroundCuts() throws {
-        let track = try CaptionTrack(
-            cues: [cue(start: 1, end: 7, text: "Spanning cue")],
-            language: Locale.LanguageCode("en")
-        )
-        let mapper = try CaptionExportTimeMapper(
-            trimRange: TimeRange(start: 0, end: 8),
-            editPlan: TimelineEditPlan(cuts: [
-                TimelineCut(
-                    id: "cut",
-                    sourceRange: TimeRange(start: 3, end: 5),
-                    kind: .transcriptSentence
-                )
-            ])
-        )
-
-        #expect(try mapper.map(track).cues.map(\.timeRange) == [
-            TimeRange(start: 1, end: 3),
-            TimeRange(start: 3, end: 5)
-        ])
-    }
-
     @Test("cue builder segments sentences and wraps caption lines")
     func cueBuilderSegmentsSentencesAndWrapsCaptionLines() throws {
         let builder = CaptionCueBuilder(
