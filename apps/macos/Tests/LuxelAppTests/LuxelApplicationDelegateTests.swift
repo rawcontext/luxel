@@ -70,8 +70,8 @@ struct LuxelApplicationDelegateTests {
 
         #expect(source.contains("[.leftMouseUp, .rightMouseUp]"))
         #expect(source.contains("NSApp.currentEvent?.type == .rightMouseUp"))
-        #expect(source.contains("title: \"Settings\""))
-        #expect(source.contains("title: \"Quit Luxel\""))
+        #expect(source.contains("title: String(localized: \"Settings\")"))
+        #expect(source.contains("title: String(localized: \"Quit Luxel\")"))
         #expect(source.contains("showStatusItemQuickActionsMenu()"))
     }
 }

@@ -6,7 +6,7 @@ extension LuxelStatusItemController {
         let menu = NSMenu()
 
         let settingsItem = NSMenuItem(
-            title: "Settings",
+            title: String(localized: "Settings"),
             action: #selector(openSettingsFromStatusItemMenu),
             keyEquivalent: ""
         )
@@ -15,7 +15,7 @@ extension LuxelStatusItemController {
         menu.addItem(settingsItem)
 
         let quitItem = NSMenuItem(
-            title: "Quit Luxel",
+            title: String(localized: "Quit Luxel"),
             action: #selector(quitFromStatusItemMenu),
             keyEquivalent: ""
         )
