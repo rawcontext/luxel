@@ -11,13 +11,13 @@ extension TranscriptCardContent {
 
     func rebuildDisplayPlan(
         transcript: TurnSegmentedTranscript,
-        sentences: [TranscriptEditableSentence],
+        words: [TranscriptEditableWord],
         spansPerChunk: Int
     ) {
         displayPlan = TranscriptDisplayPlan(
             transcript: transcript,
-            sentences: sentences,
-            sentencesPerChunk: spansPerChunk
+            words: words,
+            wordsPerChunk: spansPerChunk
         )
         updateSearchMatches(query: searchQuery)
     }
@@ -73,11 +73,11 @@ extension TranscriptCardContent {
 
     func copyTranscript(
         _ transcript: TurnSegmentedTranscript,
-        sentences: [TranscriptEditableSentence]
+        words: [TranscriptEditableWord]
     ) {
         let text = TranscriptCopyTextBuilder().text(
             transcript: transcript,
-            visibleSentences: sentences,
+            visibleWords: words,
             hasCuts: cutCount > 0
         )
         NSPasteboard.general.clearContents()

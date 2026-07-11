@@ -4,18 +4,18 @@ import SwiftUI
 
 struct TranscriptCardContent: View {
     let transcript: TurnSegmentedTranscript
-    let sentences: [TranscriptEditableSentence]
+    let words: [TranscriptEditableWord]
     let activeTurnID: String?
     let activeSpanID: String?
     let spansPerChunk: Int
-    let selectedSentenceIDs: Set<TranscriptEditableSentence.ID>
+    let selectedWordIDs: Set<TranscriptEditableWord.ID>
     let cutCount: Int
     let editStatusMessage: String?
-    let canDeleteSelectedSentence: Bool
+    let canDeleteSelectedWord: Bool
     let canClose: Bool
     let closeTranscript: () -> Void
-    let selectSentence: (TranscriptEditableSentence, Bool) -> Void
-    let deleteSelectedSentence: () -> Void
+    let selectWord: (TranscriptEditableWord, Bool) -> Void
+    let deleteSelectedWord: () -> Void
 
     @State var displayPlan: TranscriptDisplayPlan
     @State var searchQuery = ""
@@ -25,36 +25,36 @@ struct TranscriptCardContent: View {
 
     init(
         transcript: TurnSegmentedTranscript,
-        sentences: [TranscriptEditableSentence],
+        words: [TranscriptEditableWord],
         activeTurnID: String?,
         activeSpanID: String?,
         spansPerChunk: Int,
-        selectedSentenceIDs: Set<TranscriptEditableSentence.ID>,
+        selectedWordIDs: Set<TranscriptEditableWord.ID>,
         cutCount: Int,
         editStatusMessage: String?,
-        canDeleteSelectedSentence: Bool,
+        canDeleteSelectedWord: Bool,
         canClose: Bool,
         closeTranscript: @escaping () -> Void,
-        selectSentence: @escaping (TranscriptEditableSentence, Bool) -> Void,
-        deleteSelectedSentence: @escaping () -> Void
+        selectWord: @escaping (TranscriptEditableWord, Bool) -> Void,
+        deleteSelectedWord: @escaping () -> Void
     ) {
         self.transcript = transcript
-        self.sentences = sentences
+        self.words = words
         self.activeTurnID = activeTurnID
         self.activeSpanID = activeSpanID
         self.spansPerChunk = spansPerChunk
-        self.selectedSentenceIDs = selectedSentenceIDs
+        self.selectedWordIDs = selectedWordIDs
         self.cutCount = cutCount
         self.editStatusMessage = editStatusMessage
-        self.canDeleteSelectedSentence = canDeleteSelectedSentence
+        self.canDeleteSelectedWord = canDeleteSelectedWord
         self.canClose = canClose
         self.closeTranscript = closeTranscript
-        self.selectSentence = selectSentence
-        self.deleteSelectedSentence = deleteSelectedSentence
+        self.selectWord = selectWord
+        self.deleteSelectedWord = deleteSelectedWord
         let displayPlan = TranscriptDisplayPlan(
             transcript: transcript,
-            sentences: sentences,
-            sentencesPerChunk: spansPerChunk
+            words: words,
+            wordsPerChunk: spansPerChunk
         )
         _displayPlan = State(
             initialValue: displayPlan)
@@ -76,21 +76,21 @@ struct TranscriptCardContent: View {
         .onChange(of: transcript) { _, transcript in
             rebuildDisplayPlan(
                 transcript: transcript,
-                sentences: sentences,
+                words: words,
                 spansPerChunk: spansPerChunk
             )
         }
-        .onChange(of: sentences) { _, sentences in
+        .onChange(of: words) { _, words in
             rebuildDisplayPlan(
                 transcript: transcript,
-                sentences: sentences,
+                words: words,
                 spansPerChunk: spansPerChunk
             )
         }
         .onChange(of: spansPerChunk) { _, spansPerChunk in
             rebuildDisplayPlan(
                 transcript: transcript,
-                sentences: sentences,
+                words: words,
                 spansPerChunk: spansPerChunk
             )
         }
@@ -130,7 +130,7 @@ struct TranscriptCardContent: View {
             )
 
             Button {
-                copyTranscript(transcript, sentences: sentences)
+                copyTranscript(transcript, words: words)
             } label: {
                 Image(systemName: "doc.on.doc")
             }
@@ -139,14 +139,14 @@ struct TranscriptCardContent: View {
             .accessibilityLabel("Copy transcript")
 
             Button {
-                deleteSelectedSentence()
+                deleteSelectedWord()
             } label: {
                 Image(systemName: "trash")
             }
             .buttonStyle(LuxelGlassCircleButtonStyle())
-            .disabled(!canDeleteSelectedSentence)
-            .help("Cut selected transcript sentence")
-            .accessibilityLabel("Cut selected transcript sentence")
+            .disabled(!canDeleteSelectedWord)
+            .help("Cut selected transcript word")
+            .accessibilityLabel("Cut selected transcript word")
 
             if canClose {
                 Button {
@@ -208,12 +208,12 @@ struct TranscriptCardContent: View {
                         speakerChip: speakerChipInfo(for: chunk.turn),
                         isActiveTurn: chunk.turn.id == activeTurnID,
                         activeSpanID: activeSpanID,
-                        selectedSentenceIDs: selectedSentenceIDs,
+                        selectedWordIDs: selectedWordIDs,
                         matchedSearchSpanIDs: matchedSearchSpanIDs,
                         currentSearchSpanIDs: currentSearchSpanIDs,
-                        selectSentence: { sentence, extendingSelection in
+                        selectWord: { word, extendingSelection in
                             transcriptListIsFocused = true
-                            selectSentence(sentence, extendingSelection)
+                            selectWord(word, extendingSelection)
                         }
                     )
                     .id(chunk.id)
@@ -229,10 +229,10 @@ struct TranscriptCardContent: View {
             .focusable()
             .focused($transcriptListIsFocused)
             .onDeleteCommand {
-                guard canDeleteSelectedSentence else {
+                guard canDeleteSelectedWord else {
                     return
                 }
-                deleteSelectedSentence()
+                deleteSelectedWord()
             }
             .onChange(of: scrollTargetID) { _, targetID in
                 guard let targetID else {

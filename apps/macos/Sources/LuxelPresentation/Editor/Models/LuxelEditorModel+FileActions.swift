@@ -294,8 +294,8 @@ extension LuxelEditorModel {
         previewCompositionTask = nil
         transcript = nil
         transcriptEditPlan = .empty
-        selectedTranscriptSentenceIDs = []
-        transcriptSelectionAnchorID = nil
+        selectedTranscriptWordIDs = []
+        transcriptWordSelectionAnchorID = nil
         transcriptEditStatusMessage = nil
         isEditedPreviewReady = true
         isTranscriptExtractionActive = false

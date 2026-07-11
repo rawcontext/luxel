@@ -129,26 +129,26 @@ extension LuxelEditorModel {
         )
     }
 
-    var editableTranscriptSentences: [TranscriptEditableSentence] {
+    var editableTranscriptWords: [TranscriptEditableWord] {
         guard let transcript else {
             return []
         }
-        return (try? TranscriptSentenceIndex(transcript: transcript).sentences) ?? []
+        return (try? TranscriptWordIndex(transcript: transcript).words) ?? []
     }
 
-    var visibleTranscriptSentences: [TranscriptEditableSentence] {
-        editableTranscriptSentences.filter { !transcriptEditPlan.removes($0.sourceRange) }
+    var visibleTranscriptWords: [TranscriptEditableWord] {
+        editableTranscriptWords.filter { !transcriptEditPlan.removes($0.sourceRange) }
     }
 
-    var canDeleteSelectedTranscriptSentence: Bool {
-        !isExporting && !selectedTranscriptSentenceIDs.isEmpty
-            && selectedTranscriptSentenceIDs.isSubset(
-                of: Set(visibleTranscriptSentences.map(\.id))
+    var canDeleteSelectedTranscriptWord: Bool {
+        !isExporting && !selectedTranscriptWordIDs.isEmpty
+            && selectedTranscriptWordIDs.isSubset(
+                of: Set(visibleTranscriptWords.map(\.id))
             )
     }
 
     var activeTranscriptTurnID: String? {
-        let visibleSpanIDs = Set(visibleTranscriptSentences.flatMap(\.spanIDs))
+        let visibleSpanIDs = Set(visibleTranscriptWords.map(\.id))
         return visibleTranscript?.turns.first {
             !$0.spanIDs.allSatisfy { !visibleSpanIDs.contains($0) }
                 && $0.start <= currentPlaybackTime
@@ -157,7 +157,7 @@ extension LuxelEditorModel {
     }
 
     var activeTranscriptSpanID: String? {
-        let visibleSpanIDs = Set(visibleTranscriptSentences.flatMap(\.spanIDs))
+        let visibleSpanIDs = Set(visibleTranscriptWords.map(\.id))
         return visibleTranscript?.spans.first {
             visibleSpanIDs.contains($0.id) &&
                 $0.start <= currentPlaybackTime && currentPlaybackTime < $0.end

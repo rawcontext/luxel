@@ -3,12 +3,12 @@ import LuxelCore
 struct TranscriptCopyTextBuilder {
     func text(
         transcript: TurnSegmentedTranscript,
-        visibleSentences: [TranscriptEditableSentence],
+        visibleWords: [TranscriptEditableWord],
         hasCuts: Bool
     ) -> String {
         transcript.turns.compactMap { turn -> String? in
             let turnText = hasCuts
-                ? visibleSentences
+                ? visibleWords
                 .filter { $0.turnID == turn.id }
                 .map(\.text)
                 .joined(separator: " ")

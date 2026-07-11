@@ -103,7 +103,7 @@ extension ArchitectureTests {
         #expect(
             permissionSource.contains("CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined"))
         #expect(!permissionSource.contains("CGRequestScreenCaptureAccess"))
-        #expect(permissionSource.contains("CGRequestListenEventAccess"))
+        #expect(!permissionSource.contains("CGRequestListenEventAccess"))
         #expect(!permissionSource.contains("AVAudioApplication.requestRecordPermission"))
         #expect(!permissionSource.contains("AVCaptureDevice.requestAccess"))
         #expect(!permissionSource.contains("SCShareableContent.current"))

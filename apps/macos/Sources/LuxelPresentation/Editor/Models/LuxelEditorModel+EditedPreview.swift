@@ -71,7 +71,7 @@ extension LuxelEditorModel {
             previewTimelineMapper.sourceTime(forOutputTime: outputTime) ?? trimStart
         enqueuePreviewSeek(to: outputTime, resume: wasPlaying)
         isEditedPreviewReady = true
-        transcriptEditStatusMessage = "Sentence cut"
+        transcriptEditStatusMessage = "Word cut"
         previewCompositionTask = nil
     }
 

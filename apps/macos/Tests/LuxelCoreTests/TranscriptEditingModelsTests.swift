@@ -4,74 +4,74 @@ import Testing
 
 @Suite("Transcript editing")
 struct TranscriptEditingModelsTests {
-    @Test("indexes sentences inside each turn and maps whole timed spans")
-    func indexesSentences() throws {
-        let transcript = try sampleTranscript()
-        let sentences = try TranscriptSentenceIndex(transcript: transcript).sentences
+    @Test("indexes each timed transcript span as an editable word")
+    func indexesWords() throws {
+        let words = try TranscriptWordIndex(transcript: sampleTranscript()).words
 
-        #expect(sentences.map(\.text) == ["Hello world.", "How are you?", "Fine."])
-        #expect(sentences.map(\.spanIDs) == [["s0", "s1"], ["s2", "s3", "s4"], ["s5"]])
-        #expect(sentences[1].sourceRange == (try TimeRange(start: 1.2, end: 2.3)))
-        #expect(sentences[2].turnID == "turn-1")
+        #expect(words.map(\.text) == ["Hello", "world.", "How", "are", "you?", "Fine."])
+        #expect(words.map(\.id) == ["s0", "s1", "s2", "s3", "s4", "s5"])
+        #expect(words[3].sourceRange == (try TimeRange(start: 1.5, end: 1.7)))
+        #expect(words[5].turnID == "turn-1")
     }
 
-    @Test("manual sentence cut is clipped to trim and preserves originals")
-    func plansSentenceCut() throws {
+    @Test("manual word cut is clipped to trim and preserves originals")
+    func plansWordCut() throws {
         let transcript = try sampleTranscript()
-        let sentence = try TranscriptSentenceIndex(transcript: transcript).sentences[0]
-        let plannedCut = try TranscriptSentenceCutPlanner().cut(
+        let word = try TranscriptWordIndex(transcript: transcript).words[0]
+        let plannedCut = try TranscriptWordCutPlanner().cut(
             transcript: transcript,
-            sentenceID: sentence.id,
+            wordID: word.id,
             trimRange: TimeRange(start: 0.2, end: 4),
             editPlan: .empty,
             minimumRetainedDuration: 0.1
         )
         let cut = try #require(plannedCut)
 
-        #expect(cut.sourceRange == (try TimeRange(start: 0, end: 1)))
+        #expect(cut.sourceRange == (try TimeRange(start: 0, end: 0.4)))
+        #expect(cut.transcriptSpanIDs == ["s0"])
         let inserted = try TimelineEditPlan.empty.inserting(
             cut,
             within: TimeRange(start: 0.2, end: 4),
             minimumRetainedDuration: 0.1
         )
         let updated = try #require(inserted)
-        #expect(updated.cuts[0].sourceRange == (try TimeRange(start: 0.2, end: 1)))
+        #expect(updated.cuts[0].sourceRange == (try TimeRange(start: 0.2, end: 0.4)))
         #expect(transcript.spans.count == 6)
     }
 
-    @Test("edited transcript hides fully and partially cut sentences")
-    func hidesCutSentences() throws {
+    @Test("edited transcript hides only the cut word")
+    func hidesCutWord() throws {
         let transcript = try sampleTranscript()
-        let index = try TranscriptSentenceIndex(transcript: transcript)
+        let index = try TranscriptWordIndex(transcript: transcript)
         let plan = try TimelineEditPlan(cuts: [
             TimelineCut(
-                id: "partial",
+                id: "word",
                 sourceRange: TimeRange(start: 1.5, end: 1.7),
                 kind: .transcriptSentence,
                 transcriptSpanIDs: ["s3"]
             )
         ])
 
-        #expect(index.visible(with: plan).map(\.text) == ["Hello world.", "Fine."])
+        #expect(index.visible(with: plan).map(\.text) == ["Hello", "world.", "How", "you?", "Fine."])
     }
 
-    @Test("planner returns no cut for an already hidden sentence")
-    func skipsAlreadyCutSentence() throws {
+    @Test("planner returns no cut for an already hidden word")
+    func skipsAlreadyCutWord() throws {
         let transcript = try sampleTranscript()
-        let sentence = try TranscriptSentenceIndex(transcript: transcript).sentences[0]
+        let word = try TranscriptWordIndex(transcript: transcript).words[0]
         let plan = try TimelineEditPlan(cuts: [
             TimelineCut(
                 id: "existing",
-                sourceRange: sentence.sourceRange,
+                sourceRange: word.sourceRange,
                 kind: .transcriptSentence,
-                transcriptSpanIDs: sentence.spanIDs
+                transcriptSpanIDs: [word.id]
             )
         ])
 
         #expect(
-            try TranscriptSentenceCutPlanner().cut(
+            try TranscriptWordCutPlanner().cut(
                 transcript: transcript,
-                sentenceID: sentence.id,
+                wordID: word.id,
                 trimRange: TimeRange(start: 0, end: 4),
                 editPlan: plan,
                 minimumRetainedDuration: 0.1
@@ -79,32 +79,32 @@ struct TranscriptEditingModelsTests {
         )
     }
 
-    @Test("planner combines a contiguous sentence group into one cut")
-    func plansContiguousSentenceGroup() throws {
+    @Test("planner combines a contiguous word group into one cut")
+    func plansContiguousWordGroup() throws {
         let transcript = try sampleTranscript()
-        let sentences = try TranscriptSentenceIndex(transcript: transcript).sentences
+        let words = try TranscriptWordIndex(transcript: transcript).words
 
-        let cut = try TranscriptSentenceCutPlanner().cut(
+        let cut = try TranscriptWordCutPlanner().cut(
             transcript: transcript,
-            sentenceIDs: Array(sentences[0...1].map(\.id)),
+            wordIDs: Array(words[1...3].map(\.id)),
             trimRange: TimeRange(start: 0, end: 4),
             editPlan: .empty,
             minimumRetainedDuration: 0.1
         )
 
-        #expect(cut?.sourceRange == (try TimeRange(start: 0, end: 2.3)))
-        #expect(cut?.transcriptSpanIDs == ["s0", "s1", "s2", "s3", "s4"])
+        #expect(cut?.sourceRange == (try TimeRange(start: 0.5, end: 1.7)))
+        #expect(cut?.transcriptSpanIDs == ["s1", "s2", "s3"])
     }
 
-    @Test("planner rejects a noncontiguous sentence group")
-    func rejectsNoncontiguousSentenceGroup() throws {
+    @Test("planner rejects a noncontiguous word group")
+    func rejectsNoncontiguousWordGroup() throws {
         let transcript = try sampleTranscript()
-        let sentences = try TranscriptSentenceIndex(transcript: transcript).sentences
+        let words = try TranscriptWordIndex(transcript: transcript).words
 
         #expect(throws: TimelineEditingError.noncontiguousTranscriptSelection) {
-            _ = try TranscriptSentenceCutPlanner().cut(
+            _ = try TranscriptWordCutPlanner().cut(
                 transcript: transcript,
-                sentenceIDs: [sentences[0].id, sentences[2].id],
+                wordIDs: [words[0].id, words[2].id],
                 trimRange: TimeRange(start: 0, end: 4),
                 editPlan: .empty,
                 minimumRetainedDuration: 0.1

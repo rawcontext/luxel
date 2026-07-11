@@ -56,8 +56,8 @@ extension LuxelEditorModel {
         previewCompositionTask = nil
         transcript = nil
         transcriptEditPlan = .empty
-        selectedTranscriptSentenceIDs = []
-        transcriptSelectionAnchorID = nil
+        selectedTranscriptWordIDs = []
+        transcriptWordSelectionAnchorID = nil
         transcriptEditStatusMessage = nil
         isEditedPreviewReady = true
         keystrokeTimeline = nil
@@ -119,8 +119,8 @@ extension LuxelEditorModel {
         previewCompositionTask = nil
         transcript = nil
         transcriptEditPlan = .empty
-        selectedTranscriptSentenceIDs = []
-        transcriptSelectionAnchorID = nil
+        selectedTranscriptWordIDs = []
+        transcriptWordSelectionAnchorID = nil
         transcriptEditStatusMessage = nil
         isEditedPreviewReady = true
         keystrokeTimeline = nil
@@ -214,8 +214,8 @@ extension LuxelEditorModel {
         previewCompositionTask?.cancel()
         previewCompositionTask = nil
         transcriptEditPlan = .empty
-        selectedTranscriptSentenceIDs = []
-        transcriptSelectionAnchorID = nil
+        selectedTranscriptWordIDs = []
+        transcriptWordSelectionAnchorID = nil
         transcriptEditStatusMessage = nil
         isEditedPreviewReady = true
         player.replaceCurrentItem(with: nil)

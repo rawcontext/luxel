@@ -53,40 +53,40 @@ extension LuxelEditorModel {
         seekToTranscriptTime(span.start)
     }
 
-    func selectTranscriptSentence(
-        _ sentence: TranscriptEditableSentence,
+    func selectTranscriptWord(
+        _ word: TranscriptEditableWord,
         extendingSelection: Bool = false
     ) {
-        let sentences = visibleTranscriptSentences
-        guard let selectedIndex = sentences.firstIndex(where: { $0.id == sentence.id }) else {
+        let words = visibleTranscriptWords
+        guard let selectedIndex = words.firstIndex(where: { $0.id == word.id }) else {
             return
         }
 
         if extendingSelection,
-           let transcriptSelectionAnchorID,
-           let anchorIndex = sentences.firstIndex(where: { $0.id == transcriptSelectionAnchorID }) {
-            selectedTranscriptSentenceIDs = Set(
-                sentences[min(anchorIndex, selectedIndex)...max(anchorIndex, selectedIndex)].map(\.id)
+           let transcriptWordSelectionAnchorID,
+           let anchorIndex = words.firstIndex(where: { $0.id == transcriptWordSelectionAnchorID }) {
+            selectedTranscriptWordIDs = Set(
+                words[min(anchorIndex, selectedIndex)...max(anchorIndex, selectedIndex)].map(\.id)
             )
         } else {
-            selectedTranscriptSentenceIDs = [sentence.id]
-            transcriptSelectionAnchorID = sentence.id
+            selectedTranscriptWordIDs = [word.id]
+            transcriptWordSelectionAnchorID = word.id
         }
         transcriptEditStatusMessage = nil
-        seekToTranscriptTime(sentence.sourceRange.start)
+        seekToTranscriptTime(word.sourceRange.start)
     }
 
-    func deleteSelectedTranscriptSentence() {
-        guard let transcript, !selectedTranscriptSentenceIDs.isEmpty else {
+    func deleteSelectedTranscriptWord() {
+        guard let transcript, !selectedTranscriptWordIDs.isEmpty else {
             return
         }
 
         do {
             let trimRange = try TimeRange(start: trimStart, end: trimEnd)
-            guard let cut = try TranscriptSentenceCutPlanner().cut(
+            guard let cut = try TranscriptWordCutPlanner().cut(
                 transcript: transcript,
-                sentenceIDs: visibleTranscriptSentences.compactMap {
-                    selectedTranscriptSentenceIDs.contains($0.id) ? $0.id : nil
+                wordIDs: visibleTranscriptWords.compactMap {
+                    selectedTranscriptWordIDs.contains($0.id) ? $0.id : nil
                 },
                 trimRange: trimRange,
                 editPlan: transcriptEditPlan,
@@ -98,24 +98,24 @@ extension LuxelEditorModel {
                 minimumRetainedDuration: minimumTrimDuration
             )
             else {
-                transcriptEditStatusMessage = "That sentence is already cut."
+                transcriptEditStatusMessage = "That word is already cut."
                 return
             }
 
             transcriptEditPlan = updatedPlan
-            let selectedCount = selectedTranscriptSentenceIDs.count
-            selectedTranscriptSentenceIDs = []
-            transcriptSelectionAnchorID = nil
+            let selectedCount = selectedTranscriptWordIDs.count
+            selectedTranscriptWordIDs = []
+            transcriptWordSelectionAnchorID = nil
             transcriptEditStatusMessage = selectedCount == 1
-                ? "Sentence cut"
-                : "\(selectedCount) sentences cut"
+                ? "Word cut"
+                : "\(selectedCount) words cut"
             exportEstimatesByFormat = [:]
             rebuildEditedPreview()
             recordEditorDraftChange()
         } catch TimelineEditingError.insufficientRetainedDuration {
             transcriptEditStatusMessage = "Keep at least part of the recording."
         } catch {
-            transcriptEditStatusMessage = "Could not cut that sentence."
+            transcriptEditStatusMessage = "Could not cut that word."
         }
     }
 

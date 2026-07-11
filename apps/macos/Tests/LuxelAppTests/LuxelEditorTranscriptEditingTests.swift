@@ -7,8 +7,8 @@ import Testing
 @MainActor
 @Suite("Luxel editor transcript editing")
 struct LuxelEditorTranscriptEditingTests {
-    @Test("sentence cuts are non-destructive undoable and exported for audio and video")
-    func sentenceCutsApplyToAudioAndVideo() async throws {
+    @Test("word cuts are non-destructive undoable and exported for audio and video")
+    func wordCutsApplyToAudioAndVideo() async throws {
         let helper = LuxelEditorModelTests()
         let transcript = try editableTranscript()
         let sources = try [
@@ -35,34 +35,34 @@ struct LuxelEditorTranscriptEditingTests {
             model.isTranscriptPanelVisible = true
 
             let originalTranscript = model.transcript
-            let sentence = try #require(
-                model.editableTranscriptSentences.first { $0.text == "Delete this." }
+            let word = try #require(
+                model.editableTranscriptWords.first { $0.text == "Delete" }
             )
-            model.selectTranscriptSentence(sentence)
-            model.deleteSelectedTranscriptSentence()
+            model.selectTranscriptWord(word)
+            model.deleteSelectedTranscriptWord()
 
             #expect(model.transcript == originalTranscript)
             #expect(model.transcriptEditPlan.cuts.count == 1)
-            #expect(model.visibleTranscriptSentences.map(\.text) == ["Keep.", "Remain."])
-            #expect(try model.editedTimelineMapper.outputDuration == 11)
+            #expect(model.visibleTranscriptWords.map(\.text) == ["Keep.", "this.", "Remain."])
+            #expect(try model.editedTimelineMapper.outputDuration == 11.6)
             let request = try model.makeExportRequest(source: source, format: model.format)
             #expect(request.editPlan == model.transcriptEditPlan)
 
             model.handlePlaybackTime(1.25)
-            #expect(model.currentPlaybackTime == 2.25)
+            #expect(model.currentPlaybackTime == 1.65)
 
             model.undoEditorChange()
             #expect(model.transcriptEditPlan == .empty)
-            #expect(model.visibleTranscriptSentences.count == 3)
+            #expect(model.visibleTranscriptWords.count == 4)
 
             model.redoEditorChange()
             #expect(model.transcriptEditPlan.cuts.count == 1)
-            #expect(model.visibleTranscriptSentences.map(\.text) == ["Keep.", "Remain."])
+            #expect(model.visibleTranscriptWords.map(\.text) == ["Keep.", "this.", "Remain."])
         }
     }
 
     @Test("deleting all retained media reports a no-op")
-    func sentenceCutCannotRemoveEditableRange() async throws {
+    func wordCutCannotRemoveEditableRange() async throws {
         let helper = LuxelEditorModelTests()
         let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
         let source = try SourceMedia(
@@ -75,17 +75,20 @@ struct LuxelEditorTranscriptEditingTests {
         let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
         await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.transcript = try helper.sampleTranscript(source: .system)
-        let sentence = try #require(model.editableTranscriptSentences.first)
+        let words = model.editableTranscriptWords
+        let firstWord = try #require(words.first)
+        let lastWord = try #require(words.last)
 
-        model.selectTranscriptSentence(sentence)
-        model.deleteSelectedTranscriptSentence()
+        model.selectTranscriptWord(firstWord)
+        model.selectTranscriptWord(lastWord, extendingSelection: true)
+        model.deleteSelectedTranscriptWord()
 
         #expect(model.transcriptEditPlan == .empty)
         #expect(model.transcriptEditStatusMessage == "Keep at least part of the recording.")
     }
 
-    @Test("shift selection cuts one contiguous sentence group")
-    func shiftSelectionCutsSentenceGroup() async throws {
+    @Test("shift selection cuts one contiguous word group")
+    func shiftSelectionCutsWordGroup() async throws {
         let helper = LuxelEditorModelTests()
         let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
         let source = try SourceMedia(
@@ -98,16 +101,16 @@ struct LuxelEditorTranscriptEditingTests {
         let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
         await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.transcript = try editableTranscript()
-        let sentences = model.editableTranscriptSentences
+        let words = model.editableTranscriptWords
 
-        model.selectTranscriptSentence(sentences[0])
-        model.selectTranscriptSentence(sentences[1], extendingSelection: true)
+        model.selectTranscriptWord(words[1])
+        model.selectTranscriptWord(words[2], extendingSelection: true)
 
-        #expect(model.selectedTranscriptSentenceIDs == Set(sentences[0...1].map(\.id)))
-        model.deleteSelectedTranscriptSentence()
+        #expect(model.selectedTranscriptWordIDs == Set(words[1...2].map(\.id)))
+        model.deleteSelectedTranscriptWord()
         #expect(model.transcriptEditPlan.cuts.count == 1)
-        #expect(model.transcriptEditPlan.cuts[0].sourceRange == (try TimeRange(start: 0, end: 2)))
-        #expect(model.visibleTranscriptSentences.map(\.text) == ["Remain."])
+        #expect(model.transcriptEditPlan.cuts[0].sourceRange == (try TimeRange(start: 1, end: 2)))
+        #expect(model.visibleTranscriptWords.map(\.text) == ["Keep.", "Remain."])
     }
 
     @Test("preview build failure blocks cut-enabled export until undo")
@@ -124,12 +127,12 @@ struct LuxelEditorTranscriptEditingTests {
         let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
         await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
         model.transcript = try editableTranscript()
-        let sentence = try #require(
-            model.editableTranscriptSentences.first { $0.text == "Delete this." }
+        let word = try #require(
+            model.editableTranscriptWords.first { $0.text == "Delete" }
         )
 
-        model.selectTranscriptSentence(sentence)
-        model.deleteSelectedTranscriptSentence()
+        model.selectTranscriptWord(word)
+        model.deleteSelectedTranscriptWord()
         #expect(!model.canExport)
 
         for _ in 0..<100 where model.previewCompositionTask != nil {

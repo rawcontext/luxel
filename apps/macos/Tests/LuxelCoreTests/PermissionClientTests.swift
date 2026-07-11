@@ -23,7 +23,8 @@ struct PermissionClientTests {
             status: .denied
         )
 
-        #expect(consent.action == .request)
+        #expect(consent.actionTitle == "Open System Settings")
+        #expect(consent.action == .openSettings)
         #expect(consent.message.contains("typed characters"))
         #expect(consent.message.contains("locally"))
         #expect(consent.message.contains("pause"))

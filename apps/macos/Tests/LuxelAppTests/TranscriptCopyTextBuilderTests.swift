@@ -12,21 +12,20 @@ struct TranscriptCopyTextBuilderTests {
 
         let text = TranscriptCopyTextBuilder().text(
             transcript: transcript,
-            visibleSentences: [],
+            visibleWords: [],
             hasCuts: false
         )
 
         #expect(text == "Wait... what?")
     }
 
-    @Test("cut copy uses only visible edited sentences")
-    func cutCopyUsesVisibleSentences() throws {
+    @Test("cut copy uses only visible edited words")
+    func cutCopyUsesVisibleWords() throws {
         let transcript = try sampleTranscript()
         let visible = [
-            TranscriptEditableSentence(
+            TranscriptEditableWord(
                 id: "first",
                 turnID: "turn",
-                spanIDs: ["first"],
                 text: "Wait...",
                 sourceRange: try TimeRange(start: 0, end: 0.5)
             )
@@ -34,7 +33,7 @@ struct TranscriptCopyTextBuilderTests {
 
         let text = TranscriptCopyTextBuilder().text(
             transcript: transcript,
-            visibleSentences: visible,
+            visibleWords: visible,
             hasCuts: true
         )
 
