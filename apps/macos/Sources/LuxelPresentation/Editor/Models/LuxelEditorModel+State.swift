@@ -130,38 +130,80 @@ extension LuxelEditorModel {
     }
 
     var editableTranscriptWords: [TranscriptEditableWord] {
-        guard let transcript else {
-            return []
-        }
-        return (try? TranscriptWordIndex(transcript: transcript).words) ?? []
+        cachedTranscriptWords
     }
 
     var visibleTranscriptWords: [TranscriptEditableWord] {
-        editableTranscriptWords.filter { !transcriptEditPlan.removes($0.sourceRange) }
+        cachedVisibleTranscriptWords
     }
 
     var canDeleteSelectedTranscriptWord: Bool {
         !isExporting && !selectedTranscriptWordIDs.isEmpty
-            && selectedTranscriptWordIDs.isSubset(
-                of: Set(visibleTranscriptWords.map(\.id))
-            )
+            && selectedTranscriptWordIDs.isSubset(of: cachedVisibleTranscriptWordIDs)
     }
 
     var activeTranscriptTurnID: String? {
-        let visibleSpanIDs = Set(visibleTranscriptWords.map(\.id))
-        return visibleTranscript?.turns.first {
-            !$0.spanIDs.allSatisfy { !visibleSpanIDs.contains($0) }
-                && $0.start <= currentPlaybackTime
-                && currentPlaybackTime < $0.end
-        }?.id
+        guard let transcript = visibleTranscript else {
+            return nil
+        }
+        var lowerBound = transcript.turns.startIndex
+        var upperBound = transcript.turns.endIndex
+        while lowerBound < upperBound {
+            let middle = lowerBound + (upperBound - lowerBound) / 2
+            if transcript.turns[middle].start <= currentPlaybackTime {
+                lowerBound = middle + 1
+            } else {
+                upperBound = middle
+            }
+        }
+        guard lowerBound > transcript.turns.startIndex else {
+            return nil
+        }
+        let turn = transcript.turns[lowerBound - 1]
+        return cachedVisibleTranscriptTurnIDs.contains(turn.id)
+            && currentPlaybackTime < turn.end
+            ? turn.id
+            : nil
     }
 
     var activeTranscriptSpanID: String? {
-        let visibleSpanIDs = Set(visibleTranscriptWords.map(\.id))
-        return visibleTranscript?.spans.first {
-            visibleSpanIDs.contains($0.id) &&
-                $0.start <= currentPlaybackTime && currentPlaybackTime < $0.end
-        }?.id
+        guard visibleTranscript != nil else {
+            return nil
+        }
+        var lowerBound = cachedVisibleTranscriptWords.startIndex
+        var upperBound = cachedVisibleTranscriptWords.endIndex
+        while lowerBound < upperBound {
+            let middle = lowerBound + (upperBound - lowerBound) / 2
+            if cachedVisibleTranscriptWords[middle].sourceRange.start <= currentPlaybackTime {
+                lowerBound = middle + 1
+            } else {
+                upperBound = middle
+            }
+        }
+        guard lowerBound > cachedVisibleTranscriptWords.startIndex else {
+            return nil
+        }
+        let word = cachedVisibleTranscriptWords[lowerBound - 1]
+        return currentPlaybackTime < word.sourceRange.end ? word.id : nil
+    }
+
+    func rebuildTranscriptWordCache() {
+        cachedTranscriptWords = transcript.flatMap {
+            try? TranscriptWordIndex(transcript: $0).words
+        } ?? []
+        refreshVisibleTranscriptWordCache()
+    }
+
+    func refreshVisibleTranscriptWordCache() {
+        cachedVisibleTranscriptWords = cachedTranscriptWords.filter {
+            !transcriptEditPlan.removes($0.sourceRange)
+        }
+        cachedVisibleTranscriptWordIDs = Set(cachedVisibleTranscriptWords.map(\.id))
+        cachedVisibleTranscriptWordIndexByID = Dictionary(
+            uniqueKeysWithValues: cachedVisibleTranscriptWords.enumerated().map { ($1.id, $0) }
+        )
+        cachedVisibleTranscriptTurnIDs = Set(cachedVisibleTranscriptWords.map(\.turnID))
+        transcriptDisplayRevision &+= 1
     }
 
     var isExporting: Bool {

@@ -5,6 +5,7 @@ import SwiftUI
 struct TranscriptCardContent: View {
     let transcript: TurnSegmentedTranscript
     let words: [TranscriptEditableWord]
+    let displayRevision: Int
     let activeTurnID: String?
     let activeSpanID: String?
     let spansPerChunk: Int
@@ -17,15 +18,16 @@ struct TranscriptCardContent: View {
     let selectWord: (TranscriptEditableWord, Bool) -> Void
     let deleteSelectedWord: () -> Void
 
-    @State var displayPlan: TranscriptDisplayPlan
+    @State var displayPlan = TranscriptDisplayPlan()
     @State var searchQuery = ""
     @State var selectedSearchMatchID: String?
-    @State var searchMatches: [TranscriptSearchMatch]
+    @State var searchMatches: [TranscriptSearchMatch] = []
     @FocusState var transcriptListIsFocused: Bool
 
     init(
         transcript: TurnSegmentedTranscript,
         words: [TranscriptEditableWord],
+        displayRevision: Int,
         activeTurnID: String?,
         activeSpanID: String?,
         spansPerChunk: Int,
@@ -40,6 +42,7 @@ struct TranscriptCardContent: View {
     ) {
         self.transcript = transcript
         self.words = words
+        self.displayRevision = displayRevision
         self.activeTurnID = activeTurnID
         self.activeSpanID = activeSpanID
         self.spansPerChunk = spansPerChunk
@@ -51,15 +54,6 @@ struct TranscriptCardContent: View {
         self.closeTranscript = closeTranscript
         self.selectWord = selectWord
         self.deleteSelectedWord = deleteSelectedWord
-        let displayPlan = TranscriptDisplayPlan(
-            transcript: transcript,
-            words: words,
-            wordsPerChunk: spansPerChunk
-        )
-        _displayPlan = State(
-            initialValue: displayPlan)
-        _searchMatches = State(
-            initialValue: displayPlan.searchMatches(for: ""))
     }
 
     var body: some View {
@@ -73,14 +67,14 @@ struct TranscriptCardContent: View {
         .onChange(of: searchQuery) { _, query in
             updateSearchMatches(query: query)
         }
-        .onChange(of: transcript) { _, transcript in
+        .onAppear {
             rebuildDisplayPlan(
                 transcript: transcript,
                 words: words,
                 spansPerChunk: spansPerChunk
             )
         }
-        .onChange(of: words) { _, words in
+        .onChange(of: displayRevision) {
             rebuildDisplayPlan(
                 transcript: transcript,
                 words: words,

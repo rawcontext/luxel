@@ -58,13 +58,13 @@ extension LuxelEditorModel {
         extendingSelection: Bool = false
     ) {
         let words = visibleTranscriptWords
-        guard let selectedIndex = words.firstIndex(where: { $0.id == word.id }) else {
+        guard let selectedIndex = cachedVisibleTranscriptWordIndexByID[word.id] else {
             return
         }
 
         if extendingSelection,
            let transcriptWordSelectionAnchorID,
-           let anchorIndex = words.firstIndex(where: { $0.id == transcriptWordSelectionAnchorID }) {
+           let anchorIndex = cachedVisibleTranscriptWordIndexByID[transcriptWordSelectionAnchorID] {
             selectedTranscriptWordIDs = Set(
                 words[min(anchorIndex, selectedIndex)...max(anchorIndex, selectedIndex)].map(\.id)
             )

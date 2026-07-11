@@ -158,6 +158,7 @@ struct AudioTranscriptPreview: View {
         let content = TranscriptCardContent(
             transcript: transcript,
             words: model.visibleTranscriptWords,
+            displayRevision: model.transcriptDisplayRevision,
             activeTurnID: activeTurnID,
             activeSpanID: activeSpanID,
             spansPerChunk: Layout.transcriptSpansPerChunk,
