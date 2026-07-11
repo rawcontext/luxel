@@ -18,6 +18,7 @@ struct LuxelApp: App {
     @State private var aboutWindowPresenter: LuxelAboutWindowPresenter
 
     init() {
+        LuxelTooltipConfiguration.registerDefaults()
         LuxelSingleInstanceGuard.exitDuplicateInstanceIfNeeded()
 
         let errorReporter = LuxelCompositionRoot.errorReporter()
@@ -107,6 +108,18 @@ struct LuxelApp: App {
             .windowResizability(.contentMinSize)
             .windowBackgroundDragBehavior(.enabled)
         }
+    }
+}
+
+enum LuxelTooltipConfiguration {
+    // Native SwiftUI help tags read this AppKit registration default when the tooltip manager starts.
+    static let initialDelayDefaultsKey = "NSInitialToolTipDelay"
+    static let initialDelayMilliseconds = 500
+
+    static func registerDefaults(in userDefaults: UserDefaults = .standard) {
+        userDefaults.register(defaults: [
+            initialDelayDefaultsKey: initialDelayMilliseconds
+        ])
     }
 }
 
