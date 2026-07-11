@@ -70,6 +70,7 @@ public final class LuxelEditorModel {
     var selectedTranscriptWordIDs: Set<TranscriptEditableWord.ID> = []
     var transcriptWordSelectionAnchorID: TranscriptEditableWord.ID?
     var transcriptEditStatusMessage: String?
+    var lastTranscriptCutID: String?
     var isEditedPreviewReady = true
     var detectedSpeakerVoices: [DetectedSpeakerVoice] = []
     var knownSpeakerOptions: [KnownSpeakerProfile] = []
@@ -141,6 +142,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored var cachedVisibleTranscriptWordIndexByID:
         [TranscriptEditableWord.ID: Int] = [:]
     @ObservationIgnored var cachedVisibleTranscriptTurnIDs: Set<TranscriptTurn.ID> = []
+    @ObservationIgnored var cachedTranscriptCutReviewItems: [TranscriptCutReviewItem] = []
     @ObservationIgnored var exportMemoryByFormat: [ExportFormat: ExportMemory]
     @ObservationIgnored var lastSelectedExportFormat: ExportFormat?
     @ObservationIgnored var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?

@@ -3,7 +3,7 @@ import Foundation
 import LuxelCore
 
 extension LuxelEditorModel {
-    func rebuildEditedPreview() {
+    func rebuildEditedPreview(successMessage: String? = nil) {
         previewCompositionTask?.cancel()
         guard let source else {
             return
@@ -16,6 +16,9 @@ extension LuxelEditorModel {
 
         guard !plan.cuts.isEmpty else {
             isEditedPreviewReady = true
+            if let successMessage {
+                transcriptEditStatusMessage = successMessage
+            }
             let item = AVPlayerItem(url: sourceURL)
             item.audioTimePitchAlgorithm = .timeDomain
             player.replaceCurrentItem(with: item)
@@ -38,13 +41,15 @@ extension LuxelEditorModel {
                     sourceSegments: segments
                 )
                 try Task.checkCancellation()
-                self?.applyEditedPreview(
+                if self?.applyEditedPreview(
                     asset,
                     sourceURL: sourceURL,
                     plan: plan,
                     sourceTime: sourceTime,
                     wasPlaying: wasPlaying
-                )
+                ) == true {
+                    self?.transcriptEditStatusMessage = successMessage ?? "Word cut"
+                }
             } catch is CancellationError {
             } catch {
                 self?.applyEditedPreviewFailure(sourceURL: sourceURL)
@@ -58,9 +63,9 @@ extension LuxelEditorModel {
         plan: TimelineEditPlan,
         sourceTime: TimeInterval,
         wasPlaying: Bool
-    ) {
+    ) -> Bool {
         guard source?.fileURL == sourceURL, transcriptEditPlan == plan else {
-            return
+            return false
         }
 
         let item = AVPlayerItem(asset: asset)
@@ -71,8 +76,8 @@ extension LuxelEditorModel {
             previewTimelineMapper.sourceTime(forOutputTime: outputTime) ?? trimStart
         enqueuePreviewSeek(to: outputTime, resume: wasPlaying)
         isEditedPreviewReady = true
-        transcriptEditStatusMessage = "Word cut"
         previewCompositionTask = nil
+        return true
     }
 
     private func applyEditedPreviewFailure(sourceURL: URL) {

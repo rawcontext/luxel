@@ -2,6 +2,12 @@ import AVKit
 import Foundation
 import LuxelCore
 
+struct TranscriptCutReviewItem: Equatable, Identifiable {
+    let id: String
+    let text: String
+    let sourceRange: TimeRange
+}
+
 extension LuxelEditorModel {
     var hasSource: Bool {
         source != nil
@@ -142,6 +148,17 @@ extension LuxelEditorModel {
             && selectedTranscriptWordIDs.isSubset(of: cachedVisibleTranscriptWordIDs)
     }
 
+    var transcriptCutReviewItems: [TranscriptCutReviewItem] {
+        cachedTranscriptCutReviewItems
+    }
+
+    var canUndoLastTranscriptCut: Bool {
+        guard let lastTranscriptCutID else {
+            return false
+        }
+        return transcriptEditPlan.cuts.contains { $0.id == lastTranscriptCutID }
+    }
+
     var activeTranscriptTurnID: String? {
         guard let transcript = visibleTranscript else {
             return nil
@@ -203,6 +220,14 @@ extension LuxelEditorModel {
             uniqueKeysWithValues: cachedVisibleTranscriptWords.enumerated().map { ($1.id, $0) }
         )
         cachedVisibleTranscriptTurnIDs = Set(cachedVisibleTranscriptWords.map(\.turnID))
+        let wordsByID = Dictionary(uniqueKeysWithValues: cachedTranscriptWords.map { ($0.id, $0) })
+        cachedTranscriptCutReviewItems = transcriptEditPlan.cuts.map { cut in
+            TranscriptCutReviewItem(
+                id: cut.id,
+                text: cut.transcriptSpanIDs.compactMap { wordsByID[$0]?.text }.joined(separator: " "),
+                sourceRange: cut.sourceRange
+            )
+        }
         transcriptDisplayRevision &+= 1
     }
 
