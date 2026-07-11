@@ -53,13 +53,16 @@ struct LuxelEditorTranscriptPerformanceTests {
                     activeSpanID: nil,
                     spansPerChunk: 32,
                     selectedWordIDs: [],
-                    cutCount: 0,
+                    cutReviewItems: [],
                     editStatusMessage: nil,
                     canDeleteSelectedWord: false,
+                    canUndoLastCut: false,
                     canClose: false,
                     closeTranscript: {},
                     selectWord: { _, _ in },
-                    deleteSelectedWord: {}
+                    deleteSelectedWord: { false },
+                    undoLastCut: {},
+                    restoreCut: { _ in }
                 )
                 observedWordCount = content.words.count
             }

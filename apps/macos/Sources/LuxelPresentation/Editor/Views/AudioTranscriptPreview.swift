@@ -163,9 +163,10 @@ struct AudioTranscriptPreview: View {
             activeSpanID: activeSpanID,
             spansPerChunk: Layout.transcriptSpansPerChunk,
             selectedWordIDs: model.selectedTranscriptWordIDs,
-            cutCount: model.transcriptEditPlan.cuts.count,
+            cutReviewItems: model.transcriptCutReviewItems,
             editStatusMessage: model.transcriptEditStatusMessage,
             canDeleteSelectedWord: model.canDeleteSelectedTranscriptWord,
+            canUndoLastCut: model.canUndoLastTranscriptCut,
             canClose: model.canCloseTranscriptPanel,
             closeTranscript: {
                 model.hideTranscriptPanel()
@@ -178,6 +179,12 @@ struct AudioTranscriptPreview: View {
             },
             deleteSelectedWord: {
                 model.deleteSelectedTranscriptWord()
+            },
+            undoLastCut: {
+                model.undoLastTranscriptCut()
+            },
+            restoreCut: { cutID in
+                model.restoreTranscriptCut(id: cutID)
             }
         )
 

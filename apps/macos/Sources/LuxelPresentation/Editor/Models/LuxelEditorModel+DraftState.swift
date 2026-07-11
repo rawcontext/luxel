@@ -7,6 +7,7 @@ extension LuxelEditorModel {
             return
         }
 
+        lastTranscriptCutID = nil
         editorUndoStack.push(currentEditorDraftState, coalescingToken: coalescingToken)
         exportProgress = nil
     }
@@ -69,6 +70,7 @@ extension LuxelEditorModel {
         selectedTranscriptWordIDs = []
         transcriptWordSelectionAnchorID = nil
         transcriptEditStatusMessage = nil
+        lastTranscriptCutID = nil
         shouldMute = state.shouldMute
         if hasAudioOnlySource {
             shouldMute = false

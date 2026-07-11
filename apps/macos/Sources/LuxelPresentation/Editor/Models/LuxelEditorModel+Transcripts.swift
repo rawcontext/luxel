@@ -76,9 +76,10 @@ extension LuxelEditorModel {
         seekToTranscriptTime(word.sourceRange.start)
     }
 
-    func deleteSelectedTranscriptWord() {
+    @discardableResult
+    func deleteSelectedTranscriptWord() -> Bool {
         guard let transcript, !selectedTranscriptWordIDs.isEmpty else {
-            return
+            return false
         }
 
         do {
@@ -99,7 +100,7 @@ extension LuxelEditorModel {
             )
             else {
                 transcriptEditStatusMessage = "That word is already cut."
-                return
+                return false
             }
 
             transcriptEditPlan = updatedPlan
@@ -112,11 +113,38 @@ extension LuxelEditorModel {
             exportEstimatesByFormat = [:]
             rebuildEditedPreview()
             recordEditorDraftChange()
+            lastTranscriptCutID = cut.id
+            return true
         } catch TimelineEditingError.insufficientRetainedDuration {
             transcriptEditStatusMessage = "Keep at least part of the recording."
         } catch {
             transcriptEditStatusMessage = "Could not cut that word."
         }
+        return false
+    }
+
+    func undoLastTranscriptCut() {
+        guard canUndoLastTranscriptCut else {
+            return
+        }
+        undoEditorChange()
+    }
+
+    func restoreTranscriptCut(id: String) {
+        guard transcriptEditPlan.cuts.contains(where: { $0.id == id }),
+              let updatedPlan = try? TimelineEditPlan(
+                cuts: transcriptEditPlan.cuts.filter { $0.id != id }
+              )
+        else {
+            return
+        }
+
+        transcriptEditPlan = updatedPlan
+        selectedTranscriptWordIDs = []
+        transcriptWordSelectionAnchorID = nil
+        exportEstimatesByFormat = [:]
+        rebuildEditedPreview(successMessage: "Cut restored")
+        recordEditorDraftChange()
     }
 
     func toggleTranscriptPanel() {

@@ -39,10 +39,12 @@ struct LuxelEditorTranscriptEditingTests {
                 model.editableTranscriptWords.first { $0.text == "Delete" }
             )
             model.selectTranscriptWord(word)
-            model.deleteSelectedTranscriptWord()
+            #expect(model.deleteSelectedTranscriptWord())
 
             #expect(model.transcript == originalTranscript)
             #expect(model.transcriptEditPlan.cuts.count == 1)
+            #expect(model.canUndoLastTranscriptCut)
+            #expect(model.transcriptCutReviewItems.map(\.text) == ["Delete"])
             #expect(model.visibleTranscriptWords.map(\.text) == ["Keep.", "this.", "Remain."])
             #expect(try model.editedTimelineMapper.outputDuration == 11.6)
             let request = try model.makeExportRequest(source: source, format: model.format)
@@ -51,14 +53,50 @@ struct LuxelEditorTranscriptEditingTests {
             model.handlePlaybackTime(1.25)
             #expect(model.currentPlaybackTime == 1.65)
 
-            model.undoEditorChange()
+            model.undoLastTranscriptCut()
             #expect(model.transcriptEditPlan == .empty)
             #expect(model.visibleTranscriptWords.count == 4)
+            #expect(!model.canUndoLastTranscriptCut)
+            #expect(model.transcriptEditStatusMessage == nil)
 
             model.redoEditorChange()
             #expect(model.transcriptEditPlan.cuts.count == 1)
             #expect(model.visibleTranscriptWords.map(\.text) == ["Keep.", "this.", "Remain."])
         }
+    }
+
+    @Test("removed ranges can be reviewed and restored individually")
+    func removedRangesCanBeRestoredIndividually() async throws {
+        let helper = LuxelEditorModelTests()
+        let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
+        let source = try SourceMedia(
+            fileURL: sourceURL,
+            duration: 12,
+            pixelSize: PixelSize(width: 1280, height: 720),
+            nominalFrameRate: FrameRate(30),
+            hasAudio: true
+        )
+        let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.transcript = try editableTranscript()
+
+        let delete = try #require(model.editableTranscriptWords.first { $0.text == "Delete" })
+        model.selectTranscriptWord(delete)
+        #expect(model.deleteSelectedTranscriptWord())
+        let firstCutID = try #require(model.transcriptCutReviewItems.first?.id)
+
+        let remain = try #require(model.visibleTranscriptWords.first { $0.text == "Remain." })
+        model.selectTranscriptWord(remain)
+        #expect(model.deleteSelectedTranscriptWord())
+        #expect(model.transcriptCutReviewItems.map(\.text) == ["Delete", "Remain."])
+
+        model.restoreTranscriptCut(id: firstCutID)
+
+        #expect(model.transcriptCutReviewItems.map(\.text) == ["Remain."])
+        #expect(model.visibleTranscriptWords.map(\.text) == ["Keep.", "Delete", "this."])
+
+        model.undoEditorChange()
+        #expect(model.transcriptCutReviewItems.map(\.text) == ["Delete", "Remain."])
     }
 
     @Test("deleting all retained media reports a no-op")

@@ -1,7 +1,37 @@
 import AppKit
 import LuxelCore
+import SwiftUI
 
 extension TranscriptCardContent {
+    var speakerCountChip: some View {
+        HStack(spacing: 6) {
+            HStack(spacing: -3) {
+                ForEach(
+                    Array(transcript.speakers.prefix(3).enumerated()),
+                    id: \.element.id
+                ) { _, speaker in
+                    Circle()
+                        .fill(TranscriptSpeakerPalette.dotColor(for: speaker.displayName))
+                        .frame(width: 8, height: 8)
+                        .overlay {
+                            Circle().strokeBorder(.black.opacity(0.6), lineWidth: 1.5)
+                        }
+                }
+            }
+
+            Text(
+                transcript.speakers.count == 1
+                    ? "1 Speaker" : "\(transcript.speakers.count) Speakers"
+            )
+            .font(.system(size: 11.5, weight: .medium))
+            .foregroundStyle(.white.opacity(0.9))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityLabel("\(transcript.speakers.count) speakers detected")
+    }
+
     var selectedSearchMatchIndex: Int? {
         guard let selectedSearchMatchID else {
             return nil
@@ -78,7 +108,7 @@ extension TranscriptCardContent {
         let text = TranscriptCopyTextBuilder().text(
             transcript: transcript,
             visibleWords: words,
-            hasCuts: cutCount > 0
+            hasCuts: !cutReviewItems.isEmpty
         )
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)

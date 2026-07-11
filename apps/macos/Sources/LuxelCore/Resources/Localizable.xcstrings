@@ -38130,6 +38130,230 @@
         "pt-BR": { "stringUnit": { "state": "translated", "value": "Armazene localmente caracteres digitados e atalhos de teclado com novas gravações." } },
         "pt-PT": { "stringUnit": { "state": "translated", "value": "Armazene localmente carateres introduzidos e atalhos de teclado com novas gravações." } }
       }
+    },
+    "Edit by text": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Edit by text" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Edit by text" } }
+      }
+    },
+    "Select words, then choose Cut from recording or press Delete.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Select words, then choose Cut from recording or press Delete." } }
+      }
+    },
+    "Non-destructive: your original recording is safe, and cuts can be undone or restored.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Non-destructive: your original recording is safe, and cuts can be undone or restored." } }
+      }
+    },
+    "Dismiss transcript editing guidance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Dismiss transcript editing guidance" } }
+      }
+    },
+    "Review and restore removed transcript ranges": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Review and restore removed transcript ranges" } }
+      }
+    },
+    "Opens a menu of removed transcript ranges that can be restored.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Opens a menu of removed transcript ranges that can be restored." } }
+      }
+    },
+    "Undo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Undo" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Undo" } }
+      }
+    },
+    "Cut from recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Cut from recording" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Cut from recording" } }
+      }
+    },
+    "⌫": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "de": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "es": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "it": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "⌫" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "⌫" } }
+      }
+    },
+    "Cut selected words from recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Cut selected words from recording" } }
+      }
+    },
+    "Undo the transcript cut. You can also press Command-Z.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Undo the transcript cut. You can also press Command-Z." } }
+      }
+    },
+    "Restores the words and media removed by the last transcript cut.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Restores the words and media removed by the last transcript cut." } }
+      }
+    },
+    "Cut selected words from the recording (Delete)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Cut selected words from the recording (Delete)" } }
+      }
+    },
+    "Press Delete to cut the selected words. The original recording stays safe.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Press Delete to cut the selected words. The original recording stays safe." } }
+      }
     }
   },
   "version": "1.0"

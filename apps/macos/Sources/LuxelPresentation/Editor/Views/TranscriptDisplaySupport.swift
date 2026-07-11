@@ -280,7 +280,12 @@ private struct TranscriptWordButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .focusable(false)
+        .accessibilityLabel(word.text)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityHint(
+            "Selects this word and jumps to \(formatTranscriptTime(word.sourceRange.start)). "
+                + "Hold Shift while activating to extend the selection."
+        )
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .help(
             LuxelLocalization.format(

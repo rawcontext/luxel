@@ -2,6 +2,10 @@ import AppKit
 import LuxelCore
 import SwiftUI
 
+enum TranscriptEditingGuidance {
+    static let dismissalDefaultsKey = "transcriptEditingGuidanceDismissed"
+}
+
 struct TranscriptCardContent: View {
     let transcript: TurnSegmentedTranscript
     let words: [TranscriptEditableWord]
@@ -10,19 +14,23 @@ struct TranscriptCardContent: View {
     let activeSpanID: String?
     let spansPerChunk: Int
     let selectedWordIDs: Set<TranscriptEditableWord.ID>
-    let cutCount: Int
+    let cutReviewItems: [TranscriptCutReviewItem]
     let editStatusMessage: String?
     let canDeleteSelectedWord: Bool
+    let canUndoLastCut: Bool
     let canClose: Bool
     let closeTranscript: () -> Void
     let selectWord: (TranscriptEditableWord, Bool) -> Void
-    let deleteSelectedWord: () -> Void
+    let deleteSelectedWord: () -> Bool
+    let undoLastCut: () -> Void
+    let restoreCut: (String) -> Void
 
     @State var displayPlan = TranscriptDisplayPlan()
     @State var searchQuery = ""
     @State var selectedSearchMatchID: String?
     @State var searchMatches: [TranscriptSearchMatch] = []
     @FocusState var transcriptListIsFocused: Bool
+    @AppStorage var isEditingGuidanceDismissed: Bool
 
     init(
         transcript: TurnSegmentedTranscript,
@@ -32,13 +40,17 @@ struct TranscriptCardContent: View {
         activeSpanID: String?,
         spansPerChunk: Int,
         selectedWordIDs: Set<TranscriptEditableWord.ID>,
-        cutCount: Int,
+        cutReviewItems: [TranscriptCutReviewItem],
         editStatusMessage: String?,
         canDeleteSelectedWord: Bool,
+        canUndoLastCut: Bool,
         canClose: Bool,
+        guidanceDefaults: UserDefaults = .standard,
         closeTranscript: @escaping () -> Void,
         selectWord: @escaping (TranscriptEditableWord, Bool) -> Void,
-        deleteSelectedWord: @escaping () -> Void
+        deleteSelectedWord: @escaping () -> Bool,
+        undoLastCut: @escaping () -> Void,
+        restoreCut: @escaping (String) -> Void
     ) {
         self.transcript = transcript
         self.words = words
@@ -47,13 +59,21 @@ struct TranscriptCardContent: View {
         self.activeSpanID = activeSpanID
         self.spansPerChunk = spansPerChunk
         self.selectedWordIDs = selectedWordIDs
-        self.cutCount = cutCount
+        self.cutReviewItems = cutReviewItems
         self.editStatusMessage = editStatusMessage
         self.canDeleteSelectedWord = canDeleteSelectedWord
+        self.canUndoLastCut = canUndoLastCut
         self.canClose = canClose
         self.closeTranscript = closeTranscript
         self.selectWord = selectWord
         self.deleteSelectedWord = deleteSelectedWord
+        self.undoLastCut = undoLastCut
+        self.restoreCut = restoreCut
+        _isEditingGuidanceDismissed = AppStorage(
+            wrappedValue: false,
+            TranscriptEditingGuidance.dismissalDefaultsKey,
+            store: guidanceDefaults
+        )
     }
 
     var body: some View {
@@ -61,6 +81,11 @@ struct TranscriptCardContent: View {
             transcriptToolbar
 
             LuxelGlassRowDivider()
+
+            if !isEditingGuidanceDismissed {
+                editingGuidance
+                LuxelGlassRowDivider()
+            }
 
             transcriptList
         }
@@ -100,17 +125,22 @@ struct TranscriptCardContent: View {
                 speakerCountChip
             }
 
-            if cutCount > 0 {
-                Text("\(cutCount) \(cutCount == 1 ? "cut" : "cuts")")
-                    .font(.system(size: 10.5, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55))
-            }
-
             if let editStatusMessage {
                 Text(editStatusMessage)
                     .font(.system(size: 10.5, weight: .medium))
                     .foregroundStyle(.white.opacity(0.55))
                     .lineLimit(1)
+            }
+
+            if canUndoLastCut {
+                Button("Undo") {
+                    undoLastCut()
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 10.5, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.85))
+                .help("Undo the transcript cut. You can also press Command-Z.")
+                .accessibilityHint("Restores the words and media removed by the last transcript cut.")
             }
 
             Spacer(minLength: 8)
@@ -123,6 +153,10 @@ struct TranscriptCardContent: View {
                 selectNext: selectNextSearchMatch
             )
 
+            if !cutReviewItems.isEmpty {
+                cutReviewMenu
+            }
+
             Button {
                 copyTranscript(transcript, words: words)
             } label: {
@@ -132,15 +166,27 @@ struct TranscriptCardContent: View {
             .help("Copy transcript")
             .accessibilityLabel("Copy transcript")
 
-            Button {
-                deleteSelectedWord()
-            } label: {
-                Image(systemName: "trash")
+            if canDeleteSelectedWord {
+                Button {
+                    performCut()
+                } label: {
+                    HStack(spacing: 5) {
+                        Label("Cut from recording", systemImage: "scissors")
+                        Text("⌫")
+                            .foregroundStyle(.white.opacity(0.55))
+                    }
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .padding(.horizontal, 9)
+                    .frame(height: 28)
+                    .background(.white.opacity(0.09), in: Capsule(style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .help("Cut selected words from the recording (Delete)")
+                .accessibilityLabel("Cut selected words from recording")
+                .accessibilityHint(
+                    "Press Delete to cut the selected words. The original recording stays safe."
+                )
             }
-            .buttonStyle(LuxelGlassCircleButtonStyle())
-            .disabled(!canDeleteSelectedWord)
-            .help("Cut selected transcript word")
-            .accessibilityLabel("Cut selected transcript word")
 
             if canClose {
                 Button {
@@ -155,35 +201,6 @@ struct TranscriptCardContent: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
-    }
-
-    private var speakerCountChip: some View {
-        HStack(spacing: 6) {
-            HStack(spacing: -3) {
-                ForEach(
-                    Array(transcript.speakers.prefix(3).enumerated()),
-                    id: \.element.id
-                ) { _, speaker in
-                    Circle()
-                        .fill(TranscriptSpeakerPalette.dotColor(for: speaker.displayName))
-                        .frame(width: 8, height: 8)
-                        .overlay {
-                            Circle().strokeBorder(.black.opacity(0.6), lineWidth: 1.5)
-                        }
-                }
-            }
-
-            Text(
-                transcript.speakers.count == 1
-                    ? "1 Speaker" : "\(transcript.speakers.count) Speakers"
-            )
-            .font(.system(size: 11.5, weight: .medium))
-            .foregroundStyle(.white.opacity(0.9))
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
-        .accessibilityLabel("\(transcript.speakers.count) speakers detected")
     }
 
     private var transcriptList: some View {
@@ -226,7 +243,7 @@ struct TranscriptCardContent: View {
                 guard canDeleteSelectedWord else {
                     return
                 }
-                deleteSelectedWord()
+                performCut()
             }
             .onChange(of: scrollTargetID) { _, targetID in
                 guard let targetID else {
