@@ -47,4 +47,31 @@ struct LuxelApplicationDelegateTests {
 
         #expect(receivedURLs == [[mediaURL]])
     }
+
+    @Test("status item right click exposes the overflow quick actions")
+    func statusItemRightClickQuickActions() throws {
+        let packageRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let controllerSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelApp/App/LuxelStatusItemController.swift"
+            ),
+            encoding: .utf8
+        )
+        let quickActionsSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelApp/App/LuxelStatusItemController+QuickActions.swift"
+            ),
+            encoding: .utf8
+        )
+        let source = controllerSource + quickActionsSource
+
+        #expect(source.contains("[.leftMouseUp, .rightMouseUp]"))
+        #expect(source.contains("NSApp.currentEvent?.type == .rightMouseUp"))
+        #expect(source.contains("title: \"Settings\""))
+        #expect(source.contains("title: \"Quit Luxel\""))
+        #expect(source.contains("showStatusItemQuickActionsMenu()"))
+    }
 }

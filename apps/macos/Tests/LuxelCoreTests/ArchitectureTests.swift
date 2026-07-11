@@ -359,20 +359,21 @@ extension ArchitectureTests {
         #expect(source.contains("Darwin.exit(0)"))
     }
 
-    @Test("menu bar status click stops active recording before opening popover")
-    func menuBarStatusClickStopsActiveRecordingBeforeOpeningPopover() throws {
+    @Test("menu bar status interactions preserve recording stop and quick actions")
+    func menuBarStatusInteractionsPreserveRecordingStopAndQuickActions() throws {
         let source = try sourceText(
             for: [
                 "Sources/LuxelApp/App/LuxelStatusItemController.swift",
                 "Sources/LuxelApp/App/LuxelStatusItemController+Rendering.swift",
                 "Sources/LuxelApp/App/LuxelStatusItemController+Actions.swift",
-                "Sources/LuxelApp/App/LuxelStatusItemController+Popover.swift"
+                "Sources/LuxelApp/App/LuxelStatusItemController+Popover.swift",
+                "Sources/LuxelApp/App/LuxelStatusItemController+QuickActions.swift"
             ],
             encoding: .utf8
         )
 
         #expect(source.contains("button.action = #selector(handleStatusItemClick)"))
-        #expect(source.contains("button.sendAction(on: [.leftMouseUp])"))
+        #expect(source.contains("button.sendAction(on: [.leftMouseUp, .rightMouseUp])"))
         #expect(!source.contains("button.sendAction(on: [.leftMouseDown])"))
         #expect(source.contains("configureStatusItemButton(button)"))
         #expect(source.contains("statusItem.autosaveName"))
@@ -380,6 +381,8 @@ extension ArchitectureTests {
         #expect(source.contains(".statusItem"))
         #expect(source.contains("if model.hasActiveRecording"))
         #expect(source.contains("stopRecordingFromStatusItem()"))
+        #expect(source.contains("NSApp.currentEvent?.type == .rightMouseUp"))
+        #expect(source.contains("showStatusItemQuickActionsMenu()"))
         #expect(source.contains("setStatusItemLength(activeStatusItemWidth"))
         #expect(
             source.contains(

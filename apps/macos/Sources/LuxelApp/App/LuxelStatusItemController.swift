@@ -100,7 +100,7 @@ extension LuxelStatusItemController {
         button.imagePosition = .imageOnly
         button.imageScaling = .scaleProportionallyDown
         button.setButtonType(.momentaryChange)
-        button.sendAction(on: [.leftMouseUp])
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         Self.logger.debug("Status item button configured")
     }
 
@@ -335,6 +335,12 @@ extension LuxelStatusItemController {
       popover_shown=\(self.isPopoverShown, privacy: .public)
       """
         )
+
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            rememberActivationSourceApplication()
+            showStatusItemQuickActionsMenu()
+            return
+        }
 
         if model.hasActiveRecording {
             stopRecordingFromStatusItem()
