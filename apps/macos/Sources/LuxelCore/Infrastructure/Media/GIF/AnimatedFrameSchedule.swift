@@ -10,19 +10,28 @@ struct AnimatedFrameSchedule: Equatable, Sendable {
         let requestedFrameRate = Double(request.frameRate.framesPerSecond)
         let speed = request.speed.value
         let sourceFrameRate = max(1, sourceFrameRate)
-        let effectiveFrameRate = requestedFrameRate * speed
-        let decimation = max(1, Int((effectiveFrameRate / sourceFrameRate).rounded(.up)))
+        let availableOutputFrameRate = sourceFrameRate * speed
+        let decimation = max(
+            1,
+            Int((requestedFrameRate / availableOutputFrameRate).rounded(.up))
+        )
         let candidateFrameCount = max(
-            1, Int((request.timeRange.duration * requestedFrameRate).rounded()))
+            1, Int((request.outputDuration * requestedFrameRate).rounded()))
         let indices = stride(from: 0, to: candidateFrameCount, by: decimation)
+        let mapper = request.timelineMapper
 
-        frameTimes = indices.map { index in
-            CMTime(
-                seconds: request.timeRange.start + (Double(index) / requestedFrameRate),
+        frameTimes = indices.compactMap { index in
+            guard let sourceTime = mapper.sourceTime(
+                forOutputTime: Double(index) / requestedFrameRate
+            ) else {
+                return nil
+            }
+            return CMTime(
+                seconds: sourceTime,
                 preferredTimescale: 600
             )
         }
-        frameDelay = Double(decimation) / effectiveFrameRate
+        frameDelay = Double(decimation) / requestedFrameRate
     }
 }
 

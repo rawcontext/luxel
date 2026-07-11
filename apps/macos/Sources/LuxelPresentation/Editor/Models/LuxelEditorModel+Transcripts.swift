@@ -53,6 +53,53 @@ extension LuxelEditorModel {
         seekToTranscriptTime(span.start)
     }
 
+    func selectTranscriptSentence(_ sentence: TranscriptEditableSentence) {
+        guard visibleTranscriptSentences.contains(where: { $0.id == sentence.id }) else {
+            return
+        }
+
+        selectedTranscriptSentenceID = sentence.id
+        transcriptEditStatusMessage = nil
+        seekToTranscriptTime(sentence.sourceRange.start)
+    }
+
+    func deleteSelectedTranscriptSentence() {
+        guard let transcript, let selectedTranscriptSentenceID else {
+            return
+        }
+
+        do {
+            let trimRange = try TimeRange(start: trimStart, end: trimEnd)
+            guard let cut = try TranscriptSentenceCutPlanner().cut(
+                transcript: transcript,
+                sentenceID: selectedTranscriptSentenceID,
+                trimRange: trimRange,
+                editPlan: transcriptEditPlan,
+                minimumRetainedDuration: minimumTrimDuration
+            ),
+            let updatedPlan = try transcriptEditPlan.inserting(
+                cut,
+                within: trimRange,
+                minimumRetainedDuration: minimumTrimDuration
+            )
+            else {
+                transcriptEditStatusMessage = "That sentence is already cut."
+                return
+            }
+
+            transcriptEditPlan = updatedPlan
+            self.selectedTranscriptSentenceID = nil
+            transcriptEditStatusMessage = "Sentence cut"
+            exportEstimatesByFormat = [:]
+            rebuildEditedPreview()
+            recordEditorDraftChange()
+        } catch TimelineEditingError.insufficientRetainedDuration {
+            transcriptEditStatusMessage = "Keep at least part of the recording."
+        } catch {
+            transcriptEditStatusMessage = "Could not cut that sentence."
+        }
+    }
+
     func toggleTranscriptPanel() {
         if isTranscriptPanelVisible, hasVideoSource {
             hideTranscriptPanel()

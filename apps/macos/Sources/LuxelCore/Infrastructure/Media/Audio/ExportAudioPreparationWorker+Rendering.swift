@@ -10,7 +10,10 @@ extension ExportAudioPreparationWorker {
         let readerOutput = try await makeReader(request: request)
         let expectedFrames = max(
             1,
-            Int((request.timeRange.duration * Double(ExportAudioPreparationService.sampleRate)).rounded())
+            Int(
+                (try request.timelineMapper.unscaledOutputDuration
+                    * Double(ExportAudioPreparationService.sampleRate)).rounded()
+            )
         )
         let outputFile = try makeAudioFile(forWriting: outputURL)
         let writer = BoundedPCMWriter(outputFile: outputFile)

@@ -3,15 +3,18 @@ import Foundation
 public struct AudioPeakAnalysisRequest: Equatable, Sendable {
     public let inputFileURL: URL
     public let timeRange: TimeRange
+    public let editPlan: TimelineEditPlan
     public let audioTracks: [AudioTrackKind]
 
     public init(
         inputFileURL: URL,
         timeRange: TimeRange,
+        editPlan: TimelineEditPlan = .empty,
         audioTracks: [AudioTrackKind]
     ) {
         self.inputFileURL = inputFileURL
         self.timeRange = timeRange
+        self.editPlan = editPlan
         self.audioTracks = Self.deduplicated(audioTracks)
     }
 

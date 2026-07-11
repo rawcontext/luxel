@@ -4,37 +4,57 @@ import SwiftUI
 
 struct TranscriptCardContent: View {
     let transcript: TurnSegmentedTranscript
+    let sentences: [TranscriptEditableSentence]
     let activeTurnID: String?
     let activeSpanID: String?
     let spansPerChunk: Int
+    let selectedSentenceID: TranscriptEditableSentence.ID?
+    let cutCount: Int
+    let editStatusMessage: String?
+    let canDeleteSelectedSentence: Bool
     let canClose: Bool
     let closeTranscript: () -> Void
-    let seekToSpan: (TimedTranscriptSpan) -> Void
+    let selectSentence: (TranscriptEditableSentence) -> Void
+    let deleteSelectedSentence: () -> Void
 
     @State private var displayPlan: TranscriptDisplayPlan
     @State private var searchQuery = ""
     @State private var selectedSearchMatchID: String?
     @State private var searchMatches: [TranscriptSearchMatch]
+    @FocusState private var transcriptListIsFocused: Bool
 
     init(
         transcript: TurnSegmentedTranscript,
+        sentences: [TranscriptEditableSentence],
         activeTurnID: String?,
         activeSpanID: String?,
         spansPerChunk: Int,
+        selectedSentenceID: TranscriptEditableSentence.ID?,
+        cutCount: Int,
+        editStatusMessage: String?,
+        canDeleteSelectedSentence: Bool,
         canClose: Bool,
         closeTranscript: @escaping () -> Void,
-        seekToSpan: @escaping (TimedTranscriptSpan) -> Void
+        selectSentence: @escaping (TranscriptEditableSentence) -> Void,
+        deleteSelectedSentence: @escaping () -> Void
     ) {
         self.transcript = transcript
+        self.sentences = sentences
         self.activeTurnID = activeTurnID
         self.activeSpanID = activeSpanID
         self.spansPerChunk = spansPerChunk
+        self.selectedSentenceID = selectedSentenceID
+        self.cutCount = cutCount
+        self.editStatusMessage = editStatusMessage
+        self.canDeleteSelectedSentence = canDeleteSelectedSentence
         self.canClose = canClose
         self.closeTranscript = closeTranscript
-        self.seekToSpan = seekToSpan
+        self.selectSentence = selectSentence
+        self.deleteSelectedSentence = deleteSelectedSentence
         let displayPlan = TranscriptDisplayPlan(
             transcript: transcript,
-            spansPerChunk: spansPerChunk
+            sentences: sentences,
+            sentencesPerChunk: spansPerChunk
         )
         _displayPlan = State(
             initialValue: displayPlan)
@@ -54,10 +74,25 @@ struct TranscriptCardContent: View {
             updateSearchMatches(query: query)
         }
         .onChange(of: transcript) { _, transcript in
-            rebuildDisplayPlan(transcript: transcript, spansPerChunk: spansPerChunk)
+            rebuildDisplayPlan(
+                transcript: transcript,
+                sentences: sentences,
+                spansPerChunk: spansPerChunk
+            )
+        }
+        .onChange(of: sentences) { _, sentences in
+            rebuildDisplayPlan(
+                transcript: transcript,
+                sentences: sentences,
+                spansPerChunk: spansPerChunk
+            )
         }
         .onChange(of: spansPerChunk) { _, spansPerChunk in
-            rebuildDisplayPlan(transcript: transcript, spansPerChunk: spansPerChunk)
+            rebuildDisplayPlan(
+                transcript: transcript,
+                sentences: sentences,
+                spansPerChunk: spansPerChunk
+            )
         }
     }
 
@@ -71,6 +106,19 @@ struct TranscriptCardContent: View {
                 speakerCountChip
             }
 
+            if cutCount > 0 {
+                Text("\(cutCount) \(cutCount == 1 ? "cut" : "cuts")")
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+
+            if let editStatusMessage {
+                Text(editStatusMessage)
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .lineLimit(1)
+            }
+
             Spacer(minLength: 8)
 
             TranscriptSearchControl(
@@ -82,13 +130,23 @@ struct TranscriptCardContent: View {
             )
 
             Button {
-                copyTranscript(transcript)
+                copyTranscript(transcript, sentences: sentences)
             } label: {
                 Image(systemName: "doc.on.doc")
             }
             .buttonStyle(LuxelGlassCircleButtonStyle())
             .help("Copy transcript")
             .accessibilityLabel("Copy transcript")
+
+            Button {
+                deleteSelectedSentence()
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(LuxelGlassCircleButtonStyle())
+            .disabled(!canDeleteSelectedSentence)
+            .help("Cut selected transcript sentence")
+            .accessibilityLabel("Cut selected transcript sentence")
 
             if canClose {
                 Button {
@@ -150,9 +208,13 @@ struct TranscriptCardContent: View {
                         speakerChip: speakerChipInfo(for: chunk.turn),
                         isActiveTurn: chunk.turn.id == activeTurnID,
                         activeSpanID: activeSpanID,
+                        selectedSentenceID: selectedSentenceID,
                         matchedSearchSpanIDs: matchedSearchSpanIDs,
                         currentSearchSpanIDs: currentSearchSpanIDs,
-                        seekToSpan: seekToSpan
+                        selectSentence: { sentence in
+                            transcriptListIsFocused = true
+                            selectSentence(sentence)
+                        }
                     )
                     .id(chunk.id)
                     .listRowInsets(EdgeInsets(top: 1, leading: 14, bottom: 1, trailing: 14))
@@ -164,6 +226,14 @@ struct TranscriptCardContent: View {
             .scrollContentBackground(.hidden)
             .scrollIndicators(.never)
             .environment(\.defaultMinListRowHeight, 0)
+            .focusable()
+            .focused($transcriptListIsFocused)
+            .onDeleteCommand {
+                guard canDeleteSelectedSentence else {
+                    return
+                }
+                deleteSelectedSentence()
+            }
             .onChange(of: scrollTargetID) { _, targetID in
                 guard let targetID else {
                     return
@@ -184,10 +254,15 @@ struct TranscriptCardContent: View {
         return searchMatches.firstIndex { $0.id == selectedSearchMatchID }
     }
 
-    private func rebuildDisplayPlan(transcript: TurnSegmentedTranscript, spansPerChunk: Int) {
+    private func rebuildDisplayPlan(
+        transcript: TurnSegmentedTranscript,
+        sentences: [TranscriptEditableSentence],
+        spansPerChunk: Int
+    ) {
         displayPlan = TranscriptDisplayPlan(
             transcript: transcript,
-            spansPerChunk: spansPerChunk
+            sentences: sentences,
+            sentencesPerChunk: spansPerChunk
         )
         updateSearchMatches(query: searchQuery)
     }
@@ -245,12 +320,20 @@ struct TranscriptCardContent: View {
         )
     }
 
-    private func copyTranscript(_ transcript: TurnSegmentedTranscript) {
-        // Non-diarized transcripts copy exactly as before; speaker/source
-        // prefixes appear only when speaker labels exist.
-        let text = transcript.turns.map { turn in
+    private func copyTranscript(
+        _ transcript: TurnSegmentedTranscript,
+        sentences: [TranscriptEditableSentence]
+    ) {
+        let text = transcript.turns.compactMap { turn -> String? in
+            let turnText = sentences
+                .filter { $0.turnID == turn.id }
+                .map(\.text)
+                .joined(separator: " ")
+            guard !turnText.isEmpty else {
+                return nil
+            }
             guard !transcript.speakers.isEmpty else {
-                return turn.text
+                return turnText
             }
 
             var labels: [String] = []
@@ -262,10 +345,10 @@ struct TranscriptCardContent: View {
             }
 
             guard !labels.isEmpty else {
-                return turn.text
+                return turnText
             }
 
-            return "\(labels.joined(separator: " — ")): \(turn.text)"
+            return "\(labels.joined(separator: " — ")): \(turnText)"
         }
         .joined(separator: "\n\n")
         NSPasteboard.general.clearContents()

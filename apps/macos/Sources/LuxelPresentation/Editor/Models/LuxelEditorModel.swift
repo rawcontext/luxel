@@ -60,6 +60,9 @@ public final class LuxelEditorModel {
     var isTranscriptPanelVisible = false
     var transcriptExtractionStartedAt: Date?
     var transcriptFailureMessage: String?
+    var transcriptEditPlan: TimelineEditPlan = .empty
+    var selectedTranscriptSentenceID: TranscriptEditableSentence.ID?
+    var transcriptEditStatusMessage: String?
     var detectedSpeakerVoices: [DetectedSpeakerVoice] = []
     var knownSpeakerOptions: [KnownSpeakerProfile] = []
     var ignoredSpeakerVoiceIDs: Set<String> = []
@@ -119,6 +122,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored var frameGrabTask: Task<Void, Never>?
     @ObservationIgnored var previewAudioMixTask: Task<Void, Never>?
     @ObservationIgnored var transcriptTask: Task<Void, Never>?
+    @ObservationIgnored var previewCompositionTask: Task<Void, Never>?
     @ObservationIgnored var speechRecognitionAuthorizationTask: Task<Void, Never>?
     @ObservationIgnored var transcriptSourceContext: TranscriptSourceContext = .unknown
     @ObservationIgnored var exportMemoryByFormat: [ExportFormat: ExportMemory]

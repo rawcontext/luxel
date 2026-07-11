@@ -170,18 +170,21 @@ public struct CaptionSidecarDocument: Codable, Equatable, Sendable {
 public struct CaptionExportTimeMapper: Equatable, Sendable {
     public let trimRange: TimeRange
     public let speed: PlaybackSpeed
+    public let editPlan: TimelineEditPlan
 
     public init(
         trimRange: TimeRange,
-        speed: PlaybackSpeed = .normal
+        speed: PlaybackSpeed = .normal,
+        editPlan: TimelineEditPlan = .empty
     ) {
         self.trimRange = trimRange
         self.speed = speed
+        self.editPlan = editPlan
     }
 
     public func map(_ track: CaptionTrack) throws -> CaptionTrack {
         try CaptionTrack(
-            cues: track.cues.compactMap { cue in
+            cues: track.cues.flatMap { cue in
                 try map(cue)
             },
             language: track.language,
@@ -190,21 +193,14 @@ public struct CaptionExportTimeMapper: Equatable, Sendable {
         )
     }
 
-    private func map(_ cue: CaptionCue) throws -> CaptionCue? {
-        let start = max(cue.timeRange.start, trimRange.start)
-        let end = min(cue.timeRange.end, trimRange.end)
-
-        guard end > start else {
-            return nil
+    private func map(_ cue: CaptionCue) throws -> [CaptionCue] {
+        try EditedTimelineMapper(
+            trimRange: trimRange,
+            editPlan: editPlan,
+            speed: speed
+        ).mapSourceRange(cue.timeRange).map {
+            try CaptionCue(timeRange: $0, text: cue.text)
         }
-
-        return try CaptionCue(
-            timeRange: TimeRange(
-                start: (start - trimRange.start) / speed.value,
-                end: (end - trimRange.start) / speed.value
-            ),
-            text: cue.text
-        )
     }
 }
 

@@ -129,12 +129,31 @@ extension ExportModelTests {
             shouldMute: false,
             shouldCrop: true
         )
+        let mixedEditPlanRequest = try ExportRequest(
+            inputFileURL: URL(fileURLWithPath: "/tmp/input.mp4"),
+            format: .hevc,
+            pixelSize: PixelSize(width: 100, height: 200),
+            frameRate: FrameRate(30),
+            timeRange: TimeRange(start: 0, end: 10),
+            shouldMute: false,
+            shouldCrop: true,
+            editPlan: TimelineEditPlan(cuts: [
+                TimelineCut(
+                    id: "cut",
+                    sourceRange: TimeRange(start: 2, end: 3),
+                    kind: .transcriptSentence
+                )
+            ])
+        )
 
         #expect(throws: ExportModelError.mixedExportBatchSources) {
             _ = try ExportBatch([request, mixedSourceRequest])
         }
         #expect(throws: ExportModelError.mixedExportBatchTimeRanges) {
             _ = try ExportBatch([request, mixedRangeRequest])
+        }
+        #expect(throws: ExportModelError.mixedExportBatchEditPlans) {
+            _ = try ExportBatch([request, mixedEditPlanRequest])
         }
     }
 

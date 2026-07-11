@@ -11,12 +11,19 @@ extension AVFoundationMediaExporter {
     ) async throws -> AVFoundationVideoExportComposition {
         let request = input.request
         let composition = AVMutableComposition()
-        let sourceTimeRange = CMTimeRange(start: .zero, duration: plan.timeRange.duration)
+        let sourceSegments = try request.timelineMapper.sourceSegments
+        let sourceTimeRange = CMTimeRange(
+            start: .zero,
+            duration: CMTime(
+                seconds: try request.timelineMapper.unscaledOutputDuration,
+                preferredTimescale: 60_000
+            )
+        )
         let outputDuration = CMTime(seconds: request.outputDuration, preferredTimescale: 60_000)
         let videoTrack = try addVideoTrack(
             to: composition,
             from: sourceVideoTrack,
-            sourceTimeRange: plan.timeRange
+            sourceSegments: sourceSegments
         )
         let audioTracks: [AVMutableCompositionTrack]
         if !plan.shouldMute, let preparedAudio = input.preparedAudio {
@@ -28,7 +35,7 @@ extension AVFoundationMediaExporter {
             audioTracks = try await addAudioTracks(
                 to: composition,
                 from: asset,
-                sourceTimeRange: plan.timeRange
+                sourceSegments: sourceSegments
             )
         } else {
             audioTracks = []
@@ -53,7 +60,14 @@ extension AVFoundationMediaExporter {
         let plan = try planFactory.makePlan(for: request, outputFileURL: outputFileURL)
         let asset = AVURLAsset(url: plan.inputFileURL)
         let composition = AVMutableComposition()
-        let sourceCompositionTimeRange = CMTimeRange(start: .zero, duration: plan.timeRange.duration)
+        let sourceSegments = try request.timelineMapper.sourceSegments
+        let sourceCompositionTimeRange = CMTimeRange(
+            start: .zero,
+            duration: CMTime(
+                seconds: try request.timelineMapper.unscaledOutputDuration,
+                preferredTimescale: 60_000
+            )
+        )
         let outputDuration = CMTime(seconds: request.outputDuration, preferredTimescale: 60_000)
         let outputCompositionTimeRange = CMTimeRange(start: .zero, duration: outputDuration)
         let compositionAudioTracks: [AVMutableCompositionTrack]
@@ -67,7 +81,7 @@ extension AVFoundationMediaExporter {
             compositionAudioTracks = try await addAudioTracks(
                 to: composition,
                 from: asset,
-                sourceTimeRange: plan.timeRange
+                sourceSegments: sourceSegments
             )
         } else {
             compositionAudioTracks = []
@@ -169,7 +183,7 @@ extension AVFoundationMediaExporter {
     func addVideoTrack(
         to composition: AVMutableComposition,
         from sourceVideoTrack: AVAssetTrack,
-        sourceTimeRange: CMTimeRange
+        sourceSegments: [SourceMediaSegment]
     ) throws -> AVMutableCompositionTrack {
         guard
             let videoTrack = composition.addMutableTrack(
@@ -180,14 +194,20 @@ extension AVFoundationMediaExporter {
             throw AVFoundationMediaExporterError.cannotCreateVideoTrack
         }
 
-        try videoTrack.insertTimeRange(sourceTimeRange, of: sourceVideoTrack, at: .zero)
+        for segment in sourceSegments {
+            try videoTrack.insertTimeRange(
+                segment.sourceRange.cmTimeRange,
+                of: sourceVideoTrack,
+                at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
+            )
+        }
         return videoTrack
     }
 
     func addAudioTracks(
         to composition: AVMutableComposition,
         from asset: AVURLAsset,
-        sourceTimeRange: CMTimeRange
+        sourceSegments: [SourceMediaSegment]
     ) async throws -> [AVMutableCompositionTrack] {
         var audioTracks: [AVMutableCompositionTrack] = []
 
@@ -201,7 +221,13 @@ extension AVFoundationMediaExporter {
                 throw AVFoundationMediaExporterError.cannotCreateAudioTrack
             }
 
-            try audioTrack.insertTimeRange(sourceTimeRange, of: sourceAudioTrack, at: .zero)
+            for segment in sourceSegments {
+                try audioTrack.insertTimeRange(
+                    segment.sourceRange.cmTimeRange,
+                    of: sourceAudioTrack,
+                    at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
+                )
+            }
             audioTracks.append(audioTrack)
         }
 
@@ -213,14 +239,18 @@ extension AVFoundationMediaExporter {
         preparedAudio: PreparedAudioAsset
     ) async throws -> [AVMutableCompositionTrack] {
         let asset = AVURLAsset(url: preparedAudio.fileURL)
-        let timeRange = CMTimeRange(
-            start: .zero,
-            duration: CMTime(seconds: preparedAudio.duration, preferredTimescale: 60_000)
-        )
         return try await addAudioTracks(
             to: composition,
             from: asset,
-            sourceTimeRange: timeRange
+            sourceSegments: [
+                SourceMediaSegment(
+                    sourceRange: try TimeRange(
+                        start: 0,
+                        end: preparedAudio.duration
+                    ),
+                    outputStart: 0
+                )
+            ]
         )
     }
 
@@ -288,6 +318,7 @@ extension AVFoundationMediaExporter {
             AudioPeakAnalysisRequest(
                 inputFileURL: request.inputFileURL,
                 timeRange: request.timeRange,
+                editPlan: request.editPlan,
                 audioTracks: audibleTracks
             ))
         return mixPlan.resolvedGains(measuredPeaks: measuredPeaks)[.system]
@@ -317,5 +348,14 @@ extension AVFoundationMediaExporter {
 
     func requestedOutputFileTypeName(plan: AVFoundationExportPlan) -> String {
         plan.outputFileURL.pathExtension
+    }
+}
+
+private extension TimeRange {
+    var cmTimeRange: CMTimeRange {
+        CMTimeRange(
+            start: CMTime(seconds: start, preferredTimescale: 60_000),
+            duration: CMTime(seconds: duration, preferredTimescale: 60_000)
+        )
     }
 }

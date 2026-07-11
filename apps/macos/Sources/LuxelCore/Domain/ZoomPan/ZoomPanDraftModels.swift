@@ -3,38 +3,37 @@ import Foundation
 public struct ZoomExportTimeMapper: Equatable, Sendable {
     public let trimRange: TimeRange
     public let speed: PlaybackSpeed
+    public let editPlan: TimelineEditPlan
 
     public init(
         trimRange: TimeRange,
-        speed: PlaybackSpeed = .normal
+        speed: PlaybackSpeed = .normal,
+        editPlan: TimelineEditPlan = .empty
     ) {
         self.trimRange = trimRange
         self.speed = speed
+        self.editPlan = editPlan
     }
 
     public func map(_ blocks: [ZoomBlock]) throws -> [ZoomBlock] {
-        try blocks.compactMap { block in
+        try blocks.flatMap { block in
             try map(block)
         }
     }
 
-    private func map(_ block: ZoomBlock) throws -> ZoomBlock? {
-        let start = max(block.timeRange.start, trimRange.start)
-        let end = min(block.timeRange.end, trimRange.end)
-
-        guard end > start else {
-            return nil
+    private func map(_ block: ZoomBlock) throws -> [ZoomBlock] {
+        try EditedTimelineMapper(
+            trimRange: trimRange,
+            editPlan: editPlan,
+            speed: speed
+        ).mapSourceRange(block.timeRange).map { range in
+            try ZoomBlock(
+                timeRange: range,
+                targetRect: block.targetRect,
+                zoom: block.zoom,
+                transitionOverride: block.transitionOverride.map { $0 / speed.value }
+            )
         }
-
-        return try ZoomBlock(
-            timeRange: TimeRange(
-                start: (start - trimRange.start) / speed.value,
-                end: (end - trimRange.start) / speed.value
-            ),
-            targetRect: block.targetRect,
-            zoom: block.zoom,
-            transitionOverride: block.transitionOverride.map { $0 / speed.value }
-        )
     }
 }
 

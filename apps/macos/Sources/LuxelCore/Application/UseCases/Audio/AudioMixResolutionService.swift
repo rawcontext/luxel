@@ -41,6 +41,7 @@ public struct AudioMixResolutionService: Sendable {
             AudioPeakAnalysisRequest(
                 inputFileURL: request.inputFileURL,
                 timeRange: request.timeRange,
+                editPlan: request.editPlan,
                 audioTracks: audioTracksToAnalyze
             ))
         return mixPlan.resolvedGains(measuredPeaks: measuredPeaks)

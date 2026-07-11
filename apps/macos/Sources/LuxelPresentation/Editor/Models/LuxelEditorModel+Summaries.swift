@@ -21,6 +21,12 @@ extension LuxelEditorModel {
             formats: supportedFormats,
             trimStart: trimStart,
             trimEnd: trimEnd,
+            transcriptCuts: transcriptEditPlan.cuts.map {
+                ExportEstimateTaskID.TranscriptCut(
+                    start: $0.sourceRange.start,
+                    end: $0.sourceRange.end
+                )
+            },
             outputWidth: outputWidth,
             outputHeight: outputHeight,
             frameRate: frameRate,

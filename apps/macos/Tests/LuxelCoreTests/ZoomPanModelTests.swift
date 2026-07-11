@@ -252,6 +252,28 @@ extension ZoomPanModelTests {
             ])
     }
 
+    @Test("export time mapper splits blocks around timeline cuts")
+    func exportTimeMapperSplitsBlocksAroundCuts() throws {
+        let block = try zoomBlock(start: 1, end: 7)
+        let mapper = try ZoomExportTimeMapper(
+            trimRange: TimeRange(start: 0, end: 8),
+            editPlan: TimelineEditPlan(cuts: [
+                TimelineCut(
+                    id: "cut",
+                    sourceRange: TimeRange(start: 3, end: 5),
+                    kind: .transcriptSentence
+                )
+            ])
+        )
+
+        #expect(
+            try mapper.map([block]).map(\.timeRange) == [
+                TimeRange(start: 1, end: 3),
+                TimeRange(start: 3, end: 5)
+            ]
+        )
+    }
+
     func zoomBlock(
         start: TimeInterval,
         end: TimeInterval,

@@ -14,10 +14,7 @@ extension ExportAudioPreparationWorker {
             throw ExportAudioPreparationError.missingAudioTrack
         }
 
-        let sourceTimeRange = CMTimeRange(
-            start: CMTime(seconds: request.timeRange.start, preferredTimescale: 60_000),
-            duration: CMTime(seconds: request.timeRange.duration, preferredTimescale: 60_000)
-        )
+        let sourceSegments = try request.timelineMapper.sourceSegments
         let composition = AVMutableComposition()
         let tracks = try sourceTracks.map { sourceTrack in
             guard let track = composition.addMutableTrack(
@@ -26,7 +23,22 @@ extension ExportAudioPreparationWorker {
             ) else {
                 throw ExportAudioPreparationError.unsupportedAudioLayout
             }
-            try track.insertTimeRange(sourceTimeRange, of: sourceTrack, at: .zero)
+            for segment in sourceSegments {
+                try track.insertTimeRange(
+                    CMTimeRange(
+                        start: CMTime(
+                            seconds: segment.sourceRange.start,
+                            preferredTimescale: 60_000
+                        ),
+                        duration: CMTime(
+                            seconds: segment.sourceRange.duration,
+                            preferredTimescale: 60_000
+                        )
+                    ),
+                    of: sourceTrack,
+                    at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
+                )
+            }
             return track
         }
 

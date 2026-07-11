@@ -129,6 +129,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
     public let cropRect: CaptureRect?
     public let quality: ExportQuality
     public let speed: PlaybackSpeed
+    public let editPlan: TimelineEditPlan
     public let gifOptions: GIFRenderOptions?
     public let cursorOptions: CursorRenderOptions?
     public let keystrokeOptions: KeystrokeRenderOptions?
@@ -149,6 +150,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         cropRect: CaptureRect? = nil,
         quality: ExportQuality = .balanced,
         speed: PlaybackSpeed = .normal,
+        editPlan: TimelineEditPlan = .empty,
         gifOptions: GIFRenderOptions? = nil,
         cursorOptions: CursorRenderOptions? = nil,
         keystrokeOptions: KeystrokeRenderOptions? = nil,
@@ -168,6 +170,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         self.cropRect = cropRect
         self.quality = quality
         self.speed = speed
+        self.editPlan = editPlan
         self.gifOptions = gifOptions
         self.cursorOptions = cursorOptions
         self.keystrokeOptions = keystrokeOptions
@@ -189,6 +192,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         case cropRect
         case quality
         case speed
+        case editPlan
         case gifOptions
         case cursorOptions
         case keystrokeOptions
@@ -216,6 +220,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         speed =
             try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed)
             ?? .normal
+        editPlan = try container.decodeIfPresent(TimelineEditPlan.self, forKey: .editPlan) ?? .empty
         gifOptions = try container.decodeIfPresent(GIFRenderOptions.self, forKey: .gifOptions)
         cursorOptions = try container.decodeIfPresent(CursorRenderOptions.self, forKey: .cursorOptions)
         keystrokeOptions = try container.decodeIfPresent(
@@ -241,6 +246,7 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
                 cropRect: cropRect,
                 quality: quality,
                 speed: speed,
+                editPlan: editPlan,
                 gifOptions: gifOptions,
                 cursorOptions: cursorOptions,
                 keystrokeOptions: keystrokeOptions,

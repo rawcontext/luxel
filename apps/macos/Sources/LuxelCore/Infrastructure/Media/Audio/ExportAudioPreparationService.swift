@@ -127,9 +127,15 @@ private struct AudioPreparationKey: Hashable {
         let isMuted: Bool
     }
 
+    struct Cut: Hashable {
+        let start: TimeInterval
+        let end: TimeInterval
+    }
+
     let sourceURL: URL
     let trimStart: TimeInterval
     let trimEnd: TimeInterval
+    let cuts: [Cut]
     let tracks: [Track]
     let normalizesPeak: Bool
     let studioVoiceEnabled: Bool
@@ -138,6 +144,9 @@ private struct AudioPreparationKey: Hashable {
         sourceURL = request.inputFileURL.standardizedFileURL
         trimStart = request.timeRange.start
         trimEnd = request.timeRange.end
+        cuts = request.editPlan.cuts.map {
+            Cut(start: $0.sourceRange.start, end: $0.sourceRange.end)
+        }
         tracks = request.audioMix?.tracks.map {
             Track(kind: $0.kind, volume: $0.volume, isMuted: $0.isMuted)
         } ?? []
@@ -211,7 +220,7 @@ final class ExportAudioPreparationWorker: @unchecked Sendable {
 
             return PreparedAudioAsset(
                 fileURL: outputURL,
-                duration: request.timeRange.duration,
+                duration: try request.timelineMapper.unscaledOutputDuration,
                 sampleRate: ExportAudioPreparationService.sampleRate,
                 channelCount: ExportAudioPreparationService.channelCount
             )

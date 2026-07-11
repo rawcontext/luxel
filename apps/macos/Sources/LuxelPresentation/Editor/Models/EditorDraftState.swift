@@ -20,7 +20,8 @@ struct EditorDraftState: Equatable, Sendable {
         quality: .balanced,
         gifLoopModeKind: .forever,
         gifLoopCount: 3,
-        gifDithering: .auto
+        gifDithering: .auto,
+        transcriptEditPlan: .empty
     )
 
     let format: ExportFormat
@@ -41,4 +42,5 @@ struct EditorDraftState: Equatable, Sendable {
     let gifLoopModeKind: EditorGIFLoopModeKind
     let gifLoopCount: Int
     let gifDithering: GIFDitheringMode
+    let transcriptEditPlan: TimelineEditPlan
 }

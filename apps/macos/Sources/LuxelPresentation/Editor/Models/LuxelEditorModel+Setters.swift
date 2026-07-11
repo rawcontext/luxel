@@ -179,6 +179,9 @@ extension LuxelEditorModel {
         let maxStart = max(0, min(duration - minimumTrimDuration, trimEnd - minimumTrimDuration))
         trimStart = min(max(value, 0), maxStart)
         seekPlaybackIntoTrimRangeIfNeeded()
+        if !transcriptEditPlan.cuts.isEmpty {
+            rebuildEditedPreview()
+        }
         schedulePreviewAudioMixUpdate()
         recordEditorDraftChange(coalescingToken: "trim-start")
     }
@@ -187,6 +190,9 @@ extension LuxelEditorModel {
         let minEnd = min(duration, trimStart + minimumTrimDuration)
         trimEnd = min(max(value, minEnd), duration)
         seekPlaybackIntoTrimRangeIfNeeded()
+        if !transcriptEditPlan.cuts.isEmpty {
+            rebuildEditedPreview()
+        }
         schedulePreviewAudioMixUpdate()
         recordEditorDraftChange(coalescingToken: "trim-end")
     }

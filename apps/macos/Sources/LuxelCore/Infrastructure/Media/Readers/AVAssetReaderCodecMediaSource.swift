@@ -39,17 +39,18 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
         let sourceVideoTrack = try await firstVideoTrack(in: asset)
         let sourceAudioTracks = try await asset.loadTracks(withMediaType: .audio)
         let composition = AVMutableComposition()
-        let sourceTimeRange = CMTimeRange(
-            start: CMTime(seconds: request.timeRange.start, preferredTimescale: 600),
-            duration: CMTime(seconds: request.timeRange.duration, preferredTimescale: 600)
+        let sourceSegments = try request.timelineMapper.sourceSegments
+        let unscaledDuration = try request.timelineMapper.unscaledOutputDuration
+        let sourceCompositionTimeRange = CMTimeRange(
+            start: .zero,
+            duration: CMTime(seconds: unscaledDuration, preferredTimescale: 60_000)
         )
-        let sourceCompositionTimeRange = CMTimeRange(start: .zero, duration: sourceTimeRange.duration)
         let outputDuration = CMTime(seconds: request.outputDuration, preferredTimescale: 60_000)
         let outputCompositionTimeRange = CMTimeRange(start: .zero, duration: outputDuration)
         let compositionVideoTrack = try addVideoTrack(
             to: composition,
             from: sourceVideoTrack,
-            sourceTimeRange: sourceTimeRange
+            sourceSegments: sourceSegments
         )
 
         if request.speed != .normal {
@@ -71,7 +72,7 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
             try await prepareAudioReader(
                 sourceAudioTracks: sourceAudioTracks,
                 timing: CodecAudioTiming(
-                    sourceTimeRange: sourceTimeRange,
+                    sourceSegments: sourceSegments,
                     sourceCompositionTimeRange: sourceCompositionTimeRange,
                     outputDuration: outputDuration,
                     speed: request.speed
@@ -128,7 +129,7 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
 }
 
 struct CodecAudioTiming {
-    let sourceTimeRange: CMTimeRange
+    let sourceSegments: [SourceMediaSegment]
     let sourceCompositionTimeRange: CMTimeRange
     let outputDuration: CMTime
     let speed: PlaybackSpeed
@@ -136,7 +137,7 @@ struct CodecAudioTiming {
 
 struct CodecAudioSource {
     let tracks: [AVAssetTrack]
-    let timeRange: CMTimeRange
+    let sourceSegments: [SourceMediaSegment]
     let retainedAsset: AVURLAsset?
 }
 

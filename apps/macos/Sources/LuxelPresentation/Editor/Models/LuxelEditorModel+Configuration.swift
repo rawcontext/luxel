@@ -52,7 +52,12 @@ extension LuxelEditorModel {
         speechRecognitionAuthorizationTask = nil
         transcriptTask?.cancel()
         transcriptTask = nil
+        previewCompositionTask?.cancel()
+        previewCompositionTask = nil
         transcript = nil
+        transcriptEditPlan = .empty
+        selectedTranscriptSentenceID = nil
+        transcriptEditStatusMessage = nil
         isTranscriptExtractionActive = false
         isTranscriptPanelVisible = false
         transcriptExtractionStartedAt = nil
@@ -104,7 +109,12 @@ extension LuxelEditorModel {
         speechRecognitionAuthorizationTask = nil
         transcriptTask?.cancel()
         transcriptTask = nil
+        previewCompositionTask?.cancel()
+        previewCompositionTask = nil
         transcript = nil
+        transcriptEditPlan = .empty
+        selectedTranscriptSentenceID = nil
+        transcriptEditStatusMessage = nil
         isTranscriptExtractionActive = false
         isTranscriptPanelVisible = false
         transcriptExtractionStartedAt = nil
@@ -191,6 +201,11 @@ extension LuxelEditorModel {
         estimatingExportSizeFormats = []
         previewAudioMixTask?.cancel()
         previewAudioMixTask = nil
+        previewCompositionTask?.cancel()
+        previewCompositionTask = nil
+        transcriptEditPlan = .empty
+        selectedTranscriptSentenceID = nil
+        transcriptEditStatusMessage = nil
         player.replaceCurrentItem(with: nil)
         status = .failed(errorMessage(error))
         resetEditorUndoStack()
