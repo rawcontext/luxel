@@ -5,6 +5,7 @@ struct TranscriptSearchControl: View {
 
     let selectedMatchIndex: Int?
     let matchCount: Int
+    var isCompact = false
     let selectPrevious: () -> Void
     let selectNext: () -> Void
 
@@ -29,7 +30,8 @@ struct TranscriptSearchControl: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .frame(width: 170)
+            .frame(width: isCompact ? nil : 170)
+            .frame(maxWidth: isCompact ? .infinity : nil)
             .background {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(.black.opacity(0.22))

@@ -9,6 +9,8 @@ enum EditorStageChromeStyle {
 struct EditorPlaybackCapsule: View {
     @Bindable var model: LuxelEditorModel
     @State private var volume: Double = 1
+    @AppStorage(TranscriptPlaybackPreferences.autoPlayDefaultsKey)
+    private var isTranscriptAutoPlayEnabled = true
 
     var body: some View {
         VStack(spacing: 8) {
@@ -22,8 +24,8 @@ struct EditorPlaybackCapsule: View {
 
                 Spacer(minLength: 12)
 
-                Color.clear
-                    .frame(width: 110, height: 1)
+                autoPlayControls
+                    .frame(width: 110, alignment: .trailing)
             }
 
             scrubberRow
@@ -50,9 +52,21 @@ struct EditorPlaybackCapsule: View {
                 }
                 .shadow(color: .black.opacity(0.5), radius: 16, y: 6)
         }
-        .frame(maxWidth: 560)
         .onAppear {
             volume = Double(model.player.volume)
+        }
+    }
+
+    @ViewBuilder
+    private var autoPlayControls: some View {
+        if model.visibleTranscript != nil {
+            Toggle("Auto-play", isOn: $isTranscriptAutoPlayEnabled)
+                .toggleStyle(LuxelGlassCheckboxToggleStyle())
+                .fixedSize()
+                .help("Automatically start playback when selecting a transcript word.")
+        } else {
+            Color.clear
+                .frame(height: 1)
         }
     }
 

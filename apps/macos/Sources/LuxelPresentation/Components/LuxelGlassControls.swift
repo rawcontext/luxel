@@ -217,20 +217,12 @@ public struct LuxelGlassIsland<Content: View>: View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
         content
-            .glassEffect(.clear, in: .rect(cornerRadius: cornerRadius))
-            .background(
-                LinearGradient(
-                    colors: [LuxelGlassTheme.windowFillTop, LuxelGlassTheme.windowFillBottom],
-                    startPoint: .top,
-                    endPoint: .bottom
-                ),
-                in: shape
-            )
+            .background(LuxelGlassTheme.islandFill, in: shape)
             .overlay {
                 shape
                     .strokeBorder(
                         LinearGradient(
-                            colors: [.white.opacity(0.18), .white.opacity(0.06)],
+                            colors: [LuxelGlassTheme.islandHighlight, .clear],
                             startPoint: .top,
                             endPoint: .bottom
                         ),
