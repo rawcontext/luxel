@@ -54,13 +54,19 @@ public final class LuxelEditorModel {
     var transcript: TurnSegmentedTranscript? {
         didSet {
             refreshDetectedSpeakerVoices()
+            rebuildTranscriptWordCache()
         }
     }
     var isTranscriptExtractionActive = false
     var isTranscriptPanelVisible = false
     var transcriptExtractionStartedAt: Date?
     var transcriptFailureMessage: String?
-    var transcriptEditPlan: TimelineEditPlan = .empty
+    var transcriptEditPlan: TimelineEditPlan = .empty {
+        didSet {
+            refreshVisibleTranscriptWordCache()
+        }
+    }
+    var transcriptDisplayRevision = 0
     var selectedTranscriptWordIDs: Set<TranscriptEditableWord.ID> = []
     var transcriptWordSelectionAnchorID: TranscriptEditableWord.ID?
     var transcriptEditStatusMessage: String?
@@ -129,6 +135,12 @@ public final class LuxelEditorModel {
     @ObservationIgnored var previewCompositionTask: Task<Void, Never>?
     @ObservationIgnored var speechRecognitionAuthorizationTask: Task<Void, Never>?
     @ObservationIgnored var transcriptSourceContext: TranscriptSourceContext = .unknown
+    @ObservationIgnored var cachedTranscriptWords: [TranscriptEditableWord] = []
+    @ObservationIgnored var cachedVisibleTranscriptWords: [TranscriptEditableWord] = []
+    @ObservationIgnored var cachedVisibleTranscriptWordIDs: Set<TranscriptEditableWord.ID> = []
+    @ObservationIgnored var cachedVisibleTranscriptWordIndexByID:
+        [TranscriptEditableWord.ID: Int] = [:]
+    @ObservationIgnored var cachedVisibleTranscriptTurnIDs: Set<TranscriptTurn.ID> = []
     @ObservationIgnored var exportMemoryByFormat: [ExportFormat: ExportMemory]
     @ObservationIgnored var lastSelectedExportFormat: ExportFormat?
     @ObservationIgnored var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?

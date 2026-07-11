@@ -8,6 +8,12 @@ struct TranscriptDisplayPlan {
     private let chunkIDBySpanID: [String: String]
     private let searchTurns: [TranscriptSearchTurn]
 
+    init() {
+        chunks = []
+        chunkIDBySpanID = [:]
+        searchTurns = []
+    }
+
     init(
         transcript: TurnSegmentedTranscript,
         words: [TranscriptEditableWord],
