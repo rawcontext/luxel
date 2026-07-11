@@ -103,15 +103,21 @@ struct TranscriptCardDiscoverabilityTests {
         let reopened = try content(guidanceDefaults: defaults, deleteSelectedWord: { false })
         #expect(!reopened.isTranscriptAutoPlayEnabled)
 
-        let source = try String(
+        let cardSource = try String(
             contentsOf: packageRoot.appending(
                 path: "Sources/LuxelPresentation/Editor/Views/TranscriptCardContent.swift"
             ),
             encoding: .utf8
         )
-        #expect(source.contains("Toggle(\"Auto-play\""))
-        #expect(source.contains(".toggleStyle(.checkbox)"))
-        #expect(source.contains("isTranscriptAutoPlayEnabled"))
+        let capsuleSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/EditorPlaybackCapsule.swift"
+            ),
+            encoding: .utf8
+        )
+        #expect(capsuleSource.contains("Toggle(\"Auto-play\""))
+        #expect(capsuleSource.contains("TranscriptPlaybackPreferences.autoPlayDefaultsKey"))
+        #expect(cardSource.contains("isTranscriptAutoPlayEnabled"))
     }
 
     private func content(

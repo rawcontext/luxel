@@ -176,13 +176,6 @@ struct TranscriptCardContent: View {
             .help("Copy transcript")
             .accessibilityLabel("Copy transcript")
 
-            Toggle("Auto-play", isOn: $isTranscriptAutoPlayEnabled)
-                .toggleStyle(.checkbox)
-                .font(.system(size: 10.5, weight: .medium))
-                .foregroundStyle(.white.opacity(0.8))
-                .fixedSize()
-                .help("Automatically start playback when selecting a transcript word.")
-
             if canDeleteSelectedWord {
                 cutSelectionButton
             }
