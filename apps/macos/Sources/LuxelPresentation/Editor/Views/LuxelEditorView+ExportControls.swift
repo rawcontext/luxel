@@ -155,9 +155,8 @@ extension LuxelEditorView {
 
             editorDisclosureCard("Format") {
                 VStack(alignment: .leading, spacing: 12) {
-                    controlRow("Format") {
-                        formatMenu
-                    }
+                    formatMenu
+                        .frame(maxWidth: .infinity, alignment: .trailing)
 
                     if model.canChooseQuality {
                         controlRow("Quality") {

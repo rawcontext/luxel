@@ -19,16 +19,14 @@ extension TranscriptCardContent {
                 }
             }
 
-            Text(
-                transcript.speakers.count == 1
-                    ? "1 Speaker" : "\(transcript.speakers.count) Speakers"
-            )
-            .font(.system(size: 11.5, weight: .medium))
-            .foregroundStyle(.white.opacity(0.9))
+            Text("\(transcript.speakers.count)")
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.9))
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+        .background(.white.opacity(0.07), in: Capsule(style: .continuous))
+        .help("Speaker count")
         .accessibilityLabel("\(transcript.speakers.count) speakers detected")
     }
 

@@ -21,8 +21,8 @@ struct TranscriptCardDiscoverabilityTests {
         #expect(source.contains(".accessibilityValue(isSelected ? \"Selected\" : \"Not selected\")"))
     }
 
-    @Test("selection reveals a media-specific cut action with Delete equivalence")
-    func selectionCutActionConfiguration() throws {
+    @Test("transcript editing actions use adjacent icon controls with tooltips")
+    func transcriptEditingActionConfiguration() throws {
         let cardSource = try String(
             contentsOf: packageRoot.appending(
                 path: "Sources/LuxelPresentation/Editor/Views/TranscriptCardContent.swift"
@@ -38,14 +38,39 @@ struct TranscriptCardDiscoverabilityTests {
         let source = cardSource + editingSource
 
         #expect(source.contains("if canDeleteSelectedWord"))
-        #expect(source.contains("Label(\"Cut from recording\", systemImage: \"scissors\")"))
+        #expect(source.contains("Image(systemName: \"scissors\")"))
+        #expect(source.contains("Image(systemName: \"list.bullet.rectangle.portrait\")"))
+        #expect(source.contains("Image(systemName: \"arrow.uturn.backward\")"))
+        #expect(source.contains("cutReviewMenu(side: side)"))
+        #expect(source.contains("cutSelectionButton(side: side)"))
         #expect(source.contains(".onDeleteCommand"))
+        #expect(source.contains("Cut selected words from the recording (Delete)"))
         #expect(source.contains(".accessibilityLabel(\"Cut selected words from recording\")"))
         #expect(source.contains("if canUndoLastCut"))
-        #expect(source.contains("Button(\"Undo\")"))
         #expect(source.contains("if !cutReviewItems.isEmpty"))
         #expect(source.contains("restoreCut(cut.id)"))
         #expect(source.contains("Review and restore removed transcript ranges"))
+    }
+
+    @Test("speaker and format labels avoid repeated toolbar text")
+    func compactLabels() throws {
+        let actionSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/TranscriptCardContent+Actions.swift"
+            ),
+            encoding: .utf8
+        )
+        let exportSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/LuxelEditorView+ExportControls.swift"
+            ),
+            encoding: .utf8
+        )
+
+        #expect(actionSource.contains("Text(\"\\(transcript.speakers.count)\")"))
+        #expect(!actionSource.contains("\\(transcript.speakers.count) Speakers"))
+        #expect(exportSource.contains("editorDisclosureCard(\"Format\")"))
+        #expect(!exportSource.contains("controlRow(\"Format\")"))
     }
 
     @Test("guidance dismissal and a successful cut persist")
