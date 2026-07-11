@@ -60,6 +60,7 @@ public final class LuxelEditorModel {
     var isTranscriptExtractionActive = false
     var isTranscriptPanelVisible = false
     var transcriptExtractionStartedAt: Date?
+    var transcriptExtractionProgress: Double?
     var transcriptFailureMessage: String?
     var transcriptEditPlan: TimelineEditPlan = .empty {
         didSet {

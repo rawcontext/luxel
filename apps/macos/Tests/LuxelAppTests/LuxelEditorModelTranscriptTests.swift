@@ -131,7 +131,8 @@ extension LuxelEditorModelTranscriptTests {
         let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 92)
         let transcriptService = SpyAudioTranscriptService(
             transcript: try helper.sampleTranscript(source: .microphone),
-            delay: .milliseconds(150)
+            delay: .milliseconds(150),
+            progressFractions: [0.2, 0.6]
         )
         let model = helper.makeModel(
             metadataReader: StubMetadataReader(source: source),
@@ -146,11 +147,14 @@ extension LuxelEditorModelTranscriptTests {
         )
 
         try await waitForTranscriptProgress(true, model: model)
+        try await waitForTranscriptFraction(0.6, model: model)
         #expect(model.visibleTranscript == nil)
+        #expect(model.transcriptExtractionProgress == 0.6)
 
         _ = try await helper.waitForTranscript(model)
         #expect(!model.shouldShowTranscriptProgress)
         #expect(!model.isTranscriptExtractionActive)
+        #expect(model.transcriptExtractionProgress == nil)
     }
 
     @Test("transcript progress hides after extraction failure")
@@ -356,6 +360,21 @@ extension LuxelEditorModelTranscriptTests {
         }
 
         #expect(model.shouldShowTranscriptProgress == expected)
+    }
+
+    private func waitForTranscriptFraction(
+        _ expected: Double,
+        model: LuxelEditorModel
+    ) async throws {
+        for _ in 0..<100 {
+            if model.transcriptExtractionProgress == expected {
+                return
+            }
+
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        #expect(model.transcriptExtractionProgress == expected)
     }
 
     private func waitForSpeechRecognitionState(

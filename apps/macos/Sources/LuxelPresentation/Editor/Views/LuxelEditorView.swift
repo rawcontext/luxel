@@ -251,7 +251,7 @@ extension LuxelEditorView {
                 .frame(width: 32, height: 32)
                 .background {
                     Circle()
-                        .fill(EditorStageChromeStyle.fill)
+                        .fill(EditorStageChromeStyle.navigationFill)
                         .overlay {
                             Circle()
                                 .strokeBorder(.white.opacity(0.12), lineWidth: 1)

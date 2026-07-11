@@ -2,6 +2,10 @@ import Foundation
 
 public protocol AudioTranscriptService: Sendable {
     func transcript(for request: AudioTranscriptRequest) async throws -> TurnSegmentedTranscript?
+    func transcript(
+        for request: AudioTranscriptRequest,
+        progress: @escaping SpeechTranscriptionProgressHandler
+    ) async throws -> TurnSegmentedTranscript?
     /// Persists a caller-updated transcript (for example after renaming a speaker)
     /// under the same effective cache key the service would use for `request`.
     func storeUpdatedTranscript(
@@ -11,6 +15,15 @@ public protocol AudioTranscriptService: Sendable {
 }
 
 extension AudioTranscriptService {
+    public func transcript(
+        for request: AudioTranscriptRequest,
+        progress: @escaping SpeechTranscriptionProgressHandler
+    ) async throws -> TurnSegmentedTranscript? {
+        let transcript = try await transcript(for: request)
+        progress(SpeechTranscriptionProgress(fractionCompleted: 1))
+        return transcript
+    }
+
     public func storeUpdatedTranscript(
         _ transcript: TurnSegmentedTranscript,
         for request: AudioTranscriptRequest
@@ -179,6 +192,21 @@ public enum TranscriptSpeakerCountHint: Equatable, Hashable, Sendable {
 
 public protocol TimedSpeechTranscriber: Sendable {
     func transcribe(_ request: TimedSpeechTranscriptionRequest) async throws -> [TimedTranscriptSpan]
+    func transcribe(
+        _ request: TimedSpeechTranscriptionRequest,
+        progress: @escaping SpeechTranscriptionProgressHandler
+    ) async throws -> [TimedTranscriptSpan]
+}
+
+extension TimedSpeechTranscriber {
+    public func transcribe(
+        _ request: TimedSpeechTranscriptionRequest,
+        progress: @escaping SpeechTranscriptionProgressHandler
+    ) async throws -> [TimedTranscriptSpan] {
+        let spans = try await transcribe(request)
+        progress(SpeechTranscriptionProgress(fractionCompleted: 1))
+        return spans
+    }
 }
 
 public struct TimedSpeechTranscriptionRequest: Equatable, Sendable {

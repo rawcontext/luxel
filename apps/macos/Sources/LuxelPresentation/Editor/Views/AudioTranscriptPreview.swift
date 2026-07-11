@@ -55,27 +55,43 @@ struct AudioTranscriptPreview: View {
     }
 
     private func transcriptProgressRow(at date: Date) -> some View {
-        LuxelGlassIsland(cornerRadius: 18) {
-            HStack(spacing: 10) {
-                Image(systemName: "clock")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.7))
+        HStack(spacing: 8) {
+            Image(systemName: "clock")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.6))
 
-                Text(transcriptProgressTitle(at: date))
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.75))
-                    .lineLimit(1)
+            Text(transcriptProgressTitle(at: date))
+                .font(.system(size: 11.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.72))
+                .lineLimit(1)
 
-                TranscriptProgressBar()
-                    .frame(maxWidth: .infinity)
-
-                if model.canCloseTranscriptPanel {
-                    closeTranscriptButton
-                }
+            if let progress = model.transcriptExtractionProgress {
+                ProgressView(value: progress)
+                    .progressViewStyle(.linear)
+                    .controlSize(.small)
+                    .frame(width: 72)
+            } else {
+                ProgressView()
+                    .controlSize(.small)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
+
+            if model.canCloseTranscriptPanel {
+                closeTranscriptButton
+                    .scaleEffect(0.85)
+            }
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background {
+            Capsule(style: .continuous)
+                .fill(.black.opacity(0.18))
+                .overlay {
+                    Capsule(style: .continuous)
+                        .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+                }
+        }
+        .fixedSize(horizontal: true, vertical: false)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var transcriptFailureRow: some View {
@@ -162,27 +178,10 @@ struct AudioTranscriptPreview: View {
             return "Preparing transcript..."
         }
 
-        return "Transcribing audio... \(elapsed)"
-    }
-}
-
-private struct TranscriptProgressBar: View {
-    @State private var isAnimating = false
-
-    var body: some View {
-        GeometryReader { proxy in
-            Capsule(style: .continuous)
-                .fill(.white.opacity(0.8))
-                .frame(width: proxy.size.width * 0.35)
-                .offset(x: isAnimating ? proxy.size.width * 0.65 : 0)
+        guard let progress = model.transcriptExtractionProgress else {
+            return "Transcribing audio... \(elapsed)"
         }
-        .frame(height: 3)
-        .background(.white.opacity(0.12), in: Capsule(style: .continuous))
-        .clipShape(Capsule(style: .continuous))
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
-                isAnimating = true
-            }
-        }
+
+        return "Transcribing audio... \(Int((progress * 100).rounded()))% · \(elapsed)"
     }
 }

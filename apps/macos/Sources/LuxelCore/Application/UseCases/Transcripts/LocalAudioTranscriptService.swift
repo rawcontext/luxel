@@ -1,5 +1,31 @@
 import Foundation
 
+private final class TranscriptExtractionProgressRelay: @unchecked Sendable {
+    private let lock = NSLock()
+    private var fractions: [Double]
+    private let progress: SpeechTranscriptionProgressHandler
+
+    init(planCount: Int, progress: @escaping SpeechTranscriptionProgressHandler) {
+        fractions = Array(repeating: 0, count: planCount)
+        self.progress = progress
+    }
+
+    func update(planIndex: Int, fraction: Double) {
+        let aggregate = lock.withLock { () -> Double? in
+            let clamped = min(max(fraction, 0), 1)
+            guard fractions.indices.contains(planIndex), clamped >= fractions[planIndex] else {
+                return nil
+            }
+            fractions[planIndex] = clamped
+            return fractions.reduce(0, +) / Double(fractions.count)
+        }
+
+        if let aggregate {
+            progress(SpeechTranscriptionProgress(fractionCompleted: aggregate * 0.9))
+        }
+    }
+}
+
 public struct LocalAudioTranscriptService: AudioTranscriptService {
     private let transcriber: any TimedSpeechTranscriber
     // Several stored properties are internal (not private) because the diarization
@@ -58,9 +84,16 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
 
     public func transcript(for request: AudioTranscriptRequest) async throws
     -> TurnSegmentedTranscript? {
+        try await transcript(for: request, progress: { _ in })
+    }
+
+    public func transcript(
+        for request: AudioTranscriptRequest,
+        progress: @escaping SpeechTranscriptionProgressHandler
+    ) async throws -> TurnSegmentedTranscript? {
         let effectiveRequest = try await effectiveRequest(for: request)
         if let cached = try cache.load(for: effectiveRequest) {
-            return cached
+            return completedTranscript(cached, progress: progress)
         }
 
         let audioTrackLayout = try await audioTrackInspector.audioTrackLayout(
@@ -68,16 +101,18 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
         let extractionPlans = effectiveRequest.sourceContext.extractionPlans(
             audioTrackLayout: audioTrackLayout)
         guard !extractionPlans.isEmpty else {
-            return nil
+            return completedTranscript(nil, progress: progress)
         }
 
         let spans = try await extractSpans(
             request: effectiveRequest,
-            extractionPlans: extractionPlans
+            extractionPlans: extractionPlans,
+            progress: progress
         )
+        progress(SpeechTranscriptionProgress(fractionCompleted: 0.92))
         let stableSpans = try Self.stableSortedSpans(spans)
         guard !stableSpans.isEmpty else {
-            return nil
+            return completedTranscript(nil, progress: progress)
         }
 
         guard effectiveRequest.speakerDiarizationMode == .enabled,
@@ -93,9 +128,10 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
                 effectiveRequest.transcriptionProvenance
             )
             try cache.save(transcript, for: effectiveRequest)
-            return transcript
+            return completedTranscript(transcript, progress: progress)
         }
 
+        progress(SpeechTranscriptionProgress(fractionCompleted: 0.95))
         let diarized = try await diarizedOrFallbackTranscript(
             spans: stableSpans,
             extractionPlans: extractionPlans,
@@ -103,9 +139,10 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
             diarizer: speakerDiarizer,
             modelStore: speakerModelStore
         )
-        return try diarized.replacingTranscriptionProvenance(
+        let transcript = try diarized.replacingTranscriptionProvenance(
             effectiveRequest.transcriptionProvenance
         )
+        return completedTranscript(transcript, progress: progress)
     }
 
     public func storeUpdatedTranscript(
@@ -115,11 +152,24 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
         try cache.save(transcript, for: try await effectiveRequest(for: request))
     }
 
+    private func completedTranscript(
+        _ transcript: TurnSegmentedTranscript?,
+        progress: SpeechTranscriptionProgressHandler
+    ) -> TurnSegmentedTranscript? {
+        progress(SpeechTranscriptionProgress(fractionCompleted: 1))
+        return transcript
+    }
+
     private func extractSpans(
         request: AudioTranscriptRequest,
-        extractionPlans: [TranscriptExtractionPlan]
+        extractionPlans: [TranscriptExtractionPlan],
+        progress: @escaping SpeechTranscriptionProgressHandler
     ) async throws -> [TimedTranscriptSpan] {
         let transcriber = transcriber
+        let progressRelay = TranscriptExtractionProgressRelay(
+            planCount: extractionPlans.count,
+            progress: progress
+        )
         return try await withThrowingTaskGroup(
             of: (planIndex: Int, spans: [TimedTranscriptSpan]).self
         ) { group in
@@ -132,7 +182,15 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
                             source: plan.source,
                             audioTrackIndex: plan.audioTrackIndex,
                             transcriptionProvenance: request.transcriptionProvenance
-                        ))
+                        ),
+                        progress: {
+                            progressRelay.update(
+                                planIndex: planIndex,
+                                fraction: $0.fractionCompleted
+                            )
+                        }
+                    )
+                    progressRelay.update(planIndex: planIndex, fraction: 1)
                     return (planIndex, extracted)
                 }
             }

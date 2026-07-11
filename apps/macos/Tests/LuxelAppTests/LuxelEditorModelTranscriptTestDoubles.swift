@@ -27,19 +27,41 @@ actor SpyAudioTranscriptService: AudioTranscriptService {
     private let transcriptResult: TurnSegmentedTranscript?
     private let transcriptError: (any Error)?
     private let delay: Duration?
+    private let progressFractions: [Double]
     private var capturedRequests: [AudioTranscriptRequest] = []
 
     init(
         transcript: TurnSegmentedTranscript? = nil,
         error: (any Error)? = nil,
-        delay: Duration? = nil
+        delay: Duration? = nil,
+        progressFractions: [Double] = []
     ) {
         self.transcriptResult = transcript
         self.transcriptError = error
         self.delay = delay
+        self.progressFractions = progressFractions
     }
 
     func transcript(for request: AudioTranscriptRequest) async throws -> TurnSegmentedTranscript? {
+        try await performTranscript(for: request)
+    }
+
+    func transcript(
+        for request: AudioTranscriptRequest,
+        progress: @escaping SpeechTranscriptionProgressHandler
+    ) async throws -> TurnSegmentedTranscript? {
+        for fraction in progressFractions {
+            progress(SpeechTranscriptionProgress(fractionCompleted: fraction))
+        }
+
+        let transcript = try await performTranscript(for: request)
+        progress(SpeechTranscriptionProgress(fractionCompleted: 1))
+        return transcript
+    }
+
+    private func performTranscript(
+        for request: AudioTranscriptRequest
+    ) async throws -> TurnSegmentedTranscript? {
         capturedRequests.append(request)
         if let delay {
             try await Task.sleep(for: delay)

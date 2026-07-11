@@ -228,6 +228,7 @@ struct TranscriptCardContent: View {
             .scrollIndicators(.never)
             .environment(\.defaultMinListRowHeight, 0)
             .focusable()
+            .focusEffectDisabled()
             .focused($transcriptListIsFocused)
             .onDeleteCommand {
                 guard canDeleteSelectedWord else {
