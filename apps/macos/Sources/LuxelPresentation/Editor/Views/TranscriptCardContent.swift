@@ -13,6 +13,7 @@ struct TranscriptCardContent: View {
     let activeTurnID: String?
     let activeSpanID: String?
     let spansPerChunk: Int
+    let isCompact: Bool
     let selectedWordIDs: Set<TranscriptEditableWord.ID>
     let cutReviewItems: [TranscriptCutReviewItem]
     let editStatusMessage: String?
@@ -39,6 +40,7 @@ struct TranscriptCardContent: View {
         activeTurnID: String?,
         activeSpanID: String?,
         spansPerChunk: Int,
+        isCompact: Bool = false,
         selectedWordIDs: Set<TranscriptEditableWord.ID>,
         cutReviewItems: [TranscriptCutReviewItem],
         editStatusMessage: String?,
@@ -58,6 +60,7 @@ struct TranscriptCardContent: View {
         self.activeTurnID = activeTurnID
         self.activeSpanID = activeSpanID
         self.spansPerChunk = spansPerChunk
+        self.isCompact = isCompact
         self.selectedWordIDs = selectedWordIDs
         self.cutReviewItems = cutReviewItems
         self.editStatusMessage = editStatusMessage
@@ -78,7 +81,11 @@ struct TranscriptCardContent: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            transcriptToolbar
+            if isCompact {
+                compactTranscriptToolbar
+            } else {
+                transcriptToolbar
+            }
 
             LuxelGlassRowDivider()
 
@@ -133,14 +140,7 @@ struct TranscriptCardContent: View {
             }
 
             if canUndoLastCut {
-                Button("Undo") {
-                    undoLastCut()
-                }
-                .buttonStyle(.plain)
-                .font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.85))
-                .help("Undo the transcript cut. You can also press Command-Z.")
-                .accessibilityHint("Restores the words and media removed by the last transcript cut.")
+                undoCutButton
             }
 
             Spacer(minLength: 8)
@@ -167,25 +167,7 @@ struct TranscriptCardContent: View {
             .accessibilityLabel("Copy transcript")
 
             if canDeleteSelectedWord {
-                Button {
-                    performCut()
-                } label: {
-                    HStack(spacing: 5) {
-                        Label("Cut from recording", systemImage: "scissors")
-                        Text("⌫")
-                            .foregroundStyle(.white.opacity(0.55))
-                    }
-                    .font(.system(size: 10.5, weight: .semibold))
-                    .padding(.horizontal, 9)
-                    .frame(height: 28)
-                    .background(.white.opacity(0.09), in: Capsule(style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .help("Cut selected words from the recording (Delete)")
-                .accessibilityLabel("Cut selected words from recording")
-                .accessibilityHint(
-                    "Press Delete to cut the selected words. The original recording stays safe."
-                )
+                cutSelectionButton
             }
 
             if canClose {
@@ -257,6 +239,115 @@ struct TranscriptCardContent: View {
         }
     }
 
+}
+
+extension TranscriptCardContent {
+    var compactTranscriptToolbar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 7) {
+                Text("Transcript")
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+
+                if !transcript.speakers.isEmpty {
+                    speakerCountChip
+                }
+
+                Spacer(minLength: 8)
+
+                if !cutReviewItems.isEmpty {
+                    cutReviewMenu
+                }
+
+                if canClose {
+                    Button {
+                        closeTranscript()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
+                    .help("Close transcript")
+                    .accessibilityLabel("Close transcript")
+                }
+            }
+
+            HStack(spacing: 6) {
+                TranscriptSearchControl(
+                    query: $searchQuery,
+                    selectedMatchIndex: selectedSearchMatchIndex,
+                    matchCount: searchMatches.count,
+                    isCompact: true,
+                    selectPrevious: selectPreviousSearchMatch,
+                    selectNext: selectNextSearchMatch
+                )
+
+                Button {
+                    copyTranscript(transcript, words: words)
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                }
+                .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
+                .help("Copy transcript")
+                .accessibilityLabel("Copy transcript")
+            }
+
+            if canDeleteSelectedWord || canUndoLastCut || editStatusMessage != nil {
+                HStack(spacing: 8) {
+                    if canDeleteSelectedWord {
+                        cutSelectionButton
+                    }
+
+                    if let editStatusMessage {
+                        Text(editStatusMessage)
+                            .font(.system(size: 10.5, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.55))
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    if canUndoLastCut {
+                        undoCutButton
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+    }
+
+    var undoCutButton: some View {
+        Button("Undo") {
+            undoLastCut()
+        }
+        .buttonStyle(.plain)
+        .font(.system(size: 10.5, weight: .semibold))
+        .foregroundStyle(.white.opacity(0.85))
+        .help("Undo the transcript cut. You can also press Command-Z.")
+        .accessibilityHint("Restores the words and media removed by the last transcript cut.")
+    }
+
+    var cutSelectionButton: some View {
+        Button {
+            performCut()
+        } label: {
+            HStack(spacing: 5) {
+                Label("Cut from recording", systemImage: "scissors")
+                Text("⌫")
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+            .font(.system(size: 10.5, weight: .semibold))
+            .padding(.horizontal, 9)
+            .frame(height: 28)
+            .background(.white.opacity(0.09), in: Capsule(style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .help("Cut selected words from the recording (Delete)")
+        .accessibilityLabel("Cut selected words from recording")
+        .accessibilityHint(
+            "Press Delete to cut the selected words. The original recording stays safe."
+        )
+    }
 }
 
 struct TranscriptSpeakerChip: Equatable {

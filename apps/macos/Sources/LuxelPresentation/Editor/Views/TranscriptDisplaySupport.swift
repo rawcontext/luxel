@@ -191,6 +191,7 @@ struct TranscriptChunkView: View {
                             Text(speakerChip.displayName)
                                 .font(.system(size: 10.5, weight: .semibold))
                                 .foregroundStyle(speakerChip.textColor)
+                                .lineLimit(1)
                         }
                         .padding(.leading, 7)
                         .padding(.trailing, 9)
@@ -212,19 +213,21 @@ struct TranscriptChunkView: View {
                                 )
                         }
                     } else {
-                        if let source = chunk.turn.source {
-                            Text(source.displayName)
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundStyle(.white.opacity(0.55))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(
-                                    .white.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
-                        }
-
                         Text(formatTranscriptTime(chunk.turn.start))
                             .font(.system(size: 10.5, weight: .medium).monospacedDigit())
                             .foregroundStyle(.white.opacity(0.4))
+
+                        if let source = chunk.turn.source {
+                            Text(source.displayName)
+                                .font(.system(size: 10.5, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.55))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(
+                                    .white.opacity(0.07),
+                                    in: RoundedRectangle(cornerRadius: 10)
+                                )
+                        }
                     }
                 }
             }
@@ -247,6 +250,16 @@ struct TranscriptChunkView: View {
         .padding(.horizontal, 8)
         .padding(.top, chunk.showsHeader ? 10 : 2)
         .padding(.bottom, 6)
+        .background {
+            if isActiveTurn {
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .fill(.white.opacity(0.08))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .strokeBorder(.white.opacity(0.09), lineWidth: 1)
+                    }
+            }
+        }
     }
 }
 
@@ -313,72 +326,6 @@ private struct TranscriptWordButton: View {
         }
 
         return .clear
-    }
-}
-
-private struct TranscriptSpanFlowLayout: Layout {
-    let horizontalSpacing: CGFloat
-    let verticalSpacing: CGFloat
-
-    func sizeThatFits(
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache: inout Void
-    ) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        var currentRowWidth: CGFloat = 0
-        var currentRowHeight: CGFloat = 0
-        var totalHeight: CGFloat = 0
-        var widestRow: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            let proposedRowWidth =
-                currentRowWidth == 0 ? size.width : currentRowWidth + horizontalSpacing + size.width
-
-            if currentRowWidth > 0, proposedRowWidth > maxWidth {
-                widestRow = max(widestRow, currentRowWidth)
-                totalHeight += currentRowHeight + verticalSpacing
-                currentRowWidth = size.width
-                currentRowHeight = size.height
-            } else {
-                currentRowWidth = proposedRowWidth
-                currentRowHeight = max(currentRowHeight, size.height)
-            }
-        }
-
-        widestRow = max(widestRow, currentRowWidth)
-        totalHeight += currentRowHeight
-
-        return CGSize(width: proposal.width ?? widestRow, height: totalHeight)
-    }
-
-    func placeSubviews(
-        in bounds: CGRect,
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache: inout Void
-    ) {
-        var currentX = bounds.minX
-        var currentY = bounds.minY
-        var currentRowHeight: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if currentX > bounds.minX, currentX + size.width > bounds.maxX {
-                currentX = bounds.minX
-                currentY += currentRowHeight + verticalSpacing
-                currentRowHeight = 0
-            }
-
-            subview.place(
-                at: CGPoint(x: currentX, y: currentY),
-                anchor: .topLeading,
-                proposal: ProposedViewSize(width: size.width, height: size.height)
-            )
-            currentX += size.width + horizontalSpacing
-            currentRowHeight = max(currentRowHeight, size.height)
-        }
     }
 }
 

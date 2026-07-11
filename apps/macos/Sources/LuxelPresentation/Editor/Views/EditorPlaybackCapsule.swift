@@ -50,7 +50,6 @@ struct EditorPlaybackCapsule: View {
                 }
                 .shadow(color: .black.opacity(0.5), radius: 16, y: 6)
         }
-        .frame(maxWidth: 560)
         .onAppear {
             volume = Double(model.player.volume)
         }

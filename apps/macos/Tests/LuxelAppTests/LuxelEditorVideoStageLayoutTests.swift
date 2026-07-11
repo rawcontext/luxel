@@ -10,8 +10,8 @@ import Testing
 @MainActor
 @Suite("Luxel editor video stage layout")
 struct LuxelEditorVideoStageLayoutTests {
-    @Test("video and transcript render inside a shared scroll region")
-    func videoAndTranscriptShareScrollRegion() async throws {
+    @Test("transcript docks left of the video without covering it")
+    func transcriptDocksLeftOfVideo() async throws {
         let helper = LuxelEditorModelTests()
         let transcript = try helper.sampleTranscript(source: .system)
         let model = helper.makeModel(
@@ -31,18 +31,22 @@ struct LuxelEditorVideoStageLayoutTests {
         let playerView = try #require(
             hostingView.descendants.compactMap { $0 as? AVPlayerView }.first
         )
-        let sharedScrollView = try #require(
-            playerView.ancestors.compactMap { $0 as? NSScrollView }.first
+        #expect(playerView.ancestors.compactMap { $0 as? NSScrollView }.isEmpty)
+
+        let transcriptTableView = try #require(
+            hostingView.descendants.compactMap { $0 as? NSTableView }.first
         )
         let transcriptScrollView = try #require(
-            sharedScrollView.descendants.compactMap { $0 as? NSScrollView }.first
+            transcriptTableView.ancestors.compactMap { $0 as? NSScrollView }.first
         )
-        let documentView = try #require(sharedScrollView.documentView)
-        let transcriptFrame = transcriptScrollView.convert(transcriptScrollView.bounds, to: documentView)
-        let playerFrame = playerView.convert(playerView.bounds, to: documentView)
+        let transcriptFrame = transcriptScrollView.convert(
+            transcriptScrollView.bounds, to: hostingView
+        )
+        let playerFrame = playerView.convert(playerView.bounds, to: hostingView)
 
-        #expect(transcriptFrame.maxY <= playerFrame.minY)
-        #expect(playerFrame.height >= sharedScrollView.contentView.bounds.height)
+        #expect(transcriptFrame.maxX <= playerFrame.minX)
+        #expect(transcriptFrame.minY < playerFrame.maxY)
+        #expect(playerFrame.minY < transcriptFrame.maxY)
     }
 }
 

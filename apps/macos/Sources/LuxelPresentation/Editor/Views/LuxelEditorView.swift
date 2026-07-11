@@ -78,32 +78,28 @@ extension LuxelEditorView {
     }
 
     private var videoStage: some View {
-        // Mirrors audioStage: navigation lives in a row above the stage so the
-        // arrows do not move when flipping between audio and video recordings.
+        // 10a: the transcript is one column that always docks on the left of
+        // the stage; the video pane shrinks beside it and is never covered.
         VStack(spacing: 10) {
-            HStack(spacing: 10) {
-                recordingNavigationButtons
-
-                Spacer(minLength: 0)
-
-                transcriptPreviewControls
-            }
-
-            ScrollView {
-                VStack(spacing: 10) {
-                    if showsTranscriptContent {
-                        AudioTranscriptPreview(model: model)
-                    }
-
-                    videoFrame
-                        .containerRelativeFrame(.vertical)
+            HStack(alignment: .top, spacing: 10) {
+                if showsTranscriptContent {
+                    AudioTranscriptPreview(model: model)
+                        .frame(width: Self.transcriptSidebarWidth)
+                        .frame(maxHeight: .infinity)
                 }
-                .frame(maxWidth: .infinity)
+
+                videoFrame
             }
-            .scrollIndicators(.hidden)
+
+            if model.hasSource {
+                EditorPlaybackCapsule(model: model)
+                    .frame(maxWidth: .infinity)
+            }
         }
         .frame(minWidth: 540, maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    private static let transcriptSidebarWidth: CGFloat = 260
 
     private var videoFrame: some View {
         ZStack {
@@ -148,12 +144,13 @@ extension LuxelEditorView {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .strokeBorder(.white.opacity(0.08), lineWidth: 1)
         }
-        .overlay(alignment: .bottom) {
-            if model.hasSource {
-                EditorPlaybackCapsule(model: model)
-                    .padding(.horizontal, 48)
-                    .padding(.bottom, 14)
-            }
+        .overlay(alignment: .topLeading) {
+            recordingNavigationButtons
+                .padding(10)
+        }
+        .overlay(alignment: .topTrailing) {
+            transcriptPreviewControls
+                .padding(10)
         }
         .contextMenu {
             Button("Copy Frame") {
@@ -208,18 +205,15 @@ extension LuxelEditorView {
                         .font(.system(size: 11, weight: .medium))
 
                     Text(transcriptPreviewButtonTitle)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 12, weight: .semibold))
                 }
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(LuxelGlassTheme.prominentText)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background {
                     Capsule(style: .continuous)
-                        .fill(EditorStageChromeStyle.fill)
-                        .overlay {
-                            Capsule(style: .continuous)
-                                .strokeBorder(.white.opacity(0.12), lineWidth: 1)
-                        }
+                        .fill(.white.opacity(0.92))
+                        .shadow(color: .black.opacity(0.35), radius: 7, y: 2)
                 }
                 .contentShape(Capsule(style: .continuous))
             }

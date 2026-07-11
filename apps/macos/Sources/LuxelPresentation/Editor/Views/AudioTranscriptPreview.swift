@@ -4,33 +4,16 @@ import SwiftUI
 
 struct AudioTranscriptPreview: View {
     private enum Layout {
-        static let transcriptCardHeight: CGFloat = 300
-        static let transcriptCardMaxWidth: CGFloat = 640
-        static let transcriptHorizontalPadding: CGFloat = 24
-        static let progressCardMaxWidth: CGFloat = 360
         static let transcriptSpansPerChunk = 32
     }
 
     @Bindable var model: LuxelEditorModel
 
     var body: some View {
-        if model.hasAudioOnlySource {
-            audioColumn
-        } else if model.shouldShowSpeechRecognitionPrompt {
-            speechRecognitionPrompt
-        } else if model.shouldShowTranscriptProgress {
-            transcriptProgress
-        } else if model.shouldShowTranscriptFailure {
-            transcriptFailure
-        } else if let transcript = model.visibleTranscript {
-            transcriptCard(transcript)
-                .frame(maxWidth: Layout.transcriptCardMaxWidth)
-                .frame(height: Layout.transcriptCardHeight)
-                .padding(.horizontal, Layout.transcriptHorizontalPadding)
-        }
+        transcriptColumn
     }
 
-    private var audioColumn: some View {
+    private var transcriptColumn: some View {
         VStack(spacing: 10) {
             if model.shouldShowSpeechRecognitionPrompt {
                 HStack {
@@ -41,8 +24,8 @@ struct AudioTranscriptPreview: View {
                     } label: {
                         Label("Enable Speech Recognition", systemImage: "waveform")
                     }
-                    .buttonStyle(.glassProminent)
-                    .controlSize(.regular)
+                    .buttonStyle(LuxelGlassPillButtonStyle(isProminent: true))
+                    .fixedSize()
                     .help("Turn speech recognition on for this recording.")
 
                     if model.canCloseTranscriptPanel {
@@ -71,16 +54,6 @@ struct AudioTranscriptPreview: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var transcriptProgress: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { timeline in
-            transcriptProgressRow(at: timeline.date)
-                .frame(maxWidth: Layout.progressCardMaxWidth)
-                .padding(.horizontal, Layout.transcriptHorizontalPadding)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(transcriptProgressTitle(at: timeline.date))
-        }
-    }
-
     private func transcriptProgressRow(at date: Date) -> some View {
         LuxelGlassIsland(cornerRadius: 18) {
             HStack(spacing: 10) {
@@ -105,34 +78,6 @@ struct AudioTranscriptPreview: View {
         }
     }
 
-    private var speechRecognitionPrompt: some View {
-        HStack {
-            Spacer()
-
-            Button {
-                model.enableSpeechRecognition()
-            } label: {
-                Label("Enable Speech Recognition", systemImage: "waveform")
-            }
-            .buttonStyle(.glassProminent)
-            .controlSize(.regular)
-            .help("Turn speech recognition on for this recording.")
-
-            if model.canCloseTranscriptPanel {
-                closeTranscriptButton
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, Layout.transcriptHorizontalPadding)
-    }
-
-    private var transcriptFailure: some View {
-        transcriptFailureRow
-            .frame(maxWidth: Layout.progressCardMaxWidth)
-            .padding(.horizontal, Layout.transcriptHorizontalPadding)
-    }
-
     private var transcriptFailureRow: some View {
         LuxelGlassIsland(cornerRadius: 18) {
             VStack(alignment: .leading, spacing: 10) {
@@ -144,7 +89,8 @@ struct AudioTranscriptPreview: View {
                 Button("Retry") {
                     model.refreshTranscriptionConfiguration()
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(LuxelGlassPillButtonStyle())
+                .fixedSize()
                 .help("Try generating the transcript again.")
             }
             .padding(14)
@@ -162,6 +108,7 @@ struct AudioTranscriptPreview: View {
             activeTurnID: activeTurnID,
             activeSpanID: activeSpanID,
             spansPerChunk: Layout.transcriptSpansPerChunk,
+            isCompact: !model.hasAudioOnlySource,
             selectedWordIDs: model.selectedTranscriptWordIDs,
             cutReviewItems: model.transcriptCutReviewItems,
             editStatusMessage: model.transcriptEditStatusMessage,
