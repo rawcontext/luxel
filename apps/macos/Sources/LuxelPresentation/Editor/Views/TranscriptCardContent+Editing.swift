@@ -37,7 +37,7 @@ extension TranscriptCardContent {
         .padding(.vertical, 10)
     }
 
-    var cutReviewMenu: some View {
+    func cutReviewMenu(side: CGFloat) -> some View {
         Menu {
             ForEach(cutReviewItems) { cut in
                 Button {
@@ -47,16 +47,14 @@ extension TranscriptCardContent {
                 }
             }
         } label: {
-            Label(
-                "Review \(cutReviewItems.count) \(cutReviewItems.count == 1 ? "cut" : "cuts")",
-                systemImage: "scissors"
-            )
-            .font(.system(size: 10.5, weight: .medium))
-            .foregroundStyle(.white.opacity(0.75))
+            Image(systemName: "list.bullet.rectangle.portrait")
         }
         .menuStyle(.button)
-        .buttonStyle(.plain)
+        .buttonStyle(LuxelGlassCircleButtonStyle(side: side))
         .help("Review and restore removed transcript ranges")
+        .accessibilityLabel(
+            "Review \(cutReviewItems.count) \(cutReviewItems.count == 1 ? "cut" : "cuts")"
+        )
         .accessibilityHint("Opens a menu of removed transcript ranges that can be restored.")
     }
 

@@ -155,9 +155,8 @@ extension LuxelEditorView {
 
             editorDisclosureCard("Format") {
                 VStack(alignment: .leading, spacing: 12) {
-                    controlRow("Format") {
-                        formatMenu
-                    }
+                    formatMenu
+                        .frame(maxWidth: .infinity)
 
                     if model.canChooseQuality {
                         controlRow("Quality") {
@@ -191,12 +190,13 @@ extension LuxelEditorView {
         } label: {
             LuxelGlassMenuLabel(
                 model.selectedFormatSummary,
-                systemImage: model.hasAudioOnlySource ? "waveform" : "video"
+                systemImage: model.hasAudioOnlySource ? "waveform" : "video",
+                fillsAvailableWidth: true
             )
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
-        .fixedSize()
+        .frame(maxWidth: .infinity)
         .help("Choose the export file format.")
     }
 

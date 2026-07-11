@@ -9,20 +9,28 @@ import Testing
 struct TranscriptCardDiscoverabilityTests {
     @Test("transcript words remain keyboard focusable with selection instructions")
     func keyboardSelectionConfiguration() throws {
-        let source = try String(
+        let wordSource = try String(
             contentsOf: packageRoot.appending(
                 path: "Sources/LuxelPresentation/Editor/Views/TranscriptDisplaySupport.swift"
             ),
             encoding: .utf8
         )
+        let cardSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/TranscriptCardContent.swift"
+            ),
+            encoding: .utf8
+        )
 
-        #expect(!source.contains(".focusable(false)"))
-        #expect(source.contains("Hold Shift while activating to extend the selection."))
-        #expect(source.contains(".accessibilityValue(isSelected ? \"Selected\" : \"Not selected\")"))
+        #expect(!wordSource.contains(".focusable(false)"))
+        #expect(wordSource.contains("Hold Shift while activating to extend the selection."))
+        #expect(wordSource.contains(".accessibilityValue(isSelected ? \"Selected\" : \"Not selected\")"))
+        #expect(cardSource.contains(".focusable()"))
+        #expect(cardSource.contains(".focusEffectDisabled()"))
     }
 
-    @Test("selection reveals a media-specific cut action with Delete equivalence")
-    func selectionCutActionConfiguration() throws {
+    @Test("transcript editing actions use adjacent icon controls with tooltips")
+    func transcriptEditingActionConfiguration() throws {
         let cardSource = try String(
             contentsOf: packageRoot.appending(
                 path: "Sources/LuxelPresentation/Editor/Views/TranscriptCardContent.swift"
@@ -38,14 +46,102 @@ struct TranscriptCardDiscoverabilityTests {
         let source = cardSource + editingSource
 
         #expect(source.contains("if canDeleteSelectedWord"))
-        #expect(source.contains("Label(\"Cut from recording\", systemImage: \"scissors\")"))
+        #expect(source.contains("Image(systemName: \"scissors\")"))
+        #expect(source.contains("Image(systemName: \"list.bullet.rectangle.portrait\")"))
+        #expect(source.contains("Image(systemName: \"arrow.uturn.backward\")"))
+        #expect(source.contains("cutReviewMenu(side: side)"))
+        #expect(source.contains("cutSelectionButton(side: side)"))
         #expect(source.contains(".onDeleteCommand"))
+        #expect(source.contains("Cut selected words from the recording (Delete)"))
         #expect(source.contains(".accessibilityLabel(\"Cut selected words from recording\")"))
         #expect(source.contains("if canUndoLastCut"))
-        #expect(source.contains("Button(\"Undo\")"))
         #expect(source.contains("if !cutReviewItems.isEmpty"))
         #expect(source.contains("restoreCut(cut.id)"))
         #expect(source.contains("Review and restore removed transcript ranges"))
+    }
+
+    @Test("speaker and format labels avoid repeated toolbar text")
+    func compactLabels() throws {
+        let actionSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/TranscriptCardContent+Actions.swift"
+            ),
+            encoding: .utf8
+        )
+        let exportSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/LuxelEditorView+ExportControls.swift"
+            ),
+            encoding: .utf8
+        )
+
+        #expect(actionSource.contains("Text(\"\\(transcript.speakers.count)\")"))
+        #expect(!actionSource.contains("\\(transcript.speakers.count) Speakers"))
+        #expect(exportSource.contains("editorDisclosureCard(\"Format\")"))
+        #expect(!exportSource.contains("controlRow(\"Format\")"))
+        #expect(exportSource.contains("LuxelGlassMenuLabel("))
+        #expect(exportSource.contains("fillsAvailableWidth: true"))
+        #expect(exportSource.contains(".frame(maxWidth: .infinity)"))
+    }
+
+    @Test("transcription progress is compact and determinate when available")
+    func transcriptionProgressPresentation() throws {
+        let source = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/AudioTranscriptPreview.swift"
+            ),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("ProgressView(value: progress)"))
+        #expect(source.contains("model.transcriptExtractionProgress"))
+        #expect(source.contains(".fixedSize(horizontal: true, vertical: false)"))
+        #expect(!source.contains("TranscriptProgressBar"))
+    }
+
+    @Test("search navigation stays stable and uses semantic find highlights")
+    func searchPresentation() throws {
+        let searchSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/TranscriptSearchControl.swift"
+            ),
+            encoding: .utf8
+        )
+        let wordSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/TranscriptDisplaySupport.swift"
+            ),
+            encoding: .utf8
+        )
+
+        let navigationIndex = try #require(searchSource.range(of: "if matchCount > 0"))
+        let fieldIndex = try #require(searchSource.range(of: "TextField(\"Search\""))
+
+        #expect(navigationIndex.lowerBound < fieldIndex.lowerBound)
+        #expect(searchSource.contains(".frame(width: 54, alignment: .trailing)"))
+        #expect(wordSource.contains("Color(nsColor: .findHighlightColor)"))
+        #expect(wordSource.contains("if isCurrentSearchMatch"))
+        #expect(wordSource.contains(".strokeBorder(.white.opacity(0.9), lineWidth: 1.5)"))
+    }
+
+    @Test("recording navigation uses one background across media types")
+    func recordingNavigationStyle() throws {
+        let editorSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/LuxelEditorView.swift"
+            ),
+            encoding: .utf8
+        )
+        let playbackSource = try String(
+            contentsOf: packageRoot.appending(
+                path: "Sources/LuxelPresentation/Editor/Views/EditorPlaybackCapsule.swift"
+            ),
+            encoding: .utf8
+        )
+
+        #expect(editorSource.contains(".fill(EditorStageChromeStyle.navigationFill)"))
+        #expect(playbackSource.contains("static let navigationFill"))
+        #expect(!playbackSource.contains("static let fill ="))
     }
 
     @Test("guidance dismissal and a successful cut persist")

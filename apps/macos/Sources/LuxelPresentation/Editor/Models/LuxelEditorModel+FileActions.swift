@@ -300,6 +300,7 @@ extension LuxelEditorModel {
         isEditedPreviewReady = true
         isTranscriptExtractionActive = false
         transcriptExtractionStartedAt = nil
+        transcriptExtractionProgress = nil
         speechRecognitionAuthorizationState = nil
         player.pause()
         playbackRequested = false

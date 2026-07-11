@@ -149,10 +149,6 @@ struct TranscriptCardContent: View {
                     .lineLimit(1)
             }
 
-            if canUndoLastCut {
-                undoCutButton
-            }
-
             Spacer(minLength: 8)
 
             TranscriptSearchControl(
@@ -163,8 +159,10 @@ struct TranscriptCardContent: View {
                 selectNext: selectNextSearchMatch
             )
 
-            if !cutReviewItems.isEmpty {
-                cutReviewMenu
+            transcriptEditActionButtons(side: 30)
+
+            if canUndoLastCut {
+                undoCutButton(side: 30)
             }
 
             Button {
@@ -175,10 +173,6 @@ struct TranscriptCardContent: View {
             .buttonStyle(LuxelGlassCircleButtonStyle())
             .help("Copy transcript")
             .accessibilityLabel("Copy transcript")
-
-            if canDeleteSelectedWord {
-                cutSelectionButton
-            }
 
             if canClose {
                 Button {
@@ -234,6 +228,7 @@ struct TranscriptCardContent: View {
             .scrollIndicators(.never)
             .environment(\.defaultMinListRowHeight, 0)
             .focusable()
+            .focusEffectDisabled()
             .focused($transcriptListIsFocused)
             .onDeleteCommand {
                 guard canDeleteSelectedWord else {
@@ -269,10 +264,6 @@ extension TranscriptCardContent {
 
                 Spacer(minLength: 8)
 
-                if !cutReviewItems.isEmpty {
-                    cutReviewMenu
-                }
-
                 if canClose {
                     Button {
                         closeTranscript()
@@ -305,11 +296,12 @@ extension TranscriptCardContent {
                 .accessibilityLabel("Copy transcript")
             }
 
-            if canDeleteSelectedWord || canUndoLastCut || editStatusMessage != nil {
+            if !cutReviewItems.isEmpty
+                || canDeleteSelectedWord
+                || canUndoLastCut
+                || editStatusMessage != nil {
                 HStack(spacing: 8) {
-                    if canDeleteSelectedWord {
-                        cutSelectionButton
-                    }
+                    transcriptEditActionButtons(side: 24)
 
                     if let editStatusMessage {
                         Text(editStatusMessage)
@@ -321,7 +313,7 @@ extension TranscriptCardContent {
                     Spacer(minLength: 0)
 
                     if canUndoLastCut {
-                        undoCutButton
+                        undoCutButton(side: 24)
                     }
                 }
             }
@@ -330,32 +322,37 @@ extension TranscriptCardContent {
         .padding(.vertical, 10)
     }
 
-    var undoCutButton: some View {
-        Button("Undo") {
-            undoLastCut()
+    func transcriptEditActionButtons(side: CGFloat) -> some View {
+        HStack(spacing: 6) {
+            if !cutReviewItems.isEmpty {
+                cutReviewMenu(side: side)
+            }
+
+            if canDeleteSelectedWord {
+                cutSelectionButton(side: side)
+            }
         }
-        .buttonStyle(.plain)
-        .font(.system(size: 10.5, weight: .semibold))
-        .foregroundStyle(.white.opacity(0.85))
+    }
+
+    func undoCutButton(side: CGFloat) -> some View {
+        Button {
+            undoLastCut()
+        } label: {
+            Image(systemName: "arrow.uturn.backward")
+        }
+        .buttonStyle(LuxelGlassCircleButtonStyle(side: side))
         .help("Undo the transcript cut. You can also press Command-Z.")
+        .accessibilityLabel("Undo")
         .accessibilityHint("Restores the words and media removed by the last transcript cut.")
     }
 
-    var cutSelectionButton: some View {
+    func cutSelectionButton(side: CGFloat) -> some View {
         Button {
             performCut()
         } label: {
-            HStack(spacing: 5) {
-                Label("Cut from recording", systemImage: "scissors")
-                Text("⌫")
-                    .foregroundStyle(.white.opacity(0.55))
-            }
-            .font(.system(size: 10.5, weight: .semibold))
-            .padding(.horizontal, 9)
-            .frame(height: 28)
-            .background(.white.opacity(0.09), in: Capsule(style: .continuous))
+            Image(systemName: "scissors")
         }
-        .buttonStyle(.plain)
+        .buttonStyle(LuxelGlassCircleButtonStyle(side: side))
         .help("Cut selected words from the recording (Delete)")
         .accessibilityLabel("Cut selected words from recording")
         .accessibilityHint(

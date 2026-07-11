@@ -142,28 +142,32 @@ private struct LuxelGlassCheckboxBody: View {
 public struct LuxelGlassMenuLabel: View {
     private let title: String
     private let systemImage: String?
+    private let fillsAvailableWidth: Bool
 
-    public init(_ title: String, systemImage: String? = nil) {
+    public init(_ title: String, systemImage: String? = nil, fillsAvailableWidth: Bool = false) {
         self.title = title
         self.systemImage = systemImage
+        self.fillsAvailableWidth = fillsAvailableWidth
     }
-
     public var body: some View {
         HStack(spacing: 6) {
             if let systemImage {
                 Image(systemName: systemImage)
                     .font(.system(size: 11, weight: .medium))
             }
-
             Text(title)
                 .font(.system(size: 12.5, weight: .medium))
                 .lineLimit(1)
                 .truncationMode(.middle)
 
+            if fillsAvailableWidth {
+                Spacer(minLength: 6)
+            }
             Image(systemName: "chevron.up.chevron.down")
                 .font(.system(size: 8.5, weight: .bold))
                 .opacity(0.6)
         }
+        .frame(maxWidth: fillsAvailableWidth ? .infinity : nil)
         .foregroundStyle(.white.opacity(0.92))
         .padding(.leading, 12)
         .padding(.trailing, 10)

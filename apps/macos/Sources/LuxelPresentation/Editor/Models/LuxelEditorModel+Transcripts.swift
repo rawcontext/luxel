@@ -268,7 +268,9 @@ extension LuxelEditorModel {
         transcriptFailureMessage = nil
         isTranscriptExtractionActive = true
         transcriptExtractionStartedAt = Date()
+        transcriptExtractionProgress = nil
         startSpeakerModelStatePolling()
+        let progressHandler = transcriptProgressHandler(sourceURL: sourceURL)
         transcriptTask = Task { [weak self, audioTranscriptService] in
             do {
                 let transcript = try await audioTranscriptService.transcript(
@@ -277,7 +279,9 @@ extension LuxelEditorModel {
                         locale: .current,
                         sourceContext: sourceContext,
                         speakerCountHint: speakerCountHint
-                    ))
+                    ),
+                    progress: progressHandler
+                )
                 Self.logTranscriptResult(transcript)
                 await MainActor.run {
                     self?.applyTranscriptResult(
@@ -291,6 +295,26 @@ extension LuxelEditorModel {
                 await MainActor.run {
                     self?.applyTranscriptFailure(error, sourceURL: sourceURL)
                 }
+            }
+        }
+    }
+
+    private func transcriptProgressHandler(
+        sourceURL: URL
+    ) -> SpeechTranscriptionProgressHandler {
+        { [weak self] progress in
+            Task { @MainActor in
+                guard let self,
+                      self.source?.fileURL == sourceURL,
+                      self.isTranscriptExtractionActive
+                else {
+                    return
+                }
+
+                self.transcriptExtractionProgress = max(
+                    self.transcriptExtractionProgress ?? 0,
+                    progress.fractionCompleted
+                )
             }
         }
     }
@@ -317,6 +341,7 @@ extension LuxelEditorModel {
     private func finishTranscriptExtraction() {
         isTranscriptExtractionActive = false
         transcriptExtractionStartedAt = nil
+        transcriptExtractionProgress = nil
         transcriptTask = nil
         stopSpeakerModelStatePolling()
     }
@@ -330,6 +355,7 @@ extension LuxelEditorModel {
         transcriptFailureMessage = nil
         isTranscriptExtractionActive = false
         transcriptExtractionStartedAt = nil
+        transcriptExtractionProgress = nil
         speechRecognitionAuthorizationState = nil
         stopSpeakerModelStatePolling()
 

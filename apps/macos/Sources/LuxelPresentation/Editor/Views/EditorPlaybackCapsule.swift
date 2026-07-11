@@ -2,7 +2,7 @@ import AVFoundation
 import SwiftUI
 
 enum EditorStageChromeStyle {
-    static let fill = Color(red: 15 / 255, green: 15 / 255, blue: 22 / 255).opacity(0.55)
+    static let navigationFill = Color(red: 8 / 255, green: 8 / 255, blue: 12 / 255)
     static let capsuleFill = Color(red: 20 / 255, green: 20 / 255, blue: 30 / 255).opacity(0.6)
 }
 

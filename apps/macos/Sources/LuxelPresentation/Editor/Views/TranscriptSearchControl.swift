@@ -12,6 +12,25 @@ struct TranscriptSearchControl: View {
     var body: some View {
         HStack(spacing: 6) {
             HStack(spacing: 6) {
+                if matchCount > 0 {
+                    Button(action: selectPrevious) {
+                        Image(systemName: "chevron.up")
+                    }
+                    .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
+                    .help("Previous match")
+                    .accessibilityLabel("Previous transcript search match")
+
+                    Button(action: selectNext) {
+                        Image(systemName: "chevron.down")
+                    }
+                    .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
+                    .help("Next match")
+                    .accessibilityLabel("Next transcript search match")
+                }
+            }
+            .frame(width: 54, alignment: .trailing)
+
+            HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.white.opacity(0.45))
@@ -39,22 +58,6 @@ struct TranscriptSearchControl: View {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .strokeBorder(.white.opacity(0.08), lineWidth: 1)
                     }
-            }
-
-            if matchCount > 0 {
-                Button(action: selectPrevious) {
-                    Image(systemName: "chevron.up")
-                }
-                .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
-                .help("Previous match")
-                .accessibilityLabel("Previous transcript search match")
-
-                Button(action: selectNext) {
-                    Image(systemName: "chevron.down")
-                }
-                .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
-                .help("Next match")
-                .accessibilityLabel("Next transcript search match")
             }
         }
         .animation(.easeOut(duration: 0.15), value: matchCount > 0)

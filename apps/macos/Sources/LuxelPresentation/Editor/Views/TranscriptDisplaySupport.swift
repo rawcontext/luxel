@@ -278,11 +278,8 @@ private struct TranscriptWordButton: View {
             selectWord(word, extendsSelection)
         } label: {
             Text(word.text)
-                .font(.system(size: 13))
-                .foregroundStyle(
-                    isActiveSpan || isActiveTurn || isSearchMatch
-                        ? Color.white : Color.white.opacity(0.75)
-                )
+                .font(.system(size: 13, weight: isCurrentSearchMatch ? .semibold : .regular))
+                .foregroundStyle(spanForeground)
                 .underline(isActiveSpan, color: .white.opacity(0.75))
                 .padding(.horizontal, 2)
                 .padding(.vertical, 1)
@@ -290,6 +287,12 @@ private struct TranscriptWordButton: View {
                     spanBackground,
                     in: RoundedRectangle(cornerRadius: 4)
                 )
+                .overlay {
+                    if isCurrentSearchMatch {
+                        RoundedRectangle(cornerRadius: 4)
+                            .strokeBorder(.white.opacity(0.9), lineWidth: 1.5)
+                    }
+                }
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -310,7 +313,7 @@ private struct TranscriptWordButton: View {
 
     private var spanBackground: Color {
         if isCurrentSearchMatch {
-            return .white.opacity(0.3)
+            return Color(nsColor: .findHighlightColor).opacity(0.95)
         }
 
         if isSelected {
@@ -318,7 +321,7 @@ private struct TranscriptWordButton: View {
         }
 
         if isSearchMatch {
-            return .white.opacity(0.18)
+            return Color(nsColor: .findHighlightColor).opacity(0.58)
         }
 
         if isActiveSpan {
@@ -326,6 +329,14 @@ private struct TranscriptWordButton: View {
         }
 
         return .clear
+    }
+
+    private var spanForeground: Color {
+        if isSearchMatch {
+            return .black.opacity(0.88)
+        }
+
+        return isActiveSpan || isActiveTurn ? .white : .white.opacity(0.75)
     }
 }
 

@@ -15,11 +15,18 @@ public struct SelectedEngineTimedSpeechTranscriber: TimedSpeechTranscriber {
     public func transcribe(
         _ request: TimedSpeechTranscriptionRequest
     ) async throws -> [TimedTranscriptSpan] {
+        try await transcribe(request, progress: { _ in })
+    }
+
+    public func transcribe(
+        _ request: TimedSpeechTranscriptionRequest,
+        progress: @escaping SpeechTranscriptionProgressHandler
+    ) async throws -> [TimedTranscriptSpan] {
         switch request.transcriptionProvenance.engine {
         case .appleSpeech:
-            try await appleSpeech.transcribe(request)
+            try await appleSpeech.transcribe(request, progress: progress)
         case .parakeetTDTv3:
-            try await precision.transcribe(request)
+            try await precision.transcribe(request, progress: progress)
         }
     }
 }

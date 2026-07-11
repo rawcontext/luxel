@@ -38386,6 +38386,22 @@
         "pt-BR": { "stringUnit": { "state": "translated", "value": "Inicia automaticamente a reprodução ao selecionar uma palavra da transcrição." } },
         "pt-PT": { "stringUnit": { "state": "translated", "value": "Inicia automaticamente a reprodução ao selecionar uma palavra da transcrição." } }
       }
+    },
+    "Speaker count": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Speaker count" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Sprecheranzahl" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Número de hablantes" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Nombre d’intervenants" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Numero di interlocutori" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "話者数" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "화자 수" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Số người nói" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "说话人数" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Número de falantes" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Número de oradores" } }
+      }
     }
   },
   "version": "1.0"

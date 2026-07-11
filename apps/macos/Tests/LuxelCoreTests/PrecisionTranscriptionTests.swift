@@ -195,15 +195,17 @@ struct PrecisionTranscriptionTests {
         )
         let recognizer = makePrecisionRecognizer(provenance: provenance)
         let audioURL = URL(fileURLWithPath: "/tmp/precision-adapter.m4a")
+        let timedProgress = PrecisionProgressCapture()
         let spans = try await PrecisionTimedSpeechTranscriber(engine: recognizer).transcribe(
             TimedSpeechTranscriptionRequest(
                 audioURL: audioURL,
                 locale: Locale(identifier: "en-US"),
                 source: .system,
                 transcriptionProvenance: provenance
-            )
+            ),
+            progress: { timedProgress.append($0.fractionCompleted) }
         )
-        let progress = PrecisionProgressCapture()
+        let captionProgress = PrecisionProgressCapture()
         let caption = try await PrecisionCaptionSpeechTranscriber(
             engine: recognizer
         ).transcribe(
@@ -211,14 +213,15 @@ struct PrecisionTranscriptionTests {
                 audioURL: audioURL,
                 preferredLanguage: Locale.LanguageCode("en")
             ),
-            progress: { progress.append($0.fractionCompleted) }
+            progress: { captionProgress.append($0.fractionCompleted) }
         )
 
         #expect(spans.map(\.text) == caption.words.map(\.text))
         #expect(spans.map(\.start) == caption.words.map(\.timeRange.start))
         #expect(spans.allSatisfy { $0.source == .system })
         #expect(caption.provenance == provenance)
-        #expect(progress.values == [0.2, 1])
+        #expect(timedProgress.values == [0.2, 1])
+        #expect(captionProgress.values == [0.2, 1])
     }
 
     private func makePrecisionRecognizer(

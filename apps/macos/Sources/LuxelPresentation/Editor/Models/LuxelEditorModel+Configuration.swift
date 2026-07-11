@@ -65,6 +65,7 @@ extension LuxelEditorModel {
         isTranscriptExtractionActive = false
         isTranscriptPanelVisible = false
         transcriptExtractionStartedAt = nil
+        transcriptExtractionProgress = nil
         transcriptFailureMessage = nil
         speechRecognitionAuthorizationState = nil
         resetSpeakerCountControls()
@@ -128,6 +129,7 @@ extension LuxelEditorModel {
         isTranscriptExtractionActive = false
         isTranscriptPanelVisible = false
         transcriptExtractionStartedAt = nil
+        transcriptExtractionProgress = nil
         transcriptFailureMessage = nil
         speechRecognitionAuthorizationState = nil
         resetSpeakerCountControls()

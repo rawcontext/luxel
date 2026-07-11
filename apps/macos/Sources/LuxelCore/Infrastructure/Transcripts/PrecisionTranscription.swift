@@ -307,11 +307,20 @@ public struct PrecisionTimedSpeechTranscriber: TimedSpeechTranscriber {
     public func transcribe(
         _ request: TimedSpeechTranscriptionRequest
     ) async throws -> [TimedTranscriptSpan] {
+        try await transcribe(request, progress: { _ in })
+    }
+
+    public func transcribe(
+        _ request: TimedSpeechTranscriptionRequest,
+        progress: @escaping SpeechTranscriptionProgressHandler
+    ) async throws -> [TimedTranscriptSpan] {
         let result = try await engine.recognize(
             audioURL: request.audioURL,
             audioTrackIndex: request.audioTrackIndex,
             locale: request.locale,
-            progress: { _ in }
+            progress: {
+                progress(SpeechTranscriptionProgress(fractionCompleted: $0))
+            }
         )
         return try result.words.enumerated().map { index, word in
             try word.timedSpan(id: "precision-word-\(index)", source: request.source)

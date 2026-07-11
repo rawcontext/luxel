@@ -190,6 +190,7 @@ extension LuxelEditorModel {
         ignoredSpeakerVoiceIDs = []
         isTranscriptExtractionActive = false
         transcriptExtractionStartedAt = nil
+        transcriptExtractionProgress = nil
         stopSpeakerModelStatePolling()
 
         if transcriptEnginePreference() == .precision
