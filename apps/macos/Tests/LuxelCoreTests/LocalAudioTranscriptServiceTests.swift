@@ -29,6 +29,35 @@ struct LocalAudioTranscriptServiceTests {
         #expect(Set(requests.map(\.audioTrackIndex)) == [0, 1])
     }
 
+    @Test("service removes system audio echoed into the microphone transcript")
+    func serviceRemovesCrossSourceEcho() async throws {
+        let service = LocalAudioTranscriptService(
+            transcriber: AcousticEchoTimedSpeechTranscriber(),
+            turnSegmenter: EchoTranscriptTurnSegmenter(),
+            cache: MemoryTranscriptCache(),
+            audioTrackInspector: StubAudioTrackInspector(audioTrackCount: 2)
+        )
+
+        let transcript = try #require(
+            try await service.transcript(
+                for: AudioTranscriptRequest(
+                    audioURL: URL(fileURLWithPath: "/tmp/acoustic-echo.mp4"),
+                    locale: Locale(identifier: "en_US"),
+                    sourceContext: TranscriptSourceContext(
+                        recordingAudioMode: .systemAndMicrophone(deviceID: nil)
+                    )
+                )
+            )
+        )
+
+        #expect(transcript.spans.map(\.text) == ["This", "works.", "Yes", "Okay", "Okay"])
+        #expect(
+            transcript.spans.map(\.source) == [
+                .system, .system, .microphone, .system, .microphone
+            ]
+        )
+    }
+
     @Test("service follows marked track layout when physical order differs")
     func serviceFollowsMarkedTrackLayout() async throws {
         let transcriber = SpyTimedSpeechTranscriber()
@@ -129,6 +158,45 @@ struct LocalAudioTranscriptServiceTests {
                 )
             ],
             localeIdentifier: "en_US"
+        )
+    }
+}
+
+private struct AcousticEchoTimedSpeechTranscriber: TimedSpeechTranscriber {
+    func transcribe(_ request: TimedSpeechTranscriptionRequest) async throws
+    -> [TimedTranscriptSpan] {
+        switch request.source {
+        case .system:
+            try [
+                span("system-this", "This", 10, 10.24, source: .system),
+                span("system-works", "works.", 10.24, 10.72, source: .system),
+                span("system-okay", "Okay", 12, 12.3, source: .system)
+            ]
+        case .microphone:
+            try [
+                span("microphone-this", "this", 10.06, 10.3, source: .microphone),
+                span("microphone-works", "works", 10.3, 10.78, source: .microphone),
+                span("microphone-yes", "Yes", 10.5, 10.9, source: .microphone),
+                span("microphone-okay", "Okay", 13, 13.3, source: .microphone)
+            ]
+        case nil:
+            []
+        }
+    }
+
+    private func span(
+        _ id: String,
+        _ text: String,
+        _ start: TimeInterval,
+        _ end: TimeInterval,
+        source: TranscriptSourceLabel
+    ) throws -> TimedTranscriptSpan {
+        try TimedTranscriptSpan(
+            id: id,
+            text: text,
+            start: start,
+            end: end,
+            source: source
         )
     }
 }

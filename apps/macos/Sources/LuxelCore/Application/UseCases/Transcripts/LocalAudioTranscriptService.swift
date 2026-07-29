@@ -263,8 +263,9 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
 
             return $0.start < $1.start
         }
+        let reconciledSpans = CrossSourceEchoTranscriptFilter.removingEcho(from: sortedSpans)
 
-        return try sortedSpans.enumerated().map { index, span in
+        return try reconciledSpans.enumerated().map { index, span in
             try span.replacingID("span-\(index)")
         }
     }

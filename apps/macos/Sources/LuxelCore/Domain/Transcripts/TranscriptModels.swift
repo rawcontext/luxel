@@ -22,7 +22,7 @@ public struct TranscriptionProvenance: Codable, Equatable, Sendable {
 
     public static let appleSpeech = TranscriptionProvenance(
         engine: .appleSpeech,
-        configurationRevision: "apple-speech-adapter-v1"
+        configurationRevision: "apple-speech-adapter-v2"
     )
 }
 
