@@ -36683,6 +36683,102 @@
         "pt-PT": { "stringUnit": { "state": "translated", "value": "Inicia automaticamente a reprodução ao selecionar uma palavra da transcrição." } }
       }
     },
+    "transcription.error.authorizationDenied": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Allow Speech Recognition in System Settings, then retry." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Erlaube die Spracherkennung in den Systemeinstellungen und versuche es erneut." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Permite el reconocimiento de voz en Ajustes del Sistema y vuelve a intentarlo." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Autorisez la reconnaissance vocale dans Réglages Système, puis réessayez." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Consenti il riconoscimento vocale in Impostazioni di Sistema, quindi riprova." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "システム設定で音声認識を許可してから、もう一度お試しください。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "시스템 설정에서 음성 인식을 허용한 다음 다시 시도하세요." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Cho phép Nhận dạng giọng nói trong Cài đặt hệ thống, rồi thử lại." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "请在“系统设置”中允许语音识别，然后重试。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Permita o Reconhecimento de Fala nos Ajustes do Sistema e tente novamente." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Permita o Reconhecimento de Voz nas Definições do Sistema e tente novamente." } }
+      }
+    },
+    "transcription.error.unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Speech transcription is unavailable on this Mac." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Die Sprachtranskription ist auf diesem Mac nicht verfügbar." } },
+        "es": { "stringUnit": { "state": "translated", "value": "La transcripción de voz no está disponible en este Mac." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "La transcription vocale n’est pas disponible sur ce Mac." } },
+        "it": { "stringUnit": { "state": "translated", "value": "La trascrizione vocale non è disponibile su questo Mac." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "このMacでは音声文字起こしを利用できません。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 Mac에서는 음성 트랜스크립션을 사용할 수 없습니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Tính năng chép lời giọng nói không khả dụng trên máy Mac này." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "此 Mac 无法使用语音转录。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "A transcrição de voz não está disponível neste Mac." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "A transcrição de voz não está disponível neste Mac." } }
+      }
+    },
+    "transcription.error.unsupportedLocale": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The selected transcription language is not supported." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Die ausgewählte Transkriptionssprache wird nicht unterstützt." } },
+        "es": { "stringUnit": { "state": "translated", "value": "El idioma de transcripción seleccionado no es compatible." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "La langue de transcription sélectionnée n’est pas prise en charge." } },
+        "it": { "stringUnit": { "state": "translated", "value": "La lingua di trascrizione selezionata non è supportata." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "選択した文字起こし言語はサポートされていません。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "선택한 트랜스크립션 언어는 지원되지 않습니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ngôn ngữ chép lời đã chọn không được hỗ trợ." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "不支持所选的转录语言。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "O idioma de transcrição selecionado não é compatível." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "O idioma de transcrição selecionado não é suportado." } }
+      }
+    },
+    "transcription.error.assetsUnavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Speech transcription could not finish preparing. Wait a moment, then retry." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Die Sprachtranskription konnte nicht fertig vorbereitet werden. Warte einen Moment und versuche es erneut." } },
+        "es": { "stringUnit": { "state": "translated", "value": "No se pudo terminar de preparar la transcripción de voz. Espera un momento y vuelve a intentarlo." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "La préparation de la transcription vocale n’a pas pu se terminer. Patientez un instant, puis réessayez." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Non è stato possibile completare la preparazione della trascrizione vocale. Attendi un momento, quindi riprova." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "音声文字起こしの準備を完了できませんでした。しばらく待ってから、もう一度お試しください。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "음성 트랜스크립션 준비를 완료하지 못했습니다. 잠시 기다린 다음 다시 시도하세요." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Không thể hoàn tất việc chuẩn bị chép lời giọng nói. Hãy đợi một lát rồi thử lại." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "语音转录未能完成准备。请稍等片刻，然后重试。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Não foi possível concluir a preparação da transcrição de voz. Aguarde um momento e tente novamente." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Não foi possível concluir a preparação da transcrição de voz. Aguarde um momento e tente novamente." } }
+      }
+    },
+    "transcription.error.missingAudioTrack": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Luxel could not find an audio track to transcribe in this recording." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Luxel konnte in dieser Aufnahme keine Audiospur zum Transkribieren finden." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Luxel no pudo encontrar una pista de audio para transcribir en esta grabación." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Luxel n’a trouvé aucune piste audio à transcrire dans cet enregistrement." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Luxel non ha trovato una traccia audio da trascrivere in questa registrazione." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この録画に文字起こしできるオーディオトラックが見つかりませんでした。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Luxel이 이 녹화에서 트랜스크립션할 오디오 트랙을 찾지 못했습니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Luxel không tìm thấy rãnh âm thanh để chép lời trong bản ghi này." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Luxel 在此录制中找不到可转录的音轨。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "O Luxel não encontrou uma faixa de áudio para transcrever nesta gravação." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "O Luxel não encontrou uma faixa de áudio para transcrever nesta gravação." } }
+      }
+    },
+    "transcription.error.trackIsolationFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Luxel could not prepare this recording’s audio for transcription." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Luxel konnte den Ton dieser Aufnahme nicht für die Transkription vorbereiten." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Luxel no pudo preparar el audio de esta grabación para la transcripción." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Luxel n’a pas pu préparer l’audio de cet enregistrement pour la transcription." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Luxel non ha potuto preparare l’audio di questa registrazione per la trascrizione." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この録画のオーディオを文字起こし用に準備できませんでした。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "Luxel이 이 녹화의 오디오를 트랜스크립션용으로 준비하지 못했습니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Luxel không thể chuẩn bị âm thanh của bản ghi này để chép lời." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "Luxel 无法准备此录制的音频以进行转录。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "O Luxel não conseguiu preparar o áudio desta gravação para transcrição." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "O Luxel não conseguiu preparar o áudio desta gravação para transcrição." } }
+      }
+    },
     "Speaker count": {
       "extractionState": "manual",
       "localizations": {
