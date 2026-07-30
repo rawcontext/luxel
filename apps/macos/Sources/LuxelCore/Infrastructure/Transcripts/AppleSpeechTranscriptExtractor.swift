@@ -1,11 +1,18 @@
 import AVFoundation
 import CoreMedia
 import Foundation
+import OSLog
 import Speech
 
 public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
+    private static let logger = Logger(
+        subsystem: "media.luxel.app",
+        category: "speech-transcription"
+    )
+
     private let temporaryDirectory: URL
     private let speechAuthorizationStatus: @Sendable () async -> SFSpeechRecognizerAuthorizationStatus
+    private let assetReadinessGate: AppleSpeechAssetReadinessGate
 
     public init(temporaryDirectory: URL = FileManager.default.temporaryDirectory) {
         self.init(
@@ -20,6 +27,7 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
     ) {
         self.temporaryDirectory = temporaryDirectory
         self.speechAuthorizationStatus = speechAuthorizationStatus
+        self.assetReadinessGate = AppleSpeechAssetReadinessGate()
     }
 
     public func transcribe(_ request: TimedSpeechTranscriptionRequest) async throws
@@ -39,7 +47,9 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
             reportingOptions: [],
             attributeOptions: [.audioTimeRange, .transcriptionConfidence]
         )
-        try await ensureAssetsInstalled(for: [transcriber])
+        try await assetReadinessGate.wait(for: locale.identifier) {
+            try await ensureAssetsInstalled(for: [transcriber])
+        }
 
         let preparedAudioURL: URL
         if let audioTrackIndex = request.audioTrackIndex {
@@ -87,24 +97,40 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
     }
 
     private func ensureAssetsInstalled(for modules: [any Speech.SpeechModule]) async throws {
-        switch await Speech.AssetInventory.status(forModules: modules) {
-        case .installed:
-            return
-        case .supported, .downloading:
-            if let request = try await Speech.AssetInventory.assetInstallationRequest(supporting: modules) {
-                try await request.downloadAndInstall()
+        let waiter = AppleSpeechAssetReadinessWaiter()
+        try await waiter.waitUntilReady(
+            status: {
+                switch await Speech.AssetInventory.status(forModules: modules) {
+                case .installed:
+                    return .installed
+                case .supported:
+                    return .supported
+                case .downloading:
+                    return .downloading
+                case .unsupported:
+                    return .unsupported
+                @unknown default:
+                    return .unsupported
+                }
+            },
+            install: {
+                do {
+                    if let request =
+                        try await Speech.AssetInventory.assetInstallationRequest(
+                            supporting: modules
+                        ) {
+                        try await request.downloadAndInstall()
+                    }
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    Self.logger.error(
+                        "Speech asset preparation failed; retrying: \(error.localizedDescription, privacy: .private)"
+                    )
+                    throw error
+                }
             }
-
-            if await Speech.AssetInventory.status(forModules: modules) == .installed {
-                return
-            }
-
-            throw AppleSpeechTranscriptError.assetsUnavailable
-        case .unsupported:
-            throw AppleSpeechTranscriptError.assetsUnavailable
-        @unknown default:
-            throw AppleSpeechTranscriptError.assetsUnavailable
-        }
+        )
     }
 
     private func isolatedAudioURL(from audioURL: URL, audioTrackIndex: Int) async throws -> URL {
@@ -232,4 +258,42 @@ public enum AppleSpeechTranscriptError: Error, Equatable, Sendable {
     case assetsUnavailable
     case missingAudioTrack
     case trackIsolationFailed
+}
+
+extension AppleSpeechTranscriptError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .authorizationDenied:
+            LuxelLocalization.string(
+                "transcription.error.authorizationDenied",
+                defaultValue: "Allow Speech Recognition in System Settings, then retry."
+            )
+        case .unavailable:
+            LuxelLocalization.string(
+                "transcription.error.unavailable",
+                defaultValue: "Speech transcription is unavailable on this Mac."
+            )
+        case .unsupportedLocale:
+            LuxelLocalization.string(
+                "transcription.error.unsupportedLocale",
+                defaultValue: "The selected transcription language is not supported."
+            )
+        case .assetsUnavailable:
+            LuxelLocalization.string(
+                "transcription.error.assetsUnavailable",
+                defaultValue:
+                    "Speech transcription could not finish preparing. Wait a moment, then retry."
+            )
+        case .missingAudioTrack:
+            LuxelLocalization.string(
+                "transcription.error.missingAudioTrack",
+                defaultValue: "Luxel could not find an audio track to transcribe in this recording."
+            )
+        case .trackIsolationFailed:
+            LuxelLocalization.string(
+                "transcription.error.trackIsolationFailed",
+                defaultValue: "Luxel could not prepare this recording’s audio for transcription."
+            )
+        }
+    }
 }
