@@ -284,6 +284,7 @@ extension LuxelEditorView {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollIndicators(.hidden)
+        .scrollEdgeEffectHidden(true, for: .top)
     }
 
     private func keystrokePreviewAlignment(_ anchor: KeystrokeOverlayAnchor) -> Alignment {
