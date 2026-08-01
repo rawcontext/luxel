@@ -7,14 +7,10 @@ extension AVFoundationMediaExporterTests {
     func mp4ExportAppliesTimelineCutsAndSpeed() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")
         defer { try? FileManager.default.removeItem(at: outputURL) }
-        let request = try ExportRequest(
-            inputFileURL: fixtureURL("input@2x.mp4"),
-            format: .mp4,
-            pixelSize: PixelSize(width: 320, height: 180),
-            frameRate: FrameRate(30),
-            timeRange: TimeRange(start: 1, end: 1.8),
+        let request = try makeFixtureVideoExportRequest(
+            start: 1,
+            end: 1.8,
             shouldMute: false,
-            shouldCrop: false,
             speed: PlaybackSpeed(2),
             editPlan: TimelineEditPlan(cuts: [
                 TimelineCut(

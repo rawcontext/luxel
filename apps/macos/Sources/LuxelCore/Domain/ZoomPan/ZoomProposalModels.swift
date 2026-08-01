@@ -108,33 +108,39 @@ public enum ZoomProposalEngine {
         for sample in timeline.samples.dropFirst() {
             if normalizedDistance(from: dwellStart.position, to: sample.position, sourceSize: sourceSize)
                 > tuning.dwellMovementTolerance {
-                if last.time - dwellStart.time >= tuning.dwellDurationThreshold {
-                    points.append(
-                        try ZoomInterestPoint(
-                            time: (dwellStart.time + last.time) / 2,
-                            position: dwellStart.position,
-                            sourceSize: sourceSize,
-                            weight: tuning.minimumClusterWeight
-                        ))
-                }
-
+                try appendDwellPoint(
+                    from: dwellStart, through: last, sourceSize: sourceSize, tuning: tuning, to: &points
+                )
                 dwellStart = sample
             }
 
             last = sample
         }
 
-        if last.time - dwellStart.time >= tuning.dwellDurationThreshold {
-            points.append(
-                try ZoomInterestPoint(
-                    time: (dwellStart.time + last.time) / 2,
-                    position: dwellStart.position,
-                    sourceSize: sourceSize,
-                    weight: tuning.minimumClusterWeight
-                ))
-        }
+        try appendDwellPoint(
+            from: dwellStart, through: last, sourceSize: sourceSize, tuning: tuning, to: &points
+        )
 
         return points
+    }
+
+    private static func appendDwellPoint(
+        from start: CursorSample,
+        through end: CursorSample,
+        sourceSize: PixelSize,
+        tuning: ZoomProposalTuning,
+        to points: inout [ZoomInterestPoint]
+    ) throws {
+        guard end.time - start.time >= tuning.dwellDurationThreshold else {
+            return
+        }
+        points.append(
+            try ZoomInterestPoint(
+                time: (start.time + end.time) / 2,
+                position: start.position,
+                sourceSize: sourceSize,
+                weight: tuning.minimumClusterWeight
+            ))
     }
 
     private static func proposedBlocks(

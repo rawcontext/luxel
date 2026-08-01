@@ -1,0 +1,24 @@
+---
+interface Props {
+  keys: string[];
+}
+
+const { keys } = Astro.props;
+const keycaps: Record<string, { label: string; symbol: string; className: string }> = {
+  command: { label: "Command", symbol: "⌘", className: "is-modifier" },
+  control: { label: "Control", symbol: "⌃", className: "is-modifier" },
+  option: { label: "Option", symbol: "⌥", className: "is-modifier" },
+  shift: { label: "Shift", symbol: "⇧", className: "is-modifier" },
+  escape: { label: "Escape", symbol: "Esc", className: "is-wide" },
+  click: { label: "Click", symbol: "click", className: "is-word" }
+};
+const metadata = keys.map((key) => keycaps[key] ?? {
+  label: key.length === 1 ? key.toUpperCase() : key,
+  symbol: key.length === 1 ? key.toUpperCase() : key,
+  className: key.length === 1 ? "is-letter" : "is-word"
+});
+---
+
+<span class="shortcut-keys" aria-label={metadata.map((key) => key.label).join("-")}>
+  {metadata.map((key) => <kbd class={key.className} title={key.label}>{key.symbol}</kbd>)}
+</span>

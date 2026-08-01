@@ -2,6 +2,7 @@ import AVFAudio
 import AudioToolbox
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("AVAssetReader codec media source", .serialized)
@@ -188,42 +189,10 @@ struct AVAssetReaderCodecMediaSourceTests {
     }
 
     private func writeSilentPCM(to url: URL, duration: TimeInterval) throws {
-        let format = try #require(
-            AVAudioFormat(
-                commonFormat: .pcmFormatFloat32,
-                sampleRate: 48_000,
-                channels: 2,
-                interleaved: false
-            )
-        )
-        let frameCount = AVAudioFrameCount(duration * 48_000)
-        let buffer = try #require(
-            AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
-        )
-        buffer.frameLength = frameCount
-        let file = try AVAudioFile(
-            forWriting: url,
-            settings: [
-                AVFormatIDKey: kAudioFormatLinearPCM,
-                AVSampleRateKey: 48_000,
-                AVNumberOfChannelsKey: 2,
-                AVLinearPCMBitDepthKey: 32,
-                AVLinearPCMIsFloatKey: true
-            ],
-            commonFormat: .pcmFormatFloat32,
-            interleaved: false
-        )
-        try file.write(from: buffer)
+        try writeSilentTestPCM(to: url, duration: duration)
     }
 
     private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+        try sharedPackageRootURL()
     }
 }

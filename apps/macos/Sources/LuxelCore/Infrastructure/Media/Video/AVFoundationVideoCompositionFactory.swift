@@ -10,6 +10,34 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         compositionVideoTrack: AVCompositionTrack,
         timeRange: CMTimeRange,
         outputPixelSize: PixelSize,
+        request: ExportRequest
+    ) async throws -> AVVideoComposition {
+        try await makeVideoComposition(
+            sourceVideoTrack: sourceVideoTrack,
+            compositionVideoTrack: compositionVideoTrack,
+            timeRange: timeRange,
+            outputPixelSize: outputPixelSize,
+            frameRate: request.frameRate,
+            shouldCrop: request.shouldCrop,
+            sourceCropRect: request.cropRect,
+            zoomBlocks: EditedTimelineMapper(
+                trimRange: request.timeRange,
+                editPlan: request.editPlan,
+                speed: request.speed
+            ).map(request.zoomBlocks),
+            keystrokeTimeline: try? KeystrokeSidecarFileLoader().load(
+                nextTo: request.inputFileURL
+            ),
+            keystrokeOptions: request.keystrokeOptions,
+            keystrokeTimelineMapper: request.timelineMapper
+        )
+    }
+
+    func makeVideoComposition(
+        sourceVideoTrack: AVAssetTrack,
+        compositionVideoTrack: AVCompositionTrack,
+        timeRange: CMTimeRange,
+        outputPixelSize: PixelSize,
         frameRate: FrameRate,
         shouldCrop: Bool = false,
         sourceCropRect: CaptureRect? = nil,

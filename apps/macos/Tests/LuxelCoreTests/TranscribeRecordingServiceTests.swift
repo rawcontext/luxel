@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Transcribe recording service")
@@ -83,14 +84,14 @@ struct TranscribeRecordingServiceTests {
             updatedBundle.manifest.sidecar(for: .captions) == (try BundleSidecarManifest(kind: .captions))
         )
         #expect(
-            fileSystem.writtenData.map(\.url) == [
+            fileSystem.writes.map(\.url) == [
                 rootURL.appendingPathComponent("captions.json"),
                 rootURL.appendingPathComponent("bundle.json")
             ])
 
         let document = try JSONDecoder().decode(
             CaptionSidecarDocument.self,
-            from: try #require(fileSystem.writtenData.first?.data)
+            from: try #require(fileSystem.writes.first?.data)
         )
         #expect(document.track == result.track)
         #expect(result.track.sourceTrack == .system)
@@ -147,27 +148,4 @@ private final class ProgressRecorder: @unchecked Sendable {
     }
 }
 
-private final class FakeTranscriptionFileSystem: FileSystem, @unchecked Sendable {
-    private(set) var writtenData: [WrittenData] = []
-
-    func fileExists(at url: URL) -> Bool {
-        true
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func writeData(_ data: Data, to url: URL) throws {
-        writtenData.append(WrittenData(data: data, url: url))
-    }
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
-
-private struct WrittenData: Equatable {
-    let data: Data
-    let url: URL
-}
+private typealias FakeTranscriptionFileSystem = TestWritingFileSystem

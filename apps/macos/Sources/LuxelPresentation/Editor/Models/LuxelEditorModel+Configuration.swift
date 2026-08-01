@@ -46,29 +46,7 @@ extension LuxelEditorModel {
         playbackRequested = false
         frameGrabTask?.cancel()
         frameGrabTask = nil
-        previewAudioMixTask?.cancel()
-        previewAudioMixTask = nil
-        speechRecognitionAuthorizationTask?.cancel()
-        speechRecognitionAuthorizationTask = nil
-        transcriptTask?.cancel()
-        transcriptTask = nil
-        previewCompositionTask?.cancel()
-        previewCompositionTask = nil
-        transcript = nil
-        transcriptEditPlan = .empty
-        selectedTranscriptWordIDs = []
-        transcriptWordSelectionAnchorID = nil
-        transcriptEditStatusMessage = nil
-        isEditedPreviewReady = true
-        keystrokeTimeline = nil
-        keystrokeOptions = nil
-        isTranscriptExtractionActive = false
-        isTranscriptPanelVisible = false
-        transcriptExtractionStartedAt = nil
-        transcriptExtractionProgress = nil
-        transcriptFailureMessage = nil
-        speechRecognitionAuthorizationState = nil
-        resetSpeakerCountControls()
+        resetTranscriptWorkspace()
         self.transcriptSourceContext = transcriptSourceContext
         currentPlaybackTime = 0
     }
@@ -110,6 +88,13 @@ extension LuxelEditorModel {
     private func applyOpenFailure(_ error: Error) {
         source = nil
         studioVoiceEnabled = false
+        resetTranscriptWorkspace()
+        player.replaceCurrentItem(with: nil)
+        status = .failed(errorMessage(error))
+        resetEditorUndoStack()
+    }
+
+    func resetTranscriptWorkspace() {
         previewAudioMixTask?.cancel()
         previewAudioMixTask = nil
         speechRecognitionAuthorizationTask?.cancel()
@@ -133,9 +118,6 @@ extension LuxelEditorModel {
         transcriptFailureMessage = nil
         speechRecognitionAuthorizationState = nil
         resetSpeakerCountControls()
-        player.replaceCurrentItem(with: nil)
-        status = .failed(errorMessage(error))
-        resetEditorUndoStack()
     }
 
     private func resolvedTranscriptSourceContext(

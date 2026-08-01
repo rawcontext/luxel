@@ -1,5 +1,6 @@
 import CoreGraphics
 import ImageIO
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelCore
@@ -83,25 +84,21 @@ struct AnimatedFrameRendererTests {
 
     private func splitColorImage(width: Int, height: Int) throws -> CGImage {
         let outputSize = CGSize(width: width, height: height)
-        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let context = try #require(
-            CGContext(
-                data: nil,
-                width: width,
-                height: height,
-                bitsPerComponent: 8,
-                bytesPerRow: 0,
-                space: colorSpace,
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-            ))
-
-        context.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
-        context.fill(CGRect(x: 0, y: 0, width: outputSize.width / 2, height: outputSize.height))
-        context.setFillColor(CGColor(red: 0, green: 0, blue: 1, alpha: 1))
-        context.fill(
-            CGRect(x: outputSize.width / 2, y: 0, width: outputSize.width / 2, height: outputSize.height))
-
-        return try #require(context.makeImage())
+        return try makeTestImage(width: width, height: height) { context in
+            context.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1))
+            context.fill(
+                CGRect(x: 0, y: 0, width: outputSize.width / 2, height: outputSize.height)
+            )
+            context.setFillColor(CGColor(red: 0, green: 0, blue: 1, alpha: 1))
+            context.fill(
+                CGRect(
+                    x: outputSize.width / 2,
+                    y: 0,
+                    width: outputSize.width / 2,
+                    height: outputSize.height
+                )
+            )
+        }
     }
 
     private func transparentRedImage() throws -> CGImage {
@@ -124,39 +121,6 @@ struct AnimatedFrameRendererTests {
         return try #require(context.makeImage())
     }
 
-    private func rgbaPixels(from image: CGImage) throws -> [GIFRGBAPixel] {
-        let bytesPerPixel = 4
-        let bytesPerRow = image.width * bytesPerPixel
-        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo =
-            CGImageAlphaInfo.premultipliedLast.rawValue
-            | CGBitmapInfo.byteOrder32Big.rawValue
-        var bytes = Array(repeating: UInt8(0), count: image.height * bytesPerRow)
-
-        try bytes.withUnsafeMutableBytes { pointer in
-            let context = try #require(
-                CGContext(
-                    data: pointer.baseAddress,
-                    width: image.width,
-                    height: image.height,
-                    bitsPerComponent: 8,
-                    bytesPerRow: bytesPerRow,
-                    space: colorSpace,
-                    bitmapInfo: bitmapInfo
-                ))
-            context.clear(CGRect(x: 0, y: 0, width: image.width, height: image.height))
-            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
-        }
-
-        return stride(from: 0, to: bytes.count, by: bytesPerPixel).map { offset in
-            GIFRGBAPixel(
-                red: bytes[offset],
-                green: bytes[offset + 1],
-                blue: bytes[offset + 2],
-                alpha: bytes[offset + 3]
-            )
-        }
-    }
 }
 
 @Suite("Native GIF encoder")
@@ -188,37 +152,38 @@ struct NativeGIFEncoderTests {
         #expect(pixels[1].alpha == 255)
     }
 
-    private func rgbaPixels(from image: CGImage) throws -> [GIFRGBAPixel] {
-        let bytesPerPixel = 4
-        let bytesPerRow = image.width * bytesPerPixel
-        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-        let bitmapInfo =
-            CGImageAlphaInfo.premultipliedLast.rawValue
-            | CGBitmapInfo.byteOrder32Big.rawValue
-        var bytes = Array(repeating: UInt8(0), count: image.height * bytesPerRow)
+}
 
-        try bytes.withUnsafeMutableBytes { pointer in
-            let context = try #require(
-                CGContext(
-                    data: pointer.baseAddress,
-                    width: image.width,
-                    height: image.height,
-                    bitsPerComponent: 8,
-                    bytesPerRow: bytesPerRow,
-                    space: colorSpace,
-                    bitmapInfo: bitmapInfo
-                ))
-            context.clear(CGRect(x: 0, y: 0, width: image.width, height: image.height))
-            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
-        }
+private func rgbaPixels(from image: CGImage) throws -> [GIFRGBAPixel] {
+    let bytesPerPixel = 4
+    let bytesPerRow = image.width * bytesPerPixel
+    let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+    let bitmapInfo =
+        CGImageAlphaInfo.premultipliedLast.rawValue
+        | CGBitmapInfo.byteOrder32Big.rawValue
+    var bytes = Array(repeating: UInt8(0), count: image.height * bytesPerRow)
 
-        return stride(from: 0, to: bytes.count, by: bytesPerPixel).map { offset in
-            GIFRGBAPixel(
-                red: bytes[offset],
-                green: bytes[offset + 1],
-                blue: bytes[offset + 2],
-                alpha: bytes[offset + 3]
-            )
-        }
+    try bytes.withUnsafeMutableBytes { pointer in
+        let context = try #require(
+            CGContext(
+                data: pointer.baseAddress,
+                width: image.width,
+                height: image.height,
+                bitsPerComponent: 8,
+                bytesPerRow: bytesPerRow,
+                space: colorSpace,
+                bitmapInfo: bitmapInfo
+            ))
+        context.clear(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+    }
+
+    return stride(from: 0, to: bytes.count, by: bytesPerPixel).map { offset in
+        GIFRGBAPixel(
+            red: bytes[offset],
+            green: bytes[offset + 1],
+            blue: bytes[offset + 2],
+            alpha: bytes[offset + 3]
+        )
     }
 }

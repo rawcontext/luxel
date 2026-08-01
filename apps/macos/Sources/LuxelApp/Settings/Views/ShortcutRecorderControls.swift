@@ -135,28 +135,6 @@ extension NSEvent {
             return nil
         }
 
-        return try? AppKeyboardShortcut(key: rawKey, modifiers: luxelShortcutModifiers)
-    }
-
-    fileprivate var luxelShortcutModifiers: [AppKeyboardShortcutModifier] {
-        var modifiers: [AppKeyboardShortcutModifier] = []
-
-        if modifierFlags.contains(.command) {
-            modifiers.append(.command)
-        }
-
-        if modifierFlags.contains(.control) {
-            modifiers.append(.control)
-        }
-
-        if modifierFlags.contains(.option) {
-            modifiers.append(.option)
-        }
-
-        if modifierFlags.contains(.shift) {
-            modifiers.append(.shift)
-        }
-
-        return modifiers
+        return try? AppKeyboardShortcut(key: rawKey, modifiers: appShortcutModifiers)
     }
 }

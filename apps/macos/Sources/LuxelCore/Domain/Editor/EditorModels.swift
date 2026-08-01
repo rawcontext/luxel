@@ -119,86 +119,86 @@ public struct SourceMedia: Codable, Equatable, Sendable {
 public struct EditorExportDraft: Codable, Equatable, Sendable {
     public let source: SourceMedia
     public let format: ExportFormat
-    public let trimRange: TimeRange?
+    public let quality: ExportQuality
+    public let speed: PlaybackSpeed
+    public let gifOptions: GIFRenderOptions?
     public let pixelSize: PixelSize?
     public let frameRate: FrameRate?
+    public let trimRange: TimeRange?
+    public let shouldCrop: Bool
+    public let cropRect: CaptureRect?
+    public let cameraOverlay: CameraOverlayPlan?
+    public let zoomBlocks: [ZoomBlock]
     public let shouldMute: Bool
     public let audioMix: AudioMixPlan?
     public let studioVoiceEnabled: Bool
-    public let shouldCrop: Bool
-    public let cropRect: CaptureRect?
-    public let quality: ExportQuality
-    public let speed: PlaybackSpeed
-    public let editPlan: TimelineEditPlan
-    public let gifOptions: GIFRenderOptions?
     public let cursorOptions: CursorRenderOptions?
     public let keystrokeOptions: KeystrokeRenderOptions?
     public let captionOptions: CaptionRenderOptions?
-    public let cameraOverlay: CameraOverlayPlan?
-    public let zoomBlocks: [ZoomBlock]
+    public let editPlan: TimelineEditPlan
 
     public init(
         source: SourceMedia,
         format: ExportFormat = .mp4,
-        trimRange: TimeRange? = nil,
+        quality: ExportQuality = .balanced,
+        speed: PlaybackSpeed = .normal,
+        gifOptions: GIFRenderOptions? = nil,
         pixelSize: PixelSize? = nil,
         frameRate: FrameRate? = nil,
+        trimRange: TimeRange? = nil,
+        shouldCrop: Bool = false,
+        cropRect: CaptureRect? = nil,
+        cameraOverlay: CameraOverlayPlan? = nil,
+        zoomBlocks: [ZoomBlock] = [],
         shouldMute: Bool = false,
         audioMix: AudioMixPlan? = nil,
         studioVoiceEnabled: Bool = false,
-        shouldCrop: Bool = false,
-        cropRect: CaptureRect? = nil,
-        quality: ExportQuality = .balanced,
-        speed: PlaybackSpeed = .normal,
-        editPlan: TimelineEditPlan = .empty,
-        gifOptions: GIFRenderOptions? = nil,
         cursorOptions: CursorRenderOptions? = nil,
         keystrokeOptions: KeystrokeRenderOptions? = nil,
         captionOptions: CaptionRenderOptions? = nil,
-        cameraOverlay: CameraOverlayPlan? = nil,
-        zoomBlocks: [ZoomBlock] = []
+        editPlan: TimelineEditPlan = .empty
     ) {
         self.source = source
         self.format = format
-        self.trimRange = trimRange
+        self.quality = quality
+        self.speed = speed
+        self.gifOptions = gifOptions
         self.pixelSize = pixelSize
         self.frameRate = frameRate
+        self.trimRange = trimRange
+        self.shouldCrop = shouldCrop
+        self.cropRect = cropRect
+        self.cameraOverlay = cameraOverlay
+        self.zoomBlocks = zoomBlocks
         self.shouldMute = shouldMute
         self.audioMix = audioMix
         self.studioVoiceEnabled = studioVoiceEnabled
-        self.shouldCrop = shouldCrop
-        self.cropRect = cropRect
-        self.quality = quality
-        self.speed = speed
-        self.editPlan = editPlan
-        self.gifOptions = gifOptions
         self.cursorOptions = cursorOptions
         self.keystrokeOptions = keystrokeOptions
         self.captionOptions = captionOptions
-        self.cameraOverlay = cameraOverlay
-        self.zoomBlocks = zoomBlocks
+        self.editPlan = editPlan
     }
 
     private enum CodingKeys: String, CodingKey {
         case source
         case format
-        case trimRange
+        case quality
+        case speed
+        case gifOptions
         case pixelSize
         case frameRate
+        case trimRange
+        case shouldCrop
+        case cropRect
+        case cameraOverlay
+        case zoomBlocks
         case shouldMute
         case audioMix
         case studioVoiceEnabled
-        case shouldCrop
-        case cropRect
-        case quality
-        case speed
-        case editPlan
-        case gifOptions
         case cursorOptions
         case keystrokeOptions
         case captionOptions
-        case cameraOverlay
-        case zoomBlocks
+        case editPlan
     }
 
     public init(from decoder: any Decoder) throws {
@@ -206,29 +206,25 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
 
         source = try container.decode(SourceMedia.self, forKey: .source)
         format = try container.decode(ExportFormat.self, forKey: .format)
-        trimRange = try container.decodeIfPresent(TimeRange.self, forKey: .trimRange)
+        quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality) ?? .balanced
+        speed = try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed) ?? .normal
+        gifOptions = try container.decodeIfPresent(GIFRenderOptions.self, forKey: .gifOptions)
         pixelSize = try container.decodeIfPresent(PixelSize.self, forKey: .pixelSize)
         frameRate = try container.decodeIfPresent(FrameRate.self, forKey: .frameRate)
+        trimRange = try container.decodeIfPresent(TimeRange.self, forKey: .trimRange)
+        shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
+        cropRect = try container.decodeIfPresent(CaptureRect.self, forKey: .cropRect)
+        cameraOverlay = try container.decodeIfPresent(CameraOverlayPlan.self, forKey: .cameraOverlay)
+        zoomBlocks = try container.decodeIfPresent([ZoomBlock].self, forKey: .zoomBlocks) ?? []
         shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
         audioMix = try container.decodeIfPresent(AudioMixPlan.self, forKey: .audioMix)
         studioVoiceEnabled = try container.decodeIfPresent(Bool.self, forKey: .studioVoiceEnabled) ?? false
-        shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
-        cropRect = try container.decodeIfPresent(CaptureRect.self, forKey: .cropRect)
-        quality =
-            try container.decodeIfPresent(ExportQuality.self, forKey: .quality)
-            ?? .balanced
-        speed =
-            try container.decodeIfPresent(PlaybackSpeed.self, forKey: .speed)
-            ?? .normal
-        editPlan = try container.decodeIfPresent(TimelineEditPlan.self, forKey: .editPlan) ?? .empty
-        gifOptions = try container.decodeIfPresent(GIFRenderOptions.self, forKey: .gifOptions)
         cursorOptions = try container.decodeIfPresent(CursorRenderOptions.self, forKey: .cursorOptions)
         keystrokeOptions = try container.decodeIfPresent(
             KeystrokeRenderOptions.self, forKey: .keystrokeOptions)
         captionOptions = try container.decodeIfPresent(
             CaptionRenderOptions.self, forKey: .captionOptions)
-        cameraOverlay = try container.decodeIfPresent(CameraOverlayPlan.self, forKey: .cameraOverlay)
-        zoomBlocks = try container.decodeIfPresent([ZoomBlock].self, forKey: .zoomBlocks) ?? []
+        editPlan = try container.decodeIfPresent(TimelineEditPlan.self, forKey: .editPlan) ?? .empty
     }
 
     public var exportRequest: ExportRequest {
@@ -322,10 +318,7 @@ public enum EditorSizePreset: String, CaseIterable, Codable, Equatable, Hashable
     }
 
     public func pixelSize(for sourcePixelSize: PixelSize) throws -> PixelSize {
-        try PixelSize(
-            width: max(1, Int((Double(sourcePixelSize.width) * scale).rounded())),
-            height: max(1, Int((Double(sourcePixelSize.height) * scale).rounded()))
-        )
+        try sourcePixelSize.scaled(by: scale)
     }
 }
 

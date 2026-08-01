@@ -1,28 +1,20 @@
-import AVFAudio
-import AudioToolbox
 import Foundation
 import LuxelCodecWebM
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("WebM codec stack", .serialized)
 struct WebMCodecStackTests {
     @Test("codec pipeline writes a WebM file with real VP9 and Opus packets")
     func codecPipelineWritesWebMFile() async throws {
-        let outputURL = FileManager.default.temporaryDirectory
-            .appending(path: UUID().uuidString)
-            .appendingPathExtension("webm")
+        let outputURL = temporaryWebMURL()
         defer {
             try? FileManager.default.removeItem(at: outputURL)
         }
 
         let pixelSize = try PixelSize(width: 64, height: 64)
-        let pipeline = CodecExportPipeline(
-            mediaSource: StubWebMMediaSource(pixelSize: pixelSize),
-            videoEncoder: VPXVideoEncoder(),
-            audioEncoder: OpusAudioEncoder(),
-            muxer: WebMMuxer()
-        )
+        let pipeline = makeWebMTestPipeline(pixelSize: pixelSize)
 
         let exported = try await pipeline.export(
             makeRequest(pixelSize: pixelSize, shouldMute: false),
@@ -86,34 +78,14 @@ struct WebMCodecStackTests {
     @Test("media exporter consumes prepared audio when the source has no audio")
     func mediaExporterConsumesPreparedAudio() async throws {
         let outputURL = temporaryWebMURL()
-        let preparedURL = FileManager.default.temporaryDirectory
-            .appending(path: "webm-prepared-\(UUID().uuidString).caf")
+        let prepared = try makePreparedAudioTestInput(format: .webm)
         defer {
             try? FileManager.default.removeItem(at: outputURL)
-            try? FileManager.default.removeItem(at: preparedURL)
+            try? FileManager.default.removeItem(at: prepared.preparedURL)
         }
-        try writeSilentPreparedPCM(to: preparedURL, duration: 0.3)
-        let request = try ExportRequest(
-            inputFileURL: fixtureURL("input.mp4"),
-            format: .webm,
-            pixelSize: PixelSize(width: 320, height: 180),
-            frameRate: FrameRate(10),
-            timeRange: TimeRange(start: 1, end: 1.3),
-            shouldMute: false,
-            studioVoiceEnabled: true,
-            shouldCrop: false
-        )
 
         let exported = try await WebMMediaExporter().export(
-            MediaExportInput(
-                request: request,
-                preparedAudio: PreparedAudioAsset(
-                    fileURL: preparedURL,
-                    duration: 0.3,
-                    sampleRate: 48_000,
-                    channelCount: 2
-                )
-            ),
+            prepared.input,
             to: outputURL
         )
         let data = try Data(contentsOf: outputURL)
@@ -141,20 +113,12 @@ struct WebMCodecStackTests {
             try? FileManager.default.removeItem(at: outputURL)
         }
 
-        let muxer = WebMMuxer()
-        try await muxer.begin(
-            try CodecMuxerConfiguration(
-                outputFileURL: outputURL,
-                format: .webm,
-                tracks: [.video],
-                pixelSize: PixelSize(width: 64, height: 64)
-            ))
-
-        for index in 0..<150 {
-            try await muxer.write(
-                fakeVideoPacket(index: index, byteCount: 256, keyframeInterval: 60), to: .video)
-        }
-        try await muxer.finalize()
+        try await writeTestWebMVideo(
+            to: outputURL,
+            frameCount: 150,
+            byteCount: 256,
+            keyframeInterval: 60
+        )
 
         let document = try WebMTestDocument(data: try Data(contentsOf: outputURL))
         let clusters = document.topLevelElements(WebMTestID.cluster)
@@ -174,20 +138,12 @@ struct WebMCodecStackTests {
             try? FileManager.default.removeItem(at: outputURL)
         }
 
-        let muxer = WebMMuxer()
-        try await muxer.begin(
-            try CodecMuxerConfiguration(
-                outputFileURL: outputURL,
-                format: .webm,
-                tracks: [.video],
-                pixelSize: PixelSize(width: 64, height: 64)
-            ))
-
-        for index in 0..<10 {
-            try await muxer.write(
-                fakeVideoPacket(index: index, byteCount: 350_000, keyframeInterval: 1), to: .video)
-        }
-        try await muxer.finalize()
+        try await writeTestWebMVideo(
+            to: outputURL,
+            frameCount: 10,
+            byteCount: 350_000,
+            keyframeInterval: 1
+        )
 
         let document = try WebMTestDocument(data: try Data(contentsOf: outputURL))
         let clusters = document.topLevelElements(WebMTestID.cluster)
@@ -216,12 +172,7 @@ struct WebMCodecStackTests {
         }
 
         let pixelSize = try PixelSize(width: 64, height: 64)
-        let pipeline = CodecExportPipeline(
-            mediaSource: StubWebMMediaSource(pixelSize: pixelSize),
-            videoEncoder: VPXVideoEncoder(),
-            audioEncoder: OpusAudioEncoder(),
-            muxer: WebMMuxer()
-        )
+        let pipeline = makeWebMTestPipeline(pixelSize: pixelSize)
 
         _ = try await pipeline.export(
             makeRequest(pixelSize: pixelSize, shouldMute: false),

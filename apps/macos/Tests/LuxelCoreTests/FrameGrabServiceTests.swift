@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Frame grab service")
@@ -84,32 +85,9 @@ struct FrameGrabServiceTests {
     }
 }
 
-private final class StubFrameGrabber: FrameGrabber, @unchecked Sendable {
-    let imageData: FrameGrabImageData
-    private(set) var requests: [FrameGrabRequest] = []
+private typealias StubFrameGrabber = TestFrameGrabberSpy
 
-    init(imageData: FrameGrabImageData) {
-        self.imageData = imageData
-    }
-
-    func grab(_ request: FrameGrabRequest) async throws -> FrameGrabImageData {
-        requests.append(request)
-        return imageData
-    }
-}
-
-private final class SpyFrameGrabFileWriter: FrameGrabFileWriter, @unchecked Sendable {
-    struct Write: Equatable {
-        let imageData: FrameGrabImageData
-        let fileURL: URL
-    }
-
-    private(set) var writes: [Write] = []
-
-    func write(_ imageData: FrameGrabImageData, to fileURL: URL) throws {
-        writes.append(Write(imageData: imageData, fileURL: fileURL))
-    }
-}
+private typealias SpyFrameGrabFileWriter = TestFrameGrabFileWriterSpy
 
 @MainActor
 private final class SpyFrameGrabDestinationClient: FrameGrabDestinationClient {

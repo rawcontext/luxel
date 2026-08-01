@@ -30,15 +30,10 @@ extension ArchitectureTests {
 
     @Test("cropper renders snap guides while drawing selections")
     func cropperRendersSnapGuidesWhileDrawingSelections() throws {
-        let packageRoot = try packageRootURL()
-        let modelSource = try cropperModelSource()
-        let controllerSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
-            encoding: .utf8
-        )
-        let viewSource = try sourceContents(
-            under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
+        let sources = try cropperSources()
+        let modelSource = sources.model
+        let controllerSource = sources.controller
+        let viewSource = sources.views
 
         #expect(modelSource.contains("var snapGuides: [CaptureSnapGuide]"))
         #expect(modelSource.contains("let windowSnapFrames: [CaptureRect]"))
@@ -57,7 +52,6 @@ extension ArchitectureTests {
 
     @Test("cropper keeps active aspect ratio while drawing and resizing selections")
     func cropperKeepsActiveAspectRatioWhileDrawingAndResizingSelections() throws {
-        let packageRoot = try packageRootURL()
         let modelSource = try cropperModelSource()
         let activeAspectRatioUses =
             modelSource.components(separatedBy: "aspectRatio: activeAspectRatio").count - 1
@@ -107,7 +101,8 @@ extension ArchitectureTests {
         #expect(presentationSource.contains("memory: settings.lastCaptureMemory"))
         #expect(
             menuSource.contains(
-                "restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
+                "let restoredSelection = model.cropperRestoreSelectionConfiguration()"))
+        #expect(menuSource.contains("restoreSelectionConfiguration: restoredSelection"))
         #expect(
             shortcutsSource.contains(
                 "restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration()"))
@@ -115,24 +110,12 @@ extension ArchitectureTests {
 
     @Test("cropper dims inactive displays when configured")
     func cropperDimsInactiveDisplaysWhenConfigured() throws {
-        let packageRoot = try packageRootURL()
-        let modelSource = try cropperModelSource()
-        let controllerSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
-            encoding: .utf8
-        )
-        let viewSource = try sourceContents(
-            under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
-        let menuSource = try sourceText(for: [
-            "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift",
-            "Sources/LuxelApp/MenuBar/Views/LuxelMenu+Footer.swift"
-        ])
-        let shortcutsSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Shortcuts/LuxelShortcutInstaller.swift"),
-            encoding: .utf8
-        )
+        let sources = try cropperSources()
+        let modelSource = sources.model
+        let controllerSource = sources.controller
+        let viewSource = sources.views
+        let menuSource = sources.menu
+        let shortcutsSource = sources.shortcuts
 
         #expect(modelSource.contains("final class CropperDisplayFocus"))
         #expect(
@@ -152,24 +135,12 @@ extension ArchitectureTests {
 
     @Test("cropper shows loupe during precision selection")
     func cropperShowsLoupeDuringPrecisionSelection() throws {
-        let packageRoot = try packageRootURL()
-        let modelSource = try cropperModelSource()
-        let controllerSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"),
-            encoding: .utf8
-        )
-        let viewSource = try sourceContents(
-            under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
-        let menuSource = try sourceText(for: [
-            "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift",
-            "Sources/LuxelApp/MenuBar/Views/LuxelMenu+Footer.swift"
-        ])
-        let shortcutsSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelApp/Shortcuts/LuxelShortcutInstaller.swift"),
-            encoding: .utf8
-        )
+        let sources = try cropperSources()
+        let modelSource = sources.model
+        let controllerSource = sources.controller
+        let viewSource = sources.views
+        let menuSource = sources.menu
+        let shortcutsSource = sources.shortcuts
 
         #expect(modelSource.contains("var loupeSample: CaptureLoupeSample?"))
         #expect(modelSource.contains("let loupeAlwaysOn: Bool"))
@@ -191,4 +162,32 @@ extension ArchitectureTests {
             "Sources/LuxelApp/Cropper/Models/LuxelCropperModel+Selection.swift"
         ])
     }
+
+    private func cropperSources() throws -> CropperSources {
+        let packageRoot = try packageRootURL()
+        return try CropperSources(
+            model: cropperModelSource(),
+            controller: sourceText(for: [
+                "Sources/LuxelApp/Cropper/Panels/LuxelCropperPanelController.swift"
+            ]),
+            views: sourceContents(
+                under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views")
+            ),
+            menu: sourceText(for: [
+                "Sources/LuxelApp/MenuBar/Views/LuxelMenu.swift",
+                "Sources/LuxelApp/MenuBar/Views/LuxelMenu+Footer.swift"
+            ]),
+            shortcuts: sourceText(for: [
+                "Sources/LuxelApp/Shortcuts/LuxelShortcutInstaller.swift"
+            ])
+        )
+    }
+}
+
+private struct CropperSources {
+    let model: String
+    let controller: String
+    let views: String
+    let menu: String
+    let shortcuts: String
 }

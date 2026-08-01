@@ -6,13 +6,7 @@ extension GIFEngineModelTests {
     @Test("auto dithering chooses none for low error and diffusion for high error")
     func autoDitheringChoosesNoneForLowErrorAndDiffusionForHighError() throws {
         let palette = try blackWhitePalette()
-        let exactFrame = try GIFFrameBitmap(
-            pixelSize: PixelSize(width: 2, height: 1),
-            pixels: [
-                GIFRGBAPixel(red: 0, green: 0, blue: 0),
-                GIFRGBAPixel(red: 255, green: 255, blue: 255)
-            ]
-        )
+        let exactFrame = try blackWhiteFrame()
         let highErrorFrame = try solidBitmap(
             width: 2, height: 1, color: GIFRGBAPixel(red: 96, green: 96, blue: 96))
         let heuristic = GIFDitheringHeuristic()
@@ -28,20 +22,11 @@ extension GIFEngineModelTests {
     @Test("frame indexer routes explicit and auto dithering modes")
     func frameIndexerRoutesExplicitAndAutoDitheringModes() throws {
         let palette = try blackWhitePalette()
-        let exactFrame = try GIFFrameBitmap(
-            pixelSize: PixelSize(width: 2, height: 1),
-            pixels: [
-                GIFRGBAPixel(red: 0, green: 0, blue: 0),
-                GIFRGBAPixel(red: 255, green: 255, blue: 255)
-            ]
-        )
-        let highErrorFrame = try GIFFrameBitmap(
-            pixelSize: PixelSize(width: 3, height: 1),
-            pixels: [
-                GIFRGBAPixel(red: 96, green: 96, blue: 96),
-                GIFRGBAPixel(red: 96, green: 96, blue: 96),
-                GIFRGBAPixel(red: 96, green: 96, blue: 96)
-            ]
+        let exactFrame = try blackWhiteFrame()
+        let highErrorFrame = try solidBitmap(
+            width: 3,
+            height: 1,
+            color: GIFRGBAPixel(red: 96, green: 96, blue: 96)
         )
         let indexer = GIFFrameIndexer()
 
@@ -66,6 +51,16 @@ extension GIFEngineModelTests {
         #expect(throws: GIFEngineModelError.invalidFrameCount) {
             _ = try indexer.indexedFrames(from: [], palette: palette, dithering: .none)
         }
+    }
+
+    private func blackWhiteFrame() throws -> GIFFrameBitmap {
+        try GIFFrameBitmap(
+            pixelSize: PixelSize(width: 2, height: 1),
+            pixels: [
+                GIFRGBAPixel(red: 0, green: 0, blue: 0),
+                GIFRGBAPixel(red: 255, green: 255, blue: 255)
+            ]
+        )
     }
 
     @Test("frame differ emits full first frame and transparent static deltas")

@@ -316,26 +316,7 @@ extension LuxelMenu {
     }
 
     func audioCaptureRecoverySource() -> CapturePermissionSource? {
-        let microphone = model.sourcePermissionPresentation(for: .microphone)
-        let systemAudio = model.sourcePermissionPresentation(for: .systemAudio)
-
-        if microphone.needsSetup {
-            return .microphone
-        }
-
-        if systemAudio.needsSetup {
-            return .systemAudio
-        }
-
-        if microphone.phase == .offByUser {
-            return .microphone
-        }
-
-        if systemAudio.phase == .offByUser {
-            return .systemAudio
-        }
-
-        return nil
+        model.audioCaptureRecoverySource()
     }
 }
 

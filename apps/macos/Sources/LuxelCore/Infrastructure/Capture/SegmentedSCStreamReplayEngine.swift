@@ -94,7 +94,7 @@ public final class SegmentedSCStreamReplayEngine: NSObject, ReplayBufferEngine, 
         } catch {
             await session.cancel(fileManager: fileManager)
             try? await clearActiveSessionIfMatching(session)
-            throw ReplayBufferEngineError.armFailed(error.localizedReplayBufferDescription)
+            throw ReplayBufferEngineError.armFailed(error.preferredLocalizedDescription)
         }
     }
 
@@ -241,52 +241,5 @@ final class ReplayBufferStateBroadcaster: @unchecked Sendable {
         lock.withLock {
             continuations[id] = nil
         }
-    }
-}
-
-final class ReplayBufferCompletion: @unchecked Sendable {
-    private let lock = NSLock()
-    private var continuation: CheckedContinuation<Void, any Error>?
-
-    init(_ continuation: CheckedContinuation<Void, any Error>) {
-        self.continuation = continuation
-    }
-
-    func resume(with result: Result<Void, any Error>) -> Bool {
-        let continuation = lock.withLock {
-            let continuation = self.continuation
-            self.continuation = nil
-            return continuation
-        }
-
-        guard let continuation else {
-            return false
-        }
-
-        continuation.resume(with: result)
-        return true
-    }
-}
-
-struct ReplayBufferStreamHandle: @unchecked Sendable {
-    private let stream: SCStream
-
-    init(_ stream: SCStream) {
-        self.stream = stream
-    }
-
-    func stopCaptureIgnoringResult() {
-        stream.stopCapture { _ in }
-    }
-}
-
-extension Error {
-    var localizedReplayBufferDescription: String {
-        if let errorDescription = (self as? LocalizedError)?.errorDescription, !errorDescription.isEmpty {
-            return errorDescription
-        }
-
-        let localizedDescription = (self as NSError).localizedDescription
-        return localizedDescription.isEmpty ? String(describing: self) : localizedDescription
     }
 }

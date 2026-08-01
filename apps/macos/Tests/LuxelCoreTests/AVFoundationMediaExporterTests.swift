@@ -59,18 +59,16 @@ extension AVFoundationMediaExporterTests {
     @Test("mp4 export trims resizes changes frame rate and keeps audio")
     func mp4ExportTrimsResizesChangesFrameRateAndKeepsAudio() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")
-        let request = try ExportRequest(
-            inputFileURL: fixtureURL("input@2x.mp4"),
-            format: .mp4,
-            pixelSize: PixelSize(width: 321, height: 181),
-            frameRate: FrameRate(30),
-            timeRange: TimeRange(start: 1, end: 1.75),
+        let request = try makeFixtureVideoExportRequest(
+            width: 321,
+            height: 181,
+            start: 1,
+            end: 1.75,
             shouldMute: false,
             shouldCrop: true
         )
 
-        let exported = try await AVFoundationMediaExporter().export(request, to: outputURL)
-        let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: outputURL)
+        let (exported, source) = try await exportFixtureVideo(request, to: outputURL)
         let expectedPixelSize = try PixelSize(width: 322, height: 182)
         let expectedFrameRate = try FrameRate(30)
 
@@ -92,18 +90,15 @@ extension AVFoundationMediaExporterTests {
     @Test("hevc export writes HEVC video")
     func hevcExportWritesHEVCVideo() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")
-        let request = try ExportRequest(
-            inputFileURL: fixtureURL("input.mp4"),
+        let request = try makeFixtureVideoExportRequest(
+            fileName: "input.mp4",
             format: .hevc,
-            pixelSize: PixelSize(width: 320, height: 180),
-            frameRate: FrameRate(30),
-            timeRange: TimeRange(start: 1, end: 1.5),
-            shouldMute: true,
-            shouldCrop: false
+            start: 1,
+            end: 1.5,
+            shouldMute: true
         )
 
-        let exported = try await AVFoundationMediaExporter().export(request, to: outputURL)
-        let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: outputURL)
+        let (exported, source) = try await exportFixtureVideo(request, to: outputURL)
         let expectedPixelSize = try PixelSize(width: 320, height: 180)
         let codecType = try await videoCodecType(at: outputURL)
 
@@ -123,14 +118,12 @@ extension AVFoundationMediaExporterTests {
 
         for expectation in expectations {
             let outputURL = temporaryOutputURL(fileExtension: expectation.format.fileExtension)
-            let request = try ExportRequest(
-                inputFileURL: fixtureURL("input.mp4"),
+            let request = try makeFixtureVideoExportRequest(
+                fileName: "input.mp4",
                 format: expectation.format,
-                pixelSize: PixelSize(width: 320, height: 180),
-                frameRate: FrameRate(30),
-                timeRange: TimeRange(start: 1, end: 1.2),
-                shouldMute: true,
-                shouldCrop: false
+                start: 1,
+                end: 1.2,
+                shouldMute: true
             )
 
             let exported = try await AVFoundationMediaExporter().export(request, to: outputURL)
@@ -147,18 +140,14 @@ extension AVFoundationMediaExporterTests {
     @Test("muted mp4 export omits audio tracks")
     func mutedMP4ExportOmitsAudioTracks() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")
-        let request = try ExportRequest(
-            inputFileURL: fixtureURL("input@2x.mp4"),
-            format: .mp4,
-            pixelSize: PixelSize(width: 320, height: 180),
-            frameRate: FrameRate(24),
-            timeRange: TimeRange(start: 2, end: 2.5),
-            shouldMute: true,
-            shouldCrop: false
+        let request = try makeFixtureVideoExportRequest(
+            frameRate: 24,
+            start: 2,
+            end: 2.5,
+            shouldMute: true
         )
 
-        let exported = try await AVFoundationMediaExporter().export(request, to: outputURL)
-        let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: outputURL)
+        let (exported, source) = try await exportFixtureVideo(request, to: outputURL)
         let expectedPixelSize = try PixelSize(width: 320, height: 180)
         let expectedFrameRate = try FrameRate(24)
 
@@ -173,14 +162,10 @@ extension AVFoundationMediaExporterTests {
     @Test("mp4 export applies playback speed to video and audio")
     func mp4ExportAppliesPlaybackSpeedToVideoAndAudio() async throws {
         let outputURL = temporaryOutputURL(fileExtension: "mp4")
-        let request = try ExportRequest(
-            inputFileURL: fixtureURL("input@2x.mp4"),
-            format: .mp4,
-            pixelSize: PixelSize(width: 320, height: 180),
-            frameRate: FrameRate(30),
-            timeRange: TimeRange(start: 1, end: 1.8),
+        let request = try makeFixtureVideoExportRequest(
+            start: 1,
+            end: 1.8,
             shouldMute: false,
-            shouldCrop: false,
             speed: PlaybackSpeed(2)
         )
 
@@ -368,14 +353,12 @@ extension AVFoundationMediaExporterTests {
         defer {
             try? FileManager.default.removeItem(at: outputURL)
         }
-        let request = try ExportRequest(
-            inputFileURL: fixtureURL("input@2x.mp4"),
-            format: .mp4,
-            pixelSize: PixelSize(width: 321, height: 181),
-            frameRate: FrameRate(30),
-            timeRange: TimeRange(start: 1, end: 1.75),
+        let request = try makeFixtureVideoExportRequest(
+            width: 321,
+            height: 181,
+            start: 1,
+            end: 1.75,
             shouldMute: false,
-            shouldCrop: false,
             quality: .high
         )
 

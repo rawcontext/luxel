@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Audio recording lifecycle service")
@@ -148,7 +149,9 @@ struct AudioRecordingLifecycleServiceTests {
         RecordingHistoryService(
             store: store,
             fileSystem: fileSystem,
-            dateProvider: FixedDateProvider(Date(timeIntervalSince1970: 1_800_000_000)),
+            dateProvider: RecordingLifecycleFixedDateProvider(
+                date: Date(timeIntervalSince1970: 1_800_000_000)
+            ),
             mediaProbe: StaticMediaProbe(result: .playable)
         )
     }
@@ -208,70 +211,6 @@ private enum StubAudioRecorderError: Error, Equatable {
     case stopFailed
 }
 
-private struct AudioRecordingOutputMove: Equatable {
-    let sourceURL: URL
-    let destinationURL: URL
-}
-
-private final class AudioRecordingOutputFileSystem: FileSystem, @unchecked Sendable {
-    private var existingFiles: Set<URL>
-    private(set) var movedFiles: [AudioRecordingOutputMove] = []
-
-    init(existingFiles: Set<URL>) {
-        self.existingFiles = existingFiles
-    }
-
-    func fileExists(at url: URL) -> Bool {
-        existingFiles.contains(url)
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func moveFile(from sourceURL: URL, to destinationURL: URL) throws {
-        existingFiles.remove(sourceURL)
-        existingFiles.insert(destinationURL)
-        movedFiles.append(
-            AudioRecordingOutputMove(
-                sourceURL: sourceURL,
-                destinationURL: destinationURL
-            ))
-    }
-
-    func writeData(_ data: Data, to url: URL) throws {}
-
-    func removeFile(at url: URL) throws {
-        existingFiles.remove(url)
-    }
-
-    func trashItem(at url: URL) throws {}
-}
-
-private struct FixedDateProvider: DateProvider {
-    let date: Date
-
-    init(_ date: Date) {
-        self.date = date
-    }
-
-    func now() -> Date {
-        date
-    }
-}
-
-private struct AlwaysExistingFileSystem: FileSystem {
-    func fileExists(at url: URL) -> Bool {
-        true
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func writeData(_ data: Data, to url: URL) throws {}
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
+private typealias AudioRecordingOutputMove = RecordingLifecycleOutputMove
+private typealias AudioRecordingOutputFileSystem = RecordingLifecycleOutputFileSystem
+private typealias AlwaysExistingFileSystem = AlwaysExistingTestFileSystem

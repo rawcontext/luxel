@@ -148,12 +148,3 @@ private enum VerticalPlacement {
     case above
     case below
 }
-
-extension CapturePoint {
-    fileprivate func clamped(to display: DisplayBounds) -> CapturePoint {
-        CapturePoint(
-            x: min(max(xCoordinate, 0), display.width),
-            y: min(max(yCoordinate, 0), display.height)
-        )
-    }
-}

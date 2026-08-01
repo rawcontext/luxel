@@ -86,24 +86,25 @@ struct AppBundleConfigurationTests {
 extension AppBundleConfigurationTests {
     @Test("build script bundles third-party license ledger as app resource")
     func buildScriptBundlesThirdPartyLicenseLedgerAsAppResource() throws {
-        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
-        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+        let script = try scriptSource("build-luxel-app.sh")
+        let support = try scriptSource("luxel-app-bundle-support.sh")
 
         #expect(script.contains("THIRD_PARTY_LICENSES"))
-        #expect(script.contains("Contents/Resources"))
-        #expect(script.contains("ThirdPartyLicenses.md"))
+        #expect(script.contains("source \"${PACKAGE_ROOT}/Scripts/luxel-app-bundle-support.sh\""))
+        #expect(support.contains("Contents/Resources"))
+        #expect(support.contains("ThirdPartyLicenses.md"))
     }
 
     @Test("signed app scripts bundle Studio Voice model resources")
     func signedAppScriptsBundleStudioVoiceResources() throws {
+        let support = try scriptSource("luxel-app-bundle-support.sh")
         for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
-            let scriptURL = try packageRootURL().appending(path: "Scripts/\(scriptName)")
-            let script = try String(contentsOf: scriptURL, encoding: .utf8)
-
-            #expect(script.contains("Vendor/Models/studio-voice"))
-            #expect(script.contains("Contents/Resources/Models"))
-            #expect(script.contains("ThirdPartyLicenses.md"))
+            let script = try scriptSource(scriptName)
+            #expect(script.contains("source \"${PACKAGE_ROOT}/Scripts/luxel-app-bundle-support.sh\""))
         }
+        #expect(support.contains("Vendor/Models/studio-voice"))
+        #expect(support.contains("Contents/Resources/Models"))
+        #expect(support.contains("ThirdPartyLicenses.md"))
     }
 
     @Test("signed app scripts require and audit bundled MODNet resources")
@@ -117,16 +118,15 @@ extension AppBundleConfigurationTests {
         auditProcess.waitUntilExit()
         #expect(auditProcess.terminationStatus == 0)
 
+        let support = try scriptSource("luxel-app-bundle-support.sh")
         for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
-            let script = try String(
-                contentsOf: root.appending(path: "Scripts/\(scriptName)"),
-                encoding: .utf8
-            )
+            let script = try scriptSource(scriptName)
             #expect(script.contains("MODNET_MODEL_DIR"))
             #expect(script.contains("audit-modnet-model.sh"))
-            #expect(script.contains("cp -R \"${MODNET_MODEL_DIR}\""))
             #expect(!script.contains("if [[ -d \"${MODNET_MODEL_DIR}"))
         }
+        #expect(support.contains("cp -R \"${MODNET_MODEL_DIR}\""))
+        #expect(!support.contains("if [[ -d \"${MODNET_MODEL_DIR}"))
     }
 
     @Test("local build script uses a development app identity by default")
@@ -149,22 +149,22 @@ extension AppBundleConfigurationTests {
 
     @Test("build script bundles and signs CLI executable")
     func buildScriptBundlesAndSignsCLIExecutable() throws {
-        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")
-        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+        let script = try scriptSource("build-luxel-app.sh")
+        let support = try scriptSource("luxel-app-bundle-support.sh")
 
         #expect(script.contains("swift build --configuration \"${CONFIGURATION}\" --product luxel-cli"))
-        #expect(script.contains("Contents/MacOS/luxel-cli"))
-        #expect(script.contains("xcrun strip -x \"${APP_PATH}/Contents/MacOS/luxel-cli\""))
         #expect(script.contains("\"${APP_PATH}/Contents/MacOS/luxel-cli\""))
         #expect(!script.contains("Contents/Resources/install-cli"))
+        #expect(support.contains("Contents/MacOS/luxel-cli"))
+        #expect(support.contains("xcrun strip -x \"${APP_PATH}/Contents/MacOS/luxel-cli\""))
     }
 
     @Test("Mac App Store package script bundles SwiftPM resources")
     func macAppStorePackageScriptBundlesSwiftPMResources() throws {
-        let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-mas-pkg.sh")
-        let script = try String(contentsOf: scriptURL, encoding: .utf8)
+        let script = try scriptSource("build-luxel-mas-pkg.sh")
+        let support = try scriptSource("luxel-app-bundle-support.sh")
 
-        #expect(script.contains("find \"${BIN_DIR}\" -maxdepth 1 -name '*.bundle'"))
+        #expect(support.contains("find \"${BIN_DIR}\" -maxdepth 1 -name '*.bundle'"))
         #expect(script.contains("Contents/Resources/Luxel_LuxelCore.bundle"))
         #expect(script.contains("CFBundleIdentifier"))
         #expect(script.contains("LuxelCore resource bundle was not copied"))
@@ -198,14 +198,14 @@ extension AppBundleConfigurationTests {
         return try #require(plist as? [String: Any])
     }
 
-    private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
+    private func scriptSource(_ scriptName: String) throws -> String {
+        try String(
+            contentsOf: packageRootURL().appending(path: "Scripts/\(scriptName)"),
+            encoding: .utf8
+        )
+    }
 
-        return url.deletingLastPathComponent()
+    private func packageRootURL() throws -> URL {
+        try sharedPackageRootURL()
     }
 }

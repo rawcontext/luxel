@@ -387,7 +387,9 @@ void LuxelCodecPacketListDestroy(LuxelCodecPacketList *packets) {
         return;
     }
 
-    for (size_t index = 0; index < packets->count; index += 1) {
+    size_t index = packets->count;
+    while (index > 0) {
+        index -= 1;
         free(packets->packets[index].data);
     }
     free(packets->packets);

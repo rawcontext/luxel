@@ -46,32 +46,28 @@ public actor SVTAV1VideoEncoder: CodecVideoEncoder {
 
         var packetList = LuxelAV1PacketList()
         var errorBuffer = [CChar](repeating: 0, count: 512)
-        let status = try frame.frame.yPlane.withUnsafeBytes { yBuffer in
-            try frame.frame.uPlane.withUnsafeBytes { uBuffer in
-                try frame.frame.vPlane.withUnsafeBytes { vBuffer in
-                    guard let yAddress = yBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
-                          let uAddress = uBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
-                          let vAddress = vBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self)
-                    else {
-                        throw AV1CodecError.invalidConfiguration("I420 frame planes were empty.")
-                    }
-
-                    return LuxelAV1EncoderEncodeFrame(
-                        encoder,
-                        yAddress,
-                        frame.frame.yPlane.count,
-                        uAddress,
-                        frame.frame.uPlane.count,
-                        vAddress,
-                        frame.frame.vPlane.count,
-                        presentationTimeUnits,
-                        durationUnits,
-                        &packetList,
-                        &errorBuffer,
-                        errorBuffer.count
-                    )
-                }
-            }
+        let planeCounts = (
+            y: frame.frame.yPlane.count,
+            u: frame.frame.uPlane.count,
+            v: frame.frame.vPlane.count
+        )
+        let status = try frame.withUnsafeI420Planes(
+            emptyPlanesError: AV1CodecError.invalidConfiguration("I420 frame planes were empty.")
+        ) { yAddress, uAddress, vAddress in
+            LuxelAV1EncoderEncodeFrame(
+                encoder,
+                yAddress,
+                planeCounts.y,
+                uAddress,
+                planeCounts.u,
+                vAddress,
+                planeCounts.v,
+                presentationTimeUnits,
+                durationUnits,
+                &packetList,
+                &errorBuffer,
+                errorBuffer.count
+            )
         }
         defer {
             LuxelAV1PacketListDestroy(&packetList)

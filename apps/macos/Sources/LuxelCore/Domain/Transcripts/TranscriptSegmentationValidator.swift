@@ -1,13 +1,13 @@
 import Foundation
 
 public struct TranscriptTurnCandidate: Equatable, Sendable {
+    public let source: TranscriptSourceLabel?
+    public let speakerID: String?
     public let id: String
     public let spanIDs: [String]
     public let start: TimeInterval
     public let end: TimeInterval
     public let text: String
-    public let source: TranscriptSourceLabel?
-    public let speakerID: String?
 
     public init(
         id: String,
@@ -35,58 +35,9 @@ public enum TranscriptSegmentationValidator {
         localeIdentifier: String,
         speakers: [TranscriptSpeakerLabel] = []
     ) throws -> TurnSegmentedTranscript {
-        guard !spans.isEmpty, !candidates.isEmpty else {
-            throw TranscriptModelError.invalidTranscript
-        }
-
-        let spansByID = Dictionary(uniqueKeysWithValues: spans.map { ($0.id, $0) })
-        var expectedSpanIndex = spans.startIndex
-        var seenSpanIDs: Set<String> = []
-        var turns: [TranscriptTurn] = []
-
-        for (candidateIndex, candidate) in candidates.enumerated() {
-            let turnSpans = try orderedTurnSpans(
-                for: candidate,
-                spans: spans,
-                spansByID: spansByID,
-                expectedSpanIndex: &expectedSpanIndex,
-                seenSpanIDs: &seenSpanIDs
-            )
-
-            let trustedText = joinedText(turnSpans)
-            guard candidate.text == trustedText else {
-                throw TranscriptModelError.changedTurnText(candidate.id)
-            }
-
-            let attribution = try trustedAttribution(for: candidate, turnSpans: turnSpans)
-
-            let trustedStart = turnSpans[0].start
-            let trustedEnd = turnSpans[turnSpans.count - 1].end
-            guard isClose(candidate.start, trustedStart),
-                  isClose(candidate.end, trustedEnd)
-            else {
-                throw TranscriptModelError.invalidTurnTiming(candidate.id)
-            }
-
-            turns.append(
-                try TranscriptTurn(
-                    id: candidate.id.isEmpty ? "turn-\(candidateIndex)" : candidate.id,
-                    spanIDs: candidate.spanIDs,
-                    start: trustedStart,
-                    end: trustedEnd,
-                    text: trustedText,
-                    source: attribution.source,
-                    speakerID: attribution.speakerID
-                ))
-        }
-
-        guard expectedSpanIndex == spans.endIndex else {
-            throw TranscriptModelError.missingSpan(spans[expectedSpanIndex].id)
-        }
-
         return try TurnSegmentedTranscript(
             spans: spans,
-            turns: turns,
+            turns: validatedTurns(spans: spans, candidates: candidates),
             localeIdentifier: localeIdentifier,
             speakers: speakers
         )
@@ -154,7 +105,7 @@ public enum TranscriptSegmentationValidator {
                 speakerID: $0.speakerID
             )
         }
-        try validate(spans: spans, candidates: candidates)
+        _ = try validatedTurns(spans: spans, candidates: candidates)
         try validateSpeakerReferences(spans: spans, turns: turns, speakers: speakers)
     }
 
@@ -177,10 +128,10 @@ public enum TranscriptSegmentationValidator {
         }
     }
 
-    private static func validate(
+    private static func validatedTurns(
         spans: [TimedTranscriptSpan],
         candidates: [TranscriptTurnCandidate]
-    ) throws {
+    ) throws -> [TranscriptTurn] {
         guard !spans.isEmpty, !candidates.isEmpty else {
             throw TranscriptModelError.invalidTranscript
         }
@@ -188,8 +139,9 @@ public enum TranscriptSegmentationValidator {
         let spansByID = Dictionary(uniqueKeysWithValues: spans.map { ($0.id, $0) })
         var expectedSpanIndex = spans.startIndex
         var seenSpanIDs: Set<String> = []
+        var turns: [TranscriptTurn] = []
 
-        for candidate in candidates {
+        for (candidateIndex, candidate) in candidates.enumerated() {
             let turnSpans = try orderedTurnSpans(
                 for: candidate,
                 spans: spans,
@@ -198,22 +150,37 @@ public enum TranscriptSegmentationValidator {
                 seenSpanIDs: &seenSpanIDs
             )
 
-            guard candidate.text == joinedText(turnSpans) else {
+            let trustedText = joinedText(turnSpans)
+            guard candidate.text == trustedText else {
                 throw TranscriptModelError.changedTurnText(candidate.id)
             }
 
-            _ = try trustedAttribution(for: candidate, turnSpans: turnSpans)
+            let attribution = try trustedAttribution(for: candidate, turnSpans: turnSpans)
+            let trustedStart = turnSpans[0].start
+            let trustedEnd = turnSpans[turnSpans.count - 1].end
 
-            guard isClose(candidate.start, turnSpans[0].start),
-                  isClose(candidate.end, turnSpans[turnSpans.count - 1].end)
+            guard isClose(candidate.start, trustedStart),
+                  isClose(candidate.end, trustedEnd)
             else {
                 throw TranscriptModelError.invalidTurnTiming(candidate.id)
             }
+
+            turns.append(
+                try TranscriptTurn(
+                    id: candidate.id.isEmpty ? "turn-\(candidateIndex)" : candidate.id,
+                    spanIDs: candidate.spanIDs,
+                    start: trustedStart,
+                    end: trustedEnd,
+                    text: trustedText,
+                    source: attribution.source,
+                    speakerID: attribution.speakerID
+                ))
         }
 
         guard expectedSpanIndex == spans.endIndex else {
             throw TranscriptModelError.missingSpan(spans[expectedSpanIndex].id)
         }
+        return turns
     }
 
     private static func orderedTurnSpans(

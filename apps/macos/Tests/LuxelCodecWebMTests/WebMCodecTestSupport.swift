@@ -1,8 +1,7 @@
-import AVFAudio
-import AudioToolbox
 import Foundation
 import LuxelCodecWebM
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 func makeRequest(
@@ -23,55 +22,15 @@ func makeRequest(
 }
 
 func temporaryWebMURL() -> URL {
-    FileManager.default.temporaryDirectory
-        .appending(path: UUID().uuidString)
-        .appendingPathExtension("webm")
+    temporaryTestFileURL(pathExtension: "webm")
 }
 
 func fixtureURL(_ fileName: String) throws -> URL {
-    try packageRootURL()
-        .appending(path: "Tests/Fixtures")
-        .appending(path: fileName)
+    try testFixtureURL(fileName)
 }
 
 func packageRootURL() throws -> URL {
-    var url = URL(fileURLWithPath: #filePath)
-    while url.lastPathComponent != "Tests" {
-        let next = url.deletingLastPathComponent()
-        try #require(next.path != url.path)
-        url = next
-    }
-
-    return url.deletingLastPathComponent()
-}
-
-func writeSilentPreparedPCM(to url: URL, duration: TimeInterval) throws {
-    let format = try #require(
-        AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: 48_000,
-            channels: 2,
-            interleaved: false
-        )
-    )
-    let frameCount = AVAudioFrameCount(duration * 48_000)
-    let buffer = try #require(
-        AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
-    )
-    buffer.frameLength = frameCount
-    let file = try AVAudioFile(
-        forWriting: url,
-        settings: [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 48_000,
-            AVNumberOfChannelsKey: 2,
-            AVLinearPCMBitDepthKey: 32,
-            AVLinearPCMIsFloatKey: true
-        ],
-        commonFormat: .pcmFormatFloat32,
-        interleaved: false
-    )
-    try file.write(from: buffer)
+    try testPackageRootURL()
 }
 
 func fakeVideoPacket(index: Int, byteCount: Int, keyframeInterval: Int) throws
@@ -141,41 +100,49 @@ func ffprobePath() -> String? {
 }
 
 func executablePath(named name: String) -> String? {
-    let fileSystem = FileManager.default
-    let searchPaths =
-        (ProcessInfo.processInfo.environment["PATH"] ?? "")
-        .split(separator: ":")
-        .map(String.init) + ["/opt/homebrew/bin", "/usr/local/bin"]
-
-    return
-        searchPaths
-        .map { URL(fileURLWithPath: $0).appending(path: name).path }
-        .first { fileSystem.isExecutableFile(atPath: $0) }
+    testExecutablePath(named: name)
 }
 
 func runFFProbe(ffprobe: String, fileURL: URL) throws -> String {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: ffprobe)
-    process.arguments = [
-        "-v", "error",
-        "-show_format",
-        "-show_streams",
-        "-of", "json",
-        fileURL.path
-    ]
+    let result = try runTestFFProbe(executable: ffprobe, fileURL: fileURL)
+    #expect(result.terminationStatus == 0)
+    return result.output
+}
 
-    let outputPipe = Pipe()
-    let errorPipe = Pipe()
-    process.standardOutput = outputPipe
-    process.standardError = errorPipe
-    try process.run()
-    process.waitUntilExit()
+func makeWebMTestPipeline(pixelSize: PixelSize) -> CodecExportPipeline {
+    CodecExportPipeline(
+        mediaSource: StubWebMMediaSource(pixelSize: pixelSize),
+        videoEncoder: VPXVideoEncoder(),
+        audioEncoder: OpusAudioEncoder(),
+        muxer: WebMMuxer()
+    )
+}
 
-    let output = String(
-        bytes: outputPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-    _ = String(bytes: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
-    #expect(process.terminationStatus == 0)
-    return output
+func writeTestWebMVideo(
+    to outputURL: URL,
+    frameCount: Int,
+    byteCount: Int,
+    keyframeInterval: Int
+) async throws {
+    let muxer = WebMMuxer()
+    try await muxer.begin(
+        try CodecMuxerConfiguration(
+            outputFileURL: outputURL,
+            format: .webm,
+            tracks: [.video],
+            pixelSize: PixelSize(width: 64, height: 64)
+        ))
+    for index in 0..<frameCount {
+        try await muxer.write(
+            fakeVideoPacket(
+                index: index,
+                byteCount: byteCount,
+                keyframeInterval: keyframeInterval
+            ),
+            to: .video
+        )
+    }
+    try await muxer.finalize()
 }
 
 func writeReferenceYUV(pixelSize: PixelSize, frameCount: Int, to fileURL: URL) throws {
@@ -195,9 +162,7 @@ func runFFmpegPSNR(
     encodedURL: URL,
     pixelSize: PixelSize
 ) throws -> String {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: ffmpeg)
-    process.arguments = [
+    let result = try runTestProcess(executable: ffmpeg, arguments: [
         "-hide_banner",
         "-nostats",
         "-f", "rawvideo",
@@ -209,21 +174,9 @@ func runFFmpegPSNR(
         "-filter_complex", "[0:v][1:v]psnr",
         "-f", "null",
         "-"
-    ]
-
-    let outputPipe = Pipe()
-    let errorPipe = Pipe()
-    process.standardOutput = outputPipe
-    process.standardError = errorPipe
-    try process.run()
-    process.waitUntilExit()
-
-    let output = String(
-        bytes: outputPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-    let error = String(
-        bytes: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-    #expect(process.terminationStatus == 0)
-    return output + "\n" + error
+    ])
+    #expect(result.terminationStatus == 0)
+    return result.output + "\n" + result.error
 }
 
 func parseAveragePSNR(_ output: String) -> Double? {

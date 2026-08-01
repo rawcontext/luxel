@@ -116,14 +116,9 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
                 return
             }
 
-            let promotedFromAccessory = NSApplication.shared.activationPolicy() != .regular
-            _ = NSApplication.shared.setActivationPolicy(.regular)
-
-            if promotedFromAccessory {
-                yieldActivation(to: activationSource)
-                await Task.yield()
-                try? await Task.sleep(for: .milliseconds(80))
-            }
+            let promotedFromAccessory = await promoteToRegular(
+                activationSource: activationSource
+            )
 
             present(window, activationSource: activationSource)
             await Task.yield()
@@ -149,14 +144,7 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
                 return
             }
 
-            let promotedFromAccessory = NSApplication.shared.activationPolicy() != .regular
-            _ = NSApplication.shared.setActivationPolicy(.regular)
-
-            if promotedFromAccessory {
-                yieldActivation(to: activationSource)
-                await Task.yield()
-                try? await Task.sleep(for: .milliseconds(80))
-            }
+            _ = await promoteToRegular(activationSource: activationSource)
 
             editorMenuController.install()
             activateLuxel(from: activationSource)
@@ -165,6 +153,19 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
             activateLuxel(from: activationSource)
             refreshEditorMenusIfNeeded()
         }
+    }
+
+    private func promoteToRegular(
+        activationSource: NSRunningApplication?
+    ) async -> Bool {
+        let promoted = NSApplication.shared.activationPolicy() != .regular
+        _ = NSApplication.shared.setActivationPolicy(.regular)
+        if promoted {
+            yieldActivation(to: activationSource)
+            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(80))
+        }
+        return promoted
     }
 
     private func yieldActivation(to sourceApplication: NSRunningApplication?) {

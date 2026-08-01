@@ -196,10 +196,7 @@ public enum ExportPresetSizeRule: Codable, Equatable, Sendable {
             }
 
             let scale = min(1, Double(maxWidth) / Double(sourcePixelSize.width))
-            return try PixelSize(
-                width: max(1, Int((Double(sourcePixelSize.width) * scale).rounded())),
-                height: max(1, Int((Double(sourcePixelSize.height) * scale).rounded()))
-            )
+            return try sourcePixelSize.scaled(by: scale)
         }
     }
 }

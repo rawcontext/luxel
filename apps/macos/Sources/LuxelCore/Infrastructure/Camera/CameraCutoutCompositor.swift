@@ -315,14 +315,7 @@ public final class CameraCutoutCompositor: @unchecked Sendable {
     }
 
     private static func scaled(_ image: CIImage, by scale: CGFloat) -> CIImage {
-        image.applyingFilter(
-            "CIColorMatrix",
-            parameters: [
-                "inputRVector": CIVector(x: scale, y: 0, z: 0, w: 0),
-                "inputGVector": CIVector(x: 0, y: scale, z: 0, w: 0),
-                "inputBVector": CIVector(x: 0, y: 0, z: scale, w: 0)
-            ]
-        )
+        colorMatrix(image, scale: scale)
     }
 
     private static func smoothThreshold(
@@ -331,20 +324,7 @@ public final class CameraCutoutCompositor: @unchecked Sendable {
         upper: CGFloat
     ) -> CIImage {
         let scale = 1 / (upper - lower)
-        let normalized = image.applyingFilter(
-            "CIColorMatrix",
-            parameters: [
-                "inputRVector": CIVector(x: scale, y: 0, z: 0, w: 0),
-                "inputGVector": CIVector(x: 0, y: scale, z: 0, w: 0),
-                "inputBVector": CIVector(x: 0, y: 0, z: scale, w: 0),
-                "inputBiasVector": CIVector(
-                    x: -lower * scale,
-                    y: -lower * scale,
-                    z: -lower * scale,
-                    w: 0
-                )
-            ]
-        ).applyingFilter(
+        let normalized = colorMatrix(image, scale: scale, bias: -lower * scale).applyingFilter(
             "CIColorClamp",
             parameters: [
                 "inputMinComponents": CIVector(x: 0, y: 0, z: 0, w: 0),
@@ -359,6 +339,22 @@ public final class CameraCutoutCompositor: @unchecked Sendable {
                 "inputGreenCoefficients": smoothstep,
                 "inputBlueCoefficients": smoothstep,
                 "inputAlphaCoefficients": CIVector(x: 0, y: 1, z: 0, w: 0)
+            ]
+        )
+    }
+
+    private static func colorMatrix(
+        _ image: CIImage,
+        scale: CGFloat,
+        bias: CGFloat = 0
+    ) -> CIImage {
+        image.applyingFilter(
+            "CIColorMatrix",
+            parameters: [
+                "inputRVector": CIVector(x: scale, y: 0, z: 0, w: 0),
+                "inputGVector": CIVector(x: 0, y: scale, z: 0, w: 0),
+                "inputBVector": CIVector(x: 0, y: 0, z: scale, w: 0),
+                "inputBiasVector": CIVector(x: bias, y: bias, z: bias, w: 0)
             ]
         )
     }

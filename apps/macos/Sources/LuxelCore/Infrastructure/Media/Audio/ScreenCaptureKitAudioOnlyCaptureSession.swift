@@ -96,60 +96,12 @@ final class ScreenCaptureKitAudioOnlyCaptureSession: NSObject, SCStreamOutput,
     }
 
     private static func startStreamCapture(_ stream: SCStream) async throws {
-        let timeout = streamStartTimeout
-
-        try await withCheckedThrowingContinuation { continuation in
-            let streamHandle = ScreenCaptureKitAudioOnlyStreamHandle(stream)
-            let completion = AudioOnlyRecorderCompletion(continuation)
-            stream.startCapture { error in
-                if let error {
-                    _ = completion.resume(with: .failure(error))
-                } else if !completion.resume(with: .success(())) {
-                    streamHandle.stopCaptureIgnoringResult()
-                }
-            }
-
-            Task {
-                do {
-                    try await Task.sleep(for: timeout)
-                    let error = ScreenCaptureKitAudioOnlyRecorderError.startFailed(
-                        "Timed out starting capture"
-                    )
-                    if completion.resume(with: .failure(error)) {
-                        streamHandle.stopCaptureIgnoringResult()
-                    }
-                } catch is CancellationError {
-                    return
-                } catch {
-                    return
-                }
-            }
+        try await ScreenCaptureKitStreamLifecycle.start(stream, timeout: streamStartTimeout) {
+            ScreenCaptureKitAudioOnlyRecorderError.startFailed("Timed out starting capture")
         }
     }
 
     private static func stopStreamCapture(_ stream: SCStream) async throws {
-        let timeout = streamStopTimeout
-
-        try await withCheckedThrowingContinuation { continuation in
-            let completion = AudioOnlyRecorderCompletion(continuation)
-            stream.stopCapture { error in
-                if let error {
-                    _ = completion.resume(with: .failure(error))
-                } else {
-                    _ = completion.resume(with: .success(()))
-                }
-            }
-
-            Task {
-                do {
-                    try await Task.sleep(for: timeout)
-                    _ = completion.resume(with: .success(()))
-                } catch is CancellationError {
-                    return
-                } catch {
-                    return
-                }
-            }
-        }
+        try await ScreenCaptureKitStreamLifecycle.stop(stream, timeout: streamStopTimeout)
     }
 }

@@ -41,6 +41,28 @@ public protocol RecordingOutputFinalizer: Sendable {
     func finalize(_ plan: RecordingOutputFinalizationPlan) throws -> RecordingOutputFinalizationResult
 }
 
+func finalizeRecordingOutput(
+    _ plan: RecordingOutputFinalizationPlan?,
+    using finalizer: any RecordingOutputFinalizer
+) async throws -> RecordingOutputFinalizationResult? {
+    guard let plan else {
+        return nil
+    }
+    return try await Task.detached(priority: .userInitiated) {
+        try finalizer.finalize(plan)
+    }.value
+}
+
+extension Error {
+    var preferredLocalizedDescription: String {
+        if let description = (self as? LocalizedError)?.errorDescription, !description.isEmpty {
+            return description
+        }
+        let description = (self as NSError).localizedDescription
+        return description.isEmpty ? String(describing: self) : description
+    }
+}
+
 public struct PassthroughRecordingOutputFinalizer: RecordingOutputFinalizer {
     public init() {}
 

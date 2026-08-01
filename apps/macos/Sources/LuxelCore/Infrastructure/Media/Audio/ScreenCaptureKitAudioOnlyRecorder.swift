@@ -84,13 +84,7 @@ public final class ScreenCaptureKitAudioOnlyRecorder: AudioRecorder, @unchecked 
         configuration.height = 2
         configuration.minimumFrameInterval = CMTime(value: 1, timescale: 1)
         configuration.showsCursor = false
-        configuration.capturesAudio = request.audio.capturesSystemAudio
-        configuration.captureMicrophone = request.audio.capturesMicrophone
-        configuration.microphoneCaptureDeviceID = request.audio.microphoneDeviceID
-        configuration.excludesCurrentProcessAudio = request.audio.capturesSystemAudio
-        configuration.sampleRate = 48_000
-        configuration.channelCount = 2
-        configuration.queueDepth = 8
+        ScreenCaptureKitAudioConfiguration.apply(request.audio, to: configuration)
         return configuration
     }
 }

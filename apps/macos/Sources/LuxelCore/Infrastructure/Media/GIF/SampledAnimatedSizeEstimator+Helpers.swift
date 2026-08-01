@@ -16,15 +16,14 @@ extension SampledAnimatedSizeEstimator {
         let sourceFrame = try await imageGenerator.image(
             at: schedule.frameTimes[index]
         ).image
-        let cameraPath = try cameraPath(for: request, sourceFrame: sourceFrame)
+        let cameraPath = try request.animatedCameraPath(sourceFrame: sourceFrame)
         return try AnimatedFrameRenderer().renderImage(
             sourceFrame,
             outputPixelSize: outputPixelSize,
             shouldCrop: request.shouldCrop,
             sourceCropRect: request.cropRect,
-            cameraTransform: try cameraTransform(
-                for: schedule.frameTimes[index],
-                request: request,
+            cameraTransform: try request.animatedCameraTransform(
+                at: schedule.frameTimes[index],
                 cameraPath: cameraPath
             )
         )
@@ -41,61 +40,18 @@ extension SampledAnimatedSizeEstimator {
         let sourceFrame = try await imageGenerator.image(
             at: schedule.frameTimes[index]
         ).image
-        let cameraPath = try cameraPath(for: request, sourceFrame: sourceFrame)
+        let cameraPath = try request.animatedCameraPath(sourceFrame: sourceFrame)
         return try AnimatedFrameRenderer().renderGIFBitmap(
             sourceFrame,
             outputPixelSize: outputPixelSize,
             shouldCrop: request.shouldCrop,
             sourceCropRect: request.cropRect,
             backgroundMatte: backgroundMatte,
-            cameraTransform: try cameraTransform(
-                for: schedule.frameTimes[index],
-                request: request,
+            cameraTransform: try request.animatedCameraTransform(
+                at: schedule.frameTimes[index],
                 cameraPath: cameraPath
             )
         )
-    }
-
-    func cameraPath(
-        for request: ExportRequest,
-        sourceFrame: CGImage
-    ) throws -> CameraPath? {
-        guard !request.zoomBlocks.isEmpty else {
-            return nil
-        }
-
-        let blocks = try ZoomExportTimeMapper(
-            trimRange: request.timeRange,
-            speed: request.speed,
-            editPlan: request.editPlan
-        )
-        .map(request.zoomBlocks)
-
-        guard !blocks.isEmpty else {
-            return nil
-        }
-
-        return try CameraPath(
-            blocks: blocks,
-            sourceSize: PixelSize(width: sourceFrame.width, height: sourceFrame.height)
-        )
-    }
-
-    func cameraTransform(
-        for sourceTime: CMTime,
-        request: ExportRequest,
-        cameraPath: CameraPath?
-    ) throws -> CameraTransform {
-        guard let cameraPath else {
-            return .identity
-        }
-
-        guard let outputTime = request.timelineMapper.outputTime(
-            forSourceTime: sourceTime.seconds
-        ) else {
-            return .identity
-        }
-        return try cameraPath.transform(at: outputTime)
     }
 
     func encodedByteCount(
@@ -119,14 +75,17 @@ extension SampledAnimatedSizeEstimator {
 
         CGImageDestinationSetProperties(
             destination,
-            destinationProperties(for: format, loopMode: loopMode) as CFDictionary
+            AnimatedImageIOProperties.destination(
+                format: format,
+                loopMode: loopMode
+            ) as CFDictionary
         )
 
         for frame in frames {
             CGImageDestinationAddImage(
                 destination,
                 frame,
-                frameProperties(for: format, frameDelay: frameDelay) as CFDictionary
+                AnimatedImageIOProperties.frame(format: format, delay: frameDelay) as CFDictionary
             )
         }
 
@@ -192,60 +151,6 @@ extension SampledAnimatedSizeEstimator {
             UTType.png.identifier
         case .av1, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
             throw SampledAnimatedSizeEstimatorError.unsupportedFormat(format)
-        }
-    }
-
-    func destinationProperties(
-        for format: ExportFormat,
-        loopMode: GIFLoopMode = .forever
-    ) -> [CFString: Any] {
-        switch format {
-        case .gif:
-            [
-                kCGImagePropertyGIFDictionary: [
-                    kCGImagePropertyGIFLoopCount: loopMode.imageIOLoopCount ?? 0
-                ]
-            ]
-        case .apng:
-            destinationPNGProperties(loopMode: loopMode)
-        case .av1, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
-            [:]
-        }
-    }
-
-    func destinationPNGProperties(loopMode: GIFLoopMode) -> [CFString: Any] {
-        guard let loopCount = loopMode.imageIOLoopCount else {
-            return [:]
-        }
-
-        return [
-            kCGImagePropertyPNGDictionary: [
-                kCGImagePropertyAPNGLoopCount: loopCount
-            ]
-        ]
-    }
-
-    func frameProperties(
-        for format: ExportFormat,
-        frameDelay: TimeInterval
-    ) -> [CFString: Any] {
-        switch format {
-        case .gif:
-            [
-                kCGImagePropertyGIFDictionary: [
-                    kCGImagePropertyGIFDelayTime: frameDelay,
-                    kCGImagePropertyGIFUnclampedDelayTime: frameDelay
-                ]
-            ]
-        case .apng:
-            [
-                kCGImagePropertyPNGDictionary: [
-                    kCGImagePropertyAPNGDelayTime: frameDelay,
-                    kCGImagePropertyAPNGUnclampedDelayTime: frameDelay
-                ]
-            ]
-        case .av1, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
-            [:]
         }
     }
 

@@ -23,13 +23,7 @@ struct ArchitectureTests {
         ]
 
         for directory in checkedDirectories {
-            for fileURL in try swiftFiles(under: directory) {
-                let contents = try String(contentsOf: fileURL, encoding: .utf8)
-                for forbiddenImport in forbiddenImports {
-                    #expect(
-                        !contents.contains(forbiddenImport), "\(fileURL.path) contains \(forbiddenImport)")
-                }
-            }
+            try expectSources(under: directory, omit: forbiddenImports)
         }
     }
 }
@@ -54,13 +48,7 @@ extension ArchitectureTests {
             "com.apple.notificationcenterui"
         ]
 
-        for fileURL in try swiftFiles(under: sourceDirectory) {
-            let contents = try String(contentsOf: fileURL, encoding: .utf8)
-            for forbiddenSnippet in forbiddenSnippets {
-                #expect(
-                    !contents.contains(forbiddenSnippet), "\(fileURL.path) contains \(forbiddenSnippet)")
-            }
-        }
+        try expectSources(under: sourceDirectory, omit: forbiddenSnippets)
     }
 
     @Test("permission UX avoids private macOS privacy state edits")
@@ -76,13 +64,7 @@ extension ArchitectureTests {
             "systemstatusd"
         ]
 
-        for fileURL in try swiftFiles(under: sourceDirectory) {
-            let contents = try String(contentsOf: fileURL, encoding: .utf8)
-            for forbiddenSnippet in forbiddenSnippets {
-                #expect(
-                    !contents.contains(forbiddenSnippet), "\(fileURL.path) contains \(forbiddenSnippet)")
-            }
-        }
+        try expectSources(under: sourceDirectory, omit: forbiddenSnippets)
     }
 
     @Test("permission client avoids native request prompts")
@@ -171,12 +153,12 @@ extension ArchitectureTests {
         #expect(lifecycle.contains("await finishKeystrokeCapture(for: recording)"))
         #expect(lifecycle.contains("keystrokeRecordingSession.recordingDidPause()"))
         #expect(lifecycle.contains("keystrokeRecordingSession.recordingDidResume()"))
-        #expect(avFoundation.contains("keystrokeTimeline: keystrokeTimeline"))
-        #expect(avFoundation.contains("keystrokeTimelineMapper: request.timelineMapper"))
-        #expect(codecs.contains("keystrokeTimeline: try? KeystrokeSidecarFileLoader"))
-        #expect(codecs.contains("keystrokeTimelineMapper: request.timelineMapper"))
+        #expect(avFoundation.contains("request: request"))
+        #expect(codecs.contains("request: request"))
+        #expect(videoComposition.contains("keystrokeTimeline: try? KeystrokeSidecarFileLoader"))
+        #expect(videoComposition.contains("keystrokeTimelineMapper: request.timelineMapper"))
         #expect(videoComposition.contains("timelineMapper.mapSourceRange(chip.timeRange)"))
-        #expect(animated.components(separatedBy: "keystrokeCompositor.composite").count - 1 == 2)
+        #expect(animated.contains("keystrokeCompositor.composite"))
     }
 
     @Test("status item startup does not enumerate capture targets")
@@ -436,11 +418,10 @@ extension ArchitectureTests {
                 path: "Sources/LuxelCore/Infrastructure/Capture/ScreenCaptureKitRecorder.swift"),
             encoding: .utf8
         )
-        let writerSource = try String(
-            contentsOf: packageRoot.appending(
-                path: "Sources/LuxelCore/Infrastructure/Capture/ScreenCaptureKitRecordingWriter.swift"),
-            encoding: .utf8
-        )
+        let writerSource = try sourceText(for: [
+            "Sources/LuxelCore/Infrastructure/Capture/ScreenCaptureKitRecordingWriter.swift",
+            "Sources/LuxelCore/Infrastructure/Capture/ReplayBufferCaptureSupport.swift"
+        ])
 
         #expect(recorderSource.contains("waitForCurrentSegmentToStartWritingIfNeeded()"))
         #expect(recorderSource.contains("initialSampleWaitAttempts"))

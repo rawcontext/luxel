@@ -342,10 +342,6 @@
 
   .hero__title {
     margin-block-start: 26px;
-    background: linear-gradient(180deg, #fff 55%, rgb(255 255 255 / 0.55));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
     font-size: clamp(44px, 7vw, 76px);
     font-weight: 700;
     letter-spacing: -0.033em;
@@ -1367,3 +1363,18 @@
     }
   }
 }
+  .gradient-title {
+    background: linear-gradient(180deg, #fff 55%, rgb(255 255 255 / 0.55));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .page-title {
+    margin: 0;
+    font-size: clamp(2.4rem, 5.4vw, 3.4rem);
+    font-weight: 700;
+    letter-spacing: -0.028em;
+    line-height: 1.08;
+    text-wrap: balance;
+  }

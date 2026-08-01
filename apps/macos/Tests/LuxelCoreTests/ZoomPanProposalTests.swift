@@ -19,11 +19,7 @@ extension ZoomPanModelTests {
             cursorImages: [try cursorImage()]
         )
 
-        let proposals = try ZoomProposalEngine.proposals(
-            cursorTimeline: timeline,
-            sourceSize: PixelSize(width: 100, height: 100)
-        )
-        let block = try #require(proposals.first)
+        let (proposals, block) = try firstProposal(cursorTimeline: timeline)
 
         #expect(proposals.count == 1)
         #expect(abs(block.timeRange.start - 0.45) < 0.000_001)
@@ -72,12 +68,10 @@ extension ZoomPanModelTests {
             try keyDown(time: 2.4)
         ])
 
-        let proposals = try ZoomProposalEngine.proposals(
+        let (proposals, block) = try firstProposal(
             cursorTimeline: cursorTimeline,
-            keystrokeTimeline: keystrokes,
-            sourceSize: PixelSize(width: 100, height: 100)
+            keystrokeTimeline: keystrokes
         )
-        let block = try #require(proposals.first)
 
         #expect(proposals.count == 1)
         #expect(abs(block.timeRange.start - 0.9) < 0.000_001)
@@ -99,11 +93,7 @@ extension ZoomPanModelTests {
             cursorImages: [try cursorImage()]
         )
 
-        let proposals = try ZoomProposalEngine.proposals(
-            cursorTimeline: timeline,
-            sourceSize: PixelSize(width: 100, height: 100)
-        )
-        let block = try #require(proposals.first)
+        let (proposals, block) = try firstProposal(cursorTimeline: timeline)
 
         #expect(proposals.count == 1)
         #expect(block.timeRange == (try TimeRange(start: 0.25, end: 1.75)))
@@ -140,6 +130,18 @@ extension ZoomPanModelTests {
         #expect(throws: ZoomPanModelError.invalidProposalTuning) {
             _ = try ZoomProposalTuning(maxProposals: 0)
         }
+    }
+
+    private func firstProposal(
+        cursorTimeline: CursorTimeline,
+        keystrokeTimeline: KeystrokeTimeline? = nil
+    ) throws -> (proposals: [ZoomBlock], block: ZoomBlock) {
+        let proposals = try ZoomProposalEngine.proposals(
+            cursorTimeline: cursorTimeline,
+            keystrokeTimeline: keystrokeTimeline,
+            sourceSize: PixelSize(width: 100, height: 100)
+        )
+        return (proposals, try #require(proposals.first))
     }
 
     @Test("zoom block drafts track proposal acceptance edits and deletes")

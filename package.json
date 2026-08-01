@@ -11,12 +11,14 @@
     "vercel-build": "bun run --cwd apps/web build && rm -rf .vercel/output && mkdir -p .vercel && cp -R apps/web/.vercel/output .vercel/output",
     "test": "turbo run test",
     "lint": "turbo run lint",
+    "check:duplication": "jscpd apps/macos/Sources apps/macos/Tests apps/macos/Scripts apps/macos/fastlane apps/web/src apps/web/scripts apps/web/astro.config.mjs --exit-code",
     "app:build": "turbo run app:build",
     "app:build:mas": "turbo run app:build:mas",
     "check:codec-licenses": "turbo run check:codec-licenses",
     "check:distribution": "turbo run check:distribution"
   },
   "devDependencies": {
+    "jscpd": "5.0.14",
     "turbo": "2.9.18"
   }
 }

@@ -193,26 +193,13 @@ struct RecentRecordingMetadataLabel: View {
                 return nil
             }
 
-            return formatDuration(seconds)
+            return RecordingDurationFormatter.elapsedTime(
+                seconds,
+                padsMinutesWhenNoHours: true
+            )
         } catch {
             return nil
         }
     }
 
-    private static func formatDuration(_ duration: TimeInterval) -> String {
-        let totalSeconds = max(0, Int(duration.rounded(.down)))
-        let hours = totalSeconds / 3600
-        let minutes = (totalSeconds % 3600) / 60
-        let seconds = totalSeconds % 60
-
-        if hours > 0 {
-            return "\(hours):\(twoDigits(minutes)):\(twoDigits(seconds))"
-        }
-
-        return "\(twoDigits(minutes)):\(twoDigits(seconds))"
-    }
-
-    private static func twoDigits(_ value: Int) -> String {
-        value < 10 ? "0\(value)" : "\(value)"
-    }
 }

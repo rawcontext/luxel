@@ -205,11 +205,7 @@ enum LuxelCompositionRoot {
     }
 
     static var defaultRecordingsDirectory: URL {
-        let moviesDirectory =
-            FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Movies")
-
-        return moviesDirectory.appending(path: "Luxel")
+        AppSettings.defaultRecordingsDirectory
     }
 
     private static func exportAudioPreparer() -> ExportAudioPreparationService {

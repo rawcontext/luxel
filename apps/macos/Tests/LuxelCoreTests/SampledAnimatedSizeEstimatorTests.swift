@@ -1,4 +1,5 @@
 import Foundation
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelCore
@@ -58,12 +59,7 @@ struct SampledAnimatedSizeEstimatorTests {
             pixelSize: PixelSize(width: 160, height: 90)
         )
 
-        let estimate = try await SampledAnimatedSizeEstimator().estimate(request)
-        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
-        let actualBytes = try fileSize(at: outputURL)
-
-        #expect(estimate.confidence == .sampled)
-        #expect(estimate.bytes == actualBytes)
+        try await expectEstimateMatchesExport(request, outputURL: outputURL)
     }
 
     @Test("gif estimate cache keys include render options")
@@ -90,13 +86,12 @@ struct SampledAnimatedSizeEstimatorTests {
             )
         )
 
-        let baseEstimate = try await estimator.estimate(baseRequest)
-        let bounceEstimate = try await estimator.estimate(bounceRequest)
-        _ = try await ImageIOAnimatedMediaExporter().export(bounceRequest, to: outputURL)
-        let actualBounceBytes = try fileSize(at: outputURL)
-
-        #expect(bounceEstimate.bytes > baseEstimate.bytes)
-        #expect(bounceEstimate.bytes == actualBounceBytes)
+        try await expectBounceEstimateIncrease(
+            estimator: estimator,
+            baseRequest: baseRequest,
+            bounceRequest: bounceRequest,
+            outputURL: outputURL
+        )
     }
 
     @Test("gif estimate cache keys include zoom blocks")
@@ -175,12 +170,7 @@ struct SampledAnimatedSizeEstimatorTests {
             ]
         )
 
-        let estimate = try await SampledAnimatedSizeEstimator().estimate(request)
-        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
-        let actualBytes = try fileSize(at: outputURL)
-
-        #expect(estimate.confidence == .sampled)
-        #expect(estimate.bytes == actualBytes)
+        try await expectEstimateMatchesExport(request, outputURL: outputURL)
     }
 
     @Test("apng estimate cache keys include loop options")
@@ -199,13 +189,12 @@ struct SampledAnimatedSizeEstimatorTests {
             gifOptions: GIFRenderOptions(loopMode: .bounce)
         )
 
-        let baseEstimate = try await estimator.estimate(baseRequest)
-        let bounceEstimate = try await estimator.estimate(bounceRequest)
-        _ = try await ImageIOAnimatedMediaExporter().export(bounceRequest, to: outputURL)
-        let actualBounceBytes = try fileSize(at: outputURL)
-
-        #expect(bounceEstimate.bytes > baseEstimate.bytes)
-        #expect(bounceEstimate.bytes == actualBounceBytes)
+        try await expectBounceEstimateIncrease(
+            estimator: estimator,
+            baseRequest: baseRequest,
+            bounceRequest: bounceRequest,
+            outputURL: outputURL
+        )
     }
 
     @Test("native estimator routes movies and rejects future codecs")
@@ -228,27 +217,32 @@ struct SampledAnimatedSizeEstimatorTests {
         gifOptions: GIFRenderOptions? = nil,
         zoomBlocks: [ZoomBlock] = []
     ) throws -> ExportRequest {
-        try ExportRequest(
-            inputFileURL: fixtureURL("input.mp4"),
+        try makeAnimatedExportRequest(
             format: format,
-            pixelSize: pixelSize ?? PixelSize(width: 160, height: 90),
-            frameRate: FrameRate(10),
-            timeRange: TimeRange(start: 1, end: 1.3),
-            shouldMute: false,
-            shouldCrop: true,
+            pixelSize: pixelSize,
             quality: quality,
             gifOptions: gifOptions,
             zoomBlocks: zoomBlocks
         )
     }
 
+    private func expectBounceEstimateIncrease(
+        estimator: SampledAnimatedSizeEstimator,
+        baseRequest: ExportRequest,
+        bounceRequest: ExportRequest,
+        outputURL: URL
+    ) async throws {
+        let baseEstimate = try await estimator.estimate(baseRequest)
+        let bounceEstimate = try await estimator.estimate(bounceRequest)
+        _ = try await ImageIOAnimatedMediaExporter().export(bounceRequest, to: outputURL)
+        let actualBounceBytes = try fileSize(at: outputURL)
+
+        #expect(bounceEstimate.bytes > baseEstimate.bytes)
+        #expect(bounceEstimate.bytes == actualBounceBytes)
+    }
+
     private func zoomBlock(start: TimeInterval, end: TimeInterval) throws -> ZoomBlock {
-        try ZoomBlock(
-            timeRange: TimeRange(start: start, end: end),
-            targetRect: NormalizedRect(x: 0.25, y: 0.25, width: 0.2, height: 0.2),
-            zoom: 2,
-            transitionOverride: 0.05
-        )
+        try testAnimatedZoomBlock(start: start, end: end)
     }
 
     private func fileSize(at fileURL: URL) throws -> Int64 {
@@ -258,25 +252,23 @@ struct SampledAnimatedSizeEstimatorTests {
     }
 
     private func fixtureURL(_ fileName: String) throws -> URL {
-        try packageRootURL()
-            .appending(path: "Tests/Fixtures")
-            .appending(path: fileName)
+        try sharedFixtureURL(fileName)
     }
 
     private func temporaryOutputURL(fileExtension: String) -> URL {
-        FileManager.default.temporaryDirectory
-            .appending(path: "luxel-sampled-estimate-\(UUID().uuidString)")
-            .appendingPathExtension(fileExtension)
+        temporaryTestFileURL(
+            prefix: "luxel-sampled-estimate-",
+            pathExtension: fileExtension
+        )
     }
 
-    private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+    private func expectEstimateMatchesExport(
+        _ request: ExportRequest,
+        outputURL: URL
+    ) async throws {
+        let estimate = try await SampledAnimatedSizeEstimator().estimate(request)
+        _ = try await ImageIOAnimatedMediaExporter().export(request, to: outputURL)
+        #expect(estimate.confidence == .sampled)
+        #expect(estimate.bytes == (try fileSize(at: outputURL)))
     }
 }

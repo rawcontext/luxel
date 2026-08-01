@@ -312,20 +312,11 @@ extension CursorEffectModelTests {
     }
 
     private func cursorImage(id: String) throws -> CursorImageAsset {
-        try CursorImageAsset(
-            id: id,
-            pngData: Data([0x89, 0x50, 0x4E, 0x47]),
-            hotspot: CursorPoint(x: 1, y: 2),
-            scale: 2
-        )
+        try testCursorImage(id: id, hotspot: CursorPoint(x: 1, y: 2))
     }
 
     private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws
     -> CursorSample {
-        try CursorSample(
-            time: time,
-            position: CursorPoint(x: xCoordinate, y: yCoordinate),
-            cursorImageID: "arrow"
-        )
+        try testCursorSample(time: time, x: xCoordinate, y: yCoordinate)
     }
 }

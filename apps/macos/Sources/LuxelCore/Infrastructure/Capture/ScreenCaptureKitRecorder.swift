@@ -221,59 +221,13 @@ extension ScreenCaptureKitRecorder {
     }
 
     private func startStreamCapture(_ stream: SCStream) async throws {
-        let timeout = streamStartTimeout
-
-        try await withCheckedThrowingContinuation { continuation in
-            let streamHandle = ScreenCaptureKitStreamHandle(stream)
-            let completion = ScreenCaptureKitRecorderCompletion(continuation)
-            stream.startCapture { error in
-                if let error {
-                    _ = completion.resume(with: .failure(error))
-                } else if !completion.resume(with: .success(())) {
-                    streamHandle.stopCaptureIgnoringResult()
-                }
-            }
-
-            Task {
-                do {
-                    try await Task.sleep(for: timeout)
-                    let timeoutError = ScreenCaptureKitRecorderError.startFailed("Timed out starting capture")
-                    if completion.resume(with: .failure(timeoutError)) {
-                        streamHandle.stopCaptureIgnoringResult()
-                    }
-                } catch is CancellationError {
-                    return
-                } catch {
-                    return
-                }
-            }
+        try await ScreenCaptureKitStreamLifecycle.start(stream, timeout: streamStartTimeout) {
+            ScreenCaptureKitRecorderError.startFailed("Timed out starting capture")
         }
     }
 
     private func stopStreamCapture(_ stream: SCStream) async throws {
-        let timeout = streamStopTimeout
-
-        try await withCheckedThrowingContinuation { continuation in
-            let completion = ScreenCaptureKitRecorderCompletion(continuation)
-            stream.stopCapture { error in
-                if let error {
-                    _ = completion.resume(with: .failure(error))
-                } else {
-                    _ = completion.resume(with: .success(()))
-                }
-            }
-
-            Task {
-                do {
-                    try await Task.sleep(for: timeout)
-                    _ = completion.resume(with: .success(()))
-                } catch is CancellationError {
-                    return
-                } catch {
-                    return
-                }
-            }
-        }
+        try await ScreenCaptureKitStreamLifecycle.stop(stream, timeout: streamStopTimeout)
     }
 
     private func waitForCurrentSegmentToStartWritingIfNeeded() async {

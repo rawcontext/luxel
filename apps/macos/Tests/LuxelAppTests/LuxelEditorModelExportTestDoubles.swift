@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelPresentation
@@ -121,19 +122,7 @@ struct StubPassthroughExporter: PassthroughExporter {
     }
 }
 
-final class SpyFrameGrabber: FrameGrabber, @unchecked Sendable {
-    private let imageData: FrameGrabImageData
-    private(set) var requests: [FrameGrabRequest] = []
-
-    init(imageData: FrameGrabImageData) {
-        self.imageData = imageData
-    }
-
-    func grab(_ request: FrameGrabRequest) async throws -> FrameGrabImageData {
-        requests.append(request)
-        return imageData
-    }
-}
+typealias SpyFrameGrabber = TestFrameGrabberSpy
 
 struct StubFrameGrabber: FrameGrabber {
     func grab(_ request: FrameGrabRequest) async throws -> FrameGrabImageData {
@@ -144,18 +133,7 @@ struct StubFrameGrabber: FrameGrabber {
     }
 }
 
-final class SpyFrameGrabFileWriter: FrameGrabFileWriter, @unchecked Sendable {
-    struct Write: Equatable {
-        let imageData: FrameGrabImageData
-        let fileURL: URL
-    }
-
-    private(set) var writes: [Write] = []
-
-    func write(_ imageData: FrameGrabImageData, to fileURL: URL) throws {
-        writes.append(Write(imageData: imageData, fileURL: fileURL))
-    }
-}
+typealias SpyFrameGrabFileWriter = TestFrameGrabFileWriterSpy
 
 struct StubExportSizeEstimator: ExportSizeEstimator {
     func estimate(_ request: ExportRequest) async throws -> ExportEstimate {

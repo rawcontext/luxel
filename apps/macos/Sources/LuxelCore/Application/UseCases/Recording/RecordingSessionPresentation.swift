@@ -255,19 +255,6 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         )
     }
 
-    fileprivate static func elapsedTimeText(_ elapsed: TimeInterval) -> String {
-        let totalSeconds = max(0, Int(elapsed.rounded(.down)))
-        let hours = totalSeconds / 3600
-        let minutes = (totalSeconds % 3600) / 60
-        let seconds = totalSeconds % 60
-
-        if hours > 0 {
-            return "\(hours):\(twoDigits(minutes)):\(twoDigits(seconds))"
-        }
-
-        return "\(minutes):\(twoDigits(seconds))"
-    }
-
     private static func countdownText(_ remaining: TimeInterval) -> String {
         LuxelLocalization.format(
             "recording.countdown.seconds",
@@ -279,9 +266,6 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
         "\(max(0, Int(remaining.rounded(.up))))"
     }
 
-    private static func twoDigits(_ value: Int) -> String {
-        value < 10 ? "0\(value)" : "\(value)"
-    }
 }
 
 private struct RecordingSessionPresentationContent {
@@ -305,8 +289,8 @@ private struct RecordingSessionTiming {
     let displaysElapsedTime: Bool
 
     init(state: RecordingSessionPresentationState, showsMenuBarTime: Bool) {
-        elapsedText = state.elapsed.map(RecordingSessionPresentation.elapsedTimeText)
-        remainingText = state.remaining.map(RecordingSessionPresentation.elapsedTimeText)
+        elapsedText = state.elapsed.map(RecordingDurationFormatter.elapsedTime)
+        remainingText = state.remaining.map(RecordingDurationFormatter.elapsedTime)
         displaysTimerTime = showsMenuBarTime && remainingText != nil
         displaysElapsedTime = showsMenuBarTime && elapsedText != nil && !displaysTimerTime
     }

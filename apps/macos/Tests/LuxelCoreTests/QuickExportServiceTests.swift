@@ -9,7 +9,7 @@ struct QuickExportServiceTests {
     func clipboardPresetExportsToRecordingsDirectoryAndCopiesResult() async throws {
         let metadataReader = SpyMetadataReader(
             source: try makeSource(width: 1920, height: 1080, frameRate: 60))
-        let exporter = SpyMediaExporter(reportedProgress: [0.3, 0.8])
+        let exporter = ExportServiceSpyMediaExporter(reportedProgress: [0.3, 0.8])
         let progress = ProgressRecorder()
         let client = FakeExportedFileActionClient()
         let service = QuickExportService(
@@ -54,7 +54,7 @@ struct QuickExportServiceTests {
     @Test("folder preset exports to configured folder and reveals result")
     func folderPresetExportsToConfiguredFolderAndRevealsResult() async throws {
         let metadataReader = SpyMetadataReader(source: try makeSource())
-        let exporter = SpyMediaExporter()
+        let exporter = ExportServiceSpyMediaExporter()
         let client = FakeExportedFileActionClient()
         let folderURL = URL(fileURLWithPath: "/tmp/custom")
         let preset = try ExportPreset(
@@ -90,7 +90,7 @@ struct QuickExportServiceTests {
     @Test("recordings directory bookmark resolves quick export destination")
     func recordingsDirectoryBookmarkResolvesQuickExportDestination() async throws {
         let metadataReader = SpyMetadataReader(source: try makeSource())
-        let exporter = SpyMediaExporter()
+        let exporter = ExportServiceSpyMediaExporter()
         let access = QuickExportScopedAccess()
         let bookmark = BookmarkedDirectory(
             url: URL(fileURLWithPath: "/tmp/stale-recordings"),
@@ -133,7 +133,7 @@ struct QuickExportServiceTests {
     @Test("notify post action delegates to user notifier")
     func notifyPostActionDelegatesToUserNotifier() async throws {
         let metadataReader = SpyMetadataReader(source: try makeSource())
-        let exporter = SpyMediaExporter()
+        let exporter = ExportServiceSpyMediaExporter()
         let client = FakeExportedFileActionClient()
         let notifier = SpyUserNotifier()
         let preset = try ExportPreset(
@@ -170,7 +170,7 @@ struct QuickExportServiceTests {
     @Test("missing preset fails before reading metadata or exporting")
     func missingPresetFailsBeforeReadingMetadataOrExporting() async throws {
         let metadataReader = SpyMetadataReader(source: try makeSource())
-        let exporter = SpyMediaExporter()
+        let exporter = ExportServiceSpyMediaExporter()
         let service = QuickExportService(
             metadataReader: metadataReader,
             exportService: ExportService(exporter: exporter),
@@ -204,7 +204,7 @@ struct QuickExportServiceTests {
         )
         let service = QuickExportService(
             metadataReader: SpyMetadataReader(source: try makeSource()),
-            exportService: ExportService(exporter: SpyMediaExporter()),
+            exportService: ExportService(exporter: ExportServiceSpyMediaExporter()),
             fileWorkflowService: ExportedFileWorkflowService(client: FakeExportedFileActionClient())
         )
 
@@ -257,42 +257,6 @@ private actor SpyMetadataReader: MediaMetadataReader {
 
     func requestedURLs() -> [URL] {
         capturedURLs
-    }
-}
-
-private actor SpyMediaExporter: MediaExporter {
-    private let reportedProgress: [Double]
-    private var captured: (request: ExportRequest, outputFileURL: URL)?
-
-    init(reportedProgress: [Double] = []) {
-        self.reportedProgress = reportedProgress
-    }
-
-    func export(_ request: ExportRequest, to outputFileURL: URL) async throws -> ExportedMedia {
-        try await export(request, to: outputFileURL, progress: nil)
-    }
-
-    func export(
-        _ input: MediaExportInput,
-        to outputFileURL: URL,
-        progress: MediaExportProgressHandler?
-    ) async throws -> ExportedMedia {
-        let request = input.request
-        captured = (request, outputFileURL)
-        for value in reportedProgress {
-            await progress?(value)
-        }
-
-        return try ExportedMedia(
-            fileURL: outputFileURL,
-            format: request.format,
-            pixelSize: request.outputPixelSize,
-            shouldMute: request.outputShouldMute
-        )
-    }
-
-    func capturedExport() -> (request: ExportRequest, outputFileURL: URL)? {
-        captured
     }
 }
 

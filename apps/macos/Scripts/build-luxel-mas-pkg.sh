@@ -21,6 +21,8 @@ INSTALLER_SIGN_IDENTITY="${INSTALLER_SIGN_IDENTITY:-}"
 MARKETING_VERSION="${MARKETING_VERSION:-}"
 BUILD_NUMBER="${BUILD_NUMBER:-}"
 
+source "${PACKAGE_ROOT}/Scripts/luxel-app-bundle-support.sh"
+
 find_identity() {
 	local pattern="$1"
 
@@ -129,10 +131,7 @@ mkdir -p "${APP_PATH}/Contents/MacOS"
 mkdir -p "${APP_PATH}/Contents/Resources"
 
 cp "${INFO_PLIST}" "${APP_PATH}/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Delete :CFBundleIconFile" "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string ${APP_NAME}" "${APP_PATH}/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :CFBundleIconName string ${APP_NAME}" "${APP_PATH}/Contents/Info.plist"
+configure_luxel_app_icon
 if [[ -n "${MARKETING_VERSION}" ]]; then
 	/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${MARKETING_VERSION}" "${APP_PATH}/Contents/Info.plist"
 fi
@@ -143,66 +142,8 @@ fi
 /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "${APP_PATH}/Contents/Info.plist"
 
 cp "${PROVISIONING_PROFILE}" "${APP_PATH}/Contents/embedded.provisionprofile"
-cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
-cp "${BIN_DIR}/luxel-cli" "${APP_PATH}/Contents/MacOS/luxel-cli"
-cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
-if [[ -d "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" ]]; then
-	mkdir -p "${APP_PATH}/Contents/Resources/Models"
-	cp -R "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" "${APP_PATH}/Contents/Resources/Models/"
-fi
-if [[ -d "${PACKAGE_ROOT}/Vendor/Models/studio-voice" ]]; then
-	mkdir -p "${APP_PATH}/Contents/Resources/Models"
-	cp -R "${PACKAGE_ROOT}/Vendor/Models/studio-voice" "${APP_PATH}/Contents/Resources/Models/"
-fi
-mkdir -p "${APP_PATH}/Contents/Resources/Models"
-cp -R "${MODNET_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
-"${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
-"${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
-find "${BIN_DIR}" -maxdepth 1 -name '*.bundle' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
-find "${BIN_DIR}" -maxdepth 2 -name '*.lproj' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
-if [[ -d "${PACKAGE_ROOT}/Configuration/Luxel/Localizations" ]]; then
-	find "${PACKAGE_ROOT}/Configuration/Luxel/Localizations" -maxdepth 1 -name '*.lproj' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
-fi
-if [[ -f "${STRING_CATALOG}" ]]; then
-	python3 - "${STRING_CATALOG}" "${APP_PATH}/Contents/Resources" "${APP_PATH}/Contents/Resources/Luxel_LuxelCore.bundle" <<'PY'
-import json
-import pathlib
-import sys
-
-catalog_path = pathlib.Path(sys.argv[1])
-output_roots = [pathlib.Path(path) for path in sys.argv[2:] if pathlib.Path(path).exists()]
-
-with catalog_path.open(encoding="utf-8") as catalog_file:
-    catalog = json.load(catalog_file)
-
-locales = sorted({
-    locale
-    for entry in catalog.get("strings", {}).values()
-    for locale in entry.get("localizations", {})
-})
-
-
-def escaped(value):
-    return (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\n", "\\n")
-    )
-
-
-for output_root in output_roots:
-    for locale in locales:
-        lproj = output_root / f"{locale}.lproj"
-        lproj.mkdir(parents=True, exist_ok=True)
-        strings_file = lproj / "Localizable.strings"
-        with strings_file.open("w", encoding="utf-8") as output:
-            for key, entry in sorted(catalog.get("strings", {}).items()):
-                unit = entry.get("localizations", {}).get(locale, {}).get("stringUnit", {})
-                value = unit.get("value")
-                if value:
-                    output.write(f'"{escaped(key)}" = "{escaped(value)}";\n')
-PY
-fi
+copy_luxel_app_payload
+copy_luxel_app_resources
 while IFS= read -r -d '' bundle_plist; do
 	if ! /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${bundle_plist}" >/dev/null 2>&1; then
 		bundle_name="$(basename "$(dirname "${bundle_plist}")" .bundle)"
@@ -215,11 +156,7 @@ if [[ ! -d "${APP_PATH}/Contents/Resources/Luxel_LuxelCore.bundle" ]]; then
 	exit 1
 fi
 
-chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
-chmod +x "${APP_PATH}/Contents/MacOS/luxel-cli"
-
-xcrun strip -x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
-xcrun strip -x "${APP_PATH}/Contents/MacOS/luxel-cli"
+prepare_luxel_app_executables
 
 codesign \
 	--force \

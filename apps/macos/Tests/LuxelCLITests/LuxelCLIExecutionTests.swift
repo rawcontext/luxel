@@ -179,49 +179,38 @@ struct LuxelCLIExecutionTests {
 
     @Test("local callback receiver parses success callback requests")
     func localCallbackReceiverParsesSuccessCallbackRequests() async throws {
-        let receiver = try LocalLuxelCallbackReceiver()
-        defer {
-            receiver.cancel()
-        }
-
-        let successURL = try #require(receiver.callbacks.success)
-        var components = try #require(
-            URLComponents(
-                url: successURL,
-                resolvingAgainstBaseURL: false
-            ))
-        components.queryItems = [URLQueryItem(name: "filePath", value: "/tmp/Luxel Recording.mp4")]
-        let callbackURL = try #require(components.url)
-
-        _ = try await URLSession.shared.data(from: callbackURL)
-        let result = try receiver.wait(timeout: 2)
+        let result = try await receiveSuccessCallback(queryItems: [
+            URLQueryItem(name: "filePath", value: "/tmp/Luxel Recording.mp4")
+        ])
 
         #expect(result == .success(filePath: "/tmp/Luxel Recording.mp4", recordingID: nil))
     }
 
     @Test("local callback receiver tolerates duplicate query items")
     func localCallbackReceiverToleratesDuplicateQueryItems() async throws {
-        let receiver = try LocalLuxelCallbackReceiver()
-        defer {
-            receiver.cancel()
-        }
+        let result = try await receiveSuccessCallback(queryItems: [
+            URLQueryItem(name: "filePath", value: "/tmp/first.mp4"),
+            URLQueryItem(name: "filePath", value: "/tmp/second.mp4")
+        ])
 
+        #expect(result == .success(filePath: "/tmp/first.mp4", recordingID: nil))
+    }
+
+    private func receiveSuccessCallback(
+        queryItems: [URLQueryItem]
+    ) async throws -> LuxelCallbackResult {
+        let receiver = try LocalLuxelCallbackReceiver()
+        defer { receiver.cancel() }
         let successURL = try #require(receiver.callbacks.success)
         var components = try #require(
             URLComponents(
                 url: successURL,
                 resolvingAgainstBaseURL: false
-            ))
-        components.queryItems = [
-            URLQueryItem(name: "filePath", value: "/tmp/first.mp4"),
-            URLQueryItem(name: "filePath", value: "/tmp/second.mp4")
-        ]
-        let callbackURL = try #require(components.url)
-
-        _ = try await URLSession.shared.data(from: callbackURL)
-        let result = try receiver.wait(timeout: 2)
-
-        #expect(result == .success(filePath: "/tmp/first.mp4", recordingID: nil))
+            )
+        )
+        components.queryItems = queryItems
+        _ = try await URLSession.shared.data(from: try #require(components.url))
+        return try receiver.wait(timeout: 2)
     }
 }
 

@@ -40,58 +40,25 @@ extension LuxelMenu {
 
     var microphoneFooterControl: some View {
         let presentation = model.sourcePermissionPresentation(for: .microphone)
-
-        return HStack(spacing: 0) {
-            Button {
-                handleMicrophoneFooterAction(presentation)
-            } label: {
-                footerSourceIcon(presentation)
-                    .frame(width: Self.deviceIconCellWidth, height: Self.deviceControlHeight)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(
-                LuxelIslandCellButtonStyle(
-                    corners: .leading,
-                    cornerRadius: Self.deviceControlCornerRadius
-                )
-            )
-            .help(presentation.message)
-            .accessibilityLabel("Microphone")
-            .accessibilityValue(presentation.statusTitle)
-
-            footerControlDivider
-
+        return footerSourceControl(
+            presentation: presentation,
+            accessibilityLabel: "Microphone",
+            action: { handleMicrophoneFooterAction(presentation) }
+        ) {
             microphoneFooterPicker
         }
-        .luxelIslandControlGroupBackground(cornerRadius: Self.deviceControlCornerRadius)
     }
 
     var cameraFooterControl: some View {
         let presentation = model.sourcePermissionPresentation(for: .camera)
 
-        return HStack(spacing: 0) {
-            Button {
-                handleCameraFooterAction(presentation)
-            } label: {
-                footerSourceIcon(presentation)
-                    .frame(width: Self.deviceIconCellWidth, height: Self.deviceControlHeight)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(
-                LuxelIslandCellButtonStyle(
-                    corners: .leading,
-                    cornerRadius: Self.deviceControlCornerRadius
-                )
-            )
-            .help(presentation.message)
-            .accessibilityLabel("Camera")
-            .accessibilityValue(presentation.statusTitle)
-
-            footerControlDivider
-
+        return footerSourceControl(
+            presentation: presentation,
+            accessibilityLabel: "Camera",
+            action: { handleCameraFooterAction(presentation) }
+        ) {
             cameraFooterPicker
         }
-        .luxelIslandControlGroupBackground(cornerRadius: Self.deviceControlCornerRadius)
     }
 
     var footerControlDivider: some View {
@@ -103,10 +70,23 @@ extension LuxelMenu {
     var systemAudioFooterControl: some View {
         let presentation = model.sourcePermissionPresentation(for: .systemAudio)
 
-        return HStack(spacing: 0) {
-            Button {
-                handleSystemAudioFooterAction(presentation)
-            } label: {
+        return footerSourceControl(
+            presentation: presentation,
+            accessibilityLabel: "System Audio",
+            action: { handleSystemAudioFooterAction(presentation) }
+        ) {
+            systemAudioFooterPicker(presentation)
+        }
+    }
+
+    func footerSourceControl<Picker: View>(
+        presentation: CaptureSourcePermissionPresentation,
+        accessibilityLabel: String,
+        action: @escaping () -> Void,
+        @ViewBuilder picker: () -> Picker
+    ) -> some View {
+        HStack(spacing: 0) {
+            Button(action: action) {
                 footerSourceIcon(presentation)
                     .frame(width: Self.deviceIconCellWidth, height: Self.deviceControlHeight)
                     .contentShape(Rectangle())
@@ -118,12 +98,11 @@ extension LuxelMenu {
                 )
             )
             .help(presentation.message)
-            .accessibilityLabel("System Audio")
+            .accessibilityLabel(accessibilityLabel)
             .accessibilityValue(presentation.statusTitle)
 
             footerControlDivider
-
-            systemAudioFooterPicker(presentation)
+            picker()
         }
         .luxelIslandControlGroupBackground(cornerRadius: Self.deviceControlCornerRadius)
     }
@@ -138,12 +117,7 @@ extension LuxelMenu {
             }
             .pickerStyle(.inline)
         } label: {
-            Image(systemName: "chevron.down")
-                .labelStyle(.iconOnly)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.white.opacity(0.55))
-                .frame(width: 30, height: Self.deviceControlHeight)
-                .contentShape(Rectangle())
+            footerPickerChevronLabel(width: 30, height: Self.deviceControlHeight)
         }
         .buttonStyle(
             LuxelIslandCellButtonStyle(
@@ -155,6 +129,15 @@ extension LuxelMenu {
         .help("Choose audio source")
         .accessibilityLabel("Choose Audio Source")
         .accessibilityValue(model.settings.recordSystemAudio ? "System Audio" : "Off")
+    }
+
+    func footerPickerChevronLabel(width: CGFloat, height: CGFloat) -> some View {
+        Image(systemName: "chevron.down")
+            .labelStyle(.iconOnly)
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(.white.opacity(0.55))
+            .frame(width: width, height: height)
+            .contentShape(Rectangle())
     }
 
     func systemAudioFooterSelection(
@@ -206,15 +189,19 @@ extension LuxelMenu {
 
     func showAreaCapturePicker() {
         model.refreshCameraDevices()
+        let camera = model.cropperCameraConfiguration()
+        let quickRecording = model.cropperQuickRecordingConfiguration()
+        let selectionPresets = model.cropperSelectionPresetConfiguration()
+        let restoredSelection = model.cropperRestoreSelectionConfiguration()
         cropperPanelController.show(
             countdownDuration: model.settings.defaultCountdown,
             stopAfterDuration: model.settings.lastStopAfter,
             canRecordAudio: model.microphoneStatus == .authorized,
             canCaptureKeystrokes: model.inputMonitoringStatus == .authorized,
-            cameraConfiguration: model.cropperCameraConfiguration(),
-            quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
-            selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
-            restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
+            cameraConfiguration: camera,
+            quickRecordingConfiguration: quickRecording,
+            selectionPresetConfiguration: selectionPresets,
+            restoreSelectionConfiguration: restoredSelection,
             recordAudio: model.captureCapabilities.microphoneTrackAvailable,
             captureKeystrokes: model.settings.keystrokeOverlayEnabled,
             loupeAlwaysOn: model.settings.loupeAlwaysOn,

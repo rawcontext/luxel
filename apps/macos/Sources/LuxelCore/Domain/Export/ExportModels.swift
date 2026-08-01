@@ -231,6 +231,15 @@ public struct PixelSize: Codable, Equatable, Sendable {
     }
 }
 
+public extension PixelSize {
+    func scaled(by scale: Double) throws -> PixelSize {
+        try PixelSize(
+            width: max(1, Int((Double(width) * scale).rounded())),
+            height: max(1, Int((Double(height) * scale).rounded()))
+        )
+    }
+}
+
 public struct FrameRate: Codable, Equatable, Sendable {
     public static let fps30 = FrameRate(uncheckedFramesPerSecond: 30)
     public static let fps60 = FrameRate(uncheckedFramesPerSecond: 60)

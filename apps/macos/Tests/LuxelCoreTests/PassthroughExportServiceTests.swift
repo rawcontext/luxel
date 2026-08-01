@@ -1,53 +1,44 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Passthrough export service")
 struct PassthroughExportServiceTests {
     @Test("copies original file byte for byte")
     func copiesOriginalFileByteForByte() async throws {
-        let directory = temporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: directory) }
-
-        let sourceURL = directory.appending(path: "source.mp4")
+        let fixture = try makeSourceFile(bytes: Data([0, 1, 2, 3, 5, 8, 13, 21]))
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
         let outputURL =
-            directory
+            fixture.directory
             .appending(path: "exports", directoryHint: .isDirectory)
             .appending(path: "source Original.mp4")
-        let bytes = Data([0, 1, 2, 3, 5, 8, 13, 21])
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try bytes.write(to: sourceURL)
 
         let service = PassthroughExportService(fileSystem: LocalFileSystem())
         let result = try await service.export(
             PassthroughExportRequest(
-                inputFileURL: sourceURL,
+                inputFileURL: fixture.sourceURL,
                 outputFileURL: outputURL
             ))
 
         #expect(result.fileURL == outputURL)
-        #expect(try Data(contentsOf: outputURL) == bytes)
+        #expect(try Data(contentsOf: outputURL) == fixture.bytes)
     }
 
     @Test("same source and destination is a no-op")
     func sameSourceAndDestinationIsNoop() async throws {
-        let directory = temporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: directory) }
-
-        let sourceURL = directory.appending(path: "source.mp4")
-        let bytes = Data([89, 55, 34])
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try bytes.write(to: sourceURL)
+        let fixture = try makeSourceFile(bytes: Data([89, 55, 34]))
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
 
         let service = PassthroughExportService(fileSystem: LocalFileSystem())
         let result = try await service.export(
             PassthroughExportRequest(
-                inputFileURL: sourceURL,
-                outputFileURL: sourceURL
+                inputFileURL: fixture.sourceURL,
+                outputFileURL: fixture.sourceURL
             ))
 
-        #expect(result.fileURL == sourceURL)
-        #expect(try Data(contentsOf: sourceURL) == bytes)
+        #expect(result.fileURL == fixture.sourceURL)
+        #expect(try Data(contentsOf: fixture.sourceURL) == fixture.bytes)
     }
 
     @Test("trimmed passthrough delegates to exporter")
@@ -105,47 +96,21 @@ struct PassthroughExportServiceTests {
         FileManager.default.temporaryDirectory
             .appending(path: "luxel-tests-\(UUID().uuidString)", directoryHint: .isDirectory)
     }
+
+    private func makeSourceFile(bytes: Data) throws -> (
+        directory: URL,
+        sourceURL: URL,
+        bytes: Data
+    ) {
+        let directory = temporaryDirectory()
+        let sourceURL = directory.appending(path: "source.mp4")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try bytes.write(to: sourceURL)
+        return (directory, sourceURL, bytes)
+    }
 }
 
-private final class SpyFileSystem: FileSystem, @unchecked Sendable {
-    private let lock = NSLock()
-    private var capturedCreatedDirectories: [URL] = []
-    private var capturedCopiedFiles: [CopiedFile] = []
-
-    var createdDirectories: [URL] {
-        lock.withLock {
-            capturedCreatedDirectories
-        }
-    }
-
-    var copiedFiles: [CopiedFile] {
-        lock.withLock {
-            capturedCopiedFiles
-        }
-    }
-
-    func fileExists(at url: URL) -> Bool {
-        false
-    }
-
-    func createDirectory(at url: URL) throws {
-        lock.withLock {
-            capturedCreatedDirectories.append(url)
-        }
-    }
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {
-        lock.withLock {
-            capturedCopiedFiles.append(CopiedFile(sourceURL: sourceURL, destinationURL: destinationURL))
-        }
-    }
-
-    func writeData(_ data: Data, to url: URL) throws {}
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
+private typealias SpyFileSystem = TestFileSystemSpy
 
 private actor SpyPassthroughExporter: PassthroughExporter {
     private var capturedRequests: [PassthroughExportRequest] = []
@@ -160,7 +125,4 @@ private actor SpyPassthroughExporter: PassthroughExporter {
     }
 }
 
-private struct CopiedFile: Equatable {
-    let sourceURL: URL
-    let destinationURL: URL
-}
+private typealias CopiedFile = TestCopiedFile

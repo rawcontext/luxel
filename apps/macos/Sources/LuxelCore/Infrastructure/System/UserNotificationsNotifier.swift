@@ -68,7 +68,7 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
         content.body = LuxelLocalization.format(
             "notifications.recordingFinished.body",
             defaultValue: "Recording finished - %@",
-            Self.durationText(duration))
+            RecordingDurationFormatter.elapsedTime(duration))
         content.sound = .default
 
         let request = UNNotificationRequest(
@@ -77,23 +77,6 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
             trigger: nil
         )
         try await notificationCenter.add(request)
-    }
-
-    private static func durationText(_ duration: TimeInterval) -> String {
-        let totalSeconds = max(0, Int(duration.rounded(.down)))
-        let hours = totalSeconds / 3600
-        let minutes = (totalSeconds % 3600) / 60
-        let seconds = totalSeconds % 60
-
-        if hours > 0 {
-            return "\(hours):\(twoDigits(minutes)):\(twoDigits(seconds))"
-        }
-
-        return "\(minutes):\(twoDigits(seconds))"
-    }
-
-    private static func twoDigits(_ value: Int) -> String {
-        value < 10 ? "0\(value)" : "\(value)"
     }
 
     private static func currentNotificationCenter() -> UNUserNotificationCenter? {

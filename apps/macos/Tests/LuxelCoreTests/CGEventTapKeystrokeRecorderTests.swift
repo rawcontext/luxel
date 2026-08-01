@@ -7,23 +7,19 @@ import Testing
 struct CGEventTapKeystrokeRecorderTests {
     @Test("disabled tap publishes recovery after a verified re-enable")
     func disabledTapPublishesRecovery() async {
-        let control = KeystrokeEventTapRecoveryControlStub(result: true)
-        let recorder = CGEventTapKeystrokeRecorder(
-            logger: Logger(subsystem: "media.luxel.tests", category: "Keystrokes"),
-            tapRecoveryControl: control
-        )
-        var statuses = recorder.statusUpdates.makeAsyncIterator()
-        #expect(await statuses.next() == .idle)
-
-        recorder.handleEventTapInterruption()
-
-        #expect(await statuses.next() == .eventDeliveryRecovered)
-        #expect(control.callCount == 1)
+        await expectRecovery(result: true, expectedStatus: .eventDeliveryRecovered)
     }
 
     @Test("failed tap recovery publishes unavailable")
     func failedTapRecoveryPublishesUnavailable() async {
-        let control = KeystrokeEventTapRecoveryControlStub(result: false)
+        await expectRecovery(result: false, expectedStatus: .eventDeliveryUnavailable)
+    }
+
+    private func expectRecovery(
+        result: Bool,
+        expectedStatus: KeystrokeCaptureStatus
+    ) async {
+        let control = KeystrokeEventTapRecoveryControlStub(result: result)
         let recorder = CGEventTapKeystrokeRecorder(
             logger: Logger(subsystem: "media.luxel.tests", category: "Keystrokes"),
             tapRecoveryControl: control
@@ -33,7 +29,7 @@ struct CGEventTapKeystrokeRecorderTests {
 
         recorder.handleEventTapInterruption()
 
-        #expect(await statuses.next() == .eventDeliveryUnavailable)
+        #expect(await statuses.next() == expectedStatus)
         #expect(control.callCount == 1)
     }
 }

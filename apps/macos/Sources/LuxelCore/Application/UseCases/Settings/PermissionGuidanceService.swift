@@ -164,16 +164,7 @@ public struct PermissionGuidanceService: Sendable {
         presentation: CaptureSourcePermissionPresentation,
         status: PermissionStatus
     ) -> PermissionGuidance {
-        if presentation.phase == .offByUser {
-            return PermissionGuidance(
-                title: presentation.title,
-                message: presentation.message,
-                actionTitle: presentation.actionTitle,
-                action: .enableSource
-            )
-        }
-
-        return microphoneGuidance(status: status)
+        sourceGuidance(presentation: presentation) { microphoneGuidance(status: status) }
     }
 
     private func cameraGuidance(status: PermissionStatus) -> PermissionGuidance {
@@ -206,6 +197,13 @@ public struct PermissionGuidanceService: Sendable {
         presentation: CaptureSourcePermissionPresentation,
         status: PermissionStatus
     ) -> PermissionGuidance {
+        sourceGuidance(presentation: presentation) { cameraGuidance(status: status) }
+    }
+
+    private func sourceGuidance(
+        presentation: CaptureSourcePermissionPresentation,
+        fallback: () -> PermissionGuidance
+    ) -> PermissionGuidance {
         if presentation.phase == .offByUser {
             return PermissionGuidance(
                 title: presentation.title,
@@ -214,8 +212,7 @@ public struct PermissionGuidanceService: Sendable {
                 action: .enableSource
             )
         }
-
-        return cameraGuidance(status: status)
+        return fallback()
     }
 
     private func inputMonitoringGuidance(status: PermissionStatus) -> PermissionGuidance {

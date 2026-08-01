@@ -1,65 +1,33 @@
-import AVFAudio
-import AudioToolbox
 import Foundation
 import LuxelCodecAV1
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("AV1 codec stack", .serialized)
 struct AV1CodecStackTests {
     @Test("codec pipeline writes an AV1 MP4 file")
     func codecPipelineWritesAV1MP4File() async throws {
-        let outputURL = temporaryAV1URL()
-        defer {
-            try? FileManager.default.removeItem(at: outputURL)
-        }
+        let result = try await exportAV1(includeAudio: false)
+        defer { try? FileManager.default.removeItem(at: result.outputURL) }
 
-        let pixelSize = try PixelSize(width: 64, height: 64)
-        let pipeline = CodecExportPipeline(
-            mediaSource: StubAV1MediaSource(pixelSize: pixelSize, frameCount: 8),
-            videoEncoder: SVTAV1VideoEncoder(),
-            muxer: AV1MP4Muxer()
-        )
-
-        let exported = try await pipeline.export(
-            makeRequest(pixelSize: pixelSize, shouldMute: true),
-            to: outputURL
-        )
-        let data = try Data(contentsOf: outputURL)
-
-        #expect(exported.format == .av1)
-        #expect(exported.pixelSize == pixelSize)
-        #expect(exported.shouldMute)
-        #expect(data.count > 200)
-        #expect(data.contains(Data("ftyp".utf8)))
-        #expect(data.contains(Data("av01".utf8)))
+        #expect(result.exported.format == .av1)
+        #expect(result.exported.pixelSize == result.pixelSize)
+        #expect(result.exported.shouldMute)
+        #expect(result.data.count > 200)
+        #expect(result.data.contains(Data("ftyp".utf8)))
+        #expect(result.data.contains(Data("av01".utf8)))
     }
 
     @Test("codec pipeline writes an AV1 MP4 file with AAC audio")
     func codecPipelineWritesAV1MP4FileWithAACAudio() async throws {
-        let outputURL = temporaryAV1URL()
-        defer {
-            try? FileManager.default.removeItem(at: outputURL)
-        }
+        let result = try await exportAV1(includeAudio: true)
+        defer { try? FileManager.default.removeItem(at: result.outputURL) }
 
-        let pixelSize = try PixelSize(width: 64, height: 64)
-        let pipeline = CodecExportPipeline(
-            mediaSource: StubAV1MediaSource(pixelSize: pixelSize, frameCount: 8, audioChunkCount: 3),
-            videoEncoder: SVTAV1VideoEncoder(),
-            audioEncoder: PCM16AudioPassthroughEncoder(),
-            muxer: AV1MP4Muxer()
-        )
-
-        let exported = try await pipeline.export(
-            makeRequest(pixelSize: pixelSize, shouldMute: false),
-            to: outputURL
-        )
-        let data = try Data(contentsOf: outputURL)
-
-        #expect(exported.format == .av1)
-        #expect(!exported.shouldMute)
-        #expect(data.contains(Data("av01".utf8)))
-        #expect(data.contains(Data("mp4a".utf8)))
+        #expect(result.exported.format == .av1)
+        #expect(!result.exported.shouldMute)
+        #expect(result.data.contains(Data("av01".utf8)))
+        #expect(result.data.contains(Data("mp4a".utf8)))
     }
 
     @Test("ffprobe accepts the generated AV1 MP4 when installed")
@@ -68,25 +36,10 @@ struct AV1CodecStackTests {
             return
         }
 
-        let outputURL = temporaryAV1URL()
-        defer {
-            try? FileManager.default.removeItem(at: outputURL)
-        }
+        let result = try await exportAV1(includeAudio: true)
+        defer { try? FileManager.default.removeItem(at: result.outputURL) }
 
-        let pixelSize = try PixelSize(width: 64, height: 64)
-        let pipeline = CodecExportPipeline(
-            mediaSource: StubAV1MediaSource(pixelSize: pixelSize, frameCount: 8, audioChunkCount: 3),
-            videoEncoder: SVTAV1VideoEncoder(),
-            audioEncoder: PCM16AudioPassthroughEncoder(),
-            muxer: AV1MP4Muxer()
-        )
-
-        _ = try await pipeline.export(
-            makeRequest(pixelSize: pixelSize, shouldMute: false),
-            to: outputURL
-        )
-
-        let output = try runFFProbe(ffprobe: ffprobe, fileURL: outputURL)
+        let output = try runFFProbe(ffprobe: ffprobe, fileURL: result.outputURL)
         #expect(output.contains("\"codec_name\": \"av1\""))
         #expect(output.contains("\"codec_name\": \"aac\""))
     }
@@ -94,35 +47,14 @@ struct AV1CodecStackTests {
     @Test("media exporter consumes prepared audio when the source has no audio")
     func mediaExporterConsumesPreparedAudio() async throws {
         let outputURL = temporaryAV1URL()
-        let preparedURL = FileManager.default.temporaryDirectory
-            .appending(path: "av1-prepared-\(UUID().uuidString).caf")
+        let prepared = try makePreparedAudioTestInput(format: .av1)
         defer {
             try? FileManager.default.removeItem(at: outputURL)
-            try? FileManager.default.removeItem(at: preparedURL)
+            try? FileManager.default.removeItem(at: prepared.preparedURL)
         }
-        try writeSilentPreparedPCM(to: preparedURL, duration: 0.3)
-        let request = try ExportRequest(
-            inputFileURL: fixtureURL("input.mp4"),
-            format: .av1,
-            pixelSize: PixelSize(width: 320, height: 180),
-            frameRate: FrameRate(10),
-            timeRange: TimeRange(start: 1, end: 1.3),
-            shouldMute: false,
-            studioVoiceEnabled: true,
-            shouldCrop: false,
-            quality: .compact
-        )
 
         let exported = try await AV1MediaExporter().export(
-            MediaExportInput(
-                request: request,
-                preparedAudio: PreparedAudioAsset(
-                    fileURL: preparedURL,
-                    duration: 0.3,
-                    sampleRate: 48_000,
-                    channelCount: 2
-                )
-            ),
+            prepared.input,
             to: outputURL
         )
         let data = try Data(contentsOf: outputURL)
@@ -154,6 +86,38 @@ struct AV1CodecStackTests {
         #expect(packets.allSatisfy { !$0.data.isEmpty })
         #expect(packets.contains { $0.isKeyFrame })
     }
+}
+
+private struct AV1ExportResult {
+    let outputURL: URL
+    let pixelSize: PixelSize
+    let exported: ExportedMedia
+    let data: Data
+}
+
+private func exportAV1(includeAudio: Bool) async throws -> AV1ExportResult {
+    let outputURL = temporaryAV1URL()
+    let pixelSize = try PixelSize(width: 64, height: 64)
+    let pipeline = CodecExportPipeline(
+        mediaSource: StubAV1MediaSource(
+            pixelSize: pixelSize,
+            frameCount: 8,
+            audioChunkCount: includeAudio ? 3 : 0
+        ),
+        videoEncoder: SVTAV1VideoEncoder(),
+        audioEncoder: includeAudio ? PCM16AudioPassthroughEncoder() : nil,
+        muxer: AV1MP4Muxer()
+    )
+    let exported = try await pipeline.export(
+        makeRequest(pixelSize: pixelSize, shouldMute: !includeAudio),
+        to: outputURL
+    )
+    return try AV1ExportResult(
+        outputURL: outputURL,
+        pixelSize: pixelSize,
+        exported: exported,
+        data: Data(contentsOf: outputURL)
+    )
 }
 
 private actor StubAV1MediaSource: CodecMediaSource {
@@ -220,92 +184,21 @@ private func makeRequest(pixelSize: PixelSize, shouldMute: Bool) throws -> Expor
 }
 
 private func temporaryAV1URL() -> URL {
-    FileManager.default.temporaryDirectory
-        .appending(path: UUID().uuidString)
-        .appendingPathExtension("mp4")
+    temporaryTestFileURL(pathExtension: "mp4")
 }
 
 private func fixtureURL(_ fileName: String) throws -> URL {
-    try packageRootURL()
-        .appending(path: "Tests/Fixtures")
-        .appending(path: fileName)
-}
-
-private func packageRootURL() throws -> URL {
-    var url = URL(fileURLWithPath: #filePath)
-    while url.lastPathComponent != "Tests" {
-        let next = url.deletingLastPathComponent()
-        try #require(next.path != url.path)
-        url = next
-    }
-    return url.deletingLastPathComponent()
-}
-
-private func writeSilentPreparedPCM(to url: URL, duration: TimeInterval) throws {
-    let format = try #require(
-        AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: 48_000,
-            channels: 2,
-            interleaved: false
-        )
-    )
-    let frameCount = AVAudioFrameCount(duration * 48_000)
-    let buffer = try #require(
-        AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)
-    )
-    buffer.frameLength = frameCount
-    let file = try AVAudioFile(
-        forWriting: url,
-        settings: [
-            AVFormatIDKey: kAudioFormatLinearPCM,
-            AVSampleRateKey: 48_000,
-            AVNumberOfChannelsKey: 2,
-            AVLinearPCMBitDepthKey: 32,
-            AVLinearPCMIsFloatKey: true
-        ],
-        commonFormat: .pcmFormatFloat32,
-        interleaved: false
-    )
-    try file.write(from: buffer)
+    try testFixtureURL(fileName)
 }
 
 private func executablePath(named name: String) -> String? {
-    let fileSystem = FileManager.default
-    let searchPaths =
-        (ProcessInfo.processInfo.environment["PATH"] ?? "")
-        .split(separator: ":")
-        .map(String.init) + ["/opt/homebrew/bin", "/usr/local/bin"]
-
-    return
-        searchPaths
-        .map { URL(fileURLWithPath: $0).appending(path: name).path }
-        .first { fileSystem.isExecutableFile(atPath: $0) }
+    testExecutablePath(named: name)
 }
 
 private func runFFProbe(ffprobe: String, fileURL: URL) throws -> String {
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: ffprobe)
-    process.arguments = [
-        "-v", "error",
-        "-show_format",
-        "-show_streams",
-        "-of", "json",
-        fileURL.path
-    ]
-
-    let outputPipe = Pipe()
-    let errorPipe = Pipe()
-    process.standardOutput = outputPipe
-    process.standardError = errorPipe
-    try process.run()
-    process.waitUntilExit()
-
-    let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-    let output = String(data: outputData, encoding: .utf8) ?? ""
-    _ = String(data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8)
-    #expect(process.terminationStatus == 0)
-    return output
+    let result = try runTestFFProbe(executable: ffprobe, fileURL: fileURL)
+    #expect(result.terminationStatus == 0)
+    return result.output
 }
 
 private func makeVideoFrame(_ index: Int, _ pixelSize: PixelSize) throws -> CodecVideoFrame {

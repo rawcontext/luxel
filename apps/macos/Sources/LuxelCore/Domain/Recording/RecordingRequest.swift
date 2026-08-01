@@ -109,60 +109,15 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
     }
 
     public func replacingOutputFileURL(_ outputFileURL: URL) -> RecordingRequest {
-        RecordingRequest(
-            target: target,
-            outputFileURL: outputFileURL,
-            pixelSize: pixelSize,
-            frameRate: frameRate,
-            matchesDisplayFrameRate: matchesDisplayFrameRate,
-            showCursor: showCursor,
-            highlightClicks: highlightClicks,
-            captureKeystrokes: captureKeystrokes,
-            camera: camera,
-            audio: audio,
-            videoCodec: videoCodec,
-            captureKind: captureKind,
-            schedule: schedule,
-            timelapse: timelapse
-        )
+        RecordingRequest(copying: self, outputFileURL: outputFileURL)
     }
 
     func replacingPixelSize(_ pixelSize: PixelSize) -> RecordingRequest {
-        RecordingRequest(
-            target: target,
-            outputFileURL: outputFileURL,
-            pixelSize: pixelSize,
-            frameRate: frameRate,
-            matchesDisplayFrameRate: matchesDisplayFrameRate,
-            showCursor: showCursor,
-            highlightClicks: highlightClicks,
-            captureKeystrokes: captureKeystrokes,
-            camera: camera,
-            audio: audio,
-            videoCodec: videoCodec,
-            captureKind: captureKind,
-            schedule: schedule,
-            timelapse: timelapse
-        )
+        RecordingRequest(copying: self, pixelSize: pixelSize)
     }
 
     public func replacingSchedule(_ schedule: RecordingSchedule?) -> RecordingRequest {
-        RecordingRequest(
-            target: target,
-            outputFileURL: outputFileURL,
-            pixelSize: pixelSize,
-            frameRate: frameRate,
-            matchesDisplayFrameRate: matchesDisplayFrameRate,
-            showCursor: showCursor,
-            highlightClicks: highlightClicks,
-            captureKeystrokes: captureKeystrokes,
-            camera: camera,
-            audio: audio,
-            videoCodec: videoCodec,
-            captureKind: captureKind,
-            schedule: schedule,
-            timelapse: timelapse
-        )
+        RecordingRequest(copying: self, schedule: .some(schedule))
     }
 
     public func replacingFrameRate(
@@ -170,39 +125,40 @@ public struct RecordingRequest: Codable, Equatable, Sendable {
         matchesDisplayFrameRate: Bool
     ) -> RecordingRequest {
         RecordingRequest(
-            target: target,
-            outputFileURL: outputFileURL,
-            pixelSize: pixelSize,
+            copying: self,
             frameRate: frameRate,
-            matchesDisplayFrameRate: matchesDisplayFrameRate,
-            showCursor: showCursor,
-            highlightClicks: highlightClicks,
-            captureKeystrokes: captureKeystrokes,
-            camera: camera,
-            audio: audio,
-            videoCodec: videoCodec,
-            captureKind: captureKind,
-            schedule: schedule,
-            timelapse: timelapse
+            matchesDisplayFrameRate: matchesDisplayFrameRate
         )
     }
 
     public func replacingCamera(_ camera: CameraRecordingOptions?) -> RecordingRequest {
-        RecordingRequest(
-            target: target,
-            outputFileURL: outputFileURL,
-            pixelSize: pixelSize,
-            frameRate: frameRate,
-            matchesDisplayFrameRate: matchesDisplayFrameRate,
-            showCursor: showCursor,
-            highlightClicks: highlightClicks,
-            captureKeystrokes: captureKeystrokes,
-            camera: camera,
-            audio: audio,
-            videoCodec: videoCodec,
-            captureKind: captureKind,
-            schedule: schedule,
-            timelapse: timelapse
+        RecordingRequest(copying: self, camera: .some(camera))
+    }
+
+    private init(
+        copying request: RecordingRequest,
+        outputFileURL: URL? = nil,
+        pixelSize: PixelSize? = nil,
+        frameRate: FrameRate? = nil,
+        matchesDisplayFrameRate: Bool? = nil,
+        camera: CameraRecordingOptions?? = nil,
+        schedule: RecordingSchedule?? = nil
+    ) {
+        self.init(
+            target: request.target,
+            outputFileURL: outputFileURL ?? request.outputFileURL,
+            pixelSize: pixelSize ?? request.pixelSize,
+            frameRate: frameRate ?? request.frameRate,
+            matchesDisplayFrameRate: matchesDisplayFrameRate ?? request.matchesDisplayFrameRate,
+            showCursor: request.showCursor,
+            highlightClicks: request.highlightClicks,
+            captureKeystrokes: request.captureKeystrokes,
+            camera: camera ?? request.camera,
+            audio: request.audio,
+            videoCodec: request.videoCodec,
+            captureKind: request.captureKind,
+            schedule: schedule ?? request.schedule,
+            timelapse: request.timelapse
         )
     }
 

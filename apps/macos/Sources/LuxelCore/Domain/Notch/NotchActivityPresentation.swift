@@ -188,7 +188,7 @@ private extension NotchActivityPresentation {
         isMuted: Bool,
         actionToReplace: NotchActivityActionID?
     ) -> NotchActivityViewModel {
-        let elapsedText = elapsedTimeText(elapsed)
+        let elapsedText = RecordingDurationFormatter.elapsedTime(elapsed)
         return NotchActivityViewModel(
             collapsedTitle: elapsedText,
             collapsedSystemImage: "record.circle.fill",
@@ -206,7 +206,7 @@ private extension NotchActivityPresentation {
         elapsed: TimeInterval,
         actionToReplace: NotchActivityActionID?
     ) -> NotchActivityViewModel {
-        let elapsedText = elapsedTimeText(elapsed)
+        let elapsedText = RecordingDurationFormatter.elapsedTime(elapsed)
         return NotchActivityViewModel(
             collapsedTitle: elapsedText,
             collapsedSystemImage: "pause.circle.fill",
@@ -308,8 +308,8 @@ private extension NotchActivityPresentation {
 
     private static func nowPlayingViewModel(snapshot: NotchNowPlayingSnapshot)
     -> NotchActivityViewModel {
-        let elapsed = elapsedTimeText(snapshot.elapsed)
-        let duration = elapsedTimeText(snapshot.duration)
+        let elapsed = RecordingDurationFormatter.elapsedTime(snapshot.elapsed)
+        let duration = RecordingDurationFormatter.elapsedTime(snapshot.duration)
         return NotchActivityViewModel(
             collapsedTitle: elapsed,
             collapsedSystemImage: "play.circle",
@@ -347,19 +347,6 @@ private extension NotchActivityPresentation {
         }
     }
 
-    private static func elapsedTimeText(_ elapsed: TimeInterval) -> String {
-        let totalSeconds = max(0, Int(elapsed.rounded(.down)))
-        let hours = totalSeconds / 3600
-        let minutes = (totalSeconds % 3600) / 60
-        let seconds = totalSeconds % 60
-
-        if hours > 0 {
-            return "\(hours):\(twoDigits(minutes)):\(twoDigits(seconds))"
-        }
-
-        return "\(minutes):\(twoDigits(seconds))"
-    }
-
     private static func countdownText(_ remaining: TimeInterval) -> String {
         "\(max(0, Int(remaining.rounded(.up)))) s"
     }
@@ -382,10 +369,6 @@ private extension NotchActivityPresentation {
 
     private static func levelPercent(_ level: Double) -> String {
         percent(level)
-    }
-
-    private static func twoDigits(_ value: Int) -> String {
-        value < 10 ? "0\(value)" : "\(value)"
     }
 
     private static func completedTitle(for kind: NotchArtifactKind) -> String {

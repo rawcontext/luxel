@@ -296,13 +296,10 @@ extension GIFEngineModelTests {
     @Test("floyd steinberg ditherer diffuses quantization error")
     func floydSteinbergDithererDiffusesQuantizationError() throws {
         let palette = try blackWhitePalette()
-        let frame = try GIFFrameBitmap(
-            pixelSize: PixelSize(width: 3, height: 1),
-            pixels: [
-                GIFRGBAPixel(red: 96, green: 96, blue: 96),
-                GIFRGBAPixel(red: 96, green: 96, blue: 96),
-                GIFRGBAPixel(red: 96, green: 96, blue: 96)
-            ]
+        let frame = try solidBitmap(
+            width: 3,
+            height: 1,
+            color: GIFRGBAPixel(red: 96, green: 96, blue: 96)
         )
 
         let indexed = try FloydSteinbergDitherer().indexedFrame(from: frame, palette: palette)

@@ -31,25 +31,14 @@ struct ScreenRecordingConfigurationFactoryTests {
         #expect(!configuration.showsCursor)
         #expect(configuration.showMouseClicks)
         #expect(configuration.pixelFormat == kCVPixelFormatType_32BGRA)
-        #expect(configuration.capturesAudio)
-        #expect(configuration.captureMicrophone)
-        #expect(configuration.microphoneCaptureDeviceID == "mic-1")
-        #expect(configuration.excludesCurrentProcessAudio)
-        #expect(configuration.sampleRate == 48_000)
-        #expect(configuration.channelCount == 2)
+        expectStandardAudioConfiguration(configuration, microphoneDeviceID: "mic-1")
         #expect(configuration.presenterOverlayPrivacyAlertSetting == .system)
-        #expect(configuration.queueDepth == 8)
         #expect(configuration.sourceRect == CGRect(x: 42, y: 24, width: 641, height: 839))
     }
 
     @Test("120 FPS capture uses an encoding-efficient pixel format")
     func highFrameRateCaptureUsesEncodingPixelFormat() throws {
-        let request = try RecordingRequest(
-            target: .display(DisplayID(12)),
-            outputFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
-            pixelSize: PixelSize(width: 1920, height: 1080),
-            frameRate: FrameRate(120)
-        )
+        let request = try makeDisplayRequest(displayID: 12, width: 1920, height: 1080)
 
         let configuration = ScreenRecordingConfigurationFactory()
             .makeStreamConfiguration(for: request)
@@ -60,11 +49,10 @@ struct ScreenRecordingConfigurationFactoryTests {
 
     @Test("matching the display uses the maximum supported capture cadence")
     func matchingDisplayUsesMaximumCaptureCadence() throws {
-        let request = try RecordingRequest(
-            target: .display(DisplayID(12)),
-            outputFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
-            pixelSize: PixelSize(width: 1920, height: 1080),
-            frameRate: .fps120,
+        let request = try makeDisplayRequest(
+            displayID: 12,
+            width: 1920,
+            height: 1080,
             matchesDisplayFrameRate: true
         )
 
@@ -107,12 +95,10 @@ struct ScreenRecordingConfigurationFactoryTests {
             frameRate: FrameRate(30)
         )
 
-        let resolvedRequest = ScreenRecordingConfigurationFactory()
-            .requestByResolvingCaptureGeometry(
-                request,
-                contentRect: CGRect(x: 0, y: 0, width: 1728, height: 1117),
-                pointPixelScale: 2
-            )
+        let resolvedRequest = resolve(
+            request,
+            contentRect: CGRect(x: 0, y: 0, width: 1728, height: 1117)
+        )
 
         #expect(resolvedRequest.pixelSize == (try PixelSize(width: 836, height: 496)))
         #expect(resolvedRequest.target == request.target)
@@ -120,19 +106,17 @@ struct ScreenRecordingConfigurationFactoryTests {
 
     @Test("display request resolves point content rect to native pixels")
     func displayRequestResolvesPointContentRectToNativePixels() throws {
-        let request = try RecordingRequest(
-            target: .display(DisplayID(42)),
-            outputFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
-            pixelSize: PixelSize(width: 1728, height: 1117),
-            frameRate: FrameRate(30)
+        let request = try makeDisplayRequest(
+            displayID: 42,
+            width: 1728,
+            height: 1117,
+            frameRate: .fps30
         )
 
-        let resolvedRequest = ScreenRecordingConfigurationFactory()
-            .requestByResolvingCaptureGeometry(
-                request,
-                contentRect: CGRect(x: 0, y: 0, width: 1728, height: 1117),
-                pointPixelScale: 2
-            )
+        let resolvedRequest = resolve(
+            request,
+            contentRect: CGRect(x: 0, y: 0, width: 1728, height: 1117)
+        )
 
         #expect(resolvedRequest.pixelSize == (try PixelSize(width: 3456, height: 2234)))
         #expect(resolvedRequest.target == request.target)
@@ -174,5 +158,32 @@ struct ScreenRecordingConfigurationFactoryTests {
         #expect(configuration.scalesToFit)
         #expect(configuration.width == 1280)
         #expect(configuration.height == 720)
+    }
+
+    private func makeDisplayRequest(
+        displayID: UInt32,
+        width: Int,
+        height: Int,
+        frameRate: FrameRate = .fps120,
+        matchesDisplayFrameRate: Bool = false
+    ) throws -> RecordingRequest {
+        try RecordingRequest(
+            target: .display(DisplayID(displayID)),
+            outputFileURL: URL(fileURLWithPath: "/tmp/luxel.mp4"),
+            pixelSize: PixelSize(width: width, height: height),
+            frameRate: frameRate,
+            matchesDisplayFrameRate: matchesDisplayFrameRate
+        )
+    }
+
+    private func resolve(
+        _ request: RecordingRequest,
+        contentRect: CGRect
+    ) -> RecordingRequest {
+        ScreenRecordingConfigurationFactory().requestByResolvingCaptureGeometry(
+            request,
+            contentRect: contentRect,
+            pointPixelScale: 2
+        )
     }
 }

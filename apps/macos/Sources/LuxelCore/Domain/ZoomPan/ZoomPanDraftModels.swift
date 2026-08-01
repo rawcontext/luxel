@@ -1,20 +1,8 @@
 import Foundation
 
-public struct ZoomExportTimeMapper: Equatable, Sendable {
-    public let trimRange: TimeRange
-    public let speed: PlaybackSpeed
-    public let editPlan: TimelineEditPlan
+public typealias ZoomExportTimeMapper = EditedTimelineMapper
 
-    public init(
-        trimRange: TimeRange,
-        speed: PlaybackSpeed = .normal,
-        editPlan: TimelineEditPlan = .empty
-    ) {
-        self.trimRange = trimRange
-        self.speed = speed
-        self.editPlan = editPlan
-    }
-
+extension EditedTimelineMapper {
     public func map(_ blocks: [ZoomBlock]) throws -> [ZoomBlock] {
         try blocks.flatMap { block in
             try map(block)
@@ -22,11 +10,7 @@ public struct ZoomExportTimeMapper: Equatable, Sendable {
     }
 
     private func map(_ block: ZoomBlock) throws -> [ZoomBlock] {
-        try EditedTimelineMapper(
-            trimRange: trimRange,
-            editPlan: editPlan,
-            speed: speed
-        ).mapSourceRange(block.timeRange).map { range in
+        try mapSourceRange(block.timeRange).map { range in
             try ZoomBlock(
                 timeRange: range,
                 targetRect: block.targetRect,

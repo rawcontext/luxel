@@ -1,6 +1,7 @@
 import Foundation
 import ImageIO
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("ImageIO animated media exporter")
@@ -185,14 +186,9 @@ struct ImageIOAnimatedMediaExporterTests {
         gifOptions: GIFRenderOptions? = nil,
         zoomBlocks: [ZoomBlock] = []
     ) throws -> ExportRequest {
-        try ExportRequest(
-            inputFileURL: fixtureURL("input.mp4"),
+        try makeAnimatedExportRequest(
             format: format,
             pixelSize: pixelSize,
-            frameRate: FrameRate(10),
-            timeRange: TimeRange(start: 1, end: 1.3),
-            shouldMute: false,
-            shouldCrop: true,
             speed: speed,
             gifOptions: gifOptions,
             zoomBlocks: zoomBlocks
@@ -200,12 +196,7 @@ struct ImageIOAnimatedMediaExporterTests {
     }
 
     private func zoomBlock(start: TimeInterval, end: TimeInterval) throws -> ZoomBlock {
-        try ZoomBlock(
-            timeRange: TimeRange(start: start, end: end),
-            targetRect: NormalizedRect(x: 0.25, y: 0.25, width: 0.2, height: 0.2),
-            zoom: 2,
-            transitionOverride: 0.05
-        )
+        try testAnimatedZoomBlock(start: start, end: end)
     }
 
     private func animatedImageMetadata(at fileURL: URL) throws -> AnimatedImageMetadata {
@@ -267,26 +258,11 @@ struct ImageIOAnimatedMediaExporterTests {
     }
 
     private func fixtureURL(_ fileName: String) throws -> URL {
-        try packageRootURL()
-            .appending(path: "Tests/Fixtures")
-            .appending(path: fileName)
+        try testFixtureURL(fileName)
     }
 
     private func temporaryOutputURL(fileExtension: String) -> URL {
-        FileManager.default.temporaryDirectory
-            .appending(path: "luxel-animated-export-\(UUID().uuidString)")
-            .appendingPathExtension(fileExtension)
-    }
-
-    private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+        temporaryTestFileURL(prefix: "luxel-animated-export-", pathExtension: fileExtension)
     }
 }
 

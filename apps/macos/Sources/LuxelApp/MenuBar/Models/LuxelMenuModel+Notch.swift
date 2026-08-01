@@ -227,6 +227,10 @@ extension LuxelMenuModel {
     }
 
     private func notchAudioCaptureRecoverySource() -> CapturePermissionSource? {
+        audioCaptureRecoverySource()
+    }
+
+    func audioCaptureRecoverySource() -> CapturePermissionSource? {
         let microphone = sourcePermissionPresentation(for: .microphone)
         let systemAudio = sourcePermissionPresentation(for: .systemAudio)
 

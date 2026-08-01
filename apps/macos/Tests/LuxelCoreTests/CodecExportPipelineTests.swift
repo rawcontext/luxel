@@ -8,12 +8,10 @@ struct CodecExportPipelineTests {
     func pipelineWritesEncodedPacketsBeforeFinalizing() async throws {
         let events = PipelineEventLog()
         let pixelSize = try PixelSize(width: 4, height: 4)
-        let mediaSource = StubCodecMediaSource(
+        let mediaSource = try makeMediaSource(
             events: events,
-            frames: [
-                try makeVideoFrame(index: 0, pixelSize: pixelSize),
-                try makeVideoFrame(index: 1, pixelSize: pixelSize)
-            ],
+            pixelSize: pixelSize,
+            videoFrameIndices: [0, 1],
             audioChunks: [
                 try CodecAudioChunk(dataString: "pcm0", presentationTime: 0, duration: 0.02)
             ]
@@ -61,9 +59,10 @@ struct CodecExportPipelineTests {
     func mutedRequestsSkipAudioSourceAndEncoder() async throws {
         let events = PipelineEventLog()
         let pixelSize = try PixelSize(width: 4, height: 4)
-        let mediaSource = StubCodecMediaSource(
+        let mediaSource = try makeMediaSource(
             events: events,
-            frames: [try makeVideoFrame(index: 0, pixelSize: pixelSize)],
+            pixelSize: pixelSize,
+            videoFrameIndices: [0],
             audioChunks: [try CodecAudioChunk(dataString: "pcm0", presentationTime: 0, duration: 0.02)]
         )
         let pipeline = CodecExportPipeline(
@@ -88,13 +87,10 @@ struct CodecExportPipelineTests {
         let events = PipelineEventLog()
         let progress = PipelineProgressRecorder()
         let pixelSize = try PixelSize(width: 4, height: 4)
-        let mediaSource = StubCodecMediaSource(
+        let mediaSource = try makeMediaSource(
             events: events,
-            frames: [
-                try makeVideoFrame(index: 0, pixelSize: pixelSize),
-                try makeVideoFrame(index: 1, pixelSize: pixelSize),
-                try makeVideoFrame(index: 2, pixelSize: pixelSize)
-            ],
+            pixelSize: pixelSize,
+            videoFrameIndices: [0, 1, 2],
             audioChunks: [
                 try CodecAudioChunk(dataString: "pcm0", presentationTime: 0, duration: 0.02),
                 try CodecAudioChunk(dataString: "pcm1", presentationTime: 0.02, duration: 0.02)
@@ -119,6 +115,19 @@ struct CodecExportPipelineTests {
         #expect(values.first == 0)
         #expect(values.last == 1)
         #expect(zip(values, values.dropFirst()).allSatisfy { $0 <= $1 })
+    }
+
+    private func makeMediaSource(
+        events: PipelineEventLog,
+        pixelSize: PixelSize,
+        videoFrameIndices: [Int],
+        audioChunks: [CodecAudioChunk]
+    ) throws -> StubCodecMediaSource {
+        try StubCodecMediaSource(
+            events: events,
+            frames: videoFrameIndices.map { try makeVideoFrame(index: $0, pixelSize: pixelSize) },
+            audioChunks: audioChunks
+        )
     }
 
     @Test("cancellation cancels muxer without finalizing")

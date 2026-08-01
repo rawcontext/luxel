@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Replay buffer clip service")
@@ -7,28 +8,11 @@ struct ReplayBufferClipServiceTests {
     @Test("clip materializes replay buffer output and records it in history")
     func clipMaterializesReplayBufferOutputAndRecordsItInHistory() async throws {
         let clipURL = URL(fileURLWithPath: "/tmp/replay-15.mp4")
-        let engine = StubReplayBufferEngine(clipURL: clipURL)
-        let replayBufferService = ReplayBufferService(engine: engine)
         let store = InMemoryRecordingHistoryStore()
-        let history = RecordingHistoryService(
-            store: store,
-            fileSystem: ExistingReplayFileSystem(existingFiles: [clipURL]),
-            dateProvider: FixedReplayClipDateProvider(now: Date(timeIntervalSince1970: 1_000)),
-            mediaProbe: StaticMediaProbe(result: .playable),
-            calendar: utcCalendar()
-        )
-        let service = ReplayBufferClipService(
-            replayBufferService: replayBufferService,
-            history: history
-        )
-        let configuration = try ReplayBufferConfiguration(
-            bufferLength: 60,
-            source: .displayWithCursor,
-            frameRate: FrameRate(30)
-        )
+        let context = try makeClipContext(clipURL: clipURL, store: store)
 
-        try await replayBufferService.arm(configuration: configuration)
-        let recording = try await service.clip(lastSeconds: 15)
+        try await context.replayBufferService.arm(configuration: context.configuration)
+        let recording = try await context.service.clip(lastSeconds: 15)
 
         let expected = PastRecording(
             fileURL: clipURL,
@@ -37,65 +21,69 @@ struct ReplayBufferClipServiceTests {
         )
         #expect(recording == expected)
         #expect(store.recordings == [expected])
-        #expect(engine.clippedDurations() == [15])
+        #expect(context.engine.clippedDurations() == [15])
     }
 
     @Test("clip uses configured buffer length when duration is omitted")
     func clipUsesConfiguredBufferLengthWhenDurationIsOmitted() async throws {
         let clipURL = URL(fileURLWithPath: "/tmp/replay-default.mp4")
-        let engine = StubReplayBufferEngine(clipURL: clipURL)
-        let replayBufferService = ReplayBufferService(engine: engine)
-        let history = RecordingHistoryService(
-            store: InMemoryRecordingHistoryStore(),
-            fileSystem: ExistingReplayFileSystem(existingFiles: [clipURL]),
-            dateProvider: FixedReplayClipDateProvider(now: Date(timeIntervalSince1970: 1_000)),
-            mediaProbe: StaticMediaProbe(result: .playable),
-            calendar: utcCalendar()
-        )
-        let service = ReplayBufferClipService(
-            replayBufferService: replayBufferService,
-            history: history
-        )
-        let configuration = try ReplayBufferConfiguration(
-            bufferLength: 45,
-            source: .displayWithCursor,
-            frameRate: FrameRate(30)
-        )
+        let context = try makeClipContext(clipURL: clipURL, bufferLength: 45)
 
-        try await replayBufferService.arm(configuration: configuration)
-        _ = try await service.clip()
+        try await context.replayBufferService.arm(configuration: context.configuration)
+        _ = try await context.service.clip()
 
-        #expect(engine.clippedDurations() == [45])
+        #expect(context.engine.clippedDurations() == [45])
     }
 
     @Test("clip reports missing materialized file")
     func clipReportsMissingMaterializedFile() async throws {
         let clipURL = URL(fileURLWithPath: "/tmp/missing-replay.mp4")
-        let engine = StubReplayBufferEngine(clipURL: clipURL)
-        let replayBufferService = ReplayBufferService(engine: engine)
-        let history = RecordingHistoryService(
-            store: InMemoryRecordingHistoryStore(),
-            fileSystem: ExistingReplayFileSystem(),
-            dateProvider: FixedReplayClipDateProvider(now: Date(timeIntervalSince1970: 1_000)),
-            mediaProbe: StaticMediaProbe(result: .playable),
-            calendar: utcCalendar()
-        )
-        let service = ReplayBufferClipService(
+        let context = try makeClipContext(clipURL: clipURL, outputExists: false)
+
+        try await context.replayBufferService.arm(configuration: context.configuration)
+
+        await #expect(throws: ReplayBufferClipServiceError.missingClipFile(clipURL)) {
+            _ = try await context.service.clip(lastSeconds: 15)
+        }
+    }
+}
+
+private struct ReplayClipContext {
+    let engine: StubReplayBufferEngine
+    let replayBufferService: ReplayBufferService
+    let service: ReplayBufferClipService
+    let configuration: ReplayBufferConfiguration
+}
+
+private func makeClipContext(
+    clipURL: URL,
+    store: InMemoryRecordingHistoryStore = InMemoryRecordingHistoryStore(),
+    bufferLength: TimeInterval = 60,
+    outputExists: Bool = true
+) throws -> ReplayClipContext {
+    let engine = StubReplayBufferEngine(clipURL: clipURL)
+    let replayBufferService = ReplayBufferService(engine: engine)
+    let existingFiles = outputExists ? Set([clipURL]) : []
+    let history = RecordingHistoryService(
+        store: store,
+        fileSystem: ExistingReplayFileSystem(existingFiles: existingFiles),
+        dateProvider: FixedReplayClipDateProvider(now: Date(timeIntervalSince1970: 1_000)),
+        mediaProbe: StaticMediaProbe(result: .playable),
+        calendar: utcCalendar()
+    )
+    return try ReplayClipContext(
+        engine: engine,
+        replayBufferService: replayBufferService,
+        service: ReplayBufferClipService(
             replayBufferService: replayBufferService,
             history: history
-        )
-        let configuration = try ReplayBufferConfiguration(
-            bufferLength: 60,
+        ),
+        configuration: ReplayBufferConfiguration(
+            bufferLength: bufferLength,
             source: .displayWithCursor,
             frameRate: FrameRate(30)
         )
-
-        try await replayBufferService.arm(configuration: configuration)
-
-        await #expect(throws: ReplayBufferClipServiceError.missingClipFile(clipURL)) {
-            _ = try await service.clip(lastSeconds: 15)
-        }
-    }
+    )
 }
 
 private func utcCalendar() -> Calendar {
@@ -153,24 +141,4 @@ private struct FixedReplayClipDateProvider: DateProvider {
     }
 }
 
-private final class ExistingReplayFileSystem: FileSystem, @unchecked Sendable {
-    private let existingFiles: Set<URL>
-
-    init(existingFiles: Set<URL> = []) {
-        self.existingFiles = existingFiles
-    }
-
-    func fileExists(at url: URL) -> Bool {
-        existingFiles.contains(url)
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func writeData(_ data: Data, to url: URL) throws {}
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
+private typealias ExistingReplayFileSystem = ExistingTestFileSystem

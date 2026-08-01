@@ -150,23 +150,21 @@ public struct KeystrokeSidecarDocument: Codable, Equatable, Sendable {
         schemaVersion: Int = KeystrokeSidecarDocument.currentSchemaVersion,
         timeline: KeystrokeTimeline
     ) throws {
-        guard schemaVersion == Self.currentSchemaVersion else {
-            throw KeystrokeModelError.unsupportedSidecarSchemaVersion
-        }
-
-        self.schemaVersion = schemaVersion
         self.timeline = timeline
+        self.schemaVersion = try validatedSidecarSchemaVersion(
+            schemaVersion, current: Self.currentSchemaVersion,
+            error: KeystrokeModelError.unsupportedSidecarSchemaVersion
+        )
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
-        guard schemaVersion == Self.currentSchemaVersion else {
-            throw KeystrokeModelError.unsupportedSidecarSchemaVersion
-        }
-
-        self.schemaVersion = schemaVersion
-        self.timeline = try container.decode(KeystrokeTimeline.self, forKey: .timeline)
+        let timeline = try container.decode(KeystrokeTimeline.self, forKey: .timeline)
+        try self.init(
+            schemaVersion: schemaVersion,
+            timeline: timeline
+        )
     }
 
     public static func sidecarURL(nextTo mediaURL: URL) -> URL {

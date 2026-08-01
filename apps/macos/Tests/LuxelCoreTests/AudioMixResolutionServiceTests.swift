@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Audio mix resolution service")
@@ -169,20 +170,4 @@ struct AudioMixResolutionServiceTests {
     }
 }
 
-private actor SpyAudioPeakAnalyzer: AudioPeakAnalyzer {
-    private var capturedRequests: [AudioPeakAnalysisRequest] = []
-    private let peaks: [AudioTrackKind: Double]
-
-    init(peaks: [AudioTrackKind: Double] = [:]) {
-        self.peaks = peaks
-    }
-
-    func measurePeaks(_ request: AudioPeakAnalysisRequest) async throws -> [AudioTrackKind: Double] {
-        capturedRequests.append(request)
-        return peaks
-    }
-
-    func requests() -> [AudioPeakAnalysisRequest] {
-        capturedRequests
-    }
-}
+private typealias SpyAudioPeakAnalyzer = TestAudioPeakAnalyzerSpy

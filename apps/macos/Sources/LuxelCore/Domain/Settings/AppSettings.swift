@@ -46,6 +46,14 @@ public enum AppSettingsError: Error, Equatable {
 public struct AppSettings: Codable, Equatable, Sendable {
     public static let recordingFrameRateRange = 1...120
 
+    public static var defaultRecordingsDirectory: URL {
+        let moviesDirectory =
+            FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Movies")
+
+        return moviesDirectory.appending(path: "Luxel")
+    }
+
     public static func defaults(recordingsDirectory: URL) -> AppSettings {
         AppSettings(recordingsDirectory: recordingsDirectory)
     }

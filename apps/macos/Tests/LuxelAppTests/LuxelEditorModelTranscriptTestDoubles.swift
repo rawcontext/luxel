@@ -1,27 +1,12 @@
 import AVFoundation
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelPresentation
 
-actor SpyAudioPeakAnalyzer: AudioPeakAnalyzer {
-    private var capturedRequests: [AudioPeakAnalysisRequest] = []
-    private let peaks: [AudioTrackKind: Double]
-
-    init(peaks: [AudioTrackKind: Double] = [:]) {
-        self.peaks = peaks
-    }
-
-    func measurePeaks(_ request: AudioPeakAnalysisRequest) async throws -> [AudioTrackKind: Double] {
-        capturedRequests.append(request)
-        return peaks
-    }
-
-    func requests() -> [AudioPeakAnalysisRequest] {
-        capturedRequests
-    }
-}
+typealias SpyAudioPeakAnalyzer = TestAudioPeakAnalyzerSpy
 
 actor SpyAudioTranscriptService: AudioTranscriptService {
     private let transcriptResult: TurnSegmentedTranscript?
@@ -127,86 +112,9 @@ actor SpyExportSizeEstimator: ExportSizeEstimator {
     }
 }
 
-struct StubFileSystem: FileSystem {
-    func fileExists(at url: URL) -> Bool {
-        true
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func writeData(_ data: Data, to url: URL) throws {}
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
-
-final class SpyFileSystem: FileSystem, @unchecked Sendable {
-    private let lock = NSLock()
-    private var capturedCreatedDirectories: [URL] = []
-    private var capturedCopiedFiles: [CopiedFile] = []
-    private var capturedTrashedFiles: [URL] = []
-    private let trashError: Error?
-
-    init(trashError: Error? = nil) {
-        self.trashError = trashError
-    }
-
-    var createdDirectories: [URL] {
-        lock.withLock {
-            capturedCreatedDirectories
-        }
-    }
-
-    var copiedFiles: [CopiedFile] {
-        lock.withLock {
-            capturedCopiedFiles
-        }
-    }
-
-    var trashedFiles: [URL] {
-        lock.withLock {
-            capturedTrashedFiles
-        }
-    }
-
-    func fileExists(at url: URL) -> Bool {
-        false
-    }
-
-    func createDirectory(at url: URL) throws {
-        lock.withLock {
-            capturedCreatedDirectories.append(url)
-        }
-    }
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {
-        lock.withLock {
-            capturedCopiedFiles.append(CopiedFile(sourceURL: sourceURL, destinationURL: destinationURL))
-        }
-    }
-
-    func writeData(_ data: Data, to url: URL) throws {}
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {
-        lock.withLock {
-            capturedTrashedFiles.append(url)
-        }
-
-        if let trashError {
-            throw trashError
-        }
-    }
-}
-
-struct CopiedFile: Equatable {
-    let sourceURL: URL
-    let destinationURL: URL
-}
+typealias StubFileSystem = AlwaysExistingTestFileSystem
+typealias SpyFileSystem = TestFileSystemSpy
+typealias CopiedFile = TestCopiedFile
 
 @MainActor
 final class StubExportedFileActionClient: ExportedFileActionClient {

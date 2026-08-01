@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("AVFoundation passthrough exporter")
@@ -41,25 +42,10 @@ struct AVFoundationPassthroughExporterTests {
     }
 
     private func fixtureURL(_ fileName: String) throws -> URL {
-        try packageRootURL()
-            .appending(path: "Tests/Fixtures")
-            .appending(path: fileName)
+        try testFixtureURL(fileName)
     }
 
     private func temporaryOutputURL(fileExtension: String) -> URL {
-        FileManager.default.temporaryDirectory
-            .appending(path: "luxel-passthrough-\(UUID().uuidString)")
-            .appendingPathExtension(fileExtension)
-    }
-
-    private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+        temporaryTestFileURL(prefix: "luxel-passthrough-", pathExtension: fileExtension)
     }
 }

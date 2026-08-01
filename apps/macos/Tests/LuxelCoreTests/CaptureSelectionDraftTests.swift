@@ -78,11 +78,7 @@ struct CaptureSelectionDraftTests {
 
     @Test("resize bottom-right expands selection")
     func resizeBottomRightExpandsSelection() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 180)
-        )
+        let draft = try makeDraft(displayWidth: 1000, displayHeight: 700)
 
         let resized = try draft.resized(
             dragging: .bottomRight,
@@ -94,10 +90,11 @@ struct CaptureSelectionDraftTests {
 
     @Test("resize clamps moving edges to display bounds")
     func resizeClampsMovingEdgesToDisplayBounds() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 80, width: 260, height: 180)
+        let draft = try makeDraft(
+            displayWidth: 500,
+            displayHeight: 400,
+            selectionY: 80,
+            selectionWidth: 260
         )
 
         let resized = try draft.resized(
@@ -110,11 +107,7 @@ struct CaptureSelectionDraftTests {
 
     @Test("side handle resize moves only that side")
     func sideHandleResizeMovesOnlyThatSide() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 180)
-        )
+        let draft = try makeDraft(displayWidth: 1000, displayHeight: 700)
 
         let resized = try draft.resized(
             dragging: .left,
@@ -126,10 +119,11 @@ struct CaptureSelectionDraftTests {
 
     @Test("resize top-left keeps opposite corner and enforces minimum size")
     func resizeTopLeftKeepsOppositeCornerAndEnforcesMinimumSize() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 200, height: 150),
+        let draft = try makeDraft(
+            displayWidth: 500,
+            displayHeight: 400,
+            selectionWidth: 200,
+            selectionHeight: 150,
             minimumWidth: 32,
             minimumHeight: 24
         )
@@ -144,11 +138,7 @@ struct CaptureSelectionDraftTests {
 
     @Test("aspect locked corner resize preserves original ratio")
     func aspectLockedCornerResizePreservesOriginalRatio() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 180)
-        )
+        let draft = try makeDraft(displayWidth: 1000, displayHeight: 700)
 
         let resized = try draft.resized(
             dragging: .bottomRight,
@@ -161,10 +151,10 @@ struct CaptureSelectionDraftTests {
 
     @Test("requested aspect ratio corner resize uses requested ratio")
     func requestedAspectRatioCornerResizeUsesRequestedRatio() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 200)
+        let draft = try makeDraft(
+            displayWidth: 1000,
+            displayHeight: 700,
+            selectionHeight: 200
         )
 
         let resized = try draft.resized(
@@ -178,10 +168,10 @@ struct CaptureSelectionDraftTests {
 
     @Test("requested aspect ratio side resize preserves ratio")
     func requestedAspectRatioSideResizePreservesRatio() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 200)
+        let draft = try makeDraft(
+            displayWidth: 1000,
+            displayHeight: 700,
+            selectionHeight: 200
         )
 
         let resized = try draft.resized(
@@ -198,10 +188,12 @@ struct CaptureSelectionDraftTests {
 extension CaptureSelectionDraftTests {
     @Test("exact selection replacement clamps to display and minimum size")
     func exactSelectionReplacementClampsToDisplayAndMinimumSize() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 80, width: 200, height: 120),
+        let draft = try makeDraft(
+            displayWidth: 500,
+            displayHeight: 400,
+            selectionY: 80,
+            selectionWidth: 200,
+            selectionHeight: 120,
             minimumWidth: 40,
             minimumHeight: 30
         )
@@ -218,10 +210,13 @@ extension CaptureSelectionDraftTests {
 
     @Test("move nudge keeps selection inside display")
     func moveNudgeKeepsSelectionInsideDisplay() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 450, y: 360, width: 50, height: 40)
+        let draft = try makeDraft(
+            displayWidth: 500,
+            displayHeight: 400,
+            selectionX: 450,
+            selectionY: 360,
+            selectionWidth: 50,
+            selectionHeight: 40
         )
 
         let moved = try draft.moved(by: CaptureResizeDelta(x: 10, y: 10))
@@ -231,10 +226,12 @@ extension CaptureSelectionDraftTests {
 
     @Test("keyboard resize nudge preserves top-left anchor")
     func keyboardResizeNudgePreservesTopLeftAnchor() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 80, width: 200, height: 120),
+        let draft = try makeDraft(
+            displayWidth: 500,
+            displayHeight: 400,
+            selectionY: 80,
+            selectionWidth: 200,
+            selectionHeight: 120,
             minimumWidth: 40,
             minimumHeight: 30
         )
@@ -246,10 +243,10 @@ extension CaptureSelectionDraftTests {
 
     @Test("aspect ratio presets resize around selection center")
     func aspectRatioPresetsResizeAroundSelectionCenter() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 200)
+        let draft = try makeDraft(
+            displayWidth: 1000,
+            displayHeight: 700,
+            selectionHeight: 200
         )
 
         let resized = try draft.applyingAspectRatioPreset(.widescreen16x9)
@@ -259,10 +256,12 @@ extension CaptureSelectionDraftTests {
 
     @Test("vertical aspect ratio preset clamps to display height")
     func verticalAspectRatioPresetClampsToDisplayHeight() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 500, height: 400)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 80, width: 400, height: 200)
+        let draft = try makeDraft(
+            displayWidth: 500,
+            displayHeight: 400,
+            selectionY: 80,
+            selectionWidth: 400,
+            selectionHeight: 200
         )
 
         let resized = try draft.applyingAspectRatioPreset(.vertical9x16)
@@ -272,10 +271,10 @@ extension CaptureSelectionDraftTests {
 
     @Test("custom aspect ratio resizes around selection center")
     func customAspectRatioResizesAroundSelectionCenter() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 200)
+        let draft = try makeDraft(
+            displayWidth: 1000,
+            displayHeight: 700,
+            selectionHeight: 200
         )
 
         let resized = try draft.applyingAspectRatio(CaptureAspectRatio(width: 3, height: 2))
@@ -285,11 +284,7 @@ extension CaptureSelectionDraftTests {
 
     @Test("size presets clamp oversized selections to display")
     func sizePresetsClampOversizedSelectionsToDisplay() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 180)
-        )
+        let draft = try makeDraft(displayWidth: 1000, displayHeight: 700)
         let preset = try CaptureSizePreset(
             name: "Huge",
             pixelSize: PixelSize(width: 1920, height: 1080)
@@ -302,10 +297,13 @@ extension CaptureSelectionDraftTests {
 
     @Test("size presets keep requested size when it fits")
     func sizePresetsKeepRequestedSizeWhenItFits() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let draft = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 250, y: 200, width: 200, height: 100)
+        let draft = try makeDraft(
+            displayWidth: 1000,
+            displayHeight: 700,
+            selectionX: 250,
+            selectionY: 200,
+            selectionWidth: 200,
+            selectionHeight: 100
         )
         let preset = try CaptureSizePreset(
             name: "Small",
@@ -319,11 +317,7 @@ extension CaptureSelectionDraftTests {
 
     @Test("undo stack coalesces cropper drag snapshots")
     func undoStackCoalescesCropperDragSnapshots() throws {
-        let display = try DisplayBounds(id: DisplayID(1), x: 0, y: 0, width: 1000, height: 700)
-        let initial = try CaptureSelectionDraft(
-            display: display,
-            topLeftSelection: CaptureRect(x: 100, y: 100, width: 320, height: 180)
-        )
+        let initial = try makeDraft(displayWidth: 1000, displayHeight: 700)
         let firstDragUpdate = try initial.moved(by: CaptureResizeDelta(x: 10, y: 0))
         let finalDragUpdate = try initial.moved(by: CaptureResizeDelta(x: 80, y: 40))
         var stack = UndoStack(initialState: initial)
@@ -351,4 +345,33 @@ extension CaptureSelectionDraftTests {
             )
         }
     }
+}
+
+private func makeDraft(
+    displayWidth: Int,
+    displayHeight: Int,
+    selectionX: Int = 100,
+    selectionY: Int = 100,
+    selectionWidth: Int = 320,
+    selectionHeight: Int = 180,
+    minimumWidth: Int = 1,
+    minimumHeight: Int = 1
+) throws -> CaptureSelectionDraft {
+    try CaptureSelectionDraft(
+        display: DisplayBounds(
+            id: DisplayID(1),
+            x: 0,
+            y: 0,
+            width: displayWidth,
+            height: displayHeight
+        ),
+        topLeftSelection: CaptureRect(
+            x: selectionX,
+            y: selectionY,
+            width: selectionWidth,
+            height: selectionHeight
+        ),
+        minimumWidth: minimumWidth,
+        minimumHeight: minimumHeight
+    )
 }

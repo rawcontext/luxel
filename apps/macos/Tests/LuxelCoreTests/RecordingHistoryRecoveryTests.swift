@@ -5,20 +5,13 @@ import Testing
 extension RecordingHistoryTests {
     @Test("getPastRecordings filters missing files and persists the filtered list")
     func getPastRecordingsFiltersMissingFiles() {
-        let existingURL = URL(fileURLWithPath: "/tmp/existing.mp4")
-        let missingURL = URL(fileURLWithPath: "/tmp/missing.mp4")
-        let store = InMemoryRecordingHistoryStore(recordings: [
-            PastRecording(fileURL: existingURL, name: "Existing", date: Date(timeIntervalSince1970: 1)),
-            PastRecording(fileURL: missingURL, name: "Missing", date: Date(timeIntervalSince1970: 2))
-        ])
-        let service = makeService(store: store, existingFiles: [existingURL])
+        let fixture = existingAndMissingRecordings()
+        let store = InMemoryRecordingHistoryStore(recordings: fixture.recordings)
+        let service = makeService(store: store, existingFiles: [fixture.existingURL])
 
         let recordings = service.getPastRecordings()
 
-        #expect(
-            recordings == [
-                PastRecording(fileURL: existingURL, name: "Existing", date: Date(timeIntervalSince1970: 1))
-            ])
+        #expect(recordings == [fixture.recordings[0]])
         #expect(store.recordings == recordings)
     }
 

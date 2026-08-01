@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Keystroke renderer")
@@ -110,21 +111,10 @@ struct KeystrokeRendererTests {
     }
 
     private func makeFrame(width: Int, height: Int) throws -> CGImage {
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let context = try #require(
-            CGContext(
-                data: nil,
-                width: width,
-                height: height,
-                bitsPerComponent: 8,
-                bytesPerRow: 0,
-                space: colorSpace,
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-            )
-        )
-        context.setFillColor(CGColor(gray: 0.1, alpha: 1))
-        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-        return try #require(context.makeImage())
+        try makeTestImage(width: width, height: height) { context in
+            context.setFillColor(CGColor(gray: 0.1, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        }
     }
 
     private func pixelData(_ image: CGImage) -> Data? {

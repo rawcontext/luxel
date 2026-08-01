@@ -119,17 +119,10 @@ extension ExportModelTests {
         #expect(request.quality == .balanced)
         #expect(request.resolvedQuality == .balanced)
         #expect(request.speed == .normal)
-        #expect(request.gifOptions == nil)
-        #expect(request.audioMix == nil)
-        #expect(!request.studioVoiceEnabled)
         #expect(!request.shouldApplyStudioVoice)
         #expect(request.cropRect == nil)
-        #expect(request.cursorOptions == nil)
-        #expect(request.keystrokeOptions == nil)
-        #expect(request.captionOptions == nil)
-        #expect(request.cameraOverlay == nil)
-        #expect(request.zoomBlocks.isEmpty)
         #expect(request.editPlan == .empty)
+        expectDefaultOptionalExportFeatures(request)
     }
 
     @Test("export request round trips transcript edit plan and derives duration")

@@ -105,13 +105,7 @@ struct CodecComplianceModelTests {
 
     @Test("license gate passes for bundled codec dependencies")
     func licenseGatePassesForBundledCodecDependencies() throws {
-        let ledgerURL = try packageRootURL().appending(path: "THIRD_PARTY_LICENSES.md")
-        let markdown = try String(contentsOf: ledgerURL, encoding: .utf8)
-        let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
-        let report = CodecLicenseGate().validate(
-            dependencies: CodecDependency.bundledNativeCodecStack,
-            ledger: ledger
-        )
+        let (_, report) = try bundledCodecLicenseValidation()
 
         #expect(CodecDependency.bundledNativeCodecStack.map(\.id) == ["libvpx", "libopus", "svt-av1"])
         #expect(report.isPassing)
@@ -120,18 +114,27 @@ struct CodecComplianceModelTests {
 
     @Test("third party licenses ledger file passes current release gate")
     func thirdPartyLicensesLedgerFilePassesCurrentReleaseGate() throws {
-        let ledgerURL = try packageRootURL().appending(path: "THIRD_PARTY_LICENSES.md")
-        let markdown = try String(contentsOf: ledgerURL, encoding: .utf8)
-        let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
-
-        let report = CodecLicenseGate().validate(
-            dependencies: CodecDependency.bundledNativeCodecStack,
-            ledger: ledger
-        )
+        let (ledger, report) = try bundledCodecLicenseValidation()
 
         #expect(ledger.entries.map(\.dependencyID) == ["libvpx", "libopus", "svt-av1"])
         #expect(report.isPassing)
         #expect(report.violations.isEmpty)
+    }
+
+    private func bundledCodecLicenseValidation() throws -> (
+        ledger: CodecLicenseLedger,
+        report: CodecLicenseGateReport
+    ) {
+        let ledgerURL = try packageRootURL().appending(path: "THIRD_PARTY_LICENSES.md")
+        let markdown = try String(contentsOf: ledgerURL, encoding: .utf8)
+        let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
+        return (
+            ledger,
+            CodecLicenseGate().validate(
+                dependencies: CodecDependency.bundledNativeCodecStack,
+                ledger: ledger
+            )
+        )
     }
 
     @Test("license ledger markdown parser reads structured dependency entries")
@@ -347,13 +350,6 @@ extension CodecComplianceModelTests {
     }
 
     private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+        try sharedPackageRootURL()
     }
 }

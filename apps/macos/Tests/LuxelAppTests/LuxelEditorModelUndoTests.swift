@@ -15,7 +15,9 @@ extension LuxelEditorModelTests {
                 quality: .high
             )
         ]
-        let model = makeModel(exportMemory: memory)
+        let model = makeModel(
+            configuration: LuxelEditorModelTestConfiguration(exportMemory: memory)
+        )
 
         await model.open(
             fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),

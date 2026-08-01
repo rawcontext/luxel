@@ -1,47 +1,21 @@
 ---
-import "../styles/global.css";
-import SiteNav from "../components/SiteNav.astro";
-import SiteFooter from "../components/SiteFooter.astro";
+import PageLayout from "../components/PageLayout.astro";
 
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="description"
-      content="Contact Luxel support with a bug report, feature request, or product question."
-    />
-    <meta name="apple-itunes-app" content="app-id=6780682473" />
-    <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
-    <link rel="alternate" href="/llms.txt" type="text/markdown" title="Luxel LLM-readable index" />
-    <link rel="alternate" href="/llms-full.txt" type="text/markdown" title="Luxel full Markdown documentation" />
-    <title>Support - Luxel</title>
-    {turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
-  </head>
-  <body class="support-page">
-    <div class="page">
-      <div class="ambient" aria-hidden="true">
-        <span class="ambient__glow ambient__glow--hero"></span>
-      </div>
-
-      <SiteNav
-        ariaLabel="Support page navigation"
-        links={[
-          { href: "/#features", label: "Features" },
-          { href: "/docs", label: "Docs" },
-          { href: "/support", label: "Support" },
-          { href: "/privacy", label: "Privacy" }
-        ]}
-      />
+<PageLayout
+  title="Support - Luxel"
+  description="Contact Luxel support with a bug report, feature request, or product question."
+  bodyClass="support-page"
+  navigationLabel="Support page navigation"
+>
+  {turnstileSiteKey && <script slot="head" src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 
       <main class="support-shell container">
         <section class="support-hero" aria-labelledby="support-title">
           <p class="eyebrow">Support</p>
-          <h1 class="support-title" id="support-title">Send a bug report or request.</h1>
+          <h1 class="support-title page-title gradient-title" id="support-title">Send a bug report or request.</h1>
           <p class="support-lead">
             Send a bug report, feature request, or product question with the email address where
             we can follow up.
@@ -101,9 +75,6 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
         </section>
       </main>
 
-      <SiteFooter />
-    </div>
-
     <script>
       const supportForm = document.querySelector("[data-support-form]");
       const supportStatus = document.querySelector("[data-support-status]");
@@ -155,8 +126,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
         });
       }
     </script>
-  </body>
-</html>
+</PageLayout>
 
 <style>
   .support-shell {
@@ -167,19 +137,6 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
   .support-hero {
     margin-block-end: 40px;
     text-align: center;
-  }
-
-  .support-title {
-    margin: 0;
-    background: linear-gradient(180deg, #fff 55%, rgb(255 255 255 / 0.55));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-size: clamp(2.4rem, 5.4vw, 3.4rem);
-    font-weight: 700;
-    letter-spacing: -0.028em;
-    line-height: 1.08;
-    text-wrap: balance;
   }
 
   .support-lead {

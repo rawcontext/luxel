@@ -6,19 +6,55 @@ import CoreGraphics
 import Foundation
 import ImageIO
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 extension AVFoundationMediaExporterTests {
     func fixtureURL(_ fileName: String) throws -> URL {
-        try packageRootURL()
-            .appending(path: "Tests/Fixtures")
-            .appending(path: fileName)
+        try testFixtureURL(fileName)
     }
 
     func temporaryOutputURL(fileExtension: String) -> URL {
         FileManager.default.temporaryDirectory
             .appending(path: "luxel-export-\(UUID().uuidString)")
             .appendingPathExtension(fileExtension)
+    }
+
+    func makeFixtureVideoExportRequest(
+        fileName: String = "input@2x.mp4",
+        format: ExportFormat = .mp4,
+        width: Int = 320,
+        height: Int = 180,
+        frameRate: Int = 30,
+        start: TimeInterval,
+        end: TimeInterval,
+        shouldMute: Bool,
+        shouldCrop: Bool = false,
+        quality: ExportQuality = .balanced,
+        speed: PlaybackSpeed = .normal,
+        editPlan: TimelineEditPlan = .empty
+    ) throws -> ExportRequest {
+        try ExportRequest(
+            inputFileURL: fixtureURL(fileName),
+            format: format,
+            pixelSize: PixelSize(width: width, height: height),
+            frameRate: FrameRate(frameRate),
+            timeRange: TimeRange(start: start, end: end),
+            shouldMute: shouldMute,
+            shouldCrop: shouldCrop,
+            quality: quality,
+            speed: speed,
+            editPlan: editPlan
+        )
+    }
+
+    func exportFixtureVideo(
+        _ request: ExportRequest,
+        to outputURL: URL
+    ) async throws -> (exported: ExportedMedia, source: SourceMedia) {
+        let exported = try await AVFoundationMediaExporter().export(request, to: outputURL)
+        let source = try await AVFoundationMediaMetadataReader().readSourceMedia(at: outputURL)
+        return (exported, source)
     }
 
     func videoCodecType(at fileURL: URL) async throws -> CMVideoCodecType {
@@ -292,30 +328,7 @@ extension AVFoundationMediaExporterTests {
     }
 
     func writeSilentAudioFixture(to fileURL: URL, duration: TimeInterval) throws {
-        let sampleRate = 44_100.0
-        let frameCount = AVAudioFrameCount(sampleRate * duration)
-        let pcmFormat = try #require(
-            AVAudioFormat(
-                standardFormatWithSampleRate: sampleRate,
-                channels: 1
-            ))
-        let buffer = try #require(
-            AVAudioPCMBuffer(
-                pcmFormat: pcmFormat,
-                frameCapacity: frameCount
-            ))
-        buffer.frameLength = frameCount
-
-        let file = try AVAudioFile(
-            forWriting: fileURL,
-            settings: [
-                AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVSampleRateKey: sampleRate,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderBitRateKey: 64_000
-            ]
-        )
-        try file.write(from: buffer)
+        try writeSilentTestAAC(to: fileURL, duration: duration)
     }
 
     func writeSilentPCMFixture(to fileURL: URL, duration: TimeInterval) throws {
@@ -349,14 +362,7 @@ extension AVFoundationMediaExporterTests {
     }
 
     func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+        try testPackageRootURL()
     }
 }
 

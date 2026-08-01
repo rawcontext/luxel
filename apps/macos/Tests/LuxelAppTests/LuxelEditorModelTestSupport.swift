@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelPresentation
@@ -20,13 +21,7 @@ extension LuxelEditorModelTests {
         audioTranscriptService: (any AudioTranscriptService)? = nil,
         speechRecognitionAuthorizationService: (any SpeechRecognitionAuthorizationService)? =
             StubSpeechAuthorizationService(state: .authorized),
-        codecAvailability: CodecAvailability = .none,
-        directoryAccessService: BookmarkedDirectoryAccessService? = nil,
-        exportMemory: [ExportFormat: ExportMemory] = [:],
-        lastSelectedExportFormat: ExportFormat? = nil,
-        onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)? = nil,
-        onLastSelectedExportFormatChange: (@MainActor (ExportFormat) -> Void)? = nil,
-        errorReporter: any ErrorReporter = NoopErrorReporter()
+        configuration: LuxelEditorModelTestConfiguration = .init()
     ) -> LuxelEditorModel {
         LuxelEditorModel(
             metadataReader: metadataReader,
@@ -54,13 +49,13 @@ extension LuxelEditorModelTests {
             audioTranscriptService: audioTranscriptService,
             speechRecognitionAuthorizationService: speechRecognitionAuthorizationService,
             fileSystem: fileSystem,
-            codecAvailability: codecAvailability,
-            directoryAccessService: directoryAccessService,
-            exportMemory: exportMemory,
-            lastSelectedExportFormat: lastSelectedExportFormat,
-            onExportMemoryChange: onExportMemoryChange,
-            onLastSelectedExportFormatChange: onLastSelectedExportFormatChange,
-            errorReporter: errorReporter
+            codecAvailability: configuration.codecAvailability,
+            directoryAccessService: configuration.directoryAccessService,
+            exportMemory: configuration.exportMemory,
+            lastSelectedExportFormat: configuration.lastSelectedExportFormat,
+            onExportMemoryChange: configuration.onExportMemoryChange,
+            onLastSelectedExportFormatChange: configuration.onLastSelectedExportFormatChange,
+            errorReporter: configuration.errorReporter
         )
     }
 
@@ -161,9 +156,7 @@ extension LuxelEditorModelTests {
     }
 
     func fixtureURL(_ fileName: String) throws -> URL {
-        try packageRootURL()
-            .appending(path: "Tests/Fixtures")
-            .appending(path: fileName)
+        try testFixtureURL(fileName)
     }
 
     func temporaryDirectory() throws -> URL {
@@ -189,14 +182,7 @@ extension LuxelEditorModelTests {
     }
 
     func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+        try testPackageRootURL()
     }
 
     func isApproximately(
@@ -206,6 +192,17 @@ extension LuxelEditorModelTests {
     ) -> Bool {
         abs(lhs - rhs) <= tolerance
     }
+}
+
+@MainActor
+struct LuxelEditorModelTestConfiguration {
+    var codecAvailability: CodecAvailability = .none
+    var directoryAccessService: BookmarkedDirectoryAccessService?
+    var exportMemory: [ExportFormat: ExportMemory] = [:]
+    var lastSelectedExportFormat: ExportFormat?
+    var onExportMemoryChange: (@MainActor (ExportFormat, ExportMemory) -> Void)?
+    var onLastSelectedExportFormatChange: (@MainActor (ExportFormat) -> Void)?
+    var errorReporter: any ErrorReporter = NoopErrorReporter()
 }
 
 @MainActor

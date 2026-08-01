@@ -23,22 +23,7 @@ public struct AVFoundationEditorPreviewAssetBuilder: Sendable {
                 }
                 didCreateTrack = true
 
-                for segment in sourceSegments {
-                    try track.insertTimeRange(
-                        CMTimeRange(
-                            start: CMTime(
-                                seconds: segment.sourceRange.start,
-                                preferredTimescale: 60_000
-                            ),
-                            duration: CMTime(
-                                seconds: segment.sourceRange.duration,
-                                preferredTimescale: 60_000
-                            )
-                        ),
-                        of: sourceTrack,
-                        at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
-                    )
-                }
+                try track.insert(sourceSegments, from: sourceTrack)
 
                 if mediaType == .video {
                     track.preferredTransform = try await sourceTrack.load(.preferredTransform)

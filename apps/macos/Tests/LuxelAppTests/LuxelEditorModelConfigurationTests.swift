@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelPresentation
@@ -53,13 +54,16 @@ extension LuxelEditorModelTests {
         #expect(model.exportEstimate == expectedEstimate)
         #expect(model.exportEstimateSummary(for: .hevc) == "~ 1.5 MB")
         #expect(Set(model.exportEstimatesByFormat.keys) == Set(model.supportedFormats))
-        #expect(captured?.format == .hevc)
-        #expect(captured?.timeRange == expectedRange)
-        #expect(captured?.pixelSize == expectedPixelSize)
-        #expect(captured?.frameRate == expectedFrameRate)
-        #expect(captured?.speed == (try PlaybackSpeed(2)))
-        #expect(captured?.quality == .high)
-        #expect(captured?.outputShouldMute == true)
+        expectTestExportRequest(
+            captured,
+            format: .hevc,
+            timeRange: expectedRange,
+            pixelSize: expectedPixelSize,
+            frameRate: expectedFrameRate,
+            shouldMute: true,
+            quality: .high,
+            speed: try PlaybackSpeed(2)
+        )
     }
 
     @Test("refreshing GIF export estimate includes GIF options")
@@ -157,7 +161,9 @@ extension LuxelEditorModelTests {
         #expect(defaultModel.selectedFormats == [.mp4])
 
         let codecModel = makeModel(
-            codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm])
+            configuration: LuxelEditorModelTestConfiguration(
+                codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm])
+            )
         )
 
         #expect(
@@ -173,8 +179,10 @@ extension LuxelEditorModelTests {
     @Test("remembered export format overrides default WebM selection")
     func rememberedExportFormatOverridesDefaultWebMSelection() async throws {
         let model = makeModel(
-            codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm]),
-            lastSelectedExportFormat: .hevc
+            configuration: LuxelEditorModelTestConfiguration(
+                codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm]),
+                lastSelectedExportFormat: .hevc
+            )
         )
 
         await model.open(
@@ -188,8 +196,10 @@ extension LuxelEditorModelTests {
     @Test("unsupported remembered export format falls back to WebM")
     func unsupportedRememberedExportFormatFallsBackToWebM() async throws {
         let model = makeModel(
-            codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm]),
-            lastSelectedExportFormat: .av1
+            configuration: LuxelEditorModelTestConfiguration(
+                codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm]),
+                lastSelectedExportFormat: .av1
+            )
         )
 
         await model.open(
@@ -204,10 +214,12 @@ extension LuxelEditorModelTests {
     func formatChangesRememberLastSelectedExportFormat() async throws {
         var rememberedFormats: [ExportFormat] = []
         let model = makeModel(
-            codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm]),
-            onLastSelectedExportFormatChange: { format in
-                rememberedFormats.append(format)
-            }
+            configuration: LuxelEditorModelTestConfiguration(
+                codecAvailability: try CodecAvailability(registeredExternalFormats: [.webm]),
+                onLastSelectedExportFormatChange: { format in
+                    rememberedFormats.append(format)
+                }
+            )
         )
 
         await model.open(
@@ -252,7 +264,11 @@ extension LuxelEditorModelTests {
 
     @Test("export memory seeds controls when opening and changing formats")
     func exportMemorySeedsControlsWhenOpeningAndChangingFormats() async throws {
-        let model = makeModel(exportMemory: try exportMemoryFixture())
+        let model = makeModel(
+            configuration: LuxelEditorModelTestConfiguration(
+                exportMemory: try exportMemoryFixture()
+            )
+        )
 
         await model.open(
             fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),

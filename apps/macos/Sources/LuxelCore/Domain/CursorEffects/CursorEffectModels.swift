@@ -184,22 +184,18 @@ public struct CursorSidecarDocument: Codable, Equatable, Sendable {
         schemaVersion: Int = CursorSidecarDocument.currentSchemaVersion,
         timeline: CursorTimeline
     ) throws {
-        guard schemaVersion == Self.currentSchemaVersion else {
-            throw CursorEffectModelError.unsupportedSidecarSchemaVersion
-        }
-
-        self.schemaVersion = schemaVersion
+        self.schemaVersion = try validatedSidecarSchemaVersion(
+            schemaVersion, current: Self.currentSchemaVersion,
+            error: CursorEffectModelError.unsupportedSidecarSchemaVersion
+        )
         self.timeline = timeline
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
-        guard schemaVersion == Self.currentSchemaVersion else {
-            throw CursorEffectModelError.unsupportedSidecarSchemaVersion
-        }
-
-        self.schemaVersion = schemaVersion
-        self.timeline = try container.decode(CursorTimeline.self, forKey: .timeline)
+        try self.init(
+            schemaVersion: container.decode(Int.self, forKey: .schemaVersion),
+            timeline: container.decode(CursorTimeline.self, forKey: .timeline)
+        )
     }
 }

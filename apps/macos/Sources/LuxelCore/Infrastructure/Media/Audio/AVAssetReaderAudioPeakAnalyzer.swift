@@ -142,34 +142,10 @@ public struct AVAssetReaderAudioPeakAnalyzer: AudioPeakAnalyzer {
     }
 
     private func pcmData(from sampleBuffer: CMSampleBuffer) throws -> Data {
-        guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
-            throw AVAssetReaderAudioPeakAnalyzerError.missingAudioData
-        }
-
-        let dataLength = CMBlockBufferGetDataLength(blockBuffer)
-        guard dataLength > 0 else {
-            throw AVAssetReaderAudioPeakAnalyzerError.missingAudioData
-        }
-
-        var data = Data(count: dataLength)
-        let status = data.withUnsafeMutableBytes { buffer in
-            guard let baseAddress = buffer.baseAddress else {
-                return OSStatus(paramErr)
-            }
-
-            return CMBlockBufferCopyDataBytes(
-                blockBuffer,
-                atOffset: 0,
-                dataLength: dataLength,
-                destination: baseAddress
-            )
-        }
-
-        guard status == noErr else {
-            throw AVAssetReaderAudioPeakAnalyzerError.audioDataCopyFailed(status)
-        }
-
-        return data
+        try sampleBuffer.copiedPCMData(
+            missingDataError: AVAssetReaderAudioPeakAnalyzerError.missingAudioData,
+            copyError: AVAssetReaderAudioPeakAnalyzerError.audioDataCopyFailed
+        )
     }
 }
 

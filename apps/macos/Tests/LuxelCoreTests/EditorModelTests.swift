@@ -19,18 +19,11 @@ struct EditorModelTests {
         #expect(request.frameRate == source.nominalFrameRate)
         #expect(request.timeRange == fullRange)
         #expect(!request.shouldMute)
-        #expect(request.audioMix == nil)
-        #expect(!request.studioVoiceEnabled)
         #expect(!request.shouldCrop)
         #expect(request.cropRect == nil)
         #expect(request.quality == .balanced)
         #expect(request.speed == .normal)
-        #expect(request.gifOptions == nil)
-        #expect(request.cursorOptions == nil)
-        #expect(request.keystrokeOptions == nil)
-        #expect(request.captionOptions == nil)
-        #expect(request.cameraOverlay == nil)
-        #expect(request.zoomBlocks.isEmpty)
+        expectDefaultOptionalExportFeatures(request)
     }
 
     @Test("draft applies trim resize frame rate and mute overrides")
@@ -92,22 +85,22 @@ struct EditorModelTests {
         return try EditorExportDraft(
             source: makeSource(),
             format: .gif,
-            trimRange: TimeRange(start: 1, end: 5),
-            pixelSize: PixelSize(width: 320, height: 200),
-            frameRate: FrameRate(12),
-            shouldMute: true,
-            audioMix: audioMix,
-            studioVoiceEnabled: true,
-            shouldCrop: true,
-            cropRect: cropRect,
             quality: .high,
             speed: PlaybackSpeed(2),
             gifOptions: gifOptions,
+            pixelSize: PixelSize(width: 320, height: 200),
+            frameRate: FrameRate(12),
+            trimRange: TimeRange(start: 1, end: 5),
+            shouldCrop: true,
+            cropRect: cropRect,
+            cameraOverlay: cameraOverlay,
+            zoomBlocks: zoomBlocks,
+            shouldMute: true,
+            audioMix: audioMix,
+            studioVoiceEnabled: true,
             cursorOptions: cursorOptions,
             keystrokeOptions: keystrokeOptions,
-            captionOptions: captionOptions,
-            cameraOverlay: cameraOverlay,
-            zoomBlocks: zoomBlocks
+            captionOptions: captionOptions
         )
     }
 

@@ -107,12 +107,9 @@ struct NotchGeometryModelTests {
         isBuiltIn: Bool = true,
         isVisible: Bool = true
     ) throws -> NotchDisplayDescriptor {
-        try NotchDisplayDescriptor(
+        try testBuiltInNotchedDisplay(
             displayID: displayID,
-            frame: rect(x: 0, y: 0, width: 1512, height: 982),
-            safeAreaInsets: NotchSafeAreaInsets(top: safeAreaTopInset),
-            auxiliaryTopLeftArea: rect(x: 0, y: 948, width: 640, height: 34),
-            auxiliaryTopRightArea: rect(x: 872, y: 948, width: 640, height: 34),
+            safeAreaTopInset: safeAreaTopInset,
             isBuiltIn: isBuiltIn,
             isVisible: isVisible
         )
@@ -124,6 +121,6 @@ struct NotchGeometryModelTests {
         width: Double,
         height: Double
     ) throws -> NotchScreenRect {
-        try NotchScreenRect(x: originX, y: originY, width: width, height: height)
+        try testNotchRect(x: originX, y: originY, width: width, height: height)
     }
 }

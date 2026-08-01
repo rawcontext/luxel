@@ -41,6 +41,31 @@ public struct CodecVideoFrame: Equatable, Sendable {
     }
 }
 
+public extension CodecVideoFrame {
+    func withUnsafeI420Planes<Result>(
+        emptyPlanesError: @autoclosure () -> any Error,
+        _ body: (
+            UnsafePointer<UInt8>,
+            UnsafePointer<UInt8>,
+            UnsafePointer<UInt8>
+        ) throws -> Result
+    ) throws -> Result {
+        try frame.yPlane.withUnsafeBytes { yBuffer in
+            try frame.uPlane.withUnsafeBytes { uBuffer in
+                try frame.vPlane.withUnsafeBytes { vBuffer in
+                    guard let yPlane = yBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
+                          let uPlane = uBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
+                          let vPlane = vBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+                    else {
+                        throw emptyPlanesError()
+                    }
+                    return try body(yPlane, uPlane, vPlane)
+                }
+            }
+        }
+    }
+}
+
 public struct CodecAudioChunk: Equatable, Sendable {
     public let pcmData: Data
     public let presentationTime: TimeInterval

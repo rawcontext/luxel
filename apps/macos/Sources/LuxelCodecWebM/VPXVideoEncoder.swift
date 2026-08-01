@@ -51,32 +51,23 @@ public actor VPXVideoEncoder: CodecVideoEncoder {
 
         var packetList = LuxelCodecPacketList()
         var errorBuffer = [CChar](repeating: 0, count: 512)
-        let status = try frame.frame.yPlane.withUnsafeBytes { yBuffer in
-            try frame.frame.uPlane.withUnsafeBytes { uBuffer in
-                try frame.frame.vPlane.withUnsafeBytes { vBuffer in
-                    guard let yAddress = yBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
-                          let uAddress = uBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
-                          let vAddress = vBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self)
-                    else {
-                        throw WebMCodecError.invalidConfiguration("I420 frame planes were empty.")
-                    }
-
-                    return LuxelVPXEncoderEncodeFrame(
-                        encoder,
-                        yAddress,
-                        frame.frame.yPlane.count,
-                        uAddress,
-                        frame.frame.uPlane.count,
-                        vAddress,
-                        frame.frame.vPlane.count,
-                        presentationTimeUnits,
-                        durationUnits,
-                        &packetList,
-                        &errorBuffer,
-                        errorBuffer.count
-                    )
-                }
-            }
+        let status = try frame.withUnsafeI420Planes(
+            emptyPlanesError: WebMCodecError.invalidConfiguration("I420 frame planes were empty.")
+        ) { yAddress, uAddress, vAddress in
+            LuxelVPXEncoderEncodeFrame(
+                encoder,
+                yAddress,
+                frame.frame.yPlane.count,
+                uAddress,
+                frame.frame.uPlane.count,
+                vAddress,
+                frame.frame.vPlane.count,
+                presentationTimeUnits,
+                durationUnits,
+                &packetList,
+                &errorBuffer,
+                errorBuffer.count
+            )
         }
         defer {
             LuxelCodecPacketListDestroy(&packetList)
@@ -115,12 +106,7 @@ public actor VPXVideoEncoder: CodecVideoEncoder {
     }
 
     private func packets(from packetList: LuxelCodecPacketList) throws -> [EncodedPacket] {
-        guard let packets = packetList.packets else {
-            return []
-        }
-
-        return try (0..<packetList.count).map { index in
-            let packet = packets[index]
+        try mapCodecPackets(packetList) { packet in
             let data = Data(bytes: packet.data, count: packet.size)
             return try EncodedPacket(
                 data: data,

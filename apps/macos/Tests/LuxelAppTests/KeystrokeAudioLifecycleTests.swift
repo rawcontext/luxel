@@ -1,6 +1,7 @@
 import Foundation
 @testable import LuxelApp
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Audio keystroke lifecycle")
@@ -120,14 +121,7 @@ private struct KeystrokeLifecycleDateProvider: DateProvider {
     func now() -> Date { Date(timeIntervalSince1970: 1_800_000_000) }
 }
 
-private struct KeystrokeLifecycleFileSystem: FileSystem {
-    func fileExists(at url: URL) -> Bool { true }
-    func createDirectory(at url: URL) throws {}
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-    func writeData(_ data: Data, to url: URL) throws {}
-    func removeFile(at url: URL) throws {}
-    func trashItem(at url: URL) throws {}
-}
+private typealias KeystrokeLifecycleFileSystem = AlwaysExistingTestFileSystem
 
 private final class KeystrokeAudioRecorderStub: AudioRecorder, @unchecked Sendable {
     func startRecording(_ request: AudioRecordingRequest) async throws {}

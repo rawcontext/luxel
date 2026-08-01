@@ -1,5 +1,39 @@
 @preconcurrency import AVFoundation
+import CoreMedia
 import ScreenCaptureKit
+
+enum ScreenCaptureKitAudioConfiguration {
+    static func apply(_ audio: RecordingAudioMode, to configuration: SCStreamConfiguration) {
+        configuration.capturesAudio = audio.capturesSystemAudio
+        configuration.captureMicrophone = audio.capturesMicrophone
+        configuration.microphoneCaptureDeviceID = audio.microphoneDeviceID
+        configuration.excludesCurrentProcessAudio = audio.capturesSystemAudio
+        configuration.sampleRate = 48_000
+        configuration.channelCount = 2
+        configuration.queueDepth = 8
+    }
+}
+
+enum ScreenCaptureKitAssetWriterSession {
+    static func startIfNeeded(
+        writer: AVAssetWriter,
+        sampleBuffer: CMSampleBuffer,
+        didStartWriting: inout Bool,
+        fallbackError: @autoclosure () -> any Error
+    ) -> (any Error)? {
+        guard !didStartWriting else {
+            return nil
+        }
+
+        let startTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
+        guard startTime.isValid, writer.startWriting() else {
+            return writer.error ?? fallbackError()
+        }
+        writer.startSession(atSourceTime: startTime)
+        didStartWriting = true
+        return nil
+    }
+}
 
 enum ScreenCaptureKitRecordingVideoSettings {
     static func outputSettings(for request: RecordingRequest) -> [String: Any] {
@@ -52,6 +86,19 @@ struct RecordingAudioLevelMixer {
                 capturesSystemAudio ? systemSample : nil,
                 capturesMicrophone ? microphoneSample : nil
             ].compactMap { $0 })
+    }
+
+    mutating func publish(
+        _ sampleBuffer: CMSampleBuffer,
+        outputType: SCStreamOutputType,
+        to handler: (@Sendable (AudioLevelSample) -> Void)?
+    ) {
+        guard let sample = CMSampleBufferAudioLevelSampler.sample(from: sampleBuffer),
+              let combinedSample = update(sample, outputType: outputType)
+        else {
+            return
+        }
+        handler?(combinedSample)
     }
 }
 

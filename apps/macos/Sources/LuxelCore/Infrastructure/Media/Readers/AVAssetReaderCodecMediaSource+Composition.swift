@@ -24,19 +24,7 @@ extension AVAssetReaderCodecMediaSource {
             compositionVideoTrack: compositionVideoTrack,
             timeRange: timeRange,
             outputPixelSize: outputPixelSize,
-            frameRate: request.frameRate,
-            shouldCrop: request.shouldCrop,
-            sourceCropRect: request.cropRect,
-            zoomBlocks: ZoomExportTimeMapper(
-                trimRange: request.timeRange,
-                speed: request.speed,
-                editPlan: request.editPlan
-            ).map(request.zoomBlocks),
-            keystrokeTimeline: try? KeystrokeSidecarFileLoader().load(
-                nextTo: request.inputFileURL
-            ),
-            keystrokeOptions: request.keystrokeOptions,
-            keystrokeTimelineMapper: request.timelineMapper
+            request: request
         )
         return output
     }
@@ -62,11 +50,10 @@ extension AVAssetReaderCodecMediaSource {
     }
 
     func firstVideoTrack(in asset: AVURLAsset) async throws -> AVAssetTrack {
-        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
-            throw AVAssetReaderVideoCodecMediaSourceError.missingVideoTrack
-        }
-
-        return videoTrack
+        try await asset.firstTrack(
+            withMediaType: .video,
+            or: AVAssetReaderVideoCodecMediaSourceError.missingVideoTrack
+        )
     }
 
     func addVideoTrack(
@@ -83,13 +70,7 @@ extension AVAssetReaderCodecMediaSource {
             throw AVAssetReaderVideoCodecMediaSourceError.cannotCreateVideoTrack
         }
 
-        for segment in sourceSegments {
-            try videoTrack.insertTimeRange(
-                segment.cmTimeRange,
-                of: sourceVideoTrack,
-                at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
-            )
-        }
+        try videoTrack.insert(sourceSegments, from: sourceVideoTrack)
         return videoTrack
     }
 
@@ -198,13 +179,7 @@ extension AVAssetReaderCodecMediaSource {
         }
 
         do {
-            for segment in sourceSegments {
-                try audioTrack.insertTimeRange(
-                    segment.cmTimeRange,
-                    of: sourceAudioTrack,
-                    at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
-                )
-            }
+            try audioTrack.insert(sourceSegments, from: sourceAudioTrack)
         } catch {
             throw AVAssetReaderCodecMediaSourceError.readFailed(
                 "Could not compose audio: \(error.localizedDescription)"
@@ -233,14 +208,5 @@ extension AVAssetReaderCodecMediaSource {
             return parameters
         }
         return audioMix
-    }
-}
-
-private extension SourceMediaSegment {
-    var cmTimeRange: CMTimeRange {
-        CMTimeRange(
-            start: CMTime(seconds: sourceRange.start, preferredTimescale: 60_000),
-            duration: CMTime(seconds: sourceRange.duration, preferredTimescale: 60_000)
-        )
     }
 }

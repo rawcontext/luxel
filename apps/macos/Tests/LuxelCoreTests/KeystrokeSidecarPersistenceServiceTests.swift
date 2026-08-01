@@ -29,17 +29,12 @@ struct KeystrokeSidecarPersistenceServiceTests {
                 rootURL.appendingPathComponent("bundle.json")
             ])
 
-        let keystrokeDocument = try JSONDecoder().decode(
+        try expectSavedSidecar(
             KeystrokeSidecarDocument.self,
-            from: try #require(fileSystem.writtenData.first?.data)
+            expectedDocument: try KeystrokeSidecarDocument(timeline: sampleTimeline()),
+            fileSystem: fileSystem,
+            updatedBundle: updatedBundle
         )
-        #expect(keystrokeDocument == (try KeystrokeSidecarDocument(timeline: sampleTimeline())))
-
-        let manifest = try JSONDecoder().decode(
-            BundleManifest.self,
-            from: try #require(fileSystem.writtenData.last?.data)
-        )
-        #expect(manifest == updatedBundle.manifest)
     }
 
     @Test("save reuses existing keystroke sidecar file")
@@ -55,10 +50,11 @@ struct KeystrokeSidecarPersistenceServiceTests {
         let updatedBundle = try service.save(sampleTimeline(), in: bundle)
 
         #expect(updatedBundle == bundle)
-        #expect(
-            fileSystem.writtenData.map(\.url) == [
-                rootURL.appendingPathComponent("keyboard-events.json")
-            ])
+        expectWrittenSidecar(
+            named: "keyboard-events.json",
+            rootURL: rootURL,
+            fileSystem: fileSystem
+        )
     }
 
     @Test("load returns nil without keystroke sidecar")
@@ -138,42 +134,4 @@ struct KeystrokeSidecarPersistenceServiceTests {
     }
 }
 
-private final class FakeKeystrokeSidecarFileSystem: FileSystem, @unchecked Sendable {
-    private let dataByURL: [URL: Data]
-    private(set) var readURLs: [URL] = []
-    private(set) var writtenData: [WrittenData] = []
-
-    init(readData: [URL: Data] = [:]) {
-        self.dataByURL = readData
-    }
-
-    func fileExists(at url: URL) -> Bool {
-        true
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func readData(at url: URL) throws -> Data {
-        readURLs.append(url)
-        guard let data = dataByURL[url] else {
-            throw FileSystemError.unsupportedRead(url)
-        }
-
-        return data
-    }
-
-    func writeData(_ data: Data, to url: URL) throws {
-        writtenData.append(WrittenData(data: data, url: url))
-    }
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
-
-private struct WrittenData: Equatable {
-    let data: Data
-    let url: URL
-}
+private typealias FakeKeystrokeSidecarFileSystem = SidecarTestFileSystem

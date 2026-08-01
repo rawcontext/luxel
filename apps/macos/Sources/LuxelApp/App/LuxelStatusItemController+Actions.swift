@@ -201,19 +201,31 @@ extension LuxelStatusItemController {
         recordingActionID: NotchActivityActionID?
     ) {
         model.refreshCameraDevices()
-        cropperPanelController.show(
-            countdownDuration: model.settings.defaultCountdown,
-            stopAfterDuration: model.settings.lastStopAfter,
-            canRecordAudio: model.microphoneStatus == .authorized,
-            canCaptureKeystrokes: model.inputMonitoringStatus == .authorized,
-            cameraConfiguration: model.cropperCameraConfiguration(),
-            quickRecordingConfiguration: model.cropperQuickRecordingConfiguration(),
-            selectionPresetConfiguration: model.cropperSelectionPresetConfiguration(),
-            restoreSelectionConfiguration: model.cropperRestoreSelectionConfiguration(),
+        let settings = model.settings
+        let canRecordAudio = model.microphoneStatus == .authorized
+        let canCaptureKeystrokes = model.inputMonitoringStatus == .authorized
+        let quickRecording = model.cropperQuickRecordingConfiguration()
+        let selectionPresets = model.cropperSelectionPresetConfiguration()
+        let restoredSelection = model.cropperRestoreSelectionConfiguration()
+        let recordingOptions = (
             recordAudio: model.captureCapabilities.microphoneTrackAvailable,
-            captureKeystrokes: model.settings.keystrokeOverlayEnabled,
-            loupeAlwaysOn: model.settings.loupeAlwaysOn,
-            dimOtherDisplays: model.settings.dimOtherDisplays,
+            captureKeystrokes: settings.keystrokeOverlayEnabled,
+            loupeAlwaysOn: settings.loupeAlwaysOn,
+            dimOtherDisplays: settings.dimOtherDisplays
+        )
+        cropperPanelController.show(
+            countdownDuration: settings.defaultCountdown,
+            stopAfterDuration: settings.lastStopAfter,
+            canRecordAudio: canRecordAudio,
+            canCaptureKeystrokes: canCaptureKeystrokes,
+            cameraConfiguration: model.cropperCameraConfiguration(),
+            quickRecordingConfiguration: quickRecording,
+            selectionPresetConfiguration: selectionPresets,
+            restoreSelectionConfiguration: restoredSelection,
+            recordAudio: recordingOptions.recordAudio,
+            captureKeystrokes: recordingOptions.captureKeystrokes,
+            loupeAlwaysOn: recordingOptions.loupeAlwaysOn,
+            dimOtherDisplays: recordingOptions.dimOtherDisplays,
             showsNotificationReminder: false,
             onCountdownDurationChange: { [weak self] in self?.updateCropperCountdown($0) },
             onStopAfterDurationChange: { [weak self] in self?.updateCropperStopAfter($0) },
@@ -246,13 +258,11 @@ extension LuxelStatusItemController {
     }
 
     func updateCropperCountdown(_ duration: TimeInterval?) {
-        model.settings.defaultCountdown = duration
-        model.saveSettings()
+        updateCropperSettings { $0.defaultCountdown = duration }
     }
 
     func updateCropperStopAfter(_ duration: TimeInterval?) {
-        model.settings.lastStopAfter = duration
-        model.saveSettings()
+        updateCropperSettings { $0.lastStopAfter = duration }
     }
 
     func updateCropperAudio(_ isEnabled: Bool) {
@@ -260,7 +270,11 @@ extension LuxelStatusItemController {
             presentPermissionPrompt(for: .microphone)
             return
         }
-        model.settings.recordAudio = isEnabled
+        updateCropperSettings { $0.recordAudio = isEnabled }
+    }
+
+    func updateCropperSettings(_ update: (inout AppSettings) -> Void) {
+        update(&model.settings)
         model.saveSettings()
     }
 

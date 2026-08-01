@@ -1,6 +1,7 @@
 import AVFAudio
 import CoreMedia
 import Foundation
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelCore
@@ -61,13 +62,10 @@ struct AVFoundationMediaMetadataReaderTests {
     @Test("probe treats audio-only recordings as playable")
     func probeTreatsAudioOnlyRecordingsAsPlayable() async throws {
         let reader = AVFoundationMediaMetadataReader()
-        let fileURL = FileManager.default.temporaryDirectory
-            .appending(path: UUID().uuidString)
-            .appendingPathExtension("m4a")
+        let fileURL = try makeSilentAudioFixture()
         defer {
             try? FileManager.default.removeItem(at: fileURL)
         }
-        try writeSilentAudioFixture(to: fileURL)
 
         let result = await reader.inspectRecording(at: fileURL)
 
@@ -77,13 +75,10 @@ struct AVFoundationMediaMetadataReaderTests {
     @Test("reader loads audio-only source metadata")
     func readerLoadsAudioOnlySourceMetadata() async throws {
         let reader = AVFoundationMediaMetadataReader()
-        let fileURL = FileManager.default.temporaryDirectory
-            .appending(path: UUID().uuidString)
-            .appendingPathExtension("m4a")
+        let fileURL = try makeSilentAudioFixture()
         defer {
             try? FileManager.default.removeItem(at: fileURL)
         }
-        try writeSilentAudioFixture(to: fileURL)
 
         let source = try await reader.readSourceMedia(at: fileURL)
 
@@ -110,46 +105,16 @@ struct AVFoundationMediaMetadataReaderTests {
     }
 
     private func fixtureURL(_ fileName: String) throws -> URL {
-        try packageRootURL()
-            .appending(path: "Tests/Fixtures")
-            .appending(path: fileName)
+        try sharedFixtureURL(fileName)
     }
 
     private func writeSilentAudioFixture(to fileURL: URL) throws {
-        let sampleRate = 44_100.0
-        let frameCount = AVAudioFrameCount(sampleRate / 4)
-        let pcmFormat = try #require(
-            AVAudioFormat(
-                standardFormatWithSampleRate: sampleRate,
-                channels: 1
-            ))
-        let buffer = try #require(
-            AVAudioPCMBuffer(
-                pcmFormat: pcmFormat,
-                frameCapacity: frameCount
-            ))
-        buffer.frameLength = frameCount
-
-        let file = try AVAudioFile(
-            forWriting: fileURL,
-            settings: [
-                AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVSampleRateKey: sampleRate,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderBitRateKey: 64_000
-            ]
-        )
-        try file.write(from: buffer)
+        try writeSilentTestAAC(to: fileURL, duration: 0.25)
     }
 
-    private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+    private func makeSilentAudioFixture() throws -> URL {
+        let fileURL = temporaryTestFileURL(pathExtension: "m4a")
+        try writeSilentAudioFixture(to: fileURL)
+        return fileURL
     }
 }

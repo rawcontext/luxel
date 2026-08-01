@@ -89,35 +89,29 @@ struct TranscriptServiceDiarizationTests {
             ]
         )
         let modelStore = StubSpeakerModelStore(initiallyReady: true)
-        let cache = KeyedMemoryTranscriptCache()
-        let service = makeService(
+        let fixture = makeEnabledService(
             diarizer: diarizer,
-            modelStore: modelStore,
-            mode: .enabled,
-            cache: cache
+            modelStore: modelStore
         )
 
-        _ = try await service.transcript(for: makeRequest(speakerCountHint: .exact(5)))
+        _ = try await fixture.service.transcript(for: makeRequest(speakerCountHint: .exact(5)))
 
         let requests = await diarizer.requests
         #expect(requests.first?.speakerCountHint == .exact(5))
-        #expect(cache.savedRequests.first?.speakerCountHint == .exact(5))
+        #expect(fixture.cache.savedRequests.first?.speakerCountHint == .exact(5))
     }
 
     @Test("uses one microphone speaker and the selected hint for separate system audio")
     func usesSourceSpecificHintsForSeparateTracks() async throws {
         let diarizer = SpySpeakerDiarizer(segments: [])
         let modelStore = StubSpeakerModelStore(initiallyReady: true)
-        let cache = KeyedMemoryTranscriptCache()
-        let service = makeService(
+        let fixture = makeEnabledService(
             diarizer: diarizer,
             modelStore: modelStore,
-            mode: .enabled,
-            cache: cache,
             audioTrackInspector: DualTrackInspector()
         )
 
-        _ = try await service.transcript(
+        _ = try await fixture.service.transcript(
             for: makeRequest(
                 recordingAudioMode: .systemAndMicrophone(deviceID: nil),
                 speakerCountHint: .exact(5)
@@ -131,26 +125,23 @@ struct TranscriptServiceDiarizationTests {
         )
         #expect(hintByTrack[0] == .exact(5))
         #expect(hintByTrack[1] == .exact(1))
-        #expect(cache.savedRequests.first?.speakerCountHint == .exact(5))
+        #expect(fixture.cache.savedRequests.first?.speakerCountHint == .exact(5))
     }
 
     @Test("returns non-diarized transcript under the non-diarized key when diarization fails")
     func fallsBackWhenDiarizationFails() async throws {
         let diarizer = FailingSpeakerDiarizer()
         let modelStore = StubSpeakerModelStore(initiallyReady: true)
-        let cache = KeyedMemoryTranscriptCache()
-        let service = makeService(
+        let fixture = makeEnabledService(
             diarizer: diarizer,
-            modelStore: modelStore,
-            mode: .enabled,
-            cache: cache
+            modelStore: modelStore
         )
 
-        let transcript = try await service.transcript(for: makeRequest())
+        let transcript = try await fixture.service.transcript(for: makeRequest())
 
         #expect(transcript != nil)
         #expect(transcript?.speakers.isEmpty == true)
-        let savedRequests = cache.savedRequests
+        let savedRequests = fixture.cache.savedRequests
         #expect(savedRequests.count == 1)
         #expect(savedRequests.first?.speakerDiarizationMode == .disabled)
         #expect(savedRequests.first?.speakerModelRevision == nil)
@@ -160,38 +151,32 @@ struct TranscriptServiceDiarizationTests {
     func fallsBackWhenModelPreparationFails() async throws {
         let diarizer = SpySpeakerDiarizer(segments: [])
         let modelStore = StubSpeakerModelStore(initiallyReady: false, prepareFails: true)
-        let cache = KeyedMemoryTranscriptCache()
-        let service = makeService(
+        let fixture = makeEnabledService(
             diarizer: diarizer,
-            modelStore: modelStore,
-            mode: .enabled,
-            cache: cache
+            modelStore: modelStore
         )
 
-        let transcript = try await service.transcript(for: makeRequest())
+        let transcript = try await fixture.service.transcript(for: makeRequest())
 
         #expect(transcript != nil)
         let diarizeCalls = await diarizer.requests.count
         #expect(diarizeCalls == 0)
-        #expect(cache.savedRequests.first?.speakerDiarizationMode == .disabled)
+        #expect(fixture.cache.savedRequests.first?.speakerDiarizationMode == .disabled)
     }
 
     @Test("empty diarization output produces an unlabeled transcript under the diarized key")
     func emptyDiarizationKeepsTranscriptUnlabeled() async throws {
         let diarizer = SpySpeakerDiarizer(segments: [])
         let modelStore = StubSpeakerModelStore(initiallyReady: true)
-        let cache = KeyedMemoryTranscriptCache()
-        let service = makeService(
+        let fixture = makeEnabledService(
             diarizer: diarizer,
-            modelStore: modelStore,
-            mode: .enabled,
-            cache: cache
+            modelStore: modelStore
         )
 
-        let transcript = try await service.transcript(for: makeRequest())
+        let transcript = try await fixture.service.transcript(for: makeRequest())
 
         #expect(transcript?.speakers.isEmpty == true)
-        #expect(cache.savedRequests.first?.speakerDiarizationMode == .enabled)
+        #expect(fixture.cache.savedRequests.first?.speakerDiarizationMode == .enabled)
     }
 
     @Test("stores caller-updated transcripts under the effective request key")
@@ -253,6 +238,24 @@ struct TranscriptServiceDiarizationTests {
             audioTrackInspector: audioTrackInspector,
             speakerDiarizer: diarizer,
             speakerModelStore: modelStore
+        )
+    }
+
+    private func makeEnabledService(
+        diarizer: any SpeakerDiarizer,
+        modelStore: any SpeakerDiarizationModelStore,
+        audioTrackInspector: any AudioTrackInspector = SingleTrackInspector()
+    ) -> (cache: KeyedMemoryTranscriptCache, service: LocalAudioTranscriptService) {
+        let cache = KeyedMemoryTranscriptCache()
+        return (
+            cache,
+            makeService(
+                diarizer: diarizer,
+                modelStore: modelStore,
+                mode: .enabled,
+                cache: cache,
+                audioTrackInspector: audioTrackInspector
+            )
         )
     }
 }

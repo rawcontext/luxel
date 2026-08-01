@@ -58,17 +58,7 @@ public final class SpeakerDiarizationArtifactsFileStore:
             "\(modificationDate?.timeIntervalSince1970 ?? 0)"
         ].joined(separator: "|")
 
-        return directory.appending(path: "\(stableFNV1aHash(rawKey)).json")
-    }
-
-    private func stableFNV1aHash(_ string: String) -> String {
-        var hash: UInt64 = 14_695_981_039_346_656_037
-        for byte in string.utf8 {
-            hash ^= UInt64(byte)
-            hash &*= 1_099_511_628_211
-        }
-
-        return String(hash, radix: 16)
+        return directory.appending(path: "\(StableFNV1aHash.string(for: rawKey)).json")
     }
 }
 

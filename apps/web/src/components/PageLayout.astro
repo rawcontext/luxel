@@ -1,0 +1,57 @@
+---
+import "../styles/global.css";
+import SiteFooter from "./SiteFooter.astro";
+import SiteNav from "./SiteNav.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  bodyClass: string;
+  navigationLabel: string;
+  showsLeftGlow?: boolean;
+}
+
+const {
+  title,
+  description,
+  bodyClass,
+  navigationLabel,
+  showsLeftGlow = false
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="apple-itunes-app" content="app-id=6780682473" />
+    <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
+    <link rel="alternate" href="/llms.txt" type="text/markdown" title="Luxel LLM-readable index" />
+    <link rel="alternate" href="/llms-full.txt" type="text/markdown" title="Luxel full Markdown documentation" />
+    <title>{title}</title>
+    <slot name="head" />
+  </head>
+  <body class={bodyClass}>
+    <div class="page">
+      <div class="ambient" aria-hidden="true">
+        <span class="ambient__glow ambient__glow--hero"></span>
+        {showsLeftGlow && <span class="ambient__glow ambient__glow--left"></span>}
+      </div>
+
+      <SiteNav
+        ariaLabel={navigationLabel}
+        links={[
+          { href: "/#features", label: "Features" },
+          { href: "/docs", label: "Docs" },
+          { href: "/support", label: "Support" },
+          { href: "/privacy", label: "Privacy" }
+        ]}
+      />
+
+      <slot />
+      <SiteFooter />
+    </div>
+  </body>
+</html>

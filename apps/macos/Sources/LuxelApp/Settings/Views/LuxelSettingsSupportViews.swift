@@ -217,36 +217,11 @@ struct SettingsCapsuleButtonLabel: View {
     }
 
     var body: some View {
-        HStack(spacing: 6) {
-            if let systemImage {
-                Image(systemName: systemImage)
-                    .font(.system(size: 11, weight: .medium))
-            }
-
-            Text(title)
-                .font(.system(size: 12.5, weight: .medium))
-                .lineLimit(1)
-                .truncationMode(.middle)
-        }
-        .foregroundStyle(.white.opacity(0.92))
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
-        .background {
-            Capsule(style: .continuous)
-                .fill(LuxelGlassTheme.controlFill)
-                .overlay {
-                    Capsule(style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [LuxelGlassTheme.controlHighlight, .clear],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 1
-                        )
-                }
-        }
-        .contentShape(Capsule(style: .continuous))
+        LuxelGlassTitleLabel(title, systemImage: systemImage)
+            .foregroundStyle(.white.opacity(0.92))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .luxelGlassCapsuleBackground()
     }
 }
 

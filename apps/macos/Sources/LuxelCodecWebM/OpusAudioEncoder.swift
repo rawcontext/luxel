@@ -109,12 +109,7 @@ public actor OpusAudioEncoder: CodecAudioEncoder {
     }
 
     private func packets(from packetList: LuxelCodecPacketList) throws -> [EncodedPacket] {
-        guard let packets = packetList.packets else {
-            return []
-        }
-
-        return try (0..<packetList.count).map { index in
-            let packet = packets[index]
+        try mapCodecPackets(packetList) { packet in
             let presentationTime = nextPresentationTime ?? 0
             let duration = Self.frameDuration
             nextPresentationTime = presentationTime + duration

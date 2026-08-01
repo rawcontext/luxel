@@ -44,24 +44,8 @@ public struct ExportService: Sendable {
         let cleanup = ExportOutputCleanup(fileSystem: fileSystem, outputURL: outputURL)
 
         await progress?(.preparing(format: request.format))
-
-        return try await withTaskCancellationHandler {
-            do {
-                return try await exportWithPreparedAudio(
-                    request,
-                    to: outputURL,
-                    progress: progress
-                )
-            } catch is CancellationError {
-                cleanup.removeOutput()
-                await progress?(.canceled(format: request.format))
-                throw CancellationError()
-            } catch {
-                cleanup.removeOutput()
-                throw error
-            }
-        } onCancel: {
-            cleanup.removeOutput()
+        return try await exportManaged(request, cleanup: cleanup, progress: progress) {
+            try await exportWithPreparedAudio(request, to: outputURL, progress: progress)
         }
     }
 
@@ -101,23 +85,12 @@ public struct ExportService: Sendable {
             await progress?(preparationSnapshot(for: request, progress: update.progress))
         }
         defer { preparedAudio.removeTemporaryFiles() }
-        try Task.checkCancellation()
-        await progress?(.exporting(format: request.format, progress: 0))
-        let exported = try await exporter.export(
-            MediaExportInput(
-                request: request,
-                preparedAudio: preparedAudio.asset(forRequestAt: 0)
-            ),
-            to: outputURL
-        ) { value in
-            await progress?(
-                .exporting(format: request.format, progress: Self.clampedProgress(value))
-            )
-        }
-        let result = exported.withFileSizeBytes(fileSizeBytes(at: exported.fileURL))
-        try Task.checkCancellation()
-        await progress?(.completed(format: request.format))
-        return result
+        return try await exportPreparedMedia(
+            request,
+            preparedAudio: preparedAudio.asset(forRequestAt: 0),
+            to: outputURL,
+            progress: progress
+        )
     }
 
     private func prepareBatchAudio(
@@ -202,25 +175,25 @@ public struct ExportService: Sendable {
         )
         let cleanup = ExportOutputCleanup(fileSystem: fileSystem, outputURL: outputURL)
 
-        return try await withTaskCancellationHandler {
+        return try await exportManaged(request, cleanup: cleanup, progress: progress) {
+            try await exportPreparedMedia(
+                request,
+                preparedAudio: preparedAudio,
+                to: outputURL,
+                progress: progress
+            )
+        }
+    }
+
+    private func exportManaged(
+        _ request: ExportRequest,
+        cleanup: ExportOutputCleanup,
+        progress: ProgressHandler?,
+        operation: @Sendable () async throws -> ExportedMedia
+    ) async throws -> ExportedMedia {
+        try await withTaskCancellationHandler {
             do {
-                try Task.checkCancellation()
-                await progress?(.exporting(format: request.format, progress: 0))
-                let exported = try await exporter.export(
-                    MediaExportInput(request: request, preparedAudio: preparedAudio),
-                    to: outputURL
-                ) { value in
-                    await progress?(
-                        .exporting(
-                            format: request.format,
-                            progress: Self.clampedProgress(value)
-                        )
-                    )
-                }
-                let result = exported.withFileSizeBytes(fileSizeBytes(at: exported.fileURL))
-                try Task.checkCancellation()
-                await progress?(.completed(format: request.format))
-                return result
+                return try await operation()
             } catch is CancellationError {
                 cleanup.removeOutput()
                 await progress?(.canceled(format: request.format))
@@ -232,6 +205,28 @@ public struct ExportService: Sendable {
         } onCancel: {
             cleanup.removeOutput()
         }
+    }
+
+    private func exportPreparedMedia(
+        _ request: ExportRequest,
+        preparedAudio: PreparedAudioAsset?,
+        to outputURL: URL,
+        progress: ProgressHandler?
+    ) async throws -> ExportedMedia {
+        try Task.checkCancellation()
+        await progress?(.exporting(format: request.format, progress: 0))
+        let exported = try await exporter.export(
+            MediaExportInput(request: request, preparedAudio: preparedAudio),
+            to: outputURL
+        ) { value in
+            await progress?(
+                .exporting(format: request.format, progress: Self.clampedProgress(value))
+            )
+        }
+        let result = exported.withFileSizeBytes(fileSizeBytes(at: exported.fileURL))
+        try Task.checkCancellation()
+        await progress?(.completed(format: request.format))
+        return result
     }
 
     private static let maxConcurrentBatchJobs = 4

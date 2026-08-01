@@ -347,14 +347,7 @@ extension CaptionModelTests {
     }
 
     private func sampleTrack() throws -> CaptionTrack {
-        try CaptionTrack(
-            cues: [
-                cue(start: 1.2, end: 3.4, text: "Hello\nworld"),
-                cue(start: 3_661.005, end: 3_662.5, text: "Done")
-            ],
-            language: Locale.LanguageCode("en"),
-            sourceTrack: .microphone
-        )
+        try sampleCaptionTrack()
     }
 
     private func cue(
@@ -362,7 +355,7 @@ extension CaptionModelTests {
         end: TimeInterval,
         text: String
     ) throws -> CaptionCue {
-        try CaptionCue(timeRange: TimeRange(start: start, end: end), text: text)
+        try captionCue(start: start, end: end, text: text)
     }
 
     private func word(

@@ -1,20 +1,20 @@
 import Foundation
 
 public struct GIFPixelRect: Codable, Equatable, Sendable {
-    public let originX: Int
-    public let originY: Int
     public let width: Int
     public let height: Int
+    public let originX: Int
+    public let originY: Int
 
     public init(x originX: Int, y originY: Int, width: Int, height: Int) throws {
         guard originX >= 0, originY >= 0, width > 0, height > 0 else {
             throw GIFEngineModelError.invalidPixelRect
         }
 
-        self.originX = originX
-        self.originY = originY
         self.width = width
         self.height = height
+        self.originX = originX
+        self.originY = originY
     }
 
     private enum CodingKeys: String, CodingKey {

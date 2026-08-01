@@ -182,34 +182,15 @@ extension LuxelEditorView {
                     Button {
                         model.chooseOutputDirectory()
                     } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "folder")
-                                .font(.system(size: 11, weight: .medium))
-
-                            Text(model.outputDirectorySummary)
-                                .font(.system(size: 12, weight: .medium))
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
+                        LuxelGlassTitleLabel(
+                            model.outputDirectorySummary,
+                            systemImage: "folder",
+                            fontSize: 12
+                        )
                         .foregroundStyle(.white.opacity(0.92))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 7)
-                        .background {
-                            Capsule(style: .continuous)
-                                .fill(LuxelGlassTheme.controlFill)
-                                .overlay {
-                                    Capsule(style: .continuous)
-                                        .strokeBorder(
-                                            LinearGradient(
-                                                colors: [LuxelGlassTheme.controlHighlight, .clear],
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            ),
-                                            lineWidth: 1
-                                        )
-                                }
-                        }
-                        .contentShape(Capsule(style: .continuous))
+                        .luxelGlassCapsuleBackground()
                     }
                     .buttonStyle(.plain)
                     .help("Choose where to save the exported file.")

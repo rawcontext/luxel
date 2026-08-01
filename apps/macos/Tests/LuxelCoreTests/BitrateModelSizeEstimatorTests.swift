@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Bitrate model size estimator")
@@ -146,12 +147,12 @@ struct BitrateModelSizeEstimatorTests {
         let draft = try EditorExportDraft(
             source: source,
             format: .hevc,
-            trimRange: TimeRange(start: 2, end: 6),
+            quality: .high,
+            speed: PlaybackSpeed(2),
             pixelSize: PixelSize(width: 320, height: 240),
             frameRate: FrameRate(24),
-            shouldMute: true,
-            quality: .high,
-            speed: PlaybackSpeed(2)
+            trimRange: TimeRange(start: 2, end: 6),
+            shouldMute: true
         )
 
         let estimate = try await service.estimate(draft)
@@ -162,13 +163,16 @@ struct BitrateModelSizeEstimatorTests {
         let expectedFrameRate = try FrameRate(24)
 
         #expect(estimate == expectedEstimate)
-        #expect(captured?.format == .hevc)
-        #expect(captured?.timeRange == expectedRange)
-        #expect(captured?.pixelSize == expectedPixelSize)
-        #expect(captured?.frameRate == expectedFrameRate)
-        #expect(captured?.outputShouldMute == true)
-        #expect(captured?.quality == .high)
-        #expect(captured?.speed == (try PlaybackSpeed(2)))
+        expectTestExportRequest(
+            captured,
+            format: .hevc,
+            timeRange: expectedRange,
+            pixelSize: expectedPixelSize,
+            frameRate: expectedFrameRate,
+            shouldMute: true,
+            quality: .high,
+            speed: try PlaybackSpeed(2)
+        )
     }
 
     private func makeRequest(

@@ -14,15 +14,10 @@ extension LuxelMenu {
             }
             .pickerStyle(.inline)
         } label: {
-            Image(systemName: "chevron.down")
-                .labelStyle(.iconOnly)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.white.opacity(0.55))
-                .frame(
-                    width: LuxelMicrophoneFooterPickerLayout.buttonWidth,
-                    height: LuxelMicrophoneFooterPickerLayout.buttonHeight
-                )
-                .contentShape(Rectangle())
+            footerPickerChevronLabel(
+                width: LuxelMicrophoneFooterPickerLayout.buttonWidth,
+                height: LuxelMicrophoneFooterPickerLayout.buttonHeight
+            )
         }
         .buttonStyle(
             LuxelIslandCellButtonStyle(

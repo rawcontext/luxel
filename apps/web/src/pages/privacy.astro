@@ -1,47 +1,21 @@
 ---
-import "../styles/global.css";
-import SiteNav from "../components/SiteNav.astro";
-import SiteFooter from "../components/SiteFooter.astro";
+import PageLayout from "../components/PageLayout.astro";
 
 const effectiveDate = "July 2, 2026";
 const contactEmail = "maintainer@example.com";
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="description"
-      content="Luxel privacy policy for the Mac recorder and Luxel marketing website."
-    />
-    <meta name="apple-itunes-app" content="app-id=6780682473" />
-    <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
-    <link rel="alternate" href="/llms.txt" type="text/markdown" title="Luxel LLM-readable index" />
-    <link rel="alternate" href="/llms-full.txt" type="text/markdown" title="Luxel full Markdown documentation" />
-    <title>Privacy Policy - Luxel</title>
-  </head>
-  <body class="privacy-page">
-    <div class="page">
-      <div class="ambient" aria-hidden="true">
-        <span class="ambient__glow ambient__glow--hero"></span>
-      </div>
-
-      <SiteNav
-        ariaLabel="Privacy page navigation"
-        links={[
-          { href: "/#features", label: "Features" },
-          { href: "/docs", label: "Docs" },
-          { href: "/support", label: "Support" },
-          { href: "/privacy", label: "Privacy" }
-        ]}
-      />
+<PageLayout
+  title="Privacy Policy - Luxel"
+  description="Luxel privacy policy for the Mac recorder and Luxel marketing website."
+  bodyClass="privacy-page"
+  navigationLabel="Privacy page navigation"
+>
 
       <main class="privacy-shell container">
         <section class="privacy-hero" aria-labelledby="privacy-title">
           <p class="eyebrow">Privacy Policy</p>
-          <h1 class="privacy-title" id="privacy-title">Your recordings stay yours.</h1>
+          <h1 class="privacy-title page-title gradient-title" id="privacy-title">Your recordings stay yours.</h1>
           <p class="privacy-lead">
             Luxel is built as a local-first Mac app. We do not track you, run analytics,
             sell data, or send your recordings, screenshots, audio, transcripts, or exports
@@ -185,10 +159,7 @@ const contactEmail = "maintainer@example.com";
         </section>
       </main>
 
-      <SiteFooter />
-    </div>
-  </body>
-</html>
+</PageLayout>
 
 <style>
   .privacy-shell {
@@ -199,19 +170,6 @@ const contactEmail = "maintainer@example.com";
   .privacy-hero {
     margin-block-end: 44px;
     text-align: center;
-  }
-
-  .privacy-title {
-    margin: 0;
-    background: linear-gradient(180deg, #fff 55%, rgb(255 255 255 / 0.55));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-size: clamp(2.4rem, 5.4vw, 3.4rem);
-    font-weight: 700;
-    letter-spacing: -0.028em;
-    line-height: 1.08;
-    text-wrap: balance;
   }
 
   .privacy-lead {

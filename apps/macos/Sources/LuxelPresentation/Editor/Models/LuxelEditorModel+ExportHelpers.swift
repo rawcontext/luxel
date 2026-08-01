@@ -168,19 +168,13 @@ func withExportDirectoryAccess<Result: Sendable>(
     directoryAccessService: BookmarkedDirectoryAccessService?,
     operation: @Sendable (URL) async throws -> Result
 ) async throws -> Result {
-    guard let bookmark, let directoryAccessService else {
-        return try await operation(outputDirectory)
-    }
-
-    let result = try await directoryAccessService.withAccess(to: bookmark) { directory in
-        try await operation(directory.url)
-    }
-
-    guard let value = result.value else {
-        throw EditorDirectoryAccessError.revoked(result.directory.url)
-    }
-
-    return value
+    try await withBookmarkedDirectoryAccess(
+        outputDirectory: outputDirectory,
+        bookmark: bookmark,
+        service: directoryAccessService,
+        revokedError: EditorDirectoryAccessError.revoked,
+        operation: operation
+    )
 }
 
 func editorBatchOutputDirectory(defaultName: String, in outputDirectory: URL) -> URL {

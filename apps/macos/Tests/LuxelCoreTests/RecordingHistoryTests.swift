@@ -7,6 +7,38 @@ struct RecordingHistoryTests {
 }
 
 extension RecordingHistoryTests {
+    func fixedTimestampContext() throws -> (date: Date, calendar: Calendar) {
+        let date = try #require(ISO8601DateFormatter().date(from: "2020-07-21T15:27:26Z"))
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: -4 * 60 * 60))
+        return (date, calendar)
+    }
+
+    func existingAndMissingRecordings() -> (
+        existingURL: URL,
+        missingURL: URL,
+        recordings: [PastRecording]
+    ) {
+        let existingURL = URL(fileURLWithPath: "/tmp/existing.mp4")
+        let missingURL = URL(fileURLWithPath: "/tmp/missing.mp4")
+        return (
+            existingURL,
+            missingURL,
+            [
+                PastRecording(
+                    fileURL: existingURL,
+                    name: "Existing",
+                    date: Date(timeIntervalSince1970: 1)
+                ),
+                PastRecording(
+                    fileURL: missingURL,
+                    name: "Missing",
+                    date: Date(timeIntervalSince1970: 2)
+                )
+            ]
+        )
+    }
+
     func makeService(
         store: InMemoryRecordingHistoryStore,
         existingFiles: Set<URL> = [],

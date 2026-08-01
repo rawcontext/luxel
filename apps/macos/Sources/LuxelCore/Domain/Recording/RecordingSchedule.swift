@@ -186,16 +186,7 @@ public enum RecordingDurationText {
     }
 
     public static func format(_ duration: TimeInterval) -> String {
-        let totalSeconds = max(0, Int(duration.rounded(.down)))
-        let hours = totalSeconds / 3600
-        let minutes = (totalSeconds % 3600) / 60
-        let seconds = totalSeconds % 60
-
-        if hours > 0 {
-            return "\(hours):\(twoDigits(minutes)):\(twoDigits(seconds))"
-        }
-
-        return "\(minutes):\(twoDigits(seconds))"
+        RecordingDurationFormatter.elapsedTime(duration)
     }
 
     private static func seconds(minutes: Int, seconds: Int) throws -> Int {
@@ -214,9 +205,6 @@ public enum RecordingDurationText {
         return hours * 3600 + minutes * 60 + seconds
     }
 
-    private static func twoDigits(_ value: Int) -> String {
-        value < 10 ? "0\(value)" : "\(value)"
-    }
 }
 
 public enum RecordingDurationTextError: Error, Equatable {

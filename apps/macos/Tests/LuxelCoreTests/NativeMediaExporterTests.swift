@@ -2,6 +2,7 @@ import AVFAudio
 import Foundation
 import ImageIO
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Native media exporter")
@@ -100,9 +101,7 @@ struct NativeMediaExporterTests {
     }
 
     private func fixtureURL(_ fileName: String) throws -> URL {
-        try packageRootURL()
-            .appending(path: "Tests/Fixtures")
-            .appending(path: fileName)
+        try sharedFixtureURL(fileName)
     }
 
     private func temporaryOutputURL(fileExtension: String) -> URL {
@@ -112,40 +111,6 @@ struct NativeMediaExporterTests {
     }
 
     private func writeSilentAudioFixture(to fileURL: URL) throws {
-        let sampleRate = 44_100.0
-        let frameCount = AVAudioFrameCount(sampleRate / 2)
-        let pcmFormat = try #require(
-            AVAudioFormat(
-                standardFormatWithSampleRate: sampleRate,
-                channels: 1
-            ))
-        let buffer = try #require(
-            AVAudioPCMBuffer(
-                pcmFormat: pcmFormat,
-                frameCapacity: frameCount
-            ))
-        buffer.frameLength = frameCount
-
-        let file = try AVAudioFile(
-            forWriting: fileURL,
-            settings: [
-                AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVSampleRateKey: sampleRate,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderBitRateKey: 64_000
-            ]
-        )
-        try file.write(from: buffer)
-    }
-
-    private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+        try writeSilentTestAAC(to: fileURL, duration: 0.5)
     }
 }

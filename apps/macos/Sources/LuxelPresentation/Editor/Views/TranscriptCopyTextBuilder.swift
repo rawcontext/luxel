@@ -16,18 +16,7 @@ struct TranscriptCopyTextBuilder {
             guard !turnText.isEmpty else {
                 return nil
             }
-            guard !transcript.speakers.isEmpty else {
-                return turnText
-            }
-
-            var labels: [String] = []
-            if let speaker = transcript.speaker(for: turn.speakerID) {
-                labels.append(speaker.displayName)
-            }
-            if let source = turn.source {
-                labels.append(source.displayName)
-            }
-            return labels.isEmpty ? turnText : "\(labels.joined(separator: " — ")): \(turnText)"
+            return LuxelTranscriptFormatter.labeledText(turnText, for: turn, in: transcript)
         }
         .joined(separator: "\n\n")
     }

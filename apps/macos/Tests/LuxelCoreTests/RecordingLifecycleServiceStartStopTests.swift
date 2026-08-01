@@ -106,127 +106,65 @@ extension RecordingLifecycleServiceTests {
 
     @Test("start records to staging while returning final recording URL")
     func startRecordsToStagingWhileReturningFinalRecordingURL() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = RecordingLifecycleRecorderSpy()
-        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
-        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
-        let fileSystem = RecordingLifecycleOutputFileSystem(existingFiles: [stagingURL])
-        let service = RecordingLifecycleService(
-            recorder: recorder,
-            history: makeHistory(store: store, fileSystem: fileSystem),
-            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
-        )
-        let request = try makeRequest(outputFileURL: finalURL)
+        let context = try makeStagedRecordingContext()
 
-        let activeRecording = try await service.startRecording(
-            request,
-            outputPlan: RecordingOutputFinalizationPlan(
-                stagingFileURL: stagingURL,
-                finalFileURL: finalURL
-            )
-        )
+        let activeRecording = try await startStagedRecording(context)
 
-        #expect(activeRecording.fileURL == finalURL)
-        #expect(store.activeRecording?.fileURL == stagingURL)
-        #expect(recorder.startedRequests.map(\.outputFileURL) == [stagingURL])
+        #expect(activeRecording.fileURL == context.finalURL)
+        #expect(context.store.activeRecording?.fileURL == context.stagingURL)
+        #expect(context.recorder.startedRequests.map(\.outputFileURL) == [context.stagingURL])
     }
 
     @Test("stop finalizes staged recording to final URL")
     func stopFinalizesStagedRecordingToFinalURL() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = RecordingLifecycleRecorderSpy()
-        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
-        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
-        let fileSystem = RecordingLifecycleOutputFileSystem(existingFiles: [stagingURL])
-        let service = RecordingLifecycleService(
-            recorder: recorder,
-            history: makeHistory(store: store, fileSystem: fileSystem),
-            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
-        )
-        let request = try makeRequest(outputFileURL: finalURL)
+        let context = try makeStagedRecordingContext()
 
-        _ = try await service.startRecording(
-            request,
-            outputPlan: RecordingOutputFinalizationPlan(
-                stagingFileURL: stagingURL,
-                finalFileURL: finalURL
-            )
-        )
-        let recording = try await service.stopRecording(recordingName: "Finished")
+        _ = try await startStagedRecording(context)
+        let recording = try await context.service.stopRecording(recordingName: "Finished")
 
-        #expect(recording.fileURL == finalURL)
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings == [recording])
+        #expect(recording.fileURL == context.finalURL)
+        #expect(context.store.activeRecording == nil)
+        #expect(context.store.recordings == [recording])
         #expect(
-            fileSystem.movedFiles == [
-                RecordingLifecycleOutputMove(sourceURL: stagingURL, destinationURL: finalURL)
+            context.fileSystem.movedFiles == [
+                RecordingLifecycleOutputMove(
+                    sourceURL: context.stagingURL,
+                    destinationURL: context.finalURL
+                )
             ])
     }
 
     @Test("stop keeps staged recording when final move fails")
     func stopKeepsStagedRecordingWhenFinalMoveFails() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = RecordingLifecycleRecorderSpy()
-        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
-        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
-        let fileSystem = RecordingLifecycleOutputFileSystem(
-            existingFiles: [stagingURL],
+        let context = try makeStagedRecordingContext(
             moveError: RecordingLifecycleOutputError.moveFailed
         )
-        let service = RecordingLifecycleService(
-            recorder: recorder,
-            history: makeHistory(store: store, fileSystem: fileSystem),
-            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
-        )
-        let request = try makeRequest(outputFileURL: finalURL)
 
-        _ = try await service.startRecording(
-            request,
-            outputPlan: RecordingOutputFinalizationPlan(
-                stagingFileURL: stagingURL,
-                finalFileURL: finalURL
-            )
-        )
-        let recording = try await service.stopRecording()
+        _ = try await startStagedRecording(context)
+        let recording = try await context.service.stopRecording()
 
-        #expect(recording.fileURL == stagingURL)
-        #expect(store.recordings == [recording])
-        #expect(fileSystem.movedFiles.isEmpty)
+        #expect(recording.fileURL == context.stagingURL)
+        #expect(context.store.recordings == [recording])
+        #expect(context.fileSystem.movedFiles.isEmpty)
     }
 
     @Test("stop clears active recording when output finalization has no file")
     func stopClearsActiveRecordingWhenOutputFinalizationHasNoFile() async throws {
-        let store = InMemoryRecordingHistoryStore()
-        let recorder = RecordingLifecycleRecorderSpy()
-        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
-        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
-        let fileSystem = RecordingLifecycleOutputFileSystem(existingFiles: [])
-        let service = RecordingLifecycleService(
-            recorder: recorder,
-            history: makeHistory(store: store, fileSystem: fileSystem),
-            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
-        )
-        let request = try makeRequest(outputFileURL: finalURL)
+        let context = try makeStagedRecordingContext(outputExists: false)
 
-        _ = try await service.startRecording(
-            request,
-            outputPlan: RecordingOutputFinalizationPlan(
-                stagingFileURL: stagingURL,
-                finalFileURL: finalURL
-            )
-        )
+        _ = try await startStagedRecording(context)
 
         await #expect(
             throws: RecordingLifecycleError.outputFinalizationFailed(
                 "No recording output was produced. Try recording again."
             )
         ) {
-            try await service.stopRecording()
+            try await context.service.stopRecording()
         }
-        #expect(store.activeRecording == nil)
-        #expect(store.recordings.isEmpty)
-        #expect(recorder.stopCount == 1)
-        #expect(fileSystem.movedFiles.isEmpty)
+        #expect(context.store.activeRecording == nil)
+        #expect(context.store.recordings.isEmpty)
+        #expect(context.recorder.stopCount == 1)
+        #expect(context.fileSystem.movedFiles.isEmpty)
     }
 
     @Test("stop moves active recording into history after recorder stops")
@@ -268,4 +206,56 @@ extension RecordingLifecycleServiceTests {
         #expect(store.recordings.isEmpty)
     }
 
+}
+
+private struct StagedRecordingContext {
+    let store: InMemoryRecordingHistoryStore
+    let recorder: RecordingLifecycleRecorderSpy
+    let fileSystem: RecordingLifecycleOutputFileSystem
+    let service: RecordingLifecycleService
+    let request: RecordingRequest
+    let stagingURL: URL
+    let finalURL: URL
+}
+
+private extension RecordingLifecycleServiceTests {
+    func makeStagedRecordingContext(
+        outputExists: Bool = true,
+        moveError: (any Error)? = nil
+    ) throws -> StagedRecordingContext {
+        let store = InMemoryRecordingHistoryStore()
+        let recorder = RecordingLifecycleRecorderSpy()
+        let finalURL = URL(fileURLWithPath: "/tmp/final/luxel.mp4")
+        let stagingURL = URL(fileURLWithPath: "/tmp/staging/luxel.mp4")
+        let fileSystem = RecordingLifecycleOutputFileSystem(
+            existingFiles: outputExists ? [stagingURL] : [],
+            moveError: moveError
+        )
+        let service = RecordingLifecycleService(
+            recorder: recorder,
+            history: makeHistory(store: store, fileSystem: fileSystem),
+            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
+        )
+        return StagedRecordingContext(
+            store: store,
+            recorder: recorder,
+            fileSystem: fileSystem,
+            service: service,
+            request: try makeRequest(outputFileURL: finalURL),
+            stagingURL: stagingURL,
+            finalURL: finalURL
+        )
+    }
+
+    func startStagedRecording(
+        _ context: StagedRecordingContext
+    ) async throws -> ActiveRecording {
+        try await context.service.startRecording(
+            context.request,
+            outputPlan: RecordingOutputFinalizationPlan(
+                stagingFileURL: context.stagingURL,
+                finalFileURL: context.finalURL
+            )
+        )
+    }
 }

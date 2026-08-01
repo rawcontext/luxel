@@ -36,18 +36,3 @@ extension AppSettings {
 public enum CaptureSizePresetSettingsError: Error, Equatable {
     case presetNotFound(UUID)
 }
-
-extension [CaptureSizePreset] {
-    fileprivate func uniquePresetName(base: String) -> String {
-        let names = Set(map(\.name))
-        guard names.contains(base) else {
-            return base
-        }
-
-        var index = 2
-        while names.contains("\(base) \(index)") {
-            index += 1
-        }
-        return "\(base) \(index)"
-    }
-}

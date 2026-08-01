@@ -147,41 +147,25 @@ public struct CaptionSidecarDocument: Codable, Equatable, Sendable {
         schemaVersion: Int = CaptionSidecarDocument.currentSchemaVersion,
         track: CaptionTrack
     ) throws {
-        guard schemaVersion == Self.currentSchemaVersion else {
-            throw CaptionModelError.unsupportedSidecarSchemaVersion
-        }
-
-        self.schemaVersion = schemaVersion
+        self.schemaVersion = try validatedSidecarSchemaVersion(
+            schemaVersion, current: Self.currentSchemaVersion,
+            error: CaptionModelError.unsupportedSidecarSchemaVersion
+        )
         self.track = track
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
-        guard schemaVersion == Self.currentSchemaVersion else {
-            throw CaptionModelError.unsupportedSidecarSchemaVersion
-        }
-
-        self.schemaVersion = schemaVersion
-        self.track = try container.decode(CaptionTrack.self, forKey: .track)
+        try self.init(
+            schemaVersion: container.decode(Int.self, forKey: .schemaVersion),
+            track: container.decode(CaptionTrack.self, forKey: .track)
+        )
     }
 }
 
-public struct CaptionExportTimeMapper: Equatable, Sendable {
-    public let trimRange: TimeRange
-    public let speed: PlaybackSpeed
-    public let editPlan: TimelineEditPlan
+public typealias CaptionExportTimeMapper = EditedTimelineMapper
 
-    public init(
-        trimRange: TimeRange,
-        speed: PlaybackSpeed = .normal,
-        editPlan: TimelineEditPlan = .empty
-    ) {
-        self.trimRange = trimRange
-        self.speed = speed
-        self.editPlan = editPlan
-    }
-
+extension EditedTimelineMapper {
     public func map(_ track: CaptionTrack) throws -> CaptionTrack {
         try CaptionTrack(
             cues: track.cues.flatMap { cue in
@@ -194,11 +178,7 @@ public struct CaptionExportTimeMapper: Equatable, Sendable {
     }
 
     private func map(_ cue: CaptionCue) throws -> [CaptionCue] {
-        try EditedTimelineMapper(
-            trimRange: trimRange,
-            editPlan: editPlan,
-            speed: speed
-        ).mapSourceRange(cue.timeRange).map {
+        try mapSourceRange(cue.timeRange).map {
             try CaptionCue(timeRange: $0, text: cue.text)
         }
     }

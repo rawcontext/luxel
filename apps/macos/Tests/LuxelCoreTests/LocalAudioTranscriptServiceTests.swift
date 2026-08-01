@@ -137,28 +137,7 @@ struct LocalAudioTranscriptServiceTests {
     }
 
     private func sampleTranscript(source: TranscriptSourceLabel?) throws -> TurnSegmentedTranscript {
-        let span = try TimedTranscriptSpan(
-            id: "span-0",
-            text: "Cached",
-            start: 0,
-            end: 0.5,
-            source: source
-        )
-
-        return try TurnSegmentedTranscript(
-            spans: [span],
-            turns: [
-                try TranscriptTurn(
-                    id: "turn-0",
-                    spanIDs: [span.id],
-                    start: span.start,
-                    end: span.end,
-                    text: span.text,
-                    source: source
-                )
-            ],
-            localeIdentifier: "en_US"
-        )
+        try sampleTestTranscript(text: "Cached", source: source)
     }
 }
 

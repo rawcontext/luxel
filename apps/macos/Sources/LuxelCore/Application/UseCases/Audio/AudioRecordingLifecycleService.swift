@@ -47,11 +47,14 @@ public final class AudioRecordingLifecycleService: Sendable {
         try await recorder.stopRecording()
         let finalizationResult: RecordingOutputFinalizationResult?
         do {
-            finalizationResult = try await finalizeCurrentOutput()
+            finalizationResult = try await finalizeRecordingOutput(
+                await outputState.plan,
+                using: outputFinalizer
+            )
         } catch {
             history.clearCurrentRecording()
             await outputState.clear()
-            throw RecordingLifecycleError.outputFinalizationFailed(error.recordingLifecycleDescription)
+            throw RecordingLifecycleError.outputFinalizationFailed(error.preferredLocalizedDescription)
         }
 
         guard
@@ -68,26 +71,6 @@ public final class AudioRecordingLifecycleService: Sendable {
         return recording
     }
 
-    private func finalizeCurrentOutput() async throws -> RecordingOutputFinalizationResult? {
-        guard let outputPlan = await outputState.plan else {
-            return nil
-        }
-
-        return try await Task.detached(priority: .userInitiated) { [outputFinalizer] in
-            try outputFinalizer.finalize(outputPlan)
-        }.value
-    }
-}
-
-extension Error {
-    fileprivate var recordingLifecycleDescription: String {
-        if let errorDescription = (self as? LocalizedError)?.errorDescription, !errorDescription.isEmpty {
-            return errorDescription
-        }
-
-        let localizedDescription = (self as NSError).localizedDescription
-        return localizedDescription.isEmpty ? String(describing: self) : localizedDescription
-    }
 }
 
 private actor AudioRecordingLifecycleOutputState {

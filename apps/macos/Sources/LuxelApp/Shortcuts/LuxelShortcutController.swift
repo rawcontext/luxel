@@ -104,7 +104,7 @@ extension NSEvent {
         return Set(appShortcutModifiers) == Set(shortcut.modifiers)
     }
 
-    fileprivate var appShortcutModifiers: [AppKeyboardShortcutModifier] {
+    var appShortcutModifiers: [AppKeyboardShortcutModifier] {
         var modifiers: [AppKeyboardShortcutModifier] = []
 
         if modifierFlags.contains(.command) {

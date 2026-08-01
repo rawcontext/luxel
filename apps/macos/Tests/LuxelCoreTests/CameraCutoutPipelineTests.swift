@@ -230,31 +230,14 @@ private extension CameraCutoutPipelineTests {
     }
 
     private func makeCameraBuffer(width: Int, height: Int) throws -> CVPixelBuffer {
-        let buffer = try makePixelBuffer(
-            width: width,
-            height: height,
-            pixelFormat: kCVPixelFormatType_32BGRA
-        )
-        CVPixelBufferLockBaseAddress(buffer, [])
-        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
-        guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else {
-            throw FixtureError.missingBaseAddress
+        try makeBGRABuffer(width: width, height: height) { columnIndex in
+            BGRAPixel(
+                blue: columnIndex < width / 2 ? 32 : 220,
+                green: 96,
+                red: columnIndex < width / 2 ? 220 : 32,
+                alpha: 255
+            )
         }
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
-        for rowIndex in 0..<height {
-            let row =
-                baseAddress
-                .advanced(by: rowIndex * bytesPerRow)
-                .assumingMemoryBound(to: UInt8.self)
-            for columnIndex in 0..<width {
-                let offset = columnIndex * 4
-                row[offset] = columnIndex < width / 2 ? 32 : 220
-                row[offset + 1] = 96
-                row[offset + 2] = columnIndex < width / 2 ? 220 : 32
-                row[offset + 3] = 255
-            }
-        }
-        return buffer
     }
 
     private func makePortraitFixtureBuffer() throws -> CVPixelBuffer {
@@ -325,29 +308,40 @@ private extension CameraCutoutPipelineTests {
     }
 
     private func makeGreenScreenBuffer(width: Int, height: Int) throws -> CVPixelBuffer {
+        try makeBGRABuffer(width: width, height: height) { columnIndex in
+            let isGreen = columnIndex < width / 2
+            return BGRAPixel(
+                blue: isGreen ? 0 : 32,
+                green: isGreen ? 255 : 48,
+                red: isGreen ? 0 : 224,
+                alpha: 255
+            )
+        }
+    }
+
+    private func makeBGRABuffer(
+        width: Int,
+        height: Int,
+        pixel: (Int) -> BGRAPixel
+    ) throws -> CVPixelBuffer {
         let buffer = try makePixelBuffer(
             width: width,
             height: height,
             pixelFormat: kCVPixelFormatType_32BGRA
         )
-        CVPixelBufferLockBaseAddress(buffer, [])
-        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
-        guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else {
-            throw FixtureError.missingBaseAddress
-        }
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
-        for rowIndex in 0..<height {
-            let row =
-                baseAddress
-                .advanced(by: rowIndex * bytesPerRow)
-                .assumingMemoryBound(to: UInt8.self)
-            for columnIndex in 0..<width {
-                let offset = columnIndex * 4
-                let isGreen = columnIndex < width / 2
-                row[offset] = isGreen ? 0 : 32
-                row[offset + 1] = isGreen ? 255 : 48
-                row[offset + 2] = isGreen ? 0 : 224
-                row[offset + 3] = 255
+        try withLockedBaseAddress(of: buffer) { baseAddress, bytesPerRow in
+            for rowIndex in 0..<height {
+                let row = baseAddress
+                    .advanced(by: rowIndex * bytesPerRow)
+                    .assumingMemoryBound(to: UInt8.self)
+                for columnIndex in 0..<width {
+                    let offset = columnIndex * 4
+                    let color = pixel(columnIndex)
+                    row[offset] = color.blue
+                    row[offset + 1] = color.green
+                    row[offset + 2] = color.red
+                    row[offset + 3] = color.alpha
+                }
             }
         }
         return buffer
@@ -363,22 +357,29 @@ private extension CameraCutoutPipelineTests {
             height: height,
             pixelFormat: kCVPixelFormatType_OneComponent16Half
         )
+        try withLockedBaseAddress(of: buffer) { baseAddress, bytesPerRow in
+            for rowIndex in 0..<height {
+                let row = baseAddress
+                    .advanced(by: rowIndex * bytesPerRow)
+                    .assumingMemoryBound(to: UInt16.self)
+                for columnIndex in 0..<width {
+                    row[columnIndex] = Float16(value(columnIndex, rowIndex)).bitPattern
+                }
+            }
+        }
+        return buffer
+    }
+
+    private func withLockedBaseAddress(
+        of buffer: CVPixelBuffer,
+        write: (UnsafeMutableRawPointer, Int) -> Void
+    ) throws {
         CVPixelBufferLockBaseAddress(buffer, [])
         defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
         guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else {
             throw FixtureError.missingBaseAddress
         }
-        let bytesPerRow = CVPixelBufferGetBytesPerRow(buffer)
-        for rowIndex in 0..<height {
-            let row =
-                baseAddress
-                .advanced(by: rowIndex * bytesPerRow)
-                .assumingMemoryBound(to: UInt16.self)
-            for columnIndex in 0..<width {
-                row[columnIndex] = Float16(value(columnIndex, rowIndex)).bitPattern
-            }
-        }
-        return buffer
+        write(baseAddress, CVPixelBufferGetBytesPerRow(buffer))
     }
 
     private func makePixelBuffer(
@@ -452,6 +453,13 @@ private extension CameraCutoutPipelineTests {
             alpha: pixels[offset + 3]
         )
     }
+}
+
+private struct BGRAPixel {
+    let blue: UInt8
+    let green: UInt8
+    let red: UInt8
+    let alpha: UInt8
 }
 
 private struct MatteStatistics {

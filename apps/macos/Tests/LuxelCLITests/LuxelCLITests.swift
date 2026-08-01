@@ -2,6 +2,7 @@ import ArgumentParser
 import Foundation
 import LuxelCLI
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Luxel CLI")
@@ -36,18 +37,7 @@ struct LuxelCLITests {
 
         let invocation = try command.invocation
 
-        #expect(
-            invocation
-                == AutomationInvocation(
-                    command: .record(
-                        AutomationRecordingOptions(
-                            target: .display(.main),
-                            presetName: "Quick GIF",
-                            countdownSeconds: 3,
-                            outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
-                        )),
-                    callbacks: AutomationCallbacks(success: URL(string: "luxel-callback://done"))
-                ))
+        #expect(invocation == testRecordAutomationInvocation())
         #expect(
             AutomationInvocationURLBuilder.url(for: invocation).absoluteString
                 == "luxel://record?target=display&display=main&preset=Quick%20GIF&countdown=3"

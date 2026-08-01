@@ -188,11 +188,10 @@ extension AVFoundationMediaExporter {
     }
 
     func firstVideoTrack(in asset: AVURLAsset) async throws -> AVAssetTrack {
-        guard let videoTrack = try await asset.loadTracks(withMediaType: .video).first else {
-            throw AVFoundationMediaExporterError.missingVideoTrack
-        }
-
-        return videoTrack
+        try await asset.firstTrack(
+            withMediaType: .video,
+            or: AVFoundationMediaExporterError.missingVideoTrack
+        )
     }
 
     func addVideoTrack(
@@ -209,13 +208,7 @@ extension AVFoundationMediaExporter {
             throw AVFoundationMediaExporterError.cannotCreateVideoTrack
         }
 
-        for segment in sourceSegments {
-            try videoTrack.insertTimeRange(
-                segment.sourceRange.cmTimeRange,
-                of: sourceVideoTrack,
-                at: CMTime(seconds: segment.outputStart, preferredTimescale: 60_000)
-            )
-        }
+        try videoTrack.insert(sourceSegments, from: sourceVideoTrack)
         return videoTrack
     }
 
@@ -363,14 +356,5 @@ extension AVFoundationMediaExporter {
 
     func requestedOutputFileTypeName(plan: AVFoundationExportPlan) -> String {
         plan.outputFileURL.pathExtension
-    }
-}
-
-private extension TimeRange {
-    var cmTimeRange: CMTimeRange {
-        CMTimeRange(
-            start: CMTime(seconds: start, preferredTimescale: 60_000),
-            duration: CMTime(seconds: duration, preferredTimescale: 60_000)
-        )
     }
 }

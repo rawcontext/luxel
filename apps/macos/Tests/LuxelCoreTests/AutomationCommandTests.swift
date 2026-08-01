@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Automation commands")
@@ -29,18 +30,8 @@ struct AutomationCommandTests {
 
     @Test("URL builder composes automation invocations")
     func urlBuilderComposesAutomationInvocations() throws {
-        let invocation = AutomationInvocation(
-            command: .record(
-                AutomationRecordingOptions(
-                    target: .display(.main),
-                    presetName: "Quick GIF",
-                    countdownSeconds: 3,
-                    outputDirectory: URL(fileURLWithPath: "/tmp/Luxel Exports")
-                )),
-            callbacks: AutomationCallbacks(
-                success: URL(string: "luxel-callback://done"),
-                error: URL(string: "luxel-callback://failed")
-            )
+        let invocation = testRecordAutomationInvocation(
+            errorCallback: URL(string: "luxel-callback://failed")
         )
 
         let url = AutomationInvocationURLBuilder.url(for: invocation)

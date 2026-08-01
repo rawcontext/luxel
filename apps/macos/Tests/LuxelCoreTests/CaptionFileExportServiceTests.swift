@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Caption file export service")
@@ -19,14 +20,14 @@ struct CaptionFileExportServiceTests {
 
         let exported = try service.export(
             CaptionFileExportRequest(
-                track: sampleTrack(),
+                track: sampleCaptionTrack(),
                 format: .srt,
                 outputFileURL: fileURL
             ))
 
         #expect(exported == ExportedCaptionFile(fileURL: fileURL, format: .srt))
         #expect(
-            fileSystem.writes == [
+            fileSystem.utf8Writes == [
                 WrittenData(
                     text: """
             1
@@ -52,13 +53,13 @@ struct CaptionFileExportServiceTests {
 
         _ = try service.export(
             CaptionFileExportRequest(
-                track: sampleTrack(),
+                track: sampleCaptionTrack(),
                 format: .vtt,
                 outputFileURL: fileURL
             ))
 
         #expect(
-            fileSystem.writes == [
+            fileSystem.utf8Writes == [
                 WrittenData(
                     text: """
             WEBVTT
@@ -84,13 +85,13 @@ struct CaptionFileExportServiceTests {
 
         _ = try service.export(
             CaptionFileExportRequest(
-                track: sampleTrack(),
+                track: sampleCaptionTrack(),
                 format: .plainText,
                 outputFileURL: fileURL
             ))
 
         #expect(
-            fileSystem.writes == [
+            fileSystem.utf8Writes == [
                 WrittenData(
                     text: """
             Hello
@@ -112,7 +113,7 @@ struct CaptionFileExportServiceTests {
 
         _ = try service.export(
             CaptionFileExportRequest(
-                track: sampleTrack(),
+                track: sampleCaptionTrack(),
                 format: .srt,
                 outputFileURL: fileURL,
                 timeMapper: CaptionExportTimeMapper(
@@ -122,7 +123,7 @@ struct CaptionFileExportServiceTests {
             ))
 
         #expect(
-            fileSystem.writes == [
+            fileSystem.utf8Writes == [
                 WrittenData(
                     text: """
             1
@@ -162,54 +163,14 @@ struct CaptionFileExportServiceTests {
             ))
 
         #expect(
-            fileSystem.writes == [
+            fileSystem.utf8Writes == [
                 WrittenData(text: "", fileURL: URL(fileURLWithPath: "/tmp/empty.srt")),
                 WrittenData(text: "WEBVTT\n", fileURL: URL(fileURLWithPath: "/tmp/empty.vtt")),
                 WrittenData(text: "", fileURL: URL(fileURLWithPath: "/tmp/empty.txt"))
             ])
     }
 
-    private func sampleTrack() throws -> CaptionTrack {
-        try CaptionTrack(
-            cues: [
-                cue(start: 1.2, end: 3.4, text: "Hello\nworld"),
-                cue(start: 3_661.005, end: 3_662.5, text: "Done")
-            ],
-            language: Locale.LanguageCode("en"),
-            sourceTrack: .microphone
-        )
-    }
-
-    private func cue(
-        start: TimeInterval,
-        end: TimeInterval,
-        text: String
-    ) throws -> CaptionCue {
-        try CaptionCue(timeRange: TimeRange(start: start, end: end), text: text)
-    }
 }
 
-private final class SpyFileSystem: FileSystem, @unchecked Sendable {
-    private(set) var writes: [WrittenData] = []
-
-    func fileExists(at url: URL) -> Bool {
-        true
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func writeData(_ data: Data, to url: URL) throws {
-        writes.append(WrittenData(text: String(bytes: data, encoding: .utf8) ?? "", fileURL: url))
-    }
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
-
-private struct WrittenData: Equatable {
-    let text: String
-    let fileURL: URL
-}
+private typealias SpyFileSystem = TestWritingFileSystem
+private typealias WrittenData = TestUTF8WrittenFile

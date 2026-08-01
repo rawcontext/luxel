@@ -72,57 +72,27 @@ struct BookmarkedDirectoryAccessServiceTests {
 
     @Test("with access balances successful security scope")
     func withAccessBalancesSuccessfulSecurityScope() {
-        let directory = makeDirectory()
-        let access = SpySecurityScopedResourceAccess()
-        let service = BookmarkedDirectoryAccessService(
-            resolver: StubBookmarkedDirectoryResolver(
-                resolution: BookmarkedDirectoryResolution(
-                    url: directory.url,
-                    bookmarkData: directory.bookmarkData,
-                    isStale: false
-                )
-            ),
-            access: access
-        )
+        let context = makeAccessContext()
 
-        let result = service.withAccess(to: directory) { resolvedDirectory in
-            #expect(access.activeURLs == [resolvedDirectory.url])
+        let result = context.service.withAccess(to: context.directory) { resolvedDirectory in
+            #expect(context.access.activeURLs == [resolvedDirectory.url])
             return resolvedDirectory.url.lastPathComponent
         }
 
-        #expect(result.value == "selected")
-        #expect(result.accessStarted)
-        #expect(access.startedURLs == [directory.url])
-        #expect(access.stoppedURLs == [directory.url])
-        #expect(access.activeURLs.isEmpty)
+        expectBalancedAccess(result: result, context: context)
     }
 
     @Test("async with access balances successful security scope")
     func asyncWithAccessBalancesSuccessfulSecurityScope() async {
-        let directory = makeDirectory()
-        let access = SpySecurityScopedResourceAccess()
-        let service = BookmarkedDirectoryAccessService(
-            resolver: StubBookmarkedDirectoryResolver(
-                resolution: BookmarkedDirectoryResolution(
-                    url: directory.url,
-                    bookmarkData: directory.bookmarkData,
-                    isStale: false
-                )
-            ),
-            access: access
-        )
+        let context = makeAccessContext()
 
-        let result = await service.withAccess(to: directory) { resolvedDirectory in
-            #expect(access.activeURLs == [resolvedDirectory.url])
+        let result = await context.service.withAccess(to: context.directory) { resolvedDirectory in
+            #expect(context.access.activeURLs == [resolvedDirectory.url])
             await Task.yield()
             return resolvedDirectory.url.lastPathComponent
         }
 
-        #expect(result.value == "selected")
-        #expect(result.accessStarted)
-        #expect(access.startedURLs == [directory.url])
-        #expect(access.stoppedURLs == [directory.url])
-        #expect(access.activeURLs.isEmpty)
+        expectBalancedAccess(result: result, context: context)
     }
 
     @Test("with access does not stop when security scope does not start")
@@ -176,6 +146,39 @@ struct BookmarkedDirectoryAccessServiceTests {
             accessState: .resolved
         )
     }
+
+    private func makeAccessContext() -> BookmarkedAccessContext {
+        let directory = makeDirectory()
+        let access = SpySecurityScopedResourceAccess()
+        let service = BookmarkedDirectoryAccessService(
+            resolver: StubBookmarkedDirectoryResolver(
+                resolution: BookmarkedDirectoryResolution(
+                    url: directory.url,
+                    bookmarkData: directory.bookmarkData,
+                    isStale: false
+                )
+            ),
+            access: access
+        )
+        return BookmarkedAccessContext(directory: directory, access: access, service: service)
+    }
+
+    private func expectBalancedAccess(
+        result: BookmarkedDirectoryAccessResult<String>,
+        context: BookmarkedAccessContext
+    ) {
+        #expect(result.value == "selected")
+        #expect(result.accessStarted)
+        #expect(context.access.startedURLs == [context.directory.url])
+        #expect(context.access.stoppedURLs == [context.directory.url])
+        #expect(context.access.activeURLs.isEmpty)
+    }
+}
+
+private struct BookmarkedAccessContext {
+    let directory: BookmarkedDirectory
+    let access: SpySecurityScopedResourceAccess
+    let service: BookmarkedDirectoryAccessService
 }
 
 private struct StubBookmarkedDirectoryResolver: BookmarkedDirectoryResolver {

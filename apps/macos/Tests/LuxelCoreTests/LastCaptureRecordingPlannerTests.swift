@@ -98,8 +98,7 @@ struct LastCaptureRecordingPlannerTests {
             captureKind: .quick(presetID: presetID)
         )
 
-        #expect(request.captureKind == .quick(presetID: presetID))
-        #expect(request.recordingOptions.captureKind == .quick(presetID: presetID))
+        expectQuickCaptureKind(request, presetID: presetID)
     }
 
     @Test("stale window uses fallback window before display")
@@ -155,24 +154,10 @@ struct LastCaptureRecordingPlannerTests {
     }
 
     private func makeWindowOption(id: UInt32) throws -> CaptureTargetOption {
-        try CaptureTargetOption(
-            id: "window-\(id)",
-            kind: .window,
-            title: "Window \(id)",
-            target: .window(id: id),
-            pixelSize: PixelSize(width: 800, height: 600),
-            frame: CaptureRect(x: 0, y: 0, width: 800, height: 600)
-        )
+        try makeTestWindowOption(id: id)
     }
 
     private func makeDisplayOption(id: UInt32) throws -> CaptureTargetOption {
-        try CaptureTargetOption(
-            id: "display-\(id)",
-            kind: .display,
-            title: "Display \(id)",
-            target: .display(DisplayID(id)),
-            pixelSize: PixelSize(width: 1920, height: 1080),
-            frame: CaptureRect(x: 0, y: 0, width: 1920, height: 1080)
-        )
+        try makeTestDisplayOption(id: id)
     }
 }

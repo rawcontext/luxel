@@ -219,19 +219,12 @@ final class RecordingWriterSegment: @unchecked Sendable {
     }
 
     private func startWritingIfNeeded(for sampleBuffer: CMSampleBuffer) {
-        guard !didStartWriting else {
-            return
-        }
-
-        let startTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-        guard startTime.isValid, writer.startWriting() else {
-            pendingError =
-                writer.error ?? ScreenCaptureKitRecorderError.startFailed("Cannot start asset writer")
-            return
-        }
-
-        writer.startSession(atSourceTime: startTime)
-        didStartWriting = true
+        pendingError = ScreenCaptureKitAssetWriterSession.startIfNeeded(
+            writer: writer,
+            sampleBuffer: sampleBuffer,
+            didStartWriting: &didStartWriting,
+            fallbackError: ScreenCaptureKitRecorderError.startFailed("Cannot start asset writer")
+        )
     }
 
     private func input(for outputType: SCStreamOutputType) -> AVAssetWriterInput? {
@@ -248,87 +241,11 @@ final class RecordingWriterSegment: @unchecked Sendable {
     }
 
     private func updateAudioLevel(_ sampleBuffer: CMSampleBuffer, outputType: SCStreamOutputType) {
-        guard let sample = CMSampleBufferAudioLevelSampler.sample(from: sampleBuffer),
-              let combinedSample = audioLevelMixer.update(sample, outputType: outputType)
-        else {
-            return
-        }
-
-        audioLevelHandler?(combinedSample)
+        audioLevelMixer.publish(sampleBuffer, outputType: outputType, to: audioLevelHandler)
     }
 
     private func sampleBufferContainsCompleteFrame(_ sampleBuffer: CMSampleBuffer) -> Bool {
-        guard
-            let attachments = firstSampleAttachments(from: sampleBuffer),
-            let statusRawValue = frameStatusRawValue(from: attachments),
-            let status = SCFrameStatus(rawValue: statusRawValue)
-        else {
-            return false
-        }
-
-        return status == .complete
-    }
-
-    private func firstSampleAttachments(from sampleBuffer: CMSampleBuffer) -> [AnyHashable: Any]? {
-        guard
-            let attachmentsArray = CMSampleBufferGetSampleAttachmentsArray(
-                sampleBuffer,
-                createIfNecessary: false
-            )
-        else {
-            return nil
-        }
-
-        if let typedAttachments = attachmentsArray as? [[AnyHashable: Any]],
-           let attachments = typedAttachments.first {
-            return attachments
-        }
-
-        let firstAttachment = (attachmentsArray as NSArray).firstObject
-        if let attachments = firstAttachment as? [SCStreamFrameInfo: Any] {
-            return Dictionary(uniqueKeysWithValues: attachments.map { (AnyHashable($0.key), $0.value) })
-        }
-
-        if let attachments = firstAttachment as? [AnyHashable: Any] {
-            return attachments
-        }
-
-        guard let attachments = firstAttachment as? NSDictionary else {
-            return nil
-        }
-
-        var result: [AnyHashable: Any] = [:]
-        for (key, value) in attachments {
-            if let key = key as? SCStreamFrameInfo {
-                result[AnyHashable(key)] = value
-            } else if let key = key as? String {
-                result[AnyHashable(key)] = value
-            } else if let key = key as? NSString {
-                result[AnyHashable(key as String)] = value
-            }
-        }
-
-        return result.isEmpty ? nil : result
-    }
-
-    private func frameStatusRawValue(from attachments: [AnyHashable: Any]) -> Int? {
-        let value =
-            attachments[AnyHashable(SCStreamFrameInfo.status)]
-            ?? attachments[AnyHashable(SCStreamFrameInfo.status.rawValue)]
-
-        if let value = value as? SCFrameStatus {
-            return value.rawValue
-        }
-
-        if let value = value as? Int {
-            return value
-        }
-
-        if let value = value as? NSNumber {
-            return value.intValue
-        }
-
-        return nil
+        ScreenCaptureKitSampleAttachments.containsCompleteFrame(sampleBuffer)
     }
 
     private static func makeAudioInput(

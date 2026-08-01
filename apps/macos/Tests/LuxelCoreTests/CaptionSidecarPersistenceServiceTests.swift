@@ -29,17 +29,12 @@ struct CaptionSidecarPersistenceServiceTests {
                 rootURL.appendingPathComponent("bundle.json")
             ])
 
-        let captionDocument = try JSONDecoder().decode(
+        try expectSavedSidecar(
             CaptionSidecarDocument.self,
-            from: try #require(fileSystem.writtenData.first?.data)
+            expectedDocument: try CaptionSidecarDocument(track: sampleTrack()),
+            fileSystem: fileSystem,
+            updatedBundle: updatedBundle
         )
-        #expect(captionDocument == (try CaptionSidecarDocument(track: sampleTrack())))
-
-        let manifest = try JSONDecoder().decode(
-            BundleManifest.self,
-            from: try #require(fileSystem.writtenData.last?.data)
-        )
-        #expect(manifest == updatedBundle.manifest)
     }
 
     @Test("save reuses existing captions sidecar file")
@@ -55,10 +50,11 @@ struct CaptionSidecarPersistenceServiceTests {
         let updatedBundle = try service.save(sampleTrack(), in: bundle)
 
         #expect(updatedBundle == bundle)
-        #expect(
-            fileSystem.writtenData.map(\.url) == [
-                rootURL.appendingPathComponent("reviewed-captions.json")
-            ])
+        expectWrittenSidecar(
+            named: "reviewed-captions.json",
+            rootURL: rootURL,
+            fileSystem: fileSystem
+        )
     }
 
     @Test("load returns nil without captions sidecar")
@@ -121,42 +117,4 @@ struct CaptionSidecarPersistenceServiceTests {
     }
 }
 
-private final class FakeCaptionSidecarFileSystem: FileSystem, @unchecked Sendable {
-    private let dataByURL: [URL: Data]
-    private(set) var readURLs: [URL] = []
-    private(set) var writtenData: [WrittenData] = []
-
-    init(readData: [URL: Data] = [:]) {
-        self.dataByURL = readData
-    }
-
-    func fileExists(at url: URL) -> Bool {
-        true
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func readData(at url: URL) throws -> Data {
-        readURLs.append(url)
-        guard let data = dataByURL[url] else {
-            throw FileSystemError.unsupportedRead(url)
-        }
-
-        return data
-    }
-
-    func writeData(_ data: Data, to url: URL) throws {
-        writtenData.append(WrittenData(data: data, url: url))
-    }
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
-
-private struct WrittenData: Equatable {
-    let data: Data
-    let url: URL
-}
+private typealias FakeCaptionSidecarFileSystem = SidecarTestFileSystem

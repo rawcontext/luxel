@@ -59,50 +59,29 @@ struct JSONRecordingHistoryStoreTests {
 
     @Test("loads legacy past recordings without options")
     func loadsLegacyPastRecordingsWithoutOptions() throws {
-        let directory = temporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: directory) }
-
-        let storeURL = directory.appending(path: "recording-history.json")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try Data(
-            """
-      {
-        "activeRecording": null,
-        "recordings": [
+        let fixture = try makeStore(
+            payload: legacyHistoryPayload(
+                recordingJSON: """
           {
             "date": "1970-01-01T00:00:01Z",
             "fileURL": "file:///tmp/legacy.mp4",
             "name": "Legacy"
           }
-        ]
-      }
-      """.utf8
-        ).write(to: storeURL)
-
-        let store = try JSONRecordingHistoryStore(fileURL: storeURL)
-
-        #expect(
-            store.recordings == [
-                PastRecording(
-                    fileURL: URL(fileURLWithPath: "/tmp/legacy.mp4"),
-                    name: "Legacy",
-                    date: Date(timeIntervalSince1970: 1)
-                )
-            ])
+        """
+            )
+        )
+        expectLegacyRecording(
+            fixture,
+            fileURL: URL(fileURLWithPath: "/tmp/legacy.mp4"),
+            name: "Legacy"
+        )
     }
 
     @Test("loads legacy past recordings without kind as recordings")
     func loadsLegacyPastRecordingsWithoutKind() throws {
-        let directory = temporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: directory) }
-
-        let storeURL = directory.appending(path: "recording-history.json")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try Data(
-            """
-      {
-        "activeRecording": null,
-        "recordings": [
+        let fixture = try makeStore(
+            payload: legacyHistoryPayload(
+                recordingJSON: """
           {
             "date": "1970-01-01T00:00:01Z",
             "fileURL": "file:///tmp/legacy-kind.mp4",
@@ -111,38 +90,23 @@ struct JSONRecordingHistoryStoreTests {
               "frameRate": 30
             }
           }
-        ]
-      }
-      """.utf8
-        ).write(to: storeURL)
-
-        let store = try JSONRecordingHistoryStore(fileURL: storeURL)
-
-        #expect(
-            store.recordings == [
-                PastRecording(
-                    fileURL: URL(fileURLWithPath: "/tmp/legacy-kind.mp4"),
-                    name: "Legacy Kind",
-                    date: Date(timeIntervalSince1970: 1),
-                    kind: .recording,
-                    options: RecordingOptions(frameRate: 30)
-                )
-            ])
+        """
+            )
+        )
+        expectLegacyRecording(
+            fixture,
+            fileURL: URL(fileURLWithPath: "/tmp/legacy-kind.mp4"),
+            name: "Legacy Kind",
+            options: RecordingOptions(frameRate: 30)
+        )
     }
 
     @Test("drops legacy non-recording past rows")
     func dropsLegacyNonRecordingPastRows() throws {
-        let directory = temporaryDirectory()
-        defer { try? FileManager.default.removeItem(at: directory) }
-
         let retiredKind = ["screen", "shot"].joined()
-        let storeURL = directory.appending(path: "recording-history.json")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try Data(
-            """
-      {
-        "activeRecording": null,
-        "recordings": [
+        let fixture = try makeStore(
+            payload: legacyHistoryPayload(
+                recordingJSON: """
           {
             "date": "1970-01-01T00:00:01Z",
             "fileURL": "file:///tmp/legacy.mp4",
@@ -158,27 +122,61 @@ struct JSONRecordingHistoryStoreTests {
             "kind": "\(retiredKind)",
             "name": "Legacy Still"
           }
-        ]
-      }
-      """.utf8
-        ).write(to: storeURL)
-
-        let store = try JSONRecordingHistoryStore(fileURL: storeURL)
-
-        #expect(
-            store.recordings == [
-                PastRecording(
-                    fileURL: URL(fileURLWithPath: "/tmp/legacy.mp4"),
-                    name: "Legacy",
-                    date: Date(timeIntervalSince1970: 1),
-                    kind: .recording,
-                    options: RecordingOptions(frameRate: 30)
-                )
-            ])
+        """
+            )
+        )
+        expectLegacyRecording(
+            fixture,
+            fileURL: URL(fileURLWithPath: "/tmp/legacy.mp4"),
+            name: "Legacy",
+            options: RecordingOptions(frameRate: 30)
+        )
     }
 
     private func temporaryDirectory() -> URL {
         FileManager.default.temporaryDirectory
             .appending(path: "luxel-tests-\(UUID().uuidString)", directoryHint: .isDirectory)
+    }
+
+    private func legacyHistoryPayload(recordingJSON: String) -> String {
+        """
+        {
+          "activeRecording": null,
+          "recordings": [
+            \(recordingJSON)
+          ]
+        }
+        """
+    }
+
+    private func expectLegacyRecording(
+        _ fixture: (directory: URL, store: JSONRecordingHistoryStore),
+        fileURL: URL,
+        name: String,
+        options: RecordingOptions = RecordingOptions(frameRate: 0)
+    ) {
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        #expect(
+            fixture.store.recordings == [
+                PastRecording(
+                    fileURL: fileURL,
+                    name: name,
+                    date: Date(timeIntervalSince1970: 1),
+                    kind: .recording,
+                    options: options
+                )
+            ]
+        )
+    }
+
+    private func makeStore(payload: String) throws -> (
+        directory: URL,
+        store: JSONRecordingHistoryStore
+    ) {
+        let directory = temporaryDirectory()
+        let storeURL = directory.appending(path: "recording-history.json")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try Data(payload.utf8).write(to: storeURL)
+        return (directory, try JSONRecordingHistoryStore(fileURL: storeURL))
     }
 }

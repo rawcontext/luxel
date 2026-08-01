@@ -43,36 +43,15 @@ struct ExportPresetSettingsSection: View {
 
                 LuxelGlassRowDivider()
 
-                HStack(spacing: 8) {
-                    Button {
-                        addPreset()
-                    } label: {
-                        SettingsCapsuleButtonLabel("Add", systemImage: "plus")
-                    }
-                    .buttonStyle(.plain)
-                    .help("Create a new export preset.")
-
-                    Button {
-                        duplicateSelectedPreset()
-                    } label: {
-                        SettingsCapsuleButtonLabel("Duplicate", systemImage: "doc.on.doc")
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(currentSelectedPresetID == nil)
-                    .opacity(currentSelectedPresetID == nil ? 0.45 : 1)
-                    .help("Copy the selected export preset.")
-
-                    Button(role: .destructive) {
-                        deleteSelectedPreset()
-                    } label: {
-                        SettingsCapsuleButtonLabel("Delete", systemImage: "trash")
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(currentSelectedPresetID == nil)
-                    .opacity(currentSelectedPresetID == nil ? 0.45 : 1)
-                    .help("Delete the selected export preset.")
-                }
-                .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
+                PresetActionButtons(
+                    isSelectionAvailable: currentSelectedPresetID != nil,
+                    addHelp: "Create a new export preset.",
+                    duplicateHelp: "Copy the selected export preset.",
+                    deleteHelp: "Delete the selected export preset.",
+                    add: addPreset,
+                    duplicate: duplicateSelectedPreset,
+                    delete: deleteSelectedPreset
+                )
 
                 if let selectedPresetBinding {
                     LuxelGlassRowDivider()
@@ -134,17 +113,7 @@ struct ExportPresetSettingsSection: View {
     }
 
     private var selectedPresetBinding: Binding<ExportPreset>? {
-        guard let selectedPresetID = currentSelectedPresetID,
-              let index = settings.exportPresets.firstIndex(where: { $0.id == selectedPresetID })
-        else {
-            return nil
-        }
-
-        return Binding {
-            settings.exportPresets[index]
-        } set: { preset in
-            settings.exportPresets[index] = preset
-        }
+        makeSelectedPresetBinding(id: currentSelectedPresetID, presets: $settings.exportPresets)
     }
 
     private func addPreset() {
@@ -181,16 +150,7 @@ private struct ExportPresetEditor: View {
 
     var body: some View {
         Group {
-            SettingsRow("Name") {
-                TextField("Name", text: name)
-                    .textFieldStyle(.plain)
-                    .labelsHidden()
-                    .font(.system(size: 12.5, weight: .medium))
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 180)
-                    .luxelGlassFieldBackground(cornerRadius: 13)
-            }
-            .help("Name this export preset.")
+            PresetNameEditor(name: name, help: "Name this export preset.")
 
             LuxelGlassRowDivider()
 

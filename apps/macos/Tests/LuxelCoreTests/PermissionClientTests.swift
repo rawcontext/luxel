@@ -58,29 +58,21 @@ struct PermissionClientTests {
 
     @Test("microphone guidance opens settings without native request prompt")
     func microphoneGuidanceOpensSettingsWithoutNativeRequestPrompt() {
-        let notDetermined = PermissionGuidanceService().guidance(
-            for: .microphone,
-            status: .notDetermined
-        )
-        let denied = PermissionGuidanceService().guidance(
-            for: .microphone,
-            status: .denied
-        )
-
-        #expect(notDetermined.actionTitle == "Open System Settings")
-        #expect(notDetermined.action == .openSettings)
-        #expect(denied.actionTitle == "Open System Settings")
-        #expect(denied.action == .openSettings)
+        expectSettingsGuidance(for: .microphone)
     }
 
     @Test("camera guidance opens settings without native request prompt")
     func cameraGuidanceOpensSettingsWithoutNativeRequestPrompt() {
+        expectSettingsGuidance(for: .camera)
+    }
+
+    private func expectSettingsGuidance(for permission: SystemPermission) {
         let notDetermined = PermissionGuidanceService().guidance(
-            for: .camera,
+            for: permission,
             status: .notDetermined
         )
         let denied = PermissionGuidanceService().guidance(
-            for: .camera,
+            for: permission,
             status: .denied
         )
 

@@ -22,36 +22,15 @@ struct CaptureSizePresetSettingsSection: View {
 
             LuxelGlassRowDivider()
 
-            HStack(spacing: 8) {
-                Button {
-                    addPreset()
-                } label: {
-                    SettingsCapsuleButtonLabel("Add", systemImage: "plus")
-                }
-                .buttonStyle(.plain)
-                .help("Create a new cropper size preset.")
-
-                Button {
-                    duplicateSelectedPreset()
-                } label: {
-                    SettingsCapsuleButtonLabel("Duplicate", systemImage: "doc.on.doc")
-                }
-                .buttonStyle(.plain)
-                .disabled(currentSelectedPresetID == nil)
-                .opacity(currentSelectedPresetID == nil ? 0.45 : 1)
-                .help("Copy the selected cropper size preset.")
-
-                Button(role: .destructive) {
-                    deleteSelectedPreset()
-                } label: {
-                    SettingsCapsuleButtonLabel("Delete", systemImage: "trash")
-                }
-                .buttonStyle(.plain)
-                .disabled(currentSelectedPresetID == nil)
-                .opacity(currentSelectedPresetID == nil ? 0.45 : 1)
-                .help("Delete the selected cropper size preset.")
-            }
-            .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
+            PresetActionButtons(
+                isSelectionAvailable: currentSelectedPresetID != nil,
+                addHelp: "Create a new cropper size preset.",
+                duplicateHelp: "Copy the selected cropper size preset.",
+                deleteHelp: "Delete the selected cropper size preset.",
+                add: addPreset,
+                duplicate: duplicateSelectedPreset,
+                delete: deleteSelectedPreset
+            )
 
             if let selectedPresetBinding {
                 LuxelGlassRowDivider()
@@ -76,11 +55,10 @@ struct CaptureSizePresetSettingsSection: View {
     }
 
     private var editPresetSelection: Binding<UUID?> {
-        Binding {
-            currentSelectedPresetID
-        } set: { presetID in
-            selectedPresetID = presetID
-        }
+        Binding(
+            get: { currentSelectedPresetID },
+            set: { selectedPresetID = $0 }
+        )
     }
 
     private var currentSelectedPresetID: UUID? {
@@ -93,17 +71,7 @@ struct CaptureSizePresetSettingsSection: View {
     }
 
     private var selectedPresetBinding: Binding<CaptureSizePreset>? {
-        guard let selectedPresetID = currentSelectedPresetID,
-              let index = settings.userSizePresets.firstIndex(where: { $0.id == selectedPresetID })
-        else {
-            return nil
-        }
-
-        return Binding {
-            settings.userSizePresets[index]
-        } set: { preset in
-            settings.userSizePresets[index] = preset
-        }
+        makeSelectedPresetBinding(id: currentSelectedPresetID, presets: $settings.userSizePresets)
     }
 
     private func addPreset() {
@@ -139,16 +107,7 @@ private struct CaptureSizePresetEditor: View {
     @Binding var preset: CaptureSizePreset
 
     var body: some View {
-        SettingsRow("Name") {
-            TextField("Name", text: name)
-                .textFieldStyle(.plain)
-                .labelsHidden()
-                .font(.system(size: 12.5, weight: .medium))
-                .multilineTextAlignment(.trailing)
-                .frame(width: 180)
-                .luxelGlassFieldBackground(cornerRadius: 13)
-        }
-        .help("Name this cropper size preset.")
+        PresetNameEditor(name: name, help: "Name this cropper size preset.")
 
         LuxelGlassRowDivider()
 

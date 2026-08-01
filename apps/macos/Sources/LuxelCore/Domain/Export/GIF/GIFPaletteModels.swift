@@ -1,5 +1,20 @@
 import Foundation
 
+enum GIFFrameBuffer {
+    static func validate(elementCount: Int, pixelSize: PixelSize) throws {
+        guard elementCount == pixelSize.width * pixelSize.height else {
+            throw GIFEngineModelError.invalidFrameBuffer
+        }
+    }
+
+    static func linearIndex(x column: Int, y row: Int, pixelSize: PixelSize) throws -> Int {
+        guard column >= 0, column < pixelSize.width, row >= 0, row < pixelSize.height else {
+            throw GIFEngineModelError.pixelOutOfBounds
+        }
+        return row * pixelSize.width + column
+    }
+}
+
 public struct GIFFrameSequencePlanner: Sendable {
     public init() {}
 
@@ -115,24 +130,17 @@ public struct GIFFrameBitmap: Codable, Equatable, Sendable {
     public let pixels: [GIFRGBAPixel]
 
     public init(pixelSize: PixelSize, pixels: [GIFRGBAPixel]) throws {
-        guard pixels.count == pixelSize.width * pixelSize.height else {
-            throw GIFEngineModelError.invalidFrameBuffer
-        }
-
+        try GIFFrameBuffer.validate(elementCount: pixels.count, pixelSize: pixelSize)
         self.pixelSize = pixelSize
         self.pixels = pixels
     }
 
-    public func pixel(x column: Int, y row: Int) throws -> GIFRGBAPixel {
-        try pixels[linearIndex(x: column, y: row)]
+    public func linearIndex(x column: Int, y row: Int) throws -> Int {
+        try GIFFrameBuffer.linearIndex(x: column, y: row, pixelSize: pixelSize)
     }
 
-    public func linearIndex(x column: Int, y row: Int) throws -> Int {
-        guard column >= 0, column < pixelSize.width, row >= 0, row < pixelSize.height else {
-            throw GIFEngineModelError.pixelOutOfBounds
-        }
-
-        return row * pixelSize.width + column
+    public func pixel(x column: Int, y row: Int) throws -> GIFRGBAPixel {
+        try pixels[linearIndex(x: column, y: row)]
     }
 }
 

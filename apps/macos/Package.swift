@@ -96,24 +96,36 @@ let package = Package(
         .binaryTarget(name: "CVPX", path: "Vendor/Artifacts/CVPX.xcframework"),
         .binaryTarget(name: "COpus", path: "Vendor/Artifacts/COpus.xcframework"),
         .binaryTarget(name: "CSVTAV1", path: "Vendor/Artifacts/CSVTAV1.xcframework"),
+        .target(
+            name: "LuxelTestSupport",
+            dependencies: ["LuxelCore"],
+            path: "Tests/LuxelTestSupport"
+        ),
         .testTarget(
             name: "LuxelCoreTests",
-            dependencies: ["LuxelCore"],
+            dependencies: ["LuxelCore", "LuxelTestSupport"],
             resources: [.process("Fixtures")]
         ),
-        .testTarget(name: "LuxelCodecAV1Tests", dependencies: ["LuxelCodecAV1"]),
-        .testTarget(name: "LuxelCodecWebMTests", dependencies: ["LuxelCodecWebM"]),
+        .testTarget(
+            name: "LuxelCodecAV1Tests",
+            dependencies: ["LuxelCodecAV1", "LuxelTestSupport"]
+        ),
+        .testTarget(
+            name: "LuxelCodecWebMTests",
+            dependencies: ["LuxelCodecWebM", "LuxelTestSupport"]
+        ),
         .testTarget(
             name: "LuxelCLITests",
             dependencies: [
                 "LuxelCLI",
                 "LuxelCore",
+                "LuxelTestSupport",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
         .testTarget(
             name: "LuxelAppTests",
-            dependencies: ["LuxelApp", "LuxelPresentation", "LuxelCore"]
+            dependencies: ["LuxelApp", "LuxelPresentation", "LuxelCore", "LuxelTestSupport"]
         )
     ]
 )

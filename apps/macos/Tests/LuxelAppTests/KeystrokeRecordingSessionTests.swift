@@ -9,9 +9,7 @@ struct KeystrokeRecordingSessionTests {
     @Test("event source exists only between start and stop and saves sidecar")
     func eventSourceExistsOnlyBetweenStartAndStopAndSavesSidecar() async throws {
         let source = FakeKeystrokeCaptureEventSource()
-        let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let directory = try temporaryKeystrokeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let mediaURL = directory.appendingPathComponent("recording.mp4")
         let session = KeystrokeRecordingSession(sourceFactory: { source })
@@ -61,9 +59,7 @@ struct KeystrokeRecordingSessionTests {
     @Test("audio-only stop ends capture and saves a sibling sidecar")
     func audioOnlyStopEndsCaptureAndSavesSidecar() async throws {
         let source = FakeKeystrokeCaptureEventSource()
-        let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let directory = try temporaryKeystrokeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let mediaURL = directory.appendingPathComponent("recording.m4a")
         let session = KeystrokeRecordingSession(sourceFactory: { source })
@@ -88,9 +84,7 @@ struct KeystrokeRecordingSessionTests {
     @Test("recording pause rejects typed events before they reach the sidecar")
     func recordingPauseRejectsTypedEvents() async throws {
         let source = FakeKeystrokeCaptureEventSource()
-        let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let directory = try temporaryKeystrokeDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let session = KeystrokeRecordingSession(sourceFactory: { source })
         session.start()
@@ -148,6 +142,13 @@ struct KeystrokeRecordingSessionTests {
 
         #expect(observedStatuses.contains(.eventDeliveryRecovered))
     }
+}
+
+private func temporaryKeystrokeDirectory() throws -> URL {
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    return directory
 }
 
 private final class FakeKeystrokeCaptureEventSource: KeystrokeCaptureEventSource, @unchecked Sendable {

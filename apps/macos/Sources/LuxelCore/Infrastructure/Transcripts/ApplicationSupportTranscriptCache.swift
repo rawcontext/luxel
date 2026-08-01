@@ -82,17 +82,7 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
                 ? request.speakerCountHint.cacheIdentifier : ""
         ].joined(separator: "|")
 
-        return stableFNV1aHash(rawKey)
-    }
-
-    private func stableFNV1aHash(_ string: String) -> String {
-        var hash: UInt64 = 14_695_981_039_346_656_037
-        for byte in string.utf8 {
-            hash ^= UInt64(byte)
-            hash &*= 1_099_511_628_211
-        }
-
-        return String(hash, radix: 16)
+        return StableFNV1aHash.string(for: rawKey)
     }
 }
 

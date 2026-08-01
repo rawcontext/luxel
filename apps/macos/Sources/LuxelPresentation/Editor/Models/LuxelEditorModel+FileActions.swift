@@ -101,11 +101,7 @@ extension LuxelEditorModel {
     }
 
     static var defaultRecordingsDirectory: URL {
-        let moviesDirectory =
-            FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory()).appending(path: "Movies")
-
-        return moviesDirectory.appending(path: "Luxel")
+        AppSettings.defaultRecordingsDirectory
     }
 
     func handleSingleExportProgress(_ snapshot: ExportProgressSnapshot) {
@@ -284,24 +280,7 @@ extension LuxelEditorModel {
         estimatingExportSizeFormats = []
         frameGrabTask?.cancel()
         frameGrabTask = nil
-        previewAudioMixTask?.cancel()
-        previewAudioMixTask = nil
-        speechRecognitionAuthorizationTask?.cancel()
-        speechRecognitionAuthorizationTask = nil
-        transcriptTask?.cancel()
-        transcriptTask = nil
-        previewCompositionTask?.cancel()
-        previewCompositionTask = nil
-        transcript = nil
-        transcriptEditPlan = .empty
-        selectedTranscriptWordIDs = []
-        transcriptWordSelectionAnchorID = nil
-        transcriptEditStatusMessage = nil
-        isEditedPreviewReady = true
-        isTranscriptExtractionActive = false
-        transcriptExtractionStartedAt = nil
-        transcriptExtractionProgress = nil
-        speechRecognitionAuthorizationState = nil
+        resetTranscriptWorkspace()
         player.pause()
         playbackRequested = false
         currentPlaybackTime = 0

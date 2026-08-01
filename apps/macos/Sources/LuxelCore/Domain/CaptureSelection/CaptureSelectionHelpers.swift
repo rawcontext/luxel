@@ -101,7 +101,7 @@ public enum CaptureSelectionBuilder {
 }
 
 extension CapturePoint {
-    fileprivate func clamped(to display: DisplayBounds) -> CapturePoint {
+    func clamped(to display: DisplayBounds) -> CapturePoint {
         CapturePoint(
             x: min(max(xCoordinate, 0), display.width),
             y: min(max(yCoordinate, 0), display.height)

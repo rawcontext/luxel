@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Cursor timeline recording service")
@@ -102,14 +103,14 @@ struct CursorTimelineRecordingServiceTests {
 
         #expect(updatedBundle.manifest.sidecar(for: .cursor) == expectedSidecar)
         #expect(
-            fileSystem.writtenData.map(\.url) == [
+            fileSystem.writes.map(\.url) == [
                 rootURL.appendingPathComponent("cursor.json"),
                 rootURL.appendingPathComponent("bundle.json")
             ])
 
         let document = try JSONDecoder().decode(
             CursorSidecarDocument.self,
-            from: try #require(fileSystem.writtenData.first?.data)
+            from: try #require(fileSystem.writes.first?.data)
         )
         #expect(document.timeline.samples.map(\.time) == [0.25])
     }
@@ -135,12 +136,7 @@ struct CursorTimelineRecordingServiceTests {
         id: String,
         pngData: Data = Data([0x89, 0x50, 0x4E, 0x47])
     ) throws -> CursorImageAsset {
-        try CursorImageAsset(
-            id: id,
-            pngData: pngData,
-            hotspot: CursorPoint(x: 1, y: 2),
-            scale: 2
-        )
+        try testCursorImage(id: id, pngData: pngData, hotspot: CursorPoint(x: 1, y: 2))
     }
 }
 
@@ -152,40 +148,8 @@ private struct StubCursorTimelineEventSource: CursorTimelineEventSource {
     }
 
     func events() -> AsyncStream<CursorTimelineSourceEvent> {
-        AsyncStream { continuation in
-            for event in sourceEvents {
-                continuation.yield(event)
-            }
-            continuation.finish()
-        }
+        testAsyncStream(sourceEvents)
     }
 }
 
-private final class CursorTimelineRecordingFileSystem: FileSystem, @unchecked Sendable {
-    private(set) var writtenData: [CursorTimelineRecordingWrittenData] = []
-
-    func fileExists(at url: URL) -> Bool {
-        true
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func readData(at url: URL) throws -> Data {
-        throw FileSystemError.unsupportedRead(url)
-    }
-
-    func writeData(_ data: Data, to url: URL) throws {
-        writtenData.append(CursorTimelineRecordingWrittenData(data: data, url: url))
-    }
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
-
-private struct CursorTimelineRecordingWrittenData: Equatable {
-    let data: Data
-    let url: URL
-}
+private typealias CursorTimelineRecordingFileSystem = TestWritingFileSystem

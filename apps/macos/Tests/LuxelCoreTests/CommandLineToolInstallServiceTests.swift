@@ -47,14 +47,7 @@ struct CommandLineToolInstallServiceTests {
             directory
             .appending(path: "bin", directoryHint: .isDirectory)
             .appending(path: "luxel")
-        try Data("#!/bin/sh\n".utf8).write(to: bundledToolURL)
-        let installer = BundledCommandLineToolInstaller(bundledToolURL: bundledToolURL)
-
-        #expect(try installer.install(destination: destination) == destination)
-        #expect(
-            try FileManager.default.destinationOfSymbolicLink(atPath: destination.path)
-                == bundledToolURL.path
-        )
+        try installFixture(bundledToolURL: bundledToolURL, destination: destination)
     }
 
     @Test("bundled installer creates manpage symlink under local share")
@@ -69,32 +62,10 @@ struct CommandLineToolInstallServiceTests {
             .appending(path: ".local", directoryHint: .isDirectory)
             .appending(path: "bin", directoryHint: .isDirectory)
             .appending(path: "luxel")
-        let manPageDestination =
-            directory
-            .appending(path: ".local", directoryHint: .isDirectory)
-            .appending(path: "share", directoryHint: .isDirectory)
-            .appending(path: "man", directoryHint: .isDirectory)
-            .appending(path: "man1", directoryHint: .isDirectory)
-            .appending(path: "luxel.1")
-        try FileManager.default.createDirectory(
-            at: bundledToolURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        try FileManager.default.createDirectory(
-            at: bundledManPageURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        try Data("#!/bin/sh\n".utf8).write(to: bundledToolURL)
-        try Data(".Dd July 1, 2026\n".utf8).write(to: bundledManPageURL)
-        let installer = BundledCommandLineToolInstaller(
+        try installManPageFixture(
             bundledToolURL: bundledToolURL,
-            bundledManPageURL: bundledManPageURL
-        )
-
-        #expect(try installer.install(destination: destination) == destination)
-        #expect(
-            try FileManager.default.destinationOfSymbolicLink(atPath: manPageDestination.path)
-                == bundledManPageURL.path
+            bundledManPageURL: bundledManPageURL,
+            destination: destination
         )
     }
 
@@ -110,25 +81,10 @@ struct CommandLineToolInstallServiceTests {
             .appending(path: "local", directoryHint: .isDirectory)
             .appending(path: "bin", directoryHint: .isDirectory)
             .appending(path: "luxel")
-        let manPageDestination =
-            directory
-            .appending(path: "usr", directoryHint: .isDirectory)
-            .appending(path: "local", directoryHint: .isDirectory)
-            .appending(path: "share", directoryHint: .isDirectory)
-            .appending(path: "man", directoryHint: .isDirectory)
-            .appending(path: "man1", directoryHint: .isDirectory)
-            .appending(path: "luxel.1")
-        try Data("#!/bin/sh\n".utf8).write(to: bundledToolURL)
-        try Data(".Dd July 1, 2026\n".utf8).write(to: bundledManPageURL)
-        let installer = BundledCommandLineToolInstaller(
+        try installManPageFixture(
             bundledToolURL: bundledToolURL,
-            bundledManPageURL: bundledManPageURL
-        )
-
-        #expect(try installer.install(destination: destination) == destination)
-        #expect(
-            try FileManager.default.destinationOfSymbolicLink(atPath: manPageDestination.path)
-                == bundledManPageURL.path
+            bundledManPageURL: bundledManPageURL,
+            destination: destination
         )
     }
 
@@ -139,18 +95,11 @@ struct CommandLineToolInstallServiceTests {
         let bundledToolURL = directory.appending(path: "luxel-cli")
         let staleToolURL = directory.appending(path: "old-luxel-cli")
         let destination = directory.appending(path: "luxel")
-        try Data("#!/bin/sh\n".utf8).write(to: bundledToolURL)
         try FileManager.default.createSymbolicLink(
             at: destination,
             withDestinationURL: staleToolURL
         )
-        let installer = BundledCommandLineToolInstaller(bundledToolURL: bundledToolURL)
-
-        #expect(try installer.install(destination: destination) == destination)
-        #expect(
-            try FileManager.default.destinationOfSymbolicLink(atPath: destination.path)
-                == bundledToolURL.path
-        )
+        try installFixture(bundledToolURL: bundledToolURL, destination: destination)
     }
 
     @Test("bundled installer refuses to replace directory")
@@ -182,6 +131,64 @@ struct CommandLineToolInstallServiceTests {
         #expect(!command.contains("/bin/sh -c"))
         #expect(!command.contains(".zprofile"))
         #expect(!command.contains("case "))
+    }
+
+    private func installFixture(
+        bundledToolURL: URL,
+        bundledManPageURL: URL? = nil,
+        destination: URL,
+        manPageDestination: URL? = nil
+    ) throws {
+        try FileManager.default.createDirectory(
+            at: bundledToolURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("#!/bin/sh\n".utf8).write(to: bundledToolURL)
+        if let bundledManPageURL {
+            try FileManager.default.createDirectory(
+                at: bundledManPageURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try Data(".Dd July 1, 2026\n".utf8).write(to: bundledManPageURL)
+        }
+        let installer = BundledCommandLineToolInstaller(
+            bundledToolURL: bundledToolURL,
+            bundledManPageURL: bundledManPageURL
+        )
+
+        #expect(try installer.install(destination: destination) == destination)
+        #expect(
+            try FileManager.default.destinationOfSymbolicLink(atPath: destination.path)
+                == bundledToolURL.path
+        )
+        if let bundledManPageURL, let manPageDestination {
+            #expect(
+                try FileManager.default.destinationOfSymbolicLink(atPath: manPageDestination.path)
+                    == bundledManPageURL.path
+            )
+        }
+    }
+
+    private func manPageDestination(for toolDestination: URL) -> URL {
+        toolDestination.deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appending(path: "share", directoryHint: .isDirectory)
+            .appending(path: "man", directoryHint: .isDirectory)
+            .appending(path: "man1", directoryHint: .isDirectory)
+            .appending(path: "luxel.1")
+    }
+
+    private func installManPageFixture(
+        bundledToolURL: URL,
+        bundledManPageURL: URL,
+        destination: URL
+    ) throws {
+        try installFixture(
+            bundledToolURL: bundledToolURL,
+            bundledManPageURL: bundledManPageURL,
+            destination: destination,
+            manPageDestination: manPageDestination(for: destination)
+        )
     }
 
     @Test("path setup command configures bash")

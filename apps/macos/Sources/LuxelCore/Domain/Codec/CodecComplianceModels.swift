@@ -49,38 +49,6 @@ public struct CodecDependency: Codable, Equatable, Identifiable, Sendable {
         self.isFallbackOnly = isFallbackOnly
     }
 
-    public static let plannedNativeCodecStack: [CodecDependency] = [
-        CodecDependency(
-            id: "libvpx",
-            name: "libvpx",
-            role: "VP9 video encode",
-            license: .bsd3Clause,
-            patentGrant: "Google Additional IP Rights Grant"
-        ),
-        CodecDependency(
-            id: "libopus",
-            name: "libopus",
-            role: "Opus audio encode",
-            license: .bsd3Clause,
-            patentGrant: "Xiph, Broadcom, and Microsoft/Skype patent grants"
-        ),
-        CodecDependency(
-            id: "svt-av1",
-            name: "SVT-AV1",
-            role: "AV1 video encode",
-            license: .bsd3ClauseClear,
-            patentGrant: "Alliance for Open Media Patent License 1.0"
-        ),
-        CodecDependency(
-            id: "libaom",
-            name: "libaom",
-            role: "Fallback AV1 video encode",
-            license: .bsd2Clause,
-            patentGrant: "AOM Patent License 1.0",
-            isFallbackOnly: true
-        )
-    ]
-
     public static let bundledNativeCodecStack: [CodecDependency] = [
         CodecDependency(
             id: "libvpx",
@@ -104,6 +72,18 @@ public struct CodecDependency: Codable, Equatable, Identifiable, Sendable {
             patentGrant: "Alliance for Open Media Patent License 1.0"
         )
     ]
+
+    public static let plannedNativeCodecStack = bundledNativeCodecStack + [
+        CodecDependency(
+            id: "libaom",
+            name: "libaom",
+            role: "Fallback AV1 video encode",
+            license: .bsd2Clause,
+            patentGrant: "AOM Patent License 1.0",
+            isFallbackOnly: true
+        )
+    ]
+
 }
 
 public enum CodecLicenseDecision: Equatable, Sendable {

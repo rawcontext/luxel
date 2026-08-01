@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Recording lifecycle service")
@@ -127,57 +128,8 @@ enum RecordingLifecycleRecorderError: Error, Equatable {
     case stopFailed
 }
 
-enum RecordingLifecycleReplayCommand: Equatable {
-    case arm(ReplayBufferConfiguration)
-    case pause(ReplayBufferPauseReason)
-    case resume
-    case disarm
-    case clip(TimeInterval)
-}
-
-final class RecordingLifecycleReplayEngineSpy: ReplayBufferEngine, @unchecked Sendable {
-    private let lock = NSLock()
-    private var recordedCommands: [RecordingLifecycleReplayCommand] = []
-
-    var state: AsyncStream<ReplayBufferState> {
-        AsyncStream { continuation in
-            continuation.finish()
-        }
-    }
-
-    func arm(configuration: ReplayBufferConfiguration) async throws {
-        append(.arm(configuration))
-    }
-
-    func pause(reason: ReplayBufferPauseReason) async throws {
-        append(.pause(reason))
-    }
-
-    func resume() async throws {
-        append(.resume)
-    }
-
-    func disarm() async throws {
-        append(.disarm)
-    }
-
-    func clip(lastSeconds: TimeInterval) async throws -> URL {
-        append(.clip(lastSeconds))
-        return URL(fileURLWithPath: "/tmp/replay.mp4")
-    }
-
-    func commands() -> [RecordingLifecycleReplayCommand] {
-        lock.withLock {
-            recordedCommands
-        }
-    }
-
-    private func append(_ command: RecordingLifecycleReplayCommand) {
-        lock.withLock {
-            recordedCommands.append(command)
-        }
-    }
-}
+typealias RecordingLifecycleReplayCommand = TestReplayBufferCommand
+typealias RecordingLifecycleReplayEngineSpy = TestReplayBufferEngine
 
 final class RecordingLifecycleCountdownSleeperSpy: RecordingCountdownSleeper, @unchecked Sendable {
     private let error: (any Error)?
@@ -377,24 +329,4 @@ actor RecordingLifecycleUserNotifierSpy: UserNotifier {
     }
 }
 
-final class RecordingLifecycleStubFileSystem: FileSystem, @unchecked Sendable {
-    private let existingFiles: Set<URL>
-
-    init(existingFiles: Set<URL>) {
-        self.existingFiles = existingFiles
-    }
-
-    func fileExists(at url: URL) -> Bool {
-        existingFiles.contains(url)
-    }
-
-    func createDirectory(at url: URL) throws {}
-
-    func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    func writeData(_ data: Data, to url: URL) throws {}
-
-    func removeFile(at url: URL) throws {}
-
-    func trashItem(at url: URL) throws {}
-}
+typealias RecordingLifecycleStubFileSystem = ExistingTestFileSystem

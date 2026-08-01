@@ -173,15 +173,7 @@ struct TranscriptSpeakerModelTests {
 
     @Test("speaker IDs must resolve against declared transcript speakers")
     func speakerIDsMustResolve() throws {
-        let spans = try makeSpans(speakerIDs: ["speaker-0"])
-        let turn = try TranscriptTurn(
-            id: "turn-0",
-            spanIDs: ["span-0"],
-            start: 0,
-            end: 1,
-            text: "Word0",
-            speakerID: "speaker-0"
-        )
+        let (spans, turn) = try singleSpeakerFixture()
 
         #expect(throws: TranscriptModelError.unknownSpeaker("speaker-0")) {
             _ = try TurnSegmentedTranscript(
@@ -278,15 +270,7 @@ struct TranscriptSpeakerModelTests {
 
     @Test("duplicate speaker labels are rejected")
     func duplicateSpeakerLabelsRejected() throws {
-        let spans = try makeSpans(speakerIDs: ["speaker-0"])
-        let turn = try TranscriptTurn(
-            id: "turn-0",
-            spanIDs: ["span-0"],
-            start: 0,
-            end: 1,
-            text: "Word0",
-            speakerID: "speaker-0"
-        )
+        let (spans, turn) = try singleSpeakerFixture()
 
         #expect(throws: TranscriptModelError.duplicateSpeakerLabel("speaker-0")) {
             _ = try TurnSegmentedTranscript(
@@ -299,6 +283,23 @@ struct TranscriptSpeakerModelTests {
                 ]
             )
         }
+    }
+
+    private func singleSpeakerFixture() throws -> (
+        spans: [TimedTranscriptSpan],
+        turn: TranscriptTurn
+    ) {
+        (
+            try makeSpans(speakerIDs: ["speaker-0"]),
+            try TranscriptTurn(
+                id: "turn-0",
+                spanIDs: ["span-0"],
+                start: 0,
+                end: 1,
+                text: "Word0",
+                speakerID: "speaker-0"
+            )
+        )
     }
 
     @Test("replacing a speaker label renames without touching structure")

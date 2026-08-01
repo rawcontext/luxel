@@ -10,17 +10,13 @@ struct LuxelEditorModelTranscriptTests {
     @Test("opening audio-only source extracts and exposes validated transcript")
     func openingAudioOnlySourceExtractsTranscript() async throws {
         let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
-        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
-        let transcript = try helper.sampleTranscript(source: .microphone)
-        let transcriptService = SpyAudioTranscriptService(transcript: transcript)
+        let harness = try makeAudioTranscriptHarness()
+        let sourceURL = harness.sourceURL
+        let transcriptService = harness.transcriptService
         let sourceContext = TranscriptSourceContext(
             recordingAudioMode: .microphone(deviceID: "mic-1")
         )
-        let model = helper.makeModel(
-            metadataReader: StubMetadataReader(source: source),
-            audioTranscriptService: transcriptService
-        )
+        let model = harness.model
 
         await model.open(
             fileURL: sourceURL,
@@ -56,18 +52,12 @@ struct LuxelEditorModelTranscriptTests {
     @Test("applying an exact speaker count re-runs transcript extraction")
     func applyingExactSpeakerCountRerunsTranscriptExtraction() async throws {
         let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
-        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
-        let transcriptService = SpyAudioTranscriptService(
-            transcript: try helper.sampleTranscript(source: .microphone)
-        )
-        let model = helper.makeModel(
-            metadataReader: StubMetadataReader(source: source),
-            audioTranscriptService: transcriptService
-        )
+        let harness = try makeAudioTranscriptHarness()
+        let transcriptService = harness.transcriptService
+        let model = harness.model
 
         await model.open(
-            fileURL: sourceURL,
+            fileURL: harness.sourceURL,
             outputDirectory: URL(fileURLWithPath: "/tmp")
         )
         _ = try await helper.waitForTranscript(model)
@@ -87,19 +77,10 @@ struct LuxelEditorModelTranscriptTests {
     @Test("opening audio-only source infers transcript source from metadata")
     func openingAudioOnlySourceInfersTranscriptSourceFromMetadata() async throws {
         let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
-        let source = try SourceMedia.audioOnly(
-            fileURL: sourceURL,
-            duration: 12,
-            audioTracks: [.microphone]
-        )
-        let transcriptService = SpyAudioTranscriptService(
-            transcript: try helper.sampleTranscript(source: .microphone)
-        )
-        let model = helper.makeModel(
-            metadataReader: StubMetadataReader(source: source),
-            audioTranscriptService: transcriptService
-        )
+        let harness = try makeAudioTranscriptHarness(audioTracks: [.microphone])
+        let sourceURL = harness.sourceURL
+        let transcriptService = harness.transcriptService
+        let model = harness.model
 
         await model.open(
             fileURL: sourceURL,
@@ -272,22 +253,18 @@ extension LuxelEditorModelTranscriptTests {
     @Test("speech prompt appears until the user enables recognition")
     func speechPromptAppearsUntilUserEnablesRecognition() async throws {
         let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
-        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
-        let transcriptService = SpyAudioTranscriptService(
-            transcript: try helper.sampleTranscript(source: .microphone))
         let authorizationService = StubSpeechAuthorizationService(
             state: .notDetermined,
             requestedState: .authorized
         )
-        let model = helper.makeModel(
-            metadataReader: StubMetadataReader(source: source),
-            audioTranscriptService: transcriptService,
-            speechRecognitionAuthorizationService: authorizationService
+        let harness = try makeAudioTranscriptHarness(
+            authorizationService: authorizationService
         )
+        let transcriptService = harness.transcriptService
+        let model = harness.model
 
         await model.open(
-            fileURL: sourceURL,
+            fileURL: harness.sourceURL,
             outputDirectory: URL(fileURLWithPath: "/tmp"),
             transcriptSourceContext: TranscriptSourceContext(
                 recordingAudioMode: .microphone(deviceID: "mic-1"))
@@ -307,23 +284,18 @@ extension LuxelEditorModelTranscriptTests {
 
     @Test("speech prompt remains visible after recognition is denied")
     func speechPromptRemainsVisibleAfterRecognitionIsDenied() async throws {
-        let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
-        let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 12)
-        let transcriptService = SpyAudioTranscriptService(
-            transcript: try helper.sampleTranscript(source: .microphone))
         let authorizationService = StubSpeechAuthorizationService(
             state: .notDetermined,
             requestedState: .denied
         )
-        let model = helper.makeModel(
-            metadataReader: StubMetadataReader(source: source),
-            audioTranscriptService: transcriptService,
-            speechRecognitionAuthorizationService: authorizationService
+        let harness = try makeAudioTranscriptHarness(
+            authorizationService: authorizationService
         )
+        let transcriptService = harness.transcriptService
+        let model = harness.model
 
         await model.open(
-            fileURL: sourceURL,
+            fileURL: harness.sourceURL,
             outputDirectory: URL(fileURLWithPath: "/tmp")
         )
 
@@ -391,4 +363,37 @@ extension LuxelEditorModelTranscriptTests {
 
         #expect(model.speechRecognitionAuthorizationState == state)
     }
+}
+
+private struct AudioTranscriptHarness {
+    let sourceURL: URL
+    let transcriptService: SpyAudioTranscriptService
+    let model: LuxelEditorModel
+}
+
+@MainActor
+private func makeAudioTranscriptHarness(
+    audioTracks: [AudioTrackKind] = [.system],
+    authorizationService: any SpeechRecognitionAuthorizationService =
+        StubSpeechAuthorizationService(state: .authorized)
+) throws -> AudioTranscriptHarness {
+    let helper = LuxelEditorModelTests()
+    let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
+    let source = try SourceMedia.audioOnly(
+        fileURL: sourceURL,
+        duration: 12,
+        audioTracks: audioTracks
+    )
+    let transcriptService = SpyAudioTranscriptService(
+        transcript: try helper.sampleTranscript(source: .microphone)
+    )
+    return AudioTranscriptHarness(
+        sourceURL: sourceURL,
+        transcriptService: transcriptService,
+        model: helper.makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            audioTranscriptService: transcriptService,
+            speechRecognitionAuthorizationService: authorizationService
+        )
+    )
 }

@@ -6,11 +6,13 @@ extension RecordingHistoryTests {
     @Test("setCurrentRecording stores generated timestamped name")
     func setCurrentRecordingStoresGeneratedName() throws {
         let fileURL = URL(fileURLWithPath: "/tmp/current.mp4")
-        let now = try #require(ISO8601DateFormatter().date(from: "2020-07-21T15:27:26Z"))
+        let timestamp = try fixedTimestampContext()
         let store = InMemoryRecordingHistoryStore()
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = try #require(TimeZone(secondsFromGMT: -4 * 60 * 60))
-        let service = makeService(store: store, now: now, calendar: calendar)
+        let service = makeService(
+            store: store,
+            now: timestamp.date,
+            calendar: timestamp.calendar
+        )
 
         service.setCurrentRecording(fileURL: fileURL, options: RecordingOptions(frameRate: 30))
 
@@ -19,7 +21,7 @@ extension RecordingHistoryTests {
                 == ActiveRecording(
                     fileURL: fileURL,
                     name: "Luxel 2020-07-21 at 11.27.26",
-                    date: now,
+                    date: timestamp.date,
                     options: RecordingOptions(frameRate: 30)
                 ))
     }
@@ -79,18 +81,14 @@ extension RecordingHistoryTests {
 
     @Test("cleanPastRecordings removes existing files and clears history")
     func cleanPastRecordingsRemovesExistingFiles() throws {
-        let existingURL = URL(fileURLWithPath: "/tmp/existing.mp4")
-        let missingURL = URL(fileURLWithPath: "/tmp/missing.mp4")
-        let fileSystem = RecordingHistoryFakeFileSystem(existingFiles: [existingURL])
-        let store = InMemoryRecordingHistoryStore(recordings: [
-            PastRecording(fileURL: existingURL, name: "Existing", date: Date(timeIntervalSince1970: 1)),
-            PastRecording(fileURL: missingURL, name: "Missing", date: Date(timeIntervalSince1970: 2))
-        ])
+        let fixture = existingAndMissingRecordings()
+        let fileSystem = RecordingHistoryFakeFileSystem(existingFiles: [fixture.existingURL])
+        let store = InMemoryRecordingHistoryStore(recordings: fixture.recordings)
         let service = makeService(store: store, fileSystem: fileSystem)
 
         try service.cleanPastRecordings()
 
-        #expect(fileSystem.removedFiles == [existingURL])
+        #expect(fileSystem.removedFiles == [fixture.existingURL])
         #expect(store.recordings.isEmpty)
     }
 
@@ -175,15 +173,13 @@ extension RecordingHistoryTests {
     @Test("addReplayClip stores timestamped recording history entry")
     func addReplayClipStoresTimestampedRecordingHistoryEntry() throws {
         let fileURL = URL(fileURLWithPath: "/tmp/replay.mp4")
-        let now = try #require(ISO8601DateFormatter().date(from: "2020-07-21T15:27:26Z"))
+        let timestamp = try fixedTimestampContext()
         let store = InMemoryRecordingHistoryStore()
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = try #require(TimeZone(secondsFromGMT: -4 * 60 * 60))
         let service = makeService(
             store: store,
             existingFiles: [fileURL],
-            now: now,
-            calendar: calendar
+            now: timestamp.date,
+            calendar: timestamp.calendar
         )
 
         let recording = service.addReplayClip(fileURL: fileURL)
@@ -191,7 +187,7 @@ extension RecordingHistoryTests {
         let expected = PastRecording(
             fileURL: fileURL,
             name: "Luxel Replay 2020-07-21 at 11.27.26",
-            date: now,
+            date: timestamp.date,
             kind: .recording
         )
         #expect(recording == expected)

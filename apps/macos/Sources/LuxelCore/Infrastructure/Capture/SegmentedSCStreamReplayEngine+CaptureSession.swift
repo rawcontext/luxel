@@ -341,15 +341,7 @@ extension ReplayBufferCaptureSession {
     }
 
     private func sampleBufferContainsCompleteFrame(_ sampleBuffer: CMSampleBuffer) -> Bool {
-        guard
-            let attachments = ReplayBufferSampleAttachments.first(from: sampleBuffer),
-            let statusRawValue = ReplayBufferSampleAttachments.statusRawValue(from: attachments),
-            let status = SCFrameStatus(rawValue: statusRawValue)
-        else {
-            return false
-        }
-
-        return status == .complete
+        ScreenCaptureKitSampleAttachments.containsCompleteFrame(sampleBuffer)
     }
 
 }

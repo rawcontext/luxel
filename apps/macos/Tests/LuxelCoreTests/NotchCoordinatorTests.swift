@@ -8,7 +8,7 @@ struct NotchCoordinatorTests {
     func presentAcquiresNotchSurfaceAndSendsResolvedActivityUpdate() async throws {
         let presenter = SpyNotchPresenter()
         let coordinator = NotchCoordinator(presenter: presenter)
-        let display = try builtInNotchedDisplay()
+        let display = try testBuiltInNotchedDisplay()
         let coverage = try NotchReplayBufferCoverage(coveredDuration: 30, requestedDuration: 60)
         let recording = NotchActivity.recording(elapsed: 42, audioLevel: .silent, muted: false)
 
@@ -43,7 +43,7 @@ struct NotchCoordinatorTests {
 
         let result = await coordinator.present(
             activities: [.idleHover],
-            displays: [try builtInNotchedDisplay()],
+            displays: [try testBuiltInNotchedDisplay()],
             reduceMotion: true
         )
 
@@ -58,7 +58,7 @@ struct NotchCoordinatorTests {
 
         let result = await coordinator.present(
             activities: [recording],
-            displays: [try builtInNotchedDisplay()],
+            displays: [try testBuiltInNotchedDisplay()],
             presentationState: .expanded,
             recordingActionToReplace: .recordArea
         )
@@ -94,7 +94,7 @@ struct NotchCoordinatorTests {
 
         let result = await coordinator.present(
             activities: [.idleHover],
-            displays: [try builtInNotchedDisplay()],
+            displays: [try testBuiltInNotchedDisplay()],
             preferences: NotchSurfacePreferences(isEnabled: false)
         )
 
@@ -116,7 +116,7 @@ struct NotchCoordinatorTests {
         )
         var results = observation.results.makeAsyncIterator()
 
-        let notchedDisplay = try builtInNotchedDisplay()
+        let notchedDisplay = try testBuiltInNotchedDisplay()
         displayUpdates.continuation.yield([notchedDisplay])
         let notchedResult = try #require(await results.next())
         let geometry = try #require(NotchGeometry.resolve(from: notchedDisplay))
@@ -154,7 +154,7 @@ struct NotchCoordinatorTests {
         )
         var results = observation.results.makeAsyncIterator()
 
-        let notchedDisplay = try builtInNotchedDisplay()
+        let notchedDisplay = try testBuiltInNotchedDisplay()
         displayUpdates.continuation.yield([notchedDisplay])
         let result = try #require(await results.next())
         let geometry = try #require(NotchGeometry.resolve(from: notchedDisplay))
@@ -175,27 +175,6 @@ struct NotchCoordinatorTests {
         #expect(await presenter.commands() == [.setExpanded(true)])
     }
 
-    private func builtInNotchedDisplay(
-        displayID: DisplayID = DisplayID(1)
-    ) throws -> NotchDisplayDescriptor {
-        try NotchDisplayDescriptor(
-            displayID: displayID,
-            frame: rect(x: 0, y: 0, width: 1512, height: 982),
-            safeAreaInsets: NotchSafeAreaInsets(top: 34),
-            auxiliaryTopLeftArea: rect(x: 0, y: 948, width: 640, height: 34),
-            auxiliaryTopRightArea: rect(x: 872, y: 948, width: 640, height: 34),
-            isBuiltIn: true
-        )
-    }
-
-    private func rect(
-        x originX: Double,
-        y originY: Double,
-        width: Double,
-        height: Double
-    ) throws -> NotchScreenRect {
-        try NotchScreenRect(x: originX, y: originY, width: width, height: height)
-    }
 }
 
 @MainActor

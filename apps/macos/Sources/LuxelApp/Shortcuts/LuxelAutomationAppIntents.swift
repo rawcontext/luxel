@@ -108,9 +108,9 @@ struct LuxelToggleRecordingIntent: AppIntent {
         presetName: String? = nil,
         countdownSeconds: Int? = nil
     ) {
-        self.target = target
-        self.presetName = presetName
         self.countdownSeconds = countdownSeconds
+        self.presetName = presetName
+        self.target = target
     }
 
     @MainActor

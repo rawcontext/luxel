@@ -10,7 +10,7 @@ final class ScreenCaptureKitAudioOnlyWriterSegment: @unchecked Sendable {
     private let systemAudioInput: AVAssetWriterInput?
     private let microphoneAudioInput: AVAssetWriterInput?
     private let audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
-    private var audioLevelMixer: ScreenCaptureKitAudioOnlyLevelMixer
+    private var audioLevelMixer: RecordingAudioLevelMixer
     private var didStartWriting = false
     private var pendingError: (any Error)?
 
@@ -40,7 +40,7 @@ final class ScreenCaptureKitAudioOnlyWriterSegment: @unchecked Sendable {
         self.systemAudioInput = systemAudioInput
         self.microphoneAudioInput = microphoneAudioInput
         self.audioLevelHandler = audioLevelHandler
-        audioLevelMixer = ScreenCaptureKitAudioOnlyLevelMixer(audio: request.audio)
+        audioLevelMixer = RecordingAudioLevelMixer(audio: request.audio)
     }
 
     func append(_ sampleBuffer: CMSampleBuffer, outputType: SCStreamOutputType) {
@@ -100,18 +100,19 @@ final class ScreenCaptureKitAudioOnlyWriterSegment: @unchecked Sendable {
     private func finish(
         continuation: CheckedContinuation<Void, any Error>
     ) {
-        if let pendingError {
+        switch (pendingError, didStartWriting) {
+        case let (pendingError?, _):
             writer.cancelWriting()
             try? fileManager.removeItem(at: outputFileURL)
             continuation.resume(throwing: pendingError)
             return
-        }
-
-        guard didStartWriting else {
+        case (nil, false):
             writer.cancelWriting()
             try? fileManager.removeItem(at: outputFileURL)
             continuation.resume(throwing: ScreenCaptureKitAudioOnlyRecorderError.noAudioSamples)
             return
+        case (nil, true):
+            break
         }
 
         systemAudioInput?.markAsFinished()
@@ -130,20 +131,14 @@ final class ScreenCaptureKitAudioOnlyWriterSegment: @unchecked Sendable {
     }
 
     private func startWritingIfNeeded(for sampleBuffer: CMSampleBuffer) {
-        guard !didStartWriting else {
-            return
-        }
-
-        let startTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-        guard startTime.isValid, writer.startWriting() else {
-            pendingError =
-                writer.error
-                ?? ScreenCaptureKitAudioOnlyRecorderError.startFailed("Cannot start asset writer")
-            return
-        }
-
-        writer.startSession(atSourceTime: startTime)
-        didStartWriting = true
+        pendingError = ScreenCaptureKitAssetWriterSession.startIfNeeded(
+            writer: writer,
+            sampleBuffer: sampleBuffer,
+            didStartWriting: &didStartWriting,
+            fallbackError: ScreenCaptureKitAudioOnlyRecorderError.startFailed(
+                "Cannot start asset writer"
+            )
+        )
     }
 
     private func input(for outputType: SCStreamOutputType) -> AVAssetWriterInput? {
@@ -160,13 +155,7 @@ final class ScreenCaptureKitAudioOnlyWriterSegment: @unchecked Sendable {
     }
 
     private func updateAudioLevel(_ sampleBuffer: CMSampleBuffer, outputType: SCStreamOutputType) {
-        guard let sample = CMSampleBufferAudioLevelSampler.sample(from: sampleBuffer),
-              let combinedSample = audioLevelMixer.update(sample, outputType: outputType)
-        else {
-            return
-        }
-
-        audioLevelHandler?(combinedSample)
+        audioLevelMixer.publish(sampleBuffer, outputType: outputType, to: audioLevelHandler)
     }
 
     private static func makeAudioInput(

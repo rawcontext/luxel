@@ -100,19 +100,13 @@ public final class QuickExportService {
         bookmark: BookmarkedDirectory?,
         operation: @Sendable (URL) async throws -> Result
     ) async throws -> Result {
-        guard let bookmark, let directoryAccessService else {
-            return try await operation(outputDirectory)
-        }
-
-        let result = try await directoryAccessService.withAccess(to: bookmark) { directory in
-            try await operation(directory.url)
-        }
-
-        guard let value = result.value else {
-            throw QuickExportError.outputDirectoryAccessRevoked(result.directory.url)
-        }
-
-        return value
+        try await withBookmarkedDirectoryAccess(
+            outputDirectory: outputDirectory,
+            bookmark: bookmark,
+            service: directoryAccessService,
+            revokedError: QuickExportError.outputDirectoryAccessRevoked,
+            operation: operation
+        )
     }
 
     private func performPostAction(

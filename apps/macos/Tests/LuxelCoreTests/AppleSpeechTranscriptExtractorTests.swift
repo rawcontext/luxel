@@ -22,20 +22,7 @@ struct AppleSpeechTranscriptExtractorTests {
 
     @Test("asset readiness waits through a transient unsupported status")
     func assetReadinessWaitsThroughTransientUnsupportedStatus() async throws {
-        let probe = AssetReadinessProbe(statuses: [.unsupported, .installed])
-        let waiter = AppleSpeechAssetReadinessWaiter(
-            retryInterval: .zero,
-            maximumTransientAttempts: 2,
-            maximumDownloadPolls: 2
-        )
-
-        try await waiter.waitUntilReady(
-            status: { await probe.nextStatus() },
-            install: { await probe.recordInstall() },
-            sleep: { _ in await probe.recordSleep() }
-        )
-
-        let counts = await probe.counts()
+        let counts = try await waitForAssets(statuses: [.unsupported, .installed])
         #expect(counts.status == 2)
         #expect(counts.install == 0)
         #expect(counts.sleep == 1)
@@ -43,20 +30,7 @@ struct AppleSpeechTranscriptExtractorTests {
 
     @Test("asset readiness starts installation and waits for completion")
     func assetReadinessStartsInstallationAndWaitsForCompletion() async throws {
-        let probe = AssetReadinessProbe(statuses: [.supported, .downloading, .installed])
-        let waiter = AppleSpeechAssetReadinessWaiter(
-            retryInterval: .zero,
-            maximumTransientAttempts: 2,
-            maximumDownloadPolls: 2
-        )
-
-        try await waiter.waitUntilReady(
-            status: { await probe.nextStatus() },
-            install: { await probe.recordInstall() },
-            sleep: { _ in await probe.recordSleep() }
-        )
-
-        let counts = await probe.counts()
+        let counts = try await waitForAssets(statuses: [.supported, .downloading, .installed])
         #expect(counts.status == 3)
         #expect(counts.install == 1)
         #expect(counts.sleep == 2)
@@ -131,6 +105,23 @@ struct AppleSpeechTranscriptExtractorTests {
             AppleSpeechTranscriptError.assetsUnavailable.localizedDescription
                 == "Speech transcription could not finish preparing. Wait a moment, then retry."
         )
+    }
+
+    private func waitForAssets(
+        statuses: [AppleSpeechAssetStatus]
+    ) async throws -> AssetReadinessProbe.Counts {
+        let probe = AssetReadinessProbe(statuses: statuses)
+        let waiter = AppleSpeechAssetReadinessWaiter(
+            retryInterval: .zero,
+            maximumTransientAttempts: 2,
+            maximumDownloadPolls: 2
+        )
+        try await waiter.waitUntilReady(
+            status: { await probe.nextStatus() },
+            install: { await probe.recordInstall() },
+            sleep: { _ in await probe.recordSleep() }
+        )
+        return await probe.counts()
     }
 }
 

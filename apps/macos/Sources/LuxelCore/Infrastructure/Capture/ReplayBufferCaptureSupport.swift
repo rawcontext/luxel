@@ -2,7 +2,16 @@ import CoreMedia
 import Foundation
 import ScreenCaptureKit
 
-enum ReplayBufferSampleAttachments {
+enum ScreenCaptureKitSampleAttachments {
+    static func containsCompleteFrame(_ sampleBuffer: CMSampleBuffer) -> Bool {
+        guard let attachments = first(from: sampleBuffer),
+              let rawValue = statusRawValue(from: attachments)
+        else {
+            return false
+        }
+        return SCFrameStatus(rawValue: rawValue) == .complete
+    }
+
     static func first(from sampleBuffer: CMSampleBuffer) -> [AnyHashable: Any]? {
         guard
             let attachmentsArray = CMSampleBufferGetSampleAttachmentsArray(

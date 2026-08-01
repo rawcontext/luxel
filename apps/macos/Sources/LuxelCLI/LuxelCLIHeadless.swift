@@ -133,14 +133,14 @@ public struct LuxelConvertCommand: ParsableCommand, Sendable {
         return try EditorExportDraft(
             source: source.replacingFileURL(input.url),
             format: resolvedFormat.domainValue,
-            trimRange: timeRange(sourceDuration: source.duration),
+            quality: resolvedQuality,
+            speed: PlaybackSpeed(speed),
             pixelSize: pixelSize(),
             frameRate: frameRate(),
-            shouldMute: mute || muteAlias,
+            trimRange: timeRange(sourceDuration: source.duration),
             shouldCrop: cropToFill || crop != nil,
             cropRect: crop?.domainValue,
-            quality: resolvedQuality,
-            speed: PlaybackSpeed(speed)
+            shouldMute: mute || muteAlias
         )
     }
 

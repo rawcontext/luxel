@@ -44,25 +44,12 @@ public struct AVFoundationMediaExporter: MediaExporter, Sendable {
             sourceVideoTrack: sourceVideoTrack
         )
         let exportSession = try makeExportSession(for: prepared.composition, plan: plan)
-        let keystrokeTimeline = try? KeystrokeSidecarFileLoader().load(
-            nextTo: request.inputFileURL
-        )
         exportSession.videoComposition = try await videoCompositionFactory.makeVideoComposition(
             sourceVideoTrack: sourceVideoTrack,
             compositionVideoTrack: prepared.videoTrack,
             timeRange: prepared.timeRange,
             outputPixelSize: plan.outputPixelSize,
-            frameRate: request.frameRate,
-            shouldCrop: request.shouldCrop,
-            sourceCropRect: request.cropRect,
-            zoomBlocks: ZoomExportTimeMapper(
-                trimRange: request.timeRange,
-                speed: request.speed,
-                editPlan: request.editPlan
-            ).map(request.zoomBlocks),
-            keystrokeTimeline: keystrokeTimeline,
-            keystrokeOptions: request.keystrokeOptions,
-            keystrokeTimelineMapper: request.timelineMapper
+            request: request
         )
         exportSession.timeRange = prepared.timeRange
         exportSession.audioMix = try await makeAudioMix(

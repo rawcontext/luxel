@@ -5,10 +5,7 @@ public struct GIFIndexedFrame: Codable, Equatable, Sendable {
     public let colorIndexes: [UInt8]
 
     public init(pixelSize: PixelSize, colorIndexes: [UInt8]) throws {
-        guard colorIndexes.count == pixelSize.width * pixelSize.height else {
-            throw GIFEngineModelError.invalidFrameBuffer
-        }
-
+        try GIFFrameBuffer.validate(elementCount: colorIndexes.count, pixelSize: pixelSize)
         self.pixelSize = pixelSize
         self.colorIndexes = colorIndexes
     }
@@ -18,11 +15,7 @@ public struct GIFIndexedFrame: Codable, Equatable, Sendable {
     }
 
     public func linearIndex(x column: Int, y row: Int) throws -> Int {
-        guard column >= 0, column < pixelSize.width, row >= 0, row < pixelSize.height else {
-            throw GIFEngineModelError.pixelOutOfBounds
-        }
-
-        return row * pixelSize.width + column
+        try GIFFrameBuffer.linearIndex(x: column, y: row, pixelSize: pixelSize)
     }
 }
 

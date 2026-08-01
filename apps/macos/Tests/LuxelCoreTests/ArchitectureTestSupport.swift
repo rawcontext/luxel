@@ -1,5 +1,17 @@
 import Foundation
+import LuxelTestSupport
 import Testing
+
+func sharedPackageRootURL(from filePath: String = #filePath) throws -> URL {
+    try testPackageRootURL(from: filePath)
+}
+
+func sharedFixtureURL(
+    _ fileName: String,
+    from filePath: String = #filePath
+) throws -> URL {
+    try testFixtureURL(fileName, from: filePath)
+}
 
 extension ArchitectureTests {
     func swiftFiles(under directory: URL) throws -> [URL] {
@@ -36,14 +48,22 @@ extension ArchitectureTests {
             .joined(separator: "\n")
     }
 
-    func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
+    func expectSources(
+        under directory: URL,
+        omit forbiddenSnippets: [String]
+    ) throws {
+        for fileURL in try swiftFiles(under: directory) {
+            let contents = try String(contentsOf: fileURL, encoding: .utf8)
+            for forbiddenSnippet in forbiddenSnippets {
+                #expect(
+                    !contents.contains(forbiddenSnippet),
+                    "\(fileURL.path) contains \(forbiddenSnippet)"
+                )
+            }
         }
+    }
 
-        return url.deletingLastPathComponent()
+    func packageRootURL() throws -> URL {
+        try sharedPackageRootURL()
     }
 }

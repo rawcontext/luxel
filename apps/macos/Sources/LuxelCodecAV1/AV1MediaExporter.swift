@@ -31,7 +31,6 @@ public struct AV1ExportSizeEstimator: ExportSizeEstimator, Sendable {
             throw AV1CodecError.unsupportedFormat(request.format)
         }
 
-        let outputPixelSize = try request.outputPixelSize
         let bitsPerPixel =
             switch request.resolvedQuality {
             case .compact:
@@ -41,16 +40,11 @@ public struct AV1ExportSizeEstimator: ExportSizeEstimator, Sendable {
             case .high:
                 0.065
             }
-        let pixelRate = Double(
-            outputPixelSize.width * outputPixelSize.height * request.frameRate.framesPerSecond)
-        let videoBitsPerSecond = pixelRate * bitsPerPixel
-        let audioBitsPerSecond = request.outputShouldMute ? 0 : Double(AV1AACBitrate.balanced)
-        let containerOverhead = 1.02
-        let bytes = Int64(
-            (((videoBitsPerSecond + audioBitsPerSecond) * request.outputDuration) / 8 * containerOverhead)
-                .rounded(.up))
-
-        return try ExportEstimate(bytes: bytes, confidence: .modeled)
+        return try ModeledExportSizeEstimator.estimate(
+            request,
+            bitsPerPixel: bitsPerPixel,
+            audioBitsPerSecond: AV1AACBitrate.balanced
+        )
     }
 }
 

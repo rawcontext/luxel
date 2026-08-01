@@ -6,29 +6,16 @@ import Testing
 struct CameraCutoutFrameSchedulerTests {
     @Test("keeps one active frame and replaces the one pending frame")
     func keepsOneActiveAndOneLatestPendingFrame() async throws {
-        let firstStarted = LockedFlag()
-        let releaseFirst = DispatchSemaphore(value: 0)
-        let outputs = LockedValues<Int>()
-        let scheduler = CameraCutoutFrameScheduler<Int, Int>(
-            process: { frame, _ in
-                if frame == 1 {
-                    firstStarted.set()
-                    releaseFirst.wait()
-                }
-                return frame
-            },
-            onOutput: { outputs.append($0) },
-            onFailure: { _ in }
-        )
+        let harness = makeSchedulerHarness()
 
-        scheduler.start()
-        scheduler.submit(1)
-        try await waitUntil { firstStarted.value }
-        scheduler.submit(2)
-        scheduler.submit(3)
+        harness.scheduler.start()
+        harness.scheduler.submit(1)
+        try await waitUntil { harness.firstStarted.value }
+        harness.scheduler.submit(2)
+        harness.scheduler.submit(3)
 
         #expect(
-            scheduler.snapshot
+            harness.scheduler.snapshot
                 == CameraCutoutSchedulerSnapshot(
                     inFlightCount: 1,
                     pendingCount: 1,
@@ -36,39 +23,26 @@ struct CameraCutoutFrameSchedulerTests {
                 )
         )
 
-        releaseFirst.signal()
-        try await waitUntil { outputs.values == [1, 3] }
-        #expect(scheduler.snapshot.inFlightCount == 0)
-        #expect(scheduler.snapshot.pendingCount == 0)
+        harness.releaseFirst.signal()
+        try await waitUntil { harness.outputs.values == [1, 3] }
+        #expect(harness.scheduler.snapshot.inFlightCount == 0)
+        #expect(harness.scheduler.snapshot.pendingCount == 0)
     }
 
     @Test("ignores a late result after teardown and restart")
     func ignoresLateResultAfterTeardownAndRestart() async throws {
-        let firstStarted = LockedFlag()
-        let releaseFirst = DispatchSemaphore(value: 0)
-        let outputs = LockedValues<Int>()
-        let scheduler = CameraCutoutFrameScheduler<Int, Int>(
-            process: { frame, _ in
-                if frame == 1 {
-                    firstStarted.set()
-                    releaseFirst.wait()
-                }
-                return frame
-            },
-            onOutput: { outputs.append($0) },
-            onFailure: { _ in }
-        )
+        let harness = makeSchedulerHarness()
 
-        scheduler.start()
-        scheduler.submit(1)
-        try await waitUntil { firstStarted.value }
-        scheduler.stop()
-        scheduler.start()
-        scheduler.submit(2)
-        releaseFirst.signal()
+        harness.scheduler.start()
+        harness.scheduler.submit(1)
+        try await waitUntil { harness.firstStarted.value }
+        harness.scheduler.stop()
+        harness.scheduler.start()
+        harness.scheduler.submit(2)
+        harness.releaseFirst.signal()
 
-        try await waitUntil { outputs.values == [2] }
-        #expect(outputs.values == [2])
+        try await waitUntil { harness.outputs.values == [2] }
+        #expect(harness.outputs.values == [2])
     }
 
     private func waitUntil(
@@ -85,6 +59,36 @@ struct CameraCutoutFrameSchedulerTests {
             try await Task.sleep(for: .milliseconds(10))
         }
     }
+
+    private func makeSchedulerHarness() -> SchedulerHarness {
+        let firstStarted = LockedFlag()
+        let releaseFirst = DispatchSemaphore(value: 0)
+        let outputs = LockedValues<Int>()
+        let scheduler = CameraCutoutFrameScheduler<Int, Int>(
+            process: { frame, _ in
+                if frame == 1 {
+                    firstStarted.set()
+                    releaseFirst.wait()
+                }
+                return frame
+            },
+            onOutput: { outputs.append($0) },
+            onFailure: { _ in }
+        )
+        return SchedulerHarness(
+            scheduler: scheduler,
+            firstStarted: firstStarted,
+            releaseFirst: releaseFirst,
+            outputs: outputs
+        )
+    }
+}
+
+private struct SchedulerHarness {
+    let scheduler: CameraCutoutFrameScheduler<Int, Int>
+    let firstStarted: LockedFlag
+    let releaseFirst: DispatchSemaphore
+    let outputs: LockedValues<Int>
 }
 
 private final class LockedValues<Value: Sendable>: @unchecked Sendable {

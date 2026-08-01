@@ -192,23 +192,8 @@ extension LuxelEditorModel {
         }
 
         let sourceURL = source.fileURL
-        speechRecognitionAuthorizationTask?.cancel()
-        speechRecognitionAuthorizationTask = Task { [weak self, speechRecognitionAuthorizationService] in
-            let authorizationState = await speechRecognitionAuthorizationService.requestAuthorization()
-            await MainActor.run {
-                guard !Task.isCancelled,
-                      self?.source?.fileURL == sourceURL
-                else {
-                    return
-                }
-
-                self?.speechRecognitionAuthorizationTask = nil
-                self?.speechRecognitionAuthorizationState = authorizationState
-                if authorizationState == .authorized {
-                    self?.scheduleTranscriptExtraction(
-                        sourceContext: self?.transcriptSourceContext ?? .unknown)
-                }
-            }
+        scheduleSpeechAuthorizationUpdate(sourceURL: sourceURL) {
+            await speechRecognitionAuthorizationService.requestAuthorization()
         }
     }
 
@@ -221,10 +206,19 @@ extension LuxelEditorModel {
         guard let speechRecognitionAuthorizationService else { return }
 
         let sourceURL = source.fileURL
+        scheduleSpeechAuthorizationUpdate(sourceURL: sourceURL, sourceContext: sourceContext) {
+            await speechRecognitionAuthorizationService.currentAuthorizationState()
+        }
+    }
+
+    private func scheduleSpeechAuthorizationUpdate(
+        sourceURL: URL,
+        sourceContext: TranscriptSourceContext? = nil,
+        load: @escaping @Sendable () async -> SpeechRecognitionAuthorizationState
+    ) {
         speechRecognitionAuthorizationTask?.cancel()
-        speechRecognitionAuthorizationTask = Task { [weak self, speechRecognitionAuthorizationService] in
-            let authorizationState =
-                await speechRecognitionAuthorizationService.currentAuthorizationState()
+        speechRecognitionAuthorizationTask = Task { [weak self] in
+            let authorizationState = await load()
             await MainActor.run {
                 guard !Task.isCancelled,
                       self?.source?.fileURL == sourceURL
@@ -235,7 +229,9 @@ extension LuxelEditorModel {
                 self?.speechRecognitionAuthorizationTask = nil
                 self?.speechRecognitionAuthorizationState = authorizationState
                 if authorizationState == .authorized {
-                    self?.scheduleTranscriptExtraction(sourceContext: sourceContext)
+                    self?.scheduleTranscriptExtraction(
+                        sourceContext: sourceContext ?? self?.transcriptSourceContext ?? .unknown
+                    )
                 }
             }
         }

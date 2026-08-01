@@ -5,42 +5,6 @@ struct PreparedContentFilter: @unchecked Sendable {
     let filter: SCContentFilter
 }
 
-struct ScreenCaptureKitStreamHandle: @unchecked Sendable {
-    private let stream: SCStream
-
-    init(_ stream: SCStream) {
-        self.stream = stream
-    }
-
-    func stopCaptureIgnoringResult() {
-        stream.stopCapture { _ in }
-    }
-}
-
-final class ScreenCaptureKitRecorderCompletion: @unchecked Sendable {
-    private let lock = NSLock()
-    private var continuation: CheckedContinuation<Void, any Error>?
-
-    init(_ continuation: CheckedContinuation<Void, any Error>) {
-        self.continuation = continuation
-    }
-
-    func resume(with result: Result<Void, any Error>) -> Bool {
-        let continuation = lock.withLock {
-            let continuation = self.continuation
-            self.continuation = nil
-            return continuation
-        }
-
-        guard let continuation else {
-            return false
-        }
-
-        continuation.resume(with: result)
-        return true
-    }
-}
-
 final class ScreenCaptureKitContentFilterCompletion: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: CheckedContinuation<PreparedContentFilter, any Error>?

@@ -106,14 +106,7 @@ struct AVAssetReaderAudioPeakAnalyzerTests {
     }
 
     private func packageRootURL() throws -> URL {
-        var url = URL(fileURLWithPath: #filePath)
-        while url.lastPathComponent != "Tests" {
-            let next = url.deletingLastPathComponent()
-            try #require(next.path != url.path)
-            url = next
-        }
-
-        return url.deletingLastPathComponent()
+        try sharedPackageRootURL()
     }
 
     private func isApproximately(

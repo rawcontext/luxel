@@ -5,6 +5,7 @@
     "": {
       "name": "luxel",
       "devDependencies": {
+        "jscpd": "5.0.14",
         "turbo": "2.9.18",
       },
     },
@@ -544,6 +545,20 @@
     "jose": ["jose@5.10.0", "", {}, "sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg=="],
 
     "js-yaml": ["js-yaml@4.2.0", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw=="],
+
+    "jscpd": ["jscpd@5.0.14", "", { "optionalDependencies": { "jscpd-darwin-arm64": "5.0.14", "jscpd-darwin-x64": "5.0.14", "jscpd-linux-arm64-gnu": "5.0.14", "jscpd-linux-x64-gnu": "5.0.14", "jscpd-linux-x64-musl": "5.0.14", "jscpd-windows-x64-msvc": "5.0.14" }, "bin": { "jscpd": "run-jscpd.js" } }, "sha512-zge+FPZZAymt2Do5Z0+QHyIn4/XcUhrO/W7of9HcHZfx2AK8++dYhLA1uWtwXj47ml3Of8PbcUW4wUWvYMCc3w=="],
+
+    "jscpd-darwin-arm64": ["jscpd-darwin-arm64@5.0.14", "", { "os": "darwin", "cpu": "arm64" }, "sha512-Ojjl79SBuj9tEW6WbjZ1a/1ZOR89dneH9yLQYQu8WyWaQownttnx7RYFEHU6aGhS4jIvwUEbr+1wxzFTb37cwg=="],
+
+    "jscpd-darwin-x64": ["jscpd-darwin-x64@5.0.14", "", { "os": "darwin", "cpu": "x64" }, "sha512-DxFg5XvjMZ81iVeqillnM5apqcGCfNTbroNF+mPLr7RkHLGH6mudLgtO+ILL/hfpZXy1bF9oIY5BSudPmN/k9A=="],
+
+    "jscpd-linux-arm64-gnu": ["jscpd-linux-arm64-gnu@5.0.14", "", { "os": "linux", "cpu": "arm64" }, "sha512-1uw+XBHEt9pONXNICSp5HpaVWPjG6mQ6deDXaq9Yb0xCNJkX4/8gmn0vhzekIyZD2DspRYKPUolbDsqm/HEdYg=="],
+
+    "jscpd-linux-x64-gnu": ["jscpd-linux-x64-gnu@5.0.14", "", { "os": "linux", "cpu": "x64" }, "sha512-dFTbyyrm+Z9pcXIVzJQCw8QAgiNqIiO69sm4AfA7/wFdPoizoVzjhaXsYXcSV4bs0aoPiWbNazg0J0HgslT/5A=="],
+
+    "jscpd-linux-x64-musl": ["jscpd-linux-x64-musl@5.0.14", "", { "os": "linux", "cpu": "x64" }, "sha512-SayS7qQJvixyy9eR0+UjepkTsUUwqvlsiuSxfIdHgG2qzqoh/thnkgiu4By8fsiiDpQONsQrRrZDwHRQ3GDrBQ=="],
+
+    "jscpd-windows-x64-msvc": ["jscpd-windows-x64-msvc@5.0.14", "", { "os": "win32", "cpu": "x64" }, "sha512-DqjxlVkUanlahGgY2lY7Zkrau4BUTI+AwWky+bPGK4kSK2AIOaUziY9Q19u8b58idXmJA9FKK98Fuu4ajNXVjQ=="],
 
     "json-schema-traverse": ["json-schema-traverse@0.4.1", "", {}, "sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg=="],
 

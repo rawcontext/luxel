@@ -1,7 +1,6 @@
 ---
-import "../styles/global.css";
-import SiteNav from "../components/SiteNav.astro";
-import SiteFooter from "../components/SiteFooter.astro";
+import PageLayout from "../components/PageLayout.astro";
+import ShortcutKeys from "../components/ShortcutKeys.astro";
 
 const navGroups = [
   {
@@ -38,29 +37,6 @@ const navGroups = [
     ]
   }
 ];
-
-const keycaps = {
-  command: { label: "Command", symbol: "⌘", className: "is-modifier" },
-  control: { label: "Control", symbol: "⌃", className: "is-modifier" },
-  option: { label: "Option", symbol: "⌥", className: "is-modifier" },
-  shift: { label: "Shift", symbol: "⇧", className: "is-modifier" },
-  escape: { label: "Escape", symbol: "Esc", className: "is-wide" },
-  click: { label: "Click", symbol: "click", className: "is-word" }
-};
-
-const keycap = (key) => {
-  if (keycaps[key]) {
-    return keycaps[key];
-  }
-
-  return {
-    label: key.length === 1 ? key.toUpperCase() : key,
-    symbol: key.length === 1 ? key.toUpperCase() : key,
-    className: key.length === 1 ? "is-letter" : "is-word"
-  };
-};
-
-const shortcutLabel = (keys) => keys.map((key) => keycap(key).label).join("-");
 
 const globalShortcuts = [
   { command: "Select Area", keys: ["command", "control", "option", "r"], result: "Open the area picker for recording." },
@@ -215,37 +191,13 @@ const troubleshooting = [
 ];
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="description"
-      content="Luxel user documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, command-line control, automation, localization, settings, and troubleshooting."
-    />
-    <meta name="apple-itunes-app" content="app-id=6780682473" />
-    <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
-    <link rel="alternate" href="/llms.txt" type="text/markdown" title="Luxel LLM-readable index" />
-    <link rel="alternate" href="/llms-full.txt" type="text/markdown" title="Luxel full Markdown documentation" />
-    <title>Luxel Documentation</title>
-  </head>
-  <body class="docs-page">
-    <div class="page">
-    <div class="ambient" aria-hidden="true">
-      <span class="ambient__glow ambient__glow--hero"></span>
-      <span class="ambient__glow ambient__glow--left"></span>
-    </div>
-
-    <SiteNav
-      ariaLabel="Documentation navigation"
-      links={[
-        { href: "/#features", label: "Features" },
-        { href: "/docs", label: "Docs" },
-        { href: "/support", label: "Support" },
-        { href: "/privacy", label: "Privacy" }
-      ]}
-    />
+<PageLayout
+  title="Luxel Documentation"
+  description="Luxel user documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, command-line control, automation, localization, settings, and troubleshooting."
+  bodyClass="docs-page"
+  navigationLabel="Documentation navigation"
+  showsLeftGlow
+>
 
     <main class="docs-layout">
       <aside class="docs-sidebar" aria-label="Documentation sections">
@@ -262,7 +214,7 @@ const troubleshooting = [
       <div class="docs-content">
         <section class="docs-hero" id="overview" aria-labelledby="overview-title">
           <p class="docs-eyebrow">Luxel Docs</p>
-          <h1 id="overview-title">Use Luxel from first launch to final export.</h1>
+          <h1 class="gradient-title" id="overview-title">Use Luxel from first launch to final export.</h1>
           <p class="docs-lead">
             Luxel is a Mac menu bar recorder for screen capture, area capture,
             replay buffer clips, audio-only recordings, camera preview overlays,
@@ -616,12 +568,7 @@ const troubleshooting = [
                 {areaPickerShortcuts.map((shortcut) => (
                   <tr>
                     <td>
-                      <span class="shortcut-keys" aria-label={shortcutLabel(shortcut.keys)}>
-                        {shortcut.keys.map((key) => {
-                          const meta = keycap(key);
-                          return <kbd class={meta.className} title={meta.label}>{meta.symbol}</kbd>;
-                        })}
-                      </span>
+                      <ShortcutKeys keys={shortcut.keys} />
                     </td>
                     <td>{shortcut.action}</td>
                   </tr>
@@ -875,12 +822,7 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
                 <tr>
                   <td>{shortcut.command}</td>
                   <td>
-                    <span class="shortcut-keys" aria-label={shortcutLabel(shortcut.keys)}>
-                      {shortcut.keys.map((key) => {
-                        const meta = keycap(key);
-                        return <kbd class={meta.className} title={meta.label}>{meta.symbol}</kbd>;
-                      })}
-                    </span>
+                    <ShortcutKeys keys={shortcut.keys} />
                   </td>
                   <td>{shortcut.result}</td>
                 </tr>
@@ -895,12 +837,7 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
             </p>
             <div class="shortcut-cluster" aria-label="Known macOS capture shortcut conflicts">
               {systemShortcutConflicts.map((shortcut) => (
-                <span class="shortcut-keys" aria-label={shortcutLabel(shortcut)}>
-                  {shortcut.map((key) => {
-                    const meta = keycap(key);
-                    return <kbd class={meta.className} title={meta.label}>{meta.symbol}</kbd>;
-                  })}
-                </span>
+                <ShortcutKeys keys={shortcut} />
               ))}
             </div>
           </div>
@@ -1264,12 +1201,7 @@ luxel://latest?reveal=true</code></pre>
                 {item.shortcuts && (
                   <div class="shortcut-cluster" aria-label="Known macOS capture shortcut conflicts">
                     {item.shortcuts.map((shortcut) => (
-                      <span class="shortcut-keys" aria-label={shortcutLabel(shortcut)}>
-                        {shortcut.map((key) => {
-                          const meta = keycap(key);
-                          return <kbd class={meta.className} title={meta.label}>{meta.symbol}</kbd>;
-                        })}
-                      </span>
+                      <ShortcutKeys keys={shortcut} />
                     ))}
                   </div>
                 )}
@@ -1349,8 +1281,6 @@ luxel://latest?reveal=true</code></pre>
         </section>
       </div>
     </main>
-    <SiteFooter />
-    </div>
     <script>
       const lazyVideos = Array.from(document.querySelectorAll("video[data-lazy-src]"));
 
@@ -1389,8 +1319,7 @@ luxel://latest?reveal=true</code></pre>
         lazyVideos.forEach(loadLazyVideo);
       }
     </script>
-  </body>
-</html>
+</PageLayout>
 
 <style>
   .docs-page {
@@ -1408,6 +1337,8 @@ luxel://latest?reveal=true</code></pre>
       inset 0 -1px 0 rgb(255 255 255 / 0.04),
       inset 0 0 0 1px rgb(255 255 255 / 0.05),
       0 18px 44px rgb(0 0 0 / 0.32);
+    --docs-card-padding: 1.25rem;
+    --docs-detail-card-padding: 1.15rem 1.25rem;
   }
 
   .docs-hero-grid,
@@ -1530,10 +1461,6 @@ luxel://latest?reveal=true</code></pre>
   .docs-hero h1 {
     max-width: 50rem;
     margin: 0;
-    background: linear-gradient(180deg, #fff 55%, rgb(255 255 255 / 0.55));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
     font-size: clamp(2.15rem, 4.6vw, 3.9rem);
     font-weight: 700;
     letter-spacing: -0.028em;
@@ -1556,19 +1483,22 @@ luxel://latest?reveal=true</code></pre>
     margin-top: 2rem;
   }
 
-  .docs-hero-grid article,
-  .permission-grid article,
-  .concept-list article,
-  .split-grid article,
-  .option-reference-grid article,
-  .guide-stack article,
-  .workflow-grid article,
-  .faq-grid article,
-  .mini-reference,
-  .callout {
+  :is(
+    .docs-hero-grid article,
+    .permission-grid article,
+    .concept-list article,
+    .split-grid article,
+    .option-reference-grid article,
+    .guide-stack article,
+    .workflow-grid article,
+    .faq-grid article,
+    .mini-reference,
+    .callout
+  ) {
     position: relative;
     isolation: isolate;
     overflow: clip;
+    padding: var(--docs-card-padding);
     border-radius: 18px;
     background:
       linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.035)),
@@ -1576,55 +1506,22 @@ luxel://latest?reveal=true</code></pre>
     backdrop-filter: blur(28px) saturate(170%);
     -webkit-backdrop-filter: blur(28px) saturate(170%);
     box-shadow: var(--docs-glass-shadow);
-  }
 
-  :is(
-    .docs-hero-grid article,
-    .permission-grid article,
-    .concept-list article,
-    .split-grid article,
-    .option-reference-grid article,
-    .guide-stack article,
-    .workflow-grid article,
-    .faq-grid article,
-    .mini-reference,
-    .callout
-  )::before {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    content: "";
-    border-radius: inherit;
-    background:
-      radial-gradient(120% 80% at 50% -20%, rgb(255 255 255 / 0.14), transparent 52%),
-      linear-gradient(105deg, rgb(255 255 255 / 0.08), transparent 38% 72%, rgb(143 134 255 / 0.08));
-  }
+    &::before {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      content: "";
+      border-radius: inherit;
+      background:
+        linear-gradient(105deg, rgb(255 255 255 / 0.08), transparent 38% 72%, rgb(143 134 255 / 0.08)),
+        radial-gradient(120% 80% at 50% -20%, rgb(255 255 255 / 0.14), transparent 52%);
+    }
 
-  :is(
-    .docs-hero-grid article,
-    .permission-grid article,
-    .concept-list article,
-    .split-grid article,
-    .option-reference-grid article,
-    .guide-stack article,
-    .workflow-grid article,
-    .faq-grid article,
-    .mini-reference,
-    .callout
-  ) > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  .docs-hero-grid article,
-  .permission-grid article,
-  .concept-list article,
-  .split-grid article,
-  .option-reference-grid article,
-  .guide-stack article,
-  .workflow-grid article,
-  .faq-grid article {
-    padding: 1.25rem;
+    & > * {
+      position: relative;
+      z-index: 1;
+    }
   }
 
   .docs-hero-grid article {
@@ -1792,7 +1689,7 @@ luxel://latest?reveal=true</code></pre>
   }
 
   .callout {
-    padding: 1.15rem 1.25rem;
+    padding: var(--docs-detail-card-padding);
     background:
       linear-gradient(180deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0.035)),
       rgb(143 134 255 / 0.1);
@@ -1803,7 +1700,7 @@ luxel://latest?reveal=true</code></pre>
   }
 
   .mini-reference {
-    padding: 1.15rem 1.25rem;
+    padding: var(--docs-detail-card-padding);
   }
 
   .locale-list {
@@ -2037,6 +1934,11 @@ luxel://latest?reveal=true</code></pre>
   }
 
   @media (max-width: 680px) {
+    .docs-page {
+      --docs-card-padding: 1rem;
+      --docs-detail-card-padding: 1rem;
+    }
+
     .docs-layout {
       width: min(calc(100% - 1.25rem), 92rem);
       padding-top: 1rem;
@@ -2050,17 +1952,7 @@ luxel://latest?reveal=true</code></pre>
       grid-template-columns: 1fr;
     }
 
-    .docs-hero,
-    .docs-hero-grid article,
-    .permission-grid article,
-    .concept-list article,
-    .split-grid article,
-    .option-reference-grid article,
-    .guide-stack article,
-    .workflow-grid article,
-    .faq-grid article,
-    .callout,
-    .mini-reference {
+    .docs-hero {
       padding: 1rem;
     }
 

@@ -14,10 +14,11 @@ extension LuxelEditorModelTests {
         let model = makeModel(
             exporter: exporter,
             fileSystem: fileSystem,
-            fileActionClient: fileActionClient
-        ) { format, _ in
-            rememberedFormats.append(format)
-        }
+            fileActionClient: fileActionClient,
+            configuration: .init(onExportMemoryChange: { format, _ in
+                rememberedFormats.append(format)
+            })
+        )
         let batchDirectory = URL(fileURLWithPath: "/tmp/source Export", isDirectory: true)
 
         await model.open(

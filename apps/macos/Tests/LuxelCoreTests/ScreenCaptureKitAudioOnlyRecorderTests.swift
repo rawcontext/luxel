@@ -18,13 +18,7 @@ struct ScreenCaptureKitAudioOnlyRecorderTests {
 
         #expect(configuration.width == 2)
         #expect(configuration.height == 2)
-        #expect(configuration.capturesAudio)
-        #expect(configuration.captureMicrophone)
-        #expect(configuration.microphoneCaptureDeviceID == "mic-1")
-        #expect(configuration.excludesCurrentProcessAudio)
-        #expect(configuration.sampleRate == 48_000)
-        #expect(configuration.channelCount == 2)
-        #expect(configuration.queueDepth == 8)
+        expectStandardAudioConfiguration(configuration, microphoneDeviceID: "mic-1")
     }
 
     @Test("stream configuration supports microphone only")

@@ -46,13 +46,7 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         configuration.pixelFormat = highFrameRateCapture(request)
             ? kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
             : kCVPixelFormatType_32BGRA
-        configuration.capturesAudio = request.audio.capturesSystemAudio
-        configuration.captureMicrophone = request.audio.capturesMicrophone
-        configuration.microphoneCaptureDeviceID = request.audio.microphoneDeviceID
-        configuration.excludesCurrentProcessAudio = request.audio.capturesSystemAudio
-        configuration.sampleRate = 48_000
-        configuration.channelCount = 2
-        configuration.queueDepth = 8
+        ScreenCaptureKitAudioConfiguration.apply(request.audio, to: configuration)
 
         if case .area(_, let rect) = request.target {
             configuration.sourceRect = sourceRect(from: rect)

@@ -86,18 +86,13 @@ struct EditorPlaybackCapsule: View {
 
     private var transportControls: some View {
         HStack(spacing: 14) {
-            Button {
+            transportButton(
+                systemImage: "backward.end.fill",
+                accessibilityLabel: "Go to start",
+                help: "Jump to the trimmed start."
+            ) {
                 model.scrub(to: model.trimStart)
-            } label: {
-                Image(systemName: "backward.end.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.75))
-                    .frame(width: 24, height: 24)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Go to start")
-            .help("Jump to the trimmed start.")
 
             Button {
                 model.togglePlayback()
@@ -117,19 +112,32 @@ struct EditorPlaybackCapsule: View {
             .accessibilityLabel(model.playbackRequested ? "Pause" : "Play")
             .help("Play or pause the preview.")
 
-            Button {
+            transportButton(
+                systemImage: "forward.end.fill",
+                accessibilityLabel: "Go to end",
+                help: "Jump to the trimmed end."
+            ) {
                 model.scrub(to: model.trimEnd)
-            } label: {
-                Image(systemName: "forward.end.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.75))
-                    .frame(width: 24, height: 24)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Go to end")
-            .help("Jump to the trimmed end.")
         }
+    }
+
+    private func transportButton(
+        systemImage: String,
+        accessibilityLabel: String,
+        help: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.75))
+                .frame(width: 24, height: 24)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+        .help(help)
     }
 
     private var scrubberRow: some View {

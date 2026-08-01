@@ -1,5 +1,26 @@
 import SwiftUI
 
+public extension View {
+    func luxelGlassCapsuleBackground() -> some View {
+        background {
+            Capsule(style: .continuous)
+                .fill(LuxelGlassTheme.controlFill)
+                .overlay {
+                    Capsule(style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [LuxelGlassTheme.controlHighlight, .clear],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+                }
+        }
+        .contentShape(Capsule(style: .continuous))
+    }
+}
+
 public struct LuxelGlassSwitchToggleStyle: ToggleStyle {
     private let showsLabel: Bool
 
@@ -139,6 +160,31 @@ private struct LuxelGlassCheckboxBody: View {
     }
 }
 
+public struct LuxelGlassTitleLabel: View {
+    private let title: String
+    private let systemImage: String?
+    private let fontSize: CGFloat
+
+    public init(_ title: String, systemImage: String? = nil, fontSize: CGFloat = 12.5) {
+        self.title = title
+        self.systemImage = systemImage
+        self.fontSize = fontSize
+    }
+
+    public var body: some View {
+        HStack(spacing: 6) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.system(size: 11, weight: .medium))
+            }
+            Text(title)
+                .font(.system(size: fontSize, weight: .medium))
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+    }
+}
+
 public struct LuxelGlassMenuLabel: View {
     private let title: String
     private let systemImage: String?
@@ -151,14 +197,7 @@ public struct LuxelGlassMenuLabel: View {
     }
     public var body: some View {
         HStack(spacing: 6) {
-            if let systemImage {
-                Image(systemName: systemImage)
-                    .font(.system(size: 11, weight: .medium))
-            }
-            Text(title)
-                .font(.system(size: 12.5, weight: .medium))
-                .lineLimit(1)
-                .truncationMode(.middle)
+            LuxelGlassTitleLabel(title, systemImage: systemImage)
 
             if fillsAvailableWidth {
                 Spacer(minLength: 6)
@@ -172,22 +211,7 @@ public struct LuxelGlassMenuLabel: View {
         .padding(.leading, 12)
         .padding(.trailing, 10)
         .padding(.vertical, 7)
-        .background {
-            Capsule(style: .continuous)
-                .fill(LuxelGlassTheme.controlFill)
-                .overlay {
-                    Capsule(style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [LuxelGlassTheme.controlHighlight, .clear],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 1
-                        )
-                }
-        }
-        .contentShape(Capsule(style: .continuous))
+        .luxelGlassCapsuleBackground()
     }
 }
 

@@ -10,19 +10,8 @@ import Testing
 struct LuxelEditorTranscriptEditingTests {
     @Test("word selection respects transcript auto-play preference")
     func wordSelectionRespectsAutoPlayPreference() async throws {
-        let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
-        let source = try SourceMedia(
-            fileURL: sourceURL,
-            duration: 12,
-            pixelSize: PixelSize(width: 1280, height: 720),
-            nominalFrameRate: FrameRate(30),
-            hasAudio: true
-        )
-        let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
-        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        let model = try await makeVideoModel()
         model.player = ImmediateSeekPlayer()
-        model.transcript = try editableTranscript()
         let words = model.editableTranscriptWords
 
         model.selectTranscriptWord(words[0], autoPlay: false)
@@ -96,18 +85,7 @@ struct LuxelEditorTranscriptEditingTests {
 
     @Test("removed ranges can be reviewed and restored individually")
     func removedRangesCanBeRestoredIndividually() async throws {
-        let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
-        let source = try SourceMedia(
-            fileURL: sourceURL,
-            duration: 12,
-            pixelSize: PixelSize(width: 1280, height: 720),
-            nominalFrameRate: FrameRate(30),
-            hasAudio: true
-        )
-        let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
-        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
-        model.transcript = try editableTranscript()
+        let model = try await makeVideoModel()
 
         let delete = try #require(model.editableTranscriptWords.first { $0.text == "Delete" })
         model.selectTranscriptWord(delete)
@@ -131,17 +109,10 @@ struct LuxelEditorTranscriptEditingTests {
     @Test("deleting all retained media reports a no-op")
     func wordCutCannotRemoveEditableRange() async throws {
         let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
-        let source = try SourceMedia(
-            fileURL: sourceURL,
+        let model = try await makeVideoModel(
             duration: 1,
-            pixelSize: PixelSize(width: 1280, height: 720),
-            nominalFrameRate: FrameRate(30),
-            hasAudio: true
+            transcript: helper.sampleTranscript(source: .system)
         )
-        let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
-        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
-        model.transcript = try helper.sampleTranscript(source: .system)
         let words = model.editableTranscriptWords
         let firstWord = try #require(words.first)
         let lastWord = try #require(words.last)
@@ -156,18 +127,7 @@ struct LuxelEditorTranscriptEditingTests {
 
     @Test("shift selection cuts one contiguous word group")
     func shiftSelectionCutsWordGroup() async throws {
-        let helper = LuxelEditorModelTests()
-        let sourceURL = URL(fileURLWithPath: "/tmp/video.mp4")
-        let source = try SourceMedia(
-            fileURL: sourceURL,
-            duration: 12,
-            pixelSize: PixelSize(width: 1280, height: 720),
-            nominalFrameRate: FrameRate(30),
-            hasAudio: true
-        )
-        let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
-        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
-        model.transcript = try editableTranscript()
+        let model = try await makeVideoModel()
         let words = model.editableTranscriptWords
 
         model.selectTranscriptWord(words[1])
@@ -182,18 +142,8 @@ struct LuxelEditorTranscriptEditingTests {
 
     @Test("preview build failure blocks cut-enabled export until undo")
     func previewBuildFailureBlocksExport() async throws {
-        let helper = LuxelEditorModelTests()
         let sourceURL = URL(fileURLWithPath: "/tmp/missing-transcript-edit-source.mp4")
-        let source = try SourceMedia(
-            fileURL: sourceURL,
-            duration: 12,
-            pixelSize: PixelSize(width: 1280, height: 720),
-            nominalFrameRate: FrameRate(30),
-            hasAudio: true
-        )
-        let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
-        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
-        model.transcript = try editableTranscript()
+        let model = try await makeVideoModel(sourceURL: sourceURL)
         let word = try #require(
             model.editableTranscriptWords.first { $0.text == "Delete" }
         )
@@ -241,6 +191,25 @@ struct LuxelEditorTranscriptEditingTests {
             ],
             localeIdentifier: "en_US"
         )
+    }
+
+    private func makeVideoModel(
+        sourceURL: URL = URL(fileURLWithPath: "/tmp/video.mp4"),
+        duration: TimeInterval = 12,
+        transcript: TurnSegmentedTranscript? = nil
+    ) async throws -> LuxelEditorModel {
+        let helper = LuxelEditorModelTests()
+        let source = try SourceMedia(
+            fileURL: sourceURL,
+            duration: duration,
+            pixelSize: PixelSize(width: 1280, height: 720),
+            nominalFrameRate: FrameRate(30),
+            hasAudio: true
+        )
+        let model = helper.makeModel(metadataReader: StubMetadataReader(source: source))
+        await model.open(fileURL: sourceURL, outputDirectory: URL(fileURLWithPath: "/tmp"))
+        model.transcript = try transcript ?? editableTranscript()
+        return model
     }
 }
 

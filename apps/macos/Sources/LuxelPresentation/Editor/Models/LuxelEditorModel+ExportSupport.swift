@@ -269,18 +269,18 @@ extension LuxelEditorModel {
         try EditorExportDraft(
             source: source,
             format: format,
-            trimRange: TimeRange(start: trimStart, end: trimEnd),
+            quality: quality,
+            speed: playbackSpeed,
+            gifOptions: try currentGIFOptions(for: format),
             pixelSize: PixelSize(width: outputWidth, height: outputHeight),
             frameRate: FrameRate(frameRate),
+            trimRange: TimeRange(start: trimStart, end: trimEnd),
+            shouldCrop: hasVideoSource && shouldCrop,
             shouldMute: hasAudioOnlySource ? false : shouldMute,
             audioMix: currentAudioMixPlan(),
             studioVoiceEnabled: studioVoiceEnabled,
-            shouldCrop: hasVideoSource && shouldCrop,
-            quality: quality,
-            speed: playbackSpeed,
-            editPlan: transcriptEditPlan,
-            gifOptions: try currentGIFOptions(for: format),
-            keystrokeOptions: keystrokeOptions
+            keystrokeOptions: keystrokeOptions,
+            editPlan: transcriptEditPlan
         )
     }
 

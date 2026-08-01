@@ -66,47 +66,20 @@ private extension ImageIOAnimatedMediaExporter {
         try? FileManager.default.removeItem(at: outputFileURL)
 
         do {
-            var cameraPath: CameraPath?
-            var didBuildCameraPath = false
-            let keystrokeTimeline = try? KeystrokeSidecarFileLoader().load(
-                nextTo: request.inputFileURL
-            )
-            let keystrokeCompositor = await KeystrokeFrameCompositor()
-
-            await progress?(0)
-            for (frameIndex, time) in frameTimes.enumerated() {
-                let frame = try await context.imageGenerator.image(at: time).image
-                if !didBuildCameraPath {
-                    cameraPath = try self.cameraPath(for: request, sourceFrame: frame)
-                    didBuildCameraPath = true
-                }
-
-                let baseFrame = try AnimatedFrameRenderer().renderImage(
-                    frame,
-                    outputPixelSize: context.outputPixelSize,
-                    shouldCrop: request.shouldCrop,
-                    sourceCropRect: request.cropRect,
-                    cameraTransform: try cameraTransform(
-                        for: time,
-                        request: request,
-                        cameraPath: cameraPath
-                    )
-                )
-                let renderedFrame = await keystrokeCompositor.composite(
-                    baseFrame,
-                    timeline: keystrokeTimeline,
-                    options: request.keystrokeOptions,
-                    at: time.seconds
-                )
+            try await forEachRenderedFrame(
+                context: context,
+                frameTimes: frameTimes,
+                progressScale: 0.95,
+                progress: progress
+            ) { renderedFrame in
                 CGImageDestinationAddImage(
                     destination,
                     renderedFrame,
-                    frameProperties(
-                        for: request.format,
-                        frameDelay: context.schedule.frameDelay
+                    AnimatedImageIOProperties.frame(
+                        format: request.format,
+                        delay: context.schedule.frameDelay
                     ) as CFDictionary
                 )
-                await progress?(Double(frameIndex + 1) / Double(max(1, frameTimes.count)) * 0.95)
             }
 
             guard CGImageDestinationFinalize(destination) else {
@@ -133,8 +106,8 @@ private extension ImageIOAnimatedMediaExporter {
             outputFileURL: outputFileURL,
             frameCount: frameTimes.count
         )
-        let properties = destinationProperties(
-            for: context.request.format,
+        let properties = AnimatedImageIOProperties.destination(
+            format: context.request.format,
             loopMode: loopMode
         )
         CGImageDestinationSetProperties(destination, properties as CFDictionary)
@@ -188,41 +161,13 @@ private extension ImageIOAnimatedMediaExporter {
         backgroundMatte: RGBColor?,
         progress: MediaExportProgressHandler?
     ) async throws -> [GIFFrameBitmap] {
-        let request = context.request
         var frames: [GIFFrameBitmap] = []
         frames.reserveCapacity(context.schedule.frameTimes.count)
-        var cameraPath: CameraPath?
-        var didBuildCameraPath = false
-        let keystrokeTimeline = try? KeystrokeSidecarFileLoader().load(
-            nextTo: request.inputFileURL
-        )
-        let keystrokeCompositor = await KeystrokeFrameCompositor()
-
-        await progress?(0)
-        for (frameIndex, time) in context.schedule.frameTimes.enumerated() {
-            let frame = try await context.imageGenerator.image(at: time).image
-            if !didBuildCameraPath {
-                cameraPath = try self.cameraPath(for: request, sourceFrame: frame)
-                didBuildCameraPath = true
-            }
-
-            let baseFrame = try AnimatedFrameRenderer().renderImage(
-                frame,
-                outputPixelSize: context.outputPixelSize,
-                shouldCrop: request.shouldCrop,
-                sourceCropRect: request.cropRect,
-                cameraTransform: try cameraTransform(
-                    for: time,
-                    request: request,
-                    cameraPath: cameraPath
-                )
-            )
-            let compositedFrame = await keystrokeCompositor.composite(
-                baseFrame,
-                timeline: keystrokeTimeline,
-                options: request.keystrokeOptions,
-                at: time.seconds
-            )
+        try await forEachRenderedFrame(
+            context: context,
+            frameTimes: context.schedule.frameTimes,
+            progress: progress
+        ) { compositedFrame in
             frames.append(
                 try AnimatedFrameRenderer().renderGIFBitmap(
                     compositedFrame,
@@ -231,54 +176,55 @@ private extension ImageIOAnimatedMediaExporter {
                     backgroundMatte: backgroundMatte
                 )
             )
-            await progress?(
-                Double(frameIndex + 1) / Double(max(1, context.schedule.frameTimes.count))
-            )
         }
 
         return frames
     }
 
-    func cameraPath(
-        for request: ExportRequest,
-        sourceFrame: CGImage
-    ) throws -> CameraPath? {
-        guard !request.zoomBlocks.isEmpty else {
-            return nil
-        }
-
-        let blocks = try ZoomExportTimeMapper(
-            trimRange: request.timeRange,
-            speed: request.speed,
-            editPlan: request.editPlan
+    func forEachRenderedFrame(
+        context: ImageIOAnimatedExportContext,
+        frameTimes: [CMTime],
+        progressScale: Double = 1,
+        progress: MediaExportProgressHandler?,
+        body: (CGImage) throws -> Void
+    ) async throws {
+        let request = context.request
+        var cameraPath: CameraPath?
+        var didBuildCameraPath = false
+        let keystrokeTimeline = try? KeystrokeSidecarFileLoader().load(
+            nextTo: request.inputFileURL
         )
-        .map(request.zoomBlocks)
+        let keystrokeCompositor = await KeystrokeFrameCompositor()
 
-        guard !blocks.isEmpty else {
-            return nil
+        await progress?(0)
+        for (frameIndex, time) in frameTimes.enumerated() {
+            let frame = try await context.imageGenerator.image(at: time).image
+            if !didBuildCameraPath {
+                cameraPath = try request.animatedCameraPath(sourceFrame: frame)
+                didBuildCameraPath = true
+            }
+            let baseFrame = try AnimatedFrameRenderer().renderImage(
+                frame,
+                outputPixelSize: context.outputPixelSize,
+                shouldCrop: request.shouldCrop,
+                sourceCropRect: request.cropRect,
+                cameraTransform: try request.animatedCameraTransform(
+                    at: time,
+                    cameraPath: cameraPath
+                )
+            )
+            try body(
+                await keystrokeCompositor.composite(
+                    baseFrame,
+                    timeline: keystrokeTimeline,
+                    options: request.keystrokeOptions,
+                    at: time.seconds
+                )
+            )
+            await progress?(
+                Double(frameIndex + 1) / Double(max(1, frameTimes.count)) * progressScale
+            )
         }
-
-        return try CameraPath(
-            blocks: blocks,
-            sourceSize: PixelSize(width: sourceFrame.width, height: sourceFrame.height)
-        )
-    }
-
-    func cameraTransform(
-        for sourceTime: CMTime,
-        request: ExportRequest,
-        cameraPath: CameraPath?
-    ) throws -> CameraTransform {
-        guard let cameraPath else {
-            return .identity
-        }
-
-        guard let outputTime = request.timelineMapper.outputTime(
-            forSourceTime: sourceTime.seconds
-        ) else {
-            return .identity
-        }
-        return try cameraPath.transform(at: outputTime)
     }
 
     func animatedLoopMode(for request: ExportRequest) -> GIFLoopMode {
@@ -321,60 +267,6 @@ private extension ImageIOAnimatedMediaExporter {
         }
 
         return destination
-    }
-
-    func destinationProperties(
-        for format: ExportFormat,
-        loopMode: GIFLoopMode = .forever
-    ) -> [CFString: Any] {
-        switch format {
-        case .gif:
-            [
-                kCGImagePropertyGIFDictionary: [
-                    kCGImagePropertyGIFLoopCount: loopMode.imageIOLoopCount ?? 0
-                ]
-            ]
-        case .apng:
-            destinationPNGProperties(loopMode: loopMode)
-        case .av1, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
-            [:]
-        }
-    }
-
-    func destinationPNGProperties(loopMode: GIFLoopMode) -> [CFString: Any] {
-        guard let loopCount = loopMode.imageIOLoopCount else {
-            return [:]
-        }
-
-        return [
-            kCGImagePropertyPNGDictionary: [
-                kCGImagePropertyAPNGLoopCount: loopCount
-            ]
-        ]
-    }
-
-    func frameProperties(
-        for format: ExportFormat,
-        frameDelay: TimeInterval
-    ) -> [CFString: Any] {
-        switch format {
-        case .gif:
-            [
-                kCGImagePropertyGIFDictionary: [
-                    kCGImagePropertyGIFDelayTime: frameDelay,
-                    kCGImagePropertyGIFUnclampedDelayTime: frameDelay
-                ]
-            ]
-        case .apng:
-            [
-                kCGImagePropertyPNGDictionary: [
-                    kCGImagePropertyAPNGDelayTime: frameDelay,
-                    kCGImagePropertyAPNGUnclampedDelayTime: frameDelay
-                ]
-            ]
-        case .av1, .hevc, .proRes422, .proRes4444, .m4a, .alac, .wav, .caf, .flac, .mp4, .webm:
-            [:]
-        }
     }
 
 }

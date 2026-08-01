@@ -1,5 +1,7 @@
 import Foundation
 
+@testable import LuxelCodecWebM
+
 struct WebMTestDocument {
     let data: Data
     let rootElements: [WebMTestElement]
@@ -111,31 +113,28 @@ struct WebMTestCuePoint: Equatable {
 }
 
 enum WebMTestID {
-    static let ebml: UInt64 = 0x1A45_DFA3
-    static let docType: UInt64 = 0x4282
-    static let segment: UInt64 = 0x1853_8067
-    static let seekHead: UInt64 = 0x114D_9B74
-    static let seek: UInt64 = 0x4DBB
-    static let seekID: UInt64 = 0x53AB
-    static let seekPosition: UInt64 = 0x53AC
-    static let info: UInt64 = 0x1549_A966
-    static let timestampScale: UInt64 = 0x2AD7_B1
-    static let duration: UInt64 = 0x4489
-    static let tracks: UInt64 = 0x1654_AE6B
-    static let trackEntry: UInt64 = 0xAE
-    static let codecID: UInt64 = 0x86
-    static let codecPrivate: UInt64 = 0x63A2
-    static let video: UInt64 = 0xE0
-    static let colour: UInt64 = 0x55B0
-    static let cluster: UInt64 = 0x1F43_B675
-    static let clusterTimecode: UInt64 = 0xE7
-    static let simpleBlock: UInt64 = 0xA3
-    static let cues: UInt64 = 0x1C53_BB6B
-    static let cuePoint: UInt64 = 0xBB
-    static let cueTime: UInt64 = 0xB3
-    static let cueTrackPositions: UInt64 = 0xB7
-    static let cueTrack: UInt64 = 0xF7
-    static let cueClusterPosition: UInt64 = 0xF1
+    static let segment = WebMElementID.segment
+    static let seekHead = WebMElementID.seekHead
+    static let seek = WebMElementID.seek
+    static let seekID = WebMElementID.seekID
+    static let seekPosition = WebMElementID.seekPosition
+    static let info = WebMElementID.info
+    static let timestampScale = WebMElementID.timestampScale
+    static let duration = WebMElementID.duration
+    static let tracks = WebMElementID.tracks
+    static let trackEntry = WebMElementID.trackEntry
+    static let codecID = WebMElementID.codecID
+    static let codecPrivate = WebMElementID.codecPrivate
+    static let video = WebMElementID.video
+    static let colour = WebMElementID.colour
+    static let cluster = WebMElementID.cluster
+    static let simpleBlock = WebMElementID.simpleBlock
+    static let cues = WebMElementID.cues
+    static let cuePoint = WebMElementID.cuePoint
+    static let cueTime = WebMElementID.cueTime
+    static let cueTrackPositions = WebMElementID.cueTrackPositions
+    static let cueTrack = WebMElementID.cueTrack
+    static let cueClusterPosition = WebMElementID.cueClusterPosition
 }
 
 enum WebMTestReaderError: Error, Equatable {

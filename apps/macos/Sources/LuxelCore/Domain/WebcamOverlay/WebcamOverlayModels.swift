@@ -1,5 +1,38 @@
 import Foundation
 
+private struct DecodedCameraOverlayShape {
+    let shape: CameraOverlayShape
+    let legacyBackgroundEffect: CameraBackgroundEffect
+}
+
+private func decodeCameraOverlayShape<Key: CodingKey>(
+    from container: KeyedDecodingContainer<Key>,
+    forKey key: Key
+) throws -> DecodedCameraOverlayShape {
+    let rawValue = try container.decodeIfPresent(String.self, forKey: key)
+        ?? CameraOverlayShape.circle.rawValue
+    let isLegacyCutout = rawValue == "cutout"
+    guard let shape = CameraOverlayShape(rawValue: rawValue) ?? (isLegacyCutout ? .circle : nil) else {
+        throw DecodingError.dataCorruptedError(
+            forKey: key,
+            in: container,
+            debugDescription: "Unknown camera overlay shape: \(rawValue)"
+        )
+    }
+    return DecodedCameraOverlayShape(
+        shape: shape,
+        legacyBackgroundEffect: isLegacyCutout ? .portraitCutout : .none
+    )
+}
+
+private func decodeCameraBackgroundEffect<Key: CodingKey>(
+    from container: KeyedDecodingContainer<Key>,
+    forKey key: Key,
+    legacyDefault: CameraBackgroundEffect
+) throws -> CameraBackgroundEffect {
+    try container.decodeIfPresent(CameraBackgroundEffect.self, forKey: key) ?? legacyDefault
+}
+
 public enum CameraDeviceKind: String, Codable, Equatable, Sendable {
     case builtIn
     case external
@@ -79,25 +112,16 @@ public struct CameraPreviewStyle: Codable, Equatable, Sendable {
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let shapeRawValue = try container.decodeIfPresent(String.self, forKey: .shape)
-            ?? CameraOverlayShape.circle.rawValue
-        let isLegacyCutout = shapeRawValue == "cutout"
-        let decodedShape = CameraOverlayShape(rawValue: shapeRawValue)
-        guard isLegacyCutout || decodedShape != nil else {
-            throw DecodingError.dataCorruptedError(
-                forKey: .shape,
-                in: container,
-                debugDescription: "Unknown camera overlay shape: \(shapeRawValue)"
-            )
-        }
+        let decodedShape = try decodeCameraOverlayShape(from: container, forKey: .shape)
         self.init(
-            shape: decodedShape ?? .circle,
+            shape: decodedShape.shape,
             size: try container.decodeIfPresent(CameraPreviewSize.self, forKey: .size) ?? .medium,
             isMirrored: try container.decodeIfPresent(Bool.self, forKey: .isMirrored) ?? true,
-            backgroundEffect: try container.decodeIfPresent(
-                CameraBackgroundEffect.self,
-                forKey: .backgroundEffect
-            ) ?? (isLegacyCutout ? .portraitCutout : .none)
+            backgroundEffect: try decodeCameraBackgroundEffect(
+                from: container,
+                forKey: .backgroundEffect,
+                legacyDefault: decodedShape.legacyBackgroundEffect
+            )
         )
     }
 
@@ -165,26 +189,17 @@ public struct CameraOverlayPlan: Codable, Equatable, Sendable {
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let shapeRawValue = try container.decodeIfPresent(String.self, forKey: .shape)
-            ?? CameraOverlayShape.circle.rawValue
-        let isLegacyCutout = shapeRawValue == "cutout"
-        let decodedShape = CameraOverlayShape(rawValue: shapeRawValue)
-        guard isLegacyCutout || decodedShape != nil else {
-            throw DecodingError.dataCorruptedError(
-                forKey: .shape,
-                in: container,
-                debugDescription: "Unknown camera overlay shape: \(shapeRawValue)"
-            )
-        }
+        let decodedShape = try decodeCameraOverlayShape(from: container, forKey: .shape)
         try self.init(
             placement: container.decode(CameraOverlayPlacement.self, forKey: .placement),
             widthFraction: container.decode(Double.self, forKey: .widthFraction),
-            shape: decodedShape ?? .circle,
+            shape: decodedShape.shape,
             showsBorder: container.decodeIfPresent(Bool.self, forKey: .showsBorder) ?? true,
-            backgroundEffect: container.decodeIfPresent(
-                CameraBackgroundEffect.self,
-                forKey: .backgroundEffect
-            ) ?? (isLegacyCutout ? .portraitCutout : .none)
+            backgroundEffect: decodeCameraBackgroundEffect(
+                from: container,
+                forKey: .backgroundEffect,
+                legacyDefault: decodedShape.legacyBackgroundEffect
+            )
         )
     }
 

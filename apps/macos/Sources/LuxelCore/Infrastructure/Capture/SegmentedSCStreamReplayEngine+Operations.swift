@@ -287,54 +287,12 @@ extension SegmentedSCStreamReplayEngine {
     }
 
     func startStreamCapture(_ stream: SCStream) async throws {
-        let timeout = streamStartTimeout
-
-        try await withCheckedThrowingContinuation { continuation in
-            let completion = ReplayBufferCompletion(continuation)
-            let streamHandle = ReplayBufferStreamHandle(stream)
-            stream.startCapture { error in
-                if let error {
-                    _ = completion.resume(with: .failure(error))
-                } else if !completion.resume(with: .success(())) {
-                    streamHandle.stopCaptureIgnoringResult()
-                }
-            }
-
-            Task {
-                do {
-                    try await Task.sleep(for: timeout)
-                    let timeoutError = ReplayBufferEngineError.armFailed("Timed out starting capture")
-                    if completion.resume(with: .failure(timeoutError)) {
-                        streamHandle.stopCaptureIgnoringResult()
-                    }
-                } catch {
-                    return
-                }
-            }
+        try await ScreenCaptureKitStreamLifecycle.start(stream, timeout: streamStartTimeout) {
+            ReplayBufferEngineError.armFailed("Timed out starting capture")
         }
     }
 
     func stopStreamCapture(_ stream: SCStream) async throws {
-        let timeout = streamStopTimeout
-
-        try await withCheckedThrowingContinuation { continuation in
-            let completion = ReplayBufferCompletion(continuation)
-            stream.stopCapture { error in
-                if let error {
-                    _ = completion.resume(with: .failure(error))
-                } else {
-                    _ = completion.resume(with: .success(()))
-                }
-            }
-
-            Task {
-                do {
-                    try await Task.sleep(for: timeout)
-                    _ = completion.resume(with: .success(()))
-                } catch {
-                    return
-                }
-            }
-        }
+        try await ScreenCaptureKitStreamLifecycle.stop(stream, timeout: streamStopTimeout)
     }
 }

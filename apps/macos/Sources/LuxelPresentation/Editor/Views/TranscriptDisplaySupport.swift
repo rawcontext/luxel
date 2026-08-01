@@ -178,11 +178,11 @@ struct TranscriptChunkView: View {
         VStack(alignment: .leading, spacing: chunk.showsHeader ? 6 : 0) {
             if chunk.showsHeader {
                 HStack(spacing: 6) {
-                    if let speakerChip {
-                        Text(formatTranscriptTime(chunk.turn.start))
-                            .font(.system(size: 10.5, weight: .medium).monospacedDigit())
-                            .foregroundStyle(.white.opacity(0.4))
+                    Text(formatTranscriptTime(chunk.turn.start))
+                        .font(.system(size: 10.5, weight: .medium).monospacedDigit())
+                        .foregroundStyle(.white.opacity(0.4))
 
+                    if let speakerChip {
                         HStack(spacing: 5) {
                             Circle()
                                 .fill(speakerChip.dotColor)
@@ -201,33 +201,18 @@ struct TranscriptChunkView: View {
                             in: RoundedRectangle(cornerRadius: 10)
                         )
 
-                        if let source = chunk.turn.source {
-                            Text(source.displayName)
-                                .font(.system(size: 10.5, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.55))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(
-                                    .white.opacity(0.07),
-                                    in: RoundedRectangle(cornerRadius: 10)
-                                )
-                        }
-                    } else {
-                        Text(formatTranscriptTime(chunk.turn.start))
-                            .font(.system(size: 10.5, weight: .medium).monospacedDigit())
-                            .foregroundStyle(.white.opacity(0.4))
+                    }
 
-                        if let source = chunk.turn.source {
-                            Text(source.displayName)
-                                .font(.system(size: 10.5, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.55))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(
-                                    .white.opacity(0.07),
-                                    in: RoundedRectangle(cornerRadius: 10)
-                                )
-                        }
+                    if let source = chunk.turn.source {
+                        Text(source.displayName)
+                            .font(.system(size: 10.5, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.55))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(
+                                .white.opacity(0.07),
+                                in: RoundedRectangle(cornerRadius: 10)
+                            )
                     }
                 }
             }
