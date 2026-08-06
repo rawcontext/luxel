@@ -40,10 +40,41 @@ struct TranscriptCopyTextBuilderTests {
         #expect(text == "Wait...")
     }
 
-    private func sampleTranscript() throws -> TurnSegmentedTranscript {
+    @Test("copy omits the audio source while preserving the speaker label")
+    func copyOmitsAudioSource() throws {
+        let speaker = try TranscriptSpeakerLabel(id: "speaker", displayName: "Speaker 1")
+        let transcript = try sampleTranscript(source: .microphone, speaker: speaker)
+
+        let text = TranscriptCopyTextBuilder().text(
+            transcript: transcript,
+            visibleWords: [],
+            hasCuts: false
+        )
+
+        #expect(text == "Speaker 1: Wait... what?")
+    }
+
+    private func sampleTranscript(
+        source: TranscriptSourceLabel? = nil,
+        speaker: TranscriptSpeakerLabel? = nil
+    ) throws -> TurnSegmentedTranscript {
         let spans = try [
-            TimedTranscriptSpan(id: "first", text: "Wait...", start: 0, end: 0.5),
-            TimedTranscriptSpan(id: "second", text: "what?", start: 0.6, end: 1)
+            TimedTranscriptSpan(
+                id: "first",
+                text: "Wait...",
+                start: 0,
+                end: 0.5,
+                source: source,
+                speakerID: speaker?.id
+            ),
+            TimedTranscriptSpan(
+                id: "second",
+                text: "what?",
+                start: 0.6,
+                end: 1,
+                source: source,
+                speakerID: speaker?.id
+            )
         ]
         return try TurnSegmentedTranscript(
             spans: spans,
@@ -53,10 +84,13 @@ struct TranscriptCopyTextBuilderTests {
                     spanIDs: spans.map(\.id),
                     start: 0,
                     end: 1,
-                    text: "Wait... what?"
+                    text: "Wait... what?",
+                    source: source,
+                    speakerID: speaker?.id
                 )
             ],
-            localeIdentifier: "en_US"
+            localeIdentifier: "en_US",
+            speakers: speaker.map { [$0] } ?? []
         )
     }
 }
