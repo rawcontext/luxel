@@ -10,8 +10,9 @@ INPUT_PATH="$1"
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 
 if [[ "${INPUT_PATH}" == *.pkg ]]; then
-	EXPANDED_PATH="$(mktemp -d "${TMPDIR:-/tmp}/luxel-modnet-pkg.XXXXXX")"
-	trap 'rm -rf "${EXPANDED_PATH}"' EXIT
+	TEMPORARY_DIRECTORY="$(mktemp -d "${TMPDIR:-/tmp}/luxel-modnet-pkg.XXXXXX")"
+	EXPANDED_PATH="${TEMPORARY_DIRECTORY}/expanded"
+	trap 'rm -rf "${TEMPORARY_DIRECTORY}"' EXIT
 	pkgutil --expand-full "${INPUT_PATH}" "${EXPANDED_PATH}" >/dev/null
 	APP_PATH="$(find "${EXPANDED_PATH}" -type d -name 'Luxel.app' -print -quit)"
 	if [[ -z "${APP_PATH}" ]]; then
