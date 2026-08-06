@@ -16,7 +16,10 @@ struct TranscriptCopyTextBuilder {
             guard !turnText.isEmpty else {
                 return nil
             }
-            return LuxelTranscriptFormatter.labeledText(turnText, for: turn, in: transcript)
+            guard let speaker = transcript.speaker(for: turn.speakerID) else {
+                return turnText
+            }
+            return "\(speaker.displayName): \(turnText)"
         }
         .joined(separator: "\n\n")
     }
