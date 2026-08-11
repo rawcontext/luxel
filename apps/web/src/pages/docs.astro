@@ -65,12 +65,13 @@ const systemShortcutConflicts = [
 ];
 
 const settingsPanes = [
-  ["Recording", "Cursor visibility, click highlights, 1-120 FPS or display-matched capture, system audio, microphone audio, audio-only format, microphone selection, camera preview, shape, size, and mirroring."],
-  ["Output", "Recordings folder, loop exports, transcript turn segmentation, and whether Luxel asks before discarding a recording."],
+  ["Recording", "Cursor visibility, click highlights, 1-120 FPS or display-matched capture, system audio, microphone audio, audio-only format, microphone selection, and camera overlay controls including shape, background removal, size, and mirroring."],
+  ["Output", "Recordings folder, loop exports, and whether Luxel asks before discarding a recording."],
   ["Presets", "Quick export presets, cropper size presets, loupe behavior, dimming, and last-selection restoration."],
   ["Shortcuts", "Global shortcut enablement, shortcut search, custom shortcut editing, reset/clear controls, and conflict warnings."],
   ["Notch", "Built-in notch controls, idle quick actions, recording waveform, auto-collapse timing, and floating HUD fallback."],
   ["Replay Buffer", "Enablement, buffer length, display-with-cursor source, frame rate, system audio, resume on launch, and clip destination."],
+  ["Transcripts", "Transcript language, turn segmentation, local speaker identification, and saved Known Speaker voice profiles."],
   ["Command Line", "Install or repair the bundled luxel command, choose an install location, choose a shell, and copy a PATH setup command."],
   ["System", "Menu bar timer, notification reminders, launch at login, update settings, and acknowledgements."]
 ];
@@ -143,6 +144,7 @@ const cliOptionGroups = [
       ["--locale <identifier>", "Transcribe with a specific locale. Defaults to the current locale."],
       ["--output <file>", "Write transcript output to a file instead of stdout."],
       ["--semantic-turns", "Use automatic turn grouping."],
+      ["--diarize", "Identify and label speakers with Luxel's bundled local diarization model."],
       ["--json", "Print full transcript JSON instead of plain text."],
       ["--overwrite", "Replace the transcript output file if it already exists."]
     ]
@@ -390,8 +392,10 @@ const troubleshooting = [
             <article>
               <h3>Local transcripts</h3>
               <p>
-                Luxel transcribes audio on your Mac. Transcripts can
-                stay in the editor workflow or be written from the CLI as text or JSON.
+                Luxel transcribes audio on your Mac. Local speaker identification can
+                diarize conversations, match Known Speakers, and label transcript turns.
+                Transcripts can stay in the editor workflow or be written from the CLI
+                as text or JSON.
               </p>
             </article>
             <article>
@@ -449,7 +453,9 @@ const troubleshooting = [
               <ol>
                 <li>Open Recording settings or the area picker camera menu.</li>
                 <li>Choose a camera device and grant Camera permission.</li>
-                <li>Choose circle or rounded-rectangle shape, size, and mirror behavior.</li>
+                <li>Choose Squircle, Rounded, or Square shape.</li>
+                <li>Optionally enable Cutout to isolate the presenter or Green Screen to remove a chroma-key background.</li>
+                <li>Choose the overlay size and mirror behavior.</li>
                 <li>Position the floating preview before or during setup.</li>
               </ol>
               <p class="tip">
@@ -704,18 +710,31 @@ const troubleshooting = [
                 <li>Use the transcript preview to generate or review transcript text.</li>
                 <li>Search transcript text or select transcript spans to jump playback.</li>
                 <li>Leave Segment Transcript Turns enabled for automatic turn grouping.</li>
-                <li>Turn it off in Settings > Output for faster raw transcripts on long recordings.</li>
+                <li>Turn it off in Settings > Transcripts for faster raw transcripts on long recordings.</li>
               </ol>
+            </article>
+
+            <article>
+              <h3>Identify and manage speakers</h3>
+              <ol>
+                <li>Enable Identify Speakers in Settings > Transcripts.</li>
+                <li>Generate a transcript to separate and label each detected voice locally.</li>
+                <li>In the Speakers card, use Auto detection or set an Exact speaker count or Range, then re-run detection.</li>
+                <li>Play voice examples, name a detected speaker, save it as a Known Speaker, attach it to an existing profile, or ignore it.</li>
+                <li>Future transcripts can match saved Known Speakers automatically.</li>
+              </ol>
+              <p class="tip">Voice profiles and speaker processing stay on your Mac.</p>
             </article>
 
             <article>
               <h3>From the command line (Developer ID)</h3>
               <pre><code>luxel transcribe demo.m4a &gt; demo.txt
 luxel transcribe demo.mp4 --output demo.json --json --overwrite
-luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
+luxel transcribe demo.mp4 --locale en_US --semantic-turns --diarize</code></pre>
               <p class="tip">
                 Plain text is printed to stdout by default. Use <code>--json</code> for
-                full turn-segmented transcript data.
+                full turn-segmented transcript data, including speaker labels when
+                {" "}<code>--diarize</code> is enabled.
               </p>
             </article>
           </div>
@@ -746,9 +765,8 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
                 <li>Set it as the Quick Recording preset.</li>
                 <li>
                   Open Area, draw a selection, and press
-                  <span class="shortcut-keys shortcut-keys--inline" aria-label="Option-click">
-                    <kbd class="is-modifier" title="Option">⌥</kbd>
-                    <kbd class="is-word" title="Click">click</kbd>
+                  <span class="shortcut-keys--inline">
+                    <ShortcutKeys keys={["option", "click"]} />
                   </span>
                   Record.
                 </li>
@@ -1240,8 +1258,9 @@ luxel://latest?reveal=true</code></pre>
               <p>
                 Choose a camera in Recording settings or the area picker. Luxel shows a
                 floating camera preview that can appear in the captured area. You can
-                choose circle or rounded-rectangle shape, small/medium/large size, and
-                mirror behavior.
+                choose Squircle, Rounded, or Square shape; small, medium, or large size;
+                and mirror behavior. Cutout removes the camera background around the
+                presenter, while Green Screen removes a chroma-key background.
               </p>
             </article>
             <article>
@@ -1326,7 +1345,7 @@ luxel://latest?reveal=true</code></pre>
 </PageLayout>
 
 <style>
-  .docs-page {
+  :global(.docs-page) {
     --docs-ink: rgb(255 255 255 / 0.95);
     --docs-muted: rgb(255 255 255 / 0.6);
     --docs-line: rgb(255 255 255 / 0.08);
@@ -1370,9 +1389,11 @@ luxel://latest?reveal=true</code></pre>
     isolation: isolate;
     align-self: start;
     max-height: calc(100svh - 104px);
-    overflow: auto;
-    padding: 1rem;
-    border-radius: 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.75rem;
+    border-radius: 18px;
     background:
       radial-gradient(120% 100% at 50% -20%, rgb(255 255 255 / 0.16), transparent 54%),
       var(--glass-card);
@@ -1382,31 +1403,35 @@ luxel://latest?reveal=true</code></pre>
       inset 0 1px 0 rgb(255 255 255 / 0.18),
       inset 0 0 0 1px rgb(255 255 255 / 0.06),
       var(--docs-shadow);
+    scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+    scrollbar-width: thin;
   }
 
   .docs-sidebar nav {
     display: grid;
-    gap: 1.25rem;
+    gap: 0.6rem;
   }
 
   .docs-nav-group {
     display: grid;
-    gap: 0.4rem;
+    gap: 0.08rem;
   }
 
   .docs-nav-group p {
+    padding: 0.15rem 0.55rem 0.25rem;
     color: var(--quiet);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 600;
     letter-spacing: 1.2px;
     text-transform: uppercase;
   }
 
   .docs-nav-group a {
-    padding: 0.35rem 0.5rem;
+    padding: 0.28rem 0.55rem;
     border-radius: 9px;
     color: rgb(255 255 255 / 0.7);
-    font-size: 0.92rem;
+    font-size: 0.88rem;
+    line-height: 1.25;
     transition:
       background 150ms ease,
       color 150ms ease;
@@ -1717,6 +1742,7 @@ luxel://latest?reveal=true</code></pre>
   }
 
   .locale-list li {
+    margin-top: 0;
     padding: 0.32rem 0.7rem;
     border-radius: 12px;
     background:
@@ -1775,62 +1801,8 @@ luxel://latest?reveal=true</code></pre>
     padding: 0.12rem 0.3rem;
   }
 
-  .shortcut-keys {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 0.28rem;
-    align-items: center;
-    vertical-align: middle;
-  }
-
   .shortcut-keys--inline {
     margin-inline: 0.35rem;
-  }
-
-  kbd {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.75rem;
-    height: 1.75rem;
-    padding: 0 0.44rem;
-    border-radius: 7px;
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.05)),
-      #17171f;
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.22),
-      inset 0 -1px 0 rgb(0 0 0 / 0.42),
-      inset 0 0 0 1px rgb(255 255 255 / 0.08),
-      0 1px 2px rgb(0 0 0 / 0.32);
-    color: var(--docs-ink);
-    font-family:
-      -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
-    font-size: 0.92rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  kbd.is-modifier {
-    font-size: 1.02rem;
-  }
-
-  kbd.is-letter {
-    min-width: 1.72rem;
-    font-size: 0.78rem;
-    letter-spacing: 0;
-  }
-
-  kbd.is-wide,
-  kbd.is-word {
-    min-width: auto;
-    padding-inline: 0.58rem;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-  }
-
-  kbd.is-word {
-    text-transform: none;
   }
 
   .shortcut-cluster {
@@ -1938,7 +1910,7 @@ luxel://latest?reveal=true</code></pre>
   }
 
   @media (max-width: 680px) {
-    .docs-page {
+    :global(.docs-page) {
       --docs-card-padding: 1rem;
       --docs-detail-card-padding: 1rem;
     }
