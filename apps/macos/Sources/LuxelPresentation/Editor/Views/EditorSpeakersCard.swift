@@ -122,35 +122,36 @@ struct EditorSpeakersCard: View {
 
     private var speakerCountRangeControls: some View {
         HStack(spacing: 10) {
-            speakerCountStepper(
-                prefix: "Min",
-                value: model.minimumSpeakerCount,
-                help: "Set the minimum expected speaker count.",
-                setValue: model.setMinimumSpeakerCount
-            )
-            speakerCountStepper(
-                prefix: "Max",
-                value: model.maximumSpeakerCount,
-                help: "Set the maximum expected speaker count.",
-                setValue: model.setMaximumSpeakerCount
-            )
-        }
-    }
+            Stepper(
+                value: Binding(
+                    get: { model.minimumSpeakerCount },
+                    set: { model.setMinimumSpeakerCount($0) }
+                ),
+                in: 1...12
+            ) {
+                Text("Min \(model.minimumSpeakerCount)")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .frame(minWidth: 42, alignment: .leading)
+            }
+            .controlSize(.small)
+            .help("Set the minimum expected speaker count.")
 
-    private func speakerCountStepper(
-        prefix: String,
-        value: Int,
-        help: String,
-        setValue: @escaping (Int) -> Void
-    ) -> some View {
-        Stepper(value: Binding(get: { value }, set: setValue), in: 1...12) {
-            Text("\(prefix) \(value)")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(0.78))
-                .frame(minWidth: 42, alignment: .leading)
+            Stepper(
+                value: Binding(
+                    get: { model.maximumSpeakerCount },
+                    set: { model.setMaximumSpeakerCount($0) }
+                ),
+                in: 1...12
+            ) {
+                Text("Max \(model.maximumSpeakerCount)")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .frame(minWidth: 42, alignment: .leading)
+            }
+            .controlSize(.small)
+            .help("Set the maximum expected speaker count.")
         }
-        .controlSize(.small)
-        .help(help)
     }
 
 }
