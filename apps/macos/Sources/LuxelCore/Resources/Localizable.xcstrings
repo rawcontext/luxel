@@ -28622,73 +28622,144 @@
         }
       }
     },
-    "View third-party codec acknowledgements.": {
+    "View third-party acknowledgements.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "View third-party codec acknowledgements."
+            "value": "View third-party acknowledgements."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hinweise zu Codecs von Drittanbietern anzeigen."
+            "value": "Hinweise zu Drittanbieterkomponenten anzeigen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Consulta los reconocimientos de códecs de terceros."
+            "value": "Consulta los reconocimientos de componentes de terceros."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Afficher les mentions relatives aux codecs tiers."
+            "value": "Afficher les mentions relatives aux composants tiers."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Visualizza i riconoscimenti dei codec di terze parti."
+            "value": "Visualizza i riconoscimenti dei componenti di terze parti."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "他社製コーデックの謝辞を表示します。"
+            "value": "サードパーティ製コンポーネントの謝辞を表示します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타사 코덱 사용 고지를 봅니다."
+            "value": "타사 구성 요소의 사용 고지를 봅니다."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Xem thông tin ghi nhận codec của bên thứ ba."
+            "value": "Xem thông tin ghi nhận các thành phần của bên thứ ba."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "查看第三方编解码器声明。"
+            "value": "查看第三方组件声明。"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Veja os reconhecimentos dos codecs de terceiros."
+            "value": "Veja os reconhecimentos dos componentes de terceiros."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Consulte os reconhecimentos dos codecs de terceiros."
+            "value": "Consulte os reconhecimentos dos componentes de terceiros."
+          }
+        }
+      }
+    },
+    "acknowledgements.unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No third-party acknowledgements are bundled."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es sind keine Hinweise zu Drittanbieterkomponenten enthalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se incluyen reconocimientos de componentes de terceros."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucune mention relative aux composants tiers n’est incluse."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non sono inclusi riconoscimenti per componenti di terze parti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サードパーティ製コンポーネントの謝辞は含まれていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "타사 구성 요소 사용 고지가 포함되어 있지 않습니다."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có thông tin ghi nhận thành phần của bên thứ ba nào được đính kèm."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未包含第三方组件声明。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhum reconhecimento de componente de terceiros foi incluído."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não estão incluídos reconhecimentos de componentes de terceiros."
           }
         }
       }

@@ -120,7 +120,7 @@ extension LuxelSettingsView {
                     SettingsCapsuleButtonLabel("Acknowledgements", systemImage: "doc.text")
                 }
                 .buttonStyle(.plain)
-                .help("View third-party codec acknowledgements.")
+                .help("View third-party acknowledgements.")
             }
         }
 

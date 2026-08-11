@@ -7,12 +7,16 @@ Luxel ships the following third-party components:
 3. SVT-AV1 — BSD-3-Clause-Clear — AV1 video export
 4. Swift Argument Parser — Apache License 2.0 (with Runtime Library Exception) — bundled `luxel` command-line tool
 5. FluidAudio — Apache License 2.0 — local speaker diarization engine
-6. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
-7. aufklarer/DeepFilterNet3-CoreML — Apache License 2.0 — bundled Studio Voice Core ML model
-8. soniqo/speech-swift — Apache License 2.0 — adapted Studio Voice signal-processing runtime
-9. ZHKKKe/MODNet — Apache License 2.0 — bundled local camera portrait-matting model
+6. fastcluster — BSD-2-Clause — hierarchical clustering code included by FluidAudio
+7. VBx — Apache License 2.0 — speaker clustering implementation included by FluidAudio
+8. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
+9. aufklarer/DeepFilterNet3-CoreML — Apache License 2.0 — bundled Studio Voice Core ML model
+10. soniqo/speech-swift — Apache License 2.0 — adapted Studio Voice signal-processing runtime
+11. ZHKKKe/MODNet — Apache License 2.0 — bundled local camera portrait-matting model
 
-The full license text and attribution for each component follow, in the same order.
+The license notices and required attributions for each component follow in the
+same order. Shared license text is reproduced once and referenced by every
+component to which it applies.
 
 ## Dependency: libvpx
 Name: libvpx
@@ -260,6 +264,40 @@ Copyright: Copyright 2025 Fluid Inference Inc.
 
 Upstream license file: https://github.com/FluidInference/FluidAudio/blob/main/LICENSE
 
+## fastcluster (included by FluidAudio)
+
+FluidAudio includes a C++ wrapper and source from the fastcluster library for
+hierarchical speaker clustering.
+
+License: BSD 2-Clause License
+
+Copyright: Until package version 1.1.23: Copyright 2011 Daniel Müllner; all changes from version 1.1.24 on: Copyright Google Inc. All rights reserved.
+
+Upstream notice: https://github.com/FluidInference/FluidAudio/blob/19600a485baa4998812e4654b70d2bab8f2c9949/ThirdPartyLicenses/fastcluster-LICENSE.md
+
+Copyright:
+  * Until package version 1.1.23: © 2011 Daniel Müllner <https://danifold.net>
+  * All changes from version 1.1.24 on: © Google Inc. <https://www.google.com>
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+## VBx (included by FluidAudio)
+
+FluidAudio includes an implementation based on the VBx speaker-diarization
+algorithm from the Brno University of Technology Speech@FIT group.
+
+License: Apache License 2.0 (full text reproduced in the "Apache License, Version 2.0" section below)
+
+Copyright: Copyright 2021-2024 BUT Speech@FIT (original VBx project)
+
+Upstream notice: https://github.com/FluidInference/FluidAudio/blob/19600a485baa4998812e4654b70d2bab8f2c9949/ThirdPartyLicenses/vbx-LICENSE.md
+
 ## FluidInference speaker-diarization-coreml (bundled model)
 
 Luxel bundles the `FluidInference/speaker-diarization-coreml` Core ML models
@@ -270,13 +308,11 @@ The model is installed from the app bundle only; Luxel never downloads it.
 
 License: Creative Commons Attribution 4.0 International (CC-BY-4.0), https://creativecommons.org/licenses/by/4.0/
 
-Attribution: FluidInference; pyannote.audio contributors (Hervé Bredin et al.); WeSpeaker contributors. The models are redistributed unmodified.
+Attribution: FluidInference; pyannote.audio contributors (Hervé Bredin et al.); WeSpeaker contributors. Luxel redistributes the model files unmodified.
 
 Model card: https://huggingface.co/FluidInference/speaker-diarization-coreml
 
-Note: bundling is redistribution under CC-BY-4.0. Attribution and
-redistribution behavior must be reviewed by product/legal before shipping the
-diarization feature (tracked in docs/plans/optional-speaker-diarization.md).
+License terms and warranty disclaimer: https://creativecommons.org/licenses/by/4.0/legalcode.en
 
 ## aufklarer/DeepFilterNet3-CoreML (bundled model)
 
@@ -328,8 +364,8 @@ and the converted model does not require networking at runtime.
 ## Apache License, Version 2.0
 
 The following license text applies to Swift Argument Parser (together with the
-Runtime Library Exception noted above), FluidAudio, DeepFilterNet3-CoreML,
-the adapted speech-swift runtime, and MODNet.
+Runtime Library Exception noted above), FluidAudio, VBx,
+DeepFilterNet3-CoreML, the adapted speech-swift runtime, and MODNet.
 
                                  Apache License
                            Version 2.0, January 2004
@@ -532,9 +568,3 @@ the adapted speech-swift runtime, and MODNet.
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
-## Maintenance Notes
-
-Before any additional vendored codec library is distributed, this file must include the exact upstream license text and copyright notice from the vendored source tree. Distributed code must pass Luxel's Mac App Store license allowlist in `CodecLicensePolicy`; development-only validators and analyzers are tracked separately and are not part of the shipped app bundle.
-
-When a codec library is bundled, add one entry per shipped dependency using a `## Dependency: <dependency-id>` heading, followed by `Name`, `License`, `Copyright`, and `License Text` fields. The release gate parses this file and validates it against the bundled codec dependency manifest.

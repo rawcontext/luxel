@@ -1,4 +1,5 @@
 import Foundation
+import LuxelCore
 import SwiftUI
 
 struct CodecAcknowledgementsView: View {
@@ -71,8 +72,11 @@ struct CodecAcknowledgementsView: View {
             }
             .padding(.bottom, 4)
         case .field(let label, let value):
-            (Text("\(label): ").font(.system(size: 12, weight: .semibold))
-                + Text(value).font(.system(size: 12)))
+            let styledLabel = Text(verbatim: label)
+                .font(.system(size: 12, weight: .semibold))
+            let styledValue = Text(verbatim: value)
+                .font(.system(size: 12))
+            Text("\(styledLabel): \(styledValue)")
                 .padding(.bottom, 4)
         case .paragraph(let text):
             Text(text)
@@ -185,7 +189,10 @@ enum CodecAcknowledgementsResource {
               let text = try? String(contentsOf: url, encoding: .utf8),
               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else {
-            return "No third-party codec acknowledgements are bundled."
+            return LuxelLocalization.string(
+                "acknowledgements.unavailable",
+                defaultValue: "No third-party acknowledgements are bundled."
+            )
         }
 
         return text
