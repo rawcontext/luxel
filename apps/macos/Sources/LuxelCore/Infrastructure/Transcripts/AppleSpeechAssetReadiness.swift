@@ -23,6 +23,7 @@ struct AppleSpeechAssetReadinessWaiter: Sendable {
     }
 
     func waitUntilReady(
+        installed: @escaping @Sendable () async -> Bool = { false },
         status: @escaping @Sendable () async -> AppleSpeechAssetStatus,
         install: @escaping @Sendable () async throws -> Void,
         sleep: @escaping @Sendable (Duration) async throws -> Void = {
@@ -35,7 +36,7 @@ struct AppleSpeechAssetReadinessWaiter: Sendable {
         while true {
             try Task.checkCancellation()
 
-            switch await status() {
+            switch await currentStatus(installed: installed, status: status) {
             case .installed:
                 return
             case .supported:
@@ -69,6 +70,16 @@ struct AppleSpeechAssetReadinessWaiter: Sendable {
                 try await sleep(retryInterval)
             }
         }
+    }
+
+    private func currentStatus(
+        installed: @escaping @Sendable () async -> Bool,
+        status: @escaping @Sendable () async -> AppleSpeechAssetStatus
+    ) async -> AppleSpeechAssetStatus {
+        if await installed() {
+            return .installed
+        }
+        return await status()
     }
 }
 

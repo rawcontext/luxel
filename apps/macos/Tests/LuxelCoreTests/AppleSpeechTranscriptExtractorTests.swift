@@ -28,6 +28,30 @@ struct AppleSpeechTranscriptExtractorTests {
         #expect(counts.sleep == 1)
     }
 
+    @Test("asset readiness accepts an installed locale when asset status is stale")
+    func assetReadinessAcceptsInstalledLocaleWhenStatusIsStale() async throws {
+        let installedProbe = InstalledLocaleProbe(values: [false, true])
+        let assetProbe = AssetReadinessProbe(statuses: [.unsupported])
+        let waiter = AppleSpeechAssetReadinessWaiter(
+            retryInterval: .zero,
+            maximumTransientAttempts: 2,
+            maximumDownloadPolls: 2
+        )
+
+        try await waiter.waitUntilReady(
+            installed: { await installedProbe.nextValue() },
+            status: { await assetProbe.nextStatus() },
+            install: { await assetProbe.recordInstall() },
+            sleep: { _ in await assetProbe.recordSleep() }
+        )
+
+        let counts = await assetProbe.counts()
+        #expect(await installedProbe.count == 2)
+        #expect(counts.status == 1)
+        #expect(counts.install == 0)
+        #expect(counts.sleep == 1)
+    }
+
     @Test("asset readiness starts installation and waits for completion")
     func assetReadinessStartsInstallationAndWaitsForCompletion() async throws {
         let counts = try await waitForAssets(statuses: [.supported, .downloading, .installed])
@@ -122,6 +146,23 @@ struct AppleSpeechTranscriptExtractorTests {
             sleep: { _ in await probe.recordSleep() }
         )
         return await probe.counts()
+    }
+}
+
+private actor InstalledLocaleProbe {
+    private let values: [Bool]
+    private var index = 0
+    private(set) var count = 0
+
+    init(values: [Bool]) {
+        self.values = values
+    }
+
+    func nextValue() -> Bool {
+        let value = values[min(index, values.count - 1)]
+        index += 1
+        count += 1
+        return value
     }
 }
 

@@ -48,7 +48,7 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
             attributeOptions: [.audioTimeRange, .transcriptionConfidence]
         )
         try await assetReadinessGate.wait(for: locale.identifier) {
-            try await ensureAssetsInstalled(for: [transcriber])
+            try await ensureAssetsInstalled(for: [transcriber], locale: locale)
         }
 
         let preparedAudioURL: URL
@@ -96,9 +96,18 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
         SFSpeechRecognizer.authorizationStatus()
     }
 
-    private func ensureAssetsInstalled(for modules: [any Speech.SpeechModule]) async throws {
+    private func ensureAssetsInstalled(
+        for modules: [any Speech.SpeechModule],
+        locale: Locale
+    ) async throws {
         let waiter = AppleSpeechAssetReadinessWaiter()
         try await waiter.waitUntilReady(
+            installed: {
+                let identifier = locale.identifier(.bcp47)
+                return await Speech.SpeechTranscriber.installedLocales.contains {
+                    $0.identifier(.bcp47) == identifier
+                }
+            },
             status: {
                 switch await Speech.AssetInventory.status(forModules: modules) {
                 case .installed:
