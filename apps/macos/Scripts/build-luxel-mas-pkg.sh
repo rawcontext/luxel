@@ -5,8 +5,10 @@ APP_NAME="Luxel"
 CONFIGURATION="${CONFIGURATION:-release}"
 PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
+PRIVACY_MANIFEST="${PACKAGE_ROOT}/Configuration/Luxel/PrivacyInfo.xcprivacy"
 BASE_ENTITLEMENTS="${PACKAGE_ROOT}/Configuration/Luxel/Luxel.MacAppStore.entitlements"
 CLI_ENTITLEMENTS="${PACKAGE_ROOT}/Configuration/Luxel/LuxelCLI.MacAppStore.entitlements"
+CLI_INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/LuxelCLI.Info.plist"
 THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
 STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
@@ -48,8 +50,10 @@ if [[ -z "${PROVISIONING_PROFILE}" ]]; then
 fi
 
 require_file "${PROVISIONING_PROFILE}" "Mac App Store provisioning profile"
+require_file "${PRIVACY_MANIFEST}" "Privacy manifest"
 require_file "${BASE_ENTITLEMENTS}" "Mac App Store entitlements"
 require_file "${CLI_ENTITLEMENTS}" "Mac App Store command line tool entitlements"
+require_file "${CLI_INFO_PLIST}" "Mac App Store command line tool Info.plist"
 "${MODNET_MODEL_AUDITOR}" "${MODNET_MODEL_DIR}"
 
 if [[ -z "${APP_STORE_SIGN_IDENTITY}" ]]; then
@@ -127,7 +131,11 @@ swift build \
 swift build \
 	--configuration "${CONFIGURATION}" \
 	-Xswiftc -DLUXEL_MAC_APP_STORE \
-	--product luxel-cli
+	--product luxel-cli \
+	-Xlinker -sectcreate \
+	-Xlinker __TEXT \
+	-Xlinker __info_plist \
+	-Xlinker "${CLI_INFO_PLIST}"
 BIN_DIR="$(swift build --configuration "${CONFIGURATION}" --show-bin-path)"
 
 rm -rf "${APP_PATH}" "${PKG_PATH}"
@@ -169,6 +177,31 @@ codesign \
 	--entitlements "${CLI_ENTITLEMENTS}" \
 	--timestamp \
 	"${APP_PATH}/Contents/MacOS/luxel-cli"
+
+CLI_SIGNING_IDENTIFIER="$(
+	codesign -dv "${APP_PATH}/Contents/MacOS/luxel-cli" 2>&1 |
+		awk -F= '/^Identifier=/ { print $2; exit }'
+)"
+if [[ "${CLI_SIGNING_IDENTIFIER}" != "com.rawcontext.luxel.cli" ]]; then
+	echo "Signed command line tool identifier ${CLI_SIGNING_IDENTIFIER:-<missing>} is invalid." >&2
+	exit 1
+fi
+
+CLI_HELP_OUTPUT="$("${APP_PATH}/Contents/MacOS/luxel-cli" --help)"
+if grep -Eq '(^|[[:space:]])(convert|editor|export|transcribe)([[:space:]]|$)' <<<"${CLI_HELP_OUTPUT}"; then
+	echo "Mac App Store command line tool exposes file-system commands that App Sandbox cannot service." >&2
+	exit 1
+fi
+CLI_RECORD_HELP_OUTPUT="$("${APP_PATH}/Contents/MacOS/luxel-cli" record --help)"
+if grep -q -- '--save-to' <<<"${CLI_RECORD_HELP_OUTPUT}"; then
+	echo "Mac App Store command line tool exposes an arbitrary recording output path." >&2
+	exit 1
+fi
+CLI_AUTOMATION_URL="$("${APP_PATH}/Contents/MacOS/luxel-cli" stop --print-url)"
+if [[ "${CLI_AUTOMATION_URL}" != "luxel://stop" ]]; then
+	echo "Mac App Store command line tool automation URL is invalid: ${CLI_AUTOMATION_URL}" >&2
+	exit 1
+fi
 
 codesign \
 	--force \

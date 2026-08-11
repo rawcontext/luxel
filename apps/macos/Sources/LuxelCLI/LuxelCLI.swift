@@ -3,6 +3,25 @@ import Foundation
 import LuxelCore
 
 public struct LuxelCLI: ParsableCommand {
+    #if LUXEL_MAC_APP_STORE
+    public static let configuration = CommandConfiguration(
+        commandName: "luxel",
+        abstract: "Control the installed Luxel app from the command line.",
+        discussion: """
+      Mac App Store commands use Luxel's URL automation interface so the app performs \
+      all recording, replay buffer, settings, and callback work inside its sandbox.
+      """,
+        version: LuxelCLIMetadata.versionSummary,
+        subcommands: [
+            LuxelRecordCommand.self,
+            LuxelStopCommand.self,
+            LuxelToggleCommand.self,
+            LuxelClipCommand.self,
+            LuxelLatestCommand.self,
+            LuxelPreferencesCommand.self
+        ]
+    )
+    #else
     public static let configuration = CommandConfiguration(
         commandName: "luxel",
         abstract: "Control Luxel recording, editor, export, and transcript workflows.",
@@ -24,6 +43,7 @@ public struct LuxelCLI: ParsableCommand {
             LuxelPreferencesCommand.self
         ]
     )
+    #endif
 
     public init() {}
 }
@@ -133,12 +153,16 @@ public struct LuxelRecordCommand: ParsableCommand {
     @Option(help: "Seconds to wait before capture starts, from 0 to 60.")
     public var countdown: Int?
 
+    #if LUXEL_MAC_APP_STORE
+    public var saveTo: String? { nil }
+    #else
     @Option(
         name: .customLong("save-to"),
         help: "Directory to save the recording to.",
         completion: .directory
     )
     public var saveTo: String?
+    #endif
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
 
@@ -211,12 +235,16 @@ public struct LuxelToggleCommand: ParsableCommand {
     @Option(help: "Seconds to wait before capture starts, from 0 to 60.")
     public var countdown: Int?
 
+    #if LUXEL_MAC_APP_STORE
+    public var saveTo: String? { nil }
+    #else
     @Option(
         name: .customLong("save-to"),
         help: "Directory to save a started recording to.",
         completion: .directory
     )
     public var saveTo: String?
+    #endif
 
     @OptionGroup public var callbacks: LuxelCallbackArguments
 
