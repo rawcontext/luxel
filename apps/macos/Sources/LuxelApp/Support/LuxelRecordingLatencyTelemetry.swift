@@ -13,7 +13,7 @@ struct RecordingStartLatencySpan {
 @MainActor
 enum LuxelRecordingLatencyTelemetry {
     private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "media.luxel.app",
+        subsystem: Bundle.main.bundleIdentifier ?? "com.rawcontext.luxel",
         category: "RecordingLatency"
     )
     private static let signposter = OSSignposter(logger: logger)

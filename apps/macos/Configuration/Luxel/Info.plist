@@ -36,7 +36,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Luxel</string>
 	<key>CFBundleIdentifier</key>
-	<string>media.luxel.app</string>
+	<string>com.rawcontext.luxel</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -49,7 +49,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>media.luxel.app.url</string>
+			<string>com.rawcontext.luxel.url</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>luxel</string>

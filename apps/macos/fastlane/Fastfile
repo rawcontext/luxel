@@ -7,7 +7,7 @@ require "shellwords"
 
 default_platform(:mac)
 
-APP_IDENTIFIER = "media.luxel.app"
+APP_IDENTIFIER = "com.rawcontext.luxel"
 APPLE_ACCOUNT = ENV["FASTLANE_USER"]
 REPO_ROOT = File.expand_path("..", __dir__)
 PACKAGE_PATH = File.join(REPO_ROOT, ".build/mas/Luxel.pkg")

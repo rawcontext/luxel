@@ -10,7 +10,7 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundleName"] as? String == "Luxel")
         #expect(plist["CFBundleDisplayName"] as? String == "Luxel")
         #expect(plist["CFBundleExecutable"] as? String == "Luxel")
-        #expect(plist["CFBundleIdentifier"] as? String == "media.luxel.app")
+        #expect(plist["CFBundleIdentifier"] as? String == "com.rawcontext.luxel")
         #expect(plist["CFBundleShortVersionString"] as? String == "1.0.36")
         #expect(plist["CFBundleVersion"] as? String == "1")
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
@@ -21,7 +21,7 @@ struct AppBundleConfigurationTests {
                 == "Copyright © 2026 Context. All rights reserved.")
         let urlTypes = try #require(plist["CFBundleURLTypes"] as? [[String: Any]])
         let luxelURLType = try #require(urlTypes.first)
-        #expect(luxelURLType["CFBundleURLName"] as? String == "media.luxel.app.url")
+        #expect(luxelURLType["CFBundleURLName"] as? String == "com.rawcontext.luxel.url")
         #expect(luxelURLType["CFBundleURLSchemes"] as? [String] == ["luxel"])
 
         let documentTypes = try #require(plist["CFBundleDocumentTypes"] as? [[String: Any]])
@@ -135,7 +135,7 @@ extension AppBundleConfigurationTests {
         let script = try String(contentsOf: scriptURL, encoding: .utf8)
 
         #expect(
-            script.contains("APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-media.luxel.app.dev}\""))
+            script.contains("APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-com.rawcontext.luxel.dev}\""))
         #expect(script.contains("APP_DISPLAY_NAME=\"${APP_DISPLAY_NAME:-Luxel Dev}\""))
         #expect(script.contains("APP_URL_SCHEME=\"${APP_URL_SCHEME:-luxel-dev}\""))
         #expect(

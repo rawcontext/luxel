@@ -18,7 +18,7 @@ public final class CGEventTapKeystrokeRecorder: KeystrokeCaptureEventSource, @un
 
     public convenience init(
         logger: Logger = Logger(
-            subsystem: Bundle.main.bundleIdentifier ?? "media.luxel.app",
+            subsystem: Bundle.main.bundleIdentifier ?? "com.rawcontext.luxel",
             category: "KeystrokeCapture"
         )
     ) {

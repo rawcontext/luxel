@@ -3,7 +3,7 @@ import Foundation
 import LuxelCore
 import OSLog
 
-private let speakersLogger = Logger(subsystem: "media.luxel.app", category: "speakers")
+private let speakersLogger = Logger(subsystem: "com.rawcontext.luxel", category: "speakers")
 
 @MainActor
 extension LuxelEditorModel {

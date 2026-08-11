@@ -244,7 +244,7 @@ public final class MODNetPortraitMattingProcessor: @unchecked Sendable {
     private static let alphaValidationInterval = 30
     private static let inputExtent = CGRect(x: 0, y: 0, width: inputSize, height: inputSize)
     private static let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
-    private static let logger = Logger(subsystem: "media.luxel.app", category: "CameraCutout")
+    private static let logger = Logger(subsystem: "com.rawcontext.luxel", category: "CameraCutout")
 }
 
 private extension Duration {

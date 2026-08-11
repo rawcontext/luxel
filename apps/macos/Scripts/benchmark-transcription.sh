@@ -22,7 +22,7 @@ mkdir -p "${APP_PATH}/Contents/MacOS"
 cp "Configuration/Luxel/Info.plist" "${APP_PATH}/Contents/Info.plist"
 cp "${BIN_DIR}/${EXECUTABLE}" "${APP_PATH}/Contents/MacOS/${EXECUTABLE}"
 /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable ${EXECUTABLE}" "${APP_PATH}/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier media.luxel.app.dev" "${APP_PATH}/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.rawcontext.luxel.dev" "${APP_PATH}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Luxel Transcription Benchmark" "${APP_PATH}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleName Luxel Transcription Benchmark" "${APP_PATH}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Delete :CFBundleURLTypes" "${APP_PATH}/Contents/Info.plist" 2>/dev/null || true

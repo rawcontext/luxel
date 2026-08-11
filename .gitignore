@@ -1,5 +1,6 @@
 docs/Luxel
 .build/
+.signing/
 apps/macos/.build/
 apps/macos/.bench/
 apps/macos/dist/

@@ -8,7 +8,7 @@ import SwiftUI
 @MainActor
 final class LuxelStatusItemController: NSObject {
     static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "media.luxel.app",
+        subsystem: Bundle.main.bundleIdentifier ?? "com.rawcontext.luxel",
         category: "StatusItem"
     )
 
@@ -84,7 +84,7 @@ extension LuxelStatusItemController {
     func configureStatusItem() {
         let autosaveIdentifier =
             Bundle.main.bundleIdentifier
-            .map { "\($0).statusItem" } ?? "media.luxel.app.statusItem"
+            .map { "\($0).statusItem" } ?? "com.rawcontext.luxel.statusItem"
         statusItem.autosaveName = NSStatusItem.AutosaveName(autosaveIdentifier)
 
         guard let button = statusItem.button else {

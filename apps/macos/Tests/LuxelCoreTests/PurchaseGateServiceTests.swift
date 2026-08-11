@@ -39,7 +39,7 @@ struct PurchaseGateServiceTests {
                 URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/sandboxReceipt")
             },
             currentBundleID: {
-                "media.luxel.app"
+                "com.rawcontext.luxel"
             },
             appTransactionEntitlement: {
                 .unavailable
@@ -56,10 +56,10 @@ struct PurchaseGateServiceTests {
                 URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/receipt")
             },
             currentBundleID: {
-                "media.luxel.app"
+                "com.rawcontext.luxel"
             },
             appTransactionEntitlement: {
-                .verified(bundleID: "media.luxel.app")
+                .verified(bundleID: "com.rawcontext.luxel")
             }
         )
 
@@ -73,7 +73,7 @@ struct PurchaseGateServiceTests {
                 URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/receipt")
             },
             currentBundleID: {
-                "media.luxel.app"
+                "com.rawcontext.luxel"
             },
             appTransactionEntitlement: {
                 .verified(bundleID: "media.other.app")
@@ -90,7 +90,7 @@ struct PurchaseGateServiceTests {
                 URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/receipt")
             },
             currentBundleID: {
-                "media.luxel.app"
+                "com.rawcontext.luxel"
             },
             appTransactionEntitlement: {
                 .unavailable

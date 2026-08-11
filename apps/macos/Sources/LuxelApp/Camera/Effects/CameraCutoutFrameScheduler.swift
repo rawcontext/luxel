@@ -153,7 +153,7 @@ final class CameraCutoutFrameScheduler<Frame: Sendable, Output: Sendable>: @unch
     }
 
     private static var logger: Logger {
-        Logger(subsystem: "media.luxel.app", category: "CameraCutout")
+        Logger(subsystem: "com.rawcontext.luxel", category: "CameraCutout")
     }
 }
 

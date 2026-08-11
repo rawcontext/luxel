@@ -205,7 +205,7 @@ extension CameraPreviewPanelController {
 
     static let edgeMargin: CGFloat = 28
     static let cornerSnapDistance: CGFloat = 56
-    static let logger = Logger(subsystem: "media.luxel.app", category: "CameraCutout")
+    static let logger = Logger(subsystem: "com.rawcontext.luxel", category: "CameraCutout")
 }
 
 struct CameraPanelPresentation {

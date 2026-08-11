@@ -3,7 +3,7 @@ import LuxelCore
 import OSLog
 
 let luxelRecordingLogger = Logger(
-    subsystem: Bundle.main.bundleIdentifier ?? "media.luxel.app",
+    subsystem: Bundle.main.bundleIdentifier ?? "com.rawcontext.luxel",
     category: "Recording"
 )
 

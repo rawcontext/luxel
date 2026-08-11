@@ -100,7 +100,7 @@ final class CameraBackgroundEffectTelemetry: @unchecked Sendable {
     private static let maximumLatencySampleCount = 120
     private static let latencyBudgetMilliseconds = 150.0
     private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "media.luxel.app",
+        subsystem: Bundle.main.bundleIdentifier ?? "com.rawcontext.luxel",
         category: "CameraBackgroundEffect"
     )
     private static let signposter = OSSignposter(logger: logger)

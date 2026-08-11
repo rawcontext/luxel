@@ -6,7 +6,7 @@ import Speech
 
 public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
     private static let logger = Logger(
-        subsystem: "media.luxel.app",
+        subsystem: "com.rawcontext.luxel",
         category: "speech-transcription"
     )
 

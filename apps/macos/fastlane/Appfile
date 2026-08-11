@@ -1,3 +1,3 @@
-app_identifier("media.luxel.app")
+app_identifier("com.rawcontext.luxel")
 apple_id(ENV["FASTLANE_USER"])
-team_id("994AX43N6S")
+team_id("U65DCW9TAK")

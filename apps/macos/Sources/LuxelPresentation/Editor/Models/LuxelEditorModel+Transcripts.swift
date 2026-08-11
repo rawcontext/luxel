@@ -3,7 +3,7 @@ import Foundation
 import LuxelCore
 import OSLog
 
-private let transcriptLogger = Logger(subsystem: "media.luxel.app", category: "transcripts")
+private let transcriptLogger = Logger(subsystem: "com.rawcontext.luxel", category: "transcripts")
 
 extension LuxelEditorModel {
     var canTranscribeSource: Bool {

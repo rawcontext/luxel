@@ -226,7 +226,7 @@ public struct SystemLuxelEditorOpener: LuxelEditorOpener {
             return ["-a", appBundleURL.path, fileURL.path]
         }
 
-        return ["-b", "media.luxel.app", fileURL.path]
+        return ["-b", "com.rawcontext.luxel", fileURL.path]
     }
 
     public static func containingAppBundleURL(
