@@ -32,29 +32,9 @@ struct PurchaseGateServiceTests {
         #expect(await iterator.next() == true)
     }
 
-    @Test("Mac App Store gate allows TestFlight sandbox receipts")
-    func macAppStoreGateAllowsTestFlightSandboxReceipts() async {
+    @Test("Mac App Store gate accepts an Apple-verified app purchase")
+    func macAppStoreGateAcceptsVerifiedAppPurchase() async {
         let gate = MacAppStorePaidAppPurchaseGate(
-            receiptURL: {
-                URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/sandboxReceipt")
-            },
-            currentBundleID: {
-                "com.rawcontext.luxel"
-            },
-            appTransactionEntitlement: {
-                .unavailable
-            }
-        )
-
-        #expect(await gate.isEntitled())
-    }
-
-    @Test("Mac App Store gate verifies production app transaction bundle ID")
-    func macAppStoreGateVerifiesProductionAppTransactionBundleID() async {
-        let gate = MacAppStorePaidAppPurchaseGate(
-            receiptURL: {
-                URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/receipt")
-            },
             currentBundleID: {
                 "com.rawcontext.luxel"
             },
@@ -69,9 +49,6 @@ struct PurchaseGateServiceTests {
     @Test("Mac App Store gate rejects verified app transaction for another bundle ID")
     func macAppStoreGateRejectsMismatchedProductionAppTransactionBundleID() async {
         let gate = MacAppStorePaidAppPurchaseGate(
-            receiptURL: {
-                URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/receipt")
-            },
             currentBundleID: {
                 "com.rawcontext.luxel"
             },
@@ -83,12 +60,23 @@ struct PurchaseGateServiceTests {
         #expect(await !gate.isEntitled())
     }
 
-    @Test("Mac App Store gate does not lock out on unavailable app transaction")
-    func macAppStoreGateAllowsUnavailableAppTransaction() async {
+    @Test("Mac App Store gate rejects unverified app transactions")
+    func macAppStoreGateRejectsUnverifiedAppTransaction() async {
         let gate = MacAppStorePaidAppPurchaseGate(
-            receiptURL: {
-                URL(fileURLWithPath: "/Applications/Luxel.app/Contents/_MASReceipt/receipt")
+            currentBundleID: {
+                "com.rawcontext.luxel"
             },
+            appTransactionEntitlement: {
+                .unverified
+            }
+        )
+
+        #expect(await !gate.isEntitled())
+    }
+
+    @Test("Mac App Store gate fails closed when Apple verification is unavailable")
+    func macAppStoreGateRejectsUnavailableAppTransaction() async {
+        let gate = MacAppStorePaidAppPurchaseGate(
             currentBundleID: {
                 "com.rawcontext.luxel"
             },
@@ -97,7 +85,7 @@ struct PurchaseGateServiceTests {
             }
         )
 
-        #expect(await gate.isEntitled())
+        #expect(await !gate.isEntitled())
     }
 }
 

@@ -1,3 +1,0 @@
-import LuxelCLI
-
-LuxelCLI.main()

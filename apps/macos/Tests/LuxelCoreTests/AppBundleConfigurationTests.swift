@@ -214,6 +214,33 @@ extension AppBundleConfigurationTests {
         #expect(script.contains("-DLUXEL_MAC_APP_STORE"))
     }
 
+    @Test("Mac App Store GUI and CLI entry points require purchase verification")
+    func macAppStoreEntryPointsRequirePurchaseVerification() throws {
+        let root = try packageRootURL()
+        let appSource = try String(
+            contentsOf: root.appending(path: "Sources/LuxelApp/App/LuxelApp.swift"),
+            encoding: .utf8
+        )
+        let cliSource = try String(
+            contentsOf: root.appending(
+                path: "Sources/LuxelCLIExecutable/LuxelCLIExecutable.swift"
+            ),
+            encoding: .utf8
+        )
+        let bundleIdentifier = try #require(
+            readPlist("Configuration/Luxel/Info.plist")["CFBundleIdentifier"] as? String
+        )
+
+        let appVerification = try #require(
+            appSource.range(of: "guard await LuxelCompositionRoot.purchaseGateService().isEntitled()")
+        )
+        let appLaunch = try #require(appSource.range(of: "LuxelApp.main()"))
+        #expect(appVerification.lowerBound < appLaunch.lowerBound)
+        #expect(cliSource.contains("#if LUXEL_MAC_APP_STORE"))
+        #expect(cliSource.contains("guard await purchaseGate.isEntitled()"))
+        #expect(cliSource.contains("currentBundleID: { \"\(bundleIdentifier)\" }"))
+    }
+
     private func readPlist(_ relativePath: String) throws -> [String: Any] {
         let url = try packageRootURL().appending(path: relativePath)
         let data = try Data(contentsOf: url)

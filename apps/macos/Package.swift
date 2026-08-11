@@ -33,7 +33,10 @@ let package = Package(
                 "LuxelPresentation"
             ]
         ),
-        .executableTarget(name: "LuxelCLIExecutable", dependencies: ["LuxelCLI"]),
+        .executableTarget(
+            name: "LuxelCLIExecutable",
+            dependencies: ["LuxelCLI", "LuxelCore"]
+        ),
         .executableTarget(
             name: "LuxelTranscriptionBenchmark",
             dependencies: [

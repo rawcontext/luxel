@@ -16907,6 +16907,148 @@
         }
       }
     },
+    "purchaseVerification.failed.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install Luxel from the Mac App Store using the Apple Account that purchased it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installiere Luxel aus dem Mac App Store mit dem Apple Account, mit dem es gekauft wurde."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instala Luxel desde el Mac App Store con la cuenta de Apple que se utilizó para comprarlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installez Luxel depuis le Mac App Store avec le compte Apple utilisé pour l’acheter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Installa Luxel dal Mac App Store con l’Apple Account usato per acquistarlo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luxelを購入したApple Accountを使ってMac App Storeからインストールしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luxel을 구입한 Apple Account를 사용하여 Mac App Store에서 Luxel을 설치하십시오."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy cài đặt Luxel từ Mac App Store bằng Tài khoản Apple đã dùng để mua ứng dụng."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请使用购买 Luxel 的 Apple 账户从 Mac App Store 安装。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instale o Luxel pela Mac App Store usando a Conta Apple utilizada na compra."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instale o Luxel a partir da Mac App Store com a Conta Apple utilizada na compra."
+          }
+        }
+      }
+    },
+    "purchaseVerification.failed.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luxel Purchase Could Not Be Verified"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Luxel-Kauf konnte nicht bestätigt werden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo verificar la compra de Luxel"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de vérifier l’achat de Luxel"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile verificare l’acquisto di Luxel"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luxelの購入を確認できませんでした"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luxel 구매를 확인할 수 없습니다"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xác minh giao dịch mua Luxel"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法验证 Luxel 购买"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível verificar a compra do Luxel"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível verificar a compra do Luxel"
+          }
+        }
+      }
+    },
     "quickExport.error.notifierUnavailable": {
       "extractionState": "manual",
       "localizations": {

@@ -5,6 +5,18 @@ import LuxelPresentation
 import SwiftUI
 
 @main
+enum LuxelAppBootstrap {
+    @MainActor
+    static func main() async {
+        guard await LuxelCompositionRoot.purchaseGateService().isEntitled() else {
+            PurchaseFailurePresenter.present()
+            return
+        }
+
+        LuxelApp.main()
+    }
+}
+
 struct LuxelApp: App {
     @NSApplicationDelegateAdaptor(LuxelApplicationDelegate.self) private var appDelegate
     @Environment(\.openSettings) private var openSettings
@@ -58,7 +70,6 @@ struct LuxelApp: App {
                 shortcutController: shortcutController,
                 windowPresenter: windowPresenter
             ))
-        LuxelAppPurchaseGuard.enforce(purchaseGateService: LuxelCompositionRoot.purchaseGateService())
         appDelegate.openFiles = { fileURLs, activationSource in
             guard let fileURL = fileURLs.first else {
                 return
@@ -140,23 +151,24 @@ private struct LuxelSettingsActionScene<Content: Scene>: Scene {
     }
 }
 
-private enum LuxelAppPurchaseGuard {
-    static func enforce(purchaseGateService: PurchaseGateService) {
-        Task { @MainActor in
-            let isEntitled = await purchaseGateService.isEntitled()
-            guard !isEntitled else {
-                return
-            }
-
-            let alert = NSAlert()
-            alert.alertStyle = .critical
-            alert.messageText = "Luxel Purchase Could Not Be Verified"
-            alert.informativeText =
+private enum PurchaseFailurePresenter {
+    @MainActor
+    static func present() {
+        let alert = NSAlert()
+        alert.alertStyle = .critical
+        alert.messageText = LuxelLocalization.string(
+            "purchaseVerification.failed.title",
+            defaultValue: "Luxel Purchase Could Not Be Verified"
+        )
+        alert.informativeText = LuxelLocalization.string(
+            "purchaseVerification.failed.message",
+            defaultValue:
                 "Install Luxel from the Mac App Store using the Apple Account that purchased it."
-            alert.addButton(withTitle: "Quit Luxel")
-            alert.runModal()
-            NSApplication.shared.terminate(nil)
-        }
+        )
+        alert.addButton(
+            withTitle: LuxelLocalization.string("Quit Luxel", defaultValue: "Quit Luxel")
+        )
+        alert.runModal()
     }
 }
 

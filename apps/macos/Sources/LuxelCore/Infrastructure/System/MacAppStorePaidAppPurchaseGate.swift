@@ -8,14 +8,10 @@ public struct MacAppStorePaidAppPurchaseGate: PurchaseGate {
         case unavailable
     }
 
-    private let receiptURL: @Sendable () -> URL?
     private let currentBundleID: @Sendable () -> String?
     private let appTransactionEntitlement: @Sendable () async -> AppTransactionEntitlement
 
     public init(
-        receiptURL: @escaping @Sendable () -> URL? = {
-            Self.currentAppStoreReceiptURL()
-        },
         currentBundleID: @escaping @Sendable () -> String? = {
             Bundle.main.bundleIdentifier
         },
@@ -23,16 +19,11 @@ public struct MacAppStorePaidAppPurchaseGate: PurchaseGate {
             await Self.currentAppTransactionEntitlement()
         }
     ) {
-        self.receiptURL = receiptURL
         self.currentBundleID = currentBundleID
         self.appTransactionEntitlement = appTransactionEntitlement
     }
 
     public func isEntitled() async -> Bool {
-        if Self.isTestFlightReceipt(receiptURL()) {
-            return true
-        }
-
         guard let currentBundleID = currentBundleID() else {
             return false
         }
@@ -40,10 +31,8 @@ public struct MacAppStorePaidAppPurchaseGate: PurchaseGate {
         switch await appTransactionEntitlement() {
         case .verified(let appTransactionBundleID):
             return appTransactionBundleID == currentBundleID
-        case .unverified:
+        case .unverified, .unavailable:
             return false
-        case .unavailable:
-            return true
         }
     }
 
@@ -60,10 +49,6 @@ public struct MacAppStorePaidAppPurchaseGate: PurchaseGate {
         }
     }
 
-    public static func isTestFlightReceipt(_ receiptURL: URL?) -> Bool {
-        receiptURL?.lastPathComponent == "sandboxReceipt"
-    }
-
     @usableFromInline
     static func currentAppTransactionEntitlement() async -> AppTransactionEntitlement {
         do {
@@ -76,24 +61,5 @@ public struct MacAppStorePaidAppPurchaseGate: PurchaseGate {
         } catch {
             return .unavailable
         }
-    }
-
-    @usableFromInline
-    static func currentAppStoreReceiptURL() -> URL? {
-        let receiptDirectoryURL = Bundle.main.bundleURL
-            .appendingPathComponent("Contents", isDirectory: true)
-            .appendingPathComponent("_MASReceipt", isDirectory: true)
-        let sandboxReceiptURL = receiptDirectoryURL.appendingPathComponent("sandboxReceipt")
-
-        if FileManager.default.fileExists(atPath: sandboxReceiptURL.path) {
-            return sandboxReceiptURL
-        }
-
-        let productionReceiptURL = receiptDirectoryURL.appendingPathComponent("receipt")
-        if FileManager.default.fileExists(atPath: productionReceiptURL.path) {
-            return productionReceiptURL
-        }
-
-        return nil
     }
 }
