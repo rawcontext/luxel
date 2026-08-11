@@ -260,7 +260,7 @@ const troubleshooting = [
                 <li>Look for the Luxel status item in the macOS menu bar.</li>
               </ol>
               <p class="note">
-                Current builds require macOS 26.0 or later. Luxel runs from the menu bar,
+                Luxel requires macOS 26.0 or later. Luxel runs from the menu bar,
                 so the menu bar item is the main place to start captures and open settings.
               </p>
             </article>
@@ -986,7 +986,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 <li><code>toggle</code> stops an active recording when no target is passed. When starting, target-related options require a target.</li>
                 <li><code>clip</code> uses the configured replay buffer length unless <code>--seconds</code> is passed.</li>
                 <li><code>latest --reveal</code> reveals the latest recording in Finder instead of opening it.</li>
-                <li><code>preferences</code> opens Luxel settings. <code>--pane</code> accepts <code>general</code>, <code>presets</code>, <code>shortcuts</code>, <code>updates</code>, or <code>about</code> as a URL hint; current builds open Settings normally.</li>
+                <li><code>preferences</code> opens Luxel settings. <code>--pane</code> accepts <code>general</code>, <code>presets</code>, <code>shortcuts</code>, <code>updates</code>, or <code>about</code> as a URL hint, but Luxel opens Settings to its default pane.</li>
                 <li>In Developer ID builds, <code>convert</code> infers format from the output extension, but <code>.mov</code> requires <code>--format prores422</code> or <code>--format prores4444</code>, <code>.m4a</code> requires <code>--format m4a</code> or <code>--format alac</code>, and MP4 AV1 requires <code>--format av1</code>.</li>
                 <li>In Developer ID builds, <code>export</code> accepts a Luxel export request JSON document for fields without dedicated flags.</li>
               </ul>
@@ -1191,8 +1191,7 @@ luxel://latest?reveal=true</code></pre>
             <p class="docs-eyebrow">Reference</p>
             <h2 id="localization-title">Languages</h2>
             <p>
-              Luxel is available in multiple languages across the app interface and
-              system permission descriptions.
+              Choose from 11 languages for the Luxel interface and system permission prompts.
             </p>
           </div>
 
@@ -1205,14 +1204,14 @@ luxel://latest?reveal=true</code></pre>
             </article>
 
             <article>
-              <h3>Localized system prompts</h3>
+              <h3>Permission prompts</h3>
               <p>
-                Luxel includes localized descriptions for camera, microphone, screen capture,
-                and speech recognition access. These prompts explain that Luxel uses each
-                permission only when the matching feature is enabled or a recording starts.
+                Camera, microphone, screen capture, and speech recognition prompts appear in your
+                selected language. Luxel requests each permission only when the matching feature is
+                enabled or a recording starts.
               </p>
               <p class="tip">
-                The app follows the current macOS language settings automatically.
+                Luxel follows your macOS language setting automatically.
               </p>
             </article>
           </div>
