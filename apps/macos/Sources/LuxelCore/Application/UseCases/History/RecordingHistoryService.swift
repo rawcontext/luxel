@@ -261,8 +261,11 @@ public final class RecordingHistoryService: Sendable {
         return getPastRecordings()
     }
 
+}
+
+public extension RecordingHistoryService {
     @discardableResult
-    public func recoverActiveRecording() async -> RecordingRecoveryResult {
+    func recoverActiveRecording() async -> RecordingRecoveryResult {
         guard let activeRecording = store.activeRecording else {
             return .none
         }

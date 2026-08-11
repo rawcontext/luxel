@@ -196,18 +196,13 @@ extension SegmentedSCStreamReplayEngine {
             }
             try handle.close()
 
-            if let trimStart = plan.trimStartOffset, trimStart > 0 {
-                try await trimClip(
-                    temporaryURL,
-                    outputURL: plan.outputURL,
-                    trimStart: trimStart,
-                    requestedDuration: plan.requestedDuration
-                )
-                try? fileManager.removeItem(at: temporaryURL)
-            } else {
-                try? fileManager.removeItem(at: plan.outputURL)
-                try fileManager.moveItem(at: temporaryURL, to: plan.outputURL)
-            }
+            try await trimClip(
+                temporaryURL,
+                outputURL: plan.outputURL,
+                trimStart: plan.trimStartOffset ?? 0,
+                requestedDuration: plan.requestedDuration
+            )
+            try? fileManager.removeItem(at: temporaryURL)
         } catch {
             try? handle.close()
             try? fileManager.removeItem(at: temporaryURL)

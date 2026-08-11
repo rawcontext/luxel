@@ -48,6 +48,9 @@ public protocol LuxelCallbackReceiver: AnyObject {
 public func runLuxelCommand(
     _ invocation: AutomationInvocation,
     execution: LuxelCommandExecutionArguments,
+    automationURLScheme: String = AutomationURLScheme.registered(
+        containing: CurrentProcessExecutable.url
+    ),
     opener: any LuxelURLOpener = SystemLuxelURLOpener(),
     callbackReceiverFactory: () throws -> any LuxelCallbackReceiver = {
         try LocalLuxelCallbackReceiver()
@@ -61,12 +64,19 @@ public func runLuxelCommand(
             throw LuxelCLIError.printURLResultConflict
         }
 
-        output(AutomationInvocationURLBuilder.url(for: invocation).absoluteString)
+        output(
+            AutomationInvocationURLBuilder.url(
+                for: invocation,
+                scheme: automationURLScheme
+            ).absoluteString
+        )
         return
     }
 
     guard execution.requiresCallbackResult else {
-        try opener.open(AutomationInvocationURLBuilder.url(for: invocation))
+        try opener.open(
+            AutomationInvocationURLBuilder.url(for: invocation, scheme: automationURLScheme)
+        )
         return
     }
 
@@ -89,7 +99,12 @@ public func runLuxelCommand(
         command: invocation.command,
         callbacks: receiver.callbacks
     )
-    try opener.open(AutomationInvocationURLBuilder.url(for: waitingInvocation))
+    try opener.open(
+        AutomationInvocationURLBuilder.url(
+            for: waitingInvocation,
+            scheme: automationURLScheme
+        )
+    )
 
     let result = try receiver.wait(timeout: execution.timeout)
     try emitLuxelCommandResult(

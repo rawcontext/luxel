@@ -1,7 +1,10 @@
 import Foundation
 
 public enum AutomationInvocationURLBuilder {
-    public static func url(for invocation: AutomationInvocation) -> URL {
+    public static func url(
+        for invocation: AutomationInvocation,
+        scheme: String = AutomationURLScheme.production
+    ) -> URL {
         var queryItems = queryItems(for: invocation.command)
         if let success = invocation.callbacks.success {
             queryItems.append(URLQueryItem(name: "x-success", value: success.absoluteString))
@@ -10,7 +13,7 @@ public enum AutomationInvocationURLBuilder {
             queryItems.append(URLQueryItem(name: "x-error", value: error.absoluteString))
         }
 
-        return url(action: action(for: invocation.command), queryItems: queryItems)
+        return url(action: action(for: invocation.command), queryItems: queryItems, scheme: scheme)
     }
 
     private static func action(for command: AutomationCommand) -> String {
@@ -107,9 +110,13 @@ public enum AutomationInvocationURLBuilder {
         }
     }
 
-    private static func url(action: String, queryItems: [URLQueryItem]) -> URL {
+    private static func url(
+        action: String,
+        queryItems: [URLQueryItem],
+        scheme: String
+    ) -> URL {
         var components = URLComponents()
-        components.scheme = "luxel"
+        components.scheme = scheme
         components.host = action
         components.queryItems = queryItems.isEmpty ? nil : queryItems
 

@@ -16,7 +16,10 @@ extension LuxelMenuModel {
         openRecording: @escaping @MainActor (URL) -> Void
     ) async {
         do {
-            let invocation = try AutomationCommandParser.parse(url)
+            let invocation = try AutomationCommandParser.parse(
+                url,
+                expectedScheme: AutomationURLScheme.registered(in: Bundle.main.infoDictionary)
+            )
             let context = AutomationPolicyContext(
                 callerID: LuxelAutomationURLCaller.genericID,
                 callerDisplayName: LuxelAutomationURLCaller.genericDisplayName,

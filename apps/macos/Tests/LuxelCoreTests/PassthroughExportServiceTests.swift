@@ -97,17 +97,23 @@ struct PassthroughExportServiceTests {
             .appending(path: "luxel-tests-\(UUID().uuidString)", directoryHint: .isDirectory)
     }
 
-    private func makeSourceFile(bytes: Data) throws -> (
-        directory: URL,
-        sourceURL: URL,
-        bytes: Data
-    ) {
+    private func makeSourceFile(bytes: Data) throws -> PassthroughSourceFixture {
         let directory = temporaryDirectory()
         let sourceURL = directory.appending(path: "source.mp4")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try bytes.write(to: sourceURL)
-        return (directory, sourceURL, bytes)
+        return PassthroughSourceFixture(
+            directory: directory,
+            sourceURL: sourceURL,
+            bytes: bytes
+        )
     }
+}
+
+private struct PassthroughSourceFixture {
+    let directory: URL
+    let sourceURL: URL
+    let bytes: Data
 }
 
 private typealias SpyFileSystem = TestFileSystemSpy

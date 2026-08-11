@@ -1,7 +1,6 @@
 import Foundation
 import LuxelCore
 import Testing
-
 @Suite("Codec export pipeline")
 struct CodecExportPipelineTests {
     @Test("pipeline writes encoded packets before finalizing")
@@ -54,7 +53,6 @@ struct CodecExportPipelineTests {
                 "muxer.finalize"
             ])
     }
-
     @Test("muted requests skip audio source and encoder")
     func mutedRequestsSkipAudioSourceAndEncoder() async throws {
         let events = PipelineEventLog()
@@ -81,7 +79,6 @@ struct CodecExportPipelineTests {
         #expect(snapshot.contains("muxer.begin:webm:video"))
         #expect(!snapshot.contains { $0.hasPrefix("audio.") || $0.hasPrefix("source.audio") })
     }
-
     @Test("pipeline progress is monotonic")
     func pipelineProgressIsMonotonic() async throws {
         let events = PipelineEventLog()

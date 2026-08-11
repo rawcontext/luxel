@@ -78,23 +78,45 @@ public func testAsyncStream<Element: Sendable>(
     }
 }
 
+public struct TestExportRequestExpectation {
+    public let format: ExportFormat
+    public let timeRange: TimeRange
+    public let pixelSize: PixelSize
+    public let frameRate: FrameRate
+    public let shouldMute: Bool
+    public let quality: ExportQuality
+    public let speed: PlaybackSpeed
+
+    public init(
+        format: ExportFormat,
+        timeRange: TimeRange,
+        pixelSize: PixelSize,
+        frameRate: FrameRate,
+        shouldMute: Bool,
+        quality: ExportQuality,
+        speed: PlaybackSpeed
+    ) {
+        self.format = format
+        self.timeRange = timeRange
+        self.pixelSize = pixelSize
+        self.frameRate = frameRate
+        self.shouldMute = shouldMute
+        self.quality = quality
+        self.speed = speed
+    }
+}
+
 public func expectTestExportRequest(
     _ request: ExportRequest?,
-    format: ExportFormat,
-    timeRange: TimeRange,
-    pixelSize: PixelSize,
-    frameRate: FrameRate,
-    shouldMute: Bool,
-    quality: ExportQuality,
-    speed: PlaybackSpeed
+    expected: TestExportRequestExpectation
 ) {
-    #expect(request?.format == format)
-    #expect(request?.timeRange == timeRange)
-    #expect(request?.pixelSize == pixelSize)
-    #expect(request?.frameRate == frameRate)
-    #expect(request?.outputShouldMute == shouldMute)
-    #expect(request?.quality == quality)
-    #expect(request?.speed == speed)
+    #expect(request?.format == expected.format)
+    #expect(request?.timeRange == expected.timeRange)
+    #expect(request?.pixelSize == expected.pixelSize)
+    #expect(request?.frameRate == expected.frameRate)
+    #expect(request?.outputShouldMute == expected.shouldMute)
+    #expect(request?.quality == expected.quality)
+    #expect(request?.speed == expected.speed)
 }
 
 public func testRecordAutomationInvocation(
@@ -349,105 +371,5 @@ public final class TestFileSystemSpy: FileSystem, @unchecked Sendable {
         if let trashError {
             throw trashError
         }
-    }
-}
-
-public struct TestWrittenFile: Equatable, Sendable {
-    public let data: Data
-    public let url: URL
-
-    public init(data: Data, url: URL) {
-        self.data = data
-        self.url = url
-    }
-}
-
-public struct TestUTF8WrittenFile: Equatable, Sendable {
-    public let text: String
-    public let fileURL: URL
-
-    public init(text: String, fileURL: URL) {
-        self.text = text
-        self.fileURL = fileURL
-    }
-}
-
-public final class TestWritingFileSystem: FileSystem, @unchecked Sendable {
-    public private(set) var writes: [TestWrittenFile] = []
-
-    public init() {}
-
-    public var utf8Writes: [TestUTF8WrittenFile] {
-        writes.map {
-            TestUTF8WrittenFile(
-                text: String(bytes: $0.data, encoding: .utf8) ?? "",
-                fileURL: $0.url
-            )
-        }
-    }
-
-    public func fileExists(at url: URL) -> Bool { true }
-    public func createDirectory(at url: URL) throws {}
-    public func copyFile(from sourceURL: URL, to destinationURL: URL) throws {}
-
-    public func writeData(_ data: Data, to url: URL) throws {
-        writes.append(TestWrittenFile(data: data, url: url))
-    }
-
-    public func removeFile(at url: URL) throws {}
-    public func trashItem(at url: URL) throws {}
-}
-
-public actor TestAudioPeakAnalyzerSpy: AudioPeakAnalyzer {
-    private var capturedRequests: [AudioPeakAnalysisRequest] = []
-    private let peaks: [AudioTrackKind: Double]
-
-    public init(peaks: [AudioTrackKind: Double] = [:]) {
-        self.peaks = peaks
-    }
-
-    public func measurePeaks(
-        _ request: AudioPeakAnalysisRequest
-    ) async throws -> [AudioTrackKind: Double] {
-        capturedRequests.append(request)
-        return peaks
-    }
-
-    public func requests() -> [AudioPeakAnalysisRequest] {
-        capturedRequests
-    }
-}
-
-public final class TestFrameGrabberSpy: FrameGrabber, @unchecked Sendable {
-    public let imageData: FrameGrabImageData
-    public private(set) var requests: [FrameGrabRequest] = []
-
-    public init(imageData: FrameGrabImageData) {
-        self.imageData = imageData
-    }
-
-    public func grab(_ request: FrameGrabRequest) async throws -> FrameGrabImageData {
-        requests.append(request)
-        return imageData
-    }
-}
-
-public final class TestFrameGrabFileWriterSpy: FrameGrabFileWriter, @unchecked Sendable {
-    public struct Write: Equatable, Sendable {
-        public let imageData: FrameGrabImageData
-        public let fileURL: URL
-
-        public init(imageData: FrameGrabImageData, fileURL: URL) {
-            self.imageData = imageData
-            self.fileURL = fileURL
-        }
-    }
-
-    public private(set) var writes: [Write] = []
-
-    public init() {}
-
-    public func write(_ imageData: FrameGrabImageData, to fileURL: URL) throws {
-        writes.append(Write(imageData: imageData, fileURL: fileURL))
     }
 }

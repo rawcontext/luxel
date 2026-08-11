@@ -231,9 +231,8 @@ extension AppSettings {
         let renderOptions = cursorRenderOptions ?? Self.cursorRenderOptions(
             showCursor: showCursor, highlightClicks: highlightClicks
         )
-        let legacyFrameRate = Self.legacyRecordingFrameRate(record60FPS: record60FPS)
-        let frameRate = Self.supportedRecordingFrameRate(recordingFrameRate ?? legacyFrameRate)
-            ?? legacyFrameRate
+        let frameRate = Self.resolvedRecordingFrameRate(
+            record60FPS: record60FPS, recordingFrameRate: recordingFrameRate)
         let preferredBufferLength = replayBufferPreferredBufferLength ?? replayBufferConfiguration?.bufferLength
         let bufferLength = Self.supportedReplayBufferLength(preferredBufferLength)
             ?? ReplayBufferConfiguration.defaults.bufferLength
@@ -284,6 +283,15 @@ extension AppSettings {
         from presets: [CaptureSizePreset]
     ) -> [CaptureSizePreset] {
         presets.filter { !CaptureSizePreset.removedBuiltInDefaultIDs.contains($0.id) }
+    }
+
+    static func resolvedRecordingFrameRate(
+        record60FPS: Bool,
+        recordingFrameRate: FrameRate?
+    ) -> FrameRate {
+        let legacyFrameRate = legacyRecordingFrameRate(record60FPS: record60FPS)
+        return supportedRecordingFrameRate(recordingFrameRate ?? legacyFrameRate)
+            ?? legacyFrameRate
     }
 
     static func supportedReplayBufferLength(_ bufferLength: TimeInterval?) -> TimeInterval? {

@@ -43,10 +43,9 @@ extension LuxelMenu {
         return footerSourceControl(
             presentation: presentation,
             accessibilityLabel: "Microphone",
-            action: { handleMicrophoneFooterAction(presentation) }
-        ) {
-            microphoneFooterPicker
-        }
+            action: { handleMicrophoneFooterAction(presentation) },
+            picker: { microphoneFooterPicker }
+        )
     }
 
     var cameraFooterControl: some View {
@@ -55,10 +54,9 @@ extension LuxelMenu {
         return footerSourceControl(
             presentation: presentation,
             accessibilityLabel: "Camera",
-            action: { handleCameraFooterAction(presentation) }
-        ) {
-            cameraFooterPicker
-        }
+            action: { handleCameraFooterAction(presentation) },
+            picker: { cameraFooterPicker }
+        )
     }
 
     var footerControlDivider: some View {
@@ -73,10 +71,9 @@ extension LuxelMenu {
         return footerSourceControl(
             presentation: presentation,
             accessibilityLabel: "System Audio",
-            action: { handleSystemAudioFooterAction(presentation) }
-        ) {
-            systemAudioFooterPicker(presentation)
-        }
+            action: { handleSystemAudioFooterAction(presentation) },
+            picker: { systemAudioFooterPicker(presentation) }
+        )
     }
 
     func footerSourceControl<Picker: View>(

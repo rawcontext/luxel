@@ -70,40 +70,38 @@ struct AVFoundationVideoCompositionFactory: Sendable {
             timeRange: timeRange
         )
         let instruction = AVVideoCompositionInstruction(configuration: instructionConfiguration)
-        let compositionConfiguration = AVVideoComposition.Configuration(
+        var compositionConfiguration = AVVideoComposition.Configuration(
             frameDuration: CMTime(value: 1, timescale: CMTimeScale(frameRate.framesPerSecond)),
             instructions: [instruction],
             renderSize: outputSize
         )
-
-        let composition = AVVideoComposition(configuration: compositionConfiguration)
-        return await addingKeystrokeOverlay(
-            to: composition,
+        compositionConfiguration.animationTool = await keystrokeAnimationTool(
             outputSize: outputSize,
             timeline: keystrokeTimeline,
             options: keystrokeOptions,
             timelineMapper: keystrokeTimelineMapper
         )
+        return AVVideoComposition(configuration: compositionConfiguration)
     }
+}
 
+extension AVFoundationVideoCompositionFactory {
     @MainActor
-    private func addingKeystrokeOverlay(
-        to composition: AVVideoComposition,
+    private func keystrokeAnimationTool(
         outputSize: CGSize,
         timeline: KeystrokeTimeline?,
         options: KeystrokeRenderOptions?,
         timelineMapper: EditedTimelineMapper?
-    ) -> AVVideoComposition {
+    ) -> AVVideoCompositionCoreAnimationTool? {
         guard let timeline,
               let options,
               let timelineMapper,
               options.isVisible,
               let chips = try? KeystrokeChipPlanner(renderOptions: options)
                 .plannedChips(for: timeline),
-              !chips.isEmpty,
-              let mutable = composition.mutableCopy() as? AVMutableVideoComposition
+              !chips.isEmpty
         else {
-            return composition
+            return nil
         }
 
         let parentLayer = CALayer()
@@ -111,8 +109,29 @@ struct AVFoundationVideoCompositionFactory: Sendable {
         let videoLayer = CALayer()
         videoLayer.frame = parentLayer.bounds
         parentLayer.addSublayer(videoLayer)
-        let renderer = KeystrokeChipImageRenderer()
+        addKeystrokeLayers(
+            chips,
+            to: parentLayer,
+            outputSize: outputSize,
+            options: options,
+            timelineMapper: timelineMapper
+        )
 
+        return AVVideoCompositionCoreAnimationTool(
+            postProcessingAsVideoLayer: videoLayer,
+            in: parentLayer
+        )
+    }
+
+    @MainActor
+    private func addKeystrokeLayers(
+        _ chips: [KeystrokeChip],
+        to parentLayer: CALayer,
+        outputSize: CGSize,
+        options: KeystrokeRenderOptions,
+        timelineMapper: EditedTimelineMapper
+    ) {
+        let renderer = KeystrokeChipImageRenderer()
         for chip in chips {
             guard let outputRanges = try? timelineMapper.mapSourceRange(chip.timeRange),
                   !outputRanges.isEmpty,
@@ -157,12 +176,6 @@ struct AVFoundationVideoCompositionFactory: Sendable {
                 parentLayer.addSublayer(layer)
             }
         }
-
-        mutable.animationTool = AVVideoCompositionCoreAnimationTool(
-            postProcessingAsVideoLayer: videoLayer,
-            in: parentLayer
-        )
-        return mutable
     }
 
     private func compositionGeometry(sourceVideoTrack: AVAssetTrack) async throws

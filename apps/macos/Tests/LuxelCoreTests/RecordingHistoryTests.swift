@@ -14,17 +14,13 @@ extension RecordingHistoryTests {
         return (date, calendar)
     }
 
-    func existingAndMissingRecordings() -> (
-        existingURL: URL,
-        missingURL: URL,
-        recordings: [PastRecording]
-    ) {
+    func existingAndMissingRecordings() -> RecordingHistoryFixture {
         let existingURL = URL(fileURLWithPath: "/tmp/existing.mp4")
         let missingURL = URL(fileURLWithPath: "/tmp/missing.mp4")
-        return (
-            existingURL,
-            missingURL,
-            [
+        return RecordingHistoryFixture(
+            existingURL: existingURL,
+            missingURL: missingURL,
+            recordings: [
                 PastRecording(
                     fileURL: existingURL,
                     name: "Existing",
@@ -77,6 +73,12 @@ extension RecordingHistoryTests {
             calendar: calendar
         )
     }
+}
+
+struct RecordingHistoryFixture {
+    let existingURL: URL
+    let missingURL: URL
+    let recordings: [PastRecording]
 }
 
 struct RecordingHistoryFixedDateProvider: DateProvider {

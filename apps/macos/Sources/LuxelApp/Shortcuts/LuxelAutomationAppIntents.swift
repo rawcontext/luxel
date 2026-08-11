@@ -293,7 +293,10 @@ struct LuxelAppShortcuts: AppShortcutsProvider {
 private enum LuxelAppIntentURLOpener {
     @MainActor
     static func open(_ invocation: AutomationInvocation) throws {
-        let url = AutomationInvocationURLBuilder.url(for: invocation)
+        let url = AutomationInvocationURLBuilder.url(
+            for: invocation,
+            scheme: AutomationURLScheme.registered(in: Bundle.main.infoDictionary)
+        )
         guard NSWorkspace.shared.open(url) else {
             throw LuxelAppIntentError.openFailed(url)
         }

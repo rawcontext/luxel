@@ -208,39 +208,21 @@ final class CameraBackgroundEffectSessionPipeline: @unchecked Sendable {
         }
         self.compositor = compositor
         self.telemetry = telemetry
+        let processingContext = CameraCutoutProcessingContext(
+            effect: effect,
+            processor: processor,
+            telemetry: telemetry,
+            compositor: compositor,
+            outputSize: outputSize,
+            isMirrored: isMirrored
+        )
         scheduler = CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>(
             process: { frame, generation in
-                try telemetry.measureProcessing {
-                    let output: CameraCutoutCompositedFrame?
-                    switch effect {
-                    case .none:
-                        output = nil
-                    case .portraitCutout:
-                        guard let processor else {
-                            throw MODNetPortraitMattingError.missingModel
-                        }
-                        let matte = try processor.alphaMatte(for: frame.pixelBuffer)
-                        output = try compositor.compositePortraitFrame(
-                            cameraFrame: frame.pixelBuffer,
-                            alphaMatte: matte,
-                            outputSize: outputSize,
-                            isMirrored: isMirrored,
-                            timestamp: frame.timestamp,
-                            generation: generation
-                        )
-                    case .greenScreen:
-                        output = try compositor.compositeGreenScreenFrame(
-                            cameraFrame: frame.pixelBuffer,
-                            outputSize: outputSize,
-                            isMirrored: isMirrored,
-                            timestamp: frame.timestamp
-                        )
-                    }
-                    if output == nil, effect != .none {
-                        telemetry.recordRenderDrop()
-                    }
-                    return output
-                }
+                try Self.process(
+                    frame,
+                    generation: generation,
+                    context: processingContext
+                )
             },
             onOutput: { frame in
                 if let frame {
@@ -257,6 +239,44 @@ final class CameraBackgroundEffectSessionPipeline: @unchecked Sendable {
         videoOutput.alwaysDiscardsLateVideoFrames = true
     }
 
+    private static func process(
+        _ frame: CameraCutoutFrame,
+        generation: UInt64,
+        context: CameraCutoutProcessingContext
+    ) throws -> CameraCutoutCompositedFrame? {
+        try context.telemetry.measureProcessing {
+            let output: CameraCutoutCompositedFrame?
+            switch context.effect {
+            case .none:
+                output = nil
+            case .portraitCutout:
+                guard let processor = context.processor else {
+                    throw MODNetPortraitMattingError.missingModel
+                }
+                let matte = try processor.alphaMatte(for: frame.pixelBuffer)
+                output = try context.compositor.compositePortraitFrame(
+                    cameraFrame: frame.pixelBuffer,
+                    alphaMatte: matte,
+                    outputSize: context.outputSize,
+                    isMirrored: context.isMirrored,
+                    timestamp: frame.timestamp,
+                    generation: generation
+                )
+            case .greenScreen:
+                output = try context.compositor.compositeGreenScreenFrame(
+                    cameraFrame: frame.pixelBuffer,
+                    outputSize: context.outputSize,
+                    isMirrored: context.isMirrored,
+                    timestamp: frame.timestamp
+                )
+            }
+            if output == nil, context.effect != .none {
+                context.telemetry.recordRenderDrop()
+            }
+            return output
+        }
+    }
+
     func start() {
         compositor.reset()
         scheduler.start()
@@ -270,4 +290,13 @@ final class CameraBackgroundEffectSessionPipeline: @unchecked Sendable {
         compositor.reset()
         telemetry.stop(droppedFrameCount: droppedFrameCount)
     }
+}
+
+private struct CameraCutoutProcessingContext: @unchecked Sendable {
+    let effect: CameraBackgroundEffect
+    let processor: MODNetPortraitMattingProcessor?
+    let telemetry: CameraBackgroundEffectTelemetry
+    let compositor: CameraCutoutCompositor
+    let outputSize: CGSize
+    let isMirrored: Bool
 }

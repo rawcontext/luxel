@@ -230,7 +230,7 @@ public struct SystemLuxelEditorOpener: LuxelEditorOpener {
     }
 
     public static func containingAppBundleURL(
-        executableURL: URL? = Bundle.main.executableURL
+        executableURL: URL? = CurrentProcessExecutable.url
     ) -> URL? {
         guard var directory = executableURL?.resolvingSymlinksInPath().deletingLastPathComponent()
         else {

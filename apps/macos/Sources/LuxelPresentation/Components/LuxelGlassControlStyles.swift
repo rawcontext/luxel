@@ -1,5 +1,4 @@
 import SwiftUI
-
 public extension View {
     func luxelGlassCapsuleBackground() -> some View {
         background {
@@ -20,7 +19,6 @@ public extension View {
         .contentShape(Capsule(style: .continuous))
     }
 }
-
 public struct LuxelGlassSwitchToggleStyle: ToggleStyle {
     private let showsLabel: Bool
 
@@ -398,27 +396,5 @@ private struct LuxelGlassCircleButtonBody<Label: View>: View {
             .onHover { isHovered = $0 }
             .animation(.easeOut(duration: 0.12), value: isHovered)
             .animation(.easeOut(duration: 0.08), value: isPressed)
-    }
-}
-
-extension View {
-    public func luxelGlassFieldBackground(cornerRadius: CGFloat = 12) -> some View {
-        padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(LuxelGlassTheme.controlFill)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [LuxelGlassTheme.controlHighlight, .clear],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                ),
-                                lineWidth: 1
-                            )
-                    }
-            }
     }
 }

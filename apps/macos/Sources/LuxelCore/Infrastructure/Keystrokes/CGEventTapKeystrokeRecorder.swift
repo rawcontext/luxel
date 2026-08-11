@@ -121,10 +121,12 @@ public final class CGEventTapKeystrokeRecorder: KeystrokeCaptureEventSource, @un
     }
 
     public func stop() {
-        let stopped = lock.withLock { () -> (
-            AsyncStream<KeystrokeSourceEvent>.Continuation?, CFRunLoop?, CFMachPort?
-        ) in
-            let values = (eventContinuation, runLoop, eventTap)
+        let stopped = lock.withLock { () -> KeystrokeRecorderStopState in
+            let state = KeystrokeRecorderStopState(
+                continuation: eventContinuation,
+                runLoop: runLoop,
+                eventTap: eventTap
+            )
             eventContinuation = nil
             runLoop = nil
             eventTap = nil
@@ -132,20 +134,22 @@ public final class CGEventTapKeystrokeRecorder: KeystrokeCaptureEventSource, @un
             isUserPaused = false
             isRecordingPaused = false
             isSecureInputPaused = false
-            return values
+            return state
         }
 
-        if let eventTap = stopped.2 {
+        if let eventTap = stopped.eventTap {
             CFMachPortInvalidate(eventTap)
         }
-        if let runLoop = stopped.1 {
+        if let runLoop = stopped.runLoop {
             CFRunLoopStop(runLoop)
             CFRunLoopWakeUp(runLoop)
         }
-        stopped.0?.finish()
+        stopped.continuation?.finish()
         yieldStatus(.idle)
     }
+}
 
+extension CGEventTapKeystrokeRecorder {
     private func runEventTap() {
         guard CGPreflightListenEventAccess() else {
             finishUnavailable(status: .permissionDenied)
@@ -364,6 +368,12 @@ public final class CGEventTapKeystrokeRecorder: KeystrokeCaptureEventSource, @un
         )
         return String(utf16CodeUnits: characters, count: length)
     }
+}
+
+private struct KeystrokeRecorderStopState {
+    let continuation: AsyncStream<KeystrokeSourceEvent>.Continuation?
+    let runLoop: CFRunLoop?
+    let eventTap: CFMachPort?
 }
 
 protocol KeystrokeEventTapRecoveryControlling: Sendable {

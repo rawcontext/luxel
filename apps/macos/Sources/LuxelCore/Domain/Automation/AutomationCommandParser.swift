@@ -32,12 +32,15 @@ private struct AutomationQuery {
 }
 
 public enum AutomationCommandParser {
-    public static func parse(_ url: URL) throws -> AutomationInvocation {
+    public static func parse(
+        _ url: URL,
+        expectedScheme: String = AutomationURLScheme.production
+    ) throws -> AutomationInvocation {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             throw AutomationCommandParseError.unsupportedScheme(url.scheme)
         }
 
-        guard components.scheme?.lowercased() == "luxel" else {
+        guard components.scheme?.caseInsensitiveCompare(expectedScheme) == .orderedSame else {
             throw AutomationCommandParseError.unsupportedScheme(components.scheme)
         }
 

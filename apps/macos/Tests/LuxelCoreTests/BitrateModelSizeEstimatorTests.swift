@@ -165,13 +165,15 @@ struct BitrateModelSizeEstimatorTests {
         #expect(estimate == expectedEstimate)
         expectTestExportRequest(
             captured,
-            format: .hevc,
-            timeRange: expectedRange,
-            pixelSize: expectedPixelSize,
-            frameRate: expectedFrameRate,
-            shouldMute: true,
-            quality: .high,
-            speed: try PlaybackSpeed(2)
+            expected: TestExportRequestExpectation(
+                format: .hevc,
+                timeRange: expectedRange,
+                pixelSize: expectedPixelSize,
+                frameRate: expectedFrameRate,
+                shouldMute: true,
+                quality: .high,
+                speed: try PlaybackSpeed(2)
+            )
         )
     }
 

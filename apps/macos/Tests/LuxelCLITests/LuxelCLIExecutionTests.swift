@@ -125,6 +125,24 @@ struct LuxelCLIExecutionTests {
         #expect(output == ["luxel://latest?reveal=true"])
     }
 
+    @Test("developer app CLI uses its registered automation scheme")
+    func developerAppCLIUsesRegisteredAutomationScheme() throws {
+        var output: [String] = []
+
+        try runLuxelCommand(
+            AutomationInvocation(command: .stop),
+            execution: LuxelCommandExecutionArguments(
+                wait: false,
+                json: false,
+                printURL: true
+            ),
+            automationURLScheme: "luxel-dev",
+            output: { output.append($0) }
+        )
+
+        #expect(output == ["luxel-dev://stop"])
+    }
+
     @Test("print URL mode rejects result waiting")
     func printURLModeRejectsResultWaiting() {
         #expect(throws: LuxelCLIError.printURLResultConflict) {

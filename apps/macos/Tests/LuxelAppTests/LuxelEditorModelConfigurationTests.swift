@@ -56,13 +56,15 @@ extension LuxelEditorModelTests {
         #expect(Set(model.exportEstimatesByFormat.keys) == Set(model.supportedFormats))
         expectTestExportRequest(
             captured,
-            format: .hevc,
-            timeRange: expectedRange,
-            pixelSize: expectedPixelSize,
-            frameRate: expectedFrameRate,
-            shouldMute: true,
-            quality: .high,
-            speed: try PlaybackSpeed(2)
+            expected: TestExportRequestExpectation(
+                format: .hevc,
+                timeRange: expectedRange,
+                pixelSize: expectedPixelSize,
+                frameRate: expectedFrameRate,
+                shouldMute: true,
+                quality: .high,
+                speed: try PlaybackSpeed(2)
+            )
         )
     }
 

@@ -82,6 +82,13 @@ codesign \
 codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
 "${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
 
+EXPECTED_AUTOMATION_URL="${APP_URL_SCHEME}://stop"
+ACTUAL_AUTOMATION_URL="$("${APP_PATH}/Contents/MacOS/luxel-cli" stop --print-url)"
+if [[ "${ACTUAL_AUTOMATION_URL}" != "${EXPECTED_AUTOMATION_URL}" ]]; then
+	echo "Bundled CLI emitted ${ACTUAL_AUTOMATION_URL}; expected ${EXPECTED_AUTOMATION_URL}." >&2
+	exit 1
+fi
+
 TEAM_IDENTIFIER="$(
 	codesign -dv --verbose=4 "${APP_PATH}" 2>&1 |
 		awk -F= '/^TeamIdentifier=/ { print $2; exit }'

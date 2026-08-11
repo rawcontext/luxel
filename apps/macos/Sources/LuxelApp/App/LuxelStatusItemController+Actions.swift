@@ -207,12 +207,6 @@ extension LuxelStatusItemController {
         let quickRecording = model.cropperQuickRecordingConfiguration()
         let selectionPresets = model.cropperSelectionPresetConfiguration()
         let restoredSelection = model.cropperRestoreSelectionConfiguration()
-        let recordingOptions = (
-            recordAudio: model.captureCapabilities.microphoneTrackAvailable,
-            captureKeystrokes: settings.keystrokeOverlayEnabled,
-            loupeAlwaysOn: settings.loupeAlwaysOn,
-            dimOtherDisplays: settings.dimOtherDisplays
-        )
         cropperPanelController.show(
             countdownDuration: settings.defaultCountdown,
             stopAfterDuration: settings.lastStopAfter,
@@ -222,10 +216,10 @@ extension LuxelStatusItemController {
             quickRecordingConfiguration: quickRecording,
             selectionPresetConfiguration: selectionPresets,
             restoreSelectionConfiguration: restoredSelection,
-            recordAudio: recordingOptions.recordAudio,
-            captureKeystrokes: recordingOptions.captureKeystrokes,
-            loupeAlwaysOn: recordingOptions.loupeAlwaysOn,
-            dimOtherDisplays: recordingOptions.dimOtherDisplays,
+            recordAudio: model.captureCapabilities.microphoneTrackAvailable,
+            captureKeystrokes: settings.keystrokeOverlayEnabled,
+            loupeAlwaysOn: settings.loupeAlwaysOn,
+            dimOtherDisplays: settings.dimOtherDisplays,
             showsNotificationReminder: false,
             onCountdownDurationChange: { [weak self] in self?.updateCropperCountdown($0) },
             onStopAfterDurationChange: { [weak self] in self?.updateCropperStopAfter($0) },

@@ -1,7 +1,6 @@
 import Foundation
 import LuxelCore
 import OSLog
-
 @MainActor
 extension LuxelMenuModel {
     func startRecording(
@@ -43,7 +42,6 @@ extension LuxelMenuModel {
             await handleRecordingStartFailure(error, latencySpan: latencySpan, cancellation: false)
         }
     }
-
     func beginRecording(_ request: RecordingRequest) async throws -> ActiveRecording {
         if request.captureKeystrokes {
             await keystrokeLivePreviewPanelController.prepareForCapture(

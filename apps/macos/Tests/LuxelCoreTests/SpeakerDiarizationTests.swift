@@ -1,7 +1,6 @@
 import Foundation
 import Testing
 @testable import LuxelCore
-
 // MARK: - Service orchestration
 
 @Suite("Local audio transcript service diarization")
@@ -25,7 +24,6 @@ struct TranscriptServiceDiarizationTests {
         let prepareCalls = await modelStore.prepareCallCount
         #expect(prepareCalls == 0)
     }
-
     @Test("prepares model runs diarizer and labels turns when enabled")
     func diarizesWhenEnabled() async throws {
         let diarizer = SpySpeakerDiarizer(
@@ -57,7 +55,6 @@ struct TranscriptServiceDiarizationTests {
         #expect(savedRequests.first?.speakerDiarizationMode == .enabled)
         #expect(savedRequests.first?.speakerModelRevision == StubSpeakerModelStore.revision)
     }
-
     @Test("diarized transcript and cache preserve ASR provenance")
     func diarizedTranscriptPreservesASRProvenance() async throws {
         let provenance = TranscriptionProvenance(

@@ -30,12 +30,7 @@ struct UserDefaultsSettingsStoreTests {
     }
 
     private func persistedSettings() throws -> AppSettings {
-        let presetID = UUID(uuidString: "00000000-0000-0000-0000-000000000401")!
-        let preset = try persistedExportPreset(id: presetID)
-        let sizePreset = try CaptureSizePreset(
-            id: UUID(uuidString: "00000000-0000-0000-0000-000000000402")!,
-            name: "Docs 1440p", pixelSize: PixelSize(width: 2560, height: 1440)
-        )
+        let fixture = try persistedSettingsFixture()
 
         return AppSettings(
             recordingsDirectory: URL(fileURLWithPath: "/tmp/luxel"),
@@ -52,7 +47,7 @@ struct UserDefaultsSettingsStoreTests {
             audioInputDeviceID: "mic-1", audioInputDeviceName: "Studio Mic",
             audioOnlyFormat: .alac, transcriptTurnSegmentationEnabled: false,
             cameraDeviceID: "camera-1", cameraSeparateTrack: false,
-            cameraPreviewStyle: CameraPreviewStyle(shape: .square, size: .large, isMirrored: false, backgroundEffect: .portraitCutout),
+            cameraPreviewStyle: persistedCameraPreviewStyle(),
             cameraPreviewPlacements: try persistedCameraPreviewPlacements(),
             replayBufferConfiguration: try persistedReplayBufferConfiguration(),
             replayBufferPreferredBufferLength: 120, replayBufferResumeOnLaunch: true,
@@ -74,13 +69,36 @@ struct UserDefaultsSettingsStoreTests {
             showTimeInMenuBar: false, hideMenuBarIcon: false, launchAtLogin: false,
             commandLineToolInstall: persistedCommandLineToolInstall(),
             commandLineShell: .fish, notificationReminder: false, allowURLAutomation: true,
-            urlAutomationGrants: ["com.example.terminal"], exportPresets: [preset],
-            quickExportPresetID: presetID, rememberLastCapture: false, loupeAlwaysOn: true,
-            dimOtherDisplays: true, restoreLastSelection: false, userSizePresets: [sizePreset],
-            lastCaptureMemory: try persistedLastCaptureMemory(presetID: presetID),
+            urlAutomationGrants: ["com.example.terminal"], exportPresets: [fixture.preset],
+            quickExportPresetID: fixture.presetID, rememberLastCapture: false, loupeAlwaysOn: true,
+            dimOtherDisplays: true, restoreLastSelection: false,
+            userSizePresets: [fixture.sizePreset],
+            lastCaptureMemory: try persistedLastCaptureMemory(presetID: fixture.presetID),
             perFormatExportMemory: try persistedExportMemory(),
             lastSelectedExportFormat: .webm, confirmDiscard: false,
             defaultCountdown: 5, lastStopAfter: 60
+        )
+    }
+
+    private func persistedSettingsFixture() throws -> PersistedSettingsFixture {
+        let presetID = UUID(uuidString: "00000000-0000-0000-0000-000000000401")!
+        return try PersistedSettingsFixture(
+            presetID: presetID,
+            preset: persistedExportPreset(id: presetID),
+            sizePreset: CaptureSizePreset(
+                id: UUID(uuidString: "00000000-0000-0000-0000-000000000402")!,
+                name: "Docs 1440p",
+                pixelSize: PixelSize(width: 2560, height: 1440)
+            )
+        )
+    }
+
+    private func persistedCameraPreviewStyle() -> CameraPreviewStyle {
+        CameraPreviewStyle(
+            shape: .square,
+            size: .large,
+            isMirrored: false,
+            backgroundEffect: .portraitCutout
         )
     }
 
@@ -181,6 +199,12 @@ struct UserDefaultsSettingsStoreTests {
         ]
     }
 
+}
+
+private struct PersistedSettingsFixture {
+    let presetID: UUID
+    let preset: ExportPreset
+    let sizePreset: CaptureSizePreset
 }
 
 extension UserDefaultsSettingsStoreTests {
