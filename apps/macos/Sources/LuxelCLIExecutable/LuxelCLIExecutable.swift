@@ -7,7 +7,18 @@ import LuxelCore
 enum LuxelCLIExecutable {
     static func main() async {
         #if LUXEL_MAC_APP_STORE
+        let appBundleURL = Bundle.main.executableURL.flatMap {
+            MacAppStorePaidAppPurchaseGate.enclosingAppBundleURL(containing: $0)
+        }
         let purchaseGate = MacAppStorePaidAppPurchaseGate(
+            isTestFlightBuild: {
+                guard let appBundleURL else {
+                    return false
+                }
+                return MacAppStorePaidAppPurchaseGate.isTestFlightBuild(
+                    appBundleURL: appBundleURL
+                )
+            },
             currentBundleID: { "com.rawcontext.luxel" }
         )
         guard await purchaseGate.isEntitled() else {
