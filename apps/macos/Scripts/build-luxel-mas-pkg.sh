@@ -180,7 +180,7 @@ codesign \
 
 CLI_SIGNING_IDENTIFIER="$(
 	codesign -dv "${APP_PATH}/Contents/MacOS/luxel-cli" 2>&1 |
-		awk -F= '/^Identifier=/ { print $2; exit }'
+		awk -F= '/^Identifier=/ { print $2 }'
 )"
 if [[ "${CLI_SIGNING_IDENTIFIER}" != "com.rawcontext.luxel.cli" ]]; then
 	echo "Signed command line tool identifier ${CLI_SIGNING_IDENTIFIER:-<missing>} is invalid." >&2
@@ -215,7 +215,7 @@ codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
 
 SIGNED_TEAM_IDENTIFIER="$(
 	codesign -dv --verbose=4 "${APP_PATH}" 2>&1 |
-		awk -F= '/^TeamIdentifier=/ { print $2; exit }'
+		awk -F= '/^TeamIdentifier=/ { print $2 }'
 )"
 
 if [[ "${SIGNED_TEAM_IDENTIFIER}" != "${PROFILE_TEAM_IDENTIFIER}" ]]; then
