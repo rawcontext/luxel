@@ -135,6 +135,9 @@ extension AppBundleConfigurationTests {
         let script = try String(contentsOf: scriptURL, encoding: .utf8)
 
         #expect(
+            script.contains("APPLE_TEAM_IDENTIFIER=\"${APPLE_TEAM_IDENTIFIER:-U65DCW9TAK}\""))
+        #expect(script.contains("find_signing_identity_for_team 'Apple Development:'"))
+        #expect(
             script.contains("APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-com.rawcontext.luxel.dev}\""))
         #expect(script.contains("APP_DISPLAY_NAME=\"${APP_DISPLAY_NAME:-Luxel Dev}\""))
         #expect(script.contains("APP_URL_SCHEME=\"${APP_URL_SCHEME:-luxel-dev}\""))
@@ -145,6 +148,26 @@ extension AppBundleConfigurationTests {
         #expect(script.contains("Set :CFBundleName ${APP_DISPLAY_NAME}"))
         #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLName ${APP_BUNDLE_IDENTIFIER}.url"))
         #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 ${APP_URL_SCHEME}"))
+    }
+
+    @Test("signing scripts select identities from the Raw Context team")
+    func signingScriptsSelectIdentitiesFromRawContextTeam() throws {
+        let support = try scriptSource("signing-identity-support.sh")
+        #expect(support.contains("security find-certificate"))
+        #expect(support.contains("certificate_team_identifier"))
+
+        for scriptName in [
+            "build-luxel-app.sh",
+            "benchmark-transcription.sh",
+            "build-luxel-mas-pkg.sh"
+        ] {
+            let script = try scriptSource(scriptName)
+            #expect(
+                script.contains(
+                    "APPLE_TEAM_IDENTIFIER=\"${APPLE_TEAM_IDENTIFIER:-U65DCW9TAK}\""))
+            #expect(script.contains("signing-identity-support.sh"))
+            #expect(script.contains("find_signing_identity_for_team"))
+        }
     }
 
     @Test("build script bundles and signs CLI executable")

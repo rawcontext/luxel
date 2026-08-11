@@ -1,14 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "$0")/.."
+PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+APPLE_TEAM_IDENTIFIER="${APPLE_TEAM_IDENTIFIER:-U65DCW9TAK}"
+SIGN_IDENTITY="${SIGN_IDENTITY:-}"
 
-SIGN_IDENTITY="$(
-	security find-identity -v -p codesigning 2>/dev/null |
-		awk -F '"' '/"Apple Development: / { print $2; exit }'
-)"
+source "${PACKAGE_ROOT}/Scripts/signing-identity-support.sh"
+
+cd "${PACKAGE_ROOT}"
+
 if [[ -z "${SIGN_IDENTITY}" ]]; then
-	echo "No Apple Development code signing identity found." >&2
+	SIGN_IDENTITY="$(
+		find_signing_identity_for_team 'Apple Development:' "${APPLE_TEAM_IDENTIFIER}"
+	)"
+fi
+
+if [[ -z "${SIGN_IDENTITY}" ]]; then
+	echo "No Apple Development code signing identity found for team ${APPLE_TEAM_IDENTIFIER}." >&2
 	exit 1
 fi
 

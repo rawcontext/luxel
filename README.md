@@ -135,7 +135,7 @@ Direct SwiftPM executable launches can change the code identity macOS sees for S
 - Builds `Luxel` and `luxel-cli`.
 - Creates `apps/macos/dist/Luxel Dev.app` by default.
 - Copies `Info.plist`, the app icon, third-party licenses, and the CLI install helper.
-- Signs the bundle with the first available `Apple Development:` identity unless `SIGN_IDENTITY` is set.
+- Signs the bundle with the `Apple Development:` identity for team `U65DCW9TAK` unless `SIGN_IDENTITY` or `APPLE_TEAM_IDENTIFIER` is set.
 - Rejects ad-hoc signing.
 - Emits the final app path on success.
 
@@ -144,7 +144,8 @@ If signing fails, fix signing. Do not fall back to an unsigned app.
 Common overrides:
 
 ```sh
-SIGN_IDENTITY="Apple Development: Your Name (TEAMID)" bun run app:build
+SIGN_IDENTITY="Apple Development: Your Name (CERTIFICATE_ID)" bun run app:build
+APPLE_TEAM_IDENTIFIER="TEAMID" bun run app:build
 CONFIGURATION=debug bun run app:build
 APP_DISPLAY_NAME="Luxel Local" APP_URL_SCHEME="luxel-local" bun run app:build
 ```

@@ -20,15 +20,10 @@ APP_STORE_SIGN_IDENTITY="${APP_STORE_SIGN_IDENTITY:-}"
 INSTALLER_SIGN_IDENTITY="${INSTALLER_SIGN_IDENTITY:-}"
 MARKETING_VERSION="${MARKETING_VERSION:-}"
 BUILD_NUMBER="${BUILD_NUMBER:-}"
+APPLE_TEAM_IDENTIFIER="${APPLE_TEAM_IDENTIFIER:-U65DCW9TAK}"
 
 source "${PACKAGE_ROOT}/Scripts/luxel-app-bundle-support.sh"
-
-find_identity() {
-	local pattern="$1"
-
-	security find-identity -v 2>/dev/null |
-		awk -F '"' -v pattern="${pattern}" '$0 ~ pattern { print $2; exit }'
-}
+source "${PACKAGE_ROOT}/Scripts/signing-identity-support.sh"
 
 plist_read() {
 	local plist="$1"
@@ -59,23 +54,27 @@ require_file "${CLI_ENTITLEMENTS}" "Mac App Store command line tool entitlements
 
 if [[ -z "${APP_STORE_SIGN_IDENTITY}" ]]; then
 	APP_STORE_SIGN_IDENTITY="$(
-		find_identity '3rd Party Mac Developer Application:|Mac App Distribution:|Apple Distribution:'
+		find_signing_identity_for_team \
+			'3rd Party Mac Developer Application:|Mac App Distribution:|Apple Distribution:' \
+			"${APPLE_TEAM_IDENTIFIER}"
 	)"
 fi
 
 if [[ -z "${APP_STORE_SIGN_IDENTITY}" ]]; then
-	echo "No Mac App Store application signing identity found. Set APP_STORE_SIGN_IDENTITY." >&2
+	echo "No Mac App Store application signing identity found for team ${APPLE_TEAM_IDENTIFIER}." >&2
 	exit 1
 fi
 
 if [[ -z "${INSTALLER_SIGN_IDENTITY}" ]]; then
 	INSTALLER_SIGN_IDENTITY="$(
-		find_identity '3rd Party Mac Developer Installer:|Mac Installer Distribution:'
+		find_signing_identity_for_team \
+			'3rd Party Mac Developer Installer:|Mac Installer Distribution:' \
+			"${APPLE_TEAM_IDENTIFIER}"
 	)"
 fi
 
 if [[ -z "${INSTALLER_SIGN_IDENTITY}" ]]; then
-	echo "No Mac App Store installer signing identity found. Set INSTALLER_SIGN_IDENTITY." >&2
+	echo "No Mac App Store installer signing identity found for team ${APPLE_TEAM_IDENTIFIER}." >&2
 	exit 1
 fi
 
@@ -98,6 +97,11 @@ fi
 
 if [[ -z "${PROFILE_TEAM_IDENTIFIER}" ]]; then
 	echo "Provisioning profile is missing com.apple.developer.team-identifier." >&2
+	exit 1
+fi
+
+if [[ "${PROFILE_TEAM_IDENTIFIER}" != "${APPLE_TEAM_IDENTIFIER}" ]]; then
+	echo "Provisioning profile team ${PROFILE_TEAM_IDENTIFIER} does not match ${APPLE_TEAM_IDENTIFIER}." >&2
 	exit 1
 fi
 

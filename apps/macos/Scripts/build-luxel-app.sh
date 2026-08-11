@@ -16,19 +16,20 @@ APP_BUNDLE_IDENTIFIER="${APP_BUNDLE_IDENTIFIER:-com.rawcontext.luxel.dev}"
 APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-Luxel Dev}"
 APP_URL_SCHEME="${APP_URL_SCHEME:-luxel-dev}"
 APP_PATH="${APP_PATH:-${PACKAGE_ROOT}/dist/${APP_DISPLAY_NAME}.app}"
+APPLE_TEAM_IDENTIFIER="${APPLE_TEAM_IDENTIFIER:-U65DCW9TAK}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-}"
 
 source "${PACKAGE_ROOT}/Scripts/luxel-app-bundle-support.sh"
+source "${PACKAGE_ROOT}/Scripts/signing-identity-support.sh"
 
 if [[ -z "${SIGN_IDENTITY}" ]]; then
 	SIGN_IDENTITY="$(
-		security find-identity -v -p codesigning 2>/dev/null |
-			awk -F '"' '/"Apple Development: / { print $2; exit }'
+		find_signing_identity_for_team 'Apple Development:' "${APPLE_TEAM_IDENTIFIER}"
 	)"
 fi
 
 if [[ -z "${SIGN_IDENTITY}" ]]; then
-	echo "No Apple Development code signing identity found. Luxel must be signed with a team identity." >&2
+	echo "No Apple Development code signing identity found for team ${APPLE_TEAM_IDENTIFIER}." >&2
 	exit 1
 fi
 
@@ -86,8 +87,8 @@ TEAM_IDENTIFIER="$(
 		awk -F= '/^TeamIdentifier=/ { print $2; exit }'
 )"
 
-if [[ -z "${TEAM_IDENTIFIER}" || "${TEAM_IDENTIFIER}" == "not set" ]]; then
-	echo "Code signing did not produce a TeamIdentifier. Luxel must be signed with a team identity." >&2
+if [[ "${TEAM_IDENTIFIER}" != "${APPLE_TEAM_IDENTIFIER}" ]]; then
+	echo "Signed TeamIdentifier ${TEAM_IDENTIFIER:-<missing>} does not match ${APPLE_TEAM_IDENTIFIER}." >&2
 	exit 1
 fi
 
