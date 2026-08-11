@@ -25,7 +25,7 @@ const featureTrio = [
   },
   {
     title: "CLI and Automation",
-    text: "Run captures, clips, exports, transcripts, callbacks, settings, and URL workflows from scripts.",
+    text: "Start and stop captures, make replay clips, open recordings or settings, and use callbacks and URL workflows from scripts.",
     icon: "terminal"
   }
 ];
@@ -49,15 +49,15 @@ const editorFacts = [
 ];
 
 const transcriptPoints = [
-  "Plain text or JSON transcript output from the CLI",
   "Locale selection and semantic turn segmentation",
-  "Transcript caching, search, and editor transcript workflows"
+  "Transcript caching, search, and editor review workflows",
+  "Local speaker labels with the model included in the app"
 ];
 
 const cliPoints = [
-  "record, stop, toggle, clip, latest, editor, convert, export, transcribe, preferences",
+  "Mac App Store: record, stop, toggle, clip, latest, and preferences",
   "x-success and x-error callbacks with --wait, --json, and --print-url",
-  "Recording frame-rate overrides plus trim, resize, speed, quality, crop, mute, and conversion"
+  "Developer ID builds also include editor, conversion, export, and transcription commands"
 ];
 
 const settingsPoints = [
@@ -83,13 +83,13 @@ const languages = [
 const agentPoints = [
   "--json results plus x-success and x-error callbacks",
   "luxel:// URL scheme and App Shortcuts for app-level automation",
-  "Runs locally, so agents work without network access"
+  "Recording and replay automation run locally"
 ];
 
 const localPoints = [
   "No watermarks, time limits, or export restrictions.",
   "No tracking, analytics, or cloud recording.",
-  "Runs offline and does not require internet access."
+  "Recording, editing, export, and transcription run locally."
 ];
 
 const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M4A", "WAV", "FLAC"];
@@ -330,8 +330,8 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               </p>
               <div class="code-block" aria-label="Example luxel commands">
                 <div><span class="code-prompt">$</span> luxel record --display 1</div>
-                <div><span class="code-prompt">$</span> luxel clip --last 2m --json</div>
-                <div><span class="code-prompt">$</span> luxel transcribe latest --wait</div>
+                <div><span class="code-prompt">$</span> luxel clip --seconds 30 --json</div>
+                <div><span class="code-prompt">$</span> luxel latest --reveal</div>
               </div>
               <ul class="points points--small">
                 {cliPoints.map((point) => <li>{point}</li>)}
@@ -437,11 +437,11 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
           <div class="banner banner--agents">
             <div>
               <p class="eyebrow">Agent ready</p>
-              <h2 class="banner__title" id="agents-title">Your agent can run the whole recorder.</h2>
+              <h2 class="banner__title" id="agents-title">Your agent can run the recorder.</h2>
               <p class="banner__lead">
-                Everything Luxel does is scriptable, so any LLM or agent that can run a shell
-                command can capture, clip, convert, and transcribe on your behalf — with structured
-                results it can actually read.
+                Any LLM or agent that can run a shell command can start captures, stop recordings,
+                make replay clips, and open results or settings — with structured callbacks it can
+                actually read.
               </p>
               <ul class="points">
                 {agentPoints.map((point) => <li>{point}</li>)}
@@ -459,9 +459,8 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
                 <div class="terminal__comment"># agent: reproduce the bug and report back</div>
                 <div><span class="code-prompt">$</span> luxel record --display main --fps display --countdown 3</div>
                 <div><span class="code-prompt">$</span> luxel stop</div>
-                <div><span class="code-prompt">$</span> luxel convert demo.mp4 demo.gif --start 2 --duration 5 --fps 15</div>
-                <div><span class="code-prompt">$</span> luxel transcribe demo.mp4 --json --output demo.json</div>
                 <div><span class="code-prompt">$</span> luxel clip --seconds 30 --wait</div>
+                <div><span class="code-prompt">$</span> luxel latest --reveal</div>
                 <div class="terminal__result">&#123;"status":"success","filePath":"~/Movies/Luxel/Luxel Replay 2026-07-08 at 00.12.30.mp4"&#125;</div>
               </div>
             </div>
@@ -474,9 +473,8 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <p class="eyebrow">Local by design</p>
               <h2 class="banner__title" id="local-title">No watermarks. No tracking.</h2>
               <p class="banner__lead">
-                Luxel runs purely offline and locally on your Mac, without restricting the files you
-                make. Capture, replay, transcribe, automate, and export without ever uploading your
-                work.
+                Luxel records, edits, transcribes, and exports locally on your Mac without
+                restricting the files you make or uploading your work.
               </p>
             </div>
             <ul class="check-list" aria-label="Local app promises">

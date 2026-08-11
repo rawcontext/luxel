@@ -84,11 +84,11 @@ const exportFormatRows = [
   ["APNG", "Animated PNG", "Lossless animated image export. Drops audio."],
   ["WebM", "VP9 WebM", "WebM export. Supports Compact, Balanced, and High quality."],
   ["MP4 (AV1)", "AV1 video with AAC audio", "AV1 MP4 export through the bundled SVT-AV1 encoder."],
-  ["M4A", "AAC audio", "Audio-only editor export and CLI conversion format."],
-  ["ALAC M4A", "Apple Lossless audio", "Lossless audio-only editor export and CLI conversion format."],
-  ["WAV", "PCM audio", "Uncompressed audio-only editor export and CLI conversion format."],
-  ["CAF", "Core Audio Format", "Apple audio-only editor export and CLI conversion format."],
-  ["FLAC", "Free Lossless Audio Codec", "Lossless audio-only editor export and CLI conversion format."]
+  ["M4A", "AAC audio", "Audio-only editor export and Developer ID CLI conversion format."],
+  ["ALAC M4A", "Apple Lossless audio", "Lossless audio-only editor export and Developer ID CLI conversion format."],
+  ["WAV", "PCM audio", "Uncompressed audio-only editor export and Developer ID CLI conversion format."],
+  ["CAF", "Core Audio Format", "Apple audio-only editor export and Developer ID CLI conversion format."],
+  ["FLAC", "Free Lossless Audio Codec", "Lossless audio-only editor export and Developer ID CLI conversion format."]
 ];
 
 const cliCommands = [
@@ -98,10 +98,10 @@ const cliCommands = [
   ["luxel toggle", "Stop the active recording, or start one when a target is provided."],
   ["luxel clip", "Clip the replay buffer."],
   ["luxel latest", "Open the latest recording, or reveal it in Finder."],
-  ["luxel editor <file>", "Open a media file in Luxel's editor."],
-  ["luxel convert <input> <output>", "Convert or edit media from the command line."],
-  ["luxel export <request-json> <output>", "Export from a Luxel export request JSON file."],
-  ["luxel transcribe <file>", "Transcribe a media or audio file locally."],
+  ["luxel editor <file>", "Developer ID builds: open a media file in Luxel's editor."],
+  ["luxel convert <input> <output>", "Developer ID builds: convert or edit media from the command line."],
+  ["luxel export <request-json> <output>", "Developer ID builds: export from a Luxel export request JSON file."],
+  ["luxel transcribe <file>", "Developer ID builds: transcribe a media or audio file locally."],
   ["luxel preferences", "Open Luxel settings."]
 ];
 
@@ -115,12 +115,12 @@ const cliOptionGroups = [
       ["--preset <name>", "Use a Luxel export preset for quick recording."],
       ["--fps <1-120|display>", "Use a fixed recording frame rate or match the display refresh rate."],
       ["--countdown <seconds>", "Wait 0 to 60 seconds before capture starts."],
-      ["--save-to <directory>", "Save the recording in a specific directory."],
+      ["--save-to <directory>", "Developer ID builds: save the recording in a specific directory."],
       ["--seconds <seconds>", "Clip a specific replay buffer duration with luxel clip."]
     ]
   },
   {
-    title: "Command-line export options",
+    title: "Developer ID command-line export options",
     rows: [
       ["--format <format>", "Use gif, hevc, mp4, av1, webm, apng, prores422, prores4444, m4a, alac, wav, caf, or flac."],
       ["--width <pixels> --height <pixels>", "Resize the export. Use both options together."],
@@ -138,7 +138,7 @@ const cliOptionGroups = [
     ]
   },
   {
-    title: "Transcript options",
+    title: "Developer ID transcript options",
     rows: [
       ["--locale <identifier>", "Transcribe with a specific locale. Defaults to the current locale."],
       ["--output <file>", "Write transcript output to a file instead of stdout."],
@@ -187,7 +187,7 @@ const troubleshooting = [
   { problem: "Replay buffer cannot start", answer: "Enable Replay Buffer, grant Screen & System Audio Recording permission, and make sure a normal recording is not already active. Luxel pauses the buffer while regular recordings run." },
   { problem: "Replay buffer clips are shorter than requested", answer: "The buffer can only export captured history that already exists. Wait until the menu reports that replay buffering is active before clipping the full selected duration." },
   { problem: "The luxel command is not found", answer: "Open Settings > Command Line, install or repair the command, then copy the PATH command for your shell if the install directory is not already on PATH." },
-  { problem: "CLI transcription fails", answer: "Confirm speech recognition is available and authorized, then retry. The transcribe command uses local transcription, the selected locale, and the same speech recognition availability as the app." }
+  { problem: "Developer ID CLI transcription fails", answer: "Confirm speech recognition is available and authorized, then retry. The transcribe command uses local transcription, the selected locale, and the same speech recognition availability as the app." }
 ];
 ---
 
@@ -594,7 +594,8 @@ const troubleshooting = [
               </p>
               <p>
                 Rename the source file in place, move to newer or older recordings in the
-                same folder, or open an existing media file with <code>luxel editor &lt;file&gt;</code>.
+                same folder. Developer ID builds can also open an existing media file with{" "}
+                <code>luxel editor &lt;file&gt;</code>.
               </p>
             </article>
 
@@ -690,9 +691,8 @@ const troubleshooting = [
             <p class="docs-eyebrow">Guide</p>
             <h2 id="transcripts-title">Create local transcripts</h2>
             <p>
-              Luxel uses local transcription for recordings with audio. Use
-              the editor for review workflows or the CLI when you need transcript files
-              in scripts.
+              Luxel uses local transcription for recordings with audio. Use the editor for review
+              workflows. Developer ID builds also provide transcript files from the CLI for scripts.
             </p>
           </div>
 
@@ -709,7 +709,7 @@ const troubleshooting = [
             </article>
 
             <article>
-              <h3>From the command line</h3>
+              <h3>From the command line (Developer ID)</h3>
               <pre><code>luxel transcribe demo.m4a &gt; demo.txt
 luxel transcribe demo.mp4 --output demo.json --json --overwrite
 luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
@@ -787,7 +787,7 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
             </article>
 
             <article>
-              <h3>Scripted export and transcript</h3>
+              <h3>Scripted export and transcript (Developer ID)</h3>
               <ol>
                 <li>Install the command from Settings > Command Line.</li>
                 <li>Run <code>luxel convert demo.mp4 demo.webm --width 1280 --height 720</code>.</li>
@@ -848,8 +848,10 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
             <p class="docs-eyebrow">Reference</p>
             <h2 id="cli-title">Command line tool</h2>
             <p>
-              Use <code>luxel</code> when you want captures in scripts, shell aliases,
-              launchers, media processing, or repeatable workflows.
+              Use <code>luxel</code> when you want captures in scripts, shell aliases, launchers,
+              or repeatable workflows. The Mac App Store build delegates recording and replay
+              commands to the licensed sandboxed app. Developer ID builds also support direct
+              media processing and transcription.
             </p>
           </div>
 
@@ -859,8 +861,8 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
               <p>
                 Open Settings > Command Line to install the bundled command. Luxel creates
                 a symbolic link named <code>luxel</code>, defaulting to{" "}
-                <code>~/.local/bin/luxel</code>, and links the bundled manual page under{" "}
-                <code>share/man/man1/luxel.1</code> relative to the install root.
+                <code>~/.local/bin/luxel</code>. Developer ID builds also link the bundled manual
+                page under <code>share/man/man1/luxel.1</code> relative to the install root.
               </p>
               <p>
                 Use Repair after replacing or moving the app so the installed command points
@@ -871,16 +873,18 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns</code></pre>
 
             <article>
               <h3>Common examples</h3>
+              <p>Available in Mac App Store and Developer ID builds:</p>
               <pre><code>luxel --version
 luxel record --display main --fps display --countdown 3
 luxel record --active-window --fps 120
-luxel record --active-window --preset "Default" --save-to ~/Movies/Luxel
 luxel toggle --last-area
 luxel stop
 luxel clip --seconds 30 --wait
 luxel latest --reveal
 luxel preferences
-luxel record --last-area --print-url
+luxel record --last-area --print-url</code></pre>
+              <p>Additional Developer ID commands:</p>
+              <pre><code>luxel record --active-window --preset "Default" --save-to ~/Movies/Luxel
 luxel editor ~/Movies/demo.mp4
 luxel convert demo.mp4 demo.webm
 luxel convert demo.mp4 demo-av1.mp4 --format av1
@@ -906,7 +910,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 playsinline
                 preload="metadata"
               ></video>
-              <figcaption>This CLI walkthrough was recorded, edited, and exported using Luxel itself.</figcaption>
+              <figcaption>This Developer ID CLI walkthrough was recorded, edited, and exported using Luxel itself.</figcaption>
             </figure>
             <figure>
               <img
@@ -914,15 +918,15 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 alt="Luxel command line converting an MP4 file to WebM with an export progress bar."
                 loading="lazy"
               />
-              <figcaption>Command-line WebM conversion with terminal progress.</figcaption>
+              <figcaption>Developer ID command-line WebM conversion with terminal progress.</figcaption>
             </figure>
             <figure>
               <img
                 src="/screenshots/luxel-cli-help.png"
-                alt="Luxel command-line help output listing record, stop, toggle, clip, latest, editor, convert, export, transcribe, and preferences commands."
+                alt="Luxel Developer ID command-line help output listing recording, file processing, transcription, and settings commands."
                 loading="lazy"
               />
-              <figcaption>The top-level <code>luxel --help</code> screen.</figcaption>
+              <figcaption>The Developer ID build's top-level <code>luxel --help</code> screen.</figcaption>
             </figure>
           </div>
 
@@ -956,8 +960,8 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
                 <li><code>clip</code> uses the configured replay buffer length unless <code>--seconds</code> is passed.</li>
                 <li><code>latest --reveal</code> reveals the latest recording in Finder instead of opening it.</li>
                 <li><code>preferences</code> opens Luxel settings. <code>--pane</code> accepts <code>general</code>, <code>presets</code>, <code>shortcuts</code>, <code>updates</code>, or <code>about</code> as a URL hint; current builds open Settings normally.</li>
-                <li><code>convert</code> infers format from the output extension, but <code>.mov</code> requires <code>--format prores422</code> or <code>--format prores4444</code>, <code>.m4a</code> requires <code>--format m4a</code> or <code>--format alac</code>, and MP4 AV1 requires <code>--format av1</code>.</li>
-                <li><code>export</code> accepts a Luxel export request JSON document for fields without dedicated flags.</li>
+                <li>In Developer ID builds, <code>convert</code> infers format from the output extension, but <code>.mov</code> requires <code>--format prores422</code> or <code>--format prores4444</code>, <code>.m4a</code> requires <code>--format m4a</code> or <code>--format alac</code>, and MP4 AV1 requires <code>--format av1</code>.</li>
+                <li>In Developer ID builds, <code>export</code> accepts a Luxel export request JSON document for fields without dedicated flags.</li>
               </ul>
             </article>
           </div>
@@ -1004,7 +1008,7 @@ luxel transcribe demo.mp4 --output demo.json --json --overwrite</code></pre>
             <h2 id="formats-title">Export and conversion formats</h2>
             <p>
               The editor exposes video and animation formats for screen recordings, plus
-              audio-only formats when the source is audio. The CLI exposes the same
+              audio-only formats when the source is audio. The Developer ID CLI exposes the same
               conversion options for scripts.
             </p>
           </div>
@@ -1265,9 +1269,9 @@ luxel://latest?reveal=true</code></pre>
             <article>
               <h3>Can I use Luxel without opening the editor?</h3>
               <p>
-                Yes. Quick exports and replay clip destinations can finish directly, and{" "}
-                <code>luxel convert</code>, <code>luxel export</code>, and{" "}
-                <code>luxel transcribe</code> run from the command line without opening the editor.
+                Yes. Quick exports and replay clip destinations can finish directly. In Developer
+                ID builds, <code>luxel convert</code>, <code>luxel export</code>, and{" "}
+                <code>luxel transcribe</code> also run without opening the editor.
               </p>
             </article>
             <article>
