@@ -4,4 +4,4 @@
 "NSMicrophoneUsageDescription" = "Luxel은 화면 녹화에 마이크 캡처를 활성화한 경우에만 마이크 오디오를 녹음합니다.";
 "NSScreenCaptureUsageDescription" = "Luxel은 녹화를 시작한 경우에만 화면을 캡처합니다.";
 "NSSpeechRecognitionUsageDescription" = "Luxel은 내보내기 편집기에서 오디오 녹음을 전사하기 위해 온디바이스 음성 인식을 사용합니다.";
-"NSHumanReadableCopyright" = "Copyright © 2026 Context. All rights reserved.";
+"NSHumanReadableCopyright" = "Copyright © 2026 Context. 모든 권리 보유.";

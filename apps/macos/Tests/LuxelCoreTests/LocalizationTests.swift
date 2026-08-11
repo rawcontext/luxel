@@ -18,6 +18,49 @@ struct LocalizationTests {
         }
     }
 
+    @Test("string catalog entries are translated and preserve format placeholders")
+    func stringCatalogEntriesAreReadyForRelease() throws {
+        let catalog = try StringCatalog.load(from: packageRoot)
+
+        for key in catalog.strings.keys.sorted() {
+            let sourceUnit = try #require(catalog.stringUnit(forKey: key, locale: "en"))
+            let sourcePlaceholders = try formatPlaceholders(in: sourceUnit.value)
+
+            for locale in LuxelLocalization.supportedLocales {
+                let unit = try #require(catalog.stringUnit(forKey: key, locale: locale))
+                let value = unit.value.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                #expect(unit.state == "translated", "\(key) is not marked translated for \(locale)")
+                #expect(!value.isEmpty, "\(key) is empty for \(locale)")
+                #expect(
+                    try formatPlaceholders(in: unit.value) == sourcePlaceholders,
+                    "\(key) has mismatched format placeholders for \(locale)"
+                )
+            }
+        }
+    }
+
+    @Test("non-English catalog entries do not silently fall back to English")
+    func stringCatalogHasNoUnexpectedEnglishFallbacks() throws {
+        let catalog = try StringCatalog.load(from: packageRoot)
+
+        for locale in LuxelLocalization.supportedLocales where locale != "en" {
+            let fallbackKeys = Set(
+                try catalog.strings.keys.compactMap { key in
+                    let source = try #require(catalog.stringUnit(forKey: key, locale: "en"))
+                    let localized = try #require(catalog.stringUnit(forKey: key, locale: locale))
+                    return source.value == localized.value ? key : nil
+                }
+            )
+            let expected = intentionalEnglishFallbackKeys[locale] ?? []
+
+            #expect(
+                fallbackKeys == expected,
+                "Unexpected English fallbacks for \(locale): \(fallbackKeys.subtracting(expected).sorted())"
+            )
+        }
+    }
+
     @Test("InfoPlist strings include TCC descriptions for every supported locale")
     func infoPlistStringsHaveRequiredKeys() throws {
         let requiredKeys = [
@@ -33,6 +76,17 @@ struct LocalizationTests {
         let localizationsURL =
             packageRoot
             .appending(path: "Configuration/Luxel/Localizations")
+        let englishData = try Data(
+            contentsOf: localizationsURL
+                .appending(path: "en.lproj")
+                .appending(path: "InfoPlist.strings")
+        )
+        let englishPlist = try #require(
+            PropertyListSerialization.propertyList(
+                from: englishData,
+                format: nil
+            ) as? [String: String]
+        )
 
         for locale in LuxelLocalization.supportedLocales {
             let fileURL =
@@ -50,6 +104,15 @@ struct LocalizationTests {
             for key in requiredKeys {
                 let value = plist?[key]?.trimmingCharacters(in: .whitespacesAndNewlines)
                 #expect(value?.isEmpty == false, "\(fileURL.path) is missing \(key)")
+            }
+
+            if locale != "en" {
+                for key in requiredKeys where !infoPlistEnglishFallbackKeys.contains(key) {
+                    #expect(
+                        plist?[key] != englishPlist[key],
+                        "\(fileURL.path) falls back to English for \(key)"
+                    )
+                }
             }
         }
     }
@@ -136,6 +199,10 @@ private struct StringCatalog: Decodable {
                 localization.stringUnit.value.isEmpty ? nil : locale
             } ?? [])
     }
+
+    func stringUnit(forKey key: String, locale: String) -> StringCatalogStringUnit? {
+        strings[key]?.localizations?[locale]?.stringUnit
+    }
 }
 
 private struct StringCatalogEntry: Decodable {
@@ -159,6 +226,51 @@ private let packageRoot = URL(fileURLWithPath: #filePath)
 private let nonLocalizedLiteralAllowlist: Set<String> = [
     " "
 ]
+
+private let infoPlistEnglishFallbackKeys: Set<String> = [
+    "CFBundleDisplayName",
+    "CFBundleName"
+]
+
+private let intentionalEnglishFallbackKeys: [String: Set<String>] = [
+    "de": [
+        "10 s", "3 s", "30 s", "5 s", "Audio", "Countdown", "Dithering", "FPS", "Format",
+        "Name", "Studio Voice", "common.ok", "recording.countdown.seconds",
+        "replayBuffer.detail.durationFPS", "replayBuffer.duration.oneMinute", "⌫"
+    ],
+    "es": [
+        "1 min", "10 s", "3 s", "30 s", "5 min", "5 s", "Audio", "FPS",
+        "recording.countdown.seconds", "replayBuffer.detail.durationFPS", "⌫"
+    ],
+    "fr": [
+        "1 min", "10 s", "3 s", "30 s", "5 min", "5 s", "Audio", "Destination", "Format",
+        "Microphone", "Source", "common.ok", "recording.countdown.seconds", "⌫"
+    ],
+    "it": [
+        "1 min", "10 s", "3 s", "30 s", "5 min", "5 s", "Audio", "FPS", "Preset", "common.ok",
+        "recording.countdown.seconds", "replayBuffer.detail.durationFPS", "⌫"
+    ],
+    "ja": ["FPS", "common.ok", "⌫"],
+    "ko": ["FPS", "replayBuffer.detail.durationFPS", "⌫"],
+    "vi": ["Camera", "FPS", "common.ok", "replayBuffer.detail.durationFPS", "⌫"],
+    "zh-Hans": ["FPS", "replayBuffer.detail.durationFPS", "⌫"],
+    "pt-BR": [
+        "1 min", "10 s", "3 s", "30 s", "5 min", "5 s", "FPS", "common.ok",
+        "recording.countdown.seconds", "replayBuffer.detail.durationFPS", "⌫"
+    ],
+    "pt-PT": [
+        "1 min", "10 s", "3 s", "30 s", "5 min", "5 s", "FPS", "common.ok",
+        "recording.countdown.seconds", "replayBuffer.detail.durationFPS", "⌫"
+    ]
+]
+
+private func formatPlaceholders(in value: String) throws -> [String] {
+    let pattern = try NSRegularExpression(pattern: #"%(?:\d+\$)?(?:@|d|%)"#)
+    let range = NSRange(value.startIndex..<value.endIndex, in: value)
+    return pattern.matches(in: value, range: range).compactMap { match in
+        Range(match.range, in: value).map { String(value[$0]) }
+    }.sorted()
+}
 
 private func swiftFiles(under root: URL) -> [URL] {
     guard
