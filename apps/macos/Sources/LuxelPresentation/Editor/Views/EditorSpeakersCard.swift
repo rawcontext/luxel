@@ -154,7 +154,6 @@ struct EditorSpeakersCard: View {
             .foregroundStyle(.white.opacity(0.78))
             .frame(minWidth: 42, alignment: .leading)
     }
-
 }
 
 private extension EditorSpeakersCard {
