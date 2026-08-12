@@ -11,6 +11,9 @@ Luxel performs the work with the permissions and settings you approved in the ap
 curl -fsSL https://luxel.media/cli/install.sh | sh
 ```
 
+The installer adds `luxel` to `~/.local/bin` and updates the PATH for zsh, Bash,
+or Fish. Open a new terminal after installation.
+
 ## Requirements
 
 - macOS 26 or later
