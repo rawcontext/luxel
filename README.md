@@ -5,8 +5,11 @@ binary does not record, inspect, convert, export, or transcribe media itself. It
 authenticates a request, opens Luxel, and waits on a loopback-only callback while
 Luxel performs the work with the permissions and settings you approved in the app.
 
-The repository is private during development. The planned public release is MIT
-licensed.
+## Install
+
+```sh
+curl -fsSL https://luxel.media/cli/install.sh | sh
+```
 
 ## Requirements
 
