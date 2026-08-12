@@ -50,9 +50,15 @@ const editorFacts = [
 ];
 
 const transcriptPoints = [
-  "Locale selection and semantic turn segmentation",
+  "Search transcript text and jump straight to spoken words",
+  "Automatic semantic turn grouping for easier review",
+  "Review and refine transcripts alongside the recording"
+];
+
+const speakerIdentificationPoints = [
   "Local speaker diarization with Auto, Exact, or Range count detection",
-  "Known Speaker matching, voice naming, transcript search, and editor review"
+  "Name detected voices or attach them to saved Known Speakers",
+  "Match saved speakers in future recordings without uploading audio"
 ];
 
 const cliPoints = [
@@ -318,6 +324,29 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <ul class="points">
                 {transcriptPoints.map((point) => <li>{point}</li>)}
               </ul>
+            </div>
+          </article>
+
+          <article class="feature-row" id="speaker-identification">
+            <div class="feature-row__copy">
+              <p class="chip chip--green">Speakers</p>
+              <h3>Know who said what</h3>
+              <p>
+                Separate voices in a transcript, name the people you recognize, and let Luxel
+                match Known Speakers in future recordings—all on your Mac.
+              </p>
+              <ul class="points">
+                {speakerIdentificationPoints.map((point) => <li>{point}</li>)}
+              </ul>
+            </div>
+            <div class="feature-row__media">
+              <img
+                src="/screenshots/luxel-settings-transcripts.png"
+                alt="Luxel Transcripts settings with local speaker identification and anonymized Known Speakers"
+                width="1830"
+                height="1235"
+                loading="lazy"
+              />
             </div>
           </article>
 
