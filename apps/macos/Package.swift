@@ -13,14 +13,12 @@ let package = Package(
         .library(name: "LuxelCodecWebM", targets: ["LuxelCodecWebM"]),
         .library(name: "LuxelCodecAV1", targets: ["LuxelCodecAV1"]),
         .executable(name: "Luxel", targets: ["LuxelApp"]),
-        .executable(name: "luxel-cli", targets: ["LuxelCLIExecutable"]),
         .executable(
             name: "luxel-transcription-benchmark",
             targets: ["LuxelTranscriptionBenchmark"]
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.8.2"),
         .package(url: "https://github.com/FluidInference/FluidAudio.git", from: "0.15.5")
     ],
     targets: [
@@ -34,23 +32,10 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "LuxelCLIExecutable",
-            dependencies: ["LuxelCLI", "LuxelCore"]
-        ),
-        .executableTarget(
             name: "LuxelTranscriptionBenchmark",
             dependencies: [
                 "LuxelCore",
                 .product(name: "FluidAudio", package: "FluidAudio")
-            ]
-        ),
-        .target(
-            name: "LuxelCLI",
-            dependencies: [
-                "LuxelCodecAV1",
-                "LuxelCodecWebM",
-                "LuxelCore",
-                .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
         .target(name: "LuxelPresentation", dependencies: ["LuxelCore"]),
@@ -116,15 +101,6 @@ let package = Package(
         .testTarget(
             name: "LuxelCodecWebMTests",
             dependencies: ["LuxelCodecWebM", "LuxelTestSupport"]
-        ),
-        .testTarget(
-            name: "LuxelCLITests",
-            dependencies: [
-                "LuxelCLI",
-                "LuxelCore",
-                "LuxelTestSupport",
-                .product(name: "ArgumentParser", package: "swift-argument-parser")
-            ]
         ),
         .testTarget(
             name: "LuxelAppTests",

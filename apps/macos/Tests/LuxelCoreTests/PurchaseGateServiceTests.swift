@@ -128,10 +128,10 @@ struct PurchaseGateServiceTests {
         )
     }
 
-    @Test("purchase gate locates an enclosing app bundle for a bundled CLI")
+    @Test("purchase gate locates an enclosing app bundle")
     func purchaseGateLocatesEnclosingAppBundle() {
         let executableURL = URL(
-            fileURLWithPath: "/Applications/Luxel.app/Contents/MacOS/luxel-cli"
+            fileURLWithPath: "/Applications/Luxel.app/Contents/MacOS/Luxel"
         )
 
         #expect(

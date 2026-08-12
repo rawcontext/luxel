@@ -54,15 +54,6 @@ struct LuxelMenu: View {
                 await refreshMenuState()
             }
         }
-        .onOpenURL { url in
-            Task {
-                await model.handleAutomationURL(
-                    url,
-                    openSettings: openLuxelSettings,
-                    openRecording: openRecording
-                )
-            }
-        }
         .task {
             await refreshMenuState()
             if let recoveredRecording = await model.recoverInterruptedRecording() {

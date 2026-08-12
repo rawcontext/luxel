@@ -29,23 +29,53 @@ struct LuxelApplicationDelegateTests {
     }
 
     @Test(
-        "URL open requests forward media files to the editor handler",
+        "URL open requests forward files and automation to their handlers",
         arguments: ["m4a", "mp4"]
     )
     func urlOpenRequestsForwardMediaFiles(pathExtension: String) {
         let delegate = LuxelApplicationDelegate()
         let mediaURL = URL(fileURLWithPath: "/tmp/recording.\(pathExtension)")
+        let automationURL = URL(string: "luxel://record")!
         var receivedURLs: [[URL]] = []
+        var receivedAutomationURLs: [[URL]] = []
         delegate.openFiles = { urls, _ in
             receivedURLs.append(urls)
+        }
+        delegate.openURLs = { urls in
+            receivedAutomationURLs.append(urls)
         }
 
         delegate.application(
             NSApplication.shared,
-            open: [mediaURL, URL(string: "luxel://record")!]
+            open: [mediaURL, automationURL]
         )
 
         #expect(receivedURLs == [[mediaURL]])
+        #expect(receivedAutomationURLs == [[automationURL]])
+    }
+
+    @Test("URL Apple events forward automation without a SwiftUI window")
+    func urlAppleEventsForwardAutomation() {
+        let delegate = LuxelApplicationDelegate()
+        let automationURL = URL(string: "luxel://preferences")!
+        var receivedURLs: [[URL]] = []
+        delegate.openURLs = { receivedURLs.append($0) }
+
+        delegate.handleURLString(automationURL.absoluteString)
+
+        #expect(receivedURLs == [[automationURL]])
+    }
+
+    @Test("URL Apple events wait until the app installs its handler")
+    func urlAppleEventsWaitForHandler() {
+        let delegate = LuxelApplicationDelegate()
+        let automationURL = URL(string: "luxel://doctor")!
+        var receivedURLs: [[URL]] = []
+
+        delegate.handleURLString(automationURL.absoluteString)
+        delegate.openURLs = { receivedURLs.append($0) }
+
+        #expect(receivedURLs == [[automationURL]])
     }
 
     @Test("status item right click exposes the overflow quick actions")

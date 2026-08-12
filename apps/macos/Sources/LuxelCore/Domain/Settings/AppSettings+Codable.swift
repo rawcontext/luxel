@@ -42,8 +42,11 @@ extension AppSettings {
         quickRecordLastShortcut = keys.quickRecordLast; clipReplayBufferShortcut = keys.clipReplayBuffer
         updatePreferences = general.updatePreferences; showTimeInMenuBar = general.showTimeInMenuBar
         hideMenuBarIcon = general.hideMenuBarIcon && notchSurfaceSettings.isEnabled
-        launchAtLogin = general.launchAtLogin; commandLineToolInstall = general.commandLineToolInstall
-        commandLineShell = general.commandLineShell; notificationReminder = general.notificationReminder
+        launchAtLogin = general.launchAtLogin
+        commandLineControlEnabled = general.commandLineControlEnabled
+        commandLinePairedClients = general.commandLinePairedClients
+        commandLineFolderGrants = general.commandLineFolderGrants
+        notificationReminder = general.notificationReminder
         allowURLAutomation = true; urlAutomationGrants = general.urlAutomationGrants
         exportPresets = general.exportPresets; quickExportPresetID = general.quickExportPresetID
         rememberLastCapture = general.rememberLastCapture; loupeAlwaysOn = general.loupeAlwaysOn
@@ -226,14 +229,18 @@ extension AppSettings {
             hideMenuBarIcon: container.decodeIfPresent(Bool.self, forKey: .hideMenuBarIcon)
                 ?? false,
             launchAtLogin: container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true,
-            commandLineToolInstall: container.decodeIfPresent(
-                CommandLineToolInstall.self,
-                forKey: .commandLineToolInstall
-            ),
-            commandLineShell: container.decodeIfPresent(
-                CommandLineShell.self,
-                forKey: .commandLineShell
-            ) ?? .zsh,
+            commandLineControlEnabled: container.decodeIfPresent(
+                Bool.self,
+                forKey: .commandLineControlEnabled
+            ) ?? false,
+            commandLinePairedClients: container.decodeIfPresent(
+                [CommandLinePairedClient].self,
+                forKey: .commandLinePairedClients
+            ) ?? [],
+            commandLineFolderGrants: container.decodeIfPresent(
+                [CommandLineFolderGrant].self,
+                forKey: .commandLineFolderGrants
+            ) ?? [],
             notificationReminder: container.decodeIfPresent(Bool.self, forKey: .notificationReminder)
                 ?? true,
             urlAutomationGrants: container.decodeIfPresent(

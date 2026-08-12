@@ -2,7 +2,7 @@
 
 Luxel is a native macOS menu bar screen recorder inspired by Luxel and rebuilt in Swift. The app records displays, windows, selected regions, audio, and automation-driven workflows, then exports through Apple-native media pipelines plus in-process native WebM and AV1 adapters.
 
-This repository is a monorepo for the macOS app, bundled command-line tool, marketing/docs website, release scripts, and product planning docs.
+This repository is a monorepo for the macOS app, marketing/docs website, release scripts, and product planning docs. The standalone Rust CLI lives in [rawcontext/luxel-cli](https://github.com/rawcontext/luxel-cli).
 
 ## Start Here
 
@@ -38,7 +38,7 @@ This repository is a monorepo for the macOS app, bundled command-line tool, mark
 ├── turbo.json                        Task graph and cache settings
 ├── bun.lock                          Locked JavaScript tooling dependencies
 ├── apps/
-│   ├── macos/                        SwiftPM macOS app, CLI, tests, signing scripts
+│   ├── macos/                        SwiftPM macOS app, tests, and signing scripts
 │   └── web/                          Astro website and user docs
 ├── docs/                             Architecture decisions, plans, release docs
 └── packages/                         Reserved workspace package directory
@@ -53,7 +53,6 @@ apps/macos/Sources/LuxelCore          Domain, application use cases, ports, adap
 apps/macos/Sources/LuxelPresentation  Editor presentation models and views
 apps/macos/Sources/LuxelCodecWebM     Native VP9/WebM adapter
 apps/macos/Sources/LuxelCodecAV1      Native SVT-AV1/MP4 adapter
-apps/macos/Sources/LuxelCLI           ArgumentParser-based CLI wrapper
 apps/macos/Tests                      Swift test targets and fixtures
 apps/macos/Configuration/Luxel        Info.plist, entitlements, app assets
 apps/macos/Scripts                    Local build, signing, packaging, validation scripts
@@ -132,9 +131,9 @@ Direct SwiftPM executable launches can change the code identity macOS sees for S
 
 `apps/macos/Scripts/build-luxel-app.sh`:
 
-- Builds `Luxel` and `luxel-cli`.
+- Builds `Luxel`.
 - Creates `apps/macos/dist/Luxel Dev.app` by default.
-- Copies `Info.plist`, the app icon, third-party licenses, and the CLI install helper.
+- Copies `Info.plist`, the app icon, and third-party licenses.
 - Signs the bundle with the `Apple Development:` identity for team `U65DCW9TAK` unless `SIGN_IDENTITY` or `APPLE_TEAM_IDENTIFIER` is set.
 - Rejects ad-hoc signing.
 - Emits the final app path on success.
@@ -160,7 +159,6 @@ The Swift package exports these products:
 | `LuxelCodecWebM` | Library | VP9/WebM export through vendored libvpx/libopus artifacts and Swift muxing. |
 | `LuxelCodecAV1` | Library | AV1 MP4 export through vendored SVT-AV1 artifacts and AVAssetWriter muxing. |
 | `Luxel` | Executable | Menu bar app, editor window, settings, panels, shortcuts, app composition. |
-| `luxel-cli` | Executable | Command-line wrapper around Luxel automation, editor, export, and transcript workflows. |
 
 Test targets:
 
@@ -169,7 +167,6 @@ Test targets:
 | `LuxelCoreTests` | Domain, use case, infrastructure, export, recording, automation, and settings coverage. |
 | `LuxelCodecWebMTests` | WebM codec stack and muxing coverage using media fixtures. |
 | `LuxelCodecAV1Tests` | SVT-AV1 encode, MP4 muxing, AAC audio, and ffprobe-gated validation. |
-| `LuxelCLITests` | CLI parsing, validation, and command execution behavior. |
 | `LuxelAppTests` | Presentation/editor model behavior that depends on app-facing models. |
 
 ## Architecture
@@ -192,7 +189,6 @@ Use these boundaries when adding or changing behavior:
 - `LuxelApp`: App composition, SwiftUI/AppKit shell, menu bar, panels, settings, shortcuts, and concrete dependency wiring.
 - `LuxelCodecWebM`: Isolated native codec integration for WebM VP9.
 - `LuxelCodecAV1`: Isolated native codec integration for MP4 AV1.
-- `LuxelCLI`: ArgumentParser commands for URL automation, editor opening, headless export, and transcription.
 
 When a feature crosses these layers, test the lower layers first. Keep UI state out of domain models and keep framework objects behind ports.
 
@@ -243,45 +239,16 @@ The UI and availability logic should reflect registered codec adapters, not just
 
 ## CLI And Automation
 
-The bundled CLI executable is `luxel-cli`, and the installed command name is `luxel`.
+The standalone Rust CLI is maintained in [rawcontext/luxel-cli](https://github.com/rawcontext/luxel-cli), and its executable is named `luxel`. It pairs with the app, sends an authenticated request over the `luxel://cli` bootstrap route, and waits on a short-lived loopback callback. The sandboxed app performs every recording, conversion, export, and transcription operation.
 
-The CLI supports:
-
-```text
-luxel --version
-luxel record
-luxel stop
-luxel toggle
-luxel clip
-luxel latest
-luxel editor
-luxel convert
-luxel export
-luxel transcribe
-luxel preferences
-```
-
-Example commands:
+Install or build the CLI from its repository, then pair it explicitly:
 
 ```sh
-luxel --version
-luxel record --display main --fps display --countdown 3
-luxel record --active-window --fps 120
-luxel record --active-window --preset "Default" --save-to ~/Movies/Luxel
-luxel toggle --last-area
-luxel stop
-luxel latest --reveal
-luxel preferences
-luxel record --last-area --print-url
-luxel editor ~/Movies/demo.mp4
-luxel convert demo.mp4 demo.webm
-luxel convert demo.mp4 demo-av1.mp4 --format av1
-luxel convert demo.mp4 demo.gif --start 2 --duration 5 --fps 15 --width 800 --height 450
-luxel convert demo.mp4 demo.mov --format prores422 --quality high
-luxel export request.json output.webm --overwrite --json
-luxel transcribe demo.m4a > demo.txt
-luxel transcribe demo.mp4 --output demo.json --json --overwrite
+luxel pair
+luxel doctor
 ```
+
+Luxel Settings > Command Line manages paired clients and the folders available to CLI requests. The complete public command and option reference is maintained on the website at [luxel.media/docs#cli](https://luxel.media/docs#cli). The original URL automation routes remain available for Shortcuts and launchers, but they are separate from the paired CLI trust channel.
 
 The app also parses `luxel://` URLs:
 
@@ -295,26 +262,6 @@ luxel://preferences
 ```
 
 Callbacks use `x-success` and `x-error` query parameters. Successful file results append `filePath`; recording starts append `recordingID`; failures append `errorMessage`.
-
-Use `--wait` for a plain callback result, `--json` for structured callback output, and
-`--timeout` to control callback waiting.
-`--print-url`/`--dry-run` prints the Luxel automation URL without opening it.
-`luxel preferences --pane` accepts pane hints for URL compatibility, but current
-builds open Settings normally.
-`luxel convert` uses the same `EditorExportDraft`/`ExportRequest` model as the app
-for common headless edits such as trim, resize, frame rate, quality, speed, mute, and crop.
-`luxel record --fps` and `luxel toggle --fps` accept a fixed capture rate from 1 to 120
-or `display` to match the screen refresh rate. The same value is available as the `fps`
-query parameter in `luxel://record` and `luxel://toggle` URLs.
-`luxel export` accepts a full `ExportRequest` JSON document for export fields that do not have dedicated CLI flags.
-Headless export commands show an interactive progress bar on stderr when run in a terminal.
-Use `--quiet` to suppress progress output.
-`.mp4` output defaults to H.264; use `--format av1` when you want MP4 AV1.
-`luxel transcribe` uses local Apple Speech transcription and requires the same system
-speech availability and authorization as the app.
-The checked-in manual page lives at `apps/macos/Documentation/luxel.1`, is bundled into
-`Luxel.app/Contents/Resources/man/man1/luxel.1`, and is linked into `share/man/man1`
-when Luxel installs or repairs the CLI.
 
 ## Web App
 
@@ -342,7 +289,6 @@ Run Swift tests directly when you need SwiftPM flags or narrower iteration:
 ```sh
 cd apps/macos
 swift test
-swift test --filter LuxelCLITests
 swift test --filter LuxelCoreTests/AutomationServiceTests
 ```
 

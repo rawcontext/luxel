@@ -12,21 +12,19 @@ struct AppDistributionTests {
         #endif
     }
 
-    @Test("Developer ID distribution keeps updater and CLI installer outside StoreKit")
-    func developerIDDistributionKeepsUpdaterAndCLIInstallerOutsideStoreKit() {
+    @Test("Developer ID distribution keeps updater outside StoreKit")
+    func developerIDDistributionKeepsUpdaterOutsideStoreKit() {
         let capabilities = AppDistribution.developerID.capabilities
 
         #expect(capabilities.includesSparkleUpdater)
         #expect(!capabilities.usesStoreKitEntitlements)
-        #expect(capabilities.allowsCommandLineToolInstaller)
     }
 
-    @Test("Mac App Store distribution uses StoreKit and keeps CLI installer")
-    func macAppStoreDistributionUsesStoreKitAndKeepsCLIInstaller() {
+    @Test("Mac App Store distribution uses StoreKit")
+    func macAppStoreDistributionUsesStoreKit() {
         let capabilities = AppDistribution.macAppStore.capabilities
 
         #expect(!capabilities.includesSparkleUpdater)
         #expect(capabilities.usesStoreKitEntitlements)
-        #expect(capabilities.allowsCommandLineToolInstaller)
     }
 }

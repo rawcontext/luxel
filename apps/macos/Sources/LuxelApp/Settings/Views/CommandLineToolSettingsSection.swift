@@ -6,108 +6,158 @@ struct CommandLineToolSettingsSection: View {
     @Bindable var model: LuxelMenuModel
 
     var body: some View {
-        SettingsIslandGroup("Command Line Tool") {
-            if let install = model.settings.commandLineToolInstall {
-                SettingsRow("Installed Link") {
-                    Text(install.linkURL.path)
-                        .font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.55))
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .textSelection(.enabled)
-                }
-
-                LuxelGlassRowDivider()
-            }
-
-            SettingsRow("Install Location") {
-                HStack(spacing: 8) {
-                    Button {
-                        model.installCommandLineTool()
-                    } label: {
-                        SettingsCapsuleButtonLabel(
-                            model.settings.commandLineToolInstall == nil
-                                ? "Install luxel" : "Change Location",
-                            systemImage: "terminal"
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .help(
-                        LuxelLocalization.format(
-                            "settings.commandLine.installDestinationHelp",
-                            defaultValue: "Install to %@",
-                            model.commandLineToolInstallService.defaultDestination.path)
+        SettingsIslandGroup(
+            LuxelLocalization.string(
+                "settings.commandLine.title",
+                defaultValue: "Command Line"
+            ),
+            footer: LuxelLocalization.string(
+                "settings.commandLine.footer",
+                defaultValue: "The external luxel command asks this app to perform every action."
+            )
+        ) {
+            SettingsRow(
+                LuxelLocalization.string(
+                    "settings.commandLine.control",
+                    defaultValue: "Command Line Control"
+                )
+            ) {
+                Toggle(
+                    LuxelLocalization.string(
+                        "settings.commandLine.control",
+                        defaultValue: "Command Line Control"
+                    ),
+                    isOn: Binding(
+                        get: { model.settings.commandLineControlEnabled },
+                        set: { model.setCommandLineControlEnabled($0) }
                     )
-
-                    if model.settings.commandLineToolInstall != nil {
-                        Button {
-                            model.repairCommandLineToolInstall()
-                        } label: {
-                            SettingsCapsuleButtonLabel(
-                                LuxelLocalization.string(
-                                    "settings.commandLine.repair",
-                                    defaultValue: "Repair"),
-                                systemImage: "arrow.triangle.2.circlepath"
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .help(
-                            LuxelLocalization.string(
-                                "settings.commandLine.repairHelp",
-                                defaultValue:
-                                    "Update the installed command to point at this Luxel app.")
-                        )
-                    }
-                }
+                )
+                .labelsHidden()
+                .toggleStyle(.switch)
             }
-            .help("Install the command line helper for terminal automation.")
 
             LuxelGlassRowDivider()
 
-            SettingsRow("Shell") {
-                SettingsMenuPicker(
-                    selection: $model.settings.commandLineShell,
-                    options: Array(CommandLineShell.allCases)
-                ) { shell in
-                    shell.displayName
-                }
-                .help(
+            SettingsRow(
+                LuxelLocalization.string(
+                    "settings.commandLine.repository",
+                    defaultValue: "Install and Documentation"
+                )
+            ) {
+                Link(
                     LuxelLocalization.string(
-                        "settings.commandLine.shellHelp",
-                        defaultValue:
-                            "Choose which shell profile the copied PATH command updates.")
+                        "settings.commandLine.openGitHub",
+                        defaultValue: "Open GitHub"
+                    ),
+                    destination: URL(string: "https://github.com/rawcontext/luxel-cli")!
                 )
             }
+        }
+
+        pairedClients
+        folderAccess
+    }
+
+    private var pairedClients: some View {
+        SettingsIslandGroup(
+            LuxelLocalization.string(
+                "settings.commandLine.pairedClients",
+                defaultValue: "Paired Clients"
+            )
+        ) {
+            if model.settings.commandLinePairedClients.isEmpty {
+                SettingsRow {
+                    Text(
+                        LuxelLocalization.string(
+                            "settings.commandLine.noPairedClients",
+                            defaultValue: "No command line clients are paired."
+                        )
+                    )
+                    .foregroundStyle(.secondary)
+                }
+            } else {
+                ForEach(model.settings.commandLinePairedClients) { client in
+                    SettingsRow(client.name) {
+                        Button(
+                            LuxelLocalization.string(
+                                "settings.commandLine.revoke",
+                                defaultValue: "Revoke"
+                            )
+                        ) {
+                            model.revokeCommandLineClient(client.id)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    private var folderAccess: some View {
+        SettingsIslandGroup(
+            LuxelLocalization.string(
+                "settings.commandLine.fileAccess",
+                defaultValue: "File Access"
+            ),
+            footer: LuxelLocalization.string(
+                "settings.commandLine.fileAccessFooter",
+                defaultValue: "Movies, the recording folder, and folders you add are available to command line requests."
+            )
+        ) {
+            SettingsRow(
+                LuxelLocalization.string(
+                    "settings.commandLine.moviesFolder",
+                    defaultValue: "Movies Folder"
+                )
+            ) {
+                Text(FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first?.path ?? "~/Movies")
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
 
             LuxelGlassRowDivider()
 
-            SettingsRow("Shell PATH") {
+            SettingsRow(
+                LuxelLocalization.string(
+                    "settings.commandLine.recordingFolder",
+                    defaultValue: "Recording Folder"
+                )
+            ) {
+                Text(model.settings.recordingsDirectory.path)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            ForEach(model.settings.commandLineFolderGrants) { grant in
+                LuxelGlassRowDivider()
+                SettingsRow(grant.directory.url.lastPathComponent) {
+                    Button(
+                        LuxelLocalization.string(
+                            "settings.commandLine.removeFolder",
+                            defaultValue: "Remove"
+                        )
+                    ) {
+                        model.removeCommandLineFolderGrant(grant.id)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            LuxelGlassRowDivider()
+
+            SettingsRow {
                 Button {
-                    model.copyCommandLinePathSetupCommand()
+                    model.addCommandLineFolderGrant()
                 } label: {
                     SettingsCapsuleButtonLabel(
                         LuxelLocalization.string(
-                            "settings.commandLine.copyPathCommand",
-                            defaultValue: "Copy PATH Command"),
-                        systemImage: "doc.on.doc"
+                            "settings.commandLine.addFolder",
+                            defaultValue: "Add Folder"
+                        ),
+                        systemImage: "folder.badge.plus"
                     )
                 }
                 .buttonStyle(.plain)
-                .help(
-                    LuxelLocalization.string(
-                        "settings.commandLine.copyPathCommandHelp",
-                        defaultValue:
-                            "Copy a PATH setup command for the selected shell.")
-                )
-            }
-
-            if let installStatus = model.commandLineToolInstallStatus {
-                LuxelGlassRowDivider()
-
-                Label(installStatus.message, systemImage: installStatus.systemImage)
-                    .font(.caption)
-                    .foregroundStyle(installStatus.tint)
-                    .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
             }
         }
     }

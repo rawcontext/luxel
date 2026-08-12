@@ -19,14 +19,12 @@ public enum AppDistribution: String, Codable, CaseIterable, Equatable, Identifia
         case .developerID:
             AppDistributionCapabilities(
                 includesSparkleUpdater: true,
-                usesStoreKitEntitlements: false,
-                allowsCommandLineToolInstaller: true
+                usesStoreKitEntitlements: false
             )
         case .macAppStore:
             AppDistributionCapabilities(
                 includesSparkleUpdater: false,
-                usesStoreKitEntitlements: true,
-                allowsCommandLineToolInstaller: true
+                usesStoreKitEntitlements: true
             )
         }
     }
@@ -35,15 +33,12 @@ public enum AppDistribution: String, Codable, CaseIterable, Equatable, Identifia
 public struct AppDistributionCapabilities: Equatable, Sendable {
     public let includesSparkleUpdater: Bool
     public let usesStoreKitEntitlements: Bool
-    public let allowsCommandLineToolInstaller: Bool
 
     public init(
         includesSparkleUpdater: Bool,
-        usesStoreKitEntitlements: Bool,
-        allowsCommandLineToolInstaller: Bool
+        usesStoreKitEntitlements: Bool
     ) {
         self.includesSparkleUpdater = includesSparkleUpdater
         self.usesStoreKitEntitlements = usesStoreKitEntitlements
-        self.allowsCommandLineToolInstaller = allowsCommandLineToolInstaller
     }
 }

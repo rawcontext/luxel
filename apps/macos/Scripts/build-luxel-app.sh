@@ -8,7 +8,6 @@ INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
 PRIVACY_MANIFEST="${PACKAGE_ROOT}/Configuration/Luxel/PrivacyInfo.xcprivacy"
 ENTITLEMENTS="${ENTITLEMENTS:-${PACKAGE_ROOT}/Configuration/Luxel/Luxel.DeveloperID.entitlements}"
 THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
-CLI_MANPAGE="${PACKAGE_ROOT}/Documentation/luxel.1"
 STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 MODNET_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/modnet"
@@ -44,7 +43,6 @@ cd "${PACKAGE_ROOT}"
 "${MODNET_MODEL_AUDITOR}" "${MODNET_MODEL_DIR}"
 
 swift build --configuration "${CONFIGURATION}" --product "${APP_NAME}"
-swift build --configuration "${CONFIGURATION}" --product luxel-cli
 BIN_DIR="$(swift build --configuration "${CONFIGURATION}" --show-bin-path)"
 
 rm -rf "${APP_PATH}"
@@ -58,19 +56,8 @@ cp "${INFO_PLIST}" "${APP_PATH}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 ${APP_URL_SCHEME}" "${APP_PATH}/Contents/Info.plist"
 configure_luxel_app_icon
 copy_luxel_app_payload
-if [[ -f "${CLI_MANPAGE}" ]]; then
-	mkdir -p "${APP_PATH}/Contents/Resources/man/man1"
-	cp "${CLI_MANPAGE}" "${APP_PATH}/Contents/Resources/man/man1/luxel.1"
-fi
 copy_luxel_app_resources
 prepare_luxel_app_executables
-
-codesign \
-	--force \
-	--sign "${SIGN_IDENTITY}" \
-	--options runtime \
-	--timestamp \
-	"${APP_PATH}/Contents/MacOS/luxel-cli"
 
 codesign \
 	--force \
@@ -82,13 +69,6 @@ codesign \
 
 codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
 "${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
-
-EXPECTED_AUTOMATION_URL="${APP_URL_SCHEME}://stop"
-ACTUAL_AUTOMATION_URL="$("${APP_PATH}/Contents/MacOS/luxel-cli" stop --print-url)"
-if [[ "${ACTUAL_AUTOMATION_URL}" != "${EXPECTED_AUTOMATION_URL}" ]]; then
-	echo "Bundled CLI emitted ${ACTUAL_AUTOMATION_URL}; expected ${EXPECTED_AUTOMATION_URL}." >&2
-	exit 1
-fi
 
 TEAM_IDENTIFIER="$(
 	codesign -dv --verbose=4 "${APP_PATH}" 2>&1 |

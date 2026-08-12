@@ -133,16 +133,6 @@ enum LuxelCompositionRoot {
         #endif
     }
 
-    @MainActor
-    static func commandLineToolInstallService() -> CommandLineToolInstallService {
-        CommandLineToolInstallService(
-            installer: BundledCommandLineToolInstaller(),
-            homeDirectory: FileManager.default.homeDirectoryForCurrentUser,
-            destinationPicker: CommandLineInstallDestinationPicker(),
-            directoryAccessService: bookmarkedDirectoryAccessService()
-        )
-    }
-
     static func codecAdapterRegistry() -> CodecAdapterRegistry {
         do {
             return try CodecAdapterRegistry(registrations: [
@@ -208,7 +198,7 @@ enum LuxelCompositionRoot {
         AppSettings.defaultRecordingsDirectory
     }
 
-    private static func exportAudioPreparer() -> ExportAudioPreparationService {
+    static func exportAudioPreparer() -> ExportAudioPreparationService {
         ExportAudioPreparationService(
             enhancer: DeepFilterNetStudioVoiceEnhancer(
                 locator: BundledStudioVoiceModelLocator(

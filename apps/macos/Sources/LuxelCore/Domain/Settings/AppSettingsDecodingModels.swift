@@ -47,8 +47,9 @@ extension AppSettings {
         case showTimeInMenuBar
         case hideMenuBarIcon
         case launchAtLogin
-        case commandLineToolInstall
-        case commandLineShell
+        case commandLineControlEnabled
+        case commandLinePairedClients
+        case commandLineFolderGrants
         case notificationReminder
         case allowURLAutomation
         case urlAutomationGrants
@@ -149,8 +150,9 @@ struct GeneralSettings {
     let showTimeInMenuBar: Bool
     let hideMenuBarIcon: Bool
     let launchAtLogin: Bool
-    let commandLineToolInstall: CommandLineToolInstall?
-    let commandLineShell: CommandLineShell
+    let commandLineControlEnabled: Bool
+    let commandLinePairedClients: [CommandLinePairedClient]
+    let commandLineFolderGrants: [CommandLineFolderGrant]
     let notificationReminder: Bool
     let urlAutomationGrants: [String]
     let exportPresets: [ExportPreset]

@@ -36992,6 +36992,294 @@
         "pt-PT": { "stringUnit": { "state": "translated", "value": "O Luxel não conseguiu preparar o áudio desta gravação para transcrição." } }
       }
     },
+    "commandLine.pair.allow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Allow" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Erlauben" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Permitir" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Autoriser" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Consenti" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "許可" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "허용" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Cho phép" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "允许" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Permitir" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Permitir" } }
+      }
+    },
+    "commandLine.pair.deny": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Deny" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Ablehnen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Denegar" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Refuser" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Nega" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "拒否" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "거부" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Từ chối" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "拒绝" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Negar" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Recusar" } }
+      }
+    },
+    "commandLine.pair.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ wants to control Luxel. Approve only if you started `luxel pair` in Terminal." } },
+        "de": { "stringUnit": { "state": "translated", "value": "%@ möchte Luxel steuern. Erlauben Sie dies nur, wenn Sie `luxel pair` im Terminal gestartet haben." } },
+        "es": { "stringUnit": { "state": "translated", "value": "%@ quiere controlar Luxel. Apruébalo solo si ejecutaste `luxel pair` en Terminal." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "%@ souhaite contrôler Luxel. Autorisez uniquement si vous avez lancé `luxel pair` dans Terminal." } },
+        "it": { "stringUnit": { "state": "translated", "value": "%@ vuole controllare Luxel. Consenti solo se hai avviato `luxel pair` in Terminale." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "%@ が Luxel を操作しようとしています。ターミナルで `luxel pair` を実行した場合のみ許可してください。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "%@에서 Luxel을 제어하려고 합니다. 터미널에서 `luxel pair`를 실행한 경우에만 허용하세요." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "%@ muốn điều khiển Luxel. Chỉ cho phép nếu bạn đã chạy `luxel pair` trong Terminal." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "%@ 想要控制 Luxel。仅当你在终端中运行了 `luxel pair` 时才允许。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "%@ quer controlar o Luxel. Permita somente se você iniciou `luxel pair` no Terminal." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "%@ pretende controlar o Luxel. Permita apenas se iniciou `luxel pair` no Terminal." } }
+      }
+    },
+    "commandLine.pair.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Allow Command Line Control?" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Befehlszeilensteuerung erlauben?" } },
+        "es": { "stringUnit": { "state": "translated", "value": "¿Permitir el control por línea de comandos?" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Autoriser le contrôle en ligne de commande ?" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Consentire il controllo da riga di comando?" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "コマンドライン操作を許可しますか？" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "명령줄 제어를 허용할까요?" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Cho phép điều khiển bằng dòng lệnh?" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "允许命令行控制？" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Permitir controle pela linha de comando?" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Permitir controlo pela linha de comandos?" } }
+      }
+    },
+    "settings.commandLine.addFolder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add Folder" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Ordner hinzufügen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Añadir carpeta" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ajouter un dossier" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Aggiungi cartella" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "フォルダを追加" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "폴더 추가" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Thêm thư mục" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "添加文件夹" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Adicionar pasta" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Adicionar pasta" } }
+      }
+    },
+    "settings.commandLine.control": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Command Line Control" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Befehlszeilensteuerung" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Control por línea de comandos" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Contrôle en ligne de commande" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Controllo da riga di comando" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "コマンドライン操作" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "명령줄 제어" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Điều khiển bằng dòng lệnh" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "命令行控制" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Controle pela linha de comando" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Controlo pela linha de comandos" } }
+      }
+    },
+    "settings.commandLine.fileAccess": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "File Access" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Dateizugriff" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Acceso a archivos" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Accès aux fichiers" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Accesso ai file" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ファイルアクセス" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "파일 접근" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Quyền truy cập tệp" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "文件访问" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Acesso a arquivos" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Acesso a ficheiros" } }
+      }
+    },
+    "settings.commandLine.fileAccessFooter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Movies, the recording folder, and folders you add are available to command line requests." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Filme, der Aufnahmeordner und hinzugefügte Ordner sind für Befehlszeilenanfragen verfügbar." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Películas, la carpeta de grabaciones y las carpetas que añadas estarán disponibles para la línea de comandos." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Films, le dossier d’enregistrement et les dossiers ajoutés sont accessibles aux commandes." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Filmati, la cartella delle registrazioni e le cartelle aggiunte sono disponibili ai comandi." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ムービー、録画フォルダ、追加したフォルダをコマンドライン要求で使用できます。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "동영상, 녹화 폴더 및 추가한 폴더를 명령줄 요청에서 사용할 수 있습니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Phim, thư mục bản ghi và các thư mục bạn thêm sẽ khả dụng cho yêu cầu dòng lệnh." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "“影片”、录制文件夹和你添加的文件夹可供命令行请求使用。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Filmes, a pasta de gravações e as pastas adicionadas ficam disponíveis para comandos." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Filmes, a pasta de gravações e as pastas adicionadas ficam disponíveis para comandos." } }
+      }
+    },
+    "settings.commandLine.footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The external luxel command asks this app to perform every action." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Der externe luxel-Befehl lässt jede Aktion von dieser App ausführen." } },
+        "es": { "stringUnit": { "state": "translated", "value": "El comando externo luxel solicita a esta app que realice cada acción." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "La commande luxel externe demande à cette app d’effectuer chaque action." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Il comando luxel esterno chiede a questa app di eseguire ogni azione." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "外部の luxel コマンドによるすべての操作は、このアプリが実行します。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "외부 luxel 명령의 모든 작업은 이 앱이 수행합니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Lệnh luxel bên ngoài yêu cầu ứng dụng này thực hiện mọi thao tác." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "外部 luxel 命令的每项操作都由此 App 执行。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "O comando externo luxel solicita que este app execute cada ação." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "O comando externo luxel solicita que esta app execute cada ação." } }
+      }
+    },
+    "settings.commandLine.moviesFolder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Movies Folder" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Ordner „Filme“" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Carpeta Películas" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Dossier Films" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Cartella Filmati" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ムービーフォルダ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "동영상 폴더" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Thư mục Phim" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "影片文件夹" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Pasta Filmes" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Pasta Filmes" } }
+      }
+    },
+    "settings.commandLine.noPairedClients": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No command line clients are paired." } },
+        "de": { "stringUnit": { "state": "translated", "value": "Keine Befehlszeilenclients sind gekoppelt." } },
+        "es": { "stringUnit": { "state": "translated", "value": "No hay clientes de línea de comandos enlazados." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Aucun client de ligne de commande n’est jumelé." } },
+        "it": { "stringUnit": { "state": "translated", "value": "Nessun client da riga di comando è abbinato." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ペアリング済みのコマンドラインクライアントはありません。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "페어링된 명령줄 클라이언트가 없습니다." } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Chưa ghép đôi ứng dụng dòng lệnh nào." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "没有已配对的命令行客户端。" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Nenhum cliente de linha de comando está emparelhado." } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Nenhum cliente de linha de comandos está emparelhado." } }
+      }
+    },
+    "settings.commandLine.openGitHub": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open GitHub" } },
+        "de": { "stringUnit": { "state": "translated", "value": "GitHub öffnen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Abrir GitHub" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ouvrir GitHub" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Apri GitHub" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "GitHubを開く" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "GitHub 열기" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Mở GitHub" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "打开 GitHub" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Abrir GitHub" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Abrir GitHub" } }
+      }
+    },
+    "settings.commandLine.pairedClients": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Paired Clients" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Gekoppelte Clients" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Clientes enlazados" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Clients jumelés" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Client abbinati" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ペアリング済みクライアント" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "페어링된 클라이언트" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Ứng dụng đã ghép đôi" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已配对的客户端" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Clientes emparelhados" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Clientes emparelhados" } }
+      }
+    },
+    "settings.commandLine.recordingFolder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Recording Folder" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Aufnahmeordner" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Carpeta de grabaciones" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Dossier d’enregistrement" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Cartella registrazioni" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "録画フォルダ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "녹화 폴더" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Thư mục bản ghi" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "录制文件夹" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Pasta de gravações" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Pasta de gravações" } }
+      }
+    },
+    "settings.commandLine.removeFolder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Remove" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Entfernen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Eliminar" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Supprimer" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Rimuovi" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "削除" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "제거" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Xóa" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "移除" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Remover" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Remover" } }
+      }
+    },
+    "settings.commandLine.repository": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Install and Documentation" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Installation und Dokumentation" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Instalación y documentación" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Installation et documentation" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Installazione e documentazione" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "インストールとドキュメント" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "설치 및 설명서" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Cài đặt và tài liệu" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "安装和文档" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Instalação e documentação" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Instalação e documentação" } }
+      }
+    },
+    "settings.commandLine.revoke": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Revoke" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Widerrufen" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Revocar" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Révoquer" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Revoca" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "取り消す" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "해제" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Thu hồi" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "撤销" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Revogar" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Revogar" } }
+      }
+    },
+    "settings.commandLine.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Command Line" } },
+        "de": { "stringUnit": { "state": "translated", "value": "Befehlszeile" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Línea de comandos" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ligne de commande" } },
+        "it": { "stringUnit": { "state": "translated", "value": "Riga di comando" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "コマンドライン" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "명령줄" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Dòng lệnh" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "命令行" } },
+        "pt-BR": { "stringUnit": { "state": "translated", "value": "Linha de comando" } },
+        "pt-PT": { "stringUnit": { "state": "translated", "value": "Linha de comandos" } }
+      }
+    },
     "Speaker count": {
       "extractionState": "manual",
       "localizations": {

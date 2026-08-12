@@ -169,12 +169,17 @@ extension LuxelMenuModel {
     }
 
     private func finalDirectoryBookmark(for finalFileURL: URL) -> BookmarkedDirectory? {
-        let outputDirectory = finalFileURL.deletingLastPathComponent().standardizedFileURL
-        guard outputDirectory == settings.recordingsDirectory.standardizedFileURL else {
-            return nil
+        let outputDirectory = finalFileURL.deletingLastPathComponent()
+            .standardizedFileURL.resolvingSymlinksInPath()
+        let recordingsDirectory = settings.recordingsDirectory
+            .standardizedFileURL.resolvingSymlinksInPath()
+        if outputDirectory == recordingsDirectory {
+            return settings.recordingsDirectoryBookmark
         }
-
-        return settings.recordingsDirectoryBookmark
+        return settings.commandLineFolderGrants.first { grant in
+            let root = grant.directory.url.standardizedFileURL.resolvingSymlinksInPath().path
+            return outputDirectory.path == root || outputDirectory.path.hasPrefix(root + "/")
+        }?.directory
     }
 
     private func nextAudioRecordingFileURL(now: Date, format: AudioRecordingFormat) throws -> URL {

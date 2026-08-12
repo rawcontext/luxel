@@ -25,14 +25,14 @@ extension AutomationCommandTests {
             directoryHint: .isDirectory
         )
         defer { try? FileManager.default.removeItem(at: appURL) }
-        let executableURL = appURL.appending(path: "Contents/MacOS/luxel-cli")
+        let executableURL = appURL.appending(path: "Contents/MacOS/Luxel")
         try FileManager.default.createDirectory(
             at: executableURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
         let infoPlist = try PropertyListSerialization.data(
             fromPropertyList: [
-                "CFBundleExecutable": "luxel-cli",
+                "CFBundleExecutable": "Luxel",
                 "CFBundleIdentifier": "com.rawcontext.luxel.test",
                 "CFBundlePackageType": "APPL",
                 "CFBundleURLTypes": [["CFBundleURLSchemes": ["luxel-dev"]]]

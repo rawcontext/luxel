@@ -2,13 +2,6 @@ import Foundation
 import LuxelCore
 import LuxelPresentation
 
-enum CommandLineToolInstallStatus: Equatable {
-    case installed(URL)
-    case repaired(URL)
-    case pathCommandCopied(URL)
-    case failed(String)
-}
-
 @MainActor
 extension LuxelMenuModel {
     func saveSettings() {
@@ -67,68 +60,44 @@ extension LuxelMenuModel {
         }
     }
 
-    func installCommandLineTool() {
+    func addCommandLineFolderGrant() {
         do {
-            guard let install = try commandLineToolInstallService.chooseAndInstall() else {
+            guard let directory = try bookmarkedDirectoryPicker.chooseDirectory(
+                currentDirectory: settings.recordingsDirectory
+            ) else {
                 return
             }
-
-            settings.commandLineToolInstall = install
-            saveSettings()
-            commandLineToolInstallStatus = .installed(install.linkURL)
-        } catch {
-            commandLineToolInstallStatus = .failed(errorMessage(error))
-        }
-    }
-
-    func repairCommandLineToolInstall() {
-        guard let install = settings.commandLineToolInstall else {
-            installCommandLineTool()
-            return
-        }
-
-        do {
-            let repairedInstall = try commandLineToolInstallService.repairInstall(install)
-            settings.commandLineToolInstall = repairedInstall
-            saveSettings()
-            commandLineToolInstallStatus = .repaired(repairedInstall.linkURL)
-        } catch {
-            commandLineToolInstallStatus = .failed(errorMessage(error))
-        }
-    }
-
-    func copyCommandLinePathSetupCommand() {
-        let install =
-            settings.commandLineToolInstall
-            ?? CommandLineToolInstall(
-                linkURL: commandLineToolInstallService.defaultDestination,
-                directoryBookmark: BookmarkedDirectory(
-                    url: commandLineToolInstallService.defaultDestination.deletingLastPathComponent(),
-                    bookmarkData: Data()
-                )
-            )
-        let command = commandLineToolInstallService.pathSetupCommand(
-            for: install,
-            shell: settings.commandLineShell,
-            homeDirectory: FileManager.default.homeDirectoryForCurrentUser
-        )
-        fileWorkflowService.copyText(command)
-        commandLineToolInstallStatus = .pathCommandCopied(install.linkURL)
-    }
-
-    func reconcileCommandLineToolInstallWithBundle() {
-        guard let install = settings.commandLineToolInstall else {
-            return
-        }
-
-        do {
-            let repairedInstall = try commandLineToolInstallService.repairInstall(install)
-            if repairedInstall != install {
-                settings.commandLineToolInstall = repairedInstall
-                saveSettings()
+            guard !settings.commandLineFolderGrants.contains(where: {
+                $0.directory.url.standardizedFileURL == directory.url.standardizedFileURL
+            }) else {
+                return
             }
+            settings.commandLineFolderGrants.append(
+                CommandLineFolderGrant(directory: directory)
+            )
+            saveSettings()
         } catch {
+            recordingActionErrorMessage = errorMessage(error)
         }
+    }
+
+    func removeCommandLineFolderGrant(_ id: UUID) {
+        settings.commandLineFolderGrants.removeAll { $0.id == id }
+        saveSettings()
+    }
+
+    func revokeCommandLineClient(_ id: UUID) {
+        settings.commandLinePairedClients.removeAll { $0.id == id }
+        CommandLineCredentialStore().removeSecret(clientID: id)
+        saveSettings()
+    }
+
+    func setCommandLineControlEnabled(_ enabled: Bool) {
+        settings.commandLineControlEnabled = enabled
+        if !enabled {
+            commandLineJobs.values.forEach { $0.cancel() }
+        }
+        saveSettings()
     }
 
     private func rememberExportMemory(_ memory: ExportMemory, for format: ExportFormat) {

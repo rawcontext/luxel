@@ -124,10 +124,7 @@ extension LuxelSettingsView {
     }
 
     var visibleSettingsPanes: [LuxelSettingsPane] {
-        LuxelSettingsPane.allCases.filter { pane in
-            pane != .commandLine
-                || AppDistribution.current.capabilities.allowsCommandLineToolInstaller
-        }
+        LuxelSettingsPane.allCases
     }
 
     func settingsSidebarButton(_ pane: LuxelSettingsPane) -> some View {

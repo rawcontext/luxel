@@ -11,7 +11,6 @@ configure_luxel_app_icon() {
 
 copy_luxel_app_payload() {
 	cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
-	cp "${BIN_DIR}/luxel-cli" "${APP_PATH}/Contents/MacOS/luxel-cli"
 	cp "${PRIVACY_MANIFEST}" "${APP_PATH}/Contents/Resources/PrivacyInfo.xcprivacy"
 	cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
 	if [[ -d "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" ]]; then
@@ -45,7 +44,5 @@ copy_luxel_app_resources() {
 
 prepare_luxel_app_executables() {
 	chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
-	chmod +x "${APP_PATH}/Contents/MacOS/luxel-cli"
 	xcrun strip -x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
-	xcrun strip -x "${APP_PATH}/Contents/MacOS/luxel-cli"
 }

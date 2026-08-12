@@ -5,18 +5,6 @@ import LuxelPresentation
 import SwiftUI
 
 @main
-enum LuxelAppBootstrap {
-    @MainActor
-    static func main() async {
-        guard await LuxelCompositionRoot.purchaseGateService().isEntitled() else {
-            PurchaseFailurePresenter.present()
-            return
-        }
-
-        LuxelApp.main()
-    }
-}
-
 struct LuxelApp: App {
     @NSApplicationDelegateAdaptor(LuxelApplicationDelegate.self) private var appDelegate
     @Environment(\.openSettings) private var openSettings
@@ -70,17 +58,12 @@ struct LuxelApp: App {
                 shortcutController: shortcutController,
                 windowPresenter: windowPresenter
             ))
-        appDelegate.openFiles = { fileURLs, activationSource in
-            guard let fileURL = fileURLs.first else {
-                return
-            }
-
-            windowPresenter.openEditor(fileURL: fileURL, activationSource: activationSource)
-        }
     }
 
     var body: some Scene {
         LuxelSettingsActionScene(
+            applicationDelegate: appDelegate,
+            model: model,
             windowPresenter: windowPresenter,
             openSettingsAction: openSettings
         ) {
@@ -138,10 +121,31 @@ private struct LuxelSettingsActionScene<Content: Scene>: Scene {
     let content: Content
 
     init(
+        applicationDelegate: LuxelApplicationDelegate,
+        model: LuxelMenuModel,
         windowPresenter: LuxelWindowPresenter,
         openSettingsAction: OpenSettingsAction,
         @SceneBuilder content: () -> Content
     ) {
+        applicationDelegate.openFiles = { fileURLs, activationSource in
+            guard let fileURL = fileURLs.first else {
+                return
+            }
+            windowPresenter.openEditor(fileURL: fileURL, activationSource: activationSource)
+        }
+        applicationDelegate.openURLs = { urls in
+            guard let url = urls.first else {
+                return
+            }
+            Task { @MainActor in
+                await model.handleAutomationURL(
+                    url,
+                    openSettings: { windowPresenter.openSettings() },
+                    openRecording: { windowPresenter.openEditor(fileURL: $0) }
+                )
+            }
+        }
+        applicationDelegate.installURLHandler()
         windowPresenter.install(openSettingsAction: openSettingsAction)
         self.content = content()
     }
@@ -175,20 +179,85 @@ private enum PurchaseFailurePresenter {
 @MainActor
 final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
     var openFiles: (([URL], NSRunningApplication?) -> Void)?
+    var openURLs: (([URL]) -> Void)? {
+        didSet {
+            guard let openURLs, !pendingURLs.isEmpty else {
+                return
+            }
+            let urls = pendingURLs
+            pendingURLs.removeAll()
+            openURLs(urls)
+        }
+    }
+    private var pendingURLs: [URL] = []
+
+    func applicationWillFinishLaunching(_: Notification) {
+        installURLHandler()
+    }
+
+    func applicationDidFinishLaunching(_: Notification) {
+        Task { @MainActor in
+            guard await LuxelCompositionRoot.purchaseGateService().isEntitled() else {
+                PurchaseFailurePresenter.present()
+                NSApp.terminate(nil)
+                return
+            }
+        }
+    }
+
+    func installURLHandler() {
+        NSAppleEventManager.shared().setEventHandler(
+            self,
+            andSelector: #selector(handleGetURLEvent(_:withReplyEvent:)),
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL)
+        )
+    }
+
+    func applicationWillTerminate(_: Notification) {
+        NSAppleEventManager.shared().removeEventHandler(
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL)
+        )
+    }
 
     func application(_: NSApplication, open urls: [URL]) {
         let fileURLs = urls.filter(\.isFileURL)
-        guard !fileURLs.isEmpty else {
-            return
+        if !fileURLs.isEmpty {
+            openFiles?(fileURLs, NSWorkspace.shared.frontmostApplication)
         }
-
-        openFiles?(fileURLs, NSWorkspace.shared.frontmostApplication)
+        let automationURLs = urls.filter { !$0.isFileURL }
+        if !automationURLs.isEmpty {
+            openURLs?(automationURLs)
+        }
     }
 
     func application(_ sender: NSApplication, openFiles filenames: [String]) {
         let fileURLs = filenames.map { URL(fileURLWithPath: $0) }
         openFiles?(fileURLs, NSWorkspace.shared.frontmostApplication)
         sender.reply(toOpenOrPrint: .success)
+    }
+
+    @objc
+    func handleGetURLEvent(
+        _ event: NSAppleEventDescriptor,
+        withReplyEvent _: NSAppleEventDescriptor
+    ) {
+        guard let value = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject))?.stringValue else {
+            return
+        }
+        handleURLString(value)
+    }
+
+    func handleURLString(_ value: String) {
+        guard let url = URL(string: value), !url.isFileURL else {
+            return
+        }
+        if let openURLs {
+            openURLs([url])
+        } else {
+            pendingURLs.append(url)
+        }
     }
 }
 

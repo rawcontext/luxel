@@ -19,7 +19,6 @@ struct ThirdPartyLicenseAcknowledgementsTests {
             "## Dependency: libvpx",
             "## Dependency: libopus",
             "## Dependency: svt-av1",
-            "## Swift Argument Parser",
             "## FluidAudio",
             "## fastcluster (included by FluidAudio)",
             "## VBx (included by FluidAudio)",
@@ -33,10 +32,7 @@ struct ThirdPartyLicenseAcknowledgementsTests {
             ResolvedPackage.self,
             from: Data(contentsOf: packageRoot.appending(path: "Package.resolved"))
         )
-        #expect(Set(packageResolved.pins.map(\.identity)) == [
-            "fluidaudio",
-            "swift-argument-parser"
-        ])
+        #expect(Set(packageResolved.pins.map(\.identity)) == ["fluidaudio"])
 
         for path in [
             "Vendor/Artifacts/CVPX.xcframework",

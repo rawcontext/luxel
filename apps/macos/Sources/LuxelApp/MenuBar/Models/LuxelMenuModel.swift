@@ -42,7 +42,6 @@ final class LuxelMenuModel {
     var replayBufferConsentPrompt: ReplayBufferConsentPrompt?
     var recoveryPrompt: RecoveryPrompt?
     var automationPrompt: AutomationURLPrompt?
-    var commandLineToolInstallStatus: CommandLineToolInstallStatus?
     var knownSpeakers: [KnownSpeakerProfile] = []
     var expandedKnownSpeakerID: UUID?
     let appMetadata: AppMetadata
@@ -81,11 +80,14 @@ final class LuxelMenuModel {
     @ObservationIgnored let notchDisplayProvider: any NotchDisplayProvider
     @ObservationIgnored let notchCoordinator: NotchCoordinator
     @ObservationIgnored let fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver
-    @ObservationIgnored let commandLineToolInstallService: CommandLineToolInstallService
     @ObservationIgnored let errorReporter: any ErrorReporter
     @ObservationIgnored var notchPresentationState: NotchPresentationState = .collapsed
     @ObservationIgnored var activeNotchRecordingActionID: NotchActivityActionID?
     @ObservationIgnored weak var configuredEditorModel: LuxelEditorModel?
+    @ObservationIgnored var commandLineNonces: [String: Date] = [:]
+    @ObservationIgnored var commandLineJobs: [
+        UUID: Task<CommandLineAutomationResult, any Error>
+        ] = [:]
     @ObservationIgnored lazy var keystrokeLivePreviewPanelController =
         KeystrokeLivePreviewPanelController(exclusionRegistry: captureExclusionRegistry)
     @ObservationIgnored lazy var keystrokeRecordingSession: any KeystrokeRecordingSessionControlling =
@@ -164,9 +166,6 @@ final class LuxelMenuModel {
         notchPresenter: (any NotchPresenter)? = nil,
         fullscreenCaptureTargetResolver: FullscreenCaptureTargetResolver =
             FullscreenCaptureTargetResolver(),
-        commandLineToolInstallService: CommandLineToolInstallService =
-            LuxelCompositionRoot
-            .commandLineToolInstallService(),
         errorReporter: any ErrorReporter = NoopErrorReporter(),
         appMetadata: AppMetadata = LuxelCompositionRoot.appMetadata,
         recorder: (any CaptureRecorder)? = nil,
@@ -208,7 +207,7 @@ final class LuxelMenuModel {
             ?? OverlayPanelNotchPresenter(exclusionRegistry: captureExclusionRegistry)
         self.notchCoordinator = NotchCoordinator(presenter: resolvedNotchPresenter)
         self.fullscreenCaptureTargetResolver = fullscreenCaptureTargetResolver
-        self.commandLineToolInstallService = commandLineToolInstallService; self.errorReporter = errorReporter
+        self.errorReporter = errorReporter
         self.appMetadata = appMetadata
         let lifecycleServices = Self.makeRecordingLifecycleServices(.init(
             broadcaster: recordingAudioLevelBroadcaster, exclusionRegistry: captureExclusionRegistry,
@@ -223,7 +222,6 @@ final class LuxelMenuModel {
 
     private func finishInitialization() {
         reconcileLaunchAtLoginWithSettings()
-        reconcileCommandLineToolInstallWithBundle()
         prepareSpeakerModelIfNeeded()
     }
 

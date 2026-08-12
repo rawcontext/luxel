@@ -124,8 +124,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var showTimeInMenuBar: Bool
     public var hideMenuBarIcon: Bool
     public var launchAtLogin: Bool
-    public var commandLineToolInstall: CommandLineToolInstall?
-    public var commandLineShell: CommandLineShell
+    public var commandLineControlEnabled: Bool
+    public var commandLinePairedClients: [CommandLinePairedClient]
+    public var commandLineFolderGrants: [CommandLineFolderGrant]
     public var notificationReminder: Bool
     public var allowURLAutomation: Bool
     public var urlAutomationGrants: [String]
@@ -208,8 +209,9 @@ extension AppSettings {
         showTimeInMenuBar: Bool = true,
         hideMenuBarIcon: Bool = false,
         launchAtLogin: Bool = true,
-        commandLineToolInstall: CommandLineToolInstall? = nil,
-        commandLineShell: CommandLineShell = .zsh,
+        commandLineControlEnabled: Bool = false,
+        commandLinePairedClients: [CommandLinePairedClient] = [],
+        commandLineFolderGrants: [CommandLineFolderGrant] = [],
         notificationReminder: Bool = true,
         allowURLAutomation: Bool = true,
         urlAutomationGrants: [String] = [],
@@ -267,8 +269,11 @@ extension AppSettings {
         self.quickRecordLastShortcut = quickRecordLastShortcut; self.clipReplayBufferShortcut = clipReplayBufferShortcut
         self.updatePreferences = updatePreferences; self.showTimeInMenuBar = showTimeInMenuBar
         self.hideMenuBarIcon = hideMenuBarIcon && notchSurfaceSettings.isEnabled
-        self.launchAtLogin = launchAtLogin; self.commandLineToolInstall = commandLineToolInstall
-        self.commandLineShell = commandLineShell; self.notificationReminder = notificationReminder
+        self.launchAtLogin = launchAtLogin
+        self.commandLineControlEnabled = commandLineControlEnabled
+        self.commandLinePairedClients = commandLinePairedClients
+        self.commandLineFolderGrants = commandLineFolderGrants
+        self.notificationReminder = notificationReminder
         self.allowURLAutomation = true; self.urlAutomationGrants = urlAutomationGrants
         self.exportPresets = exportPresets; self.quickExportPresetID = quickExportPresetID
         self.rememberLastCapture = rememberLastCapture; self.loupeAlwaysOn = loupeAlwaysOn

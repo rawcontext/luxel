@@ -67,8 +67,9 @@ extension SettingsTests {
         #expect(settings.showTimeInMenuBar)
         #expect(!settings.hideMenuBarIcon)
         #expect(settings.launchAtLogin)
-        #expect(settings.commandLineToolInstall == nil)
-        #expect(settings.commandLineShell == .zsh)
+        #expect(!settings.commandLineControlEnabled)
+        #expect(settings.commandLinePairedClients.isEmpty)
+        #expect(settings.commandLineFolderGrants.isEmpty)
         #expect(settings.notificationReminder)
         #expect(settings.allowURLAutomation)
         #expect(settings.urlAutomationGrants.isEmpty)
@@ -87,8 +88,8 @@ extension SettingsTests {
         #expect(settings.lastStopAfter == nil)
     }
 
-    @Test("command line shell defaults to zsh when missing")
-    func commandLineShellDefaultsToZshWhenMissing() throws {
+    @Test("command line access defaults to disabled with no grants")
+    func commandLineAccessDefaults() throws {
         let data = Data(
             """
       {
@@ -98,7 +99,9 @@ extension SettingsTests {
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
-        #expect(settings.commandLineShell == .zsh)
+        #expect(!settings.commandLineControlEnabled)
+        #expect(settings.commandLinePairedClients.isEmpty)
+        #expect(settings.commandLineFolderGrants.isEmpty)
     }
 
     @Test("transcript turn segmentation setting defaults off and decodes explicit override")

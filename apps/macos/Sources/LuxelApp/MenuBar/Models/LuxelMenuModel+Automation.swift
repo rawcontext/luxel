@@ -16,6 +16,14 @@ extension LuxelMenuModel {
         openRecording: @escaping @MainActor (URL) -> Void
     ) async {
         do {
+            if url.host == "cli" {
+                try await handleCommandLineAutomationURL(
+                    url,
+                    openSettings: openSettings,
+                    openRecording: openRecording
+                )
+                return
+            }
             let invocation = try AutomationCommandParser.parse(
                 url,
                 expectedScheme: AutomationURLScheme.registered(in: Bundle.main.infoDictionary)
@@ -120,7 +128,7 @@ extension LuxelMenuModel {
         }
     }
 
-    private func executeAutomationCommand(
+    func executeAutomationCommand(
         _ command: AutomationCommand,
         openSettings: @escaping @MainActor () -> Void,
         openRecording: @escaping @MainActor (URL) -> Void

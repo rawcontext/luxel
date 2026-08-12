@@ -67,8 +67,25 @@ struct UserDefaultsSettingsStoreTests {
                 channel: .beta
             ),
             showTimeInMenuBar: false, hideMenuBarIcon: false, launchAtLogin: false,
-            commandLineToolInstall: persistedCommandLineToolInstall(),
-            commandLineShell: .fish, notificationReminder: false, allowURLAutomation: true,
+            commandLineControlEnabled: true,
+            commandLinePairedClients: [
+                CommandLinePairedClient(
+                    id: UUID(uuidString: "00000000-0000-0000-0000-000000000403")!,
+                    name: "Terminal",
+                    pairedAt: Date(timeIntervalSince1970: 1_800_000_000)
+                )
+            ],
+            commandLineFolderGrants: [
+                CommandLineFolderGrant(
+                    id: UUID(uuidString: "00000000-0000-0000-0000-000000000404")!,
+                    directory: BookmarkedDirectory(
+                        url: URL(fileURLWithPath: "/tmp/cli", isDirectory: true),
+                        bookmarkData: Data([0x63, 0x6c, 0x69])
+                    ),
+                    createdAt: Date(timeIntervalSince1970: 1_800_000_001)
+                )
+            ],
+            notificationReminder: false, allowURLAutomation: true,
             urlAutomationGrants: ["com.example.terminal"], exportPresets: [fixture.preset],
             quickExportPresetID: fixture.presetID, rememberLastCapture: false, loupeAlwaysOn: true,
             dimOtherDisplays: true, restoreLastSelection: false,
@@ -99,17 +116,6 @@ struct UserDefaultsSettingsStoreTests {
             size: .large,
             isMirrored: false,
             backgroundEffect: .portraitCutout
-        )
-    }
-
-    private func persistedCommandLineToolInstall() -> CommandLineToolInstall {
-        CommandLineToolInstall(
-            linkURL: URL(fileURLWithPath: "/Users/example/.local/bin/luxel"),
-            directoryBookmark: BookmarkedDirectory(
-                url: URL(fileURLWithPath: "/Users/example/.local/bin", isDirectory: true),
-                bookmarkData: Data([0x63, 0x6c, 0x69]),
-                accessState: .resolved
-            )
         )
     }
 

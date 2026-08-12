@@ -1,5 +1,5 @@
 {
-  "originHash" : "93da34470f534b6e0318154b33b54c74f110b88c8fdd57b56e8e5a35e6125d1f",
+  "originHash" : "062ecff5d38e002ce4193a98578b51f94b3ce312111740194ba2fa5c9add70e7",
   "pins" : [
     {
       "identity" : "fluidaudio",
@@ -8,15 +8,6 @@
       "state" : {
         "revision" : "19600a485baa4998812e4654b70d2bab8f2c9949",
         "version" : "0.15.5"
-      }
-    },
-    {
-      "identity" : "swift-argument-parser",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-argument-parser",
-      "state" : {
-        "revision" : "6a52f3251125d74daf04fcbd5e6f08a75d074382",
-        "version" : "1.8.2"
       }
     }
   ],

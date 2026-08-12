@@ -12,9 +12,7 @@ public struct AppleSpeechAuthorizationService: SpeechRecognitionAuthorizationSer
     public func requestAuthorization() async -> SpeechRecognitionAuthorizationState {
         let status = SFSpeechRecognizer.authorizationStatus()
         if status != .authorized {
-            // Fire-and-forget: awaiting MainActor deadlocks callers that block
-            // the main thread on this function (luxel-cli bridges sync→async
-            // with a semaphore, so a MainActor hop is never serviced).
+            // Fire-and-forget so authorization UI is never blocked by a caller.
             Task { @MainActor in
                 guard
                     let url = URL(

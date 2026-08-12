@@ -5,11 +5,10 @@ Luxel ships the following third-party components:
 1. libvpx — BSD-3-Clause — WebM (VP8/VP9) video export
 2. libopus — BSD-3-Clause — WebM/Opus audio export
 3. SVT-AV1 — BSD-3-Clause-Clear — AV1 video export
-4. Swift Argument Parser — Apache License 2.0 (with Runtime Library Exception) — bundled `luxel` command-line tool
-5. FluidAudio — Apache License 2.0 — local speaker diarization engine
-6. fastcluster — BSD-2-Clause — hierarchical clustering code included by FluidAudio
-7. VBx — Apache License 2.0 — speaker clustering implementation included by FluidAudio
-8. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
+4. FluidAudio — Apache License 2.0 — local speaker diarization engine
+5. fastcluster — BSD-2-Clause — hierarchical clustering code included by FluidAudio
+6. VBx — Apache License 2.0 — speaker clustering implementation included by FluidAudio
+7. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
 9. aufklarer/DeepFilterNet3-CoreML — Apache License 2.0 — bundled Studio Voice Core ML model
 10. soniqo/speech-swift — Apache License 2.0 — adapted Studio Voice signal-processing runtime
 11. ZHKKKe/MODNet — Apache License 2.0 — bundled local camera portrait-matting model
@@ -242,18 +241,6 @@ Alliance for Open Media Patent License 1.0
    the Alliance for Open Media as a Final Deliverable for which this
    License was issued.
 
-## Swift Argument Parser
-
-Luxel includes Swift Argument Parser in the bundled command-line helper.
-
-License: Apache License 2.0 with Runtime Library Exception
-
-Notice: The upstream package ships `LICENSE.txt` and no separate NOTICE file. The full Apache License, Version 2.0 text is reproduced in the "Apache License, Version 2.0" section below, and applies together with the following exception:
-
-Runtime Library Exception to the Apache 2.0 License: As an exception, if you use this Software to compile your source code and portions of this Software are embedded into the binary product as a result, you may redistribute such product without providing attribution as would otherwise be required by Sections 4(a), 4(b) and 4(d) of the License.
-
-Upstream license file: https://github.com/apple/swift-argument-parser/blob/main/LICENSE.txt
-
 ## FluidAudio
 
 Luxel includes the FluidAudio Swift SDK for local speaker diarization.
@@ -363,8 +350,7 @@ and the converted model does not require networking at runtime.
 
 ## Apache License, Version 2.0
 
-The following license text applies to Swift Argument Parser (together with the
-Runtime Library Exception noted above), FluidAudio, VBx,
+The following license text applies to FluidAudio, VBx,
 DeepFilterNet3-CoreML, the adapted speech-swift runtime, and MODNet.
 
                                  Apache License

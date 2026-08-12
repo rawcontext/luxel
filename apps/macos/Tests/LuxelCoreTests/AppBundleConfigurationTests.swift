@@ -71,30 +71,6 @@ struct AppBundleConfigurationTests {
         #expect(entitlements["com.apple.security.network.server"] == nil)
     }
 
-    @Test("Mac App Store CLI entitlements sandbox terminal-facing command")
-    func macAppStoreCLIEntitlementsSandboxTerminalFacingCommand() throws {
-        let entitlements = try readPlist("Configuration/Luxel/LuxelCLI.MacAppStore.entitlements")
-
-        #expect(entitlements["com.apple.security.app-sandbox"] as? Bool == true)
-        #expect(entitlements["com.apple.security.network.server"] as? Bool == true)
-        #expect(entitlements["com.apple.security.network.client"] == nil)
-        #expect(entitlements["com.apple.security.inherit"] == nil)
-    }
-
-    @Test("Mac App Store CLI embeds standalone sandbox bundle metadata")
-    func macAppStoreCLIEmbedsStandaloneSandboxBundleMetadata() throws {
-        let plist = try readPlist("Configuration/Luxel/LuxelCLI.Info.plist")
-        let script = try scriptSource("build-luxel-mas-pkg.sh")
-
-        #expect(plist["CFBundleExecutable"] as? String == "luxel-cli")
-        #expect(plist["CFBundleIdentifier"] as? String == "com.rawcontext.luxel.cli")
-        #expect(script.contains("-Xlinker __info_plist"))
-        #expect(script.contains("CLI_SIGNING_IDENTIFIER"))
-        #expect(script.contains("CLI_HELP_OUTPUT"))
-        #expect(script.contains("CLI_RECORD_HELP_OUTPUT"))
-        #expect(script.contains("stop --print-url"))
-    }
-
     @Test("signed app declares local-only privacy practices")
     func signedAppDeclaresLocalOnlyPrivacyPractices() throws {
         let manifest = try readPlist("Configuration/Luxel/PrivacyInfo.xcprivacy")
@@ -212,16 +188,14 @@ extension AppBundleConfigurationTests {
         }
     }
 
-    @Test("build script bundles and signs CLI executable")
-    func buildScriptBundlesAndSignsCLIExecutable() throws {
+    @Test("build script does not bundle an external command line executable")
+    func buildScriptDoesNotBundleCommandLineExecutable() throws {
         let script = try scriptSource("build-luxel-app.sh")
         let support = try scriptSource("luxel-app-bundle-support.sh")
 
-        #expect(script.contains("swift build --configuration \"${CONFIGURATION}\" --product luxel-cli"))
-        #expect(script.contains("\"${APP_PATH}/Contents/MacOS/luxel-cli\""))
-        #expect(!script.contains("Contents/Resources/install-cli"))
-        #expect(support.contains("Contents/MacOS/luxel-cli"))
-        #expect(support.contains("xcrun strip -x \"${APP_PATH}/Contents/MacOS/luxel-cli\""))
+        #expect(!script.contains("--product luxel-cli"))
+        #expect(!script.contains("Contents/MacOS/luxel-cli"))
+        #expect(!support.contains("Contents/MacOS/luxel-cli"))
     }
 
     @Test("Mac App Store package script bundles SwiftPM resources")
@@ -256,42 +230,22 @@ extension AppBundleConfigurationTests {
         #expect(script.contains("-DLUXEL_MAC_APP_STORE"))
     }
 
-    @Test("Mac App Store app verifies purchases and CLI delegates work to it")
-    func macAppStoreAppVerifiesPurchasesAndCLIDelegatesWorkToIt() throws {
+    @Test("Mac App Store app verifies purchases during launch")
+    func macAppStoreAppVerifiesPurchasesDuringLaunch() throws {
         let root = try packageRootURL()
         let appSource = try String(
             contentsOf: root.appending(path: "Sources/LuxelApp/App/LuxelApp.swift"),
             encoding: .utf8
         )
-        let cliSource = try String(
-            contentsOf: root.appending(
-                path: "Sources/LuxelCLIExecutable/LuxelCLIExecutable.swift"
-            ),
-            encoding: .utf8
+        #expect(appSource.contains("@main\nstruct LuxelApp: App"))
+        let appLaunch = try #require(
+            appSource.range(of: "func applicationDidFinishLaunching")
         )
         let appVerification = try #require(
             appSource.range(of: "guard await LuxelCompositionRoot.purchaseGateService().isEntitled()")
         )
-        let appLaunch = try #require(appSource.range(of: "LuxelApp.main()"))
-        #expect(appVerification.lowerBound < appLaunch.lowerBound)
-        #expect(cliSource.contains("LuxelCLI.main()"))
-        #expect(!cliSource.contains("MacAppStorePaidAppPurchaseGate"))
-
-        let cliCommands = try String(
-            contentsOf: root.appending(path: "Sources/LuxelCLI/LuxelCLI.swift"),
-            encoding: .utf8
-        )
-        let macAppStoreStart = try #require(cliCommands.range(of: "#if LUXEL_MAC_APP_STORE"))
-        let developerIDStart = try #require(cliCommands.range(of: "#else"))
-        let macAppStoreCommands = cliCommands[macAppStoreStart.upperBound..<developerIDStart.lowerBound]
-        for unavailableCommand in [
-            "LuxelEditorCommand.self",
-            "LuxelConvertCommand.self",
-            "LuxelExportCommand.self",
-            "LuxelTranscribeCommand.self"
-        ] {
-            #expect(!macAppStoreCommands.contains(unavailableCommand))
-        }
+        #expect(appLaunch.lowerBound < appVerification.lowerBound)
+        #expect(appSource.contains("NSApp.terminate(nil)"))
     }
 
     private func readPlist(_ relativePath: String) throws -> [String: Any] {
