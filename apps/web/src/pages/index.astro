@@ -25,7 +25,7 @@ const featureTrio = [
   },
   {
     title: "CLI and Automation",
-    text: "Start and stop captures, make replay clips, open recordings or settings, and use callbacks and URL workflows from scripts.",
+    text: "Record, export, and transcribe from scripts with an authenticated CLI, plus URL workflows and App Shortcuts.",
     icon: "terminal"
   }
 ];
@@ -56,8 +56,8 @@ const transcriptPoints = [
 
 const cliPoints = [
   "Record displays, active windows, or selected areas from scripts",
-  "Start, stop, toggle, clip, reveal recent recordings, and open Settings",
-  "x-success and x-error callbacks with --wait, --json, and --print-url"
+  "Record, convert, export, transcribe, and manage folder access through Luxel",
+  "Pairing, Keychain credentials, JSON output, and loopback-only requests"
 ];
 
 const settingsPoints = [
@@ -81,7 +81,7 @@ const languages = [
 ];
 
 const agentPoints = [
-  "--json results plus x-success and x-error callbacks",
+  "Structured --json results and stable exit statuses",
   "luxel:// URL scheme and App Shortcuts for app-level automation",
   "Recording and replay automation run locally"
 ];
@@ -325,8 +325,9 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <p class="chip chip--red chip--small">Automate</p>
               <h3>Command line and URL control</h3>
               <p>
-                Install the bundled luxel command from Settings and control Luxel from shell
-                scripts, launchers, URL automation, or Shortcuts.
+                Install the standalone <code>luxel</code> CLI from GitHub, pair it with the app,
+                and control Luxel from shell scripts, launchers, URL automation, or Shortcuts.
+                See the <a href="https://github.com/rawcontext/luxel-cli">CLI repository</a> for source and installation.
               </p>
               <div class="code-block" aria-label="Example luxel commands">
                 <div><span class="code-prompt">$</span> luxel record --display 1</div>
@@ -342,7 +343,7 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <h3>Settings, shortcuts, and presets</h3>
               <p>
                 Tune Luxel for repeated work with editable global shortcuts, quick export presets,
-                reusable crop sizes, command-line installation, update controls, and replay buffer
+                reusable crop sizes, command-line access controls, update controls, and replay buffer
                 behavior.
               </p>
               <ul class="points points--small">
@@ -437,8 +438,7 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <h2 class="banner__title" id="agents-title">Your agent can run the recorder.</h2>
               <p class="banner__lead">
                 Any LLM or agent that can run a shell command can start captures, stop recordings,
-                make replay clips, and open results or settings — with structured callbacks it can
-                actually read.
+                make replay clips, and open results or settings with structured output it can read.
               </p>
               <ul class="points">
                 {agentPoints.map((point) => <li>{point}</li>)}
@@ -456,9 +456,9 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
                 <div class="terminal__comment"># agent: reproduce the bug and report back</div>
                 <div><span class="code-prompt">$</span> luxel record --display main --fps display --countdown 3</div>
                 <div><span class="code-prompt">$</span> luxel stop</div>
-                <div><span class="code-prompt">$</span> luxel clip --seconds 30 --wait</div>
+                <div><span class="code-prompt">$</span> luxel clip --seconds 30 --json</div>
                 <div><span class="code-prompt">$</span> luxel latest --reveal</div>
-                <div class="terminal__result">&#123;"status":"success","filePath":"~/Movies/Luxel/Luxel Replay 2026-07-08 at 00.12.30.mp4"&#125;</div>
+                <div class="terminal__result">&#123;"kind":"result","result":&#123;"filePath":"~/Movies/Luxel/Luxel Replay 2026-07-08 at 00.12.30.mp4"&#125;&#125;</div>
               </div>
             </div>
           </div>

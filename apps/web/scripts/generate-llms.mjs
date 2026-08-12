@@ -70,6 +70,7 @@ This file is generated during the Luxel website build. Use the full Markdown exp
 
 - [Luxel documentation](${siteUrl}/docs): Canonical human-readable documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, CLI, automation, localization, settings, and troubleshooting.
 - [Complete Luxel documentation Markdown](${siteUrl}/llms-full.txt): Full Markdown mirror generated from the published documentation page.
+- [Luxel CLI source and installation](https://github.com/rawcontext/luxel-cli): Standalone Rust command-line client for the Luxel Mac app.
 
 ## Website
 
