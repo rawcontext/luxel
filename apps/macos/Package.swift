@@ -19,7 +19,11 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/FluidInference/FluidAudio.git", from: "0.15.5")
+        // Remove the fork after FluidInference/FluidAudio#837 ships in a stable release.
+        .package(
+            url: "https://github.com/rawcontext/FluidAudio.git",
+            revision: "b6c4da6936e6a9a4a826315ba94745a14bcf94a1"
+        )
     ],
     targets: [
         .executableTarget(

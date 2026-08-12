@@ -129,10 +129,7 @@ struct EditorSpeakersCard: View {
                 ),
                 in: 1...12
             ) {
-                Text("Min \(model.minimumSpeakerCount)")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.78))
-                    .frame(minWidth: 42, alignment: .leading)
+                speakerCountRangeLabel("Min \(model.minimumSpeakerCount)")
             }
             .controlSize(.small)
             .help("Set the minimum expected speaker count.")
@@ -144,14 +141,18 @@ struct EditorSpeakersCard: View {
                 ),
                 in: 1...12
             ) {
-                Text("Max \(model.maximumSpeakerCount)")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.78))
-                    .frame(minWidth: 42, alignment: .leading)
+                speakerCountRangeLabel("Max \(model.maximumSpeakerCount)")
             }
             .controlSize(.small)
             .help("Set the maximum expected speaker count.")
         }
+    }
+
+    private func speakerCountRangeLabel(_ label: LocalizedStringKey) -> some View {
+        Text(label)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.white.opacity(0.78))
+            .frame(minWidth: 42, alignment: .leading)
     }
 
 }
