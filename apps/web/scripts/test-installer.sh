@@ -25,19 +25,60 @@ tar -czf "$test_root/release/luxel-macos-universal.tar.gz" -C "$test_root/payloa
   shasum -a 256 luxel-macos-universal.tar.gz > luxel-macos-universal.tar.gz.sha256
 )
 
+mkdir -p "$test_root/home"
+printf 'export EXISTING_SETTING=1\n' > "$test_root/home/.zshrc"
+
 PATH="$test_root/tools:$PATH" \
-LUXEL_INSTALL_DIR="$test_root/bin" \
+HOME="$test_root/home" \
+SHELL="/bin/zsh" \
 LUXEL_RELEASE_BASE_URL="file://$test_root/release" \
   sh "$installer_path" >/dev/null
 
-[ -x "$test_root/bin/luxel" ]
-[ "$("$test_root/bin/luxel")" = "luxel installer fixture" ]
+[ -x "$test_root/home/.local/bin/luxel" ]
+[ "$("$test_root/home/.local/bin/luxel")" = "luxel installer fixture" ]
+grep -Fq 'export EXISTING_SETTING=1' "$test_root/home/.zshrc"
+grep -Fq 'export PATH="$HOME/.local/bin:$PATH"' "$test_root/home/.zshrc"
+[ "$(grep -c '# >>> luxel installer >>>' "$test_root/home/.zshrc")" -eq 1 ]
+
+PATH="$test_root/tools:$PATH" \
+HOME="$test_root/home" \
+SHELL="/bin/zsh" \
+LUXEL_RELEASE_BASE_URL="file://$test_root/release" \
+  sh "$installer_path" >/dev/null
+
+[ "$(grep -c '# >>> luxel installer >>>' "$test_root/home/.zshrc")" -eq 1 ]
+
+PATH="$test_root/tools:$PATH" \
+HOME="$test_root/bash-home" \
+SHELL="/bin/bash" \
+LUXEL_RELEASE_BASE_URL="file://$test_root/release" \
+  sh "$installer_path" >/dev/null
+
+grep -Fq 'export PATH="$HOME/.local/bin:$PATH"' "$test_root/bash-home/.bash_profile"
+
+PATH="$test_root/tools:$PATH" \
+HOME="$test_root/fish-home" \
+SHELL="/opt/homebrew/bin/fish" \
+LUXEL_RELEASE_BASE_URL="file://$test_root/release" \
+  sh "$installer_path" >/dev/null
+
+grep -Fq 'fish_add_path "$HOME/.local/bin"' "$test_root/fish-home/.config/fish/config.fish"
+
+PATH="$test_root/tools:$PATH" \
+HOME="$test_root/no-path-update" \
+SHELL="/bin/zsh" \
+LUXEL_NO_PATH_UPDATE=1 \
+LUXEL_RELEASE_BASE_URL="file://$test_root/release" \
+  sh "$installer_path" >/dev/null
+
+[ ! -e "$test_root/no-path-update/.zshrc" ]
 
 printf '%064d  luxel-macos-universal.tar.gz\n' 0 > \
   "$test_root/release/luxel-macos-universal.tar.gz.sha256"
 
 if PATH="$test_root/tools:$PATH" \
-  LUXEL_INSTALL_DIR="$test_root/rejected" \
+  HOME="$test_root/rejected" \
+  SHELL="/bin/zsh" \
   LUXEL_RELEASE_BASE_URL="file://$test_root/release" \
     sh "$installer_path" >/dev/null 2>&1; then
   printf 'installer accepted an invalid checksum\n' >&2

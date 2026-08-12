@@ -3,7 +3,8 @@ set -eu
 
 asset="luxel-macos-universal.tar.gz"
 release_base_url="${LUXEL_RELEASE_BASE_URL:-https://github.com/rawcontext/luxel-cli/releases/latest/download}"
-install_dir="${LUXEL_INSTALL_DIR:-${HOME}/.local/bin}"
+default_install_dir="${HOME}/.local/bin"
+install_dir="${LUXEL_INSTALL_DIR:-$default_install_dir}"
 
 fail() {
   printf 'luxel installer: %s\n' "$1" >&2
@@ -47,6 +48,32 @@ install -m 755 "$work_dir/extracted/luxel" "$install_dir/luxel"
 printf 'Installed luxel to %s/luxel\n' "$install_dir"
 
 case ":${PATH:-}:" in
-  *":$install_dir:"*) ;;
-  *) printf 'Add %s to your PATH.\n' "$install_dir" ;;
+  *":$install_dir:"*) printf 'Run luxel --version to verify the installation.\n' ;;
+  *)
+    config_file=""
+    path_entry='export PATH="$HOME/.local/bin:$PATH"'
+
+    if [ "$install_dir" = "$default_install_dir" ] && [ "${LUXEL_NO_PATH_UPDATE:-0}" != "1" ]; then
+      user_shell="${SHELL:-}"
+      case "${user_shell##*/}" in
+        zsh) config_file="${ZDOTDIR:-$HOME}/.zshrc" ;;
+        bash) config_file="$HOME/.bash_profile" ;;
+        fish)
+          config_file="$HOME/.config/fish/config.fish"
+          path_entry='fish_add_path "$HOME/.local/bin"'
+          ;;
+      esac
+    fi
+
+    if [ -n "$config_file" ]; then
+      mkdir -p "$(dirname "$config_file")"
+      if ! grep -Fqs "$path_entry" "$config_file" 2>/dev/null; then
+        printf '\n# >>> luxel installer >>>\n%s\n# <<< luxel installer <<<\n' "$path_entry" >> "$config_file"
+        printf 'Added %s to PATH in %s.\n' "$install_dir" "$config_file"
+      fi
+      printf 'Open a new terminal, then run luxel --version.\n'
+    else
+      printf 'Add %s to your PATH.\n' "$install_dir"
+    fi
+    ;;
 esac
