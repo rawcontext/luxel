@@ -1,0 +1,26 @@
+name: Package universal binary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - run: scripts/build-universal.sh
+      - run: shasum -a 256 target/universal-apple-darwin/release/luxel > target/universal-apple-darwin/release/luxel.sha256
+      - uses: actions/upload-artifact@v7
+        with:
+          name: luxel-universal-apple-darwin
+          path: |
+            target/universal-apple-darwin/release/luxel
+            target/universal-apple-darwin/release/luxel.sha256
+          if-no-files-found: error

@@ -1,0 +1,17 @@
+{
+  "kind" : "result",
+  "protocolVersion" : 1,
+  "requestID" : "90E7CB42-BB59-41D5-BC6C-8DF33CC702B9",
+  "result" : {
+    "export" : {
+      "filePath" : "/Users/example/Movies/Luxel/output.webm",
+      "fileSizeBytes" : 123456,
+      "format" : "webm",
+      "height" : 720,
+      "shouldMute" : true,
+      "width" : 1280
+    },
+    "filePath" : "/Users/example/Movies/Luxel/output.webm"
+  },
+  "sequence" : 2
+}
