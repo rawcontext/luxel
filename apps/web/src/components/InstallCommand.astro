@@ -1,0 +1,153 @@
+---
+const command = "curl -fsSL https://luxel.media/cli/install.sh | sh";
+---
+
+<div class="install-command">
+  <span aria-hidden="true">$</span>
+  <code>{command}</code>
+  <button type="button" data-copy-command={command} aria-label="Copy install command">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+    </svg>
+    <span data-copy-label>Copy</span>
+  </button>
+</div>
+
+<script is:inline>
+  const copyText = (text) => {
+    const input = document.createElement("textarea");
+    input.value = text;
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.append(input);
+    input.select();
+    const copied = document.execCommand("copy");
+    input.remove();
+    return copied;
+  };
+
+  document.querySelectorAll("[data-copy-command]").forEach((copyCommandButton) => {
+    copyCommandButton.addEventListener("click", () => {
+      if (!(copyCommandButton instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      const command = copyCommandButton.dataset.copyCommand;
+      if (!command) {
+        return;
+      }
+
+      const label = copyCommandButton.querySelector("[data-copy-label]");
+      const resetFeedback = () => {
+        if (label) {
+          label.textContent = "Copy";
+        }
+        copyCommandButton.setAttribute("aria-label", "Copy install command");
+      };
+      const showCopied = () => {
+        if (label) {
+          label.textContent = "Copied";
+        }
+        copyCommandButton.setAttribute("aria-label", "Install command copied");
+        window.setTimeout(resetFeedback, 1800);
+      };
+      const selectCommand = () => {
+        const code = copyCommandButton.closest(".install-command")?.querySelector("code");
+        const selection = window.getSelection();
+        if (code && selection) {
+          const range = document.createRange();
+          range.selectNodeContents(code);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        if (label) {
+          label.textContent = "Press ⌘C";
+        }
+        copyCommandButton.setAttribute("aria-label", "Install command selected; press Command-C to copy");
+        window.setTimeout(resetFeedback, 2400);
+      };
+
+      if (copyText(command)) {
+        showCopied();
+        return;
+      }
+
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(command).then(showCopied).catch(selectCommand);
+      } else {
+        selectCommand();
+      }
+    });
+  });
+</script>
+
+<style>
+  .install-command {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.7rem;
+    margin: 0.85rem 0;
+    padding: 0.75rem 0.8rem 0.75rem 1rem;
+    border-radius: 14px;
+    background: rgb(0 0 0 / 0.42);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.09);
+    color: rgb(255 255 255 / 0.48);
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  code {
+    min-width: 0;
+    padding: 0;
+    overflow-x: auto;
+    background: transparent;
+    color: rgb(255 255 255 / 0.82);
+    font-size: 0.84rem;
+    white-space: nowrap;
+  }
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.55rem;
+    border: 0;
+    border-radius: 9px;
+    background: rgb(255 255 255 / 0.08);
+    color: rgb(255 255 255 / 0.72);
+    cursor: pointer;
+    font: 600 0.74rem Inter, system-ui, sans-serif;
+  }
+
+  button:hover {
+    background: rgb(143 134 255 / 0.18);
+    color: #fff;
+  }
+
+  button:focus-visible {
+    outline: 2px solid #8f86ff;
+    outline-offset: 2px;
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentcolor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  @media (max-width: 480px) {
+    .install-command {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    button {
+      grid-column: 1 / -1;
+      justify-self: end;
+    }
+  }
+</style>

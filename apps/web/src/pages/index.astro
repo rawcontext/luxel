@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import InstallCommand from "../components/InstallCommand.astro";
 import SiteNav from "../components/SiteNav.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 
@@ -325,10 +326,11 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <p class="chip chip--red chip--small">Automate</p>
               <h3>Command line and URL control</h3>
               <p>
-                Install the standalone <code>luxel</code> CLI from GitHub, pair it with the app,
-                and control Luxel from shell scripts, launchers, URL automation, or Shortcuts.
-                See the <a href="https://github.com/rawcontext/luxel-cli">CLI repository</a> for source and installation.
+                Install the standalone <code>luxel</code> CLI, pair it with the app, and control
+                Luxel from shell scripts, launchers, URL automation, or Shortcuts. See the{" "}
+                <a href="https://github.com/rawcontext/luxel-cli">CLI repository</a> for source.
               </p>
+              <InstallCommand />
               <div class="code-block" aria-label="Example luxel commands">
                 <div><span class="code-prompt">$</span> luxel record --display 1</div>
                 <div><span class="code-prompt">$</span> luxel clip --seconds 30 --json</div>

@@ -1,6 +1,7 @@
 ---
 import PageLayout from "../components/PageLayout.astro";
 import ShortcutKeys from "../components/ShortcutKeys.astro";
+import InstallCommand from "../components/InstallCommand.astro";
 
 const navGroups = [
   {
@@ -886,13 +887,16 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns --diarize</code></pre>
           </div>
 
           <div class="split-grid">
-            <article>
+            <article class="install-card">
               <h3>Install</h3>
               <p>
-                Download or build the <code>luxel</code> binary from the{" "}
-                <a href="https://github.com/rawcontext/luxel-cli">Luxel CLI repository on GitHub</a>,
-                then place it in a directory on your <code>PATH</code>. The CLI is distributed
-                separately from the Mac app.
+                Install the latest <code>luxel</code> release from Terminal:
+              </p>
+              <InstallCommand />
+              <p>
+                The installer verifies the release checksum and adds <code>luxel</code> to{" "}
+                <code>~/.local/bin</code>. You can also build it from the{" "}
+                <a href="https://github.com/rawcontext/luxel-cli">Luxel CLI repository on GitHub</a>:
               </p>
               <pre><code>git clone https://github.com/rawcontext/luxel-cli.git
 cd luxel-cli
@@ -1303,9 +1307,8 @@ luxel://latest?reveal=true</code></pre>
             <article>
               <h3>Can I use Luxel without opening the editor?</h3>
               <p>
-                Yes. Quick exports and replay clip destinations can finish directly. In Developer
-                ID builds, <code>luxel convert</code>, <code>luxel export</code>, and{" "}
-                <code>luxel transcribe</code> also run without opening the editor.
+                Yes. Quick exports, replay clip destinations, <code>luxel convert</code>,{" "}
+                <code>luxel export</code>, and <code>luxel transcribe</code> can finish directly.
               </p>
             </article>
             <article>
@@ -1572,6 +1575,10 @@ luxel://latest?reveal=true</code></pre>
     background:
       linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.045)),
       rgb(31 31 45 / 0.36);
+  }
+
+  .install-card {
+    grid-column: 1 / -1;
   }
 
   .docs-section {

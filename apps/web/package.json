@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/generate-llms.mjs",
+    "build": "astro build && node scripts/generate-llms.mjs && sh scripts/test-installer.sh dist/client/cli/install.sh",
     "generate:llms": "node scripts/generate-llms.mjs",
+    "test:installer": "sh scripts/test-installer.sh dist/client/cli/install.sh",
     "preview": "astro preview"
   },
   "dependencies": {

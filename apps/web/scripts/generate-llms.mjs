@@ -64,12 +64,11 @@ const llmsIndex = normalizeMarkdown(`# Luxel
 
 > ${projectSummary}
 
-This file is generated during the Luxel website build. Use the full Markdown export for complete user documentation, and use the canonical website links for browser-readable pages.
-
 ## Documentation
 
 - [Luxel documentation](${siteUrl}/docs): Canonical human-readable documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, CLI, automation, localization, settings, and troubleshooting.
-- [Complete Luxel documentation Markdown](${siteUrl}/llms-full.txt): Full Markdown mirror generated from the published documentation page.
+- [Complete Luxel documentation Markdown](${siteUrl}/llms-full.txt): Complete text of the Luxel documentation.
+- [Install the Luxel CLI](${siteUrl}/cli/install.sh): Shell installer for the standalone Luxel command.
 - [Luxel CLI source and installation](https://github.com/rawcontext/luxel-cli): Standalone Rust command-line client for the Luxel Mac app.
 
 ## Website
@@ -81,11 +80,7 @@ This file is generated during the Luxel website build. Use the full Markdown exp
 
 const llmsFull = normalizeMarkdown(`# Luxel Documentation
 
-> Complete Markdown mirror of the public Luxel documentation.
-
-Source: ${siteUrl}/docs
-
-This file is generated during the Luxel website build from the built Astro documentation page.
+> Luxel installation, capture, editing, export, transcription, CLI, and troubleshooting documentation.
 
 ${docsMarkdown}
 `);
