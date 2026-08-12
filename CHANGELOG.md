@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 - 2026-08-11
 
 - Add the standalone `luxel` command.
 - Pair with Luxel through explicit in-app approval and macOS Keychain credentials.
