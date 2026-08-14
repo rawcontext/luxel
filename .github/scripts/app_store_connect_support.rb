@@ -81,6 +81,10 @@ module AppStoreConnectSupport
     request(url, token: token, accept: "application/octet-stream", accept_encoding: "identity").body
   end
 
+  def get_gzip_report(url, token:, request: method(:request))
+    request.call(url, token: token, accept: "application/a-gzip", accept_encoding: "identity").body
+  end
+
   def request(url, token:, method: Net::HTTP::Get, accept:, content_type: nil, body: nil, accept_encoding: nil)
     uri = URI(url)
     request = method.new(uri)

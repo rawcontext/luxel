@@ -4,6 +4,24 @@ require "minitest/autorun"
 require_relative "sync_app_store_digests"
 
 class AppStoreDigestSyncTest < Minitest::Test
+  def test_sales_and_finance_reports_use_the_required_media_type
+    response = Struct.new(:body).new("report")
+    request = lambda do |_url, token:, accept:, accept_encoding:, **_options|
+      assert_equal "token", token
+      assert_equal "application/a-gzip", accept
+      assert_equal "identity", accept_encoding
+      response
+    end
+
+    result = AppStoreConnectSupport.get_gzip_report(
+      "https://example.test/report",
+      token: "token",
+      request: request
+    )
+
+    assert_equal "report", result
+  end
+
   def test_aggregates_testflight_adoption_for_each_build
     response = {
       "data" => [

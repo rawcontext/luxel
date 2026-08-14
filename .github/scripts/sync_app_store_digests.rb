@@ -136,7 +136,7 @@ module AppStoreDigestSync
   end
 
   def fetch_sales(app_id:, vendor_number:, frequency:, token:, output_dir:,
-                  download: AppStoreConnectSupport.method(:get_bytes))
+                  download: AppStoreConnectSupport.method(:get_gzip_report))
     return { "status" => "Not configured: set the APP_STORE_CONNECT_VENDOR_NUMBER repository variable.", "rows" => [] } if vendor_number.empty?
 
     query = URI.encode_www_form(
@@ -157,7 +157,7 @@ module AppStoreDigestSync
   end
 
   def fetch_finance(app_id:, vendor_number:, today:, token:, output_dir:,
-                    download: AppStoreConnectSupport.method(:get_bytes))
+                    download: AppStoreConnectSupport.method(:get_gzip_report))
     return { "status" => "Not configured: set the APP_STORE_CONNECT_VENDOR_NUMBER repository variable.", "rows" => [] } if vendor_number.empty?
 
     report_months(today).each do |month|
