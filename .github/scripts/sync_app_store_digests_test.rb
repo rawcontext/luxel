@@ -16,12 +16,14 @@ class AppStoreDigestSyncTest < Minitest::Test
       ]
     }
 
+    requested_url = nil
     adoption = AppStoreDigestSync.fetch_testflight_adoption(
       builds: [build],
       token: "token",
-      get: ->(_url, _token) { response }
+      get: ->(url, _token) { requested_url = url; response }
     )
 
+    refute_includes requested_url, "limit="
     assert_equal 7, adoption.first["values"]["installCount"]
     assert_equal 12, adoption.first["values"]["sessionCount"]
     assert_equal 2, adoption.first["values"]["crashCount"]

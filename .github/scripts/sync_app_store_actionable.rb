@@ -44,7 +44,7 @@ module AppStoreActionableSync
     records
   end
 
-  def fetch_performance_regressions(app_id:, token:, get: AppStoreConnectSupport.method(:get_json))
+  def fetch_performance_regressions(app_id:, token:, get: AppStoreConnectSupport.method(:get_xcode_metrics_json))
     response = optional_get("#{API_ORIGIN}/v1/apps/#{app_id}/perfPowerMetrics", token, get)
     return [] unless response
 

@@ -60,6 +60,11 @@ module AppStoreConnectSupport
     JSON.parse(response.body)
   end
 
+  def get_xcode_metrics_json(url, token, request: method(:request))
+    response = request.call(url, token: token, accept: "application/vnd.apple.xcode-metrics+json")
+    JSON.parse(response.body)
+  end
+
   def post_json(url, token, value)
     response = request(
       url,

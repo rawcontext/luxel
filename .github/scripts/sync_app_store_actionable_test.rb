@@ -4,6 +4,23 @@ require "minitest/autorun"
 require_relative "sync_app_store_actionable"
 
 class AppStoreActionableSyncTest < Minitest::Test
+  def test_xcode_performance_metrics_use_the_required_media_type
+    response = Struct.new(:body).new('{"insights":{"regressions":[]}}')
+    request = lambda do |_url, token:, accept:, **_options|
+      assert_equal "token", token
+      assert_equal "application/vnd.apple.xcode-metrics+json", accept
+      response
+    end
+
+    result = AppStoreConnectSupport.get_xcode_metrics_json(
+      "https://example.test/metrics",
+      "token",
+      request: request
+    )
+
+    assert_empty result.dig("insights", "regressions")
+  end
+
   def test_fetches_all_screenshot_feedback_with_build_and_tester
     get = lambda do |url, _token|
       if url.include?("betaFeedbackScreenshotSubmissions")

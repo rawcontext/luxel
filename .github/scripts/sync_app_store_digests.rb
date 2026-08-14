@@ -27,7 +27,7 @@ module AppStoreDigestSync
   def fetch_testflight_adoption(builds:, token:, get: AppStoreConnectSupport.method(:get_json))
     builds.filter_map do |build|
       response = begin
-        get.call("#{API_ORIGIN}/v1/builds/#{build.fetch("id")}/metrics/betaBuildUsages?limit=200", token)
+        get.call("#{API_ORIGIN}/v1/builds/#{build.fetch("id")}/metrics/betaBuildUsages", token)
       rescue AppStoreConnectSupport::RequestError => error
         raise unless error.status == 404
 
