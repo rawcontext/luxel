@@ -67,8 +67,8 @@ extension ArchitectureTests {
         try expectSources(under: sourceDirectory, omit: forbiddenSnippets)
     }
 
-    @Test("permission client avoids native request prompts")
-    func permissionClientAvoidsNativeRequestPrompts() throws {
+    @Test("permission client supports user-initiated capture permission requests")
+    func permissionClientSupportsUserInitiatedCapturePermissionRequests() throws {
         let permissionSource = try String(
             contentsOf: packageRootURL().appending(
                 path: "Sources/LuxelCore/Infrastructure/System/ApplePermissionClient.swift"),
@@ -84,10 +84,10 @@ extension ArchitectureTests {
 
         #expect(
             permissionSource.contains("CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined"))
-        #expect(!permissionSource.contains("CGRequestScreenCaptureAccess"))
+        #expect(permissionSource.contains("CGRequestScreenCaptureAccess() ? .authorized"))
         #expect(!permissionSource.contains("CGRequestListenEventAccess"))
-        #expect(!permissionSource.contains("AVAudioApplication.requestRecordPermission"))
-        #expect(!permissionSource.contains("AVCaptureDevice.requestAccess"))
+        #expect(permissionSource.contains("AVAudioApplication.requestRecordPermission"))
+        #expect(permissionSource.contains("AVCaptureDevice.requestAccess"))
         #expect(!permissionSource.contains("SCShareableContent.current"))
         #expect(!speechSource.contains("SFSpeechRecognizer.requestAuthorization"))
     }
@@ -286,12 +286,14 @@ extension ArchitectureTests {
         #expect(
             statusItemSource.contains(
                 "presentPermissionPrompt(model.makePermissionPrompt(forSource: source))"))
+        #expect(statusItemSource.contains("if prompt.guidance.action == .request"))
+        #expect(statusItemSource.contains("await model.performPermissionAction(prompt)"))
         #expect(!menuSource.contains("isPresented: permissionPromptPresented"))
         #expect(!settingsSource.contains("isPresented: permissionPromptPresented"))
     }
 
-    @Test("permission actions open settings without native request prompts")
-    func permissionActionsOpenSettingsWithoutNativeRequestPrompts() throws {
+    @Test("permission actions separate native requests from settings recovery")
+    func permissionActionsSeparateNativeRequestsFromSettingsRecovery() throws {
         let source = try String(
             contentsOf: packageRootURL().appending(
                 path: "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+Permissions.swift"),
@@ -302,12 +304,9 @@ extension ArchitectureTests {
             source[handlerRange.upperBound...].range(of: "func sourcePermissionPresentation"))
         let handlerSource = String(source[handlerRange.lowerBound..<nextRange.lowerBound])
 
-        #expect(handlerSource.contains("permissionClient.request(.inputMonitoring)"))
-        #expect(!handlerSource.contains("permissionClient.request(.screenRecording)"))
-        #expect(!handlerSource.contains("permissionClient.request(.microphone)"))
-        #expect(!handlerSource.contains("permissionClient.request(.camera)"))
+        #expect(handlerSource.contains("permissionClient.request(prompt.permission)"))
         #expect(handlerSource.contains("await permissionClient.openSettings(for: prompt.permission)"))
-        #expect(handlerSource.contains("permissionStatus(for: prompt.permission) != .authorized"))
+        #expect(!handlerSource.contains("openSettingsAfterDeniedRequest"))
     }
 
 }

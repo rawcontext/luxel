@@ -33,10 +33,8 @@ struct PermissionClientTests {
         #expect(denied.message.contains("relaunch"))
     }
 
-    @Test(
-        "screen recording guidance opens screen and system audio settings without native request prompt"
-    )
-    func screenRecordingGuidanceOpensScreenAndSystemAudioSettingsWithoutNativeRequestPrompt() {
+    @Test("screen recording guidance requests access before opening settings")
+    func screenRecordingGuidanceRequestsAccessBeforeOpeningSettings() {
         let notDetermined = PermissionGuidanceService().guidance(
             for: .screenRecording,
             status: .notDetermined
@@ -46,8 +44,8 @@ struct PermissionClientTests {
             status: .denied
         )
 
-        #expect(notDetermined.actionTitle == "Open System Settings")
-        #expect(notDetermined.action == .openSettings)
+        #expect(notDetermined.actionTitle == "Enable Capture")
+        #expect(notDetermined.action == .request)
         #expect(notDetermined.message.contains("Screen & System Audio Recording"))
         #expect(guidance.title == "Screen capture is off")
         #expect(guidance.actionTitle == "Open System Settings")
@@ -56,17 +54,20 @@ struct PermissionClientTests {
         #expect(guidance.message.contains("click +"))
     }
 
-    @Test("microphone guidance opens settings without native request prompt")
-    func microphoneGuidanceOpensSettingsWithoutNativeRequestPrompt() {
-        expectSettingsGuidance(for: .microphone)
+    @Test("microphone guidance requests access before opening settings")
+    func microphoneGuidanceRequestsAccessBeforeOpeningSettings() {
+        expectRequestThenSettingsGuidance(for: .microphone, actionTitle: "Enable Mic")
     }
 
-    @Test("camera guidance opens settings without native request prompt")
-    func cameraGuidanceOpensSettingsWithoutNativeRequestPrompt() {
-        expectSettingsGuidance(for: .camera)
+    @Test("camera guidance requests access before opening settings")
+    func cameraGuidanceRequestsAccessBeforeOpeningSettings() {
+        expectRequestThenSettingsGuidance(for: .camera, actionTitle: "Enable Camera")
     }
 
-    private func expectSettingsGuidance(for permission: SystemPermission) {
+    private func expectRequestThenSettingsGuidance(
+        for permission: SystemPermission,
+        actionTitle: String
+    ) {
         let notDetermined = PermissionGuidanceService().guidance(
             for: permission,
             status: .notDetermined
@@ -76,8 +77,8 @@ struct PermissionClientTests {
             status: .denied
         )
 
-        #expect(notDetermined.actionTitle == "Open System Settings")
-        #expect(notDetermined.action == .openSettings)
+        #expect(notDetermined.actionTitle == actionTitle)
+        #expect(notDetermined.action == .request)
         #expect(denied.actionTitle == "Open System Settings")
         #expect(denied.action == .openSettings)
     }
@@ -118,8 +119,8 @@ struct PermissionClientTests {
             status: .notDetermined
         )
 
-        #expect(notDeterminedGuidance.actionTitle == "Open System Settings")
-        #expect(notDeterminedGuidance.action == .openSettings)
+        #expect(notDeterminedGuidance.actionTitle == "Enable System Sound")
+        #expect(notDeterminedGuidance.action == .request)
         #expect(notDeterminedGuidance.message.contains("Screen & System Audio Recording"))
         #expect(notDeterminedGuidance.message.contains("click +"))
     }

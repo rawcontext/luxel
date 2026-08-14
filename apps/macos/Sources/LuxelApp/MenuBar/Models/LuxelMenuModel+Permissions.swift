@@ -45,7 +45,6 @@ extension LuxelMenuModel {
         permissionPrompt = nil
         await performGuidanceAction(prompt)
         await refreshPermissions()
-        await openSettingsAfterDeniedRequest(prompt)
         if prompt.permission == .inputMonitoring, inputMonitoringStatus == .authorized {
             settings.keystrokeOverlayEnabled = true
             saveSettings()
@@ -59,12 +58,7 @@ extension LuxelMenuModel {
         switch prompt.guidance.action {
         case .request:
             try? await Task.sleep(nanoseconds: 200_000_000)
-            if prompt.permission == .inputMonitoring {
-                inputMonitoringStatus = await permissionClient.request(.inputMonitoring)
-            }
-            if permissionStatus(for: prompt.permission) != .authorized {
-                await refreshPermissions()
-            }
+            _ = await permissionClient.request(prompt.permission)
         case .openSettings:
             try? await Task.sleep(nanoseconds: 200_000_000)
             await permissionClient.openSettings(for: prompt.permission)
@@ -72,13 +66,6 @@ extension LuxelMenuModel {
             if let source = prompt.source {
                 enableCaptureSource(source)
             }
-        }
-    }
-
-    private func openSettingsAfterDeniedRequest(_ prompt: PermissionPrompt) async {
-        if prompt.guidance.action == .request,
-           permissionStatus(for: prompt.permission) != .authorized {
-            await permissionClient.openSettings(for: prompt.permission)
         }
     }
 

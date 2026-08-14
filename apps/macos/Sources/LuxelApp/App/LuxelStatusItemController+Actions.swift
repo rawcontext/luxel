@@ -94,6 +94,13 @@ extension LuxelStatusItemController {
                 return
             }
 
+            if prompt.guidance.action == .request {
+                await model.performPermissionAction(prompt)
+                isPresentingPermissionPrompt = false
+                presentPendingPermissionPromptIfNeeded()
+                return
+            }
+
             let shouldPerformAction = runPermissionAlert(prompt)
             isPresentingPermissionPrompt = false
 

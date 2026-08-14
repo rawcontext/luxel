@@ -71,8 +71,10 @@ public struct PermissionGuidanceService: Sendable {
                 title: "Screen capture is off",
                 message: "Turn Luxel on in Screen & System Audio Recording. "
                     + "If Luxel is not listed, click + and add the app.",
-                actionTitle: "Open System Settings",
-                action: .openSettings
+                actionTitle: LuxelLocalization.string(
+                    "permissions.screen.enable",
+                    defaultValue: "Enable Capture"),
+                action: .request
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
@@ -112,8 +114,10 @@ public struct PermissionGuidanceService: Sendable {
                     title: presentation.title,
                     message: "System sound uses macOS Screen & System Audio Recording. "
                         + "If Luxel is not listed, click + and add the app.",
-                    actionTitle: "Open System Settings",
-                    action: .openSettings
+                    actionTitle: LuxelLocalization.string(
+                        "permissions.systemAudio.enable",
+                        defaultValue: "Enable System Sound"),
+                    action: .request
                 )
             case .authorized:
                 PermissionGuidance(
@@ -140,8 +144,10 @@ public struct PermissionGuidanceService: Sendable {
             PermissionGuidance(
                 title: "Microphone is off",
                 message: "Allow microphone access to add your voice to recordings.",
-                actionTitle: "Open System Settings",
-                action: .openSettings
+                actionTitle: LuxelLocalization.string(
+                    "permissions.microphone.enable",
+                    defaultValue: "Enable Mic"),
+                action: .request
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
@@ -173,8 +179,10 @@ public struct PermissionGuidanceService: Sendable {
             PermissionGuidance(
                 title: "Camera is off",
                 message: "Allow camera access to add your camera overlay.",
-                actionTitle: "Open System Settings",
-                action: .openSettings
+                actionTitle: LuxelLocalization.string(
+                    "permissions.camera.enable",
+                    defaultValue: "Enable Camera"),
+                action: .request
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
