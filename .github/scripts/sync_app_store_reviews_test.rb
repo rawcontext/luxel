@@ -7,7 +7,7 @@ require_relative "sync_app_store_reviews"
 class AppStoreReviewSyncTest < Minitest::Test
   def test_jwt_has_valid_es256_signature_and_expected_claims
     key = OpenSSL::PKey::EC.generate("prime256v1")
-    token = AppStoreReviewSync.jwt(
+    token = AppStoreConnectSupport.jwt(
       key_id: "KEY123",
       issuer_id: "issuer-123",
       private_key: key.to_pem,
