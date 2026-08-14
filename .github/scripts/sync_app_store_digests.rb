@@ -122,7 +122,13 @@ module AppStoreDigestSync
         "segmentCount" => contents.length
       }
     end
-    { "status" => created && results.empty? ? "Report request created; Apple needs 24–48 hours to generate data." : "Available", "reports" => results }
+    status = if results.empty?
+               created ? "Report request created; Apple needs 24–48 hours to generate data." :
+                 "Report request is active; Apple has not generated data yet."
+             else
+               "Available"
+             end
+    { "status" => status, "reports" => results }
   rescue AppStoreConnectSupport::RequestError => error
     raise unless [403, 404].include?(error.status)
 

@@ -79,6 +79,40 @@ class AppStoreDigestSyncTest < Minitest::Test
     refute calls.any? { |url| url.include?("analyticsReportInstances/old") }
   end
 
+  def test_reports_when_an_active_analytics_request_has_not_produced_data
+    get = lambda do |url, _token|
+      case url
+      when /apps\/6800438206\/analyticsReportRequests/
+        {
+          "data" => [
+            {
+              "type" => "analyticsReportRequests",
+              "id" => "request-1",
+              "attributes" => { "accessType" => "ONGOING", "stoppedDueToInactivity" => false }
+            }
+          ],
+          "links" => {}
+        }
+      when /analyticsReportRequests\/request-1\/reports/
+        { "data" => [], "links" => {} }
+      else
+        raise "Unexpected URL: #{url}"
+      end
+    end
+
+    analytics = AppStoreDigestSync.fetch_analytics(
+      app_id: "6800438206",
+      granularity: "WEEKLY",
+      token: "token",
+      output_dir: "",
+      get: get,
+      post: ->(*) { raise "Should not create another analytics request" }
+    )
+
+    assert_equal "Report request is active; Apple has not generated data yet.", analytics["status"]
+    assert_empty analytics["reports"]
+  end
+
   def test_summarizes_analytics_adoption_sales_and_finance_in_digest
     analytics = {
       "status" => "Available",
