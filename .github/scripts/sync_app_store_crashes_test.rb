@@ -48,6 +48,16 @@ class AppStoreCrashSyncTest < Minitest::Test
     assert chunks.all? { |chunk| chunk.bytesize <= 31 }
   end
 
+  def test_missing_diagnostics_are_treated_as_no_available_data
+    get = lambda do |_url, _token|
+      raise AppStoreConnectSupport::RequestError.new(404, "No diagnostics for this build")
+    end
+
+    diagnostics = AppStoreCrashSync.fetch_diagnostics(builds: [build], token: "token", get: get)
+
+    assert_empty diagnostics
+  end
+
   private
 
   def response_for(url)

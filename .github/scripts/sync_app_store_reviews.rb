@@ -148,4 +148,10 @@ module AppStoreReviewSync
   end
 end
 
-AppStoreReviewSync.run if $PROGRAM_NAME == __FILE__
+if $PROGRAM_NAME == __FILE__
+  begin
+    AppStoreReviewSync.run
+  rescue AppStoreConnectSupport::RequestError => error
+    abort(error.message)
+  end
+end

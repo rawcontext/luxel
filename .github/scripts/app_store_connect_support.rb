@@ -11,6 +11,15 @@ require "uri"
 module AppStoreConnectSupport
   API_ORIGIN = "https://api.appstoreconnect.apple.com"
 
+  class RequestError < StandardError
+    attr_reader :status
+
+    def initialize(status, body)
+      @status = Integer(status)
+      super("App Store Connect request failed (#{status}): #{body}")
+    end
+  end
+
   module_function
 
   def required_env(name)
@@ -54,7 +63,7 @@ module AppStoreConnectSupport
     end
     return JSON.parse(response.body) if response.is_a?(Net::HTTPSuccess)
 
-    abort("App Store Connect request failed (#{response.code}): #{response.body}")
+    raise RequestError.new(response.code, response.body)
   end
 
   def paginated_data(url, token, get: method(:get_json))

@@ -24,7 +24,7 @@ module AppStoreCrashSync
   def fetch_diagnostics(builds:, token:, get: AppStoreConnectSupport.method(:get_json))
     builds.flat_map do |build|
       query = URI.encode_www_form("limit" => 200)
-      signatures = AppStoreConnectSupport.paginated_data(
+      signatures = optional_paginated_data(
         "#{API_ORIGIN}/v1/builds/#{build.fetch("id")}/diagnosticSignatures?#{query}",
         token,
         get: get
@@ -35,10 +35,32 @@ module AppStoreCrashSync
           "kind" => "diagnostic",
           "build" => build,
           "signature" => signature,
-          "logs" => get.call(logs_url, token)
+          "logs" => optional_get(logs_url, token, get) || { "productData" => [] }
         }
       end
     end
+  end
+
+  def optional_paginated_data(url, token, get: AppStoreConnectSupport.method(:get_json))
+    page = optional_get(url, token, get)
+    return [] unless page
+
+    data = Array(page["data"])
+    next_url = page.dig("links", "next")
+    while next_url
+      page = get.call(next_url, token)
+      data.concat(Array(page["data"]))
+      next_url = page.dig("links", "next")
+    end
+    data
+  end
+
+  def optional_get(url, token, get)
+    get.call(url, token)
+  rescue AppStoreConnectSupport::RequestError => error
+    raise unless error.status == 404
+
+    nil
   end
 
   def fetch_testflight_crashes(app_id:, token:, get: AppStoreConnectSupport.method(:get_json))
@@ -58,7 +80,7 @@ module AppStoreCrashSync
           "submission" => submission,
           "build" => included[["builds", build_id]],
           "tester" => included[["betaTesters", tester_id]],
-          "crashLog" => get.call(log_url, token).fetch("data")
+          "crashLog" => optional_get(log_url, token, get)&.fetch("data")
         }
       end
       next_url = page.dig("links", "next")
@@ -150,7 +172,7 @@ module AppStoreCrashSync
       | Resource | ID |
       | --- | --- |
       | Crash submission | `#{submission.fetch("id")}` |
-      | Crash log | `#{record.fetch("crashLog").fetch("id")}` |
+      | Crash log | #{resource_id(record["crashLog"])} |
 
       #{raw_data_note(sha256, chunk_count)}
 
@@ -183,6 +205,10 @@ module AppStoreCrashSync
 
       Resource ID: `#{resource.fetch("id")}`
     MARKDOWN
+  end
+
+  def resource_id(resource)
+    resource ? "`#{resource.fetch("id")}`" : "Not provided"
   end
 
   def humanize(value)
@@ -251,4 +277,10 @@ module AppStoreCrashSync
   end
 end
 
-AppStoreCrashSync.run if $PROGRAM_NAME == __FILE__
+if $PROGRAM_NAME == __FILE__
+  begin
+    AppStoreCrashSync.run
+  rescue AppStoreConnectSupport::RequestError => error
+    abort(error.message)
+  end
+end
