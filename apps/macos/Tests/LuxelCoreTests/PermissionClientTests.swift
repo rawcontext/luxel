@@ -12,8 +12,8 @@ struct PermissionClientTests {
         #expect(PermissionStatus.denied != .restricted)
     }
 
-    @Test("input monitoring guidance explains consent and recovery")
-    func inputMonitoringGuidanceExplainsConsentAndRecovery() {
+    @Test("input monitoring guidance requests access before settings recovery")
+    func inputMonitoringGuidanceRequestsAccessBeforeSettingsRecovery() {
         let consent = PermissionGuidanceService().guidance(
             for: .inputMonitoring,
             status: .notDetermined
@@ -24,7 +24,7 @@ struct PermissionClientTests {
         )
 
         #expect(consent.actionTitle == "Open System Settings")
-        #expect(consent.action == .openSettings)
+        #expect(consent.action == .request)
         #expect(consent.message.contains("typed characters"))
         #expect(consent.message.contains("locally"))
         #expect(consent.message.contains("pause"))

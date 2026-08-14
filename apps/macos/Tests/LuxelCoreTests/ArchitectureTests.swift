@@ -85,11 +85,27 @@ extension ArchitectureTests {
         #expect(
             permissionSource.contains("CGPreflightScreenCaptureAccess() ? .authorized : .notDetermined"))
         #expect(permissionSource.contains("CGRequestScreenCaptureAccess() ? .authorized"))
-        #expect(!permissionSource.contains("CGRequestListenEventAccess"))
+        #expect(permissionSource.contains("CGRequestListenEventAccess() ? .authorized : .denied"))
         #expect(permissionSource.contains("AVAudioApplication.requestRecordPermission"))
         #expect(permissionSource.contains("AVCaptureDevice.requestAccess"))
         #expect(!permissionSource.contains("SCShareableContent.current"))
-        #expect(!speechSource.contains("SFSpeechRecognizer.requestAuthorization"))
+        #expect(speechSource.contains("case .notDetermined"))
+        #expect(speechSource.contains("SFSpeechRecognizer.requestAuthorization"))
+        #expect(speechSource.contains("case .denied, .restricted"))
+        #expect(speechSource.contains("openSpeechRecognitionSettings()"))
+    }
+
+    @Test("notification permission uses only the native request surface")
+    func notificationPermissionUsesOnlyTheNativeRequestSurface() throws {
+        let source = try String(
+            contentsOf: packageRootURL().appending(
+                path: "Sources/LuxelCore/Infrastructure/System/UserNotificationsNotifier.swift"),
+            encoding: .utf8
+        )
+
+        #expect(source.contains("notificationCenter.requestAuthorization"))
+        #expect(!source.contains("NSAlert"))
+        #expect(!source.contains("NSWorkspace.shared.open"))
     }
 
     @Test("CGEventTap remains isolated to the keystroke adapter")
@@ -305,8 +321,13 @@ extension ArchitectureTests {
         let handlerSource = String(source[handlerRange.lowerBound..<nextRange.lowerBound])
 
         #expect(handlerSource.contains("permissionClient.request(prompt.permission)"))
+        #expect(handlerSource.contains("screenRecordingStatus = requestedStatus"))
+        #expect(handlerSource.contains("inputMonitoringStatus = requestedStatus"))
         #expect(handlerSource.contains("await permissionClient.openSettings(for: prompt.permission)"))
         #expect(!handlerSource.contains("openSettingsAfterDeniedRequest"))
+        #expect(
+            source.contains(
+                "screenRecordingStatus != .denied || refreshedScreenRecordingStatus == .authorized"))
     }
 
 }

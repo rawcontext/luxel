@@ -238,7 +238,7 @@ public struct PermissionGuidanceService: Sendable {
                 message: "Luxel stores typed characters and shortcut identities locally with the recording. "
                     + "You can pause capture at any time and remove the data later.",
                 actionTitle: "Open System Settings",
-                action: .openSettings
+                action: .request
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(

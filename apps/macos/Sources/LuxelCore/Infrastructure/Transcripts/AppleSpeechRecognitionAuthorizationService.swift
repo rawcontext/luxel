@@ -10,24 +10,37 @@ public struct AppleSpeechAuthorizationService: SpeechRecognitionAuthorizationSer
     }
 
     public func requestAuthorization() async -> SpeechRecognitionAuthorizationState {
-        let status = SFSpeechRecognizer.authorizationStatus()
-        if status != .authorized {
-            // Fire-and-forget so authorization UI is never blocked by a caller.
-            Task { @MainActor in
-                guard
-                    let url = URL(
-                        string:
-                            "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition"
-                    )
-                else {
-                    return
+        switch SFSpeechRecognizer.authorizationStatus() {
+        case .notDetermined:
+            return await withCheckedContinuation { continuation in
+                SFSpeechRecognizer.requestAuthorization { status in
+                    continuation.resume(returning: Self.state(from: status))
                 }
-
-                NSWorkspace.shared.open(url)
             }
+        case .authorized:
+            return .authorized
+        case .denied, .restricted:
+            openSpeechRecognitionSettings()
+            return .denied
+        @unknown default:
+            openSpeechRecognitionSettings()
+            return .denied
         }
+    }
 
-        return Self.state(from: status)
+    private func openSpeechRecognitionSettings() {
+        Task { @MainActor in
+            guard
+                let url = URL(
+                    string:
+                        "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition"
+                )
+            else {
+                return
+            }
+
+            NSWorkspace.shared.open(url)
+        }
     }
 
     private static func state(

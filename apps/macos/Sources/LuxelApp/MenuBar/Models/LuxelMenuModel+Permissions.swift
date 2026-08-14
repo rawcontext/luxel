@@ -3,7 +3,10 @@ import LuxelCore
 @MainActor
 extension LuxelMenuModel {
     func refreshPermissions() async {
-        screenRecordingStatus = await permissionClient.status(for: .screenRecording)
+        let refreshedScreenRecordingStatus = await permissionClient.status(for: .screenRecording)
+        if screenRecordingStatus != .denied || refreshedScreenRecordingStatus == .authorized {
+            screenRecordingStatus = refreshedScreenRecordingStatus
+        }
         microphoneStatus = await permissionClient.status(for: .microphone)
         cameraStatus = await permissionClient.status(for: .camera)
         let refreshedInputMonitoringStatus = await permissionClient.status(for: .inputMonitoring)
@@ -58,7 +61,17 @@ extension LuxelMenuModel {
         switch prompt.guidance.action {
         case .request:
             try? await Task.sleep(nanoseconds: 200_000_000)
-            _ = await permissionClient.request(prompt.permission)
+            let requestedStatus = await permissionClient.request(prompt.permission)
+            switch prompt.permission {
+            case .screenRecording:
+                screenRecordingStatus = requestedStatus
+            case .microphone:
+                microphoneStatus = requestedStatus
+            case .camera:
+                cameraStatus = requestedStatus
+            case .inputMonitoring:
+                inputMonitoringStatus = requestedStatus
+            }
         case .openSettings:
             try? await Task.sleep(nanoseconds: 200_000_000)
             await permissionClient.openSettings(for: prompt.permission)
