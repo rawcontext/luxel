@@ -2,6 +2,12 @@
 
 Luxel is a native macOS menu bar screen recorder inspired by Luxel and rebuilt in Swift. The app records displays, windows, selected regions, audio, and automation-driven workflows, then exports through Apple-native media pipelines plus in-process native WebM and AV1 adapters.
 
+<p align="right">
+  <a href="https://apps.apple.com/us/app/luxel/id6780682473?mt=12" style="text-decoration: none;">
+    <img src="apps/web/public/app-store/mac-app-store-badge.svg" alt="Download on the Mac App Store" width="156" />
+  </a>
+</p>
+
 This repository is a monorepo for the macOS app, marketing/docs website, release scripts, and product planning docs. The standalone Rust CLI lives in [rawcontext/luxel-cli](https://github.com/rawcontext/luxel-cli).
 
 ## Start Here
