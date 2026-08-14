@@ -225,7 +225,7 @@ class AppStoreDigestSyncTest < Minitest::Test
     assert_equal "2026-08-09", weekly[:report_date]
     assert_equal "2026-07", monthly[:key]
     assert_equal "2026-07-01 through 2026-07-31", monthly[:label]
-    assert_equal "2026-07-31", monthly[:report_date]
+    assert_equal "2026-07", monthly[:report_date]
   end
 
   private

@@ -379,7 +379,7 @@ module AppStoreDigestSync
     else
       finish = Date.new(today.year, today.month, 1) - 1
       start = Date.new(finish.year, finish.month, 1)
-      { key: start.strftime("%Y-%m"), label: "#{start} through #{finish}", report_date: finish.to_s }
+      { key: start.strftime("%Y-%m"), label: "#{start} through #{finish}", report_date: start.strftime("%Y-%m") }
     end
   end
 
