@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   sync:
-    name: Sync reviews to issues
+    name: Sync App Store feedback to issues
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
