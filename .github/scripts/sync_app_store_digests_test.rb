@@ -200,15 +200,18 @@ class AppStoreDigestSyncTest < Minitest::Test
       6800438206\t3\t0.70\tUSD
       1234567890\t9\t0.70\tUSD
     TSV
+    requested_url = nil
     sales = AppStoreDigestSync.fetch_sales(
       app_id: "6800438206",
       vendor_number: "12345",
       frequency: "WEEKLY",
+      report_date: "2026-08-09",
       token: "token",
       output_dir: "",
-      download: ->(_url, token:) { content }
+      download: ->(url, token:) { requested_url = url; content }
     )
 
+    assert_includes requested_url, "filter%5BreportDate%5D=2026-08-09"
     assert_equal 1, sales["rows"].length
     assert_equal "3", sales["rows"].first["Units"]
   end
@@ -219,8 +222,10 @@ class AppStoreDigestSyncTest < Minitest::Test
 
     assert_equal "2026-W32", weekly[:key]
     assert_equal "2026-08-03 through 2026-08-09", weekly[:label]
+    assert_equal "2026-08-09", weekly[:report_date]
     assert_equal "2026-07", monthly[:key]
     assert_equal "2026-07-01 through 2026-07-31", monthly[:label]
+    assert_equal "2026-07-31", monthly[:report_date]
   end
 
   private

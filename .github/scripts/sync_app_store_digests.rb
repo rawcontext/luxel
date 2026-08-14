@@ -135,7 +135,7 @@ module AppStoreDigestSync
     { "status" => "Unavailable to the current API key (Admin, Sales and Reports, or Finance access is required).", "reports" => [] }
   end
 
-  def fetch_sales(app_id:, vendor_number:, frequency:, token:, output_dir:,
+  def fetch_sales(app_id:, vendor_number:, frequency:, report_date:, token:, output_dir:,
                   download: AppStoreConnectSupport.method(:get_gzip_report))
     return { "status" => "Not configured: set the APP_STORE_CONNECT_VENDOR_NUMBER repository variable.", "rows" => [] } if vendor_number.empty?
 
@@ -143,7 +143,8 @@ module AppStoreDigestSync
       "filter[vendorNumber]" => vendor_number,
       "filter[reportType]" => "SALES",
       "filter[reportSubType]" => "SUMMARY",
-      "filter[frequency]" => frequency
+      "filter[frequency]" => frequency,
+      "filter[reportDate]" => report_date
     )
     content = AppStoreConnectSupport.gunzip(download.call("#{API_ORIGIN}/v1/salesReports?#{query}", token: token))
     write_report_file(output_dir, "sales-#{frequency.downcase}.tsv", content)
@@ -374,11 +375,11 @@ module AppStoreDigestSync
     if kind == "weekly"
       finish = today - today.wday
       start = finish - 6
-      { key: start.strftime("%G-W%V"), label: "#{start} through #{finish}" }
+      { key: start.strftime("%G-W%V"), label: "#{start} through #{finish}", report_date: finish.to_s }
     else
       finish = Date.new(today.year, today.month, 1) - 1
       start = Date.new(finish.year, finish.month, 1)
-      { key: start.strftime("%Y-%m"), label: "#{start} through #{finish}" }
+      { key: start.strftime("%Y-%m"), label: "#{start} through #{finish}", report_date: finish.to_s }
     end
   end
 
@@ -435,6 +436,7 @@ module AppStoreDigestSync
     vendor_number = ENV["APP_STORE_CONNECT_VENDOR_NUMBER"].to_s.strip
     output_dir = ENV["APP_STORE_REPORT_OUTPUT_DIR"].to_s
     granularity = kind.upcase
+    digest_period = period(kind, today)
     builds = fetch_builds(app_id: app_id, token: token)
 
     adoption = kind == "weekly" ? fetch_testflight_adoption(builds: builds, token: token) : []
@@ -448,6 +450,7 @@ module AppStoreDigestSync
       app_id: app_id,
       vendor_number: vendor_number,
       frequency: granularity,
+      report_date: digest_period.fetch(:report_date),
       token: token,
       output_dir: output_dir
     )
@@ -468,7 +471,6 @@ module AppStoreDigestSync
       "testflight-adoption.json",
       JSON.pretty_generate(adoption)
     ) unless adoption.empty?
-    digest_period = period(kind, today)
     run_url = "#{ENV.fetch("GITHUB_SERVER_URL", "https://github.com")}/#{repository}/actions/runs/#{ENV.fetch("GITHUB_RUN_ID", "")}".delete_suffix("/")
     body = issue_body(
       kind: kind,
