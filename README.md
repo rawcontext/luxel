@@ -121,6 +121,13 @@ bun run app:build
 open "apps/macos/dist/Luxel Dev.app"
 ```
 
+Local development builds must use the script defaults: `com.rawcontext.luxel.dev`,
+`Luxel Dev`, `luxel-dev`, and `apps/macos/dist/Luxel Dev.app`. Do not override
+`APP_BUNDLE_IDENTIFIER`, `APP_DISPLAY_NAME`, `APP_URL_SCHEME`, or `APP_PATH` to
+production values, do not use the Mac App Store packaging script for local runs, and
+do not replace or launch `/Applications/Luxel.app`. That path is reserved for the
+TestFlight or App Store build with bundle identifier `com.rawcontext.luxel`.
+
 Do not launch this binary directly:
 
 ```text
@@ -140,13 +147,12 @@ Direct SwiftPM executable launches can change the code identity macOS sees for S
 
 If signing fails, fix signing. Do not fall back to an unsigned app.
 
-Common overrides:
+Supported local-development overrides:
 
 ```sh
 SIGN_IDENTITY="Apple Development: Your Name (CERTIFICATE_ID)" bun run app:build
 APPLE_TEAM_IDENTIFIER="TEAMID" bun run app:build
 CONFIGURATION=debug bun run app:build
-APP_DISPLAY_NAME="Luxel Local" APP_URL_SCHEME="luxel-local" bun run app:build
 ```
 
 ## Swift Package Layout
