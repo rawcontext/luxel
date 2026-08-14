@@ -2,8 +2,23 @@ name: App Store Feedback
 
 on:
   workflow_dispatch:
+    inputs:
+      digest:
+        description: Additional digest to generate
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - none
+          - weekly
+          - monthly
   schedule:
     - cron: "0 8 * * *"
+      timezone: America/Chicago
+    - cron: "15 8 * * 6"
+      timezone: America/Chicago
+    - cron: "30 8 8 * *"
       timezone: America/Chicago
 
 concurrency:
@@ -15,8 +30,24 @@ permissions:
   issues: write
 
 jobs:
-  sync:
-    name: Sync App Store feedback to issues
+  test:
+    name: Test App Store sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Run tests
+        run: |
+          ruby .github/scripts/sync_app_store_reviews_test.rb
+          ruby .github/scripts/sync_app_store_crashes_test.rb
+          ruby .github/scripts/sync_app_store_actionable_test.rb
+          ruby .github/scripts/sync_app_store_digests_test.rb
+
+  actionable:
+    name: Sync actionable App Store feedback
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 8 * * *'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -29,13 +60,75 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Test App Store sync
-        run: |
-          ruby .github/scripts/sync_app_store_reviews_test.rb
-          ruby .github/scripts/sync_app_store_crashes_test.rb
-
       - name: Sync App Store reviews
         run: ruby .github/scripts/sync_app_store_reviews.rb
 
       - name: Sync App Store crashes and diagnostics
         run: ruby .github/scripts/sync_app_store_crashes.rb
+
+      - name: Sync feedback, regressions, rejections, and failed uploads
+        run: ruby .github/scripts/sync_app_store_actionable.rb
+
+  weekly-digest:
+    name: Create weekly App Store digest
+    needs: test
+    if: github.event.schedule == '15 8 * * 6' || (github.event_name == 'workflow_dispatch' && (inputs.digest == 'weekly' || inputs.digest == 'all'))
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      APP_STORE_CONNECT_APP_ID: "6800438206"
+      APP_STORE_CONNECT_PLATFORM: MAC_OS
+      APP_STORE_CONNECT_VENDOR_NUMBER: ${{ vars.APP_STORE_CONNECT_VENDOR_NUMBER }}
+      APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+      APP_STORE_DIGEST_KIND: weekly
+      APP_STORE_REPORT_OUTPUT_DIR: app-store-reports/weekly
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Create weekly digest
+        run: ruby .github/scripts/sync_app_store_digests.rb
+
+      - name: Upload source reports
+        if: always() && hashFiles('app-store-reports/weekly/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-weekly-reports-${{ github.run_id }}
+          path: app-store-reports/weekly
+          if-no-files-found: ignore
+
+  monthly-digest:
+    name: Create monthly App Store digest
+    needs:
+      - test
+      - weekly-digest
+    if: always() && needs.test.result == 'success' && (github.event.schedule == '30 8 8 * *' || (github.event_name == 'workflow_dispatch' && (inputs.digest == 'monthly' || inputs.digest == 'all')))
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      APP_STORE_CONNECT_APP_ID: "6800438206"
+      APP_STORE_CONNECT_PLATFORM: MAC_OS
+      APP_STORE_CONNECT_VENDOR_NUMBER: ${{ vars.APP_STORE_CONNECT_VENDOR_NUMBER }}
+      APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+      APP_STORE_DIGEST_KIND: monthly
+      APP_STORE_REPORT_OUTPUT_DIR: app-store-reports/monthly
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Create monthly digest
+        run: ruby .github/scripts/sync_app_store_digests.rb
+
+      - name: Upload source reports
+        if: always() && hashFiles('app-store-reports/monthly/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-store-monthly-reports-${{ github.run_id }}
+          path: app-store-reports/monthly
+          if-no-files-found: ignore
