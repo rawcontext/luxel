@@ -105,5 +105,5 @@ private enum LuxelAboutLinks {
     static let website = URL(string: "https://luxel.media")!
     static let support = URL(string: "https://luxel.media/support")!
     static let appStore = URL(
-        string: "https://apps.apple.com/us/app/luxel/id6780682473?mt=12")!
+        string: "https://apps.apple.com/us/app/luxel/id6800438206?mt=12")!
 }
