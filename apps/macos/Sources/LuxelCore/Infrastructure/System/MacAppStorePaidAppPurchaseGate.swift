@@ -46,20 +46,8 @@ public struct MacAppStorePaidAppPurchaseGate: PurchaseGate {
         }
     }
 
-    public static func isTestFlightBuild(
-        receiptURL: URL?,
-        betaReportsActive: Bool
-    ) -> Bool {
-        betaReportsActive && receiptURL?.lastPathComponent == "sandboxReceipt"
-    }
-
     public static func isTestFlightBuild(appBundleURL: URL) -> Bool {
-        isTestFlightBuild(
-            receiptURL: appStoreReceiptURL(in: appBundleURL),
-            betaReportsActive: betaReportsActiveEntitlement(
-                at: Bundle(url: appBundleURL)?.executableURL
-            )
-        )
+        hasTestFlightSignature(at: Bundle(url: appBundleURL)?.executableURL)
     }
 
     public static func enclosingAppBundleURL(containing executableURL: URL) -> URL? {
@@ -105,26 +93,15 @@ public struct MacAppStorePaidAppPurchaseGate: PurchaseGate {
     }
 
     @usableFromInline
-    static func appStoreReceiptURL(in appBundleURL: URL) -> URL? {
-        let receiptDirectoryURL = appBundleURL
-            .appendingPathComponent("Contents", isDirectory: true)
-            .appendingPathComponent("_MASReceipt", isDirectory: true)
-        let sandboxReceiptURL = receiptDirectoryURL.appendingPathComponent("sandboxReceipt")
-
-        if FileManager.default.fileExists(atPath: sandboxReceiptURL.path) {
-            return sandboxReceiptURL
-        }
-
-        let productionReceiptURL = receiptDirectoryURL.appendingPathComponent("receipt")
-        if FileManager.default.fileExists(atPath: productionReceiptURL.path) {
-            return productionReceiptURL
-        }
-
-        return nil
-    }
+    static let testFlightCodeRequirement = #"""
+        anchor apple generic
+        and identifier "com.rawcontext.luxel"
+        and certificate 1[field.1.2.840.113635.100.6.2.1] exists
+        and certificate leaf[field.1.2.840.113635.100.6.1.25.1] exists
+    """#
 
     @usableFromInline
-    static func betaReportsActiveEntitlement(at executableURL: URL?) -> Bool {
+    static func hasTestFlightSignature(at executableURL: URL?) -> Bool {
         guard let executableURL else {
             return false
         }
@@ -136,36 +113,22 @@ public struct MacAppStorePaidAppPurchaseGate: PurchaseGate {
             return false
         }
 
-        let appStoreRequirementText = #"""
-            anchor apple generic
-            and identifier "com.rawcontext.luxel"
-            and certificate leaf[field.1.2.840.113635.100.6.1.9] exists
-        """#
-        var appStoreRequirement: SecRequirement?
+        var testFlightRequirement: SecRequirement?
         guard SecRequirementCreateWithString(
-            appStoreRequirementText as CFString,
+            testFlightCodeRequirement as CFString,
             [],
-            &appStoreRequirement
+            &testFlightRequirement
         ) == errSecSuccess,
-        let appStoreRequirement,
-        SecStaticCodeCheckValidity(staticCode, [], appStoreRequirement) == errSecSuccess
-        else {
-            return false
-        }
-
-        var signingInformation: CFDictionary?
-        guard SecCodeCopySigningInformation(
+        let testFlightRequirement,
+        SecStaticCodeCheckValidity(
             staticCode,
-            SecCSFlags(rawValue: kSecCSSigningInformation),
-            &signingInformation
-        ) == errSecSuccess,
-        let signingInformation = signingInformation as? [String: Any],
-        let entitlements = signingInformation[kSecCodeInfoEntitlementsDict as String]
-            as? [String: Any]
+            SecCSFlags(rawValue: kSecCSBasicValidateOnly),
+            testFlightRequirement
+        ) == errSecSuccess
         else {
             return false
         }
 
-        return entitlements["beta-reports-active"] as? Bool == true
+        return true
     }
 }

@@ -1,5 +1,5 @@
 import Foundation
-import LuxelCore
+@testable import LuxelCore
 import Testing
 
 @Suite("Purchase gate service")
@@ -107,24 +107,21 @@ struct PurchaseGateServiceTests {
         #expect(await gate.isEntitled())
     }
 
-    @Test("TestFlight detection requires a sandbox receipt and beta entitlement", arguments: [
-        (receiptName: "sandboxReceipt", betaReportsActive: true, expected: true),
-        (receiptName: "sandboxReceipt", betaReportsActive: false, expected: false),
-        (receiptName: "receipt", betaReportsActive: true, expected: false),
-        (receiptName: "receipt", betaReportsActive: false, expected: false)
-    ])
-    func testFlightDetectionRequiresBothSignals(
-        receiptName: String,
-        betaReportsActive: Bool,
-        expected: Bool
-    ) {
-        let receiptURL = URL(fileURLWithPath: "/Luxel.app/Contents/_MASReceipt/\(receiptName)")
+    @Test("TestFlight detection uses Apple's TestFlight certificate chain")
+    func testFlightDetectionUsesTestFlightCertificateChain() {
+        let requirement = MacAppStorePaidAppPurchaseGate.testFlightCodeRequirement
 
+        #expect(requirement.contains("1.2.840.113635.100.6.2.1"))
+        #expect(requirement.contains("1.2.840.113635.100.6.1.25.1"))
+        #expect(!requirement.contains("1.2.840.113635.100.6.1.9"))
+    }
+
+    @Test("TestFlight detection rejects a non-TestFlight app")
+    func testFlightDetectionRejectsNonTestFlightApp() {
         #expect(
-            MacAppStorePaidAppPurchaseGate.isTestFlightBuild(
-                receiptURL: receiptURL,
-                betaReportsActive: betaReportsActive
-            ) == expected
+            !MacAppStorePaidAppPurchaseGate.isTestFlightBuild(
+                appBundleURL: Bundle.main.bundleURL
+            )
         )
     }
 
