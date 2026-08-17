@@ -110,9 +110,12 @@ struct CommandLineToolSettingsSection: View {
                     defaultValue: "Movies Folder"
                 )
             ) {
-                Text(FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first?.path ?? "~/Movies")
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                Text(
+                    FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask)
+                        .first?.userVisiblePath ?? "~/Movies"
+                )
+                .lineLimit(1)
+                .truncationMode(.middle)
             }
 
             LuxelGlassRowDivider()
@@ -123,7 +126,7 @@ struct CommandLineToolSettingsSection: View {
                     defaultValue: "Recording Folder"
                 )
             ) {
-                Text(model.settings.recordingsDirectory.path)
+                Text(model.settings.recordingsDirectory.userVisiblePath)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }

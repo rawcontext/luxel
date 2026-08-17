@@ -234,6 +234,6 @@ extension LuxelMenuModel {
 
     var recordingsDirectorySummary: String {
         let name = settings.recordingsDirectory.lastPathComponent
-        return name.isEmpty ? settings.recordingsDirectory.path : name
+        return name.isEmpty ? settings.recordingsDirectory.userVisiblePath : name
     }
 }
