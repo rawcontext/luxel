@@ -14,13 +14,6 @@ extension LuxelSettingsView {
         return cameraDeviceID
     }
 
-    var updateSettingsPresentation: UpdateSettingsPresentation {
-        UpdateSettingsPresentation(
-            preferences: model.settings.updatePreferences,
-            distribution: AppDistribution.current
-        )
-    }
-
     var visibleShortcutCommands: [LuxelShortcutSettingsCommand] {
         let searchText = shortcutSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return shortcutCommands.filter { $0.matchesSearch(searchText) }

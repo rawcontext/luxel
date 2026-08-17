@@ -96,8 +96,6 @@ extension LuxelSettingsView {
                 .help("Open Luxel automatically when you sign in.")
         }
 
-        updatesSettingsGroup
-
         SettingsIslandGroup("About") {
             SettingsRow("App") {
                 settingsValueText(model.appMetadata.displayName)
@@ -127,69 +125,6 @@ extension LuxelSettingsView {
         if !model.appMetadata.copyright.isEmpty {
             LuxelGlassSectionFooter(model.appMetadata.copyright)
                 .padding(.leading, 6)
-        }
-    }
-
-    @ViewBuilder
-    var updatesSettingsGroup: some View {
-        let updatePresentation = updateSettingsPresentation
-
-        SettingsIslandGroup("Updates", footer: updatePresentation.networkPolicyText) {
-            SettingsRow("Current Version") {
-                settingsValueText(model.appMetadata.versionSummary)
-            }
-            .help("Shows the installed Luxel version.")
-
-            LuxelGlassRowDivider()
-
-            SettingsRow("Status") {
-                settingsValueText(updatePresentation.statusText)
-            }
-            .help("Shows the current update availability.")
-
-            if updatePresentation.showsDeveloperIDUpdateControls {
-                LuxelGlassRowDivider()
-
-                settingsToggleRow(
-                    "Check Automatically",
-                    isOn: $model.settings.updatePreferences.automaticallyCheckForUpdates
-                )
-                .help("Let Luxel periodically check for updates.")
-
-                LuxelGlassRowDivider()
-
-                settingsToggleRow(
-                    "Install Automatically",
-                    isOn: $model.settings.updatePreferences.automaticallyDownloadAndInstall
-                )
-                .disabled(!updatePresentation.automaticInstallToggleEnabled)
-                .help("Download and install updates without asking.")
-
-                LuxelGlassRowDivider()
-
-                SettingsRow("Channel") {
-                    SettingsMenuPicker(
-                        selection: $model.settings.updatePreferences.channel,
-                        options: Array(UpdateChannel.allCases)
-                    ) { channel in
-                        channel.label
-                    }
-                }
-                .help("Choose which update channel Luxel checks.")
-
-                LuxelGlassRowDivider()
-
-                SettingsRow {
-                    Button {
-                    } label: {
-                        SettingsCapsuleButtonLabel("Check Now", systemImage: "arrow.clockwise")
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!updatePresentation.canCheckNow)
-                    .opacity(updatePresentation.canCheckNow ? 1 : 0.45)
-                    .help(updatePresentation.checkNowHelp)
-                }
-            }
         }
     }
 
