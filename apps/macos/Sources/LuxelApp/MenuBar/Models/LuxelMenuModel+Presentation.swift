@@ -232,8 +232,12 @@ extension LuxelMenuModel {
         }
     }
 
+    var recordingsDirectoryPath: String {
+        settings.recordingsDirectory.userVisiblePath
+    }
+
     var recordingsDirectorySummary: String {
         let name = settings.recordingsDirectory.lastPathComponent
-        return name.isEmpty ? settings.recordingsDirectory.userVisiblePath : name
+        return name.isEmpty ? recordingsDirectoryPath : name
     }
 }

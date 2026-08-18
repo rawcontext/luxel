@@ -21,8 +21,7 @@ extension LuxelSettingsView {
                 }
                 .buttonStyle(.plain)
                 .help(
-                    "Choose where new recordings are saved. "
-                        + "Current: \(model.settings.recordingsDirectory.userVisiblePath)"
+                    "Choose where new recordings are saved. Current: \(model.recordingsDirectoryPath)"
                 )
             }
 
