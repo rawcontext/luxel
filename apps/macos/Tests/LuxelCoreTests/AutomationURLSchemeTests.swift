@@ -45,4 +45,17 @@ extension AutomationCommandTests {
 
         #expect(AutomationURLScheme.registered(containing: executableURL) == "luxel-dev")
     }
+
+    @Test("automation URL scheme locates an enclosing app bundle")
+    func automationURLSchemeLocatesEnclosingAppBundle() {
+        let executableURL = URL(
+            fileURLWithPath: "/Applications/Luxel.app/Contents/MacOS/Luxel"
+        )
+
+        #expect(
+            AutomationURLScheme.enclosingAppBundleURL(
+                containing: executableURL
+            )?.path == "/Applications/Luxel.app"
+        )
+    }
 }

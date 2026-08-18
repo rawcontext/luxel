@@ -3,11 +3,24 @@ import Foundation
 public enum AutomationURLScheme {
     public static let production = "luxel"
 
+    public static func enclosingAppBundleURL(containing executableURL: URL) -> URL? {
+        var candidateURL = executableURL
+            .resolvingSymlinksInPath()
+            .deletingLastPathComponent()
+
+        while candidateURL.path != "/" {
+            if candidateURL.pathExtension == "app" {
+                return candidateURL
+            }
+            candidateURL.deleteLastPathComponent()
+        }
+
+        return nil
+    }
+
     public static func registered(containing executableURL: URL?) -> String {
         guard let executableURL,
-              let appBundleURL = MacAppStorePaidAppPurchaseGate.enclosingAppBundleURL(
-                containing: executableURL
-              ),
+              let appBundleURL = enclosingAppBundleURL(containing: executableURL),
               executableURL.resolvingSymlinksInPath().deletingLastPathComponent().path
                 == appBundleURL.appending(path: "Contents/MacOS").path,
               let bundle = Bundle(url: appBundleURL)

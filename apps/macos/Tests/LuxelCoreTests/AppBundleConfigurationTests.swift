@@ -230,22 +230,16 @@ extension AppBundleConfigurationTests {
         #expect(script.contains("-DLUXEL_MAC_APP_STORE"))
     }
 
-    @Test("Mac App Store app verifies purchases during launch")
-    func macAppStoreAppVerifiesPurchasesDuringLaunch() throws {
+    @Test("app launch never terminates over purchase verification")
+    func appLaunchNeverTerminatesOverPurchaseVerification() throws {
         let root = try packageRootURL()
         let appSource = try String(
             contentsOf: root.appending(path: "Sources/LuxelApp/App/LuxelApp.swift"),
             encoding: .utf8
         )
         #expect(appSource.contains("@main\nstruct LuxelApp: App"))
-        let appLaunch = try #require(
-            appSource.range(of: "func applicationDidFinishLaunching")
-        )
-        let appVerification = try #require(
-            appSource.range(of: "guard await LuxelCompositionRoot.purchaseGateService().isEntitled()")
-        )
-        #expect(appLaunch.lowerBound < appVerification.lowerBound)
-        #expect(appSource.contains("NSApp.terminate(nil)"))
+        #expect(!appSource.contains("purchaseGateService"))
+        #expect(!appSource.contains("NSApp.terminate(nil)"))
     }
 
     private func readPlist(_ relativePath: String) throws -> [String: Any] {

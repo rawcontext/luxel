@@ -155,27 +155,6 @@ private struct LuxelSettingsActionScene<Content: Scene>: Scene {
     }
 }
 
-private enum PurchaseFailurePresenter {
-    @MainActor
-    static func present() {
-        let alert = NSAlert()
-        alert.alertStyle = .critical
-        alert.messageText = LuxelLocalization.string(
-            "purchaseVerification.failed.title",
-            defaultValue: "Luxel Purchase Could Not Be Verified"
-        )
-        alert.informativeText = LuxelLocalization.string(
-            "purchaseVerification.failed.message",
-            defaultValue:
-                "Install Luxel from the Mac App Store using the Apple Account that purchased it."
-        )
-        alert.addButton(
-            withTitle: LuxelLocalization.string("Quit Luxel", defaultValue: "Quit Luxel")
-        )
-        alert.runModal()
-    }
-}
-
 @MainActor
 final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
     var openFiles: (([URL], NSRunningApplication?) -> Void)?
@@ -193,16 +172,6 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillFinishLaunching(_: Notification) {
         installURLHandler()
-    }
-
-    func applicationDidFinishLaunching(_: Notification) {
-        Task { @MainActor in
-            guard await LuxelCompositionRoot.purchaseGateService().isEntitled() else {
-                PurchaseFailurePresenter.present()
-                NSApp.terminate(nil)
-                return
-            }
-        }
     }
 
     func installURLHandler() {
