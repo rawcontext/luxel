@@ -208,7 +208,7 @@ extension AppSettings {
         updatePreferences: UpdatePreferences = .defaults,
         showTimeInMenuBar: Bool = true,
         hideMenuBarIcon: Bool = false,
-        launchAtLogin: Bool = true,
+        launchAtLogin: Bool = false,
         commandLineControlEnabled: Bool = false,
         commandLinePairedClients: [CommandLinePairedClient] = [],
         commandLineFolderGrants: [CommandLineFolderGrant] = [],

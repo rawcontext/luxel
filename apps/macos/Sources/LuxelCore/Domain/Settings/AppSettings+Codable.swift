@@ -228,7 +228,7 @@ extension AppSettings {
                 ?? true,
             hideMenuBarIcon: container.decodeIfPresent(Bool.self, forKey: .hideMenuBarIcon)
                 ?? false,
-            launchAtLogin: container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true,
+            launchAtLogin: container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false,
             commandLineControlEnabled: container.decodeIfPresent(
                 Bool.self,
                 forKey: .commandLineControlEnabled

@@ -66,7 +66,7 @@ extension SettingsTests {
         #expect(settings.updatePreferences.channel == .stable)
         #expect(settings.showTimeInMenuBar)
         #expect(!settings.hideMenuBarIcon)
-        #expect(settings.launchAtLogin)
+        #expect(!settings.launchAtLogin)
         #expect(!settings.commandLineControlEnabled)
         #expect(settings.commandLinePairedClients.isEmpty)
         #expect(settings.commandLineFolderGrants.isEmpty)
