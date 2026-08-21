@@ -13,3 +13,4 @@ node_modules/
 .turbo/
 .DS_Store
 docs/design/
+apps/web/public/videos/luxel-app-review.mp4
