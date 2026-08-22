@@ -21,6 +21,8 @@ extension AppSettings {
         case audioInputDeviceID
         case audioInputDeviceName
         case audioOnlyFormat
+        case speechDetectionPromptsEnabled
+        case speechDetectionDisclosureAccepted
         case transcriptTurnSegmentationEnabled
         case transcriptSpeakerDiarizationEnabled
         case transcriptLanguageIdentifier

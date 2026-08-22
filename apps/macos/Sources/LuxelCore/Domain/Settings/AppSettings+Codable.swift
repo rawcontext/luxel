@@ -24,6 +24,14 @@ extension AppSettings {
         recordSystemAudio = recording.recordsSystemAudio; recordAudio = recording.recordsAudio
         audioInputDeviceID = audioInput.id; audioInputDeviceName = audioInput.name
         audioOnlyFormat = recording.audioOnlyFormat
+        speechDetectionPromptsEnabled = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .speechDetectionPromptsEnabled
+        ) ?? false
+        speechDetectionDisclosureAccepted = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .speechDetectionDisclosureAccepted
+        ) ?? false
         transcriptTurnSegmentationEnabled = transcription.turnSegmentationEnabled
         transcriptSpeakerDiarizationEnabled = transcription.speakerDiarizationEnabled
         transcriptLanguageIdentifier = transcription.languageIdentifier
