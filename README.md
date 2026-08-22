@@ -1,3 +1,9 @@
+<p align="right">
+  <a href="https://apps.apple.com/us/app/luxel/id6800438206?mt=12">
+    <img src="https://luxel.media/app-store/mac-app-store-badge.svg" alt="Download on the Mac App Store" width="156" />
+  </a>
+</p>
+
 # luxel
 
 `luxel` is the open-source command-line controller for the Luxel macOS app. The
