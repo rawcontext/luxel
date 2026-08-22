@@ -3,6 +3,7 @@ import Darwin
 import LuxelCore
 import LuxelPresentation
 import SwiftUI
+@preconcurrency import UserNotifications
 
 @main
 struct LuxelApp: App {
@@ -169,9 +170,22 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
         }
     }
     private var pendingURLs: [URL] = []
+    var voiceDetectionPromptActions: ((VoiceDetectionPromptAction) -> Void)? {
+        didSet {
+            guard let voiceDetectionPromptActions, !pendingVoiceDetectionPromptActions.isEmpty else {
+                return
+            }
+            let actions = pendingVoiceDetectionPromptActions
+            pendingVoiceDetectionPromptActions.removeAll()
+            actions.forEach(voiceDetectionPromptActions)
+        }
+    }
+    private var pendingVoiceDetectionPromptActions: [VoiceDetectionPromptAction] = []
+    private var voiceDetectionNotificationController: VoiceDetectionNotificationController?
 
     func applicationWillFinishLaunching(_: Notification) {
         installURLHandler()
+        installVoiceDetectionNotificationController()
     }
 
     func installURLHandler() {
@@ -188,6 +202,14 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
             forEventClass: AEEventClass(kInternetEventClass),
             andEventID: AEEventID(kAEGetURL)
         )
+    }
+
+    func handleVoiceDetectionPromptAction(_ action: VoiceDetectionPromptAction) {
+        if let voiceDetectionPromptActions {
+            voiceDetectionPromptActions(action)
+        } else {
+            pendingVoiceDetectionPromptActions.append(action)
+        }
     }
 
     func application(_: NSApplication, open urls: [URL]) {
@@ -227,6 +249,20 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
         } else {
             pendingURLs.append(url)
         }
+    }
+
+    private func installVoiceDetectionNotificationController() {
+        guard Bundle.main.bundleURL.pathExtension == "app" else {
+            return
+        }
+
+        let controller = VoiceDetectionNotificationController { [weak self] action in
+            Task { @MainActor in
+                self?.handleVoiceDetectionPromptAction(action)
+            }
+        }
+        controller.install(on: .current())
+        voiceDetectionNotificationController = controller
     }
 }
 
