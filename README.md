@@ -1,5 +1,5 @@
 <p align="right">
-  <a href="https://apps.apple.com/us/app/luxel/id6800438206?mt=12">
+  <a href="https://apps.apple.com/app/apple-store/id6800438206?pt=129245287&ct=github&mt=8">
     <img src="https://luxel.media/app-store/mac-app-store-badge.svg" alt="Download on the Mac App Store" width="156" />
   </a>
 </p>
