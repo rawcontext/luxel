@@ -1,4 +1,5 @@
 docs/Luxel
+.env
 .build/
 .signing/
 apps/macos/.build/
