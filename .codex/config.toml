@@ -1,0 +1,16 @@
+[mcp_servers.google_ads]
+command = "pipx"
+args = [
+  "run",
+  "--spec",
+  "git+https://github.com/googleads/google-ads-mcp.git@ba47210245f2925a130a2770a4d272d5dd0c91cd",
+  "google-ads-mcp",
+]
+env_vars = [
+  "GOOGLE_APPLICATION_CREDENTIALS",
+  "GOOGLE_CLOUD_PROJECT",
+  "GOOGLE_PROJECT_ID",
+  "GOOGLE_ADS_DEVELOPER_TOKEN",
+  "GOOGLE_ADS_LOGIN_CUSTOMER_ID",
+]
+startup_timeout_sec = 120
