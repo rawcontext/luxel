@@ -12,6 +12,8 @@ STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstring
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 MODNET_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/modnet"
 MODNET_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-modnet-model.sh"
+VAD_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/voice-activity-detection"
+VAD_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-voice-activity-detection-model.sh"
 APP_BUNDLE_IDENTIFIER="${APP_BUNDLE_IDENTIFIER:-com.rawcontext.luxel.dev}"
 APP_DISPLAY_NAME="${APP_DISPLAY_NAME:-Luxel Dev}"
 APP_URL_SCHEME="${APP_URL_SCHEME:-luxel-dev}"
@@ -41,6 +43,7 @@ fi
 cd "${PACKAGE_ROOT}"
 
 "${MODNET_MODEL_AUDITOR}" "${MODNET_MODEL_DIR}"
+"${VAD_MODEL_AUDITOR}" "${VAD_MODEL_DIR}"
 
 swift build --configuration "${CONFIGURATION}" --product "${APP_NAME}"
 BIN_DIR="$(swift build --configuration "${CONFIGURATION}" --show-bin-path)"
@@ -69,6 +72,7 @@ codesign \
 
 codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
 "${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
+"${VAD_MODEL_AUDITOR}" "${APP_PATH}"
 
 TEAM_IDENTIFIER="$(
 	codesign -dv --verbose=4 "${APP_PATH}" 2>&1 |

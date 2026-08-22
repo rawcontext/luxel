@@ -147,6 +147,30 @@ extension AppBundleConfigurationTests {
         #expect(!support.contains("if [[ -d \"${MODNET_MODEL_DIR}"))
     }
 
+    @Test("signed app scripts require and audit bundled voice activity detection resources")
+    func signedAppScriptsRequireAndAuditBundledVoiceActivityDetectionResources() throws {
+        let root = try packageRootURL()
+        let auditor = root.appending(path: "Scripts/audit-voice-activity-detection-model.sh")
+        let modelDirectory = root.appending(path: "Vendor/Models/voice-activity-detection")
+        let auditProcess = Process()
+        auditProcess.executableURL = auditor
+        auditProcess.arguments = [modelDirectory.path]
+        try auditProcess.run()
+        auditProcess.waitUntilExit()
+        #expect(auditProcess.terminationStatus == 0)
+
+        let support = try scriptSource("luxel-app-bundle-support.sh")
+        for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
+            let script = try scriptSource(scriptName)
+            #expect(script.contains("VAD_MODEL_DIR"))
+            #expect(script.contains("audit-voice-activity-detection-model.sh"))
+            #expect(!script.contains("if [[ -d \"${VAD_MODEL_DIR}"))
+        }
+        #expect(support.contains("cp -R \"${VAD_MODEL_DIR}\""))
+        #expect(support.contains("\"${VAD_MODEL_AUDITOR}\" \"${APP_PATH}\""))
+        #expect(!support.contains("if [[ -d \"${VAD_MODEL_DIR}"))
+    }
+
     @Test("local build script uses a development app identity by default")
     func localBuildScriptUsesDevelopmentAppIdentityByDefault() throws {
         let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")

@@ -9,6 +9,7 @@ Luxel ships the following third-party components:
 5. fastcluster — BSD-2-Clause — hierarchical clustering code included by FluidAudio
 6. VBx — Apache License 2.0 — speaker clustering implementation included by FluidAudio
 7. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
+8. FluidInference silero-vad-coreml — MIT — bundled local voice activity detection model
 9. aufklarer/DeepFilterNet3-CoreML — Apache License 2.0 — bundled Studio Voice Core ML model
 10. soniqo/speech-swift — Apache License 2.0 — adapted Studio Voice signal-processing runtime
 11. ZHKKKe/MODNet — Apache License 2.0 — bundled local camera portrait-matting model
@@ -300,6 +301,40 @@ Attribution: FluidInference; pyannote.audio contributors (Hervé Bredin et al.);
 Model card: https://huggingface.co/FluidInference/speaker-diarization-coreml
 
 License terms and warranty disclaimer: https://creativecommons.org/licenses/by/4.0/legalcode.en
+
+## FluidInference silero-vad-coreml (bundled model)
+
+Luxel bundles `silero-vad-unified-256ms-v6.2.1.mlmodelc` from
+`FluidInference/silero-vad-coreml` at revision
+`b419383c55c110e2c9271fa6ee0ea83d03c70d96` in
+`Contents/Resources/Models/voice-activity-detection`. The model performs local
+voice activity detection and is never downloaded at runtime.
+
+License: MIT License
+
+Copyright: Copyright (c) 2020-present Silero Team
+
+Model card: https://huggingface.co/FluidInference/silero-vad-coreml
+
+Upstream: https://github.com/snakers4/silero-vad
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## aufklarer/DeepFilterNet3-CoreML (bundled model)
 
