@@ -1,5 +1,8 @@
 import type { APIRoute } from "astro";
 
+import { defaultLocale, isLocale, resolvePreferredLocale, type Locale } from "../../i18n/config";
+import { translate } from "../../i18n/text";
+
 export const prerender = false;
 
 const defaultRepository = "ccheney/luxel";
@@ -18,15 +21,22 @@ type GitHubIssueResponse = {
 };
 
 export const POST: APIRoute = async ({ request }) => {
+  let locale = requestLocale(request);
+
   if (request.method !== "POST") {
-    return json({ message: "Method not allowed." }, 405);
+    return localizedJson("Method not allowed.", locale, 405);
   }
 
   let formData: FormData;
   try {
     formData = await request.formData();
   } catch {
-    return json({ message: "Could not read the support request." }, 400);
+    return localizedJson("Could not read the support request.", locale, 400);
+  }
+
+  const submittedLocale = stringField(formData, "locale");
+  if (isLocale(submittedLocale)) {
+    locale = submittedLocale;
   }
 
   const email = stringField(formData, "email");
@@ -34,20 +44,20 @@ export const POST: APIRoute = async ({ request }) => {
   const turnstileToken = stringField(formData, "cf-turnstile-response");
 
   if (!email || !message) {
-    return json({ message: "Email and message are required." }, 400);
+    return localizedJson("Email and message are required.", locale, 400);
   }
 
   if (email.length > maxEmailLength || !isEmail(email)) {
-    return json({ message: "Enter a valid email address." }, 400);
+    return localizedJson("Enter a valid email address.", locale, 400);
   }
 
   if (message.length > maxMessageLength) {
-    return json({ message: "Message is too long." }, 400);
+    return localizedJson("Message is too long.", locale, 400);
   }
 
   const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
   if (!turnstileSecret) {
-    return json({ message: "Support submissions are not configured yet." }, 503);
+    return localizedJson("Support submissions are not configured yet.", locale, 503);
   }
 
   const turnstileResult = await verifyTurnstile({
@@ -57,12 +67,12 @@ export const POST: APIRoute = async ({ request }) => {
   });
 
   if (!turnstileResult.success) {
-    return json({ message: "Please complete the anti-spam check and try again." }, 400);
+    return localizedJson("Please complete the anti-spam check and try again.", locale, 400);
   }
 
   const githubToken = process.env.GITHUB_SUPPORT_TOKEN;
   if (!githubToken) {
-    return json({ message: "Support submissions are not configured yet." }, 503);
+    return localizedJson("Support submissions are not configured yet.", locale, 503);
   }
 
   const repository = process.env.GITHUB_SUPPORT_REPO || defaultRepository;
@@ -75,11 +85,20 @@ export const POST: APIRoute = async ({ request }) => {
   });
 
   if (!createdIssue.ok) {
-    return json({ message: "Could not create the support request. Please try again later." }, 502);
+    return localizedJson("Could not create the support request. Please try again later.", locale, 502);
   }
 
-  return json({ message: "Report sent." }, 201);
+  return localizedJson("Report sent.", locale, 201);
 };
+
+function requestLocale(request: Request): Locale {
+  const preferences = (request.headers.get("accept-language") ?? "")
+    .split(",")
+    .map((preference) => preference.split(";", 1)[0]?.trim())
+    .filter((preference): preference is string => Boolean(preference));
+  const locale = resolvePreferredLocale(preferences);
+  return locale && isLocale(locale) ? locale : defaultLocale;
+}
 
 function stringField(formData: FormData, key: string): string {
   const value = formData.get(key);
@@ -211,4 +230,8 @@ function json(payload: { message: string }, status: number): Response {
       "Cache-Control": "no-store"
     }
   });
+}
+
+function localizedJson(message: string, locale: Locale, status: number): Response {
+  return json({ message: translate(locale, message) }, status);
 }

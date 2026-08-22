@@ -1,16 +1,24 @@
 ---
 import PageLayout from "../components/PageLayout.astro";
+import LocalizedContent from "../components/LocalizedContent.astro";
+import { defaultLocale, localizedHref, type Locale } from "../i18n/config";
+import { translate } from "../i18n/text";
+
+const { locale = defaultLocale } = Astro.props as { locale?: Locale };
 
 const effectiveDate = "August 11, 2026";
 ---
 
 <PageLayout
-  title="Privacy Policy - Luxel"
-  description="Luxel privacy policy for the Mac recorder and Luxel marketing website."
+  title={translate(locale, "Privacy Policy - Luxel")}
+  description={translate(locale, "Luxel privacy policy for the Mac recorder and Luxel marketing website.")}
   bodyClass="privacy-page"
-  navigationLabel="Privacy page navigation"
+  navigationLabel={translate(locale, "Privacy page navigation")}
+  path="/privacy"
+  locale={locale}
 >
 
+  <LocalizedContent locale={locale}>
       <main class="privacy-shell container">
         <section class="privacy-hero" aria-labelledby="privacy-title">
           <p class="eyebrow">Privacy Policy</p>
@@ -152,11 +160,12 @@ const effectiveDate = "August 11, 2026";
             <h2>Contact</h2>
             <p>
               For privacy questions or requests, use the{" "}
-              <a href="/support">support page</a>.
+              <a href={localizedHref(locale, "/support")}>support page</a>.
             </p>
           </article>
         </section>
       </main>
+  </LocalizedContent>
 
 </PageLayout>
 

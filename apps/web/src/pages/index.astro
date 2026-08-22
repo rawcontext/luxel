@@ -1,17 +1,30 @@
 ---
 import "../styles/global.css";
 import InstallCommand from "../components/InstallCommand.astro";
+import LocaleRedirect from "../components/LocaleRedirect.astro";
+import LocalizedContent from "../components/LocalizedContent.astro";
+import LocalizedSeo from "../components/LocalizedSeo.astro";
 import SiteNav from "../components/SiteNav.astro";
 import SiteFooter from "../components/SiteFooter.astro";
+import { commonCopy } from "../i18n/common";
+import { defaultLocale, localizedHref, type Locale } from "../i18n/config";
+import { translate } from "../i18n/text";
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = defaultLocale } = Astro.props;
+const common = commonCopy(locale);
 
 const macAppStoreUrl =
   "https://apps.apple.com/app/apple-store/id6800438206?pt=129245287&ct=luxelweb&mt=8";
 
 const navLinks = [
-  { href: "#features", label: "Features" },
-  { href: "/docs", label: "Docs" },
-  { href: "/support", label: "Support" },
-  { href: "/privacy", label: "Privacy" }
+  { href: "#features", label: common.nav.features },
+  { href: "/docs", label: common.nav.docs },
+  { href: "/support", label: common.nav.support },
+  { href: "/privacy", label: common.nav.privacy }
 ];
 
 const featureTrio = [
@@ -104,19 +117,21 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Luxel is a Mac menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports."
+      content={translate(locale, "Luxel is a Mac menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports.")}
     />
     <meta name="apple-itunes-app" content="app-id=6800438206" />
     <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
-    <link rel="alternate" href="/llms.txt" type="text/markdown" title="Luxel LLM-readable index" />
-    <link rel="alternate" href="/llms-full.txt" type="text/markdown" title="Luxel full Markdown documentation" />
-    <title>Luxel - Screen recording for Mac</title>
+    <LocalizedSeo locale={locale} path="/" />
+    {locale === defaultLocale && <LocaleRedirect path="/" />}
+    <link rel="alternate" href="/llms.txt" type="text/markdown" title={translate(locale, "Luxel LLM-readable index")} />
+    <link rel="alternate" href="/llms-full.txt" type="text/markdown" title={translate(locale, "Luxel full Markdown documentation")} />
+    <title>{translate(locale, "Luxel - Screen recording for Mac")}</title>
   </head>
   <body>
     <div class="page" id="top">
@@ -127,8 +142,9 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
         <span class="ambient__glow ambient__glow--low"></span>
       </div>
 
-      <SiteNav links={navLinks} ariaLabel="Page sections" />
+      <SiteNav locale={locale} links={navLinks} ariaLabel={translate(locale, "Page sections")} />
 
+      <LocalizedContent locale={locale}>
       <main>
         <section class="hero container" aria-labelledby="hero-title">
           <p class="hero__badge">
@@ -155,7 +171,7 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
                 height="48"
               />
             </a>
-            <a class="glass-button" href="/docs">Read docs</a>
+            <a class="glass-button" href={localizedHref(locale, "/docs")}>Read docs</a>
             <a class="hero__more" href="#notch">See recording controls →</a>
           </div>
 
@@ -360,7 +376,7 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
                 Luxel from shell scripts, launchers, URL automation, or Shortcuts. See the{" "}
                 <a href="https://github.com/rawcontext/luxel-cli">CLI repository</a> for source.
               </p>
-              <InstallCommand />
+              <InstallCommand locale={locale} />
               <div class="code-block" aria-label="Example luxel commands">
                 <div><span class="code-prompt">$</span> luxel record --display 1</div>
                 <div><span class="code-prompt">$</span> luxel clip --seconds 30 --json</div>
@@ -475,7 +491,7 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <ul class="points">
                 {agentPoints.map((point) => <li>{point}</li>)}
               </ul>
-              <a class="glass-button banner__cta" href="/docs#cli">CLI reference →</a>
+              <a class="glass-button banner__cta" href={localizedHref(locale, "/docs#cli")}>CLI reference →</a>
             </div>
             <div class="terminal" aria-label="Example agent session in a terminal">
               <div class="terminal__bar">
@@ -555,14 +571,15 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
                   height="46"
                 />
               </a>
-              <a class="button button--primary" href="/docs">Open docs</a>
-              <a class="glass-button" href="/privacy">Privacy</a>
-              <a class="glass-button" href="/support">Support</a>
+              <a class="button button--primary" href={localizedHref(locale, "/docs")}>Open docs</a>
+              <a class="glass-button" href={localizedHref(locale, "/privacy")}>Privacy</a>
+              <a class="glass-button" href={localizedHref(locale, "/support")}>Support</a>
             </div>
           </div>
         </section>
       </main>
-      <SiteFooter />
+      </LocalizedContent>
+      <SiteFooter locale={locale} />
     </div>
   </body>
 </html>

@@ -1,0 +1,28 @@
+---
+import {
+  absoluteLocalizedUrl,
+  defaultLocale,
+  supportedLocales,
+  type Locale,
+  type PublicPagePath
+} from "../i18n/config";
+
+interface Props {
+  locale: Locale;
+  path: PublicPagePath;
+}
+
+const { locale, path } = Astro.props;
+---
+
+<link rel="canonical" href={absoluteLocalizedUrl(locale, path)} />
+{
+  supportedLocales.map((alternateLocale) => (
+    <link
+      rel="alternate"
+      hreflang={alternateLocale}
+      href={absoluteLocalizedUrl(alternateLocale, path)}
+    />
+  ))
+}
+<link rel="alternate" hreflang="x-default" href={absoluteLocalizedUrl(defaultLocale, path)} />

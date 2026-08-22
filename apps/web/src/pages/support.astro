@@ -1,17 +1,26 @@
 ---
 import PageLayout from "../components/PageLayout.astro";
+import LocalizedContent from "../components/LocalizedContent.astro";
+import { defaultLocale, localizedHref, type Locale } from "../i18n/config";
+import { translate } from "../i18n/text";
+
+const { locale = defaultLocale } = Astro.props as { locale?: Locale };
 
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
+const localizedHomePath = localizedHref(locale, "/");
 ---
 
 <PageLayout
-  title="Support - Luxel"
-  description="Contact Luxel support with a bug report, feature request, or product question."
+  title={translate(locale, "Support - Luxel")}
+  description={translate(locale, "Contact Luxel support with a bug report, feature request, or product question.")}
   bodyClass="support-page"
-  navigationLabel="Support page navigation"
+  navigationLabel={translate(locale, "Support page navigation")}
+  path="/support"
+  locale={locale}
 >
   {turnstileSiteKey && <script slot="head" src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 
+  <LocalizedContent locale={locale}>
       <main class="support-shell container">
         <section class="support-hero" aria-labelledby="support-title">
           <p class="eyebrow">Support</p>
@@ -29,7 +38,17 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
             <p>We read every message and will reply when a follow-up is needed.</p>
           </div>
 
-          <form class="support-form" method="post" action="/api/support" data-support-form>
+          <form
+            class="support-form"
+            method="post"
+            action="/api/support"
+            data-support-form
+            data-sending={translate(locale, "Sending...")}
+            data-failure={translate(locale, "Could not send the report.")}
+            data-thank-you={translate(locale, "Thank you for your submission.")}
+            data-home-path={localizedHomePath}
+          >
+            <input type="hidden" name="locale" value={locale} />
             <label>
               <span>Email address</span>
               <input
@@ -71,9 +90,10 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
           <h2 id="support-success-title">Thank you for your submission.</h2>
           <p>We received your message and will follow up by email if needed.</p>
           <p class="support-success__redirect">Redirecting you back to the homepage shortly.</p>
-          <a class="glass-button" href="/">Return home</a>
+          <a class="glass-button" href={localizedHomePath}>Return home</a>
         </section>
       </main>
+  </LocalizedContent>
 
     <script>
       const supportForm = document.querySelector("[data-support-form]");
@@ -91,7 +111,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
           }
 
           submitButton.disabled = true;
-          supportStatus.textContent = "Sending...";
+          supportStatus.textContent = supportForm.dataset.sending ?? "";
 
           try {
             const response = await fetch(supportForm.action, {
@@ -104,7 +124,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
             const payload = await response.json().catch(() => ({}));
             if (!response.ok) {
-              throw new Error(payload.message || "Could not send the report.");
+              throw new Error(payload.message || supportForm.dataset.failure);
             }
 
             if (supportFormSection instanceof HTMLElement && supportSuccess instanceof HTMLElement) {
@@ -112,14 +132,14 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
               supportSuccess.hidden = false;
               supportSuccess.focus();
               window.setTimeout(() => {
-                window.location.assign("/");
+                window.location.assign(supportForm.dataset.homePath ?? "/");
               }, 5000);
             } else {
-              supportStatus.textContent = payload.message || "Thank you for your submission.";
+              supportStatus.textContent = payload.message || supportForm.dataset.thankYou || "";
             }
           } catch (error) {
             window.turnstile?.reset();
-            supportStatus.textContent = error instanceof Error ? error.message : "Could not send the report.";
+            supportStatus.textContent = error instanceof Error ? error.message : supportForm.dataset.failure || "";
           } finally {
             submitButton.disabled = false;
           }

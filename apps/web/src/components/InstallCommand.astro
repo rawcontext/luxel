@@ -1,16 +1,35 @@
 ---
+import { commonCopy } from "../i18n/common";
+import { defaultLocale, type Locale } from "../i18n/config";
+
+interface Props {
+  locale?: Locale;
+}
+
 const command = "curl -fsSL https://luxel.media/cli/install.sh | sh";
+const { locale = defaultLocale } = Astro.props;
+const copy = commonCopy(locale).installCommand;
 ---
 
 <div class="install-command">
   <span aria-hidden="true">$</span>
   <code>{command}</code>
-  <button type="button" data-copy-command={command} aria-label="Copy install command">
+  <button
+    type="button"
+    data-copy-command={command}
+    data-copy={copy.copy}
+    data-copy-aria={copy.copyAria}
+    data-copied={copy.copied}
+    data-copied-aria={copy.copiedAria}
+    data-press-command-c={copy.pressCommandC}
+    data-selected-aria={copy.selectedAria}
+    aria-label={copy.copyAria}
+  >
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <rect x="8" y="8" width="11" height="11" rx="2"></rect>
       <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
     </svg>
-    <span data-copy-label>Copy</span>
+    <span data-copy-label>{copy.copy}</span>
   </button>
 </div>
 
@@ -41,15 +60,15 @@ const command = "curl -fsSL https://luxel.media/cli/install.sh | sh";
       const label = copyCommandButton.querySelector("[data-copy-label]");
       const resetFeedback = () => {
         if (label) {
-          label.textContent = "Copy";
+          label.textContent = copyCommandButton.dataset.copy ?? "";
         }
-        copyCommandButton.setAttribute("aria-label", "Copy install command");
+        copyCommandButton.setAttribute("aria-label", copyCommandButton.dataset.copyAria ?? "");
       };
       const showCopied = () => {
         if (label) {
-          label.textContent = "Copied";
+          label.textContent = copyCommandButton.dataset.copied ?? "";
         }
-        copyCommandButton.setAttribute("aria-label", "Install command copied");
+        copyCommandButton.setAttribute("aria-label", copyCommandButton.dataset.copiedAria ?? "");
         window.setTimeout(resetFeedback, 1800);
       };
       const selectCommand = () => {
@@ -62,9 +81,9 @@ const command = "curl -fsSL https://luxel.media/cli/install.sh | sh";
           selection.addRange(range);
         }
         if (label) {
-          label.textContent = "Press ⌘C";
+          label.textContent = copyCommandButton.dataset.pressCommandC ?? "";
         }
-        copyCommandButton.setAttribute("aria-label", "Install command selected; press Command-C to copy");
+        copyCommandButton.setAttribute("aria-label", copyCommandButton.dataset.selectedAria ?? "");
         window.setTimeout(resetFeedback, 2400);
       };
 

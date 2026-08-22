@@ -1,0 +1,40 @@
+---
+import DocsPage from "../docs.astro";
+import HomePage from "../index.astro";
+import PrivacyPage from "../privacy.astro";
+import SupportPage from "../support.astro";
+import {
+  defaultLocale,
+  publicPagePaths,
+  supportedLocales,
+  type Locale,
+  type PublicPagePath
+} from "../../i18n/config";
+
+export function getStaticPaths() {
+  return supportedLocales
+    .filter((locale) => locale !== defaultLocale)
+    .flatMap((locale) => publicPagePaths.map((pagePath) => ({
+      params: {
+        locale,
+        path: pagePath === "/" ? undefined : pagePath.slice(1)
+      },
+      props: { locale, pagePath }
+    })));
+}
+
+interface Props {
+  locale: Locale;
+  pagePath: PublicPagePath;
+}
+
+const { locale, pagePath } = Astro.props;
+const Page = {
+  "/": HomePage,
+  "/docs": DocsPage,
+  "/privacy": PrivacyPage,
+  "/support": SupportPage
+}[pagePath];
+---
+
+<Page locale={locale} />

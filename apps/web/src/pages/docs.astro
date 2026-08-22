@@ -2,6 +2,15 @@
 import PageLayout from "../components/PageLayout.astro";
 import ShortcutKeys from "../components/ShortcutKeys.astro";
 import InstallCommand from "../components/InstallCommand.astro";
+import LocalizedContent from "../components/LocalizedContent.astro";
+import { defaultLocale, type Locale } from "../i18n/config";
+import { translate } from "../i18n/text";
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = defaultLocale } = Astro.props;
 
 const navGroups = [
   {
@@ -199,13 +208,16 @@ const troubleshooting = [
 ---
 
 <PageLayout
-  title="Luxel Documentation"
-  description="Luxel user documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, command-line control, automation, localization, settings, and troubleshooting."
+  title={translate(locale, "Luxel Documentation")}
+  description={translate(locale, "Luxel user documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, command-line control, automation, localization, settings, and troubleshooting.")}
   bodyClass="docs-page"
-  navigationLabel="Documentation navigation"
+  navigationLabel={translate(locale, "Documentation navigation")}
+  path="/docs"
+  locale={locale}
   showsLeftGlow
 >
 
+  <LocalizedContent locale={locale}>
     <main class="docs-layout">
       <aside class="docs-sidebar" aria-label="Documentation sections">
         <nav>
@@ -579,7 +591,7 @@ const troubleshooting = [
                 {areaPickerShortcuts.map((shortcut) => (
                   <tr>
                     <td>
-                      <ShortcutKeys keys={shortcut.keys} />
+                      <ShortcutKeys keys={shortcut.keys} locale={locale} />
                     </td>
                     <td>{shortcut.action}</td>
                   </tr>
@@ -780,7 +792,7 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns --diarize</code></pre>
                 <li>
                   Open Area, draw a selection, and press
                   <span class="shortcut-keys--inline">
-                    <ShortcutKeys keys={["option", "click"]} />
+                    <ShortcutKeys keys={["option", "click"]} locale={locale} />
                   </span>
                   Record.
                 </li>
@@ -854,7 +866,7 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns --diarize</code></pre>
                 <tr>
                   <td>{shortcut.command}</td>
                   <td>
-                    <ShortcutKeys keys={shortcut.keys} />
+                    <ShortcutKeys keys={shortcut.keys} locale={locale} />
                   </td>
                   <td>{shortcut.result}</td>
                 </tr>
@@ -869,7 +881,7 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns --diarize</code></pre>
             </p>
             <div class="shortcut-cluster" aria-label="Known macOS capture shortcut conflicts">
               {systemShortcutConflicts.map((shortcut) => (
-                <ShortcutKeys keys={shortcut} />
+                <ShortcutKeys keys={shortcut} locale={locale} />
               ))}
             </div>
           </div>
@@ -892,7 +904,7 @@ luxel transcribe demo.mp4 --locale en_US --semantic-turns --diarize</code></pre>
               <p>
                 Install the latest <code>luxel</code> release from Terminal:
               </p>
-              <InstallCommand />
+              <InstallCommand locale={locale} />
               <p>
                 The installer verifies the release checksum, adds <code>luxel</code> to{" "}
                 <code>~/.local/bin</code>, and updates your shell path. Open a new terminal after{" "}
@@ -1243,7 +1255,7 @@ luxel://latest?reveal=true</code></pre>
                 {item.shortcuts && (
                   <div class="shortcut-cluster" aria-label="Known macOS capture shortcut conflicts">
                     {item.shortcuts.map((shortcut) => (
-                      <ShortcutKeys keys={shortcut} />
+                      <ShortcutKeys keys={shortcut} locale={locale} />
                     ))}
                   </div>
                 )}
@@ -1323,6 +1335,7 @@ luxel://latest?reveal=true</code></pre>
         </section>
       </div>
     </main>
+  </LocalizedContent>
     <script>
       const lazyVideos = Array.from(document.querySelectorAll("video[data-lazy-src]"));
 

@@ -1,15 +1,27 @@
+---
+import { commonCopy } from "../i18n/common";
+import { defaultLocale, localizedHref, type Locale } from "../i18n/config";
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = defaultLocale } = Astro.props;
+const copy = commonCopy(locale);
+---
+
 <div class="container site-footer">
   <footer class="footer">
     <div class="footer__brand">
       <img src="/luxel-icon.svg" alt="" width="20" height="20" />
       <span class="footer__name">Luxel</span>
-      <span class="footer__tag">· Screen recording for Mac</span>
+      <span class="footer__tag">{copy.footer.tagline}</span>
     </div>
-    <nav class="footer__links" aria-label="Footer">
-      <a href="/">Home</a>
-      <a href="/docs">Docs</a>
-      <a href="/support">Support</a>
-      <a href="/privacy">Privacy</a>
+    <nav class="footer__links" aria-label={copy.footer.aria}>
+      <a href={localizedHref(locale, "/")}>{copy.footer.home}</a>
+      <a href={localizedHref(locale, "/docs")}>{copy.nav.docs}</a>
+      <a href={localizedHref(locale, "/support")}>{copy.nav.support}</a>
+      <a href={localizedHref(locale, "/privacy")}>{copy.nav.privacy}</a>
     </nav>
   </footer>
 </div>

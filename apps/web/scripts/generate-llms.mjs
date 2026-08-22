@@ -20,6 +20,24 @@ const docsHtmlPath = path.join(primaryOutputDir, "docs", "index.html");
 
 const projectSummary =
   "Luxel is a Mac menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports.";
+const localizedLocales = [
+  "de",
+  "es",
+  "fr",
+  "it",
+  "ja",
+  "ko",
+  "vi",
+  "zh-Hans",
+  "pt-BR",
+  "pt-PT"
+];
+const publicPages = [
+  { path: "/", changefreq: "weekly", priority: "1.0" },
+  { path: "/docs", changefreq: "weekly", priority: "0.8" },
+  { path: "/support", changefreq: "monthly", priority: "0.6" },
+  { path: "/privacy", changefreq: "monthly", priority: "0.6" }
+];
 
 const html = await readFile(docsHtmlPath, "utf8");
 const $ = cheerio.load(html);
@@ -86,10 +104,11 @@ ${docsMarkdown}
 `);
 
 const sitemapUrls = [
-  { path: "/", changefreq: "weekly", priority: "1.0" },
-  { path: "/docs", changefreq: "weekly", priority: "0.8" },
-  { path: "/support", changefreq: "monthly", priority: "0.6" },
-  { path: "/privacy", changefreq: "monthly", priority: "0.6" },
+  ...publicPages,
+  ...localizedLocales.flatMap((locale) => publicPages.map((page) => ({
+    ...page,
+    path: page.path === "/" ? `/${locale}/` : `/${locale}${page.path}`
+  }))),
   { path: "/llms.txt", changefreq: "weekly", priority: "0.4" },
   { path: "/llms-full.txt", changefreq: "weekly", priority: "0.4" }
 ];

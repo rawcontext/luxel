@@ -1,17 +1,23 @@
 ---
+import { commonCopy } from "../i18n/common";
+import { defaultLocale, localizedHref, type Locale } from "../i18n/config";
+
 interface Props {
   links?: { href: string; label: string }[];
   ariaLabel?: string;
+  locale?: Locale;
 }
 
 const macAppStoreUrl =
   "https://apps.apple.com/app/apple-store/id6800438206?pt=129245287&ct=luxelweb&mt=8";
-const { links = [], ariaLabel = "Site navigation" } = Astro.props;
+const { links = [], locale = defaultLocale } = Astro.props;
+const copy = commonCopy(locale).nav;
+const ariaLabel = Astro.props.ariaLabel ?? copy.siteAria;
 ---
 
 <header class="nav">
   <div class="nav__pill">
-    <a class="brand" href="/" aria-label="Luxel home">
+    <a class="brand" href={localizedHref(locale, "/")} aria-label={copy.homeAria}>
       <img class="brand-mark" src="/luxel-icon.svg" alt="" width="24" height="24" />
       <span>Luxel</span>
     </a>
@@ -19,7 +25,7 @@ const { links = [], ariaLabel = "Site navigation" } = Astro.props;
       links.length > 0 && (
         <nav class="nav__links" aria-label={ariaLabel}>
           {links.map((link) => (
-            <a href={link.href}>{link.label}</a>
+            <a href={localizedHref(locale, link.href)}>{link.label}</a>
           ))}
         </nav>
       )
@@ -29,10 +35,10 @@ const { links = [], ariaLabel = "Site navigation" } = Astro.props;
       href={macAppStoreUrl}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Download Luxel on the Mac App Store"
+      aria-label={copy.downloadAria}
     >
       <span class="record-glyph" aria-hidden="true"></span>
-      <span>Download</span>
+      <span>{copy.download}</span>
     </a>
   </div>
 </header>

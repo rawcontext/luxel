@@ -1,5 +1,10 @@
 ---
 import "../styles/global.css";
+import { commonCopy } from "../i18n/common";
+import { defaultLocale, type Locale, type PublicPagePath } from "../i18n/config";
+import { translate } from "../i18n/text";
+import LocaleRedirect from "./LocaleRedirect.astro";
+import LocalizedSeo from "./LocalizedSeo.astro";
 import SiteFooter from "./SiteFooter.astro";
 import SiteNav from "./SiteNav.astro";
 
@@ -8,6 +13,8 @@ interface Props {
   description: string;
   bodyClass: string;
   navigationLabel: string;
+  path: PublicPagePath;
+  locale?: Locale;
   showsLeftGlow?: boolean;
 }
 
@@ -16,20 +23,25 @@ const {
   description,
   bodyClass,
   navigationLabel,
+  path,
+  locale = defaultLocale,
   showsLeftGlow = false
 } = Astro.props;
+const copy = commonCopy(locale);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={locale}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="apple-itunes-app" content="app-id=6800438206" />
     <link rel="icon" href="/luxel-icon.svg" type="image/svg+xml" />
-    <link rel="alternate" href="/llms.txt" type="text/markdown" title="Luxel LLM-readable index" />
-    <link rel="alternate" href="/llms-full.txt" type="text/markdown" title="Luxel full Markdown documentation" />
+    <LocalizedSeo locale={locale} path={path} />
+    {locale === defaultLocale && <LocaleRedirect path={path} />}
+    <link rel="alternate" href="/llms.txt" type="text/markdown" title={translate(locale, "Luxel LLM-readable index")} />
+    <link rel="alternate" href="/llms-full.txt" type="text/markdown" title={translate(locale, "Luxel full Markdown documentation")} />
     <title>{title}</title>
     <slot name="head" />
   </head>
@@ -41,17 +53,18 @@ const {
       </div>
 
       <SiteNav
+        locale={locale}
         ariaLabel={navigationLabel}
         links={[
-          { href: "/#features", label: "Features" },
-          { href: "/docs", label: "Docs" },
-          { href: "/support", label: "Support" },
-          { href: "/privacy", label: "Privacy" }
+          { href: "/#features", label: copy.nav.features },
+          { href: "/docs", label: copy.nav.docs },
+          { href: "/support", label: copy.nav.support },
+          { href: "/privacy", label: copy.nav.privacy }
         ]}
       />
 
       <slot />
-      <SiteFooter />
+      <SiteFooter locale={locale} />
     </div>
   </body>
 </html>
