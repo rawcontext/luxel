@@ -149,7 +149,7 @@ Prior promotional text, keywords, App Review notes, private App Privacy answers,
 
 ## Localized screenshot gallery
 
-`docs/ux/app-store/localized-screenshot-headings.json` defines the six headings in all 11 App Store locales. `render-localized-screenshots.swift` removes the English heading band and draws the translated heading with the same layout while retaining the real screenshot, laptop frame, and background from each English master. It does not use AI-generated imagery. Generated storefront assets are temporary workflow output and are not checked into the repository.
+`docs/ux/app-store/localized-screenshot-headings.json` defines the six headings in all 11 App Store locales. `render-localized-screenshots.swift` removes the English heading band and draws the translated heading with the same layout while retaining the real screenshot, laptop frame, and background from each English master. It does not use AI-generated imagery. The 66 release assets are checked in under `docs/design/app-store-localized`, with their hashes recorded in `docs/design/app-store-localized-manifest.json`.
 
 The renderer verifies 2880 × 1800 dimensions, absence of alpha, a complete locale/heading matrix, readable headline fit, and a deterministic manifest. App Store Connect has no separate screenshot-caption field; the visible localized heading is part of each uploaded image.
 
@@ -540,5 +540,5 @@ If any of those facts change, stop submission and re-answer App Privacy before r
 
 1. Run `bun docs/ux/app-store/validate-listing-metadata.mjs`.
 2. Render the gallery locally to a temporary directory and inspect the complete output before changing App Store Connect.
-3. Dispatch App Store Localized Screenshots with the editable version number. The workflow renders the same assets again on the runner and uploads all 11 locale directories.
+3. Dispatch App Store Localized Screenshots with the editable version number. The workflow re-renders the gallery, requires a byte-for-byte match with the checked-in assets, and uploads all 11 locale directories.
 4. Confirm the workflow succeeded. It must not upload a binary, change text metadata, submit for review, or publish the version.

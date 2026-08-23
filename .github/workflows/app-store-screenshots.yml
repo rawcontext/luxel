@@ -46,15 +46,20 @@ jobs:
 
       - name: Configure temporary screenshot paths
         run: |
-          echo "APP_STORE_SCREENSHOTS_PATH=$RUNNER_TEMP/luxel-app-store-screenshots" >> "$GITHUB_ENV"
-          echo "APP_STORE_SCREENSHOTS_MANIFEST=$RUNNER_TEMP/luxel-app-store-screenshots.json" >> "$GITHUB_ENV"
+          {
+            echo "APP_STORE_SCREENSHOTS_PATH=$GITHUB_WORKSPACE/docs/design/app-store-localized"
+            echo "APP_STORE_SCREENSHOTS_RENDERED_PATH=$RUNNER_TEMP/luxel-app-store-screenshots"
+            echo "APP_STORE_SCREENSHOTS_MANIFEST=$RUNNER_TEMP/luxel-app-store-screenshots.json"
+          } >> "$GITHUB_ENV"
 
       - name: Render and validate localized screenshots
         run: |
           swift docs/ux/app-store/render-localized-screenshots.swift \
-            --output "$APP_STORE_SCREENSHOTS_PATH" \
+            --output "$APP_STORE_SCREENSHOTS_RENDERED_PATH" \
             --manifest "$APP_STORE_SCREENSHOTS_MANIFEST"
           test "$(find "$APP_STORE_SCREENSHOTS_PATH" -type f | wc -l | tr -d ' ')" = "66"
+          diff -qr "$APP_STORE_SCREENSHOTS_PATH" "$APP_STORE_SCREENSHOTS_RENDERED_PATH"
+          cmp docs/design/app-store-localized-manifest.json "$APP_STORE_SCREENSHOTS_MANIFEST"
 
       - name: Update App Store Connect screenshot draft
         working-directory: apps/macos

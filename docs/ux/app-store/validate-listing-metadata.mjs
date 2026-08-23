@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile, readdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -16,6 +17,10 @@ const markdown = await readFile(metadataPath, "utf8");
 const reviewNotes = await readFile(resolve(repositoryRoot, "docs/app-review/review-notes.txt"), "utf8");
 const screenshotConfiguration = JSON.parse(
   await readFile(resolve(scriptDirectory, "localized-screenshot-headings.json"), "utf8"),
+);
+const committedScreenshotRoot = resolve(repositoryRoot, "docs/design/app-store-localized");
+const committedScreenshotManifest = JSON.parse(
+  await readFile(resolve(repositoryRoot, "docs/design/app-store-localized-manifest.json"), "utf8"),
 );
 
 const requiredFields = [
@@ -92,6 +97,55 @@ for (const locale of requiredLocales) {
   for (const screenshot of screenshotConfiguration.screenshots) {
     assert(typeof headings[screenshot.id] === "string" && headings[screenshot.id].trim(), `${locale}: ${screenshot.id} heading is empty`);
   }
+}
+
+assert(committedScreenshotManifest.schemaVersion === 1, "Localized screenshot manifest schema is unsupported");
+assert(
+  committedScreenshotManifest.width === 2_880 && committedScreenshotManifest.height === 1_800,
+  "Localized screenshot manifest has the wrong dimensions",
+);
+assert(
+  JSON.stringify(committedScreenshotManifest.locales) === JSON.stringify(requiredLocales),
+  "Localized screenshot manifest locale order is stale",
+);
+assert(committedScreenshotManifest.files.length === 66, "Localized screenshot manifest must contain 66 files");
+const manifestFiles = new Map(
+  committedScreenshotManifest.files.map((file) => [`${file.locale}/${file.id}`, file]),
+);
+assert(manifestFiles.size === 66, "Localized screenshot manifest contains duplicate entries");
+
+for (const locale of requiredLocales) {
+  const expectedNames = [];
+  for (const screenshot of screenshotConfiguration.screenshots) {
+    const extension = locale === "en-US" ? "png" : "jpg";
+    const outputName = `${String(screenshot.position).padStart(2, "0")}-${screenshot.outputStem}.${extension}`;
+    const relativePath = `${locale}/${outputName}`;
+    const manifestFile = manifestFiles.get(`${locale}/${screenshot.id}`);
+    assert(manifestFile, `${locale}: missing ${screenshot.id} from localized screenshot manifest`);
+    assert(manifestFile.position === screenshot.position, `${relativePath}: manifest position is stale`);
+    assert(manifestFile.source === screenshot.source, `${relativePath}: manifest source is stale`);
+    assert(manifestFile.output === relativePath, `${relativePath}: manifest output is stale`);
+    assert(
+      manifestFile.heading === screenshotConfiguration.locales[locale][screenshot.id],
+      `${relativePath}: manifest heading is stale`,
+    );
+
+    const outputBuffer = await readFile(resolve(committedScreenshotRoot, relativePath));
+    const outputDigest = createHash("sha256").update(outputBuffer).digest("hex");
+    assert(manifestFile.sha256 === outputDigest, `${relativePath}: hash does not match the manifest`);
+    assert(manifestFile.bytes === outputBuffer.length, `${relativePath}: byte count does not match the manifest`);
+    if (locale === "en-US") {
+      const sourceBuffer = await readFile(resolve(repositoryRoot, screenshot.source));
+      assert(outputBuffer.equals(sourceBuffer), `${relativePath}: English output must exactly match its source master`);
+    }
+    expectedNames.push(outputName);
+  }
+
+  const committedNames = (await readdir(resolve(committedScreenshotRoot, locale))).sort();
+  assert(
+    JSON.stringify(committedNames) === JSON.stringify(expectedNames.sort()),
+    `${locale}: checked-in localized screenshot set is incomplete`,
+  );
 }
 
 assert(locales.length === requiredLocales.length, `Expected ${requiredLocales.length} locale blocks`);

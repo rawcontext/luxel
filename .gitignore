@@ -13,5 +13,9 @@ node_modules/
 .vercel/output/
 .turbo/
 .DS_Store
-docs/design/
+docs/design/*
+!docs/design/app-store-0*.png
+!docs/design/app-store-localized/
+!docs/design/app-store-localized/**
+!docs/design/app-store-localized-manifest.json
 apps/web/public/videos/luxel-app-review.mp4
