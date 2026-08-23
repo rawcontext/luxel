@@ -10,13 +10,14 @@ public struct CommandLineCredentialStore: Sendable {
 
     public func secret(clientID: UUID) -> Data? {
         var result: CFTypeRef?
-        let status = SecItemCopyMatching([
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: clientID.uuidString.lowercased(),
-            kSecReturnData: true,
-            kSecMatchLimit: kSecMatchLimitOne
-        ] as CFDictionary, &result)
+        let status = SecItemCopyMatching(
+            [
+                kSecClass: kSecClassGenericPassword,
+                kSecAttrService: service,
+                kSecAttrAccount: clientID.uuidString.lowercased(),
+                kSecReturnData: true,
+                kSecMatchLimit: kSecMatchLimitOne
+            ] as CFDictionary, &result)
         guard status == errSecSuccess else { return nil }
         return result as? Data
     }
@@ -46,11 +47,12 @@ public struct CommandLineCredentialStore: Sendable {
     }
 
     public func removeSecret(clientID: UUID) {
-        SecItemDelete([
-            kSecClass: kSecClassGenericPassword,
-            kSecAttrService: service,
-            kSecAttrAccount: clientID.uuidString.lowercased()
-        ] as CFDictionary)
+        SecItemDelete(
+            [
+                kSecClass: kSecClassGenericPassword,
+                kSecAttrService: service,
+                kSecAttrAccount: clientID.uuidString.lowercased()
+            ] as CFDictionary)
     }
 
     public func makeSecret() throws -> Data {

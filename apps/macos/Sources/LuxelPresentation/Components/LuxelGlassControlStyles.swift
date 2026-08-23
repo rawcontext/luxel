@@ -1,6 +1,7 @@
 import SwiftUI
-public extension View {
-    func luxelGlassCapsuleBackground() -> some View {
+
+extension View {
+    public func luxelGlassCapsuleBackground() -> some View {
         background {
             Capsule(style: .continuous)
                 .fill(LuxelGlassTheme.controlFill)

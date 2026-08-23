@@ -103,16 +103,16 @@ extension ExportModelTests {
     func exportRequestDefaultsLegacyQualityToBalanced() throws {
         let data = Data(
             """
-      {
-        "inputFileURL": "file:///tmp/input.mp4",
-        "format": "mp4",
-        "pixelSize": { "width": 100, "height": 200 },
-        "frameRate": { "framesPerSecond": 30 },
-        "timeRange": { "start": 0, "end": 10 },
-        "shouldMute": false,
-        "shouldCrop": true
-      }
-      """.utf8)
+            {
+              "inputFileURL": "file:///tmp/input.mp4",
+              "format": "mp4",
+              "pixelSize": { "width": 100, "height": 200 },
+              "frameRate": { "framesPerSecond": 30 },
+              "timeRange": { "start": 0, "end": 10 },
+              "shouldMute": false,
+              "shouldCrop": true
+            }
+            """.utf8)
 
         let request = try JSONDecoder().decode(ExportRequest.self, from: data)
 

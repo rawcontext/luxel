@@ -1,6 +1,7 @@
 import AVFoundation
-@testable import LuxelCore
 import Testing
+
+@testable import LuxelCore
 
 struct VoiceActivitySampleFramerTests {
     @Test("framer emits ordered exact model frames and retains only a remainder")
@@ -36,11 +37,12 @@ struct VoiceActivitySampleFramerTests {
     func conversion(sampleRate: Double, channels: AVAudioChannelCount) throws {
         let converter = VoiceActivityAudioConverter()
         let frameCount = AVAudioFrameCount(sampleRate / 4)
-        let buffer = try #require(makeBuffer(
-            sampleRate: sampleRate,
-            channels: channels,
-            frameCount: frameCount
-        ))
+        let buffer = try #require(
+            makeBuffer(
+                sampleRate: sampleRate,
+                channels: channels,
+                frameCount: frameCount
+            ))
 
         let samples = try converter.convert(buffer)
         let allSamplesAreFinite = samples.allSatisfy { $0.isFinite }
@@ -53,7 +55,8 @@ struct VoiceActivitySampleFramerTests {
     func modelLocator() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
-        let model = root
+        let model =
+            root
             .appendingPathComponent("Models/voice-activity-detection", isDirectory: true)
             .appendingPathComponent(
                 BundledVoiceActivityModelLocator.modelDirectoryName,

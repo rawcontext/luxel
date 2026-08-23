@@ -105,7 +105,7 @@ public final class RecordingHistoryService: Sendable {
         let validRecordings = getPastRecordings()
 
         guard fileSystem.fileExists(at: exportedMedia.fileURL),
-              let recordingIndex = validRecordings.firstIndex(where: { $0.fileURL == recording.fileURL })
+            let recordingIndex = validRecordings.firstIndex(where: { $0.fileURL == recording.fileURL })
         else {
             return validRecordings
         }
@@ -227,8 +227,8 @@ public final class RecordingHistoryService: Sendable {
             }
 
             guard let bundle = recording.bundle,
-                  bundle.primaryURL.standardizedFileURL == oldSourceURL,
-                  newSourceURL.deletingLastPathComponent().standardizedFileURL
+                bundle.primaryURL.standardizedFileURL == oldSourceURL,
+                newSourceURL.deletingLastPathComponent().standardizedFileURL
                     == bundle.rootURL.standardizedFileURL
             else {
                 return recording
@@ -263,9 +263,9 @@ public final class RecordingHistoryService: Sendable {
 
 }
 
-public extension RecordingHistoryService {
+extension RecordingHistoryService {
     @discardableResult
-    func recoverActiveRecording() async -> RecordingRecoveryResult {
+    public func recoverActiveRecording() async -> RecordingRecoveryResult {
         guard let activeRecording = store.activeRecording else {
             return .none
         }
@@ -297,7 +297,7 @@ public extension RecordingHistoryService {
     }
 }
 
-private extension RecordingHistoryService {
+extension RecordingHistoryService {
     private func removeKeystrokeSidecar(for recording: PastRecording) throws -> BundleManifest? {
         try KeystrokeSidecarRemovalService(fileSystem: fileSystem, mode: .trash)
             .remove(nextTo: recording.primaryMediaURL, bundle: recording.bundle)

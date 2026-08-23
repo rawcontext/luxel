@@ -22,8 +22,7 @@ enum LuxelAutomationURLCaller {
 }
 
 final class LuxelAutomationCommandExecutor: AutomationCommandExecutor, @unchecked Sendable {
-    private let execute:
-        @MainActor @Sendable (AutomationCommand) async throws -> AutomationExecutionResult
+    private let execute: @MainActor @Sendable (AutomationCommand) async throws -> AutomationExecutionResult
 
     init(
         execute:
@@ -57,7 +56,8 @@ final class LuxelAutomationCommandExecutor: AutomationCommandExecutor, @unchecke
     }
 
     func transcribe(_ options: AutomationTranscriptionOptions) async throws
-    -> AutomationExecutionResult {
+        -> AutomationExecutionResult
+    {
         try await execute(.transcribe(options))
     }
 }

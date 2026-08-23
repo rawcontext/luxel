@@ -21,6 +21,7 @@ if [[ "${#swift_files[@]}" -eq 0 ]]; then
 	exit 0
 fi
 
-swiftlint lint --fix --format --quiet --config .swiftlint.yml "${swift_files[@]}"
+swift format format --in-place --parallel "${swift_files[@]}"
+swift format lint --strict "${swift_files[@]}"
 git add -- "${swift_files[@]}"
 swiftlint lint --quiet --config .swiftlint.yml "${swift_files[@]}"

@@ -75,7 +75,8 @@ extension LuxelMenu {
 
     var areaTargetChipText: String {
         if let memory = model.settings.lastCaptureMemory,
-           case .area = memory.target {
+            case .area = memory.target
+        {
             return "\(memory.pixelSize.width) × \(memory.pixelSize.height) · reselect at record"
         }
 

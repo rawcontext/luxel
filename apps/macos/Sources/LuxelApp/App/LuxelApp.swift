@@ -260,7 +260,8 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
         _ event: NSAppleEventDescriptor,
         withReplyEvent _: NSAppleEventDescriptor
     ) {
-        guard let value = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject))?.stringValue else {
+        guard let value = event.paramDescriptor(forKeyword: AEKeyword(keyDirectObject))?.stringValue
+        else {
             return
         }
         handleURLString(value)

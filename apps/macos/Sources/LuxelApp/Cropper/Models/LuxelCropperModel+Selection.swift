@@ -275,7 +275,7 @@ extension LuxelCropperModel {
         isRequested: Bool
     ) {
         guard shouldShowLoupe(isRequested: isRequested),
-              let overlayPixelSize = loupeOverlayPixelSize(viewSize: viewSize, overlaySize: overlaySize)
+            let overlayPixelSize = loupeOverlayPixelSize(viewSize: viewSize, overlaySize: overlaySize)
         else {
             clearLoupe()
             return
@@ -306,9 +306,9 @@ extension LuxelCropperModel {
 
     func loupeOverlayPixelSize(viewSize: CGSize, overlaySize: CGSize) -> PixelSize? {
         guard viewSize.width > 0,
-              viewSize.height > 0,
-              overlaySize.width > 0,
-              overlaySize.height > 0
+            viewSize.height > 0,
+            overlaySize.width > 0,
+            overlaySize.height > 0
         else {
             return nil
         }
@@ -367,9 +367,10 @@ extension LuxelCropperModel {
     }
 
     static func validInitialSelection(_ selection: CaptureRect?, display: DisplayBounds)
-    -> CaptureRect? {
+        -> CaptureRect?
+    {
         guard let selection,
-              (try? CaptureSelectionDraft(display: display, topLeftSelection: selection)) != nil
+            (try? CaptureSelectionDraft(display: display, topLeftSelection: selection)) != nil
         else {
             return nil
         }
@@ -379,7 +380,7 @@ extension LuxelCropperModel {
 
     static func parseCustomAspectRatioComponent(_ text: String) throws -> Int {
         guard let value = Int(text.trimmingCharacters(in: .whitespacesAndNewlines)),
-              value > 0
+            value > 0
         else {
             throw CaptureModelError.invalidDimensions
         }

@@ -85,15 +85,20 @@ func deepFilterNetApplyFiltering(
             var realSum: Float = 0
             var imaginarySum: Float = 0
             for tap in 0..<shape.order {
-                let sourceFrame = min(max(frame + tap - padding, 0), shape.frameCount - 1)
+                let sourceFrame = frame + tap - padding
+                guard sourceFrame >= 0, sourceFrame < shape.frameCount else {
+                    continue
+                }
                 let sourceIndex = sourceFrame * shape.frequencyBins + bin
                 let coefficientIndex =
                     (frame * shape.filteredBins * shape.order + bin * shape.order + tap) * 2
                 let coefficientReal = coefficients[coefficientIndex]
                 let coefficientImaginary = coefficients[coefficientIndex + 1]
-                realSum += real[sourceIndex] * coefficientReal
+                realSum +=
+                    real[sourceIndex] * coefficientReal
                     - imaginary[sourceIndex] * coefficientImaginary
-                imaginarySum += imaginary[sourceIndex] * coefficientReal
+                imaginarySum +=
+                    imaginary[sourceIndex] * coefficientReal
                     + real[sourceIndex] * coefficientImaginary
             }
             outputReal[frame * shape.filteredBins + bin] = realSum

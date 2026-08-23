@@ -117,7 +117,8 @@ public struct CaptureCapabilityState: Equatable, Sendable {
     }
 
     public func presentation(for source: CapturePermissionSource)
-    -> CaptureSourcePermissionPresentation {
+        -> CaptureSourcePermissionPresentation
+    {
         switch source {
         case .screenPixels:
             screen
@@ -131,7 +132,7 @@ public struct CaptureCapabilityState: Equatable, Sendable {
     }
 }
 
-private extension CaptureCapabilityState {
+extension CaptureCapabilityState {
     private static func screenPresentation(
         status: PermissionStatus
     ) -> CaptureSourcePermissionPresentation {
@@ -215,7 +216,7 @@ private extension CaptureCapabilityState {
         )
     }
 
-    static func systemAudioGrantPresentation() -> CaptureSourcePermissionPresentation {
+    fileprivate static func systemAudioGrantPresentation() -> CaptureSourcePermissionPresentation {
         CaptureSourcePermissionPresentation(
             source: .systemAudio,
             phase: .needsGrant,

@@ -49,15 +49,17 @@ public func makeTestImage(
     draw: (CGContext) -> Void
 ) throws -> CGImage {
     let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-    guard let context = CGContext(
-        data: nil,
-        width: width,
-        height: height,
-        bitsPerComponent: 8,
-        bytesPerRow: 0,
-        space: colorSpace,
-        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-    ) else {
+    guard
+        let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )
+    else {
         throw TestFileSupportError.imageContextUnavailable
     }
     draw(context)
@@ -139,12 +141,14 @@ public func testRecordAutomationInvocation(
 }
 
 public func writeSilentTestPCM(to url: URL, duration: TimeInterval) throws {
-    guard let format = AVAudioFormat(
-        commonFormat: .pcmFormatFloat32,
-        sampleRate: 48_000,
-        channels: 2,
-        interleaved: false
-    ) else {
+    guard
+        let format = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: 48_000,
+            channels: 2,
+            interleaved: false
+        )
+    else {
         throw TestFileSupportError.audioFormatUnavailable
     }
     let frameCount = AVAudioFrameCount(duration * 48_000)
@@ -169,10 +173,12 @@ public func writeSilentTestPCM(to url: URL, duration: TimeInterval) throws {
 
 public func writeSilentTestAAC(to url: URL, duration: TimeInterval) throws {
     let sampleRate = 44_100.0
-    guard let format = AVAudioFormat(
-        standardFormatWithSampleRate: sampleRate,
-        channels: 1
-    ) else {
+    guard
+        let format = AVAudioFormat(
+            standardFormatWithSampleRate: sampleRate,
+            channels: 1
+        )
+    else {
         throw TestFileSupportError.audioFormatUnavailable
     }
     let frameCount = AVAudioFrameCount(sampleRate * duration)
@@ -193,10 +199,12 @@ public func writeSilentTestAAC(to url: URL, duration: TimeInterval) throws {
 }
 
 public func testExecutablePath(named name: String) -> String? {
-    let searchPaths = (ProcessInfo.processInfo.environment["PATH"] ?? "")
+    let searchPaths =
+        (ProcessInfo.processInfo.environment["PATH"] ?? "")
         .split(separator: ":")
         .map(String.init) + ["/opt/homebrew/bin", "/usr/local/bin"]
-    return searchPaths
+    return
+        searchPaths
         .map { URL(fileURLWithPath: $0).appending(path: name).path }
         .first { FileManager.default.isExecutableFile(atPath: $0) }
 }
@@ -281,13 +289,15 @@ public func runTestFFProbe(
     executable: String,
     fileURL: URL
 ) throws -> TestProcessResult {
-    try runTestProcess(executable: executable, arguments: [
-        "-v", "error",
-        "-show_format",
-        "-show_streams",
-        "-of", "json",
-        fileURL.path
-    ])
+    try runTestProcess(
+        executable: executable,
+        arguments: [
+            "-v", "error",
+            "-show_format",
+            "-show_streams",
+            "-of", "json",
+            fileURL.path
+        ])
 }
 
 open class ExistingTestFileSystem: FileSystem, @unchecked Sendable {

@@ -49,7 +49,7 @@ extension LuxelMenuModel {
         audioLevelSample = .silent
 
         guard let activeRecording = recordingState.activeRecording,
-              activeRecording.options.audio.capturesAudio
+            activeRecording.options.audio.capturesAudio
         else {
             return
         }
@@ -69,7 +69,8 @@ extension LuxelMenuModel {
         )
 
         if settings.audioInputDeviceID != resolution.device.id
-            || settings.audioInputDeviceName != resolution.device.name {
+            || settings.audioInputDeviceName != resolution.device.name
+        {
             settings.audioInputDeviceID = resolution.device.id
             settings.audioInputDeviceName = resolution.device.name
             saveSettings()

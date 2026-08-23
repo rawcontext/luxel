@@ -1,6 +1,7 @@
 import Foundation
 import LuxelCore
 import OSLog
+
 @MainActor
 extension LuxelMenuModel {
     func startRecording(
@@ -164,10 +165,10 @@ extension LuxelMenuModel {
         setCameraPreviewHoverControlsEnabled(false)
         luxelRecordingLogger.info(
             """
-      Stop recording transitioned to stopping previous_state=\(previousState.loggingDescription, privacy: .public) \
-      active_recording=\(activeRecording?.name ?? "none", privacy: .private) \
-      capture_kind=\(captureKind.loggingDescription, privacy: .public)
-      """
+            Stop recording transitioned to stopping previous_state=\(previousState.loggingDescription, privacy: .public) \
+            active_recording=\(activeRecording?.name ?? "none", privacy: .private) \
+            capture_kind=\(captureKind.loggingDescription, privacy: .public)
+            """
         )
         return RecordingStopContext(
             previousState: previousState,
@@ -210,9 +211,9 @@ extension LuxelMenuModel {
         refreshRecentRecordings()
         luxelRecordingLogger.info(
             """
-      Screen recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private) \
-      capture_kind=\(captureKind.loggingDescription, privacy: .public)
-      """
+            Screen recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private) \
+            capture_kind=\(captureKind.loggingDescription, privacy: .public)
+            """
         )
         return recording
     }
@@ -264,11 +265,11 @@ extension LuxelMenuModel {
         syncCameraPreviewHoverControls()
         luxelRecordingLogger.error(
             """
-      Stop recording failed previous_state=\(context.previousState.loggingDescription, privacy: .public) \
-      restored_state=\(self.recordingState.loggingDescription, privacy: .public) \
-      error_domain=\(nsError.domain, privacy: .public) error_code=\(nsError.code, privacy: .public) \
-      message=\(message, privacy: .public)
-      """
+            Stop recording failed previous_state=\(context.previousState.loggingDescription, privacy: .public) \
+            restored_state=\(self.recordingState.loggingDescription, privacy: .public) \
+            error_domain=\(nsError.domain, privacy: .public) error_code=\(nsError.code, privacy: .public) \
+            message=\(message, privacy: .public)
+            """
         )
     }
 
@@ -294,7 +295,8 @@ extension LuxelMenuModel {
             return
         }
         keystrokeRecordingSession.toggleUserPause()
-        recordingNoticeMessage = keystrokeRecordingSession.isUserPaused
+        recordingNoticeMessage =
+            keystrokeRecordingSession.isUserPaused
             ? "Keystroke capture paused."
             : "Keystroke capture resumed."
     }

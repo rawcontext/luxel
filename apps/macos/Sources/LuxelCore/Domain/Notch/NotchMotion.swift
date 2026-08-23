@@ -69,11 +69,11 @@ public struct NotchMotion: Codable, Equatable, Sendable {
         waveformFrameRate: Double
     ) throws {
         guard geometryMorphDuration.isFinite, geometryMorphDuration >= 0,
-              contentFadeDuration.isFinite, contentFadeDuration >= 0,
-              hoverGraceDuration.isFinite, hoverGraceDuration >= 0,
-              completionDwellDuration.isFinite, completionDwellDuration >= 0,
-              recordingPulseFrequency.isFinite, recordingPulseFrequency >= 0,
-              waveformFrameRate.isFinite, waveformFrameRate >= 0
+            contentFadeDuration.isFinite, contentFadeDuration >= 0,
+            hoverGraceDuration.isFinite, hoverGraceDuration >= 0,
+            completionDwellDuration.isFinite, completionDwellDuration >= 0,
+            recordingPulseFrequency.isFinite, recordingPulseFrequency >= 0,
+            waveformFrameRate.isFinite, waveformFrameRate >= 0
         else {
             throw NotchMotionError.invalidTiming
         }

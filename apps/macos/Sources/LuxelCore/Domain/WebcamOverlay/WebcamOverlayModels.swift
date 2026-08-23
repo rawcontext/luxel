@@ -9,10 +9,12 @@ private func decodeCameraOverlayShape<Key: CodingKey>(
     from container: KeyedDecodingContainer<Key>,
     forKey key: Key
 ) throws -> DecodedCameraOverlayShape {
-    let rawValue = try container.decodeIfPresent(String.self, forKey: key)
+    let rawValue =
+        try container.decodeIfPresent(String.self, forKey: key)
         ?? CameraOverlayShape.circle.rawValue
     let isLegacyCutout = rawValue == "cutout"
-    guard let shape = CameraOverlayShape(rawValue: rawValue) ?? (isLegacyCutout ? .circle : nil) else {
+    guard let shape = CameraOverlayShape(rawValue: rawValue) ?? (isLegacyCutout ? .circle : nil)
+    else {
         throw DecodingError.dataCorruptedError(
             forKey: key,
             in: container,
@@ -233,9 +235,9 @@ public struct CameraOverlayPlan: Codable, Equatable, Sendable {
             let originX = Int((centerX - Double(overlayWidth) / 2).rounded())
             let originY = Int((centerY - Double(overlayHeight) / 2).rounded())
             guard originX >= 0,
-                  originY >= 0,
-                  originX + overlayWidth <= outputSize.width,
-                  originY + overlayHeight <= outputSize.height
+                originY >= 0,
+                originX + overlayWidth <= outputSize.width,
+                originY + overlayHeight <= outputSize.height
             else {
                 throw WebcamOverlayModelError.overlayOutsideFrame
             }
@@ -302,9 +304,9 @@ public struct NormalizedPoint: Codable, Equatable, Sendable {
 
     public init(x xCoordinate: Double, y yCoordinate: Double) throws {
         guard xCoordinate.isFinite,
-              yCoordinate.isFinite,
-              (0...1).contains(xCoordinate),
-              (0...1).contains(yCoordinate)
+            yCoordinate.isFinite,
+            (0...1).contains(xCoordinate),
+            (0...1).contains(yCoordinate)
         else {
             throw WebcamOverlayModelError.invalidNormalizedPoint
         }

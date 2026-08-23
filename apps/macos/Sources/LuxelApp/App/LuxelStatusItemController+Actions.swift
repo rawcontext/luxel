@@ -8,7 +8,7 @@ import SwiftUI
 extension LuxelStatusItemController {
     func rememberActivationSourceApplication() {
         guard let frontmostApplication = NSWorkspace.shared.frontmostApplication,
-              frontmostApplication.processIdentifier != NSRunningApplication.current.processIdentifier
+            frontmostApplication.processIdentifier != NSRunningApplication.current.processIdentifier
         else {
             return
         }
@@ -26,7 +26,7 @@ extension LuxelStatusItemController {
 
     func presentPendingPermissionPromptIfNeeded() {
         guard !isPresentingPermissionPrompt,
-              let prompt = model.permissionPrompt
+            let prompt = model.permissionPrompt
         else {
             return
         }
@@ -36,7 +36,7 @@ extension LuxelStatusItemController {
 
     func presentPendingReplayBufferConsentIfNeeded() {
         guard !isPresentingReplayBufferConsent,
-              let prompt = model.replayBufferConsentPrompt
+            let prompt = model.replayBufferConsentPrompt
         else {
             return
         }

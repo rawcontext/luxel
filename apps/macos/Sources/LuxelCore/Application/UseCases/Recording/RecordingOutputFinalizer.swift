@@ -67,7 +67,8 @@ public struct PassthroughRecordingOutputFinalizer: RecordingOutputFinalizer {
     public init() {}
 
     public func finalize(_ plan: RecordingOutputFinalizationPlan) throws
-    -> RecordingOutputFinalizationResult {
+        -> RecordingOutputFinalizationResult
+    {
         RecordingOutputFinalizationResult(fileURL: plan.finalFileURL)
     }
 }
@@ -85,7 +86,8 @@ public struct FileSystemRecordingOutputFinalizer: RecordingOutputFinalizer {
     }
 
     public func finalize(_ plan: RecordingOutputFinalizationPlan) throws
-    -> RecordingOutputFinalizationResult {
+        -> RecordingOutputFinalizationResult
+    {
         guard !plan.recordsDirectlyToFinalURL else {
             return RecordingOutputFinalizationResult(fileURL: plan.finalFileURL)
         }
@@ -101,7 +103,7 @@ public struct FileSystemRecordingOutputFinalizer: RecordingOutputFinalizer {
         _ plan: RecordingOutputFinalizationPlan
     ) -> RecordingOutputFinalizationResult? {
         guard let finalDirectoryBookmark = plan.finalDirectoryBookmark,
-              let directoryAccessService
+            let directoryAccessService
         else {
             return nil
         }

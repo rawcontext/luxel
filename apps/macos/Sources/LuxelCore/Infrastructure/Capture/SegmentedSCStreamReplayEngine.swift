@@ -34,8 +34,8 @@ public final class SegmentedSCStreamReplayEngine: NSObject, ReplayBufferEngine, 
         .first?
         .appending(path: "Luxel", directoryHint: .isDirectory)
         .appending(path: "ReplayBuffer", directoryHint: .isDirectory)
-        ?? FileManager.default.temporaryDirectory
-        .appending(path: "LuxelReplayBuffer", directoryHint: .isDirectory),
+            ?? FileManager.default.temporaryDirectory
+            .appending(path: "LuxelReplayBuffer", directoryHint: .isDirectory),
         clipDirectoryProvider: @escaping @Sendable () -> URL,
         fileManager: FileManager = .default,
         dateProvider: any DateProvider = SystemDateProvider()
@@ -234,7 +234,9 @@ final class ReplayBufferStateBroadcaster: @unchecked Sendable {
             return Array(continuations.values)
         }
 
-        activeContinuations.forEach { $0.yield(state) }
+        for continuation in activeContinuations {
+            continuation.yield(state)
+        }
     }
 
     private func removeContinuation(_ id: UUID) {

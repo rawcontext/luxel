@@ -3,8 +3,22 @@ import Testing
 
 @Suite("MODNet package audit")
 struct MODNetPackageAuditTests {
-    @Test("package audit expands into a new directory")
-    func packageAuditExpandsIntoNewDirectory() throws {
+    @Test("package audit expands and verifies a copied model")
+    func packageAuditExpandsAndVerifiesCopiedModel() throws {
+        #expect(try runPackageAudit(mode: "copy") == 0)
+    }
+
+    @Test("package audit rejects an external model symlink")
+    func packageAuditRejectsExternalModelSymlink() throws {
+        #expect(try runPackageAudit(mode: "symlink") != 0)
+    }
+
+    @Test("package audit rejects multiple app payloads")
+    func packageAuditRejectsMultipleAppPayloads() throws {
+        #expect(try runPackageAudit(mode: "decoy") != 0)
+    }
+
+    private func runPackageAudit(mode: String) throws -> Int32 {
         let packageRoot = try sharedPackageRootURL()
         let temporaryRoot = FileManager.default.temporaryDirectory
             .appending(path: "luxel-modnet-audit-\(UUID().uuidString)")
@@ -29,7 +43,9 @@ struct MODNetPackageAuditTests {
         process.arguments = [packageURL.path]
         process.environment = ProcessInfo.processInfo.environment.merging(
             [
-                "LUXEL_TEST_MODEL_DIR": packageRoot
+                "LUXEL_TEST_MODE": mode,
+                "LUXEL_TEST_MODEL_DIR":
+                    packageRoot
                     .appending(path: "Vendor/Models/modnet").path,
                 "PATH": "\(binDirectory.path):\(ProcessInfo.processInfo.environment["PATH"] ?? "")",
                 "TMPDIR": temporaryRoot.path
@@ -39,8 +55,7 @@ struct MODNetPackageAuditTests {
 
         try process.run()
         process.waitUntilExit()
-
-        #expect(process.terminationStatus == 0)
+        return process.terminationStatus
     }
 
     private var pkgutilStub: String {
@@ -54,7 +69,21 @@ struct MODNetPackageAuditTests {
 
         model_parent="$3/Applications/Luxel.app/Contents/Resources/Models"
         mkdir -p "${model_parent}"
-        ln -s "${LUXEL_TEST_MODEL_DIR}" "${model_parent}/modnet"
+        case "${LUXEL_TEST_MODE}" in
+            copy)
+                cp -R "${LUXEL_TEST_MODEL_DIR}" "${model_parent}/modnet"
+                ;;
+            symlink)
+                ln -s "${LUXEL_TEST_MODEL_DIR}" "${model_parent}/modnet"
+                ;;
+            decoy)
+                mkdir -p "$3/Decoy/Luxel.app"
+                cp -R "${LUXEL_TEST_MODEL_DIR}" "${model_parent}/modnet"
+                ;;
+            *)
+                exit 92
+                ;;
+        esac
         """
     }
 }

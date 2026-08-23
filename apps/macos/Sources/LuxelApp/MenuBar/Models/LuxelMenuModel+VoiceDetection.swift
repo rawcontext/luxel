@@ -44,7 +44,8 @@ extension LuxelMenuModel {
     }
 
     func requestVoiceDetectionNotificationAuthorization()
-    async -> VoiceDetectionAuthorizationStatus {
+        async -> VoiceDetectionAuthorizationStatus
+    {
         let status = await voiceDetection.coordinator.requestNotificationAuthorization()
         scheduleVoiceDetectionReconciliation()
         return status
@@ -202,8 +203,8 @@ extension LuxelMenuModel {
     }
 }
 
-private extension PermissionStatus {
-    var voiceDetectionAuthorizationStatus: VoiceDetectionAuthorizationStatus {
+extension PermissionStatus {
+    fileprivate var voiceDetectionAuthorizationStatus: VoiceDetectionAuthorizationStatus {
         switch self {
         case .notDetermined, .unknown:
             .notDetermined

@@ -68,7 +68,8 @@ public struct AudioMixPlan: Codable, Equatable, Sendable {
     }
 
     public func resolvedGains(measuredPeaks: [AudioTrackKind: Double] = [:]) -> [AudioTrackKind:
-        Double] {
+        Double]
+    {
         let baseGains = Dictionary(uniqueKeysWithValues: tracks.map { ($0.kind, $0.gain) })
         guard normalizePeak else {
             return baseGains

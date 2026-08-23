@@ -94,7 +94,8 @@ public struct ExportRequest: Codable, Equatable, Sendable {
         timeRange = try container.decode(TimeRange.self, forKey: .timeRange)
         shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
         audioMix = try container.decodeIfPresent(AudioMixPlan.self, forKey: .audioMix)
-        studioVoiceEnabled = try container.decodeIfPresent(Bool.self, forKey: .studioVoiceEnabled) ?? false
+        studioVoiceEnabled =
+            try container.decodeIfPresent(Bool.self, forKey: .studioVoiceEnabled) ?? false
         shouldCrop = try container.decode(Bool.self, forKey: .shouldCrop)
         cropRect = try container.decodeIfPresent(CaptureRect.self, forKey: .cropRect)
         quality = try container.decodeIfPresent(ExportQuality.self, forKey: .quality) ?? .balanced

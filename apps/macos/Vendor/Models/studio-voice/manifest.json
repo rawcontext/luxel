@@ -1,10 +1,68 @@
 {
+  "schemaVersion": 1,
   "repository": "aufklarer/DeepFilterNet3-CoreML",
   "revision": "937bad9811f1ffc1a06ea0d676461b080b2bdc93",
   "sourceURL": "https://huggingface.co/aufklarer/DeepFilterNet3-CoreML/tree/937bad9811f1ffc1a06ea0d676461b080b2bdc93",
   "license": "Apache-2.0",
   "sampleRate": 48000,
-  "runtime": "Adapted from soniqo/speech-swift v0.0.21 (7609977be837a6529bd04300c6b963e735300070)",
+  "runtime": "Adapted from soniqo/speech-swift v0.0.26 (f9af2f34d196eacca85d13fe508d8ed71919671f)",
+  "artifactByteCount": 2472038,
+  "artifactTreeSHA256": "50385d8dc28e911837f0e71855b32471db0a0f602c7e653a23846d6e54c1f4e8",
+  "contract": {
+    "fftSize": 960,
+    "hopSize": 480,
+    "erbBands": 32,
+    "frequencyBins": 481,
+    "deepFilterBins": 96,
+    "deepFilterOrder": 5,
+    "deepFilterLookahead": 2,
+    "maximumFrameCount": 6000,
+    "inputs": [
+      {
+        "name": "feat_erb",
+        "dataType": "Float16",
+        "shape": [
+          1,
+          1,
+          "frames",
+          32
+        ]
+      },
+      {
+        "name": "feat_spec",
+        "dataType": "Float16",
+        "shape": [
+          1,
+          2,
+          "frames",
+          96
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "erb_mask",
+        "dataType": "Float16",
+        "shape": [
+          1,
+          1,
+          "frames",
+          32
+        ]
+      },
+      {
+        "name": "df_coefs",
+        "dataType": "Float16",
+        "shape": [
+          1,
+          5,
+          "frames",
+          96,
+          2
+        ]
+      }
+    ]
+  },
   "files": [
     {
       "path": "DeepFilterNet3.mlmodelc/analytics/coremldata.bin",

@@ -3,8 +3,9 @@ import LuxelCore
 @preconcurrency import UserNotifications
 
 final class VoiceDetectionNotificationController: NSObject,
-                                                  UNUserNotificationCenterDelegate,
-                                                  @unchecked Sendable {
+    UNUserNotificationCenterDelegate,
+    @unchecked Sendable
+{
     private let actionHandler: @Sendable (VoiceDetectionPromptAction) -> Void
 
     init(actionHandler: @escaping @Sendable (VoiceDetectionPromptAction) -> Void) {
@@ -50,7 +51,7 @@ final class VoiceDetectionNotificationController: NSObject,
         }
 
         guard categoryIdentifier == VoiceDetectionNotificationIdentifiers.category,
-              let action = Self.action(for: actionIdentifier)
+            let action = Self.action(for: actionIdentifier)
         else {
             return
         }
@@ -72,7 +73,7 @@ final class VoiceDetectionNotificationController: NSObject,
         case VoiceDetectionNotificationIdentifiers.startRecordingAction:
             .startRecording
         case VoiceDetectionNotificationIdentifiers.dismissAction,
-             UNNotificationDismissActionIdentifier:
+            UNNotificationDismissActionIdentifier:
             .dismiss
         case UNNotificationDefaultActionIdentifier:
             .defaultAction

@@ -5,7 +5,7 @@ public enum CaptureWindowSnapFrameResolver {
     ) -> [CaptureRect] {
         targets.compactMap { target in
             guard case .window = target.target,
-                  let frame = target.frame
+                let frame = target.frame
             else {
                 return nil
             }

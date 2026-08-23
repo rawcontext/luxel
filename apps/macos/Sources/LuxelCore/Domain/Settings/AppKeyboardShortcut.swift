@@ -1,7 +1,8 @@
 import Foundation
 
 public enum AppKeyboardShortcutModifier: String, Codable, CaseIterable, Equatable, Hashable,
-                                         Sendable {
+    Sendable
+{
     case command
     case control
     case option
@@ -70,7 +71,7 @@ public struct AppKeyboardShortcut: Codable, Equatable, Identifiable, Sendable {
 
         let modifiers = parts.dropLast().compactMap(AppKeyboardShortcutModifier.init(rawValue:))
         guard modifiers.count == parts.dropLast().count,
-              let shortcut = try? AppKeyboardShortcut(key: key, modifiers: modifiers)
+            let shortcut = try? AppKeyboardShortcut(key: key, modifiers: modifiers)
         else {
             return nil
         }

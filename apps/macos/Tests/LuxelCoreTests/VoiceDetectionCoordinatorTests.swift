@@ -1,40 +1,42 @@
 import Foundation
-@testable import LuxelCore
+import LuxelTestSupport
 import Testing
+
+@testable import LuxelCore
 
 @Suite("Voice detection coordination")
 struct VoiceDetectionCoordinatorTests {
     @Test("eligibility starts detection and permission loss stops it")
     func eligibilityLifecycle() async {
-        let detector = VoiceActivityDetectorSpy()
+        let detector = TestVoiceActivityDetectorSpy()
         let notifier = VoiceRecordingPromptNotifierSpy()
         let coordinator = VoiceDetectionCoordinator(detector: detector, notifier: notifier)
 
-        #expect(await coordinator.reconcile(eligibility: eligible())
-                    == .listening(microphoneName: "Test Mic"))
+        #expect(
+            await coordinator.reconcile(eligibility: eligible())
+                == .listening(microphoneName: "Test Mic"))
         #expect(await detector.events == [.start("mic-1")])
 
-        #expect(await coordinator.reconcile(eligibility: eligible(
-            notificationPermission: .denied
-        )) == .notificationsRequired)
+        #expect(
+            await coordinator.reconcile(
+                eligibility: eligible(
+                    notificationPermission: .denied
+                )) == .notificationsRequired)
         #expect(await detector.events == [.start("mic-1"), .stop])
     }
 
     @Test("sustained speech posts once and explicit consent stops before returning start")
     func promptAndStartOrdering() async {
         let timeline = VoiceDetectionTimeline()
-        let detector = VoiceActivityDetectorSpy(timeline: timeline)
+        let detector = TestVoiceActivityDetectorSpy(
+            didStop: { await timeline.append("stop-detector") }
+        )
         let notifier = VoiceRecordingPromptNotifierSpy(timeline: timeline)
         let coordinator = VoiceDetectionCoordinator(detector: detector, notifier: notifier)
         _ = await coordinator.reconcile(eligibility: eligible())
 
-        for index in 0..<4 {
-            await coordinator.receive(.observation(
-                VoiceActivityObservation(
-                    probability: 0.95,
-                    observedAt: Date(timeIntervalSince1970: Double(index) * 0.25)
-                )
-            ))
+        for event in testSustainedSpeechEvents() {
+            await coordinator.receive(event)
         }
 
         #expect(await notifier.postCount == 1)
@@ -45,7 +47,7 @@ struct VoiceDetectionCoordinatorTests {
     @Test("dismiss, body clicks, and stale recording actions cannot start recording")
     func nonConsentAndStaleActions() async {
         let coordinator = VoiceDetectionCoordinator(
-            detector: VoiceActivityDetectorSpy(),
+            detector: TestVoiceActivityDetectorSpy(),
             notifier: VoiceRecordingPromptNotifierSpy()
         )
         _ = await coordinator.reconcile(eligibility: eligible())
@@ -58,17 +60,12 @@ struct VoiceDetectionCoordinatorTests {
     @Test("concurrent recording actions consume one outstanding prompt at most once")
     func concurrentRecordingActionsStartAtMostOnce() async {
         let coordinator = VoiceDetectionCoordinator(
-            detector: VoiceActivityDetectorSpy(),
+            detector: TestVoiceActivityDetectorSpy(),
             notifier: VoiceRecordingPromptNotifierSpy()
         )
         _ = await coordinator.reconcile(eligibility: eligible())
-        for index in 0..<4 {
-            await coordinator.receive(.observation(
-                VoiceActivityObservation(
-                    probability: 0.95,
-                    observedAt: Date(timeIntervalSince1970: Double(index) * 0.25)
-                )
-            ))
+        for event in testSustainedSpeechEvents() {
+            await coordinator.receive(event)
         }
 
         let outcomes = await withTaskGroup(
@@ -94,17 +91,12 @@ struct VoiceDetectionCoordinatorTests {
 
     @Test("device loss removes an outstanding prompt and stops capture")
     func deviceLoss() async {
-        let detector = VoiceActivityDetectorSpy()
+        let detector = TestVoiceActivityDetectorSpy()
         let notifier = VoiceRecordingPromptNotifierSpy()
         let coordinator = VoiceDetectionCoordinator(detector: detector, notifier: notifier)
         _ = await coordinator.reconcile(eligibility: eligible())
-        for index in 0..<4 {
-            await coordinator.receive(.observation(
-                VoiceActivityObservation(
-                    probability: 0.95,
-                    observedAt: Date(timeIntervalSince1970: Double(index) * 0.25)
-                )
-            ))
+        for event in testSustainedSpeechEvents() {
+            await coordinator.receive(event)
         }
 
         _ = await coordinator.reconcile(eligibility: eligible(microphone: nil))
@@ -129,35 +121,6 @@ struct VoiceDetectionCoordinatorTests {
             isSessionLocked: false,
             isDisplayAsleep: false
         )
-    }
-}
-
-private actor VoiceActivityDetectorSpy: VoiceActivityDetecting {
-    enum Event: Equatable, Sendable {
-        case start(String?)
-        case stop
-    }
-
-    private(set) var events: [Event] = []
-    private let timeline: VoiceDetectionTimeline?
-    private var continuation: AsyncStream<VoiceActivityDetectorEvent>.Continuation?
-
-    init(timeline: VoiceDetectionTimeline? = nil) {
-        self.timeline = timeline
-    }
-
-    func start(deviceID: String?) -> AsyncStream<VoiceActivityDetectorEvent> {
-        events.append(.start(deviceID))
-        let stream = AsyncStream.makeStream(of: VoiceActivityDetectorEvent.self)
-        continuation = stream.continuation
-        return stream.stream
-    }
-
-    func stop() async {
-        events.append(.stop)
-        await timeline?.append("stop-detector")
-        continuation?.finish()
-        continuation = nil
     }
 }
 

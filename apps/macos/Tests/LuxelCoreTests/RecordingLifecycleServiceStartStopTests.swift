@@ -24,7 +24,8 @@ extension RecordingLifecycleServiceTests {
     @Test("start clears active recording when recorder fails")
     func startClearsActiveRecordingWhenRecorderFails() async throws {
         let store = InMemoryRecordingHistoryStore()
-        let recorder = RecordingLifecycleRecorderSpy(startError: RecordingLifecycleRecorderError.startFailed)
+        let recorder = RecordingLifecycleRecorderSpy(
+            startError: RecordingLifecycleRecorderError.startFailed)
         let service = makeService(store: store, recorder: recorder)
 
         await #expect(throws: RecordingLifecycleRecorderError.startFailed) {
@@ -190,7 +191,8 @@ extension RecordingLifecycleServiceTests {
     @Test("stop keeps active recording when recorder fails")
     func stopKeepsActiveRecordingWhenRecorderFails() async throws {
         let store = InMemoryRecordingHistoryStore()
-        let recorder = RecordingLifecycleRecorderSpy(stopError: RecordingLifecycleRecorderError.stopFailed)
+        let recorder = RecordingLifecycleRecorderSpy(
+            stopError: RecordingLifecycleRecorderError.stopFailed)
         let history = makeHistory(store: store)
         let service = RecordingLifecycleService(recorder: recorder, history: history)
         history.setCurrentRecording(
@@ -218,8 +220,8 @@ private struct StagedRecordingContext {
     let finalURL: URL
 }
 
-private extension RecordingLifecycleServiceTests {
-    func makeStagedRecordingContext(
+extension RecordingLifecycleServiceTests {
+    fileprivate func makeStagedRecordingContext(
         outputExists: Bool = true,
         moveError: (any Error)? = nil
     ) throws -> StagedRecordingContext {
@@ -247,7 +249,7 @@ private extension RecordingLifecycleServiceTests {
         )
     }
 
-    func startStagedRecording(
+    fileprivate func startStagedRecording(
         _ context: StagedRecordingContext
     ) async throws -> ActiveRecording {
         try await context.service.startRecording(

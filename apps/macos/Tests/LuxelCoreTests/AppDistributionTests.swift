@@ -6,9 +6,9 @@ struct AppDistributionTests {
     @Test("current distribution follows active compilation condition")
     func currentDistributionFollowsActiveCompilationCondition() {
         #if LUXEL_MAC_APP_STORE
-        #expect(AppDistribution.current == .macAppStore)
+            #expect(AppDistribution.current == .macAppStore)
         #else
-        #expect(AppDistribution.current == .developerID)
+            #expect(AppDistribution.current == .developerID)
         #endif
     }
 

@@ -14,7 +14,8 @@ extension URL {
     private func resolvingSymlinksAllowingMissingLeaves() -> URL {
         let standardized = standardizedFileURL
         if standardized.pathComponents.count <= 1
-            || FileManager.default.fileExists(atPath: standardized.path) {
+            || FileManager.default.fileExists(atPath: standardized.path)
+        {
             return standardized.resolvingSymlinksInPath()
         }
         return standardized.deletingLastPathComponent()

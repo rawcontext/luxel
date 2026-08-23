@@ -249,16 +249,16 @@ struct TranscriptSpeakerModelTests {
     @Test("old transcript JSON without speaker fields decodes as non-diarized")
     func oldJSONDecodesAsNonDiarized() throws {
         let json = """
-        {
-          "localeIdentifier": "en_US",
-          "spans": [
-            { "id": "span-0", "text": "Legacy", "start": 0, "end": 1 }
-          ],
-          "turns": [
-            { "id": "turn-0", "spanIDs": ["span-0"], "start": 0, "end": 1, "text": "Legacy" }
-          ]
-        }
-        """
+            {
+              "localeIdentifier": "en_US",
+              "spans": [
+                { "id": "span-0", "text": "Legacy", "start": 0, "end": 1 }
+              ],
+              "turns": [
+                { "id": "turn-0", "spanIDs": ["span-0"], "start": 0, "end": 1, "text": "Legacy" }
+              ]
+            }
+            """
 
         let transcript = try JSONDecoder().decode(
             TurnSegmentedTranscript.self, from: Data(json.utf8))

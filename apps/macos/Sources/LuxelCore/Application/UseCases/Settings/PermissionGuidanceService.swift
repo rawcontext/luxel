@@ -27,7 +27,8 @@ public struct PermissionGuidanceService: Sendable {
     public init() {}
 
     public func guidance(for permission: SystemPermission, status: PermissionStatus)
-    -> PermissionGuidance {
+        -> PermissionGuidance
+    {
         switch permission {
         case .screenRecording:
             screenRecordingGuidance(status: status)
@@ -107,7 +108,7 @@ public struct PermissionGuidanceService: Sendable {
                 action: .enableSource
             )
         case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch,
-             .pausedByMacOS, .blocked:
+            .pausedByMacOS, .blocked:
             switch status {
             case .notDetermined:
                 PermissionGuidance(
@@ -235,7 +236,8 @@ public struct PermissionGuidanceService: Sendable {
         case .notDetermined:
             PermissionGuidance(
                 title: "Allow keystroke capture?",
-                message: "Luxel stores typed characters and shortcut identities locally with the recording. "
+                message:
+                    "Luxel stores typed characters and shortcut identities locally with the recording. "
                     + "You can pause capture at any time and remove the data later.",
                 actionTitle: "Open System Settings",
                 action: .request

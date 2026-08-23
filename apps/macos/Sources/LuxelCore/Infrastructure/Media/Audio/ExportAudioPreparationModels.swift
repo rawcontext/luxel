@@ -47,11 +47,11 @@ final class BoundedPCMWriter {
             return
         }
         guard channels.allSatisfy({ $0.count == frameCount }),
-              let buffer = AVAudioPCMBuffer(
+            let buffer = AVAudioPCMBuffer(
                 pcmFormat: ExportAudioPreparationWorker.format,
                 frameCapacity: AVAudioFrameCount(frameCount)
-              ),
-              let channelData = buffer.floatChannelData
+            ),
+            let channelData = buffer.floatChannelData
         else {
             throw ExportAudioPreparationError.preparedAudioWriteFailed
         }

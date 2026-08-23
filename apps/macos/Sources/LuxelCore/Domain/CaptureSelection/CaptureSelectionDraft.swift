@@ -11,9 +11,9 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
         minimumHeight: Int = 32
     ) throws {
         guard minimumWidth > 0,
-              minimumHeight > 0,
-              minimumWidth <= display.width,
-              minimumHeight <= display.height
+            minimumHeight > 0,
+            minimumWidth <= display.width,
+            minimumHeight <= display.height
         else {
             throw CaptureModelError.invalidDimensions
         }
@@ -128,12 +128,14 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
     }
 
     public func applyingAspectRatioPreset(_ preset: CaptureAspectRatioPreset) throws
-    -> CaptureSelectionDraft {
+        -> CaptureSelectionDraft
+    {
         try applyingAspectRatio(preset.aspectRatio)
     }
 
     public func applyingAspectRatio(_ aspectRatio: CaptureAspectRatio?) throws
-    -> CaptureSelectionDraft {
+        -> CaptureSelectionDraft
+    {
         guard let aspectRatio else {
             return self
         }
@@ -173,7 +175,7 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
     }
 }
 
-private extension CaptureSelectionDraft {
+extension CaptureSelectionDraft {
     private func freeformResize(
         dragging handle: CaptureResizeHandle,
         by delta: CaptureResizeDelta

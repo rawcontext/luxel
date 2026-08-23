@@ -222,20 +222,20 @@ extension UserDefaultsSettingsStoreTests {
             recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
         let oldPayload = Data(
             """
-      {
-          "recordingsDirectory": "file:///tmp/luxel/",
-          "allowAnalytics": true,
-          "showCursor": false,
-          "highlightClicks": true,
-          "record60FPS": true,
-          "loopExports": false,
-          "recordAudio": true,
-          "audioInputDeviceID": "device-1",
-          "lossyCompression": true,
-          "enableShortcuts": false,
-          "triggerCropperShortcut": "command+shift+5"
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///tmp/luxel/",
+                "allowAnalytics": true,
+                "showCursor": false,
+                "highlightClicks": true,
+                "record60FPS": true,
+                "loopExports": false,
+                "recordAudio": true,
+                "audioInputDeviceID": "device-1",
+                "lossyCompression": true,
+                "enableShortcuts": false,
+                "triggerCropperShortcut": "command+shift+5"
+            }
+            """.utf8)
         defaults.set(oldPayload, forKey: "settings")
 
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
@@ -275,11 +275,11 @@ extension UserDefaultsSettingsStoreTests {
             recordingsDirectory: URL(fileURLWithPath: "/tmp/default"))
         let payload = Data(
             """
-      {
-          "recordingsDirectory": "file:///tmp/luxel/",
-          "quickExportPresetID": null
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///tmp/luxel/",
+                "quickExportPresetID": null
+            }
+            """.utf8)
         defaults.set(payload, forKey: "settings")
 
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)

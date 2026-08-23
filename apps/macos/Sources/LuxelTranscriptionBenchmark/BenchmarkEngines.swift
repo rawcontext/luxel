@@ -103,9 +103,10 @@ actor ParakeetUnifiedBenchmarkEngine: BenchmarkEngine {
             throw BenchmarkError.invalidEncoderPrecision(precisionValue)
         }
         let modelConfiguration = MLModelConfiguration()
-        modelConfiguration.computeUnits = try parsedComputeUnits(
-            configuration.encoderComputeUnits
-        ) ?? .cpuAndNeuralEngine
+        modelConfiguration.computeUnits =
+            try parsedComputeUnits(
+                configuration.encoderComputeUnits
+            ) ?? .cpuAndNeuralEngine
         manager = UnifiedAsrManager(
             configuration: modelConfiguration,
             encoderPrecision: precision
@@ -119,10 +120,12 @@ actor ParakeetUnifiedBenchmarkEngine: BenchmarkEngine {
 
     func transcribe(audioURL: URL, locale: Locale) async throws -> String {
         let audioFile = try AVAudioFile(forReading: audioURL)
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: audioFile.processingFormat,
-            frameCapacity: AVAudioFrameCount(audioFile.length)
-        ) else {
+        guard
+            let buffer = AVAudioPCMBuffer(
+                pcmFormat: audioFile.processingFormat,
+                frameCapacity: AVAudioFrameCount(audioFile.length)
+            )
+        else {
             throw BenchmarkError.audioBufferCreationFailed(audioURL.path)
         }
         try audioFile.read(into: buffer)

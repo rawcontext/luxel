@@ -29,8 +29,8 @@ enum CaptureTargetScreenRectResolver {
 
         case .window(let id):
             guard let windowTarget = availableTargets.first(where: { $0.target == .window(id: id) }),
-                  let windowFrame = windowTarget.frame,
-                  let displayFrame = displayFrame(containing: windowFrame, availableTargets: availableTargets)
+                let windowFrame = windowTarget.frame,
+                let displayFrame = displayFrame(containing: windowFrame, availableTargets: availableTargets)
             else {
                 return nil
             }
@@ -44,7 +44,7 @@ enum CaptureTargetScreenRectResolver {
         availableTargets: [CaptureTargetOption]
     ) -> CaptureTargetDisplayScreenFrame? {
         guard let screen = NSScreen.screens.first(where: { $0.displayID == displayID }),
-              let target = availableTargets.first(where: { $0.target == .display(displayID) })
+            let target = availableTargets.first(where: { $0.target == .display(displayID) })
         else {
             return nil
         }
@@ -66,7 +66,7 @@ enum CaptureTargetScreenRectResolver {
         guard
             let displayTarget = availableTargets.first(where: { target in
                 guard case .display(let displayID) = target.target,
-                      let frame = target.frame
+                    let frame = target.frame
                 else {
                     return false
                 }

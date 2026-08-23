@@ -63,7 +63,8 @@ struct CaptureSizePresetSettingsSection: View {
 
     private var currentSelectedPresetID: UUID? {
         if let selectedPresetID,
-           settings.userSizePresets.contains(where: { $0.id == selectedPresetID }) {
+            settings.userSizePresets.contains(where: { $0.id == selectedPresetID })
+        {
             return selectedPresetID
         }
 
@@ -83,7 +84,7 @@ struct CaptureSizePresetSettingsSection: View {
 
     private func duplicateSelectedPreset() {
         guard let presetID = currentSelectedPresetID,
-              let preset = try? settings.duplicateCaptureSizePreset(id: presetID)
+            let preset = try? settings.duplicateCaptureSizePreset(id: presetID)
         else {
             return
         }

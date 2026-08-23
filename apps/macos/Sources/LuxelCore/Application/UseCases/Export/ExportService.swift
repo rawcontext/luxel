@@ -247,7 +247,7 @@ public struct ExportService: Sendable {
 
     private func fileSizeBytes(at fileURL: URL) -> Int64? {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-              let size = attributes[.size] as? NSNumber
+            let size = attributes[.size] as? NSNumber
         else {
             return nil
         }

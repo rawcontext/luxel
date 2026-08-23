@@ -171,7 +171,8 @@ enum LuxelCompositionRoot {
 
     @MainActor
     static func quickExportService(fileWorkflowService: ExportedFileWorkflowService)
-    -> QuickExportService {
+        -> QuickExportService
+    {
         let codecAdapterRegistry = codecAdapterRegistry()
 
         return QuickExportService(

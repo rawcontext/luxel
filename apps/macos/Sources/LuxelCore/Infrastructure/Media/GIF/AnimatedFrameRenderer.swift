@@ -153,9 +153,9 @@ struct AnimatedFrameRenderer: Sendable {
         )
         let clampedRect = requestedRect.intersection(imageRect).integral
         guard !clampedRect.isNull,
-              clampedRect.width > 0,
-              clampedRect.height > 0,
-              let croppedImage = image.cropping(to: clampedRect)
+            clampedRect.width > 0,
+            clampedRect.height > 0,
+            let croppedImage = image.cropping(to: clampedRect)
         else {
             throw AnimatedFrameRendererError.cannotCropFrame
         }

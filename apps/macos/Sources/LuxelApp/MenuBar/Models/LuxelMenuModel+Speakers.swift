@@ -30,8 +30,8 @@ extension LuxelMenuModel {
     func renameKnownSpeaker(id: UUID, to name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
-              var profile = knownSpeakers.first(where: { $0.id == id }),
-              profile.displayName != trimmed
+            var profile = knownSpeakers.first(where: { $0.id == id }),
+            profile.displayName != trimmed
         else {
             return
         }
@@ -52,7 +52,7 @@ extension LuxelMenuModel {
 
     func removeKnownSpeakerClip(profileID: UUID, clipID: UUID) {
         guard var profile = knownSpeakers.first(where: { $0.id == profileID }),
-              let clip = profile.exampleClips.first(where: { $0.id == clipID })
+            let clip = profile.exampleClips.first(where: { $0.id == clipID })
         else {
             return
         }

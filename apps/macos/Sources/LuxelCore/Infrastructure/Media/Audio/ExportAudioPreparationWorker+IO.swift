@@ -50,10 +50,12 @@ extension ExportAudioPreparationWorker {
         to composition: AVMutableComposition
     ) throws -> [AVMutableCompositionTrack] {
         try sourceTracks.map { sourceTrack in
-            guard let track = composition.addMutableTrack(
-                withMediaType: .audio,
-                preferredTrackID: kCMPersistentTrackID_Invalid
-            ) else {
+            guard
+                let track = composition.addMutableTrack(
+                    withMediaType: .audio,
+                    preferredTrackID: kCMPersistentTrackID_Invalid
+                )
+            else {
                 throw ExportAudioPreparationError.unsupportedAudioLayout
             }
             try track.insert(sourceSegments, from: sourceTrack)
@@ -63,10 +65,12 @@ extension ExportAudioPreparationWorker {
 
     func channels(from sampleBuffer: CMSampleBuffer) throws -> [[Float]] {
         let frameCount = AVAudioFrameCount(CMSampleBufferGetNumSamples(sampleBuffer))
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: Self.format,
-            frameCapacity: frameCount
-        ) else {
+        guard
+            let buffer = AVAudioPCMBuffer(
+                pcmFormat: Self.format,
+                frameCapacity: frameCount
+            )
+        else {
             throw ExportAudioPreparationError.sourceReadFailed(
                 "Could not allocate an audio buffer."
             )
@@ -97,10 +101,12 @@ extension ExportAudioPreparationWorker {
         let inputFile = try AVAudioFile(forReading: inputURL)
         let outputFile = try makeAudioFile(forWriting: outputURL)
         let capacity: AVAudioFrameCount = 4_096
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: Self.format,
-            frameCapacity: capacity
-        ) else {
+        guard
+            let buffer = AVAudioPCMBuffer(
+                pcmFormat: Self.format,
+                frameCapacity: capacity
+            )
+        else {
             throw ExportAudioPreparationError.preparedAudioWriteFailed
         }
 
@@ -113,7 +119,8 @@ extension ExportAudioPreparationWorker {
             for channel in 0..<ExportAudioPreparationService.channelCount {
                 for frame in 0..<Int(buffer.frameLength) {
                     let scaled = Double(channelData[channel][frame]) * gain
-                    channelData[channel][frame] = scaled.isFinite
+                    channelData[channel][frame] =
+                        scaled.isFinite
                         ? Float(min(max(scaled, -1), 1))
                         : 0
                 }

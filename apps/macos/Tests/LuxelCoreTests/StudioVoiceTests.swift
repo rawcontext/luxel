@@ -1,7 +1,76 @@
 import AVFAudio
 import Foundation
-import LuxelCore
 import Testing
+
+@testable import LuxelCore
+
+@Suite("Studio Voice runtime parity")
+struct StudioVoiceRuntimeParityTests {
+    @Test("normalization alpha matches libdf training configuration")
+    func normalizationAlphaMatchesLibDF() {
+        #expect(abs(DeepFilterNetConfiguration().normalizationAlpha - 0.99) < 0.000_001)
+    }
+
+    @Test("analysis DFT uses libdf scaling")
+    func analysisDFTUsesLibDFScaling() {
+        let transform = DeepFilterNetSTFT(
+            fftSize: 4,
+            hopSize: 2,
+            window: [1, 1, 1, 1]
+        )
+        var memory: [Float] = [0, 0]
+
+        let spectrum = transform.forward(audio: [1, 0], memory: &memory)
+
+        #expect(abs(spectrum.real[0] - 0.25) < 0.000_001)
+        #expect(abs(spectrum.real[1] + 0.25) < 0.000_001)
+        #expect(abs(spectrum.real[2] - 0.25) < 0.000_001)
+    }
+
+    @Test("deep filtering zero-pads taps outside the time axis")
+    func deepFilteringZeroPadsTimeAxis() {
+        let filtered = deepFilterNetApplyFiltering(
+            real: [2],
+            imaginary: [0],
+            coefficients: [1, 0, 1, 0, 1, 0],
+            shape: DeepFilterNetFilteringShape(
+                filteredBins: 1,
+                order: 3,
+                lookahead: 1,
+                frameCount: 1,
+                frequencyBins: 1
+            )
+        )
+
+        #expect(filtered.real == [2])
+        #expect(filtered.imaginary == [0])
+    }
+
+    @Test("auxiliary reader restores Fortran-order inverse filterbank")
+    func auxiliaryReaderRestoresFortranOrder() throws {
+        let resources = try BundledStudioVoiceModelLocator(
+            modelDirectoryURL: studioVoiceModelDirectory()
+        ).locate()
+
+        let auxiliary = try DeepFilterNetNPZReader.load(from: resources.auxiliaryDataURL)
+
+        #expect(auxiliary.inverseERBFilterbank[33] == 0)
+        #expect(auxiliary.inverseERBFilterbank[481 + 1] == 1)
+    }
+
+    private func studioVoiceModelDirectory() throws -> URL {
+        packageRootURL()
+            .appending(path: "Vendor/Models/studio-voice", directoryHint: .isDirectory)
+    }
+
+    private func packageRootURL() -> URL {
+        var url = URL(fileURLWithPath: #filePath)
+        while url.lastPathComponent != "Tests" {
+            url.deleteLastPathComponent()
+        }
+        return url.deletingLastPathComponent()
+    }
+}
 
 @Suite("Studio Voice")
 struct StudioVoiceTests {
@@ -12,7 +81,10 @@ struct StudioVoiceTests {
             modelDirectoryURL: directory
         ).locate()
         let shippedFiles = try FileManager.default.subpathsOfDirectory(atPath: directory.path)
-            .filter { !$0.hasSuffix("/") && $0 != "manifest.json" }
+            .filter {
+                !$0.hasSuffix("/")
+                    && !["manifest.json", "LICENSE.txt", "NOTICE.md"].contains($0)
+            }
             .filter { path in
                 var isDirectory = ObjCBool(false)
                 let fullPath = directory.appending(path: path).path
@@ -32,7 +104,7 @@ struct StudioVoiceTests {
                 modelDirectoryURL: try studioVoiceModelDirectory()
             )
         )
-        let frameCount = 48_000
+        let frameCount = 48_123
         let samples = (0..<frameCount).map { frame in
             Float(sin(Double(frame) * 2 * .pi * 220 / 48_000) * 0.1)
         }
@@ -51,6 +123,7 @@ struct StudioVoiceTests {
 
         #expect(output.samples.count == samples.count)
         #expect(output.samples.allSatisfy { $0.isFinite })
+        #expect(output.samples.suffix(123).contains { abs($0) > 0.000_001 })
     }
 
     @Test("preparation skips default and audio-disabled requests")
@@ -201,10 +274,12 @@ struct StudioVoiceTests {
     private func peak(of url: URL) throws -> Double {
         let file = try AVAudioFile(forReading: url)
         let format = file.processingFormat
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: format,
-            frameCapacity: AVAudioFrameCount(file.length)
-        ) else {
+        guard
+            let buffer = AVAudioPCMBuffer(
+                pcmFormat: format,
+                frameCapacity: AVAudioFrameCount(file.length)
+            )
+        else {
             return 0
         }
         try file.read(into: buffer)
@@ -266,7 +341,9 @@ private actor SpyStudioVoiceEnhancer: StudioVoiceEnhancing {
         started = true
         let continuations = startContinuations
         startContinuations.removeAll()
-        continuations.forEach { $0.resume() }
+        for continuation in continuations {
+            continuation.resume()
+        }
         if let delay {
             try await Task.sleep(for: delay)
         }

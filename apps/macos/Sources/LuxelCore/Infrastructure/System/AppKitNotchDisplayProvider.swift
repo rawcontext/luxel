@@ -63,8 +63,8 @@ public final class AppKitNotchDisplayProvider: NotchDisplayProvider {
         isVisible: Bool = true
     ) -> NotchDisplayDescriptor? {
         guard let displayID,
-              let frame = notchRect(from: frame),
-              let safeAreaInsets = notchInsets(from: safeAreaInsets)
+            let frame = notchRect(from: frame),
+            let safeAreaInsets = notchInsets(from: safeAreaInsets)
         else {
             return nil
         }

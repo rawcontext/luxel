@@ -7,7 +7,8 @@ extension LuxelMenuModel {
         recentRecordings = recordingHistoryService.getPastRecordings()
 
         if recentRecordingFilter != .all,
-           !recentRecordings.contains(where: recentRecordingFilter.includes) {
+            !recentRecordings.contains(where: recentRecordingFilter.includes)
+        {
             recentRecordingFilter = .all
         }
     }

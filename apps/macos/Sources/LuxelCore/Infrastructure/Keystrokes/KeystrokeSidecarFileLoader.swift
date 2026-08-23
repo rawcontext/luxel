@@ -19,7 +19,7 @@ public struct KeystrokeSidecarFileLoader: Sendable {
             from: Data(contentsOf: manifestURL)
         )
         guard manifest.primaryFileName == mediaURL.lastPathComponent,
-              let sidecar = manifest.sidecar(for: .keystrokes)
+            let sidecar = manifest.sidecar(for: .keystrokes)
         else {
             return nil
         }
@@ -37,9 +37,9 @@ public struct KeystrokeSidecarFileLoader: Sendable {
         let manifestURL = mediaURL.deletingLastPathComponent()
             .appendingPathComponent(BundleManifest.fileName)
         guard let data = try? Data(contentsOf: manifestURL),
-              let manifest = try? JSONDecoder().decode(BundleManifest.self, from: data),
-              manifest.primaryFileName == mediaURL.lastPathComponent,
-              let sidecar = manifest.sidecar(for: .keystrokes)
+            let manifest = try? JSONDecoder().decode(BundleManifest.self, from: data),
+            manifest.primaryFileName == mediaURL.lastPathComponent,
+            let sidecar = manifest.sidecar(for: .keystrokes)
         else {
             return nil
         }

@@ -87,7 +87,8 @@ private struct LuxelAboutView: View {
     }
 
     private func openAppStoreListing() {
-        guard let appStoreApplicationURL = NSWorkspace.shared.urlForApplication(
+        guard
+            let appStoreApplicationURL = NSWorkspace.shared.urlForApplication(
                 withBundleIdentifier: "com.apple.AppStore")
         else {
             return

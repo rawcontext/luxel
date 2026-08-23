@@ -21,10 +21,7 @@ struct VoiceDetectionServiceTests {
         let service = VoiceDetectionService()
         _ = await service.reconcile(eligibility: eligible())
 
-        #expect(await service.handle(positive(at: 0)) == [])
-        #expect(await service.handle(positive(at: 0.256)) == [])
-        #expect(await service.handle(positive(at: 0.512)) == [])
-        #expect(await service.handle(positive(at: 0.768)) == [.postPrompt])
+        await expectSustainedSpeechPrompt(service, startingAt: 0)
         #expect(await service.handle(positive(at: 1.024)) == [])
         #expect(await service.handle(positive(at: 30)) == [])
     }
@@ -36,10 +33,7 @@ struct VoiceDetectionServiceTests {
 
         #expect(await service.handle(positive(at: 0)) == [])
         #expect(await service.handle(positive(at: 0.256)) == [])
-        #expect(await service.handle(positive(at: 2)) == [])
-        #expect(await service.handle(positive(at: 2.256)) == [])
-        #expect(await service.handle(positive(at: 2.512)) == [])
-        #expect(await service.handle(positive(at: 2.768)) == [.postPrompt])
+        await expectSustainedSpeechPrompt(service, startingAt: 2)
     }
 
     @Test("dismiss requires cooldown and continuous silence before rearm")
@@ -60,10 +54,7 @@ struct VoiceDetectionServiceTests {
 
         #expect(await service.handle(negative(at: 250)) == [])
         #expect(await service.handle(negative(at: 301)) == [])
-        #expect(await service.handle(positive(at: 302)) == [])
-        #expect(await service.handle(positive(at: 302.256)) == [])
-        #expect(await service.handle(positive(at: 302.512)) == [])
-        #expect(await service.handle(positive(at: 302.768)) == [.postPrompt])
+        await expectSustainedSpeechPrompt(service, startingAt: 302)
     }
 
     @Test("positive evidence interrupts rearm silence")
@@ -84,10 +75,7 @@ struct VoiceDetectionServiceTests {
 
         #expect(await service.handle(negative(at: 320)) == [])
         #expect(await service.handle(negative(at: 351)) == [])
-        #expect(await service.handle(positive(at: 352)) == [])
-        #expect(await service.handle(positive(at: 352.256)) == [])
-        #expect(await service.handle(positive(at: 352.512)) == [])
-        #expect(await service.handle(positive(at: 352.768)) == [.postPrompt])
+        await expectSustainedSpeechPrompt(service, startingAt: 352)
     }
 
     @Test("reset clears candidates and outstanding prompt")
@@ -99,10 +87,7 @@ struct VoiceDetectionServiceTests {
         #expect(
             await service.reset(for: .queueOverflow) == [.removePrompt, .resetDetector]
         )
-        #expect(await service.handle(positive(at: 2)) == [])
-        #expect(await service.handle(positive(at: 2.256)) == [])
-        #expect(await service.handle(positive(at: 2.512)) == [])
-        #expect(await service.handle(positive(at: 2.768)) == [.postPrompt])
+        await expectSustainedSpeechPrompt(service, startingAt: 2)
     }
 
     @Test("eligibility loss removes prompt and stops detector")
@@ -209,10 +194,17 @@ private func eligible(
 }
 
 private func reachPrompt(_ service: VoiceDetectionService) async {
-    _ = await service.handle(positive(at: 0))
-    _ = await service.handle(positive(at: 0.256))
-    _ = await service.handle(positive(at: 0.512))
-    _ = await service.handle(positive(at: 0.768))
+    await expectSustainedSpeechPrompt(service, startingAt: 0)
+}
+
+private func expectSustainedSpeechPrompt(
+    _ service: VoiceDetectionService,
+    startingAt startTime: TimeInterval
+) async {
+    #expect(await service.handle(positive(at: startTime)) == [])
+    #expect(await service.handle(positive(at: startTime + 0.256)) == [])
+    #expect(await service.handle(positive(at: startTime + 0.512)) == [])
+    #expect(await service.handle(positive(at: startTime + 0.768)) == [.postPrompt])
 }
 
 private func positive(at time: TimeInterval) -> VoiceActivityDetectorEvent {

@@ -35,7 +35,7 @@ struct SampledAnimatedEstimateModel: Equatable, Sendable {
         adjacentPairs: [SampledAnimatedAdjacentPairSize]
     ) throws {
         guard totalFrameCount > 0, !sampleByteCounts.isEmpty,
-              sampleByteCounts.allSatisfy({ $0 > 0 })
+            sampleByteCounts.allSatisfy({ $0 > 0 })
         else {
             throw SampledAnimatedSizeEstimatorError.invalidSampleData
         }

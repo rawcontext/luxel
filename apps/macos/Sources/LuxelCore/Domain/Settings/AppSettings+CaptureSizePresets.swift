@@ -14,7 +14,8 @@ extension AppSettings {
 
     @discardableResult
     public mutating func duplicateCaptureSizePreset(id: UUID, newID: UUID = UUID()) throws
-    -> CaptureSizePreset {
+        -> CaptureSizePreset
+    {
         guard let preset = userSizePresets.first(where: { $0.id == id }) else {
             throw CaptureSizePresetSettingsError.presetNotFound(id)
         }

@@ -10,10 +10,10 @@ public struct I420Frame: Equatable, Sendable {
         let chromaWidth = pixelSize.width / 2
         let chromaHeight = pixelSize.height / 2
         guard pixelSize.width.isMultiple(of: 2),
-              pixelSize.height.isMultiple(of: 2),
-              yPlane.count == pixelSize.width * pixelSize.height,
-              uPlane.count == chromaWidth * chromaHeight,
-              vPlane.count == chromaWidth * chromaHeight
+            pixelSize.height.isMultiple(of: 2),
+            yPlane.count == pixelSize.width * pixelSize.height,
+            uPlane.count == chromaWidth * chromaHeight,
+            vPlane.count == chromaWidth * chromaHeight
         else {
             throw CodecPipelineModelError.invalidI420Frame
         }
@@ -41,8 +41,8 @@ public struct CodecVideoFrame: Equatable, Sendable {
     }
 }
 
-public extension CodecVideoFrame {
-    func withUnsafeI420Planes<Result>(
+extension CodecVideoFrame {
+    public func withUnsafeI420Planes<Result>(
         emptyPlanesError: @autoclosure () -> any Error,
         _ body: (
             UnsafePointer<UInt8>,
@@ -54,8 +54,8 @@ public extension CodecVideoFrame {
             try frame.uPlane.withUnsafeBytes { uBuffer in
                 try frame.vPlane.withUnsafeBytes { vBuffer in
                     guard let yPlane = yBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
-                          let uPlane = uBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
-                          let vPlane = vBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self)
+                        let uPlane = uBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self),
+                        let vPlane = vBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self)
                     else {
                         throw emptyPlanesError()
                     }
@@ -188,7 +188,7 @@ public struct CodecMuxerConfiguration: Equatable, Sendable {
 
         if tracks.contains(.audio) {
             guard let audioSampleRate, audioSampleRate > 0,
-                  let audioChannelCount, audioChannelCount > 0
+                let audioChannelCount, audioChannelCount > 0
             else {
                 throw CodecPipelineModelError.invalidMuxerConfiguration
             }
@@ -221,7 +221,7 @@ public struct CodecMediaSourceDescription: Equatable, Sendable {
 
         if audioChunkCount > 0 {
             guard let audioSampleRate, audioSampleRate > 0,
-                  let audioChannelCount, audioChannelCount > 0
+                let audioChannelCount, audioChannelCount > 0
             else {
                 throw CodecPipelineModelError.invalidMediaSourceDescription
             }

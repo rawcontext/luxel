@@ -8,11 +8,11 @@ public struct NotchScreenRect: Codable, Equatable, Sendable {
 
     public init(x originX: Double, y originY: Double, width: Double, height: Double) throws {
         guard originX.isFinite,
-              originY.isFinite,
-              width.isFinite,
-              height.isFinite,
-              width > 0,
-              height > 0
+            originY.isFinite,
+            width.isFinite,
+            height.isFinite,
+            width > 0,
+            height > 0
         else {
             throw NotchGeometryError.invalidRect
         }
@@ -96,11 +96,11 @@ public struct NotchGeometry: Codable, Equatable, Sendable {
 
     public static func resolve(from display: NotchDisplayDescriptor) -> NotchGeometry? {
         guard display.isVisible,
-              display.isBuiltIn,
-              display.safeAreaInsets.top > 0,
-              let leftArea = display.auxiliaryTopLeftArea,
-              let rightArea = display.auxiliaryTopRightArea,
-              leftArea.maxX < rightArea.minX
+            display.isBuiltIn,
+            display.safeAreaInsets.top > 0,
+            let leftArea = display.auxiliaryTopLeftArea,
+            let rightArea = display.auxiliaryTopRightArea,
+            leftArea.maxX < rightArea.minX
         else {
             return nil
         }

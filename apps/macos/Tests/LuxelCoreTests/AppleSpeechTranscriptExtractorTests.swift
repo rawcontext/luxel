@@ -1,7 +1,8 @@
 import Foundation
-@testable import LuxelCore
 import Speech
 import Testing
+
+@testable import LuxelCore
 
 @Suite("Apple Speech transcript extractor")
 struct AppleSpeechTranscriptExtractorTests {

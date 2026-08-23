@@ -92,10 +92,10 @@ extension SettingsTests {
     func commandLineAccessDefaults() throws {
         let data = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+            }
+            """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -108,17 +108,17 @@ extension SettingsTests {
     func transcriptTurnSegmentationSettingDecodesOverride() throws {
         let missingData = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+            }
+            """.utf8)
         let enabledData = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "transcriptTurnSegmentationEnabled": true
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "transcriptTurnSegmentationEnabled": true
+            }
+            """.utf8)
 
         #expect(
             !(try JSONDecoder().decode(AppSettings.self, from: missingData)
@@ -132,17 +132,17 @@ extension SettingsTests {
     func speakerDiarizationSettingDecodesOverride() throws {
         let missingData = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+            }
+            """.utf8)
         let disabledData = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "transcriptSpeakerDiarizationEnabled": false
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "transcriptSpeakerDiarizationEnabled": false
+            }
+            """.utf8)
 
         #expect(
             try JSONDecoder().decode(AppSettings.self, from: missingData)
@@ -156,24 +156,24 @@ extension SettingsTests {
     func transcriptLanguageDecodesIdentifier() throws {
         let missingData = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+            }
+            """.utf8)
         let explicitData = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "transcriptLanguageIdentifier": "de-DE"
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "transcriptLanguageIdentifier": "de-DE"
+            }
+            """.utf8)
         let emptyData = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "transcriptLanguageIdentifier": ""
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "transcriptLanguageIdentifier": ""
+            }
+            """.utf8)
 
         #expect(
             try JSONDecoder().decode(AppSettings.self, from: missingData)
@@ -190,11 +190,11 @@ extension SettingsTests {
     func replayBufferPreferredLengthDecodesWithoutEnablingBuffer() throws {
         let data = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "replayBufferPreferredBufferLength": 300
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "replayBufferPreferredBufferLength": 300
+            }
+            """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -206,17 +206,17 @@ extension SettingsTests {
     func replayBufferIslandVisibilityDefaultsOffAndDecodesOverride() throws {
         let missingData = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+            }
+            """.utf8)
         let enabledData = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "alwaysShowReplayBufferIsland": true
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "alwaysShowReplayBufferIsland": true
+            }
+            """.utf8)
 
         #expect(
             !(try JSONDecoder().decode(AppSettings.self, from: missingData)
@@ -230,17 +230,17 @@ extension SettingsTests {
     func replayBufferPreferredLengthFallsBackToConfiguredBufferLength() throws {
         let data = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "replayBufferConfiguration": {
-              "bufferLength": 120,
-              "source": { "displayWithCursor": {} },
-              "frameRate": { "framesPerSecond": 30 },
-              "includeSystemAudio": false,
-              "quality": "balanced"
-          }
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "replayBufferConfiguration": {
+                    "bufferLength": 120,
+                    "source": { "displayWithCursor": {} },
+                    "frameRate": { "framesPerSecond": 30 },
+                    "includeSystemAudio": false,
+                    "quality": "balanced"
+                }
+            }
+            """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -252,32 +252,32 @@ extension SettingsTests {
     func decodingSettingsRemovesRetiredBuiltInCropperSizePresets() throws {
         let data = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "userSizePresets": [
-              {
-                  "id": "00000000-0000-0000-0000-000000000701",
-                  "name": "1280x720",
-                  "pixelSize": { "width": 1280, "height": 720 }
-              },
-              {
-                  "id": "00000000-0000-0000-0000-000000000704",
-                  "name": "X/Twitter 1280x720",
-                  "pixelSize": { "width": 1280, "height": 720 }
-              },
-              {
-                  "id": "00000000-0000-0000-0000-000000000705",
-                  "name": "App Store Preview 1920x1080",
-                  "pixelSize": { "width": 1920, "height": 1080 }
-              },
-              {
-                  "id": "00000000-0000-0000-0000-000000000806",
-                  "name": "Custom X/Twitter",
-                  "pixelSize": { "width": 1280, "height": 720 }
-              }
-          ]
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "userSizePresets": [
+                    {
+                        "id": "00000000-0000-0000-0000-000000000701",
+                        "name": "1280x720",
+                        "pixelSize": { "width": 1280, "height": 720 }
+                    },
+                    {
+                        "id": "00000000-0000-0000-0000-000000000704",
+                        "name": "X/Twitter 1280x720",
+                        "pixelSize": { "width": 1280, "height": 720 }
+                    },
+                    {
+                        "id": "00000000-0000-0000-0000-000000000705",
+                        "name": "App Store Preview 1920x1080",
+                        "pixelSize": { "width": 1920, "height": 1080 }
+                    },
+                    {
+                        "id": "00000000-0000-0000-0000-000000000806",
+                        "name": "Custom X/Twitter",
+                        "pixelSize": { "width": 1280, "height": 720 }
+                    }
+                ]
+            }
+            """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -354,12 +354,12 @@ extension SettingsTests {
     func typedRecordingFrameRateWinsOverLegacyBooleanWhenDecoding() throws {
         let data = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "record60FPS": true,
-          "recordingFrameRate": { "framesPerSecond": 24 }
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "record60FPS": true,
+                "recordingFrameRate": { "framesPerSecond": 24 }
+            }
+            """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 

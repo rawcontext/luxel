@@ -210,13 +210,13 @@ extension LuxelEditorModel {
         displayDuration: TimeInterval? = nil
     ) {
         guard let current = keystrokeOptions,
-              let updated = try? KeystrokeRenderOptions(
+            let updated = try? KeystrokeRenderOptions(
                 isVisible: isVisible ?? current.isVisible,
                 anchor: anchor ?? current.anchor,
                 size: size ?? current.size,
                 theme: theme ?? current.theme,
                 displayDuration: displayDuration ?? current.displayDuration
-              )
+            )
         else {
             return
         }

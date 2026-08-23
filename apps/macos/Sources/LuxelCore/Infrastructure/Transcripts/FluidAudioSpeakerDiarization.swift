@@ -17,12 +17,15 @@ struct SpeakerDiarizationModelManifest: Codable, Equatable, Sendable {
 public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStore {
     /// Re-check on every FluidAudio version bump; embeddings and cached diarized
     /// transcripts are keyed by this identity.
-    public static let packageVersion = "0.15.5"
+    public static let packageVersion = "0.15.6"
+    public static let modelSourceRevision = "1ed7a662fdc7109e36d822db793ee6eebdaf8594"
     public static let modelRevision =
-        "speaker-diarization-coreml@fluidaudio-\(packageVersion)-threshold0.7"
+        "speaker-diarization-coreml@\(modelSourceRevision)+fluidaudio-\(packageVersion)+euclidean-0.6"
+    private static let modelDirectoryName = "speaker-diarization"
 
     public enum ModelInstallError: Error, Equatable, Sendable {
         case bundledModelMissing
+        case bundledModelInvalid
     }
 
     private let modelsDirectory: URL
@@ -60,7 +63,10 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
                 expectedBytes: catalogInfo.expectedDownloadBytes
             )
         }
-        if let manifest = loadManifest() {
+        if let manifest = loadManifest(),
+            isCurrentManifest(manifest),
+            installedModelIsValid()
+        {
             return .ready(
                 installedBytes: installedBytes() ?? manifest.installedBytes,
                 modelRevision: Self.modelRevision
@@ -78,16 +84,25 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
         }
 
         guard let bundledModelDirectory,
-              fileManager.fileExists(atPath: bundledModelDirectory.path)
+            fileManager.fileExists(atPath: bundledModelDirectory.path)
         else {
             failureMessage = "The speaker model is missing from the app bundle."
             throw ModelInstallError.bundledModelMissing
+        }
+        guard modelDirectoryIsValid(bundledModelDirectory) else {
+            failureMessage = "The bundled speaker model failed integrity validation."
+            throw ModelInstallError.bundledModelInvalid
         }
 
         try seedFromBundle(bundledModelDirectory)
         failureMessage = nil
         try writeManifest()
-        return currentState()
+        let state = currentState()
+        guard case .ready = state else {
+            failureMessage = "The installed speaker model failed integrity validation."
+            throw ModelInstallError.bundledModelInvalid
+        }
+        return state
     }
 
     public func removeModel() throws {
@@ -98,8 +113,7 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
     }
 
     private func seedFromBundle(_ bundledModelDirectory: URL) throws {
-        let destination = modelsDirectory.appending(
-            path: bundledModelDirectory.lastPathComponent)
+        let destination = installedModelDirectory
         try fileManager.createDirectory(at: modelsDirectory, withIntermediateDirectories: true)
         if fileManager.fileExists(atPath: destination.path) {
             try fileManager.removeItem(at: destination)
@@ -111,12 +125,36 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
         modelsDirectory.appending(path: "luxel-model-manifest.json")
     }
 
+    private var installedModelDirectory: URL {
+        modelsDirectory.appending(path: Self.modelDirectoryName, directoryHint: .isDirectory)
+    }
+
     private func loadManifest() -> SpeakerDiarizationModelManifest? {
         guard let data = try? Data(contentsOf: manifestURL) else {
             return nil
         }
 
         return try? JSONDecoder().decode(SpeakerDiarizationModelManifest.self, from: data)
+    }
+
+    private func isCurrentManifest(_ manifest: SpeakerDiarizationModelManifest) -> Bool {
+        manifest.packageVersion == Self.packageVersion
+            && manifest.repository == catalogInfo.repository
+            && manifest.revision == Self.modelRevision
+            && manifest.expectedBytes == catalogInfo.expectedDownloadBytes
+            && manifest.licenseIdentifier == catalogInfo.licenseIdentifier
+    }
+
+    private func installedModelIsValid() -> Bool {
+        modelDirectoryIsValid(installedModelDirectory)
+    }
+
+    private func modelDirectoryIsValid(_ directory: URL) -> Bool {
+        SpeakerModelIntegrityValidator(fileManager: fileManager).isValid(
+            directory: directory,
+            repository: catalogInfo.repository,
+            revision: Self.modelSourceRevision
+        )
     }
 
     private func writeManifest() throws {
@@ -165,7 +203,7 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
 }
 
 public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
-    public static let offlineClusteringThreshold = 0.7
+    public static let offlineClusteringThreshold = 0.6
 
     private let modelsDirectory: URL
     private let segmentExporter: AVFoundationAudioSegmentExporter
@@ -179,7 +217,8 @@ public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
     }
 
     public func diarize(_ request: SpeakerDiarizationRequest) async throws
-    -> SpeakerDiarizationOutput {
+        -> SpeakerDiarizationOutput
+    {
         var audioURL = request.audioURL
         var temporaryURL: URL?
         if let audioTrackIndex = try await isolationTrackIndex(for: request) {
@@ -198,7 +237,8 @@ public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
 
         let manager = OfflineDiarizerManager(
             config: Self.offlineDiarizerConfig(speakerCountHint: request.speakerCountHint))
-        try await manager.prepareModels(directory: modelsDirectory)
+        let models = try await Self.loadModelsOffline(from: modelsDirectory)
+        manager.initialize(models: models)
         do {
             let result = try await manager.process(audioURL)
             return Self.normalizedOutput(from: result)
@@ -211,7 +251,8 @@ public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
     /// readers target audio files, so movie containers are exported to a
     /// temporary M4A first.
     private func isolationTrackIndex(for request: SpeakerDiarizationRequest) async throws
-    -> Int? {
+        -> Int?
+    {
         if let audioTrackIndex = request.audioTrackIndex {
             return audioTrackIndex
         }
@@ -221,7 +262,14 @@ public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
         return hasVideoTracks ? 0 : nil
     }
 
-    private static func offlineDiarizerConfig(
+    static func loadModelsOffline(from modelsDirectory: URL) async throws
+        -> OfflineDiarizerModels
+    {
+        ModelHub.offlineMode = true
+        return try await OfflineDiarizerModels.load(from: modelsDirectory)
+    }
+
+    static func offlineDiarizerConfig(
         speakerCountHint: TranscriptSpeakerCountHint
     ) -> OfflineDiarizerConfig {
         let base = OfflineDiarizerConfig(clusteringThreshold: offlineClusteringThreshold)

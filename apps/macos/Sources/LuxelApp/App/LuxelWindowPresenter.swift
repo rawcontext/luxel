@@ -170,8 +170,8 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
     private func yieldActivation(to sourceApplication: NSRunningApplication?) {
         guard let sourceApplication,
-              sourceApplication.processIdentifier != NSRunningApplication.current.processIdentifier,
-              !sourceApplication.isTerminated
+            sourceApplication.processIdentifier != NSRunningApplication.current.processIdentifier,
+            !sourceApplication.isTerminated
         else {
             return
         }
@@ -207,7 +207,7 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
     private func refreshEditorMenusIfNeeded() {
         guard NSApplication.shared.activationPolicy() == .regular,
-              editorWindow?.isVisible == true || settingsWindow?.isVisible == true
+            editorWindow?.isVisible == true || settingsWindow?.isVisible == true
         else {
             return
         }
@@ -235,11 +235,13 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
         let currentApplication = NSRunningApplication.current
         if let sourceApplication,
-           sourceApplication.processIdentifier != currentApplication.processIdentifier,
-           !sourceApplication.isTerminated {
+            sourceApplication.processIdentifier != currentApplication.processIdentifier,
+            !sourceApplication.isTerminated
+        {
             _ = currentApplication.activate(from: sourceApplication, options: .activateAllWindows)
         } else if let frontmostApplication = NSWorkspace.shared.frontmostApplication,
-                  frontmostApplication.processIdentifier != currentApplication.processIdentifier {
+            frontmostApplication.processIdentifier != currentApplication.processIdentifier
+        {
             _ = currentApplication.activate(from: frontmostApplication, options: .activateAllWindows)
         } else {
             NSApplication.shared.activate()
@@ -258,7 +260,7 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
     private func pauseEditorPlaybackIfNeeded(for notification: Notification) {
         guard let closingWindow = notification.object as? NSWindow,
-              closingWindow === editorWindow
+            closingWindow === editorWindow
         else {
             return
         }
@@ -268,9 +270,9 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
     private func restoreAccessoryActivationPolicyIfNoManagedWindowsVisible() {
         guard !settingsPresentationInFlight,
-              !NSApplication.shared.windows.contains(where: { window in
+            !NSApplication.shared.windows.contains(where: { window in
                 window.isVisible && window.canBecomeMain
-              })
+            })
         else {
             return
         }

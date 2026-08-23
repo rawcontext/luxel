@@ -83,10 +83,11 @@ extension LuxelSettingsView {
             }
             .disabled(!isMicrophoneSelectionEnabled)
             .opacity(isMicrophoneSelectionEnabled ? 1 : 0.45)
-            .help(speechDetectionString(
-                "settings.speechDetection.microphoneHelp",
-                "Choose the microphone Luxel records or analyzes for speech detection."
-            ))
+            .help(
+                speechDetectionString(
+                    "settings.speechDetection.microphoneHelp",
+                    "Choose the microphone Luxel records or analyzes for speech detection."
+                ))
 
             LuxelGlassRowDivider()
 

@@ -101,7 +101,8 @@ struct CommandLineToolSettingsSection: View {
             ),
             footer: LuxelLocalization.string(
                 "settings.commandLine.fileAccessFooter",
-                defaultValue: "Movies, the recording folder, and folders you add are available to command line requests."
+                defaultValue:
+                    "Movies, the recording folder, and folders you add are available to command line requests."
             )
         ) {
             SettingsRow(

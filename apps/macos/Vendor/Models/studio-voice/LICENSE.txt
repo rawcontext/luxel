@@ -1,0 +1,10 @@
+Apache License, Version 2.0
+
+The bundled DeepFilterNet3 model material is distributed under the Apache
+License, Version 2.0. The complete license text is available at:
+
+https://www.apache.org/licenses/LICENSE-2.0
+
+The complete Apache License 2.0 text is also reproduced in Luxel's
+ThirdPartyLicenses.md, which is included in every signed app bundle alongside
+this model directory.

@@ -19,8 +19,8 @@ extension LuxelEditorModel {
         canTranscribeSource
             && isTranscriptPanelVisible
             && (transcript != nil
-                    || isTranscriptExtractionActive
-                    || hasPendingSpeakerCountHintChange)
+                || isTranscriptExtractionActive
+                || hasPendingSpeakerCountHintChange)
     }
 
     var selectedSpeakerCountHint: TranscriptSpeakerCountHint {
@@ -47,8 +47,8 @@ extension LuxelEditorModel {
 
     func refreshDetectedSpeakerVoices() {
         guard let transcript, !transcript.speakers.isEmpty,
-              let speakerNamingService,
-              let source
+            let speakerNamingService,
+            let source
         else {
             detectedSpeakerVoices = []
             knownSpeakerOptions = []
@@ -179,7 +179,7 @@ extension LuxelEditorModel {
 
     func applySpeakerCountHint() {
         guard canTranscribeSource,
-              isTranscriptPanelVisible
+            isTranscriptPanelVisible
         else {
             return
         }
@@ -262,7 +262,8 @@ extension LuxelEditorModel {
     func seekToTranscriptTime(_ time: TimeInterval, autoPlay: Bool = true) {
         currentPlaybackTime = time
         let shouldStartPlayback = autoPlay && !playbackRequested
-        let playerTime = transcriptEditPlan.cuts.isEmpty
+        let playerTime =
+            transcriptEditPlan.cuts.isEmpty
             ? time
             : previewOutputTime(forSourceTime: time)
         player.seek(

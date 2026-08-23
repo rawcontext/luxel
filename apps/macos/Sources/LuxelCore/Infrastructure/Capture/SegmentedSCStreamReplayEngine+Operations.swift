@@ -92,9 +92,9 @@ extension SegmentedSCStreamReplayEngine {
 
     func publishBufferingIfReady() {
         guard !isReadyForClipping,
-              pausedReason == nil,
-              activeSession?.canMakeClipPlan == true,
-              let bufferingSince
+            pausedReason == nil,
+            activeSession?.canMakeClipPlan == true,
+            let bufferingSince
         else {
             return
         }

@@ -26,7 +26,8 @@ public final class AutomationService: Sendable {
         context: AutomationPolicyContext
     ) async throws -> AutomationServiceResult {
         switch AutomationPolicy.evaluate(
-            command: invocation.command, settings: settings, context: context) {
+            command: invocation.command, settings: settings, context: context)
+        {
         case .allow:
             return .executed(try await execute(invocation.command))
         case .confirm(let prompt):
@@ -37,7 +38,8 @@ public final class AutomationService: Sendable {
     }
 
     public func executeConfirmed(_ invocation: AutomationInvocation) async throws
-    -> AutomationExecutionResult {
+        -> AutomationExecutionResult
+    {
         try await execute(invocation.command)
     }
 

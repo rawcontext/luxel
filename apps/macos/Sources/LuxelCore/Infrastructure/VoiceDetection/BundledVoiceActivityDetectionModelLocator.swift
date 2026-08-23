@@ -14,11 +14,12 @@ public struct BundledVoiceActivityModelLocator: Sendable {
     }
 
     public var modelURL: URL? {
-        guard let candidate = resourceURL?
+        guard
+            let candidate = resourceURL?
                 .appendingPathComponent("Models", isDirectory: true)
                 .appendingPathComponent("voice-activity-detection", isDirectory: true)
                 .appendingPathComponent(Self.modelDirectoryName, isDirectory: true),
-              FileManager.default.fileExists(atPath: candidate.path)
+            FileManager.default.fileExists(atPath: candidate.path)
         else {
             return nil
         }

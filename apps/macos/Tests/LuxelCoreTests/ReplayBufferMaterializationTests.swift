@@ -1,9 +1,10 @@
 import AVFoundation
 import CoreVideo
 import Foundation
-@testable import LuxelCore
 import LuxelTestSupport
 import Testing
+
+@testable import LuxelCore
 
 @Suite("Replay buffer materialization", .serialized)
 struct ReplayBufferMaterializationTests {
@@ -100,13 +101,13 @@ private func makeReplayEngine() -> SegmentedSCStreamReplayEngine {
 private func probeTimeline(ffprobe: String, fileURL: URL) throws -> ReplayProbeTimeline {
     let result = try runTestFFProbe(executable: ffprobe, fileURL: fileURL)
     guard result.terminationStatus == 0,
-          let data = result.output.data(using: .utf8),
-          let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-          let format = object["format"] as? [String: Any],
-          let startText = format["start_time"] as? String,
-          let durationText = format["duration"] as? String,
-          let startTime = TimeInterval(startText),
-          let duration = TimeInterval(durationText)
+        let data = result.output.data(using: .utf8),
+        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+        let format = object["format"] as? [String: Any],
+        let startText = format["start_time"] as? String,
+        let durationText = format["duration"] as? String,
+        let startTime = TimeInterval(startText),
+        let duration = TimeInterval(durationText)
     else {
         throw ReplayBufferMaterializationTestError.invalidProbeOutput
     }

@@ -1,17 +1,40 @@
 @preconcurrency import AVFoundation
 import CryptoKit
 import Foundation
-@testable import LuxelCore
 import Testing
+
+@testable import LuxelCore
 
 @Suite("Voice detection fixture benchmark", .serialized)
 struct VoiceDetectionFixtureTests {
     @Test("fixture manifest records provenance formats and matching checksums")
     func fixtureManifest() throws {
         let corpus = try VoiceDetectionFixtureCorpus.load()
+        let expectedPythonVersion = try repositoryPythonVersion()
+        let expectedSourceAudioSHA256 = """
+            4e25e22555cd16e90edb0a3b49fdcf1fe652b2a1250ab643634db33895c75b41
+            """
 
-        #expect(corpus.manifest.schemaVersion == 1)
+        #expect(corpus.manifest.schemaVersion == 2)
         #expect(corpus.manifest.speechSource.license == "CC BY 4.0")
+        #expect(
+            corpus.manifest.speechSource.datasetRevision
+                == "5be91486e11a2d616f4ec5db8d3fd248585ac07a"
+        )
+        #expect(corpus.manifest.speechSource.sourceAudioByteCount == 120_041)
+        #expect(corpus.manifest.speechSource.sourceAudioSha256 == expectedSourceAudioSHA256)
+        #expect(
+            corpus.manifest.speechSource.sourceRowsURL.contains(
+                corpus.manifest.speechSource.datasetRevision
+            )
+        )
+        #expect(
+            corpus.manifest.speechSource.sourceAssetPath.contains(
+                corpus.manifest.speechSource.datasetRevision
+            )
+        )
+        #expect(corpus.manifest.generationToolchain.ffmpeg == "8.1.2")
+        #expect(corpus.manifest.generationToolchain.python == expectedPythonVersion)
         #expect(corpus.manifest.fixtures.count == 9)
         #expect(Set(corpus.manifest.fixtures.map(\.sampleRate)) == [16_000, 44_100, 48_000])
         #expect(Set(corpus.manifest.fixtures.map(\.channels)) == [1, 2])
@@ -30,7 +53,8 @@ struct VoiceDetectionFixtureTests {
     @Test("bundled model and production pipeline meet prompt precision gates")
     func productionPipelinePromptBehavior() async throws {
         let corpus = try VoiceDetectionFixtureCorpus.load()
-        let modelURL = packageRoot
+        let modelURL =
+            packageRoot
             .appending(path: "Vendor/Models/voice-activity-detection")
             .appending(path: BundledVoiceActivityModelLocator.modelDirectoryName)
 
@@ -78,31 +102,36 @@ struct VoiceDetectionFixtureTests {
         while file.framePosition < file.length {
             let remaining = AVAudioFrameCount(file.length - file.framePosition)
             let capacity = min(remaining, chunkSizes[chunkIndex % chunkSizes.count])
-            let buffer = try #require(AVAudioPCMBuffer(
-                pcmFormat: file.processingFormat,
-                frameCapacity: capacity
-            ))
+            let buffer = try #require(
+                AVAudioPCMBuffer(
+                    pcmFormat: file.processingFormat,
+                    frameCapacity: capacity
+                ))
             try file.read(into: buffer, frameCount: capacity)
             let sampleRate = Int32(file.processingFormat.sampleRate)
-            let observations = try await pipeline.process(CapturedVoiceActivityBuffer(
-                buffer: buffer,
-                presentationTime: CMTime(value: sourceFramePosition, timescale: sampleRate),
-                duration: CMTime(value: Int64(buffer.frameLength), timescale: sampleRate)
-            ))
+            let observations = try await pipeline.process(
+                CapturedVoiceActivityBuffer(
+                    buffer: buffer,
+                    presentationTime: CMTime(value: sourceFramePosition, timescale: sampleRate),
+                    duration: CMTime(value: Int64(buffer.frameLength), timescale: sampleRate)
+                ))
 
             for observation in observations {
                 let observedAt = startDate.addingTimeInterval(
                     Double(modelFrameIndex) * observation.frameDuration
                 )
-                let effects = await service.handle(.observation(VoiceActivityObservation(
-                    probability: observation.probability,
-                    frameDuration: observation.frameDuration,
-                    observedAt: observedAt,
-                    kind: observation.kind
-                )))
+                let effects = await service.handle(
+                    .observation(
+                        VoiceActivityObservation(
+                            probability: observation.probability,
+                            frameDuration: observation.frameDuration,
+                            observedAt: observedAt,
+                            kind: observation.kind
+                        )))
                 if effects.contains(.postPrompt) {
                     promptCount += 1
-                    firstPromptSeconds = firstPromptSeconds
+                    firstPromptSeconds =
+                        firstPromptSeconds
                         ?? observedAt.timeIntervalSince(startDate)
                 }
                 modelFrameIndex += 1
@@ -126,10 +155,12 @@ private struct VoiceDetectionFixtureResult {
     let modelFrameCount: Int
 
     func reportLine(fixtureName: String) -> String {
-        let promptTime = firstPromptSecondsFromStart
+        let promptTime =
+            firstPromptSecondsFromStart
             .map { String(format: "%.3f", $0) }
             ?? "none"
-        return "\(fixtureName): frames=\(modelFrameCount), prompts=\(promptCount), firstPromptSeconds=\(promptTime)"
+        return
+            "\(fixtureName): frames=\(modelFrameCount), prompts=\(promptCount), firstPromptSeconds=\(promptTime)"
     }
 }
 
@@ -138,10 +169,11 @@ private struct VoiceDetectionFixtureCorpus {
     let manifest: VoiceDetectionFixtureManifest
 
     static func load() throws -> VoiceDetectionFixtureCorpus {
-        let manifestURL = try #require(Bundle.module.url(
-            forResource: "manifest",
-            withExtension: "json"
-        ))
+        let manifestURL = try #require(
+            Bundle.module.url(
+                forResource: "manifest",
+                withExtension: "json"
+            ))
         let directory = manifestURL.deletingLastPathComponent()
         let data = try Data(contentsOf: manifestURL)
         return VoiceDetectionFixtureCorpus(
@@ -158,11 +190,22 @@ private struct VoiceDetectionFixtureCorpus {
 private struct VoiceDetectionFixtureManifest: Decodable {
     let schemaVersion: Int
     let speechSource: VoiceDetectionSpeechSource
+    let generationToolchain: VoiceDetectionFixtureToolchain
     let fixtures: [VoiceDetectionFixture]
 }
 
 private struct VoiceDetectionSpeechSource: Decodable {
     let license: String
+    let datasetRevision: String
+    let sourceRowsURL: String
+    let sourceAssetPath: String
+    let sourceAudioByteCount: Int
+    let sourceAudioSha256: String
+}
+
+private struct VoiceDetectionFixtureToolchain: Decodable {
+    let python: String
+    let ffmpeg: String
 }
 
 private struct VoiceDetectionFixture: Decodable {
@@ -182,8 +225,8 @@ private struct VoiceDetectionFixture: Decodable {
     let sha256: String
 }
 
-private extension VoiceDetectionEligibility {
-    static let fixtureEligible = VoiceDetectionEligibility(
+extension VoiceDetectionEligibility {
+    fileprivate static let fixtureEligible = VoiceDetectionEligibility(
         isEnabled: true,
         isDisclosureAccepted: true,
         notificationPermission: .authorized,
@@ -201,3 +244,16 @@ private let packageRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .deletingLastPathComponent()
     .deletingLastPathComponent()
+
+private func repositoryPythonVersion() throws -> String {
+    let toolVersionsURL =
+        packageRoot
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appending(path: ".tool-versions")
+    let contents = try String(contentsOf: toolVersionsURL, encoding: .utf8)
+    return try #require(
+        contents.split(separator: "\n").first { line in
+            line.split(separator: " ").first == "python"
+        }?.split(separator: " ").last.map(String.init))
+}

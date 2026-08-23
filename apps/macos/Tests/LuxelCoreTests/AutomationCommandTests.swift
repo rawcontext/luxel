@@ -263,12 +263,12 @@ extension AutomationCommandTests {
                 settings: settings,
                 context: AutomationPolicyContext()
             )
-            == .confirm(
-                AutomationPolicyPrompt(
-                    title: "Allow Automation Request?",
-                    message: "Another app wants to transcribe a local media file."
+                == .confirm(
+                    AutomationPolicyPrompt(
+                        title: "Allow Automation Request?",
+                        message: "Another app wants to transcribe a local media file."
+                    )
                 )
-            )
         )
     }
 
@@ -333,22 +333,22 @@ extension AutomationCommandTests {
                 settings: settings,
                 context: AutomationPolicyContext()
             )
-            == .confirm(
-                AutomationPolicyPrompt(
-                    title: "Allow Automation Request?",
-                    message: "Another app wants to start a screen recording."
-                )))
+                == .confirm(
+                    AutomationPolicyPrompt(
+                        title: "Allow Automation Request?",
+                        message: "Another app wants to start a screen recording."
+                    )))
         #expect(
             AutomationPolicy.evaluate(
                 command: .toggle(nil),
                 settings: settings,
                 context: AutomationPolicyContext(hasActiveRecording: false)
             )
-            == .confirm(
-                AutomationPolicyPrompt(
-                    title: "Allow Automation Request?",
-                    message: "Another app wants to toggle recording."
-                )))
+                == .confirm(
+                    AutomationPolicyPrompt(
+                        title: "Allow Automation Request?",
+                        message: "Another app wants to toggle recording."
+                    )))
     }
 
     @Test("policy confirms ungranted named callers")

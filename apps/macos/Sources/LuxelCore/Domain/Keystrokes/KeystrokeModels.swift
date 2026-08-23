@@ -268,12 +268,12 @@ public struct KeystrokeChipPlannerRules: Equatable, Sendable {
         maxVisibleChips: Int = 3
     ) throws {
         guard typingCoalescingInterval >= 0,
-              typingCoalescingInterval.isFinite,
-              maxTypingCharacters > 0,
-              modifierHoldThreshold >= 0,
-              modifierHoldThreshold.isFinite,
-              repeatCollapseThreshold > 0,
-              maxVisibleChips > 0
+            typingCoalescingInterval.isFinite,
+            maxTypingCharacters > 0,
+            modifierHoldThreshold >= 0,
+            modifierHoldThreshold.isFinite,
+            repeatCollapseThreshold > 0,
+            maxVisibleChips > 0
         else {
             throw KeystrokeModelError.invalidChipPlannerRules
         }

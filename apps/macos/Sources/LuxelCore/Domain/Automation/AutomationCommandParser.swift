@@ -64,7 +64,8 @@ public enum AutomationCommandParser {
             .split(separator: "/")
             .first
             .map(String.init),
-           !pathAction.isEmpty {
+            !pathAction.isEmpty
+        {
             return pathAction
         }
 
@@ -138,7 +139,7 @@ public enum AutomationCommandParser {
         }
 
         guard let framesPerSecond = Int(value),
-              let frameRate = try? AppSettings.makeRecordingFrameRate(framesPerSecond)
+            let frameRate = try? AppSettings.makeRecordingFrameRate(framesPerSecond)
         else {
             throw AutomationCommandParseError.invalidParameter("fps")
         }
@@ -175,7 +176,8 @@ public enum AutomationCommandParser {
     }
 
     private static func preferencesPane(in query: AutomationQuery) throws
-    -> AutomationPreferencesPane? {
+        -> AutomationPreferencesPane?
+    {
         guard let pane = query.value(for: "pane") else {
             return nil
         }
@@ -253,8 +255,9 @@ public enum AutomationCommandParser {
         }
 
         if let url = URL(string: value),
-           url.isFileURL,
-           !url.path.isEmpty {
+            url.isFileURL,
+            !url.path.isEmpty
+        {
             return url.standardizedFileURL
         }
 
@@ -296,9 +299,9 @@ public enum AutomationCommandParser {
         }
 
         guard let url = URL(string: value),
-              let scheme = url.scheme?.lowercased(),
-              !url.isFileURL,
-              scheme != "file"
+            let scheme = url.scheme?.lowercased(),
+            !url.isFileURL,
+            scheme != "file"
         else {
             throw AutomationCommandParseError.invalidCallbackURL(name)
         }

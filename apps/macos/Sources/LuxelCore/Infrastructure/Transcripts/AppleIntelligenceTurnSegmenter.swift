@@ -131,67 +131,67 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
             retrying
             ? """
 
-      Your previous response failed validation. This time preserve every span id exactly once,
-      return only ordered span id groups. The app will reconstruct exact text, timing, and source.
+            Your previous response failed validation. This time preserve every span id exactly once,
+            return only ordered span id groups. The app will reconstruct exact text, timing, and source.
 
-      """
+            """
             : ""
         let spanLines = spans.map { span in
             let source = span.source?.rawValue ?? "unknown"
             return
                 """
-        [id=\(span.id) start=\(formatTime(span.start)) end=\(formatTime(span.end)) \
-        source=\(source)] \(retrying ? "" : sanitized(span.text))
-        """
+                [id=\(span.id) start=\(formatTime(span.start)) end=\(formatTime(span.end)) \
+                source=\(source)] \(retrying ? "" : sanitized(span.text))
+                """
         }.joined(separator: "\n")
 
         return """
-      Segment this \(locale.identifier) time-coded transcript into display turns.\(retryText)
+            Segment this \(locale.identifier) time-coded transcript into display turns.\(retryText)
 
-      Input spans:
-      \(spanLines)
+            Input spans:
+            \(spanLines)
 
-      Return structured turns only.
-      """
+            Return structured turns only.
+            """
     }
 
     private static var instructions: String {
         """
-    You segment a time-coded transcript into conversational turns for display.
+        You segment a time-coded transcript into conversational turns for display.
 
-    You are not performing speaker diarization. Do not identify speakers from voice, wording, names,
-    gender, role, or topic. Use only provided source labels.
-    If a span has source=microphone, its display source is Microphone.
-    If source=system, its display source is System Audio.
-    If source is missing or unknown, leave the turn source empty unless every span in the turn has the
-    same known source.
+        You are not performing speaker diarization. Do not identify speakers from voice, wording, names,
+        gender, role, or topic. Use only provided source labels.
+        If a span has source=microphone, its display source is Microphone.
+        If source=system, its display source is System Audio.
+        If source is missing or unknown, leave the turn source empty unless every span in the turn has the
+        same known source.
 
-    Group the transcript exactly:
-    - Keep spans in their original order.
-    - Every input span id must appear in exactly one output turn.
-    - Do not create speaker names, speaker ids, source labels, text, timing, summaries, or corrections.
-    - Return only turn ids and ordered span id lists.
+        Group the transcript exactly:
+        - Keep spans in their original order.
+        - Every input span id must appear in exactly one output turn.
+        - Do not create speaker names, speaker ids, source labels, text, timing, summaries, or corrections.
+        - Return only turn ids and ordered span id lists.
 
-    Create a new turn when one or more of these strongly suggests a conversational boundary:
-    - The source label changes between adjacent spans.
-    - There is a pause of about 1.2 seconds or longer.
-    - A question is followed by an answer.
-    - The semantic focus changes from one participant/action to another.
-    - A short acknowledgment is clearly its own response.
+        Create a new turn when one or more of these strongly suggests a conversational boundary:
+        - The source label changes between adjacent spans.
+        - There is a pause of about 1.2 seconds or longer.
+        - A question is followed by an answer.
+        - The semantic focus changes from one participant/action to another.
+        - A short acknowledgment is clearly its own response.
 
-    Prefer fewer, larger turns when uncertain. Keep brief filler words or backchannels inside the surrounding
-    turn unless they clearly form a separate response.
-    """
+        Prefer fewer, larger turns when uncertain. Keep brief filler words or backchannels inside the surrounding
+        turn unless they clearly form a separate response.
+        """
     }
 
     private static var retryInstructions: String {
         """
-    You repair transcript turn segmentation output. Follow these constraints exactly:
-    - Use every input span id exactly once in original order.
-    - Return only turn ids and ordered span id lists.
-    - Do not infer speakers, names, text, timing, or source labels.
-    - Prefer fewer turns when uncertain.
-    """
+        You repair transcript turn segmentation output. Follow these constraints exactly:
+        - Use every input span id exactly once in original order.
+        - Return only turn ids and ordered span id lists.
+        - Do not infer speakers, names, text, timing, or source labels.
+        - Prefer fewer turns when uncertain.
+        """
     }
 
     private static func chunks(from spans: [TimedTranscriptSpan]) -> [[TimedTranscriptSpan]] {
@@ -202,8 +202,9 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
         for span in spans {
             let projectedCharacterCount = currentCharacterCount + span.text.count
             if !current.isEmpty,
-               current.count >= maximumChunkSpanCount
-                || projectedCharacterCount > maximumChunkCharacterCount {
+                current.count >= maximumChunkSpanCount
+                    || projectedCharacterCount > maximumChunkCharacterCount
+            {
                 chunks.append(current)
                 current = []
                 currentCharacterCount = 0

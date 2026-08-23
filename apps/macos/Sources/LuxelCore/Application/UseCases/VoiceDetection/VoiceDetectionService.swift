@@ -112,8 +112,8 @@ public actor VoiceDetectionService {
         switch action {
         case .startRecording:
             guard hasOutstandingPrompt,
-                  case .prompted = state,
-                  eligibility.canRunDetector
+                case .prompted = state,
+                eligibility.canRunDetector
             else {
                 return [.activateApplication]
             }
@@ -137,13 +137,14 @@ public actor VoiceDetectionService {
 
     public func reset(for reason: VoiceDetectionResetReason) -> [VoiceDetectionEffect] {
         clearPolicyState(armed: eligibility.canRunDetector)
-        let shouldStop = switch reason {
-        case .deviceChanged, .displaySleep, .sessionLocked, .permissionChanged,
-             .recordingChanged, .disabled, .detectorStopped:
-            true
-        case .discontinuity, .queueOverflow:
-            false
-        }
+        let shouldStop =
+            switch reason {
+            case .deviceChanged, .displaySleep, .sessionLocked, .permissionChanged,
+                .recordingChanged, .disabled, .detectorStopped:
+                true
+            case .discontinuity, .queueOverflow:
+                false
+            }
 
         if shouldStop {
             detectorIsRunning = false
@@ -154,7 +155,8 @@ public actor VoiceDetectionService {
     }
 
     private func handle(_ observation: VoiceActivityObservation) -> [VoiceDetectionEffect] {
-        let isPositive = observation.probability >= configuration.entryProbability
+        let isPositive =
+            observation.probability >= configuration.entryProbability
             || observation.kind == .speechStarted
 
         if case .prompted = state {
@@ -197,7 +199,7 @@ public actor VoiceDetectionService {
         let silenceStart = silenceStartedAt ?? date
         state = .prompted(promptedAt: promptedAt, silenceStartedAt: silenceStart)
         guard date.timeIntervalSince(promptedAt) >= configuration.promptCooldown,
-              date.timeIntervalSince(silenceStart) >= configuration.rearmSilenceDuration
+            date.timeIntervalSince(silenceStart) >= configuration.rearmSilenceDuration
         else {
             return []
         }

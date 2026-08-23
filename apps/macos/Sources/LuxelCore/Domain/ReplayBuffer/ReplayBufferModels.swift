@@ -166,7 +166,7 @@ public struct SegmentLedger: Codable, Equatable, Sendable {
         let requestedStart = max(0, latestEnd - lastSeconds)
         let selectedSegments = segments.filter { $0.end > requestedStart }
         guard let firstSelectedSegment = selectedSegments.first,
-              let lastSelectedSegment = selectedSegments.last
+            let lastSelectedSegment = selectedSegments.last
         else {
             return ReplayBufferClipCoverage(
                 segments: [],

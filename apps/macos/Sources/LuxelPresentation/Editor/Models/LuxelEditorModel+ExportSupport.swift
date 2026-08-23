@@ -31,10 +31,10 @@ extension LuxelEditorModel {
 
         let recordingURLs =
             (directoryURLs.compactMap(recordingNavigationCandidate)
-                + [
-                    recordingNavigationCandidate(for: selectedFileURL)
-                        ?? (selectedFileURL.standardizedFileURL, .distantPast)
-                ])
+            + [
+                recordingNavigationCandidate(for: selectedFileURL)
+                    ?? (selectedFileURL.standardizedFileURL, .distantPast)
+            ])
             .sorted { lhs, rhs in
                 if lhs.date == rhs.date {
                     return lhs.url.lastPathComponent > rhs.url.lastPathComponent
@@ -49,12 +49,12 @@ extension LuxelEditorModel {
 
     private static func recordingNavigationCandidate(for url: URL) -> (url: URL, date: Date)? {
         guard isNavigableRecordingURL(url),
-              let values = try? url.resourceValues(forKeys: [
+            let values = try? url.resourceValues(forKeys: [
                 .creationDateKey,
                 .contentModificationDateKey,
                 .isRegularFileKey
-              ]),
-              values.isRegularFile == true
+            ]),
+            values.isRegularFile == true
         else {
             return nil
         }
@@ -143,7 +143,7 @@ extension LuxelEditorModel {
 
     func updateSizePresetFromDimensions() {
         guard let source,
-              let currentPixelSize = try? PixelSize(width: outputWidth, height: outputHeight)
+            let currentPixelSize = try? PixelSize(width: outputWidth, height: outputHeight)
         else {
             sizePreset = nil
             return
@@ -223,15 +223,16 @@ extension LuxelEditorModel {
             throw EditorSourceRenameError.emptyFileName
         }
         guard !fileName.contains("/"),
-              !fileName.contains("\u{0}"),
-              fileName != ".",
-              fileName != ".."
+            !fileName.contains("\u{0}"),
+            fileName != ".",
+            fileName != ".."
         else {
             throw EditorSourceRenameError.invalidFileName
         }
 
         if URL(fileURLWithPath: fileName).pathExtension.isEmpty,
-           !sourceURL.pathExtension.isEmpty {
+            !sourceURL.pathExtension.isEmpty
+        {
             fileName += ".\(sourceURL.pathExtension)"
         }
 

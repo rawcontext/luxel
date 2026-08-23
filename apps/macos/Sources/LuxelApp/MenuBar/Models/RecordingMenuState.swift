@@ -132,9 +132,9 @@ extension RecordingMenuState {
     var activeRecording: ActiveRecording? {
         switch self {
         case .recording(let recording, _),
-             .pausing(let recording, _),
-             .paused(let recording, _),
-             .resuming(let recording, _):
+            .pausing(let recording, _),
+            .paused(let recording, _),
+            .resuming(let recording, _):
             recording
         case .idle, .starting, .countingDown, .stopping, .exporting, .failed:
             nil
@@ -179,7 +179,8 @@ extension RecordingMenuState {
     }
 
     private func remainingRecordedTime(for recording: ActiveRecording, elapsed: TimeInterval)
-    -> TimeInterval? {
+        -> TimeInterval?
+    {
         guard let maxRecordedDuration = recording.options.schedule?.maxRecordedDuration else {
             return nil
         }

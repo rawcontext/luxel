@@ -4,7 +4,8 @@ public enum AutomationURLScheme {
     public static let production = "luxel"
 
     public static func enclosingAppBundleURL(containing executableURL: URL) -> URL? {
-        var candidateURL = executableURL
+        var candidateURL =
+            executableURL
             .resolvingSymlinksInPath()
             .deletingLastPathComponent()
 
@@ -20,10 +21,10 @@ public enum AutomationURLScheme {
 
     public static func registered(containing executableURL: URL?) -> String {
         guard let executableURL,
-              let appBundleURL = enclosingAppBundleURL(containing: executableURL),
-              executableURL.resolvingSymlinksInPath().deletingLastPathComponent().path
+            let appBundleURL = enclosingAppBundleURL(containing: executableURL),
+            executableURL.resolvingSymlinksInPath().deletingLastPathComponent().path
                 == appBundleURL.appending(path: "Contents/MacOS").path,
-              let bundle = Bundle(url: appBundleURL)
+            let bundle = Bundle(url: appBundleURL)
         else {
             return production
         }

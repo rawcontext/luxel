@@ -121,8 +121,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored let speakerModelStore: (any SpeakerDiarizationModelStore)?
     @ObservationIgnored var exampleClipPlaybackTask: Task<Void, Never>?
     @ObservationIgnored var speakerModelStatePollingTask: Task<Void, Never>?
-    @ObservationIgnored let speechRecognitionAuthorizationService:
-        (any SpeechRecognitionAuthorizationService)?
+    @ObservationIgnored let speechRecognitionAuthorizationService: (any SpeechRecognitionAuthorizationService)?
     @ObservationIgnored let fileSystem: any FileSystem
     @ObservationIgnored let directoryAccessService: BookmarkedDirectoryAccessService?
     var playbackRequested = false
@@ -139,8 +138,8 @@ public final class LuxelEditorModel {
     @ObservationIgnored var cachedTranscriptWords: [TranscriptEditableWord] = []
     @ObservationIgnored var cachedVisibleTranscriptWords: [TranscriptEditableWord] = []
     @ObservationIgnored var cachedVisibleTranscriptWordIDs: Set<TranscriptEditableWord.ID> = []
-    @ObservationIgnored var cachedVisibleTranscriptWordIndexByID:
-        [TranscriptEditableWord.ID: Int] = [:]
+    @ObservationIgnored var cachedVisibleTranscriptWordIndexByID: [TranscriptEditableWord.ID: Int] =
+        [:]
     @ObservationIgnored var cachedVisibleTranscriptTurnIDs: Set<TranscriptTurn.ID> = []
     @ObservationIgnored var cachedTranscriptCutReviewItems: [TranscriptCutReviewItem] = []
     @ObservationIgnored var exportMemoryByFormat: [ExportFormat: ExportMemory]

@@ -34,7 +34,7 @@ enum AVFoundationAudioTrackMetadata {
     static func kind(in metadata: [AVMetadataItem]) async -> AudioTrackKind? {
         for item in metadata {
             guard let title = try? await item.load(.stringValue),
-                  let kind = AudioTrackKind(assetTrackTitle: title)
+                let kind = AudioTrackKind(assetTrackTitle: title)
             else {
                 continue
             }

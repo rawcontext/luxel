@@ -183,7 +183,7 @@ extension ReplayBufferCaptureSession {
         }
 
         guard hasInitializationSegment,
-              fileManager.fileExists(atPath: initializationSegmentURL.path)
+            fileManager.fileExists(atPath: initializationSegmentURL.path)
         else {
             throw ReplayBufferEngineError.missingInitializationSegment
         }
@@ -195,7 +195,7 @@ extension ReplayBufferCaptureSession {
 
         let segmentFileURLs = try coverage.segments.map { segment in
             guard let fileURL = mediaSegmentFileURLs[segment.id],
-                  fileManager.fileExists(atPath: fileURL.path)
+                fileManager.fileExists(atPath: fileURL.path)
             else {
                 throw ReplayBufferEngineError.missingSegments
             }
@@ -309,9 +309,9 @@ extension ReplayBufferCaptureSession {
 
         let videoReport = report?.trackReports.first { $0.mediaType == .video }
         guard let videoReport,
-              videoReport.earliestPresentationTimeStamp.isValid,
-              videoReport.duration.isValid,
-              videoReport.duration > .zero
+            videoReport.earliestPresentationTimeStamp.isValid,
+            videoReport.duration.isValid,
+            videoReport.duration > .zero
         else {
             return fallbackSegmentTiming()
         }

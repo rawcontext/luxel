@@ -43,9 +43,9 @@ public struct AVFoundationFrameGrabber: FrameGrabber, Sendable {
             height: cropRect.height
         )
         guard rect.minX >= 0,
-              rect.minY >= 0,
-              rect.maxX <= CGFloat(image.width),
-              rect.maxY <= CGFloat(image.height)
+            rect.minY >= 0,
+            rect.maxX <= CGFloat(image.width),
+            rect.maxY <= CGFloat(image.height)
         else {
             throw AVFoundationFrameGrabberError.cropOutsideFrame
         }

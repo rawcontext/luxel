@@ -12,7 +12,7 @@ struct AppBundleConfigurationTests {
         #expect(plist["CFBundleDisplayName"] as? String == "Luxel")
         #expect(plist["CFBundleExecutable"] as? String == "Luxel")
         #expect(plist["CFBundleIdentifier"] as? String == "com.rawcontext.luxel")
-        #expect(plist["CFBundleShortVersionString"] as? String == "1.1.10")
+        #expect(plist["CFBundleShortVersionString"] as? String == "1.2.0")
         #expect(plist["CFBundleVersion"] as? String == "1")
         #expect(plist["CFBundlePackageType"] as? String == "APPL")
         #expect(plist["LSMinimumSystemVersion"] as? String == "26.0")
@@ -81,11 +81,12 @@ struct AppBundleConfigurationTests {
         let accessedAPIs = try #require(
             manifest["NSPrivacyAccessedAPITypes"] as? [[String: Any]]
         )
-        let reasons = Dictionary(uniqueKeysWithValues: try accessedAPIs.map { entry in
-            let category = try #require(entry["NSPrivacyAccessedAPIType"] as? String)
-            let values = try #require(entry["NSPrivacyAccessedAPITypeReasons"] as? [String])
-            return (category, values)
-        })
+        let reasons = Dictionary(
+            uniqueKeysWithValues: try accessedAPIs.map { entry in
+                let category = try #require(entry["NSPrivacyAccessedAPIType"] as? String)
+                let values = try #require(entry["NSPrivacyAccessedAPITypeReasons"] as? [String])
+                return (category, values)
+            })
 
         #expect(!tracking)
         #expect(collectedData.isEmpty)
@@ -122,7 +123,7 @@ extension AppBundleConfigurationTests {
             let script = try scriptSource(scriptName)
             #expect(script.contains("source \"${PACKAGE_ROOT}/Scripts/luxel-app-bundle-support.sh\""))
         }
-        #expect(support.contains("Vendor/Models/studio-voice"))
+        #expect(support.contains("STUDIO_VOICE_MODEL_DIR"))
         #expect(support.contains("Contents/Resources/Models"))
         #expect(support.contains("ThirdPartyLicenses.md"))
     }
@@ -130,13 +131,11 @@ extension AppBundleConfigurationTests {
     @Test("signed app scripts require and audit bundled MODNet resources")
     func signedAppScriptsRequireAndAuditBundledMODNetResources() throws {
         let root = try packageRootURL()
-        let auditor = root.appending(path: "Scripts/audit-modnet-model.sh")
-        let auditProcess = Process()
-        auditProcess.executableURL = auditor
-        auditProcess.arguments = [root.appending(path: "Vendor/Models/modnet").path]
-        try auditProcess.run()
-        auditProcess.waitUntilExit()
-        #expect(auditProcess.terminationStatus == 0)
+        try runModelAudit(
+            root: root,
+            script: "audit-modnet-model.sh",
+            modelDirectory: "modnet"
+        )
 
         let support = try scriptSource("luxel-app-bundle-support.sh")
         for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
@@ -152,14 +151,11 @@ extension AppBundleConfigurationTests {
     @Test("signed app scripts require and audit bundled voice activity detection resources")
     func signedAppScriptsRequireAndAuditBundledVoiceActivityDetectionResources() throws {
         let root = try packageRootURL()
-        let auditor = root.appending(path: "Scripts/audit-voice-activity-detection-model.sh")
-        let modelDirectory = root.appending(path: "Vendor/Models/voice-activity-detection")
-        let auditProcess = Process()
-        auditProcess.executableURL = auditor
-        auditProcess.arguments = [modelDirectory.path]
-        try auditProcess.run()
-        auditProcess.waitUntilExit()
-        #expect(auditProcess.terminationStatus == 0)
+        try runModelAudit(
+            root: root,
+            script: "audit-voice-activity-detection-model.sh",
+            modelDirectory: "voice-activity-detection"
+        )
 
         let support = try scriptSource("luxel-app-bundle-support.sh")
         for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
@@ -182,7 +178,8 @@ extension AppBundleConfigurationTests {
             script.contains("APPLE_TEAM_IDENTIFIER=\"${APPLE_TEAM_IDENTIFIER:-U65DCW9TAK}\""))
         #expect(script.contains("find_signing_identity_for_team 'Apple Development:'"))
         #expect(
-            script.contains("APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-com.rawcontext.luxel.dev}\""))
+            script.contains(
+                "APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-com.rawcontext.luxel.dev}\""))
         #expect(script.contains("APP_DISPLAY_NAME=\"${APP_DISPLAY_NAME:-Luxel Dev}\""))
         #expect(script.contains("APP_URL_SCHEME=\"${APP_URL_SCHEME:-luxel-dev}\""))
         #expect(
@@ -230,10 +227,12 @@ extension AppBundleConfigurationTests {
         try rewriteLocalizedDisplayName(in: appPath, using: supportScript)
 
         for locale in LuxelLocalization.supportedLocales {
-            let source = localizations
+            let source =
+                localizations
                 .appending(path: "\(locale).lproj")
                 .appending(path: "InfoPlist.strings")
-            let assembled = resources
+            let assembled =
+                resources
                 .appending(path: "\(locale).lproj")
                 .appending(path: "InfoPlist.strings")
             let sourcePlist = try readPlist(at: source)
@@ -341,6 +340,15 @@ extension AppBundleConfigurationTests {
             appPath.path,
             supportScript.path
         ]
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
+    }
+
+    private func runModelAudit(root: URL, script: String, modelDirectory: String) throws {
+        let process = Process()
+        process.executableURL = root.appending(path: "Scripts/\(script)")
+        process.arguments = [root.appending(path: "Vendor/Models/\(modelDirectory)").path]
         try process.run()
         process.waitUntilExit()
         #expect(process.terminationStatus == 0)

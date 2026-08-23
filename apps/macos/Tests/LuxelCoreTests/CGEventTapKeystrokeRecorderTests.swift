@@ -1,7 +1,8 @@
 import Foundation
-@testable import LuxelCore
 import OSLog
 import Testing
+
+@testable import LuxelCore
 
 @Suite("CGEventTap keystroke recorder")
 struct CGEventTapKeystrokeRecorderTests {
@@ -36,7 +37,8 @@ struct CGEventTapKeystrokeRecorderTests {
 
 private final class KeystrokeEventTapRecoveryControlStub:
     KeystrokeEventTapRecoveryControlling,
-    @unchecked Sendable {
+    @unchecked Sendable
+{
     private let lock = NSLock()
     private let result: Bool
     private var calls = 0

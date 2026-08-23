@@ -115,7 +115,8 @@ extension ArchitectureTests {
 
         for fileURL in try swiftFiles(under: sourceDirectory) {
             let contents = try String(contentsOf: fileURL, encoding: .utf8)
-            guard contents.contains("CGEvent.tapCreate")
+            guard
+                contents.contains("CGEvent.tapCreate")
                     || contents.contains(".tapDisabledByTimeout")
                     || contents.contains("CGEvent.tapEnable")
             else {

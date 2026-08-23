@@ -35,7 +35,8 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
         let pixelSize = (try? request.pixelSize.roundedToEvenDimensions) ?? request.pixelSize
         configuration.width = size_t(pixelSize.width)
         configuration.height = size_t(pixelSize.height)
-        configuration.minimumFrameInterval = request.matchesDisplayFrameRate
+        configuration.minimumFrameInterval =
+            request.matchesDisplayFrameRate
             ? .zero
             : CMTime(
                 value: 1,
@@ -43,7 +44,8 @@ public struct ScreenRecordingConfigurationFactory: Sendable {
             )
         configuration.showsCursor = request.showCursor
         configuration.showMouseClicks = request.highlightClicks
-        configuration.pixelFormat = highFrameRateCapture(request)
+        configuration.pixelFormat =
+            highFrameRateCapture(request)
             ? kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
             : kCVPixelFormatType_32BGRA
         ScreenCaptureKitAudioConfiguration.apply(request.audio, to: configuration)

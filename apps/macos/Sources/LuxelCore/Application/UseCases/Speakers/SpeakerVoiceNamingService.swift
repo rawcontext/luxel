@@ -111,9 +111,11 @@ public struct SpeakerVoiceNamingService: Sendable {
             lastMatchedAt: Date()
         )
         let library = try profileStore.save(profile)
-        guard let savedProfile = library.profiles.first(where: {
-            $0.embeddings.contains { $0.id == embedding.id }
-        }) else {
+        guard
+            let savedProfile = library.profiles.first(where: {
+                $0.embeddings.contains { $0.id == embedding.id }
+            })
+        else {
             throw KnownSpeakerError.profileNotFound(profile.id)
         }
 
@@ -162,9 +164,11 @@ public struct SpeakerVoiceNamingService: Sendable {
         )
         let updatedTranscript = try transcript.replacingSpeakerLabel(updatedLabel)
 
-        guard let existingSpeakerID = updatedTranscript.speakers.first(where: {
-            $0.id != speakerID && $0.knownSpeakerID == profile.id
-        })?.id else {
+        guard
+            let existingSpeakerID = updatedTranscript.speakers.first(where: {
+                $0.id != speakerID && $0.knownSpeakerID == profile.id
+            })?.id
+        else {
             return updatedTranscript
         }
         return try updatedTranscript.mergingSpeaker(id: speakerID, into: existingSpeakerID)

@@ -38,7 +38,7 @@ final class DeepFilterNetStreamProcessor {
             return []
         }
 
-        let paddedSamples = samples + [Float](repeating: 0, count: configuration.hopSize)
+        let paddedSamples = samples + [Float](repeating: 0, count: configuration.fftSize)
         let spectrum = stft.forward(audio: paddedSamples, memory: &analysisMemory)
         let frameCount = spectrum.real.count / configuration.frequencyBins
         guard frameCount > 0 else {

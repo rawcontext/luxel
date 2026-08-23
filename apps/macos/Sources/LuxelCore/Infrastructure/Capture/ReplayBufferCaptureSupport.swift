@@ -5,7 +5,7 @@ import ScreenCaptureKit
 enum ScreenCaptureKitSampleAttachments {
     static func containsCompleteFrame(_ sampleBuffer: CMSampleBuffer) -> Bool {
         guard let attachments = first(from: sampleBuffer),
-              let rawValue = statusRawValue(from: attachments)
+            let rawValue = statusRawValue(from: attachments)
         else {
             return false
         }
@@ -22,7 +22,8 @@ enum ScreenCaptureKitSampleAttachments {
             return nil
         }
         if let typedAttachments = attachmentsArray as? [[AnyHashable: Any]],
-           let attachments = typedAttachments.first {
+            let attachments = typedAttachments.first
+        {
             return attachments
         }
         let firstAttachment = (attachmentsArray as NSArray).firstObject
@@ -49,7 +50,8 @@ enum ScreenCaptureKitSampleAttachments {
     }
 
     static func statusRawValue(from attachments: [AnyHashable: Any]) -> Int? {
-        let value = attachments[AnyHashable(SCStreamFrameInfo.status)]
+        let value =
+            attachments[AnyHashable(SCStreamFrameInfo.status)]
             ?? attachments[AnyHashable(SCStreamFrameInfo.status.rawValue)]
         if let value = value as? SCFrameStatus {
             return value.rawValue

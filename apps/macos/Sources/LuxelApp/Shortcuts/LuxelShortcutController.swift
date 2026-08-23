@@ -47,7 +47,8 @@ final class LuxelShortcutController: @unchecked Sendable {
                 }
 
                 return nil
-            }) {
+            })
+        {
             monitors.append(localMonitor)
         }
 
@@ -55,7 +56,8 @@ final class LuxelShortcutController: @unchecked Sendable {
             matching: .keyDown,
             handler: { [weak self] event in
                 _ = self?.handle(event)
-            }) {
+            })
+        {
             monitors.append(globalMonitor)
         }
     }
@@ -96,7 +98,7 @@ final class LuxelShortcutController: @unchecked Sendable {
 extension NSEvent {
     fileprivate func matches(_ shortcut: AppKeyboardShortcut) -> Bool {
         guard type == .keyDown,
-              charactersIgnoringModifiers?.lowercased() == shortcut.key
+            charactersIgnoringModifiers?.lowercased() == shortcut.key
         else {
             return false
         }

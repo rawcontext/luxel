@@ -231,8 +231,8 @@ public struct PixelSize: Codable, Equatable, Sendable {
     }
 }
 
-public extension PixelSize {
-    func scaled(by scale: Double) throws -> PixelSize {
+extension PixelSize {
+    public func scaled(by scale: Double) throws -> PixelSize {
         try PixelSize(
             width: max(1, Int((Double(width) * scale).rounded())),
             height: max(1, Int((Double(height) * scale).rounded()))

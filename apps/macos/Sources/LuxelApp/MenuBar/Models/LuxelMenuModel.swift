@@ -89,9 +89,8 @@ final class LuxelMenuModel {
     @ObservationIgnored var activeNotchRecordingActionID: NotchActivityActionID?
     @ObservationIgnored weak var configuredEditorModel: LuxelEditorModel?
     @ObservationIgnored var commandLineNonces: [String: Date] = [:]
-    @ObservationIgnored var commandLineJobs: [
-        UUID: Task<CommandLineAutomationResult, any Error>
-        ] = [:]
+    @ObservationIgnored var commandLineJobs: [UUID: Task<CommandLineAutomationResult, any Error>] =
+        [:]
     @ObservationIgnored lazy var keystrokeLivePreviewPanelController =
         KeystrokeLivePreviewPanelController(exclusionRegistry: captureExclusionRegistry)
     @ObservationIgnored lazy var keystrokeRecordingSession: any KeystrokeRecordingSessionControlling =
@@ -180,16 +179,22 @@ final class LuxelMenuModel {
     ) {
         let recordingAudioLevelBroadcaster = AudioLevelBroadcaster()
 
-        self.settingsStore = settingsStore; self.permissionClient = permissionClient
-        self.launchAtLoginService = launchAtLoginService; self.recordingHistoryService = recordingHistoryService
-        self.captureTargetService = captureTargetService; self.captureExclusionRegistry = captureExclusionRegistry
+        self.settingsStore = settingsStore
+        self.permissionClient = permissionClient
+        self.launchAtLoginService = launchAtLoginService
+        self.recordingHistoryService = recordingHistoryService
+        self.captureTargetService = captureTargetService
+        self.captureExclusionRegistry = captureExclusionRegistry
         self.recordingFramePanelController = recordingFramePanelController
-        self.audioInputDeviceService = audioInputDeviceService; self.cameraDeviceService = cameraDeviceService
+        self.audioInputDeviceService = audioInputDeviceService
+        self.cameraDeviceService = cameraDeviceService
         self.cameraPreviewPanelController = cameraPreviewPanelController
         self.audioLevelMonitorFactory = audioLevelMonitorFactory
         self.recordingAudioLevelMonitorFactory = { recordingAudioLevelBroadcaster }
-        self.fileWorkflowService = fileWorkflowService; self.bookmarkedDirectoryPicker = bookmarkedDirectoryPicker
-        self.directoryAccessService = directoryAccessService; self.permissionGuidanceService = permissionGuidanceService
+        self.fileWorkflowService = fileWorkflowService
+        self.bookmarkedDirectoryPicker = bookmarkedDirectoryPicker
+        self.directoryAccessService = directoryAccessService
+        self.permissionGuidanceService = permissionGuidanceService
         self.voiceDetection = VoiceDetectionModelDependencies(
             coordinator: voiceDetectionCoordinator,
             modelLocator: voiceDetectionModelLocator,
@@ -212,22 +217,29 @@ final class LuxelMenuModel {
                 replayBufferService: resolvedReplayBufferService,
                 history: recordingHistoryService
             )
-        self.lastCaptureRecordingPlanner = lastCaptureRecordingPlanner; self.activeWindowCatalog = activeWindowCatalog
+        self.lastCaptureRecordingPlanner = lastCaptureRecordingPlanner
+        self.activeWindowCatalog = activeWindowCatalog
         self.activeWindowCaptureTargetResolver = activeWindowCaptureTargetResolver
-        self.pointerDisplayProvider = pointerDisplayProvider; self.notchDisplayProvider = notchDisplayProvider
-        let resolvedNotchPresenter = notchPresenter
+        self.pointerDisplayProvider = pointerDisplayProvider
+        self.notchDisplayProvider = notchDisplayProvider
+        let resolvedNotchPresenter =
+            notchPresenter
             ?? OverlayPanelNotchPresenter(exclusionRegistry: captureExclusionRegistry)
         self.notchCoordinator = NotchCoordinator(presenter: resolvedNotchPresenter)
         self.fullscreenCaptureTargetResolver = fullscreenCaptureTargetResolver
-        self.errorReporter = errorReporter; self.appMetadata = appMetadata
-        let lifecycleServices = Self.makeRecordingLifecycleServices(.init(
-            broadcaster: recordingAudioLevelBroadcaster, exclusionRegistry: captureExclusionRegistry,
-            history: recordingHistoryService, replayBufferService: resolvedReplayBufferService,
-            recorder: recorder, audioRecorder: audioRecorder
-        ))
-        recordingLifecycleService = lifecycleServices.video; audioRecordingLifecycleService = lifecycleServices.audio
+        self.errorReporter = errorReporter
+        self.appMetadata = appMetadata
+        let lifecycleServices = Self.makeRecordingLifecycleServices(
+            .init(
+                broadcaster: recordingAudioLevelBroadcaster, exclusionRegistry: captureExclusionRegistry,
+                history: recordingHistoryService, replayBufferService: resolvedReplayBufferService,
+                recorder: recorder, audioRecorder: audioRecorder
+            ))
+        recordingLifecycleService = lifecycleServices.video
+        audioRecordingLifecycleService = lifecycleServices.audio
         let loadedSettings = (try? settingsStore.load()) ?? LuxelCompositionRoot.defaultSettings
-        self.settings = loadedSettings; self.launchAtLogin = loadedSettings.launchAtLogin
+        self.settings = loadedSettings
+        self.launchAtLogin = loadedSettings.launchAtLogin
         finishInitialization()
     }
 

@@ -4,9 +4,9 @@ public enum AppDistribution: String, Codable, CaseIterable, Equatable, Identifia
 
     public static var current: AppDistribution {
         #if LUXEL_MAC_APP_STORE
-        .macAppStore
+            .macAppStore
         #else
-        .developerID
+            .developerID
         #endif
     }
 

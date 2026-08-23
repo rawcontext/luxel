@@ -33,9 +33,9 @@ public enum CursorPathSmoother {
         }
 
         guard let first = samples.first,
-              let last = samples.last,
-              time > first.time,
-              time < last.time
+            let last = samples.last,
+            time > first.time,
+            time < last.time
         else {
             return nil
         }
@@ -48,8 +48,8 @@ public enum CursorPathSmoother {
         let lower = samples[lowerIndex]
         let upper = samples[upperIndex]
         guard lower.time < upper.time,
-              isRenderable(lower, frameSize: frameSize),
-              isRenderable(upper, frameSize: frameSize)
+            isRenderable(lower, frameSize: frameSize),
+            isRenderable(upper, frameSize: frameSize)
         else {
             return nil
         }

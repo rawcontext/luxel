@@ -8,7 +8,7 @@ extension LuxelEditorModel {
         previewAudioMixTask = nil
 
         guard let source,
-              let playerItem = player.currentItem
+            let playerItem = player.currentItem
         else {
             player.isMuted = true
             player.currentItem?.audioMix = nil
@@ -65,8 +65,8 @@ extension LuxelEditorModel {
                 gain: gains[.system] ?? 1
             )
             guard !Task.isCancelled,
-                  currentPreviewAudioMixTaskID(source: source) == taskID,
-                  player.currentItem === playerItem
+                currentPreviewAudioMixTaskID(source: source) == taskID,
+                player.currentItem === playerItem
             else {
                 return
             }

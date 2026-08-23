@@ -82,11 +82,13 @@ public struct GIFFrameDiffer: Sendable {
             throw GIFEngineModelError.frameSizeMismatch
         }
 
-        guard let rect = try changedRect(
-            from: previousFrame,
-            to: currentFrame,
-            tolerance: lossyTolerance
-        ) else {
+        guard
+            let rect = try changedRect(
+                from: previousFrame,
+                to: currentFrame,
+                tolerance: lossyTolerance
+            )
+        else {
             return try transparentDelta(
                 at: currentFrame.pixelSize,
                 transparentColorIndex: transparentColorIndex
@@ -113,11 +115,13 @@ public struct GIFFrameDiffer: Sendable {
         for row in 0..<currentFrame.pixelSize.height {
             for column in 0..<currentFrame.pixelSize.width {
                 let index = row * currentFrame.pixelSize.width + column
-                guard !isNearMatch(
-                    previousFrame.pixels[index],
-                    currentFrame.pixels[index],
-                    tolerance: tolerance
-                ) else {
+                guard
+                    !isNearMatch(
+                        previousFrame.pixels[index],
+                        currentFrame.pixels[index],
+                        tolerance: tolerance
+                    )
+                else {
                     continue
                 }
                 bounds.minX = min(bounds.minX, column)

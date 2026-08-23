@@ -30,16 +30,16 @@ struct CaptionFileExportServiceTests {
             fileSystem.utf8Writes == [
                 WrittenData(
                     text: """
-            1
-            00:00:01,200 --> 00:00:03,400
-            Hello
-            world
+                        1
+                        00:00:01,200 --> 00:00:03,400
+                        Hello
+                        world
 
-            2
-            01:01:01,005 --> 01:01:02,500
-            Done
+                        2
+                        01:01:01,005 --> 01:01:02,500
+                        Done
 
-            """,
+                        """,
                     fileURL: fileURL
                 )
             ])
@@ -62,16 +62,16 @@ struct CaptionFileExportServiceTests {
             fileSystem.utf8Writes == [
                 WrittenData(
                     text: """
-            WEBVTT
+                        WEBVTT
 
-            00:00:01.200 --> 00:00:03.400
-            Hello
-            world
+                        00:00:01.200 --> 00:00:03.400
+                        Hello
+                        world
 
-            01:01:01.005 --> 01:01:02.500
-            Done
+                        01:01:01.005 --> 01:01:02.500
+                        Done
 
-            """,
+                        """,
                     fileURL: fileURL
                 )
             ])
@@ -94,12 +94,12 @@ struct CaptionFileExportServiceTests {
             fileSystem.utf8Writes == [
                 WrittenData(
                     text: """
-            Hello
-            world
+                        Hello
+                        world
 
-            Done
+                        Done
 
-            """,
+                        """,
                     fileURL: fileURL
                 )
             ])
@@ -126,12 +126,12 @@ struct CaptionFileExportServiceTests {
             fileSystem.utf8Writes == [
                 WrittenData(
                     text: """
-            1
-            00:00:00,000 --> 00:00:00,600
-            Hello
-            world
+                        1
+                        00:00:00,000 --> 00:00:00,600
+                        Hello
+                        world
 
-            """,
+                        """,
                     fileURL: fileURL
                 )
             ])

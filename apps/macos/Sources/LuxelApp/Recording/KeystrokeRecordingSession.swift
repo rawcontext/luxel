@@ -149,13 +149,16 @@ final class KeystrokeRecordingSession: KeystrokeRecordingSessionControlling {
     }
 
     private func publishLiveChips(from events: [KeystrokeSourceEvent]) {
-        guard let request = try? KeystrokeTimelineRecordingRequest(
-            recordingDuration: elapsedTime,
-            pauses: recordingPauses
-        ),
-        let timeline = try? KeystrokeTimelineRecordingService(eventSource: EmptyKeystrokeEventSource())
+        guard
+            let request = try? KeystrokeTimelineRecordingRequest(
+                recordingDuration: elapsedTime,
+                pauses: recordingPauses
+            ),
+            let timeline = try? KeystrokeTimelineRecordingService(
+                eventSource: EmptyKeystrokeEventSource()
+            )
             .timeline(from: events, request: request),
-        let chips = try? KeystrokeChipPlanner().plannedChips(for: timeline)
+            let chips = try? KeystrokeChipPlanner().plannedChips(for: timeline)
         else {
             return
         }

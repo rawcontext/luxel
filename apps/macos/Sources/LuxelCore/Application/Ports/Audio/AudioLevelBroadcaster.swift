@@ -26,7 +26,9 @@ public final class AudioLevelBroadcaster: AudioLevelMonitor, @unchecked Sendable
             return activeContinuations
         }
 
-        activeContinuations.forEach { $0.finish() }
+        for continuation in activeContinuations {
+            continuation.finish()
+        }
     }
 
     public func publish(_ sample: AudioLevelSample) {
@@ -34,7 +36,9 @@ public final class AudioLevelBroadcaster: AudioLevelMonitor, @unchecked Sendable
             Array(continuations.values)
         }
 
-        activeContinuations.forEach { $0.yield(sample) }
+        for continuation in activeContinuations {
+            continuation.yield(sample)
+        }
     }
 
     private func removeContinuation(_ id: UUID) {

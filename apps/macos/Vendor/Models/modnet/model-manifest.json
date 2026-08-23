@@ -1,8 +1,15 @@
 {
   "artifact": {
-    "byteSize": 13122775,
+    "byteSize": 13122577,
     "directory": "MODNetPortraitMatting.mlmodelc",
-    "sha256": "4ac8e748039196c5ce9a93bc5222a3407fce6f71b514d814cede1253b0ba5b09"
+    "files": {
+      "analytics/coremldata.bin": "a2fb20b1ada819e765fc62520eef7c088849319dc180adb3028b3c9ccd29f623",
+      "coremldata.bin": "d17f83b45a32e565cf8718559836df632a9590f1b004e1f3ca54931dfca78f2e",
+      "metadata.json": "023badc277f7212dc21e0dd6e9051abfe84f3a95f1fc11abc384628e2f66776f",
+      "model.mil": "b31886bd8393d469ca37f513dddea4d5989d53743c99bd11945df7871cfd67fb",
+      "weights/weight.bin": "542b70422586d032b2a975b3de930c64f168d9a8420592d7bc8f106b98469dd5"
+    },
+    "sha256": "d0fc8c34ea739ad6fbb144ebce3f334f5994b6ba87332a6be168970da51b6650"
   },
   "checkpoint": {
     "license": "Apache-2.0",
@@ -44,15 +51,21 @@
   },
   "conversion": {
     "computeUnits": "all",
+    "coremlcompilerSha256": "ea1cd3a446a1d38d2bae94501d274fc9cf395db865f8ad600573b381e408d85d",
     "coremltools": "9.0",
+    "driverScriptSha256": "c198ae6573fa10189baa2d4694f55633c3a9328b8bdb5a3b61681da413367143",
     "minimumDeploymentTarget": "macOS 26",
-    "numpy": "2.5.1",
+    "numpy": "2.5.2",
     "precision": "Float16",
-    "python": "3.13.13",
+    "python": "3.13.15",
     "pytorch": "2.7.0",
     "representation": "ML Program",
-    "requirementsLockSha256": "e97aedf2f586d29aaa9a09e0a0cb88ce9952f2c279d11ffb541bba9ad3181efd",
-    "scriptSha256": "eadd6d9fc0c07ef7bdba64ba4b6ef25a3588d40251ccea9ceec4b20b05b3fb32"
+    "requirementsInputSha256": "f05f71a8b4fa9e29d5c97497c7bc0d835eec012d3a616df4114ca4a81426fada",
+    "requirementsLockSha256": "385f0471d1b925adb9d7ab10bb9be93d3109575dfed882c2835c4648fc95afeb",
+    "scriptSha256": "d525e498fe77bdd6293d862edb6c5cc0f0cc5e9d29908f61f44e8ad6f3a6ff0a",
+    "uv": "0.12.5",
+    "xcode": "26.6",
+    "xcodeBuild": "17F113"
   },
   "schemaVersion": 1,
   "upstream": {
@@ -61,23 +74,14 @@
   },
   "validation": {
     "benchmark": {
-      "completedMattesPerSecond": 128.25208983178692,
-      "meanMilliseconds": 7.797143900825176,
-      "p95Milliseconds": 7.980435737408698,
+      "minimumCompletedMattesPerSecond": 15,
       "sampleCount": 20
     },
-    "fixtures": {
-      "gradient": {
-        "maximumAbsoluteError": 0.09012904763221741,
-        "meanAbsoluteError": 0.00031335101812146604,
-        "p99AbsoluteError": 0.006342442240566015
-      },
-      "silhouette": {
-        "maximumAbsoluteError": 0.003928065299987793,
-        "meanAbsoluteError": 3.241440572310239e-05,
-        "p99AbsoluteError": 0.0003684042894747108
-      }
-    },
+    "computeUnits": "all",
+    "fixtures": [
+      "gradient",
+      "silhouette"
+    ],
     "maximumAbsoluteErrorTolerance": 0.1,
     "meanAbsoluteErrorTolerance": 0.002,
     "p99AbsoluteErrorTolerance": 0.01

@@ -49,14 +49,16 @@ public struct CommandLineLoopbackClient: Sendable {
             throw CommandLineLoopbackClientError.bodyTooLarge
         }
         guard let response = response as? HTTPURLResponse,
-              response.statusCode == allowedStatus
+            response.statusCode == allowedStatus
         else {
             throw CommandLineLoopbackClientError.invalidResponse
         }
     }
 }
 
-private final class CommandLineNoRedirectDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+private final class CommandLineNoRedirectDelegate: NSObject, URLSessionTaskDelegate,
+    @unchecked Sendable
+{
     func urlSession(
         _ session: URLSession,
         task: URLSessionTask,

@@ -51,8 +51,8 @@ public struct ImageIOAnimatedMediaExporter: MediaExporter, Sendable {
     }
 }
 
-private extension ImageIOAnimatedMediaExporter {
-    func exportAPNG(
+extension ImageIOAnimatedMediaExporter {
+    fileprivate func exportAPNG(
         _ context: ImageIOAnimatedExportContext,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
@@ -92,7 +92,7 @@ private extension ImageIOAnimatedMediaExporter {
         }
     }
 
-    func makeAPNGDestination(
+    fileprivate func makeAPNGDestination(
         context: ImageIOAnimatedExportContext,
         outputFileURL: URL
     ) throws -> (CGImageDestination, [CMTime]) {
@@ -114,7 +114,7 @@ private extension ImageIOAnimatedMediaExporter {
         return (destination, frameTimes)
     }
 
-    func exportGIF(
+    fileprivate func exportGIF(
         _ context: ImageIOAnimatedExportContext,
         to outputFileURL: URL,
         progress: MediaExportProgressHandler?
@@ -156,7 +156,7 @@ private extension ImageIOAnimatedMediaExporter {
         }
     }
 
-    func renderedBitmaps(
+    fileprivate func renderedBitmaps(
         context: ImageIOAnimatedExportContext,
         backgroundMatte: RGBColor?,
         progress: MediaExportProgressHandler?
@@ -181,7 +181,7 @@ private extension ImageIOAnimatedMediaExporter {
         return frames
     }
 
-    func forEachRenderedFrame(
+    fileprivate func forEachRenderedFrame(
         context: ImageIOAnimatedExportContext,
         frameTimes: [CMTime],
         progressScale: Double = 1,
@@ -227,11 +227,11 @@ private extension ImageIOAnimatedMediaExporter {
         }
     }
 
-    func animatedLoopMode(for request: ExportRequest) -> GIFLoopMode {
+    fileprivate func animatedLoopMode(for request: ExportRequest) -> GIFLoopMode {
         request.gifOptions?.loopMode ?? .forever
     }
 
-    func sequencedFrameTimes(
+    fileprivate func sequencedFrameTimes(
         _ frameTimes: [CMTime],
         loopMode: GIFLoopMode
     ) throws -> [CMTime] {
@@ -240,7 +240,7 @@ private extension ImageIOAnimatedMediaExporter {
         return frameIndexes.map { frameTimes[$0] }
     }
 
-    func makeDestination(
+    fileprivate func makeDestination(
         format: ExportFormat,
         outputFileURL: URL,
         frameCount: Int

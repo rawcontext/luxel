@@ -92,17 +92,17 @@ struct CursorSidecarPersistenceServiceTests {
     func sidecarDocumentRejectsUnsupportedSchemaVersions() throws {
         let data = Data(
             """
-      {
-        "schemaVersion": 2,
-        "timeline": {
-          "schemaVersion": 1,
-          "samples": [],
-          "clicks": [],
-          "spotlightToggles": [],
-          "cursorImages": []
-        }
-      }
-      """.utf8)
+            {
+              "schemaVersion": 2,
+              "timeline": {
+                "schemaVersion": 1,
+                "samples": [],
+                "clicks": [],
+                "spotlightToggles": [],
+                "cursorImages": []
+              }
+            }
+            """.utf8)
 
         #expect(throws: CursorEffectModelError.unsupportedSidecarSchemaVersion) {
             _ = try JSONDecoder().decode(CursorSidecarDocument.self, from: data)

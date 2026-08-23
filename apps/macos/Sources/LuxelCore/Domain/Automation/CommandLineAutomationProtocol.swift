@@ -222,7 +222,8 @@ public struct CommandLineRecordingArguments: Codable, Equatable, Sendable {
             throw CommandLineAutomationValidationError.invalidValue("displayID")
         }
         if let framesPerSecond,
-           !AppSettings.recordingFrameRateRange.contains(framesPerSecond) {
+            !AppSettings.recordingFrameRateRange.contains(framesPerSecond)
+        {
             throw CommandLineAutomationValidationError.invalidValue("framesPerSecond")
         }
         if framesPerSecond != nil, matchesDisplayFrameRate {

@@ -80,8 +80,15 @@ docs/testflight-ci.md                       TestFlight CI secret and workflow no
 The root workspace uses Bun and Turborepo. `.tool-versions` currently pins:
 
 ```text
-bun 1.3.14
-ruby 4.0.5
+bun 1.4.0
+ruby 4.0.6
+github-cli 2.98.0
+nodejs 24.19.0
+python 3.13.15
+pre-commit 4.6.2
+swiftlint 0.65.1
+pipx 1.16.7
+uv 0.12.5
 ```
 
 The macOS app is a Swift package with:
@@ -91,7 +98,11 @@ swift-tools-version: 6.2
 platform: macOS 26
 ```
 
-Install or select an Xcode toolchain that supports Swift tools version 6.2 and the macOS 26 SDK before building the app. Fastlane release work also needs Ruby and Bundler in `apps/macos`.
+Install or select Xcode 26.6, which supplies Swift tools version 6.2 and the
+macOS 26 SDK, before building the app. Fastlane release work also needs the
+pinned Ruby and Bundler in `apps/macos`. Model conversion uses the pinned
+Python and uv toolchain; hooks and normal lint runs use the pinned pre-commit
+and SwiftLint executables rather than ambient installations.
 
 Useful external docs:
 
@@ -111,6 +122,7 @@ Run commands from the repository root unless a section says otherwise.
 | `bun run build` | Run `turbo run build` across workspace packages. |
 | `bun run test` | Run `turbo run test`; currently includes Swift tests for the macOS package. |
 | `bun run lint` | Run `turbo run lint`; currently SwiftLint for the macOS package. |
+| `bun run --cwd apps/macos bench:media` | Run the headless release media-export benchmark and fixed performance gates. |
 | `bun run app:build` | Build a signed local dev `.app` bundle. |
 | `bun run app:build:mas` | Build a Mac App Store package path through the MAS script. |
 | `bun run check:codec-licenses` | Validate third-party codec license ledger expectations. |

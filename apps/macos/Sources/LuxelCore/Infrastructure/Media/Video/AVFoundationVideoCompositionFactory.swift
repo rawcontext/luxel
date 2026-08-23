@@ -94,12 +94,12 @@ extension AVFoundationVideoCompositionFactory {
         timelineMapper: EditedTimelineMapper?
     ) -> AVVideoCompositionCoreAnimationTool? {
         guard let timeline,
-              let options,
-              let timelineMapper,
-              options.isVisible,
-              let chips = try? KeystrokeChipPlanner(renderOptions: options)
+            let options,
+            let timelineMapper,
+            options.isVisible,
+            let chips = try? KeystrokeChipPlanner(renderOptions: options)
                 .plannedChips(for: timeline),
-              !chips.isEmpty
+            !chips.isEmpty
         else {
             return nil
         }
@@ -134,8 +134,8 @@ extension AVFoundationVideoCompositionFactory {
         let renderer = KeystrokeChipImageRenderer()
         for chip in chips {
             guard let outputRanges = try? timelineMapper.mapSourceRange(chip.timeRange),
-                  !outputRanges.isEmpty,
-                  let image = renderer.image(for: chip, options: options)
+                !outputRanges.isEmpty,
+                let image = renderer.image(for: chip, options: options)
             else {
                 continue
             }
@@ -179,7 +179,8 @@ extension AVFoundationVideoCompositionFactory {
     }
 
     private func compositionGeometry(sourceVideoTrack: AVAssetTrack) async throws
-    -> VideoCompositionGeometry {
+        -> VideoCompositionGeometry
+    {
         let naturalSize = try await sourceVideoTrack.load(.naturalSize)
         let preferredTransform = try await sourceVideoTrack.load(.preferredTransform)
         let transformedRect = CGRect(origin: .zero, size: naturalSize).applying(preferredTransform)
@@ -353,8 +354,8 @@ extension AVFoundationVideoCompositionFactory {
         )
         let clampedRect = requestedRect.intersection(presentationBounds)
         guard !clampedRect.isNull,
-              clampedRect.width > 0,
-              clampedRect.height > 0
+            clampedRect.width > 0,
+            clampedRect.height > 0
         else {
             throw AVFoundationVideoCompositionFactoryError.invalidCropRect
         }

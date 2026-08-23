@@ -95,7 +95,8 @@ struct GIFContainerWriterTests {
             if abs(Int(decoded[offset]) - Int(expected.red)) > 2
                 || abs(Int(decoded[offset + 1]) - Int(expected.green)) > 2
                 || abs(Int(decoded[offset + 2]) - Int(expected.blue)) > 2
-                || decoded[offset + 3] != 255 {
+                || decoded[offset + 3] != 255
+            {
                 mismatchedPixelCount += 1
             }
         }
@@ -247,10 +248,11 @@ extension GIFContainerWriterTests {
             offset += 8
         } else if label == 0xFF {
             let blockSize = Int(bytes[offset + 2])
-            let application = String(
-                bytes: bytes[(offset + 3)..<(offset + 3 + blockSize)],
-                encoding: .utf8
-            ) ?? ""
+            let application =
+                String(
+                    bytes: bytes[(offset + 3)..<(offset + 3 + blockSize)],
+                    encoding: .utf8
+                ) ?? ""
             offset += 3 + blockSize
             if application == "NETSCAPE2.0", bytes[offset] == 3, bytes[offset + 1] == 1 {
                 loopCount = readUInt16(bytes, offset + 2)

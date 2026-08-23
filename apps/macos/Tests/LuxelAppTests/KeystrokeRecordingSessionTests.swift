@@ -1,7 +1,8 @@
 import Foundation
-@testable import LuxelApp
 import LuxelCore
 import Testing
+
+@testable import LuxelApp
 
 @Suite("Keystroke recording session")
 @MainActor
@@ -151,7 +152,9 @@ private func temporaryKeystrokeDirectory() throws -> URL {
     return directory
 }
 
-private final class FakeKeystrokeCaptureEventSource: KeystrokeCaptureEventSource, @unchecked Sendable {
+private final class FakeKeystrokeCaptureEventSource: KeystrokeCaptureEventSource,
+    @unchecked Sendable
+{
     private let lock = NSLock()
     private var eventContinuation: AsyncStream<KeystrokeSourceEvent>.Continuation?
     private var statusContinuation: AsyncStream<KeystrokeCaptureStatus>.Continuation?

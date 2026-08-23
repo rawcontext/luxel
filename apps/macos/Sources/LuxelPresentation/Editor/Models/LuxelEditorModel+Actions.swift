@@ -17,7 +17,7 @@ private struct EditorExportOperation: Sendable {
 extension LuxelEditorModel {
     func navigateToOlderRecording() async {
         guard let recordingNavigationIndex,
-              canNavigateToOlderRecording
+            canNavigateToOlderRecording
         else {
             return
         }
@@ -27,7 +27,7 @@ extension LuxelEditorModel {
 
     func navigateToNewerRecording() async {
         guard let recordingNavigationIndex,
-              canNavigateToNewerRecording
+            canNavigateToNewerRecording
         else {
             return
         }

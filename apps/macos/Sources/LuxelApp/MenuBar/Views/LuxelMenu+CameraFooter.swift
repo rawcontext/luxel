@@ -65,7 +65,7 @@ extension LuxelMenu {
 
     private var unavailableCameraDeviceID: String? {
         guard let cameraDeviceID = model.settings.cameraDeviceID,
-              !model.cameraDevices.contains(where: { $0.id == cameraDeviceID })
+            !model.cameraDevices.contains(where: { $0.id == cameraDeviceID })
         else {
             return nil
         }

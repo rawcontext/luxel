@@ -28,7 +28,7 @@ extension LuxelEditorModel {
         isTranscriptPanelVisible
             && canTranscribeSource
             && (speechRecognitionAuthorizationState == .notDetermined
-                    || speechRecognitionAuthorizationState == .denied)
+                || speechRecognitionAuthorizationState == .denied)
     }
 
     var shouldShowTranscriptProgress: Bool {
@@ -62,8 +62,9 @@ extension LuxelEditorModel {
         }
 
         if extendingSelection,
-           let transcriptWordSelectionAnchorID,
-           let anchorIndex = cachedVisibleTranscriptWordIndexByID[transcriptWordSelectionAnchorID] {
+            let transcriptWordSelectionAnchorID,
+            let anchorIndex = cachedVisibleTranscriptWordIndexByID[transcriptWordSelectionAnchorID]
+        {
             selectedTranscriptWordIDs = Set(
                 words[min(anchorIndex, selectedIndex)...max(anchorIndex, selectedIndex)].map(\.id)
             )
@@ -83,20 +84,21 @@ extension LuxelEditorModel {
 
         do {
             let trimRange = try TimeRange(start: trimStart, end: trimEnd)
-            guard let cut = try TranscriptWordCutPlanner().cut(
-                transcript: transcript,
-                wordIDs: visibleTranscriptWords.compactMap {
-                    selectedTranscriptWordIDs.contains($0.id) ? $0.id : nil
-                },
-                trimRange: trimRange,
-                editPlan: transcriptEditPlan,
-                minimumRetainedDuration: minimumTrimDuration
-            ),
-            let updatedPlan = try transcriptEditPlan.inserting(
-                cut,
-                within: trimRange,
-                minimumRetainedDuration: minimumTrimDuration
-            )
+            guard
+                let cut = try TranscriptWordCutPlanner().cut(
+                    transcript: transcript,
+                    wordIDs: visibleTranscriptWords.compactMap {
+                        selectedTranscriptWordIDs.contains($0.id) ? $0.id : nil
+                    },
+                    trimRange: trimRange,
+                    editPlan: transcriptEditPlan,
+                    minimumRetainedDuration: minimumTrimDuration
+                ),
+                let updatedPlan = try transcriptEditPlan.inserting(
+                    cut,
+                    within: trimRange,
+                    minimumRetainedDuration: minimumTrimDuration
+                )
             else {
                 transcriptEditStatusMessage = "That word is already cut."
                 return false
@@ -106,7 +108,8 @@ extension LuxelEditorModel {
             let selectedCount = selectedTranscriptWordIDs.count
             selectedTranscriptWordIDs = []
             transcriptWordSelectionAnchorID = nil
-            transcriptEditStatusMessage = selectedCount == 1
+            transcriptEditStatusMessage =
+                selectedCount == 1
                 ? "Word cut"
                 : "\(selectedCount) words cut"
             exportEstimatesByFormat = [:]
@@ -131,9 +134,9 @@ extension LuxelEditorModel {
 
     func restoreTranscriptCut(id: String) {
         guard transcriptEditPlan.cuts.contains(where: { $0.id == id }),
-              let updatedPlan = try? TimelineEditPlan(
+            let updatedPlan = try? TimelineEditPlan(
                 cuts: transcriptEditPlan.cuts.filter { $0.id != id }
-              )
+            )
         else {
             return
         }
@@ -182,10 +185,10 @@ extension LuxelEditorModel {
 
     func enableSpeechRecognition() {
         guard canTranscribeSource,
-              isTranscriptPanelVisible,
-              let source,
-              let speechRecognitionAuthorizationService,
-              speechRecognitionAuthorizationState == .notDetermined
+            isTranscriptPanelVisible,
+            let source,
+            let speechRecognitionAuthorizationService,
+            speechRecognitionAuthorizationState == .notDetermined
                 || speechRecognitionAuthorizationState == .denied
         else {
             return
@@ -221,7 +224,7 @@ extension LuxelEditorModel {
             let authorizationState = await load()
             await MainActor.run {
                 guard !Task.isCancelled,
-                      self?.source?.fileURL == sourceURL
+                    self?.source?.fileURL == sourceURL
                 else {
                     return
                 }
@@ -239,9 +242,9 @@ extension LuxelEditorModel {
 
     func scheduleTranscriptExtraction(sourceContext: TranscriptSourceContext) {
         guard canTranscribeSource,
-              let source,
-              let audioTranscriptService,
-              speechRecognitionAuthorizationState == .authorized
+            let source,
+            let audioTranscriptService,
+            speechRecognitionAuthorizationState == .authorized
         else {
             return
         }
@@ -289,8 +292,8 @@ extension LuxelEditorModel {
         { [weak self] progress in
             Task { @MainActor in
                 guard let self,
-                      self.source?.fileURL == sourceURL,
-                      self.isTranscriptExtractionActive
+                    self.source?.fileURL == sourceURL,
+                    self.isTranscriptExtractionActive
                 else {
                     return
                 }

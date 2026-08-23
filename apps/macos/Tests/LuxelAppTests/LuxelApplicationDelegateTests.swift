@@ -94,18 +94,22 @@ struct LuxelApplicationDelegateTests {
 
     @Test("notification identifiers map recording consent separately from body clicks")
     func notificationActionMapping() {
-        #expect(VoiceDetectionNotificationController.action(
-            for: VoiceDetectionNotificationIdentifiers.startRecordingAction
-        ) == .startRecording)
-        #expect(VoiceDetectionNotificationController.action(
-            for: VoiceDetectionNotificationIdentifiers.dismissAction
-        ) == .dismiss)
-        #expect(VoiceDetectionNotificationController.action(
-            for: UNNotificationDismissActionIdentifier
-        ) == .dismiss)
-        #expect(VoiceDetectionNotificationController.action(
-            for: UNNotificationDefaultActionIdentifier
-        ) == .defaultAction)
+        #expect(
+            VoiceDetectionNotificationController.action(
+                for: VoiceDetectionNotificationIdentifiers.startRecordingAction
+            ) == .startRecording)
+        #expect(
+            VoiceDetectionNotificationController.action(
+                for: VoiceDetectionNotificationIdentifiers.dismissAction
+            ) == .dismiss)
+        #expect(
+            VoiceDetectionNotificationController.action(
+                for: UNNotificationDismissActionIdentifier
+            ) == .dismiss)
+        #expect(
+            VoiceDetectionNotificationController.action(
+                for: UNNotificationDefaultActionIdentifier
+            ) == .defaultAction)
         #expect(VoiceDetectionNotificationController.action(for: "unrelated") == nil)
     }
 
@@ -117,9 +121,10 @@ struct LuxelApplicationDelegateTests {
 
         #expect(speechOptions.contains(.banner))
         #expect(speechOptions.contains(.sound))
-        #expect(VoiceDetectionNotificationController.presentationOptions(
-            categoryIdentifier: "unrelated"
-        ).isEmpty)
+        #expect(
+            VoiceDetectionNotificationController.presentationOptions(
+                categoryIdentifier: "unrelated"
+            ).isEmpty)
     }
 
     @Test("notification response handling calls completion exactly once on every path")
@@ -160,10 +165,11 @@ struct LuxelApplicationDelegateTests {
         let category = VoiceDetectionNotificationController.category
 
         #expect(category.identifier == VoiceDetectionNotificationIdentifiers.category)
-        #expect(category.actions.map(\.identifier) == [
-            VoiceDetectionNotificationIdentifiers.startRecordingAction,
-            VoiceDetectionNotificationIdentifiers.dismissAction
-        ])
+        #expect(
+            category.actions.map(\.identifier) == [
+                VoiceDetectionNotificationIdentifiers.startRecordingAction,
+                VoiceDetectionNotificationIdentifiers.dismissAction
+            ])
         #expect(category.actions.allSatisfy { !$0.title.isEmpty })
         #expect(category.options.contains(.customDismissAction))
     }

@@ -173,7 +173,7 @@ struct VoiceActivityInferencePipeline {
 
     func hasDiscontinuity(at presentationTime: CMTime) -> Bool {
         guard let previousEndTime,
-              CMTimeCompare(presentationTime, previousEndTime) > 0
+            CMTimeCompare(presentationTime, previousEndTime) > 0
         else {
             return false
         }
@@ -321,8 +321,9 @@ struct CapturedVoiceActivityBuffer: @unchecked Sendable {
 }
 
 private final class VoiceActivitySampleBufferDelegate: NSObject,
-                                                       AVCaptureAudioDataOutputSampleBufferDelegate,
-                                                       @unchecked Sendable {
+    AVCaptureAudioDataOutputSampleBufferDelegate,
+    @unchecked Sendable
+{
     private let lock = NSLock()
     private let bufferQueue: VoiceActivityBufferQueue<CapturedVoiceActivityBuffer>
     private var overflowed = false

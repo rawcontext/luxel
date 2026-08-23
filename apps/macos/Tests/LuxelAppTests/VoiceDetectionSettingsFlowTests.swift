@@ -1,8 +1,9 @@
 import Foundation
-@testable import LuxelApp
-@testable import LuxelCore
 import LuxelTestSupport
 import Testing
+
+@testable import LuxelApp
+@testable import LuxelCore
 
 @Suite("Voice detection settings flow")
 @MainActor
@@ -25,9 +26,10 @@ struct VoiceDetectionSettingsFlowTests {
 
         await fixture.model.approveVoiceDetectionDisclosure()
 
-        #expect(fixture.timeline.events == [
-            "save-settings", "request-notifications", "request-microphone"
-        ])
+        #expect(
+            fixture.timeline.events == [
+                "save-settings", "request-notifications", "request-microphone"
+            ])
         #expect(fixture.model.settings.speechDetectionPromptsEnabled)
         #expect(fixture.model.settings.speechDetectionDisclosureAccepted)
         #expect(fixture.model.voiceDetectionStatus == .listening(microphoneName: "Test Mic"))
@@ -70,9 +72,10 @@ struct VoiceDetectionSettingsFlowTests {
         fixture.model.settings.audioInputDeviceName = "Second Mic"
         await fixture.model.reconcileVoiceDetection()
 
-        #expect(await fixture.detector.events == [
-            .start("mic-1"), .stop, .start("mic-2")
-        ])
+        #expect(
+            await fixture.detector.events == [
+                .start("mic-1"), .stop, .start("mic-2")
+            ])
     }
 
     @Test("disablement stops capture and removes an outstanding prompt")
@@ -81,11 +84,8 @@ struct VoiceDetectionSettingsFlowTests {
         defer { fixture.removeTemporaryFiles() }
         await fixture.model.refreshPermissions()
         await fixture.model.reconcileVoiceDetection()
-        for index in 0..<4 {
-            await fixture.coordinator.receive(.observation(VoiceActivityObservation(
-                probability: 0.95,
-                observedAt: Date(timeIntervalSince1970: Double(index) * 0.25)
-            )))
+        for event in testSustainedSpeechEvents() {
+            await fixture.coordinator.receive(event)
         }
 
         await fixture.model.disableVoiceDetectionPrompts()
@@ -103,17 +103,14 @@ struct VoiceDetectionSettingsFlowTests {
     ) throws -> VoiceDetectionSettingsFixture {
         let root = FileManager.default.temporaryDirectory
             .appending(path: "VoiceDetectionSettingsFlowTests-\(UUID().uuidString)")
-        let modelDirectory = root
-            .appending(path: "Models/voice-activity-detection")
-            .appending(path: BundledVoiceActivityModelLocator.modelDirectoryName)
-        try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        try createTestVoiceDetectionModelDirectory(at: root)
         var settings = AppSettings.defaults(recordingsDirectory: root.appending(path: "Recordings"))
         settings.speechDetectionPromptsEnabled = isEnabled
         settings.speechDetectionDisclosureAccepted = isEnabled
         settings.audioInputDeviceID = "mic-1"
         settings.audioInputDeviceName = "Test Mic"
         let timeline = VoiceDetectionSettingsTimeline()
-        let detector = VoiceDetectionSettingsDetectorSpy()
+        let detector = TestVoiceActivityDetectorSpy()
         let notifier = VoiceDetectionSettingsNotifierSpy(
             status: notificationStatus,
             timeline: timeline
@@ -148,7 +145,7 @@ private struct VoiceDetectionSettingsFixture {
     let root: URL
     let model: LuxelMenuModel
     let coordinator: VoiceDetectionCoordinator
-    let detector: VoiceDetectionSettingsDetectorSpy
+    let detector: TestVoiceActivityDetectorSpy
     let notifier: VoiceDetectionSettingsNotifierSpy
     let timeline: VoiceDetectionSettingsTimeline
 
@@ -210,32 +207,10 @@ private struct VoiceDetectionSettingsSystemMonitor: SystemActivityMonitor {
     func events() -> AsyncStream<SystemActivityEvent> { AsyncStream { $0.finish() } }
 }
 
-private actor VoiceDetectionSettingsDetectorSpy: VoiceActivityDetecting {
-    enum Event: Equatable, Sendable {
-        case start(String?)
-        case stop
-    }
-
-    private(set) var events: [Event] = []
-    private var continuation: AsyncStream<VoiceActivityDetectorEvent>.Continuation?
-
-    func start(deviceID: String?) -> AsyncStream<VoiceActivityDetectorEvent> {
-        events.append(.start(deviceID))
-        let stream = AsyncStream.makeStream(of: VoiceActivityDetectorEvent.self)
-        continuation = stream.continuation
-        return stream.stream
-    }
-
-    func stop() {
-        events.append(.stop)
-        continuation?.finish()
-        continuation = nil
-    }
-}
-
 private final class VoiceDetectionSettingsNotifierSpy:
     VoiceRecordingPromptNotifying,
-    @unchecked Sendable {
+    @unchecked Sendable
+{
     let status: VoiceDetectionAuthorizationStatus
     let timeline: VoiceDetectionSettingsTimeline
     private let lock = NSLock()

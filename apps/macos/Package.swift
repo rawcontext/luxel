@@ -16,13 +16,16 @@ let package = Package(
         .executable(
             name: "luxel-transcription-benchmark",
             targets: ["LuxelTranscriptionBenchmark"]
+        ),
+        .executable(
+            name: "luxel-media-benchmark",
+            targets: ["LuxelMediaBenchmark"]
         )
     ],
     dependencies: [
-        // Remove the fork after FluidInference/FluidAudio#837 ships in a stable release.
         .package(
-            url: "https://github.com/rawcontext/FluidAudio.git",
-            revision: "b6c4da6936e6a9a4a826315ba94745a14bcf94a1"
+            url: "https://github.com/FluidInference/FluidAudio.git",
+            exact: "0.15.6"
         )
     ],
     targets: [
@@ -40,6 +43,14 @@ let package = Package(
             dependencies: [
                 "LuxelCore",
                 .product(name: "FluidAudio", package: "FluidAudio")
+            ]
+        ),
+        .executableTarget(
+            name: "LuxelMediaBenchmark",
+            dependencies: [
+                "LuxelCore",
+                "LuxelCodecAV1",
+                "LuxelCodecWebM"
             ]
         ),
         .target(name: "LuxelPresentation", dependencies: ["LuxelCore"]),

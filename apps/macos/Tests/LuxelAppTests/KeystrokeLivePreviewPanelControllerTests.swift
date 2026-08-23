@@ -1,7 +1,8 @@
 import AppKit
-@testable import LuxelApp
 import LuxelCore
 import Testing
+
+@testable import LuxelApp
 
 @Suite("Keystroke live preview panel")
 @MainActor

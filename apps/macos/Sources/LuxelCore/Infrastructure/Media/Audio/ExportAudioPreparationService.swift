@@ -36,9 +36,11 @@ public struct ExportAudioPreparationService: ExportAudioPreparing, Sendable {
         for requests: [ExportRequest],
         progress: ExportAudioPreparationProgressHandler?
     ) async throws -> PreparedExportAudioSet {
-        let groups = Dictionary(grouping: requests.indices.filter {
-            requests[$0].requiresAudioPreparation
-        }) { index in
+        let groups = Dictionary(
+            grouping: requests.indices.filter {
+                requests[$0].requiresAudioPreparation
+            }
+        ) { index in
             AudioPreparationKey(request: requests[index])
         }
         guard !groups.isEmpty else {
@@ -147,9 +149,10 @@ private struct AudioPreparationKey: Hashable {
         cuts = request.editPlan.cuts.map {
             Cut(start: $0.sourceRange.start, end: $0.sourceRange.end)
         }
-        tracks = request.audioMix?.tracks.map {
-            Track(kind: $0.kind, volume: $0.volume, isMuted: $0.isMuted)
-        } ?? []
+        tracks =
+            request.audioMix?.tracks.map {
+                Track(kind: $0.kind, volume: $0.volume, isMuted: $0.isMuted)
+            } ?? []
         normalizesPeak = request.audioMix?.normalizePeak == true
         studioVoiceEnabled = request.shouldApplyStudioVoice
     }
@@ -211,7 +214,8 @@ final class ExportAudioPreparationWorker: @unchecked Sendable {
                 for: request,
                 measuredPeaks: [.system: peak]
             )
-            let gain = resolvedGains[.system]
+            let gain =
+                resolvedGains[.system]
                 ?? request.audioMix?.mix(for: .system).gain
                 ?? 1
             try applyGain(gain, inputURL: rawURL, outputURL: outputURL)

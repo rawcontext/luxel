@@ -20,8 +20,13 @@ MODEL_NAME = "MODNetPortraitMatting"
 INPUT_NAME = "cameraImage"
 OUTPUT_NAME = "alphaMatte"
 IMAGE_SIZE = 512
+MINIMUM_PREDICTIONS_PER_SECOND = 15
 CHECKPOINT_SHA256 = "913b82b66558db39b6286c150f809017d7528c872b156eb14333c9c6cb52108b"
 UPSTREAM_COMMIT = "28165a451e4610c9d77cfdf925a94610bb2810fb"
+XCODE_VERSION = "26.6"
+XCODE_BUILD = "17F113"
+COREMLCOMPILER_SHA256 = "ea1cd3a446a1d38d2bae94501d274fc9cf395db865f8ad600573b381e408d85d"
+VALIDATION_FIXTURES = ("gradient", "silhouette")
 
 
 def sha256_file(path: pathlib.Path) -> str:
@@ -39,6 +44,13 @@ def sha256_directory(path: pathlib.Path) -> str:
         digest.update(b"\0")
         digest.update(bytes.fromhex(sha256_file(child)))
     return digest.hexdigest()
+
+
+def sha256_files(path: pathlib.Path) -> dict[str, str]:
+    return {
+        child.relative_to(path).as_posix(): sha256_file(child)
+        for child in sorted(candidate for candidate in path.rglob("*") if candidate.is_file())
+    }
 
 
 def make_fixture(kind: str) -> np.ndarray:
@@ -118,6 +130,7 @@ def convert_model(torch_model: torch.nn.Module, package_path: pathlib.Path) -> c
             )
         ],
         compute_precision=ct.precision.FLOAT16,
+        compute_units=ct.ComputeUnit.ALL,
         minimum_deployment_target=ct.target.macOS26,
     )
     model.author = "ZHKKKe/MODNet; Core ML conversion by Luxel"
@@ -125,18 +138,34 @@ def convert_model(torch_model: torch.nn.Module, package_path: pathlib.Path) -> c
     model.short_description = "Video-adapted MODNet portrait alpha matting"
     model.input_description[INPUT_NAME] = "512 x 512 center-cropped RGB camera frame"
     model.output_description[OUTPUT_NAME] = "512 x 512 continuous foreground alpha matte"
+    model.user_defined_metadata.pop("com.github.apple.coremltools.conversion_date", None)
     model.save(package_path)
+    package_manifest_path = package_path / "Manifest.json"
+    package_manifest = json.loads(package_manifest_path.read_text(encoding="utf-8"))
+    stable_identifiers = {
+        "model.mlmodel": "00000000-0000-0000-0000-000000000001",
+        "weights": "00000000-0000-0000-0000-000000000002",
+    }
+    package_manifest["itemInfoEntries"] = {
+        stable_identifiers[item["name"]]: item
+        for item in package_manifest["itemInfoEntries"].values()
+    }
+    package_manifest["rootModelIdentifier"] = stable_identifiers["model.mlmodel"]
+    package_manifest_path.write_text(
+        json.dumps(package_manifest, indent=4, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    specification_path = package_path / "Data/com.apple.CoreML/model.mlmodel"
+    specification_path.write_bytes(model.get_spec().SerializeToString(deterministic=True))
     return model
 
 
 def validate_model(
     torch_model: torch.nn.Module,
-    coreml_model: ct.models.MLModel,
-    fixtures_path: pathlib.Path,
+    coreml_model: object,
 ) -> dict[str, dict[str, float]]:
-    fixtures_path.mkdir(parents=True, exist_ok=True)
     metrics = {}
-    for kind in ("gradient", "silhouette"):
+    for kind in VALIDATION_FIXTURES:
         image = make_fixture(kind)
         with torch.no_grad():
             reference = torch_model(normalized_tensor(image)).numpy().squeeze()
@@ -159,15 +188,6 @@ def validate_model(
             raise RuntimeError(f"fixture {kind} exceeded p99 error tolerance: {fixture_metrics}")
         if fixture_metrics["meanAbsoluteError"] > 0.002:
             raise RuntimeError(f"fixture {kind} exceeded mean error tolerance: {fixture_metrics}")
-        Image.fromarray(image).save(fixtures_path / f"{kind}-input.png")
-        Image.fromarray(np.uint16(np.clip(reference, 0, 1) * 65535)).save(
-            fixtures_path / f"{kind}-reference.png"
-        )
-        Image.fromarray(np.uint16(np.clip(prediction, 0, 1) * 65535)).save(
-            fixtures_path / f"{kind}-coreml.png"
-        )
-        difference = np.uint8(np.clip(absolute_error / 0.1, 0, 1) * 255)
-        Image.fromarray(difference, mode="L").save(fixtures_path / f"{kind}-difference.png")
         metrics[kind] = fixture_metrics
     return metrics
 
@@ -193,12 +213,19 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--upstream", type=pathlib.Path, required=True)
     parser.add_argument("--checkpoint", type=pathlib.Path, required=True)
-    parser.add_argument("--output", type=pathlib.Path, required=True)
-    parser.add_argument("--fixtures", type=pathlib.Path, required=True)
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("--output", type=pathlib.Path)
+    action.add_argument("--validate-compiled", type=pathlib.Path)
+    parser.add_argument("--coremlcompiler", type=pathlib.Path)
     args = parser.parse_args()
 
+    if args.output is not None and args.coremlcompiler is None:
+        parser.error("--coremlcompiler is required with --output")
+    if args.validate_compiled is not None and args.coremlcompiler is not None:
+        parser.error("--coremlcompiler is only valid with --output")
+
     upstream_commit = subprocess.check_output(
-        ["git", "-C", args.upstream, "rev-parse", "HEAD"], text=True
+        ["/usr/bin/git", "-C", args.upstream, "rev-parse", "HEAD"], text=True
     ).strip()
     if upstream_commit != UPSTREAM_COMMIT:
         raise RuntimeError(f"unexpected upstream commit {upstream_commit}")
@@ -206,29 +233,75 @@ def main() -> None:
     if checkpoint_sha != CHECKPOINT_SHA256:
         raise RuntimeError(f"unexpected checkpoint SHA-256 {checkpoint_sha}")
 
+    torch.manual_seed(0)
+    torch.set_num_threads(1)
+    torch.set_num_interop_threads(1)
+    torch.use_deterministic_algorithms(True)
+    torch_model = load_torch_model(args.upstream, args.checkpoint)
+    if args.validate_compiled is not None:
+        compiled_model = ct.models.CompiledMLModel(
+            str(args.validate_compiled), compute_units=ct.ComputeUnit.ALL
+        )
+        fixture_metrics = validate_model(torch_model, compiled_model)
+        benchmark_model = ct.models.CompiledMLModel(
+            str(args.validate_compiled), compute_units=ct.ComputeUnit.ALL
+        )
+        benchmark_metrics = benchmark(benchmark_model)
+        if benchmark_metrics["completedMattesPerSecond"] < MINIMUM_PREDICTIONS_PER_SECOND:
+            raise RuntimeError(
+                f"compiled model missed the performance floor: {benchmark_metrics}"
+            )
+        print(
+            json.dumps(
+                {
+                    "validatedCompiledModel": str(args.validate_compiled),
+                    "fixtureResults": fixture_metrics,
+                    "benchmarkResult": benchmark_metrics,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return
+
+    if sha256_file(args.coremlcompiler) != COREMLCOMPILER_SHA256:
+        raise RuntimeError("unexpected coremlcompiler SHA-256")
+
     args.output.mkdir(parents=True, exist_ok=True)
     package_path = args.output / f"{MODEL_NAME}.mlpackage"
     compiled_path = args.output / f"{MODEL_NAME}.mlmodelc"
     shutil.rmtree(package_path, ignore_errors=True)
     shutil.rmtree(compiled_path, ignore_errors=True)
 
-    torch_model = load_torch_model(args.upstream, args.checkpoint)
     coreml_model = convert_model(torch_model, package_path)
-    metrics = validate_model(torch_model, coreml_model, args.fixtures)
+    package_metrics = validate_model(torch_model, coreml_model)
+    print(json.dumps({"packageFixtureResults": package_metrics}, indent=2, sort_keys=True))
 
     with tempfile.TemporaryDirectory() as temporary_directory:
         subprocess.run(
-            ["xcrun", "coremlcompiler", "compile", str(package_path), temporary_directory],
+            [str(args.coremlcompiler), "compile", str(package_path), temporary_directory],
             check=True,
         )
         shutil.copytree(pathlib.Path(temporary_directory) / compiled_path.name, compiled_path)
+    compiled_metadata_path = compiled_path / "metadata.json"
+    compiled_metadata = json.loads(compiled_metadata_path.read_text(encoding="utf-8"))
+    compiled_metadata_path.write_text(
+        json.dumps(compiled_metadata, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
-    compiled_model = ct.models.CompiledMLModel(
+    validation_model = ct.models.CompiledMLModel(
         str(compiled_path), compute_units=ct.ComputeUnit.ALL
     )
-    benchmark_metrics = benchmark(compiled_model)
-    if benchmark_metrics["completedMattesPerSecond"] < 15:
+    compiled_metrics = validate_model(torch_model, validation_model)
+    print(json.dumps({"compiledFixtureResults": compiled_metrics}, indent=2, sort_keys=True))
+    benchmark_model = ct.models.CompiledMLModel(
+        str(compiled_path), compute_units=ct.ComputeUnit.ALL
+    )
+    benchmark_metrics = benchmark(benchmark_model)
+    if benchmark_metrics["completedMattesPerSecond"] < MINIMUM_PREDICTIONS_PER_SECOND:
         raise RuntimeError(f"compiled model missed the performance floor: {benchmark_metrics}")
+    print(json.dumps({"benchmarkResult": benchmark_metrics}, indent=2, sort_keys=True))
 
     manifest = {
         "schemaVersion": 1,
@@ -247,7 +320,15 @@ def main() -> None:
             "pytorch": torch.__version__,
             "coremltools": ct.__version__,
             "numpy": np.__version__,
+            "uv": "0.12.5",
+            "xcode": XCODE_VERSION,
+            "xcodeBuild": XCODE_BUILD,
+            "coremlcompilerSha256": COREMLCOMPILER_SHA256,
             "scriptSha256": sha256_file(pathlib.Path(__file__)),
+            "driverScriptSha256": sha256_file(pathlib.Path(__file__).with_name("convert.sh")),
+            "requirementsInputSha256": sha256_file(
+                pathlib.Path(__file__).with_name("requirements.in")
+            ),
             "requirementsLockSha256": sha256_file(pathlib.Path(__file__).with_name("requirements.lock")),
             "representation": "ML Program",
             "precision": "Float16",
@@ -273,11 +354,16 @@ def main() -> None:
             "maximumAbsoluteErrorTolerance": 0.1,
             "p99AbsoluteErrorTolerance": 0.01,
             "meanAbsoluteErrorTolerance": 0.002,
-            "fixtures": metrics,
-            "benchmark": benchmark_metrics,
+            "computeUnits": "all",
+            "fixtures": list(VALIDATION_FIXTURES),
+            "benchmark": {
+                "sampleCount": 20,
+                "minimumCompletedMattesPerSecond": MINIMUM_PREDICTIONS_PER_SECOND,
+            },
         },
         "artifact": {
             "directory": compiled_path.name,
+            "files": sha256_files(compiled_path),
             "sha256": sha256_directory(compiled_path),
             "byteSize": sum(path.stat().st_size for path in compiled_path.rglob("*") if path.is_file()),
         },

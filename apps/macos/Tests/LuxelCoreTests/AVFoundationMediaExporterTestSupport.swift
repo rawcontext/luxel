@@ -1,8 +1,8 @@
 import AVFAudio
-import AppKit
 import AVFoundation
-import CoreMedia
+import AppKit
 import CoreGraphics
+import CoreMedia
 import Foundation
 import ImageIO
 import LuxelCore
@@ -92,8 +92,8 @@ extension AVFoundationMediaExporterTests {
         )
 
         guard status == noErr,
-              let parameterSetPointer,
-              parameterSetSize > 1
+            let parameterSetPointer,
+            parameterSetSize > 1
         else {
             throw AVFoundationMediaExporterTestError.missingH264ParameterSet
         }
@@ -213,7 +213,7 @@ extension AVFoundationMediaExporterTests {
         )
 
         guard status == kCVReturnSuccess,
-              let pixelBuffer
+            let pixelBuffer
         else {
             throw AVFoundationMediaExporterTestError.pixelBufferCreateFailed(status)
         }
@@ -287,7 +287,7 @@ extension AVFoundationMediaExporterTests {
         var pixels = Data(count: bytesPerRow * image.height)
         let rendered = pixels.withUnsafeMutableBytes { bytes -> Bool in
             guard let baseAddress = bytes.baseAddress,
-                  let context = CGContext(
+                let context = CGContext(
                     data: baseAddress,
                     width: image.width,
                     height: image.height,
@@ -295,7 +295,7 @@ extension AVFoundationMediaExporterTests {
                     bytesPerRow: bytesPerRow,
                     space: CGColorSpaceCreateDeviceRGB(),
                     bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-                  )
+                )
             else {
                 return false
             }

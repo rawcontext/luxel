@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TAG="v4.1.0"
-PEELED_COMMIT="c04f951541ad600e0d9c10836f2ab7b9bc69816d"
+TAG="v4.2.0"
+PEELED_COMMIT="9292ec8e32bce26f781f277ec8739b53426c4300"
 ARCH="arm64"
 DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-26.0}"
+SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORK_DIR="${ROOT}/.build/vendor"
 SOURCE_DIR="${WORK_DIR}/svt-av1-${TAG#v}"
@@ -31,6 +32,9 @@ cmake \
 	-DCMAKE_BUILD_TYPE=Release \
 	-DCMAKE_OSX_ARCHITECTURES="${ARCH}" \
 	-DCMAKE_OSX_DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET}" \
+	-DCMAKE_OSX_SYSROOT="${SDK_PATH}" \
+	-DCMAKE_C_FLAGS="-ffile-prefix-map=${SOURCE_DIR}=svt-av1-${TAG#v}" \
+	-DCMAKE_CXX_FLAGS="-ffile-prefix-map=${SOURCE_DIR}=svt-av1-${TAG#v}" \
 	-DBUILD_SHARED_LIBS=OFF \
 	-DBUILD_APPS=OFF \
 	-DBUILD_TESTING=OFF \
@@ -41,6 +45,7 @@ cmake \
 	-DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}"
 
 cmake --build "${BUILD_DIR}" --config Release --target install -j"$(sysctl -n hw.ncpu)"
+xcrun ranlib -D "${INSTALL_DIR}/lib/libSvtAv1Enc.a"
 
 mkdir -p "${HEADERS_DIR}"
 cp -R "${INSTALL_DIR}/include/svt-av1" "${HEADERS_DIR}/svt-av1"

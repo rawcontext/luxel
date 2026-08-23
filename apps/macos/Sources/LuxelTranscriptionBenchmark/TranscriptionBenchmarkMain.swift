@@ -184,7 +184,7 @@ enum TranscriptionBenchmarkMain {
     private static func writeLaunchError(_ message: String) {
         let arguments = CommandLine.arguments
         guard let outputIndex = arguments.firstIndex(of: "--output"),
-              arguments.indices.contains(outputIndex + 1)
+            arguments.indices.contains(outputIndex + 1)
         else {
             return
         }

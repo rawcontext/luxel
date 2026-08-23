@@ -1,0 +1,11 @@
+Creative Commons Attribution 4.0 International (CC-BY-4.0)
+
+The licensed model material may be shared and adapted under the terms of the
+Creative Commons Attribution 4.0 International Public License. The complete
+legal code is available at:
+
+https://creativecommons.org/licenses/by/4.0/legalcode.en
+
+Attribution and provenance for the bundled model material are provided in
+NOTICE.md. A copy of this license notice and the attribution are included in
+Luxel's bundled ThirdPartyLicenses.md.

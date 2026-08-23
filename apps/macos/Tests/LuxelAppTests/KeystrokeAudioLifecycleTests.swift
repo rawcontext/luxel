@@ -1,8 +1,9 @@
 import Foundation
-@testable import LuxelApp
 import LuxelCore
 import LuxelTestSupport
 import Testing
+
+@testable import LuxelApp
 
 @Suite("Audio keystroke lifecycle")
 @MainActor

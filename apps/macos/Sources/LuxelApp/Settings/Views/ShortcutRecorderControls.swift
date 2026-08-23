@@ -128,9 +128,9 @@ final class ShortcutRecorderNSView: NSView {
 extension NSEvent {
     fileprivate var luxelShortcut: AppKeyboardShortcut? {
         guard let rawKey = charactersIgnoringModifiers?.lowercased(),
-              rawKey.count == 1,
-              let scalar = rawKey.unicodeScalars.first,
-              CharacterSet.alphanumerics.contains(scalar)
+            rawKey.count == 1,
+            let scalar = rawKey.unicodeScalars.first,
+            CharacterSet.alphanumerics.contains(scalar)
         else {
             return nil
         }

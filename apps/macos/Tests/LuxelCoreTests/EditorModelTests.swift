@@ -112,13 +112,13 @@ struct EditorModelTests {
         let sourceJSON = try #require(String(data: sourceData, encoding: .utf8))
         let data = Data(
             """
-      {
-        "source": \(sourceJSON),
-        "format": "mp4",
-        "shouldMute": false,
-        "shouldCrop": false
-      }
-      """.utf8)
+            {
+              "source": \(sourceJSON),
+              "format": "mp4",
+              "shouldMute": false,
+              "shouldCrop": false
+            }
+            """.utf8)
 
         let draft = try JSONDecoder().decode(EditorExportDraft.self, from: data)
 
@@ -149,19 +149,19 @@ struct EditorModelTests {
     func sourceMediaDecodesMissingAlphaAsFalse() throws {
         let data = Data(
             """
-      {
-        "fileURL": "file:///tmp/source.mp4",
-        "duration": 12.5,
-        "pixelSize": {
-          "width": 1280,
-          "height": 720
-        },
-        "nominalFrameRate": {
-          "framesPerSecond": 30
-        },
-        "hasAudio": true
-      }
-      """.utf8)
+            {
+              "fileURL": "file:///tmp/source.mp4",
+              "duration": 12.5,
+              "pixelSize": {
+                "width": 1280,
+                "height": 720
+              },
+              "nominalFrameRate": {
+                "framesPerSecond": 30
+              },
+              "hasAudio": true
+            }
+            """.utf8)
 
         let source = try JSONDecoder().decode(SourceMedia.self, from: data)
 

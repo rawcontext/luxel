@@ -14,13 +14,15 @@ enum CrossSourceEchoTranscriptFilter {
             }
 
             while firstCandidateIndex < systemSpans.count,
-                  systemSpans[firstCandidateIndex].start < span.start - maximumStartDelta {
+                systemSpans[firstCandidateIndex].start < span.start - maximumStartDelta
+            {
                 firstCandidateIndex += 1
             }
 
             var candidateIndex = firstCandidateIndex
             while candidateIndex < systemSpans.count,
-                  systemSpans[candidateIndex].start <= span.start + maximumStartDelta {
+                systemSpans[candidateIndex].start <= span.start + maximumStartDelta
+            {
                 if isEcho(microphoneSpan: span, systemSpan: systemSpans[candidateIndex]) {
                     return false
                 }
