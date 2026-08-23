@@ -8,7 +8,7 @@ This file is the checked-in source of truth for Luxel's Mac App Store product-pa
 - No App Store Connect credentials are available in the local environment. The repository's authenticated workflows receive credentials only from GitHub Actions secrets, so private fields and the configured localization set could not be retrieved.
 - Apple's public Search API does not expose promotional text, keywords, App Review notes, configured localizations, or draft metadata. Those prior values are therefore recorded as unavailable rather than guessed.
 - The guarded App Store Metadata Draft workflow exports all 11 localized listings and the exact App Review notes while explicitly skipping binaries, screenshots, review submission, and release. [Run 32658321002](https://github.com/ccheney/luxel/actions/runs/32658321002) synchronized the version 1.2.0 metadata draft successfully.
-- The App Store Localized Screenshots workflow renders 66 upload assets from the six real English masters, validates Apple's image requirements, and synchronizes them without uploading a binary, changing text metadata, submitting for review, or releasing the version.
+- The App Store Localized Screenshots workflow renders 66 upload assets from the six real English masters, validates Apple's image requirements, and synchronizes them without uploading a binary, changing text metadata, submitting for review, or releasing the version. [Run 32660368255](https://github.com/ccheney/luxel/actions/runs/32660368255) replaced the six prior English screenshots and uploaded all 66 committed assets to the version 1.2.0 draft successfully.
 
 ## Apple field rules
 
