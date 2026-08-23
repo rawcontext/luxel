@@ -1,13 +1,14 @@
 # Luxel Mac App Store Listing Metadata
 
-This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026, the complete proposed text metadata for the Speech Detection Prompts release, and the pending real-capture screenshot plan. After the upload-size capture gate below is complete, copy values from this file into an editable App Store Connect draft; do not edit the draft independently.
+This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026, the complete proposed text metadata for the Speech Detection Prompts release, and the pending real-capture screenshot plan. Use the guarded App Store Metadata Draft workflow to synchronize text and App Review notes, then compare the editable App Store Connect draft with this file; do not edit the draft independently.
 
 ## Publication state
 
-- Prepared locally on August 22, 2026. Nothing in this change was submitted to or published through App Store Connect.
+- TestFlight workflow run [32609710472](https://github.com/ccheney/luxel/actions/runs/32609710472) uploaded the release package from commit `f65a76da35aa486bbbec62c30693dbae89713ed2`. App Store Connect processed macOS version 1.1.10, build `202608230110`. This binary upload did not change or publish product-page metadata.
 - No App Store Connect credentials are available in the local environment. The repository's authenticated workflows receive credentials only from GitHub Actions secrets, so private fields and the configured localization set could not be retrieved.
 - Apple's public Search API does not expose promotional text, keywords, App Review notes, configured localizations, or draft metadata. Those prior values are therefore recorded as unavailable rather than guessed.
-- The App Store Connect screenshot and metadata draft update remains pending. None of the checked-in real reference captures has an Apple-accepted 16:10 Mac upload size, so fresh real captures are required before the draft is changed.
+- The guarded App Store Metadata Draft workflow exports all 11 localized listings and the exact App Review notes while explicitly skipping binaries, screenshots, review submission, and release. Its first dispatch, [run 32610546783](https://github.com/ccheney/luxel/actions/runs/32610546783), was rejected before any step started because the account's Actions billing/spending limit prevented a hosted job from starting. App Store Connect text metadata therefore remains unchanged.
+- The App Store Connect screenshot update also remains pending. None of the checked-in real reference captures has an Apple-accepted 16:10 Mac upload size, so fresh real captures are required before screenshots are uploaded.
 - Before submission, compare every editable App Store Connect field with this file, update the release version/build in the review package, attach the final review video, and record the comparison in GitHub issue #57.
 
 ## Apple field rules
