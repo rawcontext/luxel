@@ -80,8 +80,15 @@ docs/testflight-ci.md                       TestFlight CI secret and workflow no
 The root workspace uses Bun and Turborepo. `.tool-versions` currently pins:
 
 ```text
-bun 1.3.14
-ruby 4.0.5
+bun 1.4.0
+ruby 4.0.6
+github-cli 2.98.0
+nodejs 24.19.0
+python 3.13.15
+pre-commit 4.6.2
+swiftlint 0.65.1
+pipx 1.16.7
+uv 0.12.5
 ```
 
 The macOS app is a Swift package with:
@@ -91,7 +98,11 @@ swift-tools-version: 6.2
 platform: macOS 26
 ```
 
-Install or select an Xcode toolchain that supports Swift tools version 6.2 and the macOS 26 SDK before building the app. Fastlane release work also needs Ruby and Bundler in `apps/macos`.
+Install or select Xcode 26.6, which supplies Swift tools version 6.2 and the
+macOS 26 SDK, before building the app. Fastlane release work also needs the
+pinned Ruby and Bundler in `apps/macos`. Model conversion uses the pinned
+Python and uv toolchain; hooks and normal lint runs use the pinned pre-commit
+and SwiftLint executables rather than ambient installations.
 
 Useful external docs:
 
