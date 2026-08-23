@@ -54,7 +54,7 @@
   "Uses the selected microphone and pauses during recordings or while your Mac is locked or asleep",
   "Treats sustained speech-like sound as a cue, not as guaranteed meeting or call detection",
   "Before you choose Start Recording, microphone frames are discarded. Luxel creates no pre-roll, media file, history item, transcript, sidecar, or cloud upload.",
-  "Luxel Recording settings showing Speech Detection off by default and its local-audio disclosure",
+  "Luxel Recording settings showing Speech Detection enabled and its local-audio disclosure",
   "Polish",
   "Editor and export",
   "Open recordings in the editor to trim, resize, retime, crop-to-fill, adjust audio, copy frames, save originals, and export video, animation, or audio files from the same workspace.",
