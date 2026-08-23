@@ -52,21 +52,9 @@ struct VoiceDetectionRecordingRequestTests {
 
     @Test("explicit prompt action releases detection before starting one audio recording")
     func promptActionStartsAfterDetectorRelease() async throws {
-        let root = FileManager.default.temporaryDirectory
-            .appending(path: "VoiceDetectionRecordingRequestTests-\(UUID().uuidString)")
-        defer { try? FileManager.default.removeItem(at: root) }
-        let fixture = try makePromptRecordingFixture(root: root)
-
-        await fixture.model.refreshPermissions()
-        await fixture.model.reconcileVoiceDetection()
-        for index in 0..<4 {
-            await fixture.coordinator.receive(.observation(
-                VoiceActivityObservation(
-                    probability: 0.95,
-                    observedAt: Date(timeIntervalSince1970: Double(index) * 0.25)
-                )
-            ))
-        }
+        let fixture = try makePromptRecordingFixture(testName: "VoiceDetectionRecordingRequestTests")
+        defer { fixture.removeTemporaryFiles() }
+        await fixture.preparePrompt()
 
         await fixture.model.handleVoiceDetectionPromptAction(.startRecording)
 
@@ -90,21 +78,9 @@ struct VoiceDetectionRecordingRequestTests {
 
     @Test("prompt and manual recording starts race to one recorder request")
     func promptAndManualStartRace() async throws {
-        let root = FileManager.default.temporaryDirectory
-            .appending(path: "VoiceDetectionRecordingRaceTests-\(UUID().uuidString)")
-        defer { try? FileManager.default.removeItem(at: root) }
-        let fixture = try makePromptRecordingFixture(root: root)
-
-        await fixture.model.refreshPermissions()
-        await fixture.model.reconcileVoiceDetection()
-        for index in 0..<4 {
-            await fixture.coordinator.receive(.observation(
-                VoiceActivityObservation(
-                    probability: 0.95,
-                    observedAt: Date(timeIntervalSince1970: Double(index) * 0.25)
-                )
-            ))
-        }
+        let fixture = try makePromptRecordingFixture(testName: "VoiceDetectionRecordingRaceTests")
+        defer { fixture.removeTemporaryFiles() }
+        await fixture.preparePrompt()
 
         async let promptStart: Void = fixture.model.handleVoiceDetectionPromptAction(.startRecording)
         async let manualStart: Void = fixture.model.startAudioOnlyRecording()
@@ -115,12 +91,11 @@ struct VoiceDetectionRecordingRequestTests {
     }
 
     private func makePromptRecordingFixture(
-        root: URL
+        testName: String
     ) throws -> VoiceDetectionPromptFixture {
-        let modelDirectory = root
-            .appending(path: "Models/voice-activity-detection")
-            .appending(path: BundledVoiceActivityModelLocator.modelDirectoryName)
-        try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        let root = FileManager.default.temporaryDirectory
+            .appending(path: "\(testName)-\(UUID().uuidString)")
+        try createTestVoiceDetectionModelDirectory(at: root)
         var settings = AppSettings.defaults(recordingsDirectory: root.appending(path: "Recordings"))
         settings.speechDetectionPromptsEnabled = true
         settings.speechDetectionDisclosureAccepted = true
@@ -130,7 +105,10 @@ struct VoiceDetectionRecordingRequestTests {
         settings.audioInputDeviceName = "Test Mic"
         let timeline = VoiceDetectionRecordingTimeline()
         let coordinator = VoiceDetectionCoordinator(
-            detector: VoiceDetectionDetectorSpy(timeline: timeline),
+            detector: TestVoiceActivityDetectorSpy(
+                didStart: { _ in await timeline.append("start-detector") },
+                didStop: { await timeline.append("stop-detector") }
+            ),
             notifier: VoiceDetectionNotifierSpy(timeline: timeline)
         )
         let recorder = VoiceDetectionAudioRecorderSpy(timeline: timeline)
@@ -153,6 +131,7 @@ struct VoiceDetectionRecordingRequestTests {
             audioRecorder: recorder
         )
         return VoiceDetectionPromptFixture(
+            root: root,
             model: model,
             coordinator: coordinator,
             recorder: recorder,
@@ -172,10 +151,23 @@ struct VoiceDetectionRecordingRequestTests {
 
 @MainActor
 private struct VoiceDetectionPromptFixture {
+    let root: URL
     let model: LuxelMenuModel
     let coordinator: VoiceDetectionCoordinator
     let recorder: VoiceDetectionAudioRecorderSpy
     let timeline: VoiceDetectionRecordingTimeline
+
+    func preparePrompt() async {
+        await model.refreshPermissions()
+        await model.reconcileVoiceDetection()
+        for event in testSustainedSpeechEvents() {
+            await coordinator.receive(event)
+        }
+    }
+
+    func removeTemporaryFiles() {
+        try? FileManager.default.removeItem(at: root)
+    }
 }
 
 private struct VoiceDetectionSettingsStore: SettingsStore {
@@ -214,28 +206,6 @@ private actor VoiceDetectionRecordingTimeline {
 
     func append(_ event: String) {
         events.append(event)
-    }
-}
-
-private actor VoiceDetectionDetectorSpy: VoiceActivityDetecting {
-    let timeline: VoiceDetectionRecordingTimeline
-    private var continuation: AsyncStream<VoiceActivityDetectorEvent>.Continuation?
-
-    init(timeline: VoiceDetectionRecordingTimeline) {
-        self.timeline = timeline
-    }
-
-    func start(deviceID: String?) async -> AsyncStream<VoiceActivityDetectorEvent> {
-        await timeline.append("start-detector")
-        let stream = AsyncStream.makeStream(of: VoiceActivityDetectorEvent.self)
-        continuation = stream.continuation
-        return stream.stream
-    }
-
-    func stop() async {
-        await timeline.append("stop-detector")
-        continuation?.finish()
-        continuation = nil
     }
 }
 
