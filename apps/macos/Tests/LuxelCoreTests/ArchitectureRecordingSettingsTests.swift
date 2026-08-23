@@ -40,6 +40,18 @@ extension ArchitectureTests {
         #expect(!settingsSource.contains("syncCameraPreviewPanelWithSettings("))
     }
 
+    @Test("speech detection setting uses the toggle without a redundant status row")
+    func speechDetectionSettingOmitsStatusRow() throws {
+        let source = try sourceText(for: [
+            "Sources/LuxelApp/Settings/Views/LuxelSettingsView+SpeechDetection.swift"
+        ])
+
+        #expect(source.contains("settingsToggleRow("))
+        #expect(!source.contains("settings.speechDetection.status.label"))
+        #expect(!source.contains("speechDetectionStatusText"))
+        #expect(!source.contains("speechDetectionRecoveryButton"))
+    }
+
     @Test("recording lifecycle owns camera preview activation")
     func recordingLifecycleOwnsCameraPreviewActivation() throws {
         let recordingSource = try sourceText(for: [
