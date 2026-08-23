@@ -12,6 +12,7 @@ import {
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const sourcePath = resolve(scriptDirectory, "listing-metadata.md");
+const reviewNotesPath = resolve(scriptDirectory, "../../app-review/review-notes.txt");
 
 async function readTree(rootPath) {
   const files = {};
@@ -25,7 +26,7 @@ async function readTree(rootPath) {
   return files;
 }
 
-test("exports every localized field to a deterministic Fastlane metadata tree", async (context) => {
+test("exports locale metadata and only exact review notes to a deterministic tree", async (context) => {
   const temporaryRoot = await mkdtemp(join(tmpdir(), "luxel-app-store-metadata-"));
   context.after(() => rm(temporaryRoot, { recursive: true, force: true }));
   const firstOutput = join(temporaryRoot, "first");
@@ -42,7 +43,7 @@ test("exports every localized field to a deterministic Fastlane metadata tree", 
   assert.deepEqual(firstTree, secondTree);
   assert.equal(
     Object.keys(firstTree).length,
-    locales.length * Object.keys(fastlaneMetadataFiles).length,
+    locales.length * Object.keys(fastlaneMetadataFiles).length + 1,
   );
 
   for (const entry of locales) {
@@ -51,6 +52,11 @@ test("exports every localized field to a deterministic Fastlane metadata tree", 
     }
   }
 
+  assert.deepEqual(
+    await readFile(join(firstOutput, "review_information", "notes.txt")),
+    await readFile(reviewNotesPath),
+  );
+  assert.deepEqual(await readdir(join(firstOutput, "review_information")), ["notes.txt"]);
   assert.equal(Object.keys(firstTree).some((path) => /screenshot|\.(png|jpe?g)$/iu.test(path)), false);
 });
 
