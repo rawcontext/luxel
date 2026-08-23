@@ -1,4 +1,5 @@
 import Foundation
+import LuxelCore
 import Testing
 
 @Suite("App bundle configuration")
@@ -191,6 +192,58 @@ extension AppBundleConfigurationTests {
         #expect(script.contains("Set :CFBundleName ${APP_DISPLAY_NAME}"))
         #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLName ${APP_BUNDLE_IDENTIFIER}.url"))
         #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 ${APP_URL_SCHEME}"))
+        #expect(script.contains("set_luxel_localized_bundle_display_name \"${APP_DISPLAY_NAME}\""))
+    }
+
+    @Test("local build rewrites only assembled localized app names")
+    func localBuildRewritesOnlyAssembledLocalizedAppNames() throws {
+        let root = try packageRootURL()
+        let macAppStoreScript = try scriptSource("build-luxel-mas-pkg.sh")
+        #expect(!macAppStoreScript.contains("set_luxel_localized_bundle_display_name"))
+
+        let localizations = root.appending(path: "Configuration/Luxel/Localizations")
+        let temporaryRoot = FileManager.default.temporaryDirectory.appending(
+            component: "luxel-localized-display-name-\(UUID().uuidString)",
+            directoryHint: .isDirectory
+        )
+        let appPath = temporaryRoot.appending(
+            component: "Luxel Dev.app",
+            directoryHint: .isDirectory
+        )
+        let resources = appPath.appending(path: "Contents/Resources", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temporaryRoot) }
+
+        for locale in LuxelLocalization.supportedLocales {
+            let source = localizations.appending(
+                path: "\(locale).lproj",
+                directoryHint: .isDirectory
+            )
+            let destination = resources.appending(
+                path: "\(locale).lproj",
+                directoryHint: .isDirectory
+            )
+            try FileManager.default.copyItem(at: source, to: destination)
+        }
+
+        let supportScript = root.appending(path: "Scripts/luxel-app-bundle-support.sh")
+        try rewriteLocalizedDisplayName(in: appPath, using: supportScript)
+
+        for locale in LuxelLocalization.supportedLocales {
+            let source = localizations
+                .appending(path: "\(locale).lproj")
+                .appending(path: "InfoPlist.strings")
+            let assembled = resources
+                .appending(path: "\(locale).lproj")
+                .appending(path: "InfoPlist.strings")
+            let sourcePlist = try readPlist(at: source)
+            let assembledPlist = try readPlist(at: assembled)
+
+            #expect(sourcePlist["CFBundleDisplayName"] as? String == "Luxel")
+            #expect(sourcePlist["CFBundleName"] as? String == "Luxel")
+            #expect(assembledPlist["CFBundleDisplayName"] as? String == "Luxel Dev")
+            #expect(assembledPlist["CFBundleName"] as? String == "Luxel Dev")
+        }
     }
 
     @Test("signing scripts select identities from the Raw Context team")
@@ -269,9 +322,28 @@ extension AppBundleConfigurationTests {
 
     private func readPlist(_ relativePath: String) throws -> [String: Any] {
         let url = try packageRootURL().appending(path: relativePath)
+        return try readPlist(at: url)
+    }
+
+    private func readPlist(at url: URL) throws -> [String: Any] {
         let data = try Data(contentsOf: url)
         let plist = try PropertyListSerialization.propertyList(from: data, format: nil)
         return try #require(plist as? [String: Any])
+    }
+
+    private func rewriteLocalizedDisplayName(in appPath: URL, using supportScript: URL) throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/bash")
+        process.arguments = [
+            "-c",
+            "APP_PATH=\"$1\"; source \"$2\"; set_luxel_localized_bundle_display_name \"Luxel Dev\"",
+            "luxel-localized-display-name",
+            appPath.path,
+            supportScript.path
+        ]
+        try process.run()
+        process.waitUntilExit()
+        #expect(process.terminationStatus == 0)
     }
 
     private func scriptSource(_ scriptName: String) throws -> String {
