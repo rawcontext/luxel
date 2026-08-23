@@ -55,6 +55,43 @@ struct VoiceDetectionCoordinatorTests {
         #expect(await coordinator.handlePromptAction(.startRecording) == .activateApplication)
     }
 
+    @Test("concurrent recording actions consume one outstanding prompt at most once")
+    func concurrentRecordingActionsStartAtMostOnce() async {
+        let coordinator = VoiceDetectionCoordinator(
+            detector: VoiceActivityDetectorSpy(),
+            notifier: VoiceRecordingPromptNotifierSpy()
+        )
+        _ = await coordinator.reconcile(eligibility: eligible())
+        for index in 0..<4 {
+            await coordinator.receive(.observation(
+                VoiceActivityObservation(
+                    probability: 0.95,
+                    observedAt: Date(timeIntervalSince1970: Double(index) * 0.25)
+                )
+            ))
+        }
+
+        let outcomes = await withTaskGroup(
+            of: VoiceDetectionCoordinatorOutcome.self,
+            returning: [VoiceDetectionCoordinatorOutcome].self
+        ) { group in
+            for _ in 0..<2 {
+                group.addTask {
+                    await coordinator.handlePromptAction(.startRecording)
+                }
+            }
+
+            var outcomes: [VoiceDetectionCoordinatorOutcome] = []
+            for await outcome in group {
+                outcomes.append(outcome)
+            }
+            return outcomes
+        }
+
+        #expect(outcomes.filter { $0 == .startRecording }.count == 1)
+        #expect(outcomes.filter { $0 == .activateApplication }.count == 1)
+    }
+
     @Test("device loss removes an outstanding prompt and stops capture")
     func deviceLoss() async {
         let detector = VoiceActivityDetectorSpy()

@@ -88,6 +88,32 @@ struct VoiceDetectionRecordingRequestTests {
         }
     }
 
+    @Test("prompt and manual recording starts race to one recorder request")
+    func promptAndManualStartRace() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appending(path: "VoiceDetectionRecordingRaceTests-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let fixture = try makePromptRecordingFixture(root: root)
+
+        await fixture.model.refreshPermissions()
+        await fixture.model.reconcileVoiceDetection()
+        for index in 0..<4 {
+            await fixture.coordinator.receive(.observation(
+                VoiceActivityObservation(
+                    probability: 0.95,
+                    observedAt: Date(timeIntervalSince1970: Double(index) * 0.25)
+                )
+            ))
+        }
+
+        async let promptStart: Void = fixture.model.handleVoiceDetectionPromptAction(.startRecording)
+        async let manualStart: Void = fixture.model.startAudioOnlyRecording()
+        _ = await (promptStart, manualStart)
+
+        #expect(await fixture.recorder.requests.count == 1)
+        #expect(fixture.model.recordingState.activeRecording?.options.isAudioOnly == true)
+    }
+
     private func makePromptRecordingFixture(
         root: URL
     ) throws -> VoiceDetectionPromptFixture {
@@ -98,6 +124,7 @@ struct VoiceDetectionRecordingRequestTests {
         var settings = AppSettings.defaults(recordingsDirectory: root.appending(path: "Recordings"))
         settings.speechDetectionPromptsEnabled = true
         settings.speechDetectionDisclosureAccepted = true
+        settings.recordAudio = true
         settings.recordSystemAudio = false
         settings.audioInputDeviceID = "mic-1"
         settings.audioInputDeviceName = "Test Mic"
