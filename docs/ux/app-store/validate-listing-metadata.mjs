@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { readFile, stat } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -42,6 +43,16 @@ const characterLimits = {
   description: 4_000,
   whatsNew: 4_000,
 };
+const screenshotReferences = [
+  ["apps/web/public/screenshots/luxel-menu-capture-under-menu-bar.png", "1114x896"],
+  ["apps/web/public/screenshots/luxel-settings-speech-detection.png", "2064x1744"],
+  ["apps/web/public/screenshots/luxel-area-selection.png", "1200x870"],
+  ["apps/web/public/screenshots/luxel-settings-transcripts.png", "1830x1235"],
+  ["apps/web/public/screenshots/luxel-editor-loaded.png", "1800x1184"],
+  ["apps/web/public/screenshots/luxel-menu-bar-recording-status.png", "1162x736"],
+  ["apps/web/public/screenshots/luxel-audio-transcript-editor.png", "2224x1648"],
+];
+const canonicalSpeechScreenshotHash = "1a8051f2d614d27eb301063db1cf58e9ce3ccac151f81c79eae20dadc167db6c";
 
 function parseTaggedJson(tag) {
   const pattern = new RegExp(
@@ -67,16 +78,32 @@ assert(screenshotPlans.length === 1, "Expected one APP-STORE-SCREENSHOTS JSON bl
 
 const screenshotPlan = screenshotPlans[0];
 assert(Array.isArray(screenshotPlan) && screenshotPlan.length === 7, "Expected seven screenshots");
+const screenshotBuffers = [];
 for (const [index, screenshot] of screenshotPlan.entries()) {
   assert(screenshot.position === index + 1, `Screenshot position ${index + 1} is missing or out of order`);
-  const expectedSize = screenshot.position === 2 ? "2064x1744" : "2880x1800";
-  assert(screenshot.size === expectedSize, `Screenshot ${screenshot.position} must be ${expectedSize}`);
-  assert(typeof screenshot.sourcePath === "string", `Screenshot ${screenshot.position} needs a sourcePath`);
-  await stat(resolve(repositoryRoot, screenshot.sourcePath));
-  if (screenshot.capturePath) {
-    await stat(resolve(repositoryRoot, screenshot.capturePath));
-  }
+  const [expectedPath, expectedSize] = screenshotReferences[index];
+  assert(screenshot.referencePath === expectedPath, `Screenshot ${screenshot.position} must use ${expectedPath}`);
+  assert(screenshot.referenceSize === expectedSize, `Screenshot ${screenshot.position} reference must be ${expectedSize}`);
+  assert(
+    screenshot.referencePath.startsWith("apps/web/public/screenshots/"),
+    `Screenshot ${screenshot.position} must use a real apps/web screenshot reference`,
+  );
+  assert(!screenshot.referencePath.includes("docs/design"), `Screenshot ${screenshot.position} uses a legacy composite`);
+  assert(screenshot.requiredUploadSize === "2880x1800", `Screenshot ${screenshot.position} must be recaptured at 2880x1800`);
+  assert(screenshot.uploadStatus === "recapture-required", `Screenshot ${screenshot.position} is not upload-ready`);
+  assert(screenshot.referenceSize !== screenshot.requiredUploadSize, `Screenshot ${screenshot.position} incorrectly claims upload readiness`);
+  const screenshotBuffer = await readFile(resolve(repositoryRoot, screenshot.referencePath));
+  assert(screenshotBuffer.toString("ascii", 1, 4) === "PNG", `Screenshot ${screenshot.position} must be PNG`);
+  const actualSize = `${screenshotBuffer.readUInt32BE(16)}x${screenshotBuffer.readUInt32BE(20)}`;
+  assert(actualSize === screenshot.referenceSize, `Screenshot ${screenshot.position} is ${actualSize}, not ${screenshot.referenceSize}`);
+  screenshotBuffers.push(screenshotBuffer);
 }
+
+const canonicalSpeechScreenshotDigest = createHash("sha256").update(screenshotBuffers[1]).digest("hex");
+assert(
+  canonicalSpeechScreenshotDigest === canonicalSpeechScreenshotHash,
+  "Canonical Speech Detection screenshot hash changed",
+);
 
 assert(locales.length === requiredLocales.length, `Expected ${requiredLocales.length} locale blocks`);
 assert(
@@ -121,6 +148,6 @@ assert(reviewNoteBytes > 0, "App Review notes are empty");
 assert(reviewNoteBytes <= 4_000, `App Review notes are ${reviewNoteBytes} bytes; limit is 4000`);
 
 console.log(
-  `Validated ${locales.length} localized listings, ${screenshotPlan.length} screenshots, `
+  `Validated ${locales.length} localized listings, ${screenshotPlan.length} recapture references, `
     + `and ${reviewNoteBytes} bytes of App Review notes.`,
 );

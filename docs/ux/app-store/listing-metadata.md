@@ -1,12 +1,13 @@
 # Luxel Mac App Store Listing Metadata
 
-This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026 and the complete proposed metadata for the Speech Detection Prompts release. Copy values from this file into an editable App Store Connect draft; do not edit the draft independently.
+This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026, the complete proposed text metadata for the Speech Detection Prompts release, and the pending real-capture screenshot plan. After the upload-size capture gate below is complete, copy values from this file into an editable App Store Connect draft; do not edit the draft independently.
 
 ## Publication state
 
 - Prepared locally on August 22, 2026. Nothing in this change was submitted to or published through App Store Connect.
 - No App Store Connect credentials are available in the local environment. The repository's authenticated workflows receive credentials only from GitHub Actions secrets, so private fields and the configured localization set could not be retrieved.
 - Apple's public Search API does not expose promotional text, keywords, App Review notes, configured localizations, or draft metadata. Those prior values are therefore recorded as unavailable rather than guessed.
+- The App Store Connect screenshot and metadata draft update remains pending. None of the checked-in real reference captures has an Apple-accepted 16:10 Mac upload size, so fresh real captures are required before the draft is changed.
 - Before submission, compare every editable App Store Connect field with this file, update the release version/build in the review package, attach the final review video, and record the comparison in GitHub issue #57.
 
 ## Apple field rules
@@ -22,6 +23,7 @@ These limits were rechecked against Apple's App Store Connect Help on August 22,
 | Keywords | 100 UTF-8 bytes; each keyword longer than two characters; do not repeat the app/company name or use other app/company names |
 | What's New | 4,000 characters |
 | App Review notes | 4,000 UTF-8 bytes; one shared review field, not storefront-localized |
+| Mac screenshots | 1–10 PNG/JPEG images without alpha; 16:10 at 1280 × 800, 1440 × 900, 2560 × 1600, or 2880 × 1800 pixels |
 | Support URL | Full URL; must lead to real contact information |
 | Privacy Policy URL | Required for macOS apps |
 
@@ -30,6 +32,7 @@ Authoritative references:
 - [App information](https://developer.apple.com/help/app-store-connect/reference/app-information/app-information)
 - [Platform version information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information)
 - [App Store localizations](https://developer.apple.com/help/app-store-connect/reference/app-information/app-store-localizations)
+- [Screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications)
 - [App privacy details](https://developer.apple.com/app-store/app-privacy-details/)
 
 Run the local validation after every metadata edit:
@@ -38,7 +41,7 @@ Run the local validation after every metadata edit:
 bun docs/ux/app-store/validate-listing-metadata.mjs
 ```
 
-The script validates every declared character count, the keyword byte counts, required locales, HTTPS URLs, and screenshot source paths.
+The script validates every declared character count, the keyword byte counts, required locales, HTTPS URLs, and the real-capture screenshot plan. It deliberately rejects legacy composite paths and any claim that the current references are upload-ready.
 
 ## Verified public baseline
 
@@ -124,6 +127,8 @@ The current public screenshot order is:
 5. `docs/design/app-store-03-recording-status.png`
 6. `docs/design/app-store-02-editor-trim.png`
 
+Those six `docs/design` images are preserved only as the live 1.1.6 gallery baseline. They are composed marketing assets, not direct app captures, and are excluded from the proposed real-screenshot plan below.
+
 Prior promotional text, keywords, App Review notes, private App Privacy answers, and exact App Store Connect localization records were not publicly retrievable. The existing review package for version 1.1.6 is preserved in Git history and summarized in `docs/app-review/information-needed-checklist.md`.
 
 ## Locale mapping
@@ -142,9 +147,13 @@ Prior promotional text, keywords, App Review notes, private App Privacy answers,
 | `pt-BR` | `pt-BR` | Portuguese (Brazil) |
 | `pt-PT` | `pt-PT` | Portuguese (Portugal) |
 
-## Proposed screenshot order
+## Proposed real-capture screenshot order
 
-Use only real Luxel screenshots. Do not add marketing overlays, generated imagery, frames, retouching, text replacement, or resized derivatives. Position 2 is the exact 2064 × 1744 screenshot supplied for this release (SHA-256 `1a8051f2d614d27eb301063db1cf58e9ce3ccac151f81c79eae20dadc167db6c`). The localized captions below are editorial labels for the checked-in plan; App Store Connect has no separate screenshot-caption field, so they are not rendered into the images. If Apple rejects the supplied dimensions, capture the same real settings view again at a currently supported size instead of altering this file.
+The files below are direct app screenshots used only as visual references for the next capture session. None has an Apple-accepted 16:10 Mac screenshot size, so none is approved for upload. Recreate each scene as a fresh, real 2880 × 1800 app screenshot. Do not crop, resize, pad, frame, retouch, generate, composite, or replace text in an existing image.
+
+Position 2 preserves the exact 2064 × 1744 screenshot supplied for the website and current feature reference (SHA-256 `1a8051f2d614d27eb301063db1cf58e9ce3ccac151f81c79eae20dadc167db6c`). It is not an App Store upload asset. Recapture the same real toggle-only Settings view at 2880 × 1800 before updating the App Store Connect draft.
+
+The localized captions below are editorial labels for the checked-in plan. App Store Connect has no separate screenshot-caption field, so captions are not rendered into screenshots. If locale-specific screenshots are needed, launch the real app in that locale and take a separate 2880 × 1800 capture.
 
 <!-- APP-STORE-SCREENSHOTS -->
 ```json
@@ -152,44 +161,58 @@ Use only real Luxel screenshots. Do not add marketing overlays, generated imager
   {
     "position": 1,
     "subject": "menu-bar capture",
-    "size": "2880x1800",
-    "sourcePath": "docs/design/app-store-05-menu-bar.png"
+    "referenceSize": "1114x896",
+    "referencePath": "apps/web/public/screenshots/luxel-menu-capture-under-menu-bar.png",
+    "requiredUploadSize": "2880x1800",
+    "uploadStatus": "recapture-required"
   },
   {
     "position": 2,
     "subject": "Speech Detection Prompts settings",
-    "size": "2064x1744",
-    "sourcePath": "apps/web/public/screenshots/luxel-settings-speech-detection.png"
+    "referenceSize": "2064x1744",
+    "referencePath": "apps/web/public/screenshots/luxel-settings-speech-detection.png",
+    "requiredUploadSize": "2880x1800",
+    "uploadStatus": "recapture-required"
   },
   {
     "position": 3,
     "subject": "precise area capture",
-    "size": "2880x1800",
-    "sourcePath": "docs/design/app-store-01-area-capture.png"
+    "referenceSize": "1200x870",
+    "referencePath": "apps/web/public/screenshots/luxel-area-selection.png",
+    "requiredUploadSize": "2880x1800",
+    "uploadStatus": "recapture-required"
   },
   {
     "position": 4,
-    "subject": "local transcripts",
-    "size": "2880x1800",
-    "sourcePath": "docs/design/app-store-06-transcripts.png"
+    "subject": "transcript settings",
+    "referenceSize": "1830x1235",
+    "referencePath": "apps/web/public/screenshots/luxel-settings-transcripts.png",
+    "requiredUploadSize": "2880x1800",
+    "uploadStatus": "recapture-required"
   },
   {
     "position": 5,
     "subject": "export formats",
-    "size": "2880x1800",
-    "sourcePath": "docs/design/app-store-04-export.png"
+    "referenceSize": "1800x1184",
+    "referencePath": "apps/web/public/screenshots/luxel-editor-loaded.png",
+    "requiredUploadSize": "2880x1800",
+    "uploadStatus": "recapture-required"
   },
   {
     "position": 6,
     "subject": "recording controls",
-    "size": "2880x1800",
-    "sourcePath": "docs/design/app-store-03-recording-status.png"
+    "referenceSize": "1162x736",
+    "referencePath": "apps/web/public/screenshots/luxel-menu-bar-recording-status.png",
+    "requiredUploadSize": "2880x1800",
+    "uploadStatus": "recapture-required"
   },
   {
     "position": 7,
     "subject": "non-destructive editor",
-    "size": "2880x1800",
-    "sourcePath": "docs/design/app-store-02-editor-trim.png"
+    "referenceSize": "2224x1648",
+    "referencePath": "apps/web/public/screenshots/luxel-audio-transcript-editor.png",
+    "requiredUploadSize": "2880x1800",
+    "uploadStatus": "recapture-required"
   }
 ]
 ```
@@ -537,10 +560,12 @@ If any of those facts change, stop submission and re-answer App Privacy before r
 ## App Store Connect handoff
 
 1. Re-fetch the public listing and record any baseline change.
-2. Open an editable macOS version in App Store Connect and confirm the configured localization records match the 11 locale identifiers above.
-3. Copy each JSON value exactly. App Review notes come from `docs/app-review/review-notes.txt`.
-4. Use the exact Speech Detection screenshot at position 2 without alteration. For any future locale-specific screenshot, run the real app in that locale and capture it again; do not add or replace text in an image.
+2. Install the exact release candidate and recreate all seven reference scenes as direct 2880 × 1800 screenshots. Do not transform the existing reference files.
+3. Inspect every fresh capture for the real current UI, correct locale, private information, alpha/transparency, and the exact 16:10 dimensions Apple accepts.
+4. Update this plan to point at the new real captures and replace each `recapture-required` state only after the files pass inspection.
 5. Run `bun docs/ux/app-store/validate-listing-metadata.mjs` and confirm the App Store Connect counters independently.
-6. Confirm the App Privacy answer and privacy-policy URL.
-7. Save as a draft. Do not publish from this document change.
-8. Compare the draft field-for-field with this file and attach evidence to issue #57 before closing it.
+6. Only after the real upload-size captures exist, open an editable macOS version in App Store Connect and confirm the configured localization records match the 11 locale identifiers above.
+7. Copy each JSON value exactly. App Review notes come from `docs/app-review/review-notes.txt`; confirm the App Privacy answer and privacy-policy URL.
+8. Save as a draft, compare it field-for-field with this file, and attach evidence to issue #57. Do not publish from this document change.
+
+Until steps 2–5 are complete, the App Store Connect screenshot and metadata draft update remains pending.
