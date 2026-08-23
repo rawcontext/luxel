@@ -1,7 +1,7 @@
 "CFBundleDisplayName" = "Luxel";
 "CFBundleName" = "Luxel";
 "NSCameraUsageDescription" = "Luxel 仅在你启用摄像头预览或摄像头轨道录制时使用摄像头。";
-"NSMicrophoneUsageDescription" = "Luxel 仅在你为屏幕录制启用麦克风捕捉时录制麦克风音频。";
+"NSMicrophoneUsageDescription" = "启用麦克风录音或语音检测提示时，Luxel 会使用你的麦克风。语音检测在这台 Mac 上进行，只有在你开始录制后才会保存音频。";
 "NSScreenCaptureUsageDescription" = "Luxel 仅在你开始录制时捕捉屏幕。";
 "NSSpeechRecognitionUsageDescription" = "Luxel 使用设备端语音识别在导出编辑器中转录音频录制。";
 "NSHumanReadableCopyright" = "Copyright © 2026 Context. 保留所有权利。";

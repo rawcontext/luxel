@@ -3,6 +3,7 @@ import Darwin
 import LuxelCore
 import LuxelPresentation
 import SwiftUI
+@preconcurrency import UserNotifications
 
 @main
 struct LuxelApp: App {
@@ -146,6 +147,14 @@ private struct LuxelSettingsActionScene<Content: Scene>: Scene {
             }
         }
         applicationDelegate.installURLHandler()
+        applicationDelegate.voiceDetectionPromptActions = { [weak model] action in
+            Task { @MainActor in
+                await model?.handleVoiceDetectionPromptAction(action)
+            }
+        }
+        applicationDelegate.prepareForTermination = { [weak model] in
+            await model?.shutdownVoiceDetection()
+        }
         windowPresenter.install(openSettingsAction: openSettingsAction)
         self.content = content()
     }
@@ -169,9 +178,24 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
         }
     }
     private var pendingURLs: [URL] = []
+    var voiceDetectionPromptActions: ((VoiceDetectionPromptAction) -> Void)? {
+        didSet {
+            guard let voiceDetectionPromptActions, !pendingVoiceDetectionPromptActions.isEmpty else {
+                return
+            }
+            let actions = pendingVoiceDetectionPromptActions
+            pendingVoiceDetectionPromptActions.removeAll()
+            actions.forEach(voiceDetectionPromptActions)
+        }
+    }
+    private var pendingVoiceDetectionPromptActions: [VoiceDetectionPromptAction] = []
+    private var voiceDetectionNotificationController: VoiceDetectionNotificationController?
+    var prepareForTermination: (@MainActor () async -> Void)?
+    private var terminationTask: Task<Void, Never>?
 
     func applicationWillFinishLaunching(_: Notification) {
         installURLHandler()
+        installVoiceDetectionNotificationController()
     }
 
     func installURLHandler() {
@@ -188,6 +212,30 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
             forEventClass: AEEventClass(kInternetEventClass),
             andEventID: AEEventID(kAEGetURL)
         )
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let prepareForTermination else {
+            return .terminateNow
+        }
+        guard terminationTask == nil else {
+            return .terminateLater
+        }
+
+        terminationTask = Task { @MainActor [weak self] in
+            await prepareForTermination()
+            sender.reply(toApplicationShouldTerminate: true)
+            self?.terminationTask = nil
+        }
+        return .terminateLater
+    }
+
+    func handleVoiceDetectionPromptAction(_ action: VoiceDetectionPromptAction) {
+        if let voiceDetectionPromptActions {
+            voiceDetectionPromptActions(action)
+        } else {
+            pendingVoiceDetectionPromptActions.append(action)
+        }
     }
 
     func application(_: NSApplication, open urls: [URL]) {
@@ -227,6 +275,20 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
         } else {
             pendingURLs.append(url)
         }
+    }
+
+    private func installVoiceDetectionNotificationController() {
+        guard Bundle.main.bundleURL.pathExtension == "app" else {
+            return
+        }
+
+        let controller = VoiceDetectionNotificationController { [weak self] action in
+            Task { @MainActor in
+                self?.handleVoiceDetectionPromptAction(action)
+            }
+        }
+        controller.install(on: .current())
+        voiceDetectionNotificationController = controller
     }
 }
 

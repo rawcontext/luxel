@@ -8,4 +8,5 @@ public enum SystemActivityEvent: Equatable, Sendable {
     case pauseReasonBecameActive(ReplayBufferPauseReason)
     case pauseReasonBecameInactive(ReplayBufferPauseReason)
     case displayConfigurationChanged
+    case applicationDidBecomeActive
 }

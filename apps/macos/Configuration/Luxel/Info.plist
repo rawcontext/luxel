@@ -71,7 +71,7 @@
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Context. All rights reserved.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Luxel records microphone audio only when you enable microphone capture for a screen recording.</string>
+	<string>Luxel uses your microphone when you enable microphone recording or speech detection prompts. Speech detection happens on this Mac, and audio is saved only after you start recording.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSScreenCaptureUsageDescription</key>

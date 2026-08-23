@@ -30,6 +30,7 @@ struct AppKitSystemActivityMonitorTests {
         let sessionDidResign = Notification.Name("tests.sessionDidResign")
         let sessionDidBecome = Notification.Name("tests.sessionDidBecome")
         let displayChanged = Notification.Name("tests.displayChanged")
+        let applicationDidBecomeActive = Notification.Name("tests.applicationDidBecomeActive")
         let monitor = AppKitSystemActivityMonitor(
             workspaceNotificationCenter: workspaceCenter,
             applicationNotificationCenter: applicationCenter,
@@ -38,6 +39,7 @@ struct AppKitSystemActivityMonitorTests {
             sessionDidResignActiveNotification: sessionDidResign,
             sessionDidBecomeActiveNotification: sessionDidBecome,
             displayChangeNotification: displayChanged,
+            applicationDidBecomeActiveNotification: applicationDidBecomeActive,
             isOnBatteryPower: { false },
             startPowerSourceObserver: powerProbe.start
         )
@@ -48,12 +50,14 @@ struct AppKitSystemActivityMonitorTests {
         workspaceCenter.post(name: sessionDidResign, object: nil)
         workspaceCenter.post(name: sessionDidBecome, object: nil)
         applicationCenter.post(name: displayChanged, object: nil)
+        applicationCenter.post(name: applicationDidBecomeActive, object: nil)
 
         #expect(await iterator.next() == .pauseReasonBecameActive(.displaySleep))
         #expect(await iterator.next() == .pauseReasonBecameInactive(.displaySleep))
         #expect(await iterator.next() == .pauseReasonBecameActive(.locked))
         #expect(await iterator.next() == .pauseReasonBecameInactive(.locked))
         #expect(await iterator.next() == .displayConfigurationChanged)
+        #expect(await iterator.next() == .applicationDidBecomeActive)
     }
 
     @Test("power source callback maps current battery state")

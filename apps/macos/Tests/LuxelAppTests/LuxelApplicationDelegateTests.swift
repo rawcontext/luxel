@@ -1,6 +1,8 @@
 import AppKit
 import Foundation
+import LuxelCore
 import Testing
+import UserNotifications
 
 @testable import LuxelApp
 
@@ -78,6 +80,94 @@ struct LuxelApplicationDelegateTests {
         #expect(receivedURLs == [[automationURL]])
     }
 
+    @Test("speech prompt actions wait for the menu model handler and preserve order")
+    func speechPromptActionsWaitForHandler() {
+        let delegate = LuxelApplicationDelegate()
+        var receivedActions: [VoiceDetectionPromptAction] = []
+
+        delegate.handleVoiceDetectionPromptAction(.dismiss)
+        delegate.handleVoiceDetectionPromptAction(.startRecording)
+        delegate.voiceDetectionPromptActions = { receivedActions.append($0) }
+
+        #expect(receivedActions == [.dismiss, .startRecording])
+    }
+
+    @Test("notification identifiers map recording consent separately from body clicks")
+    func notificationActionMapping() {
+        #expect(VoiceDetectionNotificationController.action(
+            for: VoiceDetectionNotificationIdentifiers.startRecordingAction
+        ) == .startRecording)
+        #expect(VoiceDetectionNotificationController.action(
+            for: VoiceDetectionNotificationIdentifiers.dismissAction
+        ) == .dismiss)
+        #expect(VoiceDetectionNotificationController.action(
+            for: UNNotificationDismissActionIdentifier
+        ) == .dismiss)
+        #expect(VoiceDetectionNotificationController.action(
+            for: UNNotificationDefaultActionIdentifier
+        ) == .defaultAction)
+        #expect(VoiceDetectionNotificationController.action(for: "unrelated") == nil)
+    }
+
+    @Test("speech prompts present as foreground banners with sound")
+    func speechPromptPresentation() {
+        let speechOptions = VoiceDetectionNotificationController.presentationOptions(
+            categoryIdentifier: VoiceDetectionNotificationIdentifiers.category
+        )
+
+        #expect(speechOptions.contains(.banner))
+        #expect(speechOptions.contains(.sound))
+        #expect(VoiceDetectionNotificationController.presentationOptions(
+            categoryIdentifier: "unrelated"
+        ).isEmpty)
+    }
+
+    @Test("notification response handling calls completion exactly once on every path")
+    func responseCompletion() {
+        let actionRecorder = VoiceDetectionPromptActionRecorder()
+        let controller = VoiceDetectionNotificationController {
+            actionRecorder.append($0)
+        }
+        var completionCount = 0
+
+        for identifier in [
+            VoiceDetectionNotificationIdentifiers.startRecordingAction,
+            VoiceDetectionNotificationIdentifiers.dismissAction,
+            UNNotificationDismissActionIdentifier,
+            UNNotificationDefaultActionIdentifier,
+            "unrelated"
+        ] {
+            controller.handleResponse(
+                categoryIdentifier: VoiceDetectionNotificationIdentifiers.category,
+                actionIdentifier: identifier
+            ) {
+                completionCount += 1
+            }
+        }
+        controller.handleResponse(
+            categoryIdentifier: "unrelated",
+            actionIdentifier: VoiceDetectionNotificationIdentifiers.startRecordingAction
+        ) {
+            completionCount += 1
+        }
+
+        #expect(actionRecorder.actions == [.startRecording, .dismiss, .dismiss, .defaultAction])
+        #expect(completionCount == 6)
+    }
+
+    @Test("speech prompt category registers stable actions")
+    func notificationCategory() {
+        let category = VoiceDetectionNotificationController.category
+
+        #expect(category.identifier == VoiceDetectionNotificationIdentifiers.category)
+        #expect(category.actions.map(\.identifier) == [
+            VoiceDetectionNotificationIdentifiers.startRecordingAction,
+            VoiceDetectionNotificationIdentifiers.dismissAction
+        ])
+        #expect(category.actions.allSatisfy { !$0.title.isEmpty })
+        #expect(category.options.contains(.customDismissAction))
+    }
+
     @Test("status item right click exposes the overflow quick actions")
     func statusItemRightClickQuickActions() throws {
         let packageRoot = URL(fileURLWithPath: #filePath)
@@ -103,5 +193,20 @@ struct LuxelApplicationDelegateTests {
         #expect(source.contains("title: String(localized: \"Settings\")"))
         #expect(source.contains("title: String(localized: \"Quit Luxel\")"))
         #expect(source.contains("showStatusItemQuickActionsMenu()"))
+    }
+}
+
+private final class VoiceDetectionPromptActionRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recordedActions: [VoiceDetectionPromptAction] = []
+
+    var actions: [VoiceDetectionPromptAction] {
+        lock.withLock { recordedActions }
+    }
+
+    func append(_ action: VoiceDetectionPromptAction) {
+        lock.withLock {
+            recordedActions.append(action)
+        }
     }
 }

@@ -13286,6 +13286,290 @@
         }
       }
     },
+    "notifications.speechDetected.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start an audio recording?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audioaufnahme starten?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Iniciar una grabación de audio?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Démarrer un enregistrement audio ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avviare una registrazione audio?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オーディオ録音を開始しますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 녹음을 시작할까요?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu ghi âm?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要开始录音吗？"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar uma gravação de áudio?"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar uma gravação de áudio?"
+          }
+        }
+      }
+    },
+    "notifications.speechDetected.dismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schließen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descartar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignora"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閉じる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "닫기"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ qua"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "忽略"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispensar"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorar"
+          }
+        }
+      }
+    },
+    "notifications.speechDetected.startRecording": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start Recording"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme starten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar grabación"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Démarrer l’enregistrement"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvia registrazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録音を開始"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "녹음 시작"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu ghi"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始录音"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar gravação"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar gravação"
+          }
+        }
+      }
+    },
+    "notifications.speechDetected.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speech detected"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprache erkannt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voz detectada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parole détectée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voce rilevata"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声を検出"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음성 감지됨"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã phát hiện giọng nói"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检测到语音"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fala detectada"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fala detetada"
+          }
+        }
+      }
+    },
     "Off": {
       "extractionState": "manual",
       "localizations": {
@@ -37280,6 +37564,16 @@
         "pt-PT": { "stringUnit": { "state": "translated", "value": "Linha de comandos" } }
       }
     },
+    "settings.speechDetection.title": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Speech Detection"}},"de":{"stringUnit":{"state":"translated","value":"Spracherkennung"}},"es":{"stringUnit":{"state":"translated","value":"Detección de voz"}},"fr":{"stringUnit":{"state":"translated","value":"Détection de parole"}},"it":{"stringUnit":{"state":"translated","value":"Rilevamento vocale"}},"ja":{"stringUnit":{"state":"translated","value":"音声検出"}},"ko":{"stringUnit":{"state":"translated","value":"음성 감지"}},"vi":{"stringUnit":{"state":"translated","value":"Phát hiện giọng nói"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"语音检测"}},"pt-BR":{"stringUnit":{"state":"translated","value":"Detecção de fala"}},"pt-PT":{"stringUnit":{"state":"translated","value":"Deteção de fala"}}}},
+    "settings.speechDetection.toggle": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Notify When Speech Is Detected"}},"de":{"stringUnit":{"state":"translated","value":"Bei erkannter Sprache benachrichtigen"}},"es":{"stringUnit":{"state":"translated","value":"Notificar al detectar voz"}},"fr":{"stringUnit":{"state":"translated","value":"Notifier quand de la parole est détectée"}},"it":{"stringUnit":{"state":"translated","value":"Avvisa quando viene rilevata la voce"}},"ja":{"stringUnit":{"state":"translated","value":"音声を検出したときに通知"}},"ko":{"stringUnit":{"state":"translated","value":"음성이 감지되면 알림"}},"vi":{"stringUnit":{"state":"translated","value":"Thông báo khi phát hiện giọng nói"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"检测到语音时通知"}},"pt-BR":{"stringUnit":{"state":"translated","value":"Notificar ao detectar fala"}},"pt-PT":{"stringUnit":{"state":"translated","value":"Notificar ao detetar fala"}}}},
+    "settings.speechDetection.help": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Show a recording prompt after Luxel detects sustained speech on the selected microphone."}},"de":{"stringUnit":{"state":"translated","value":"Zeige eine Aufnahmeaufforderung, nachdem Luxel anhaltende Sprache am ausgewählten Mikrofon erkennt."}},"es":{"stringUnit":{"state":"translated","value":"Muestra un aviso de grabación cuando Luxel detecte voz continua en el micrófono seleccionado."}},"fr":{"stringUnit":{"state":"translated","value":"Affichez une invite d’enregistrement lorsque Luxel détecte une parole continue sur le microphone sélectionné."}},"it":{"stringUnit":{"state":"translated","value":"Mostra una richiesta di registrazione quando Luxel rileva voce continua sul microfono selezionato."}},"ja":{"stringUnit":{"state":"translated","value":"選択したマイクで継続的な音声を検出した後に、録音を促す通知を表示します。"}},"ko":{"stringUnit":{"state":"translated","value":"선택한 마이크에서 지속적인 음성이 감지되면 녹음 알림을 표시합니다."}},"vi":{"stringUnit":{"state":"translated","value":"Hiển thị lời nhắc ghi âm sau khi Luxel phát hiện giọng nói liên tục trên micrô đã chọn."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"Luxel 在所选麦克风上检测到持续语音后显示录制提示。"}},"pt-BR":{"stringUnit":{"state":"translated","value":"Mostra um aviso de gravação quando o Luxel detecta fala contínua no microfone selecionado."}},"pt-PT":{"stringUnit":{"state":"translated","value":"Mostra um aviso de gravação quando o Luxel deteta fala contínua no microfone selecionado."}}}},
+    "settings.speechDetection.footer": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Luxel analyzes microphone audio on this Mac while it is running. Audio is discarded unless you start recording."}},"de":{"stringUnit":{"state":"translated","value":"Luxel analysiert während der Ausführung Mikrofon-Audio auf diesem Mac. Audio wird verworfen, sofern du keine Aufnahme startest."}},"es":{"stringUnit":{"state":"translated","value":"Luxel analiza el audio del micrófono en este Mac mientras está abierto. El audio se descarta salvo que inicies una grabación."}},"fr":{"stringUnit":{"state":"translated","value":"Luxel analyse le son du microphone sur ce Mac pendant son fonctionnement. Le son est supprimé sauf si vous démarrez un enregistrement."}},"it":{"stringUnit":{"state":"translated","value":"Luxel analizza l’audio del microfono su questo Mac mentre è in esecuzione. L’audio viene eliminato a meno che non avvii una registrazione."}},"ja":{"stringUnit":{"state":"translated","value":"Luxel の実行中は、この Mac 上でマイク音声を解析します。録音を開始しない限り、音声は破棄されます。"}},"ko":{"stringUnit":{"state":"translated","value":"Luxel이 실행되는 동안 이 Mac에서 마이크 오디오를 분석합니다. 녹음을 시작하지 않으면 오디오는 폐기됩니다."}},"vi":{"stringUnit":{"state":"translated","value":"Luxel phân tích âm thanh micrô trên máy Mac này khi đang chạy. Âm thanh sẽ bị loại bỏ trừ khi bạn bắt đầu ghi."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"Luxel 运行时会在这台 Mac 上分析麦克风音频。除非你开始录制，否则音频会被丢弃。"}},"pt-BR":{"stringUnit":{"state":"translated","value":"O Luxel analisa o áudio do microfone neste Mac enquanto está em execução. O áudio é descartado, a menos que você inicie uma gravação."}},"pt-PT":{"stringUnit":{"state":"translated","value":"O Luxel analisa o áudio do microfone neste Mac enquanto está em execução. O áudio é eliminado, a menos que inicie uma gravação."}}}},
+    "settings.speechDetection.launchAtLoginFooter": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Works while Luxel is open. Turn on Launch at Login to make it available after you sign in."}},"de":{"stringUnit":{"state":"translated","value":"Funktioniert, solange Luxel geöffnet ist. Aktiviere „Beim Anmelden öffnen“, damit die Funktion nach der Anmeldung verfügbar ist."}},"es":{"stringUnit":{"state":"translated","value":"Funciona mientras Luxel está abierto. Activa Abrir al iniciar sesión para que esté disponible al entrar."}},"fr":{"stringUnit":{"state":"translated","value":"Fonctionne lorsque Luxel est ouvert. Activez Ouvrir à la connexion pour que cette fonction soit disponible après votre connexion."}},"it":{"stringUnit":{"state":"translated","value":"Funziona mentre Luxel è aperto. Attiva Apri al login per renderlo disponibile dopo l’accesso."}},"ja":{"stringUnit":{"state":"translated","value":"Luxel が開いている間に機能します。サインイン後も利用するには「ログイン時に開く」をオンにしてください。"}},"ko":{"stringUnit":{"state":"translated","value":"Luxel이 열려 있는 동안 작동합니다. 로그인 후에도 사용하려면 로그인 시 열기를 켜세요."}},"vi":{"stringUnit":{"state":"translated","value":"Hoạt động khi Luxel đang mở. Bật Mở khi đăng nhập để sử dụng sau khi bạn đăng nhập."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"在 Luxel 打开时有效。打开“登录时启动”，即可在登录后使用。"}},"pt-BR":{"stringUnit":{"state":"translated","value":"Funciona enquanto o Luxel está aberto. Ative Abrir ao Iniciar para disponibilizar após iniciar a sessão."}},"pt-PT":{"stringUnit":{"state":"translated","value":"Funciona enquanto o Luxel está aberto. Ative Abrir ao iniciar sessão para ficar disponível após iniciar sessão."}}}},
+    "settings.speechDetection.disclosure.title": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Enable Speech Detection Prompts?"}},"de":{"stringUnit":{"state":"translated","value":"Hinweise zur Spracherkennung aktivieren?"}},"es":{"stringUnit":{"state":"translated","value":"¿Activar los avisos de detección de voz?"}},"fr":{"stringUnit":{"state":"translated","value":"Activer les invites de détection de parole ?"}},"it":{"stringUnit":{"state":"translated","value":"Abilitare gli avvisi di rilevamento vocale?"}},"ja":{"stringUnit":{"state":"translated","value":"音声検出通知を有効にしますか？"}},"ko":{"stringUnit":{"state":"translated","value":"음성 감지 알림을 활성화할까요?"}},"vi":{"stringUnit":{"state":"translated","value":"Bật lời nhắc phát hiện giọng nói?"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"启用语音检测提示？"}},"pt-BR":{"stringUnit":{"state":"translated","value":"Ativar avisos de detecção de fala?"}},"pt-PT":{"stringUnit":{"state":"translated","value":"Ativar avisos de deteção de fala?"}}}},
+    "settings.speechDetection.disclosure.enable": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Enable"}},"de":{"stringUnit":{"state":"translated","value":"Aktivieren"}},"es":{"stringUnit":{"state":"translated","value":"Activar"}},"fr":{"stringUnit":{"state":"translated","value":"Activer"}},"it":{"stringUnit":{"state":"translated","value":"Abilita"}},"ja":{"stringUnit":{"state":"translated","value":"有効にする"}},"ko":{"stringUnit":{"state":"translated","value":"활성화"}},"vi":{"stringUnit":{"state":"translated","value":"Bật"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"启用"}},"pt-BR":{"stringUnit":{"state":"translated","value":"Ativar"}},"pt-PT":{"stringUnit":{"state":"translated","value":"Ativar"}}}},
+    "settings.speechDetection.disclosure.cancel": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Cancel"}},"de":{"stringUnit":{"state":"translated","value":"Abbrechen"}},"es":{"stringUnit":{"state":"translated","value":"Cancelar"}},"fr":{"stringUnit":{"state":"translated","value":"Annuler"}},"it":{"stringUnit":{"state":"translated","value":"Annulla"}},"ja":{"stringUnit":{"state":"translated","value":"キャンセル"}},"ko":{"stringUnit":{"state":"translated","value":"취소"}},"vi":{"stringUnit":{"state":"translated","value":"Hủy"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"取消"}},"pt-BR":{"stringUnit":{"state":"translated","value":"Cancelar"}},"pt-PT":{"stringUnit":{"state":"translated","value":"Cancelar"}}}},
+    "settings.speechDetection.disclosure.body": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Luxel will listen to the selected microphone while it is running and notify you after it detects sustained speech. Detection happens on this Mac, and audio is not saved unless you start recording."}},"de":{"stringUnit":{"state":"translated","value":"Luxel hört während der Ausführung das ausgewählte Mikrofon ab und benachrichtigt dich, wenn anhaltende Sprache erkannt wird. Die Erkennung erfolgt auf diesem Mac, und Audio wird nur gespeichert, wenn du eine Aufnahme startest."}},"es":{"stringUnit":{"state":"translated","value":"Luxel escuchará el micrófono seleccionado mientras esté abierto y te avisará cuando detecte voz continua. La detección se realiza en este Mac y el audio no se guarda salvo que inicies una grabación."}},"fr":{"stringUnit":{"state":"translated","value":"Luxel écoutera le microphone sélectionné pendant son fonctionnement et vous avertira après avoir détecté une parole continue. La détection s’effectue sur ce Mac et le son n’est enregistré que si vous démarrez un enregistrement."}},"it":{"stringUnit":{"state":"translated","value":"Luxel ascolterà il microfono selezionato mentre è in esecuzione e ti avviserà quando rileva voce continua. Il rilevamento avviene su questo Mac e l’audio non viene salvato a meno che non avvii una registrazione."}},"ja":{"stringUnit":{"state":"translated","value":"Luxel の実行中は選択したマイクを監視し、継続的な音声を検出すると通知します。検出はこの Mac 上で行われ、録音を開始しない限り音声は保存されません。"}},"ko":{"stringUnit":{"state":"translated","value":"Luxel이 실행되는 동안 선택한 마이크를 듣고 지속적인 음성이 감지되면 알려 줍니다. 감지는 이 Mac에서 수행되며 녹음을 시작하지 않으면 오디오는 저장되지 않습니다."}},"vi":{"stringUnit":{"state":"translated","value":"Luxel sẽ lắng nghe micrô đã chọn khi đang chạy và thông báo sau khi phát hiện giọng nói liên tục. Việc phát hiện diễn ra trên máy Mac này và âm thanh không được lưu trừ khi bạn bắt đầu ghi."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"Luxel 运行时会监听所选麦克风，并在检测到持续语音后通知你。检测在这台 Mac 上进行，除非你开始录制，否则不会保存音频。"}},"pt-BR":{"stringUnit":{"state":"translated","value":"O Luxel ouvirá o microfone selecionado enquanto estiver em execução e avisará após detectar fala contínua. A detecção acontece neste Mac e o áudio não é salvo, a menos que você inicie uma gravação."}},"pt-PT":{"stringUnit":{"state":"translated","value":"O Luxel ouvirá o microfone selecionado enquanto estiver em execução e avisará após detetar fala contínua. A deteção acontece neste Mac e o áudio não é guardado, a menos que inicie uma gravação."}}}},
+    "settings.speechDetection.microphoneHelp": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Choose the microphone Luxel records or analyzes for speech detection."}},"de":{"stringUnit":{"state":"translated","value":"Wähle das Mikrofon, das Luxel aufnimmt oder für die Spracherkennung analysiert."}},"es":{"stringUnit":{"state":"translated","value":"Elige el micrófono que Luxel graba o analiza para detectar voz."}},"fr":{"stringUnit":{"state":"translated","value":"Choisissez le microphone que Luxel enregistre ou analyse pour détecter la parole."}},"it":{"stringUnit":{"state":"translated","value":"Scegli il microfono che Luxel registra o analizza per il rilevamento vocale."}},"ja":{"stringUnit":{"state":"translated","value":"Luxel が録音または音声検出のために解析するマイクを選択します。"}},"ko":{"stringUnit":{"state":"translated","value":"Luxel이 녹음하거나 음성 감지를 위해 분석할 마이크를 선택합니다."}},"vi":{"stringUnit":{"state":"translated","value":"Chọn micrô mà Luxel ghi hoặc phân tích để phát hiện giọng nói."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"选择 Luxel 用于录音或语音检测分析的麦克风。"}},"pt-BR":{"stringUnit":{"state":"translated","value":"Escolha o microfone que o Luxel grava ou analisa para detectar fala."}},"pt-PT":{"stringUnit":{"state":"translated","value":"Escolha o microfone que o Luxel grava ou analisa para detetar fala."}}}},
     "Speaker count": {
       "extractionState": "manual",
       "localizations": {

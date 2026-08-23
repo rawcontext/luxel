@@ -26,6 +26,7 @@ const navGroups = [
     title: "Guides",
     links: [
       { href: "#capture", label: "Capture" },
+      { href: "#speech-detection", label: "Speech detection prompts" },
       { href: "#replay-buffer", label: "Replay buffer" },
       { href: "#cropper", label: "Area picker" },
       { href: "#editor", label: "Edit and export" },
@@ -75,7 +76,7 @@ const systemShortcutConflicts = [
 ];
 
 const settingsPanes = [
-  ["Recording", "Cursor visibility, click highlights, 1-120 FPS or display-matched capture, system audio, microphone audio, audio-only format, microphone selection, and camera overlay controls including shape, background removal, size, and mirroring."],
+  ["Recording", "Cursor visibility, click highlights, 1-120 FPS or display-matched capture, system audio, microphone audio, audio-only format, microphone selection, optional speech detection prompts, and camera overlay controls including shape, background removal, size, and mirroring."],
   ["Output", "Recordings folder, loop exports, and whether Luxel asks before discarding a recording."],
   ["Presets", "Quick export presets, cropper size presets, loupe behavior, dimming, and last-selection restoration."],
   ["Shortcuts", "Global shortcut enablement, shortcut search, custom shortcut editing, reset/clear controls, and conflict warnings."],
@@ -196,6 +197,9 @@ const troubleshooting = [
   { problem: "Record buttons are disabled", answer: "Choose a capture target and resolve the visible permission chips. Screen capture needs Screen & System Audio Recording permission; audio-only capture needs microphone permission." },
   { problem: "Screen capture still fails after allowing permission", answer: "Quit and reopen Luxel after changing Screen & System Audio Recording access. If Luxel still is not listed, remove old Luxel entries from the permission list and open Luxel again." },
   { problem: "Microphone audio is missing", answer: "Enable Record Microphone, choose a valid microphone or System Default, and grant Microphone permission. GIF and APNG exports do not carry audio." },
+  { problem: "Speech detection is not listening", answer: "Open Recording settings and make sure Notify When Speech Is Detected is on. Allow notifications and microphone access, choose an available microphone, and make sure Luxel is open, no recording is active, and your Mac is awake and unlocked." },
+  { problem: "A speech detection notification did not appear", answer: "Open System Settings > Notifications > Luxel and allow notifications. Focus modes and other macOS notification settings can delay or hide prompts. Speech detection is only a cue and is not guaranteed to recognize every conversation, meeting, or call." },
+  { problem: "The selected microphone is unavailable", answer: "Open Recording settings and choose System Default or another connected input. Luxel follows the selected microphone for both recording and speech detection." },
   { problem: "Quick Record is disabled", answer: "Create or select a quick export preset, then choose a target or enable Remember Last Capture so Luxel has a previous capture to repeat." },
   { problem: "Copy Frame or Save Frame As is disabled", answer: "Pause preview playback first. Frame grabs use the current paused frame and save as PNG." },
   { problem: "Shortcut does not fire", answer: "Make sure Keyboard Shortcuts is enabled, remove duplicate shortcuts, and avoid known macOS capture shortcuts, including:", shortcuts: systemShortcutConflicts },
@@ -320,9 +324,19 @@ const troubleshooting = [
               <h3>Microphone</h3>
               <p>
                 Required when Record Microphone is on, when the area picker microphone
-                toggle is on, or when you start an audio-only recording.
+                toggle is on, when you start an audio-only recording, or while optional
+                Speech Detection Prompts are enabled.
               </p>
               <p class="expected">You can choose System Default or a specific input device.</p>
+            </article>
+
+            <article>
+              <h3>Notifications</h3>
+              <p>
+                Required only when Speech Detection Prompts are enabled. Luxel uses notifications
+                to ask whether you want to start an audio-only recording after a detection cue.
+              </p>
+              <p class="expected">A notification never starts recording by itself.</p>
             </article>
 
             <article>
@@ -489,6 +503,84 @@ const troubleshooting = [
                 1 minute, 5 minutes, and a custom duration from 0:01 to 12:00:00.
               </p>
               <p class="tip">Stopping during countdown cancels the countdown instead of saving a recording.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="docs-section" id="speech-detection" aria-labelledby="speech-detection-title">
+          <div class="section-heading">
+            <p class="docs-eyebrow">Guide</p>
+            <h2 id="speech-detection-title">Speech Detection Prompts</h2>
+            <p>
+              This optional feature listens for sustained speech-like audio on the selected
+              microphone and asks whether you want to start an audio-only recording. It is off by
+              default and does not identify meetings, calls, speakers, words, or meaning.
+            </p>
+          </div>
+
+          <div class="split-grid">
+            <article>
+              <h3>Enable prompts</h3>
+              <ol>
+                <li>Open Settings > Recording.</li>
+                <li>Turn on Notify When Speech Is Detected.</li>
+                <li>Read the disclosure, then choose Enable to opt in.</li>
+                <li>Allow notifications first, then allow microphone access.</li>
+                <li>Choose System Default or a specific microphone.</li>
+              </ol>
+              <p class="tip">
+                Turn on Launch at Login if you want the feature available after you sign in.
+                Detection works only while Luxel is open.
+              </p>
+            </article>
+
+            <article>
+              <h3>Choose what happens</h3>
+              <p>
+                When Luxel detects a cue, the notification offers Start Recording and Dismiss.
+                Start Recording begins one audio-only recording with the selected microphone.
+                Dismiss does nothing, and opening the notification activates Luxel without
+                recording.
+              </p>
+              <p class="tip">
+                Focus modes and other macOS notification settings may delay or hide the prompt.
+                A prompt is a convenience, not a guarantee that Luxel recognizes a conversation.
+              </p>
+            </article>
+          </div>
+
+          <div class="guide-stack">
+            <article>
+              <h3>What Luxel processes</h3>
+              <p>
+                While the feature is enabled, Luxel continuously analyzes short microphone frames
+                on your Mac. Before you explicitly choose Start Recording, those frames are
+                discarded and Luxel creates no pre-roll, media file, history item, transcript,
+                sidecar, or cloud upload.
+              </p>
+              <p>
+                The detector looks only for sustained speech-like sound. It does not inspect app
+                state or decide whether you are in a meeting or call.
+              </p>
+            </article>
+
+            <article>
+              <h3>Automatic pauses</h3>
+              <p>
+                Luxel pauses microphone analysis while a recording is active and while your Mac is
+                locked or its display is asleep. Analysis resumes automatically when the recording
+                ends or your Mac is awake and unlocked again.
+              </p>
+            </article>
+
+            <article>
+              <h3>Disable or recover access</h3>
+              <p>
+                Turn off Notify When Speech Is Detected to stop analysis and remove any outstanding
+                prompt. If access was denied, open System Settings > Privacy & Security > Microphone
+                and System Settings > Notifications > Luxel. Choose an available input in Recording
+                settings, then turn the feature on again.
+              </p>
             </article>
           </div>
         </section>

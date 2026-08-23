@@ -12,6 +12,8 @@ STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstring
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 MODNET_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/modnet"
 MODNET_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-modnet-model.sh"
+VAD_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/voice-activity-detection"
+VAD_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-voice-activity-detection-model.sh"
 OUTPUT_DIR="${OUTPUT_DIR:-${PACKAGE_ROOT}/.build/mas}"
 APP_PATH="${APP_PATH:-${OUTPUT_DIR}/${APP_NAME}.app}"
 PKG_PATH="${PKG_PATH:-${OUTPUT_DIR}/${APP_NAME}.pkg}"
@@ -51,6 +53,7 @@ require_file "${PROVISIONING_PROFILE}" "Mac App Store provisioning profile"
 require_file "${PRIVACY_MANIFEST}" "Privacy manifest"
 require_file "${BASE_ENTITLEMENTS}" "Mac App Store entitlements"
 "${MODNET_MODEL_AUDITOR}" "${MODNET_MODEL_DIR}"
+"${VAD_MODEL_AUDITOR}" "${VAD_MODEL_DIR}"
 
 if [[ -z "${APP_STORE_SIGN_IDENTITY}" ]]; then
 	APP_STORE_SIGN_IDENTITY="$(
@@ -185,5 +188,6 @@ productbuild \
 
 pkgutil --check-signature "${PKG_PATH}" >/dev/null
 "${MODNET_MODEL_AUDITOR}" "${PKG_PATH}"
+"${VAD_MODEL_AUDITOR}" "${PKG_PATH}"
 
 echo "${PKG_PATH}"

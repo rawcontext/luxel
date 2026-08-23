@@ -81,9 +81,12 @@ extension LuxelSettingsView {
                     audioInputDeviceLabel(deviceID)
                 }
             }
-            .disabled(!model.settings.recordAudio)
-            .opacity(model.settings.recordAudio ? 1 : 0.45)
-            .help("Choose which microphone Luxel records.")
+            .disabled(!isMicrophoneSelectionEnabled)
+            .opacity(isMicrophoneSelectionEnabled ? 1 : 0.45)
+            .help(speechDetectionString(
+                "settings.speechDetection.microphoneHelp",
+                "Choose the microphone Luxel records or analyzes for speech detection."
+            ))
 
             LuxelGlassRowDivider()
 
@@ -97,6 +100,8 @@ extension LuxelSettingsView {
             }
             .help("Choose the file format for audio-only recordings.")
         }
+
+        speechDetectionSettings
 
         SettingsIslandGroup(
             "Camera",

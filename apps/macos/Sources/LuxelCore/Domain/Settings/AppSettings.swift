@@ -92,6 +92,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var audioInputDeviceID: String?
     public var audioInputDeviceName: String?
     public var audioOnlyFormat: AudioRecordingFormat
+    public var speechDetectionPromptsEnabled: Bool
+    public var speechDetectionDisclosureAccepted: Bool
     public var transcriptTurnSegmentationEnabled: Bool
     public var transcriptSpeakerDiarizationEnabled: Bool
     public var transcriptLanguageIdentifier: String?
@@ -183,6 +185,8 @@ extension AppSettings {
         audioInputDeviceID: String? = AudioInputDeviceID.systemDefault,
         audioInputDeviceName: String? = AudioInputDeviceOption.systemDefault.name,
         audioOnlyFormat: AudioRecordingFormat = .aac,
+        speechDetectionPromptsEnabled: Bool = false,
+        speechDetectionDisclosureAccepted: Bool = false,
         transcriptTurnSegmentationEnabled: Bool = false,
         transcriptSpeakerDiarizationEnabled: Bool = true,
         transcriptLanguageIdentifier: String? = nil,
@@ -249,7 +253,10 @@ extension AppSettings {
         self.matchDisplayFrameRate = matchDisplayFrameRate; self.loopExports = loopExports
         self.recordSystemAudio = recordSystemAudio; self.recordAudio = recordAudio
         self.audioInputDeviceID = audioInputDeviceID; self.audioInputDeviceName = audioInputDeviceName
-        self.audioOnlyFormat = audioOnlyFormat; self.cameraSeparateTrack = cameraSeparateTrack
+        self.audioOnlyFormat = audioOnlyFormat
+        self.speechDetectionPromptsEnabled = speechDetectionPromptsEnabled
+        self.speechDetectionDisclosureAccepted = speechDetectionDisclosureAccepted
+        self.cameraSeparateTrack = cameraSeparateTrack
         self.transcriptTurnSegmentationEnabled = transcriptTurnSegmentationEnabled
         self.transcriptSpeakerDiarizationEnabled = transcriptSpeakerDiarizationEnabled
         self.transcriptLanguageIdentifier = transcriptLanguageIdentifier.flatMap(Self.nonEmpty)

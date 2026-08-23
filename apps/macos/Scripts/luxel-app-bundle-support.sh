@@ -24,6 +24,8 @@ copy_luxel_app_payload() {
 	mkdir -p "${APP_PATH}/Contents/Resources/Models"
 	cp -R "${MODNET_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
 	"${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
+	cp -R "${VAD_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
+	"${VAD_MODEL_AUDITOR}" "${APP_PATH}"
 }
 
 copy_luxel_app_resources() {

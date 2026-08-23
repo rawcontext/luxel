@@ -23,6 +23,7 @@ struct ThirdPartyLicenseAcknowledgementsTests {
             "## fastcluster (included by FluidAudio)",
             "## VBx (included by FluidAudio)",
             "## FluidInference speaker-diarization-coreml (bundled model)",
+            "## FluidInference silero-vad-coreml (bundled model)",
             "## aufklarer/DeepFilterNet3-CoreML (bundled model)",
             "## soniqo/speech-swift (adapted runtime)",
             "## ZHKKKe/MODNet (bundled model)"
@@ -39,6 +40,7 @@ struct ThirdPartyLicenseAcknowledgementsTests {
             "Vendor/Artifacts/COpus.xcframework",
             "Vendor/Artifacts/CSVTAV1.xcframework",
             "Vendor/Models/speaker-diarization",
+            "Vendor/Models/voice-activity-detection",
             "Vendor/Models/studio-voice",
             "Vendor/Models/modnet"
         ] {

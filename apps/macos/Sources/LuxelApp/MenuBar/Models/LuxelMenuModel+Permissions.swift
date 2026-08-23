@@ -13,6 +13,7 @@ extension LuxelMenuModel {
         if inputMonitoringStatus != .denied || refreshedInputMonitoringStatus == .authorized {
             inputMonitoringStatus = refreshedInputMonitoringStatus
         }
+        scheduleVoiceDetectionReconciliation()
     }
 
     func presentPermissionPrompt(for permission: SystemPermission) {

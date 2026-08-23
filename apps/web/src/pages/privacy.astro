@@ -6,7 +6,7 @@ import { translate } from "../i18n/text";
 
 const { locale = defaultLocale } = Astro.props as { locale?: Locale };
 
-const effectiveDate = "August 11, 2026";
+const effectiveDate = "August 22, 2026";
 ---
 
 <PageLayout
@@ -56,6 +56,17 @@ const effectiveDate = "August 11, 2026";
               files included with Luxel and runs on your Mac. Luxel does not upload recordings for
               transcription or fall back to cloud transcription.
             </p>
+            <p>
+              Optional Speech Detection Prompts are off by default. When you enable them, Luxel
+              continuously analyzes short frames from the selected microphone on your Mac while
+              the app is running and eligible. The detector looks for sustained speech-like sound;
+              it does not identify meetings, calls, speakers, words, or meaning.
+            </p>
+            <p>
+              Detection frames are discarded unless you explicitly choose Start Recording. Before
+              then, Luxel creates no pre-roll, media file, history item, transcript, sidecar, or
+              cloud upload.
+            </p>
           </article>
 
           <article>
@@ -65,6 +76,12 @@ const effectiveDate = "August 11, 2026";
               Speech Recognition, file, folder, or automation permissions. Luxel uses those
               permissions only to perform the feature you request. We do not use permissions
               to build profiles, track behavior, or collect analytics.
+            </p>
+            <p>
+              If you opt in to Speech Detection Prompts, Luxel uses Microphone permission for
+              ongoing local analysis while the app is running and eligible, and Notifications
+              permission to show recording prompts. Turn the feature off at any time in Recording
+              settings to stop that analysis.
             </p>
           </article>
 
@@ -135,6 +152,10 @@ const effectiveDate = "August 11, 2026";
               your Mac until you delete them, clear app data, or remove the app. You can delete
               exported files wherever you saved them. Support messages are retained only as long
               as reasonably necessary for support, security, business records, or legal obligations.
+            </p>
+            <p>
+              Speech detection frames are not retained. A recording and its normal history entry
+              are created only after you explicitly choose Start Recording.
             </p>
           </article>
 
