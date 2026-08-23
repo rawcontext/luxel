@@ -54,7 +54,7 @@
   "Verwendet das ausgewählte Mikrofon und pausiert während Aufnahmen oder wenn dein Mac gesperrt ist oder schläft",
   "Behandelt anhaltende sprachähnliche Geräusche als Signal, nicht als garantierte Erkennung von Besprechungen oder Anrufen",
   "Bevor du „Aufnahme starten“ auswählst, werden die Mikrofonframes verworfen. Luxel erstellt weder Vorlauf noch Mediendatei, Verlaufseintrag, Transkript, Begleitdatei oder Cloud-Upload.",
-  "Luxel-Aufnahmeeinstellungen mit standardmäßig deaktivierter Spracherkennung und Hinweis zur lokalen Audioverarbeitung",
+  "Luxel-Aufnahmeeinstellungen mit aktivierter Spracherkennung und Hinweis zur lokalen Audioverarbeitung",
   "Verfeinern",
   "Editor und Export",
   "Öffne Aufnahmen im Editor, um zu trimmen, Größe und Zeit anzupassen, bildfüllend zuzuschneiden, Audio zu regeln, Einzelbilder zu kopieren, Originale zu sichern und Video-, Animations- oder Audiodateien im selben Arbeitsbereich zu exportieren.",
