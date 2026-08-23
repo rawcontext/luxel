@@ -31,6 +31,22 @@ Build a Mac App Store package for Luxel
 
 Build Luxel and upload the signed macOS package to TestFlight
 
+### mac sync_app_store_metadata
+
+```sh
+[bundle exec] fastlane mac sync_app_store_metadata
+```
+
+Upload localized metadata to an editable App Store Connect version
+
+### mac sync_app_store_screenshots
+
+```sh
+[bundle exec] fastlane mac sync_app_store_screenshots
+```
+
+Upload localized screenshots to an editable App Store Connect version
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

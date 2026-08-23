@@ -55,6 +55,28 @@ platform :mac do
       run_precheck_before_submit: false
     )
   end
+
+  desc "Upload localized screenshots to an editable App Store Connect version"
+  lane :sync_app_store_screenshots do |options|
+    upload_to_app_store(
+      api_key: app_store_connect_api_key_from_env,
+      app_identifier: APP_IDENTIFIER,
+      app_version: app_store_version(options),
+      screenshots_path: app_store_screenshots_path(options),
+      platform: "osx",
+      skip_binary_upload: true,
+      skip_screenshots: false,
+      skip_metadata: true,
+      sync_screenshots: true,
+      overwrite_screenshots: false,
+      submit_for_review: false,
+      automatic_release: false,
+      edit_live: false,
+      use_live_version: false,
+      force: true,
+      run_precheck_before_submit: false
+    )
+  end
 end
 
 def app_store_connect_api_key_from_env
@@ -185,6 +207,16 @@ def app_store_metadata_path(options)
 
   path = File.expand_path(path, REPO_ROOT)
   UI.user_error!("Expected generated metadata directory at #{path}") unless Dir.exist?(path)
+
+  path
+end
+
+def app_store_screenshots_path(options)
+  path = options[:screenshots_path] || ENV["APP_STORE_SCREENSHOTS_PATH"]
+  UI.user_error!("Missing screenshots_path or APP_STORE_SCREENSHOTS_PATH") if path.to_s.strip == ""
+
+  path = File.expand_path(path, REPO_ROOT)
+  UI.user_error!("Expected generated screenshots directory at #{path}") unless Dir.exist?(path)
 
   path
 end

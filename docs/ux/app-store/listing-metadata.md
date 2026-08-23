@@ -1,15 +1,14 @@
 # Luxel Mac App Store Listing Metadata
 
-This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026, the complete proposed text metadata for the Speech Detection Prompts release, and the pending real-capture screenshot plan. Use the guarded App Store Metadata Draft workflow to synchronize text and App Review notes, then compare the editable App Store Connect draft with this file; do not edit the draft independently.
+This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026, the localized text metadata for version 1.2.0, and the localized screenshot gallery derived from the six English App Store masters in `docs/design`. Use the guarded App Store workflows to synchronize the editable App Store Connect version; do not edit the draft independently.
 
 ## Publication state
 
-- TestFlight workflow run [32609710472](https://github.com/ccheney/luxel/actions/runs/32609710472) uploaded the release package from commit `f65a76da35aa486bbbec62c30693dbae89713ed2`. App Store Connect processed macOS version 1.1.10, build `202608230110`. This binary upload did not change or publish product-page metadata.
+- TestFlight workflow run [32657756015](https://github.com/ccheney/luxel/actions/runs/32657756015) uploaded macOS version 1.2.0, build `202608231822`, from release tag `v1.2.0`.
 - No App Store Connect credentials are available in the local environment. The repository's authenticated workflows receive credentials only from GitHub Actions secrets, so private fields and the configured localization set could not be retrieved.
 - Apple's public Search API does not expose promotional text, keywords, App Review notes, configured localizations, or draft metadata. Those prior values are therefore recorded as unavailable rather than guessed.
-- The guarded App Store Metadata Draft workflow exports all 11 localized listings and the exact App Review notes while explicitly skipping binaries, screenshots, review submission, and release. Its first dispatch, [run 32610546783](https://github.com/ccheney/luxel/actions/runs/32610546783), was rejected before any step started because the account's Actions billing/spending limit prevented a hosted job from starting. App Store Connect text metadata therefore remains unchanged.
-- The App Store Connect screenshot update also remains pending. None of the checked-in real reference captures has an Apple-accepted 16:10 Mac upload size, so fresh real captures are required before screenshots are uploaded.
-- Before submission, compare every editable App Store Connect field with this file, update the release version/build in the review package, attach the final review video, and record the comparison in GitHub issue #57.
+- The guarded App Store Metadata Draft workflow exports all 11 localized listings and the exact App Review notes while explicitly skipping binaries, screenshots, review submission, and release. [Run 32658321002](https://github.com/ccheney/luxel/actions/runs/32658321002) synchronized the version 1.2.0 metadata draft successfully.
+- The App Store Localized Screenshots workflow renders 66 upload assets from the six real English masters, validates Apple's image requirements, and synchronizes them without uploading a binary, changing text metadata, submitting for review, or releasing the version.
 
 ## Apple field rules
 
@@ -42,7 +41,7 @@ Run the local validation after every metadata edit:
 bun docs/ux/app-store/validate-listing-metadata.mjs
 ```
 
-The script validates every declared character count, the keyword byte counts, required locales, HTTPS URLs, and the real-capture screenshot plan. It deliberately rejects legacy composite paths and any claim that the current references are upload-ready.
+The script validates every declared character count, the keyword byte counts, required locales, HTTPS URLs, the six English screenshot masters, and all localized screenshot headings.
 
 ## Verified public baseline
 
@@ -128,7 +127,7 @@ The current public screenshot order is:
 5. `docs/design/app-store-03-recording-status.png`
 6. `docs/design/app-store-02-editor-trim.png`
 
-Those six `docs/design` images are preserved only as the live 1.1.6 gallery baseline. They are composed marketing assets, not direct app captures, and are excluded from the proposed real-screenshot plan below.
+Those six 2880 × 1800 PNG files are the English upload masters. The English storefront receives byte-for-byte copies in the order above. Every other storefront receives the same real app imagery with only the top marketing heading translated.
 
 Prior promotional text, keywords, App Review notes, private App Privacy answers, and exact App Store Connect localization records were not publicly retrievable. The existing review package for version 1.1.6 is preserved in Git history and summarized in `docs/app-review/information-needed-checklist.md`.
 
@@ -148,72 +147,62 @@ Prior promotional text, keywords, App Review notes, private App Privacy answers,
 | `pt-BR` | `pt-BR` | Portuguese (Brazil) |
 | `pt-PT` | `pt-PT` | Portuguese (Portugal) |
 
-## Proposed real-capture screenshot order
+## Localized screenshot gallery
 
-The files below are direct app screenshots used only as visual references for the next capture session. None has an Apple-accepted 16:10 Mac screenshot size, so none is approved for upload. Recreate each scene as a fresh, real 2880 × 1800 app screenshot. Do not crop, resize, pad, frame, retouch, generate, composite, or replace text in an existing image.
+`docs/ux/app-store/localized-screenshot-headings.json` defines the six headings in all 11 App Store locales. `render-localized-screenshots.swift` removes the English heading band and draws the translated heading with the same layout while retaining the real screenshot, laptop frame, and background from each English master. It does not use AI-generated imagery. The 66 release assets are checked in under `docs/design/app-store-localized`, with their hashes recorded in `docs/design/app-store-localized-manifest.json`.
 
-Position 2 preserves the exact 2064 × 1744 screenshot supplied for the website and current feature reference (SHA-256 `1a8051f2d614d27eb301063db1cf58e9ce3ccac151f81c79eae20dadc167db6c`). It is not an App Store upload asset. Recapture the same real toggle-only Settings view at 2880 × 1800 before updating the App Store Connect draft.
-
-The localized captions below are editorial labels for the checked-in plan. App Store Connect has no separate screenshot-caption field, so captions are not rendered into screenshots. If locale-specific screenshots are needed, launch the real app in that locale and take a separate 2880 × 1800 capture.
+The renderer verifies 2880 × 1800 dimensions, absence of alpha, a complete locale/heading matrix, readable headline fit, and a deterministic manifest. App Store Connect has no separate screenshot-caption field; the visible localized heading is part of each uploaded image.
 
 <!-- APP-STORE-SCREENSHOTS -->
 ```json
 [
   {
     "position": 1,
-    "subject": "menu-bar capture",
-    "referenceSize": "1114x896",
-    "referencePath": "apps/web/public/screenshots/luxel-menu-capture-under-menu-bar.png",
-    "requiredUploadSize": "2880x1800",
-    "uploadStatus": "recapture-required"
+    "subject": "record from the menu bar",
+    "headingId": "menu-bar",
+    "referenceSize": "2880x1800",
+    "referencePath": "docs/design/app-store-05-menu-bar.png",
+    "uploadStatus": "ready"
   },
   {
     "position": 2,
-    "subject": "Speech Detection Prompts settings",
-    "referenceSize": "2064x1744",
-    "referencePath": "apps/web/public/screenshots/luxel-settings-speech-detection.png",
-    "requiredUploadSize": "2880x1800",
-    "uploadStatus": "recapture-required"
+    "subject": "pixel-perfect area capture",
+    "headingId": "area-capture",
+    "referenceSize": "2880x1800",
+    "referencePath": "docs/design/app-store-01-area-capture.png",
+    "uploadStatus": "ready"
   },
   {
     "position": 3,
-    "subject": "precise area capture",
-    "referenceSize": "1200x870",
-    "referencePath": "apps/web/public/screenshots/luxel-area-selection.png",
-    "requiredUploadSize": "2880x1800",
-    "uploadStatus": "recapture-required"
+    "subject": "local transcription and speaker identification",
+    "headingId": "transcripts",
+    "referenceSize": "2880x1800",
+    "referencePath": "docs/design/app-store-06-transcripts.png",
+    "uploadStatus": "ready"
   },
   {
     "position": 4,
-    "subject": "transcript settings",
-    "referenceSize": "1830x1235",
-    "referencePath": "apps/web/public/screenshots/luxel-settings-transcripts.png",
-    "requiredUploadSize": "2880x1800",
-    "uploadStatus": "recapture-required"
+    "subject": "fast clean export",
+    "headingId": "export",
+    "referenceSize": "2880x1800",
+    "referencePath": "docs/design/app-store-04-export.png",
+    "uploadStatus": "ready"
   },
   {
     "position": 5,
-    "subject": "export formats",
-    "referenceSize": "1800x1184",
-    "referencePath": "apps/web/public/screenshots/luxel-editor-loaded.png",
-    "requiredUploadSize": "2880x1800",
-    "uploadStatus": "recapture-required"
+    "subject": "glanceable recording status",
+    "headingId": "recording-status",
+    "referenceSize": "2880x1800",
+    "referencePath": "docs/design/app-store-03-recording-status.png",
+    "uploadStatus": "ready"
   },
   {
     "position": 6,
-    "subject": "recording controls",
-    "referenceSize": "1162x736",
-    "referencePath": "apps/web/public/screenshots/luxel-menu-bar-recording-status.png",
-    "requiredUploadSize": "2880x1800",
-    "uploadStatus": "recapture-required"
-  },
-  {
-    "position": 7,
-    "subject": "non-destructive editor",
-    "referenceSize": "2224x1648",
-    "referencePath": "apps/web/public/screenshots/luxel-audio-transcript-editor.png",
-    "requiredUploadSize": "2880x1800",
-    "uploadStatus": "recapture-required"
+    "subject": "trim and tune before sharing",
+    "headingId": "editor-trim",
+    "referenceSize": "2880x1800",
+    "referencePath": "docs/design/app-store-02-editor-trim.png",
+    "uploadStatus": "ready"
   }
 ]
 ```
@@ -239,13 +228,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/support",
   "privacyPolicyUrl": "https://luxel.media/privacy",
   "screenshotCaptions": [
-    "Capture from your menu bar",
-    "Optional local speech prompts — recording stays your choice",
-    "Select the exact area you need",
-    "Transcribe and edit on your Mac",
-    "Export every format your workflow needs",
-    "Keep recording controls close",
-    "Refine recordings non-destructively"
+    "Record From Menu Bar",
+    "Pixel-Perfect Area Capture",
+    "Transcribe Locally, Identify Speakers",
+    "Export Clean, Fast Files",
+    "Glanceable Recording Status",
+    "Trim & Tune Before Share"
   ],
   "counts": { "name": 5, "subtitle": 24, "promotionalText": 134, "description": 2338, "whatsNew": 310, "keywordBytes": 88 }
 }
@@ -268,13 +256,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/de/support",
   "privacyPolicyUrl": "https://luxel.media/de/privacy",
   "screenshotCaptions": [
-    "Direkt aus der Menüleiste aufnehmen",
-    "Optionale lokale Sprachhinweise — du entscheidest über die Aufnahme",
-    "Wähle exakt den gewünschten Bereich",
-    "Auf dem Mac transkribieren und bearbeiten",
-    "In alle Formate deines Workflows exportieren",
-    "Aufnahmesteuerung immer in Reichweite",
-    "Aufnahmen nicht-destruktiv verfeinern"
+    "Über die Menüleiste aufnehmen",
+    "Pixelgenaue Bereichsaufnahme",
+    "Lokal transkribieren, Sprecher erkennen",
+    "Saubere Dateien schnell exportieren",
+    "Aufnahmestatus auf einen Blick",
+    "Vor dem Teilen zuschneiden und optimieren"
   ],
   "counts": { "name": 5, "subtitle": 27, "promotionalText": 136, "description": 2476, "whatsNew": 330, "keywordBytes": 74 }
 }
@@ -297,13 +284,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/es/support",
   "privacyPolicyUrl": "https://luxel.media/es/privacy",
   "screenshotCaptions": [
-    "Captura desde la barra de menús",
-    "Avisos de voz locales y opcionales: tú decides si grabar",
-    "Selecciona exactamente el área que necesitas",
-    "Transcribe y edita en tu Mac",
-    "Exporta en todos los formatos de tu flujo",
-    "Mantén cerca los controles de grabación",
-    "Perfecciona sin alterar el original"
+    "Graba desde la barra de menús",
+    "Captura de área con precisión de píxel",
+    "Transcribe en local, identifica hablantes",
+    "Exporta archivos limpios rápidamente",
+    "Estado de grabación de un vistazo",
+    "Recorta y ajusta antes de compartir"
   ],
   "counts": { "name": 5, "subtitle": 30, "promotionalText": 121, "description": 2390, "whatsNew": 332, "keywordBytes": 77 }
 }
@@ -326,13 +312,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/fr/support",
   "privacyPolicyUrl": "https://luxel.media/fr/privacy",
   "screenshotCaptions": [
-    "Capturez depuis la barre des menus",
-    "Alertes vocales locales et facultatives : vous décidez d’enregistrer",
-    "Sélectionnez exactement la zone voulue",
-    "Transcrivez et montez sur votre Mac",
-    "Exportez dans tous les formats utiles",
-    "Gardez les commandes d’enregistrement à portée de main",
-    "Peaufinez sans altérer l’original"
+    "Enregistrez depuis la barre des menus",
+    "Capture de zone au pixel près",
+    "Transcrivez en local, identifiez les locuteurs",
+    "Exportez vite des fichiers impeccables",
+    "État d’enregistrement en un coup d’œil",
+    "Découpez et ajustez avant de partager"
   ],
   "counts": { "name": 5, "subtitle": 25, "promotionalText": 132, "description": 2539, "whatsNew": 341, "keywordBytes": 78 }
 }
@@ -356,12 +341,11 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "privacyPolicyUrl": "https://luxel.media/it/privacy",
   "screenshotCaptions": [
     "Registra dalla barra dei menu",
-    "Avvisi vocali locali e opzionali: registri solo se lo decidi",
-    "Seleziona esattamente l’area necessaria",
-    "Trascrivi e modifica sul tuo Mac",
-    "Esporta in tutti i formati che ti servono",
-    "Tieni i controlli di registrazione a portata di mano",
-    "Perfeziona senza alterare l’originale"
+    "Cattura area precisa al pixel",
+    "Trascrivi in locale, identifica i parlanti",
+    "Esporta rapidamente file puliti",
+    "Stato registrazione a colpo d’occhio",
+    "Ritaglia e perfeziona prima di condividere"
   ],
   "counts": { "name": 5, "subtitle": 30, "promotionalText": 128, "description": 2477, "whatsNew": 355, "keywordBytes": 72 }
 }
@@ -384,13 +368,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/ja/support",
   "privacyPolicyUrl": "https://luxel.media/ja/privacy",
   "screenshotCaptions": [
-    "メニューバーからすぐにキャプチャ",
-    "任意のローカル音声通知。録音するかはあなたが選択",
-    "必要な範囲を正確に選択",
-    "Mac上で文字起こしと編集",
-    "作業に必要な形式へ書き出し",
-    "録画コントロールをすぐそばに",
-    "元の素材を保ったまま仕上げる"
+    "メニューバーから録画",
+    "ピクセル単位で範囲をキャプチャ",
+    "ローカルで文字起こし、話者を識別",
+    "高品質なファイルをすばやく書き出し",
+    "録画状況をひと目で確認",
+    "共有前にトリミングと調整"
   ],
   "counts": { "name": 5, "subtitle": 9, "promotionalText": 55, "description": 1097, "whatsNew": 119, "keywordBytes": 89 }
 }
@@ -413,13 +396,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/ko/support",
   "privacyPolicyUrl": "https://luxel.media/ko/privacy",
   "screenshotCaptions": [
-    "메뉴 막대에서 바로 캡처",
-    "선택형 로컬 음성 알림 — 녹음 여부는 사용자가 결정",
-    "필요한 영역을 정확하게 선택",
-    "Mac에서 전사하고 편집",
-    "작업에 필요한 모든 형식으로 내보내기",
-    "녹화 제어기를 가까이에",
-    "원본을 보존하며 세밀하게 편집"
+    "메뉴 막대에서 녹화",
+    "픽셀 단위로 영역 캡처",
+    "로컬에서 전사하고 화자 식별",
+    "깔끔한 파일을 빠르게 내보내기",
+    "녹화 상태를 한눈에",
+    "공유 전에 자르고 다듬기"
   ],
   "counts": { "name": 5, "subtitle": 12, "promotionalText": 66, "description": 1265, "whatsNew": 154, "keywordBytes": 92 }
 }
@@ -442,13 +424,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/vi/support",
   "privacyPolicyUrl": "https://luxel.media/vi/privacy",
   "screenshotCaptions": [
-    "Ghi ngay từ thanh menu",
-    "Thông báo giọng nói cục bộ, tùy chọn — bạn quyết định có ghi hay không",
-    "Chọn chính xác vùng bạn cần",
-    "Chép lời và chỉnh sửa trên Mac",
-    "Xuất mọi định dạng cho quy trình của bạn",
-    "Luôn có điều khiển ghi trong tầm tay",
-    "Tinh chỉnh mà không làm thay đổi bản gốc"
+    "Ghi từ thanh menu",
+    "Chụp vùng chính xác từng pixel",
+    "Chép lời cục bộ, nhận diện người nói",
+    "Xuất tệp gọn, nhanh chóng",
+    "Trạng thái ghi hình trong nháy mắt",
+    "Cắt và tinh chỉnh trước khi chia sẻ"
   ],
   "counts": { "name": 5, "subtitle": 22, "promotionalText": 106, "description": 2146, "whatsNew": 290, "keywordBytes": 70 }
 }
@@ -471,13 +452,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/zh-Hans/support",
   "privacyPolicyUrl": "https://luxel.media/zh-Hans/privacy",
   "screenshotCaptions": [
-    "从菜单栏立即录制",
-    "可选的本地语音提醒——是否录制由你决定",
-    "精确选择所需区域",
-    "直接在 Mac 上转写和编辑",
-    "导出工作流程需要的各种格式",
-    "录制控制始终触手可及",
-    "以非破坏方式精细编辑"
+    "从菜单栏开始录制",
+    "像素级精准区域录制",
+    "本地转写，识别说话人",
+    "快速导出清晰文件",
+    "录制状态一目了然",
+    "分享前裁剪并优化"
   ],
   "counts": { "name": 5, "subtitle": 7, "promotionalText": 53, "description": 822, "whatsNew": 97, "keywordBytes": 86 }
 }
@@ -500,13 +480,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/pt-BR/support",
   "privacyPolicyUrl": "https://luxel.media/pt-BR/privacy",
   "screenshotCaptions": [
-    "Capture direto da barra de menus",
-    "Alertas de voz locais e opcionais: você decide se quer gravar",
-    "Selecione exatamente a área necessária",
-    "Transcreva e edite no Mac",
-    "Exporte em todos os formatos do seu fluxo",
-    "Mantenha os controles de gravação por perto",
-    "Aprimore sem alterar o original"
+    "Grave pela barra de menus",
+    "Captura de área com precisão de pixel",
+    "Transcreva localmente, identifique os falantes",
+    "Exporte arquivos limpos com rapidez",
+    "Status da gravação em um relance",
+    "Recorte e ajuste antes de compartilhar"
   ],
   "counts": { "name": 5, "subtitle": 25, "promotionalText": 122, "description": 2280, "whatsNew": 322, "keywordBytes": 73 }
 }
@@ -529,13 +508,12 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
   "supportUrl": "https://luxel.media/pt-PT/support",
   "privacyPolicyUrl": "https://luxel.media/pt-PT/privacy",
   "screenshotCaptions": [
-    "Capture diretamente da barra de menus",
-    "Alertas de voz locais e opcionais: decide se quer gravar",
-    "Selecione exatamente a área necessária",
-    "Transcreva e edite no Mac",
-    "Exporte em todos os formatos do seu fluxo",
-    "Mantenha os controlos de gravação por perto",
-    "Aperfeiçoe sem alterar o original"
+    "Grave pela barra de menus",
+    "Captura de área com precisão ao píxel",
+    "Transcreva localmente, identifique os oradores",
+    "Exporte ficheiros limpos rapidamente",
+    "Estado da gravação num relance",
+    "Recorte e ajuste antes de partilhar"
   ],
   "counts": { "name": 5, "subtitle": 25, "promotionalText": 110, "description": 2352, "whatsNew": 336, "keywordBytes": 76 }
 }
@@ -560,13 +538,7 @@ If any of those facts change, stop submission and re-answer App Privacy before r
 
 ## App Store Connect handoff
 
-1. Re-fetch the public listing and record any baseline change.
-2. Install the exact release candidate and recreate all seven reference scenes as direct 2880 × 1800 screenshots. Do not transform the existing reference files.
-3. Inspect every fresh capture for the real current UI, correct locale, private information, alpha/transparency, and the exact 16:10 dimensions Apple accepts.
-4. Update this plan to point at the new real captures and replace each `recapture-required` state only after the files pass inspection.
-5. Run `bun docs/ux/app-store/validate-listing-metadata.mjs` and confirm the App Store Connect counters independently.
-6. Only after the real upload-size captures exist, open an editable macOS version in App Store Connect and confirm the configured localization records match the 11 locale identifiers above.
-7. Copy each JSON value exactly. App Review notes come from `docs/app-review/review-notes.txt`; confirm the App Privacy answer and privacy-policy URL.
-8. Save as a draft, compare it field-for-field with this file, and attach evidence to issue #57. Do not publish from this document change.
-
-Until steps 2–5 are complete, the App Store Connect screenshot and metadata draft update remains pending.
+1. Run `bun docs/ux/app-store/validate-listing-metadata.mjs`.
+2. Render the gallery locally to a temporary directory and inspect the complete output before changing App Store Connect.
+3. Dispatch App Store Localized Screenshots with the editable version number. The workflow re-renders the gallery, requires a byte-for-byte match with the checked-in assets, and uploads all 11 locale directories.
+4. Confirm the workflow succeeded. It must not upload a binary, change text metadata, submit for review, or publish the version.

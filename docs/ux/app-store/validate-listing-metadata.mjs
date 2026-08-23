@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -15,6 +15,13 @@ const repositoryRoot = resolve(scriptDirectory, "../../..");
 const metadataPath = resolve(scriptDirectory, "listing-metadata.md");
 const markdown = await readFile(metadataPath, "utf8");
 const reviewNotes = await readFile(resolve(repositoryRoot, "docs/app-review/review-notes.txt"), "utf8");
+const screenshotConfiguration = JSON.parse(
+  await readFile(resolve(scriptDirectory, "localized-screenshot-headings.json"), "utf8"),
+);
+const committedScreenshotRoot = resolve(repositoryRoot, "docs/design/app-store-localized");
+const committedScreenshotManifest = JSON.parse(
+  await readFile(resolve(repositoryRoot, "docs/design/app-store-localized-manifest.json"), "utf8"),
+);
 
 const requiredFields = [
   "name",
@@ -36,15 +43,13 @@ const characterLimits = {
   whatsNew: 4_000,
 };
 const screenshotReferences = [
-  ["apps/web/public/screenshots/luxel-menu-capture-under-menu-bar.png", "1114x896"],
-  ["apps/web/public/screenshots/luxel-settings-speech-detection.png", "2064x1744"],
-  ["apps/web/public/screenshots/luxel-area-selection.png", "1200x870"],
-  ["apps/web/public/screenshots/luxel-settings-transcripts.png", "1830x1235"],
-  ["apps/web/public/screenshots/luxel-editor-loaded.png", "1800x1184"],
-  ["apps/web/public/screenshots/luxel-menu-bar-recording-status.png", "1162x736"],
-  ["apps/web/public/screenshots/luxel-audio-transcript-editor.png", "2224x1648"],
+  ["docs/design/app-store-05-menu-bar.png", "menu-bar"],
+  ["docs/design/app-store-01-area-capture.png", "area-capture"],
+  ["docs/design/app-store-06-transcripts.png", "transcripts"],
+  ["docs/design/app-store-04-export.png", "export"],
+  ["docs/design/app-store-03-recording-status.png", "recording-status"],
+  ["docs/design/app-store-02-editor-trim.png", "editor-trim"],
 ];
-const canonicalSpeechScreenshotHash = "1a8051f2d614d27eb301063db1cf58e9ce3ccac151f81c79eae20dadc167db6c";
 
 function characterCount(value) {
   return Array.from(value).length;
@@ -61,33 +66,87 @@ const screenshotPlans = parseTaggedJson(markdown, "APP-STORE-SCREENSHOTS");
 assert(screenshotPlans.length === 1, "Expected one APP-STORE-SCREENSHOTS JSON block");
 
 const screenshotPlan = screenshotPlans[0];
-assert(Array.isArray(screenshotPlan) && screenshotPlan.length === 7, "Expected seven screenshots");
-const screenshotBuffers = [];
+assert(Array.isArray(screenshotPlan) && screenshotPlan.length === 6, "Expected six screenshots");
 for (const [index, screenshot] of screenshotPlan.entries()) {
   assert(screenshot.position === index + 1, `Screenshot position ${index + 1} is missing or out of order`);
-  const [expectedPath, expectedSize] = screenshotReferences[index];
+  const [expectedPath, expectedHeadingId] = screenshotReferences[index];
   assert(screenshot.referencePath === expectedPath, `Screenshot ${screenshot.position} must use ${expectedPath}`);
-  assert(screenshot.referenceSize === expectedSize, `Screenshot ${screenshot.position} reference must be ${expectedSize}`);
-  assert(
-    screenshot.referencePath.startsWith("apps/web/public/screenshots/"),
-    `Screenshot ${screenshot.position} must use a real apps/web screenshot reference`,
-  );
-  assert(!screenshot.referencePath.includes("docs/design"), `Screenshot ${screenshot.position} uses a legacy composite`);
-  assert(screenshot.requiredUploadSize === "2880x1800", `Screenshot ${screenshot.position} must be recaptured at 2880x1800`);
-  assert(screenshot.uploadStatus === "recapture-required", `Screenshot ${screenshot.position} is not upload-ready`);
-  assert(screenshot.referenceSize !== screenshot.requiredUploadSize, `Screenshot ${screenshot.position} incorrectly claims upload readiness`);
+  assert(screenshot.headingId === expectedHeadingId, `Screenshot ${screenshot.position} must use heading ${expectedHeadingId}`);
+  assert(screenshot.referenceSize === "2880x1800", `Screenshot ${screenshot.position} reference must be 2880x1800`);
+  assert(screenshot.uploadStatus === "ready", `Screenshot ${screenshot.position} is not upload-ready`);
   const screenshotBuffer = await readFile(resolve(repositoryRoot, screenshot.referencePath));
   assert(screenshotBuffer.toString("ascii", 1, 4) === "PNG", `Screenshot ${screenshot.position} must be PNG`);
   const actualSize = `${screenshotBuffer.readUInt32BE(16)}x${screenshotBuffer.readUInt32BE(20)}`;
   assert(actualSize === screenshot.referenceSize, `Screenshot ${screenshot.position} is ${actualSize}, not ${screenshot.referenceSize}`);
-  screenshotBuffers.push(screenshotBuffer);
+  assert(![4, 6].includes(screenshotBuffer[25]), `Screenshot ${screenshot.position} must not have an alpha channel`);
 }
 
-const canonicalSpeechScreenshotDigest = createHash("sha256").update(screenshotBuffers[1]).digest("hex");
 assert(
-  canonicalSpeechScreenshotDigest === canonicalSpeechScreenshotHash,
-  "Canonical Speech Detection screenshot hash changed",
+  JSON.stringify(Object.keys(screenshotConfiguration.locales)) === JSON.stringify(requiredLocales),
+  `Screenshot locales must appear in this order: ${requiredLocales.join(", ")}`,
 );
+assert(screenshotConfiguration.screenshots.length === screenshotPlan.length, "Screenshot configuration count is stale");
+for (const [index, screenshot] of screenshotConfiguration.screenshots.entries()) {
+  assert(screenshot.position === index + 1, `Configured screenshot position ${index + 1} is missing or out of order`);
+  assert(screenshot.source === screenshotReferences[index][0], `Configured screenshot ${index + 1} has the wrong source`);
+  assert(screenshot.id === screenshotReferences[index][1], `Configured screenshot ${index + 1} has the wrong heading ID`);
+}
+for (const locale of requiredLocales) {
+  const headings = screenshotConfiguration.locales[locale];
+  assert(headings && Object.keys(headings).length === screenshotPlan.length, `${locale}: screenshot headings are incomplete`);
+  for (const screenshot of screenshotConfiguration.screenshots) {
+    assert(typeof headings[screenshot.id] === "string" && headings[screenshot.id].trim(), `${locale}: ${screenshot.id} heading is empty`);
+  }
+}
+
+assert(committedScreenshotManifest.schemaVersion === 1, "Localized screenshot manifest schema is unsupported");
+assert(
+  committedScreenshotManifest.width === 2_880 && committedScreenshotManifest.height === 1_800,
+  "Localized screenshot manifest has the wrong dimensions",
+);
+assert(
+  JSON.stringify(committedScreenshotManifest.locales) === JSON.stringify(requiredLocales),
+  "Localized screenshot manifest locale order is stale",
+);
+assert(committedScreenshotManifest.files.length === 66, "Localized screenshot manifest must contain 66 files");
+const manifestFiles = new Map(
+  committedScreenshotManifest.files.map((file) => [`${file.locale}/${file.id}`, file]),
+);
+assert(manifestFiles.size === 66, "Localized screenshot manifest contains duplicate entries");
+
+for (const locale of requiredLocales) {
+  const expectedNames = [];
+  for (const screenshot of screenshotConfiguration.screenshots) {
+    const extension = locale === "en-US" ? "png" : "jpg";
+    const outputName = `${String(screenshot.position).padStart(2, "0")}-${screenshot.outputStem}.${extension}`;
+    const relativePath = `${locale}/${outputName}`;
+    const manifestFile = manifestFiles.get(`${locale}/${screenshot.id}`);
+    assert(manifestFile, `${locale}: missing ${screenshot.id} from localized screenshot manifest`);
+    assert(manifestFile.position === screenshot.position, `${relativePath}: manifest position is stale`);
+    assert(manifestFile.source === screenshot.source, `${relativePath}: manifest source is stale`);
+    assert(manifestFile.output === relativePath, `${relativePath}: manifest output is stale`);
+    assert(
+      manifestFile.heading === screenshotConfiguration.locales[locale][screenshot.id],
+      `${relativePath}: manifest heading is stale`,
+    );
+
+    const outputBuffer = await readFile(resolve(committedScreenshotRoot, relativePath));
+    const outputDigest = createHash("sha256").update(outputBuffer).digest("hex");
+    assert(manifestFile.sha256 === outputDigest, `${relativePath}: hash does not match the manifest`);
+    assert(manifestFile.bytes === outputBuffer.length, `${relativePath}: byte count does not match the manifest`);
+    if (locale === "en-US") {
+      const sourceBuffer = await readFile(resolve(repositoryRoot, screenshot.source));
+      assert(outputBuffer.equals(sourceBuffer), `${relativePath}: English output must exactly match its source master`);
+    }
+    expectedNames.push(outputName);
+  }
+
+  const committedNames = (await readdir(resolve(committedScreenshotRoot, locale))).sort();
+  assert(
+    JSON.stringify(committedNames) === JSON.stringify(expectedNames.sort()),
+    `${locale}: checked-in localized screenshot set is incomplete`,
+  );
+}
 
 assert(locales.length === requiredLocales.length, `Expected ${requiredLocales.length} locale blocks`);
 assert(
@@ -125,6 +184,13 @@ for (const entry of locales) {
     `${entry.locale}: expected ${screenshotPlan.length} screenshot captions`,
   );
   assert(entry.screenshotCaptions.every((caption) => caption.trim()), `${entry.locale}: screenshot caption is empty`);
+  const configuredHeadings = screenshotConfiguration.screenshots.map(
+    ({ id }) => screenshotConfiguration.locales[entry.locale][id],
+  );
+  assert(
+    JSON.stringify(entry.screenshotCaptions) === JSON.stringify(configuredHeadings),
+    `${entry.locale}: screenshot captions must match the rendered headings`,
+  );
 }
 
 const reviewNoteBytes = Buffer.byteLength(reviewNotes, "utf8");
@@ -132,6 +198,6 @@ assert(reviewNoteBytes > 0, "App Review notes are empty");
 assert(reviewNoteBytes <= 4_000, `App Review notes are ${reviewNoteBytes} bytes; limit is 4000`);
 
 console.log(
-  `Validated ${locales.length} localized listings, ${screenshotPlan.length} recapture references, `
+  `Validated ${locales.length} localized listings, ${screenshotPlan.length} localized screenshot masters, `
     + `and ${reviewNoteBytes} bytes of App Review notes.`,
 );

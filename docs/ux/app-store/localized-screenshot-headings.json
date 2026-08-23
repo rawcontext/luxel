@@ -1,0 +1,166 @@
+{
+  "screenshots": [
+    {
+      "id": "menu-bar",
+      "position": 1,
+      "source": "docs/design/app-store-05-menu-bar.png",
+      "outputStem": "record-from-menu-bar",
+      "anchorTop": 40,
+      "anchorBottom": 320,
+      "textCenterY": 162,
+      "baseFontSize": 174,
+      "maxWidth": 2460,
+      "textColor": "#E8EBF4"
+    },
+    {
+      "id": "area-capture",
+      "position": 2,
+      "source": "docs/design/app-store-01-area-capture.png",
+      "outputStem": "pixel-perfect-area-capture",
+      "anchorTop": 100,
+      "anchorBottom": 400,
+      "textCenterY": 269,
+      "baseFontSize": 178,
+      "maxWidth": 2460,
+      "textColor": "#282D54"
+    },
+    {
+      "id": "transcripts",
+      "position": 3,
+      "source": "docs/design/app-store-06-transcripts.png",
+      "outputStem": "transcribe-locally-identify-speakers",
+      "anchorTop": 50,
+      "anchorBottom": 325,
+      "textCenterY": 198,
+      "baseFontSize": 168,
+      "maxWidth": 2460,
+      "textColor": "#EBEEF6"
+    },
+    {
+      "id": "export",
+      "position": 4,
+      "source": "docs/design/app-store-04-export.png",
+      "outputStem": "export-clean-fast-files",
+      "anchorTop": 40,
+      "anchorBottom": 320,
+      "textCenterY": 174,
+      "baseFontSize": 180,
+      "maxWidth": 2460,
+      "textColor": "#2E345A"
+    },
+    {
+      "id": "recording-status",
+      "position": 5,
+      "source": "docs/design/app-store-03-recording-status.png",
+      "outputStem": "glanceable-recording-status",
+      "anchorTop": 100,
+      "anchorBottom": 390,
+      "textCenterY": 252,
+      "baseFontSize": 175,
+      "maxWidth": 2460,
+      "textColor": "#E7EBF4"
+    },
+    {
+      "id": "editor-trim",
+      "position": 6,
+      "source": "docs/design/app-store-02-editor-trim.png",
+      "outputStem": "trim-tune-before-share",
+      "anchorTop": 40,
+      "anchorBottom": 300,
+      "textCenterY": 162,
+      "baseFontSize": 177,
+      "maxWidth": 2460,
+      "textColor": "#E9EBF4"
+    }
+  ],
+  "locales": {
+    "en-US": {
+      "menu-bar": "Record From Menu Bar",
+      "area-capture": "Pixel-Perfect Area Capture",
+      "transcripts": "Transcribe Locally, Identify Speakers",
+      "export": "Export Clean, Fast Files",
+      "recording-status": "Glanceable Recording Status",
+      "editor-trim": "Trim & Tune Before Share"
+    },
+    "de-DE": {
+      "menu-bar": "Über die Menüleiste aufnehmen",
+      "area-capture": "Pixelgenaue Bereichsaufnahme",
+      "transcripts": "Lokal transkribieren, Sprecher erkennen",
+      "export": "Saubere Dateien schnell exportieren",
+      "recording-status": "Aufnahmestatus auf einen Blick",
+      "editor-trim": "Vor dem Teilen zuschneiden und optimieren"
+    },
+    "es-ES": {
+      "menu-bar": "Graba desde la barra de menús",
+      "area-capture": "Captura de área con precisión de píxel",
+      "transcripts": "Transcribe en local, identifica hablantes",
+      "export": "Exporta archivos limpios rápidamente",
+      "recording-status": "Estado de grabación de un vistazo",
+      "editor-trim": "Recorta y ajusta antes de compartir"
+    },
+    "fr-FR": {
+      "menu-bar": "Enregistrez depuis la barre des menus",
+      "area-capture": "Capture de zone au pixel près",
+      "transcripts": "Transcrivez en local, identifiez les locuteurs",
+      "export": "Exportez vite des fichiers impeccables",
+      "recording-status": "État d’enregistrement en un coup d’œil",
+      "editor-trim": "Découpez et ajustez avant de partager"
+    },
+    "it": {
+      "menu-bar": "Registra dalla barra dei menu",
+      "area-capture": "Cattura area precisa al pixel",
+      "transcripts": "Trascrivi in locale, identifica i parlanti",
+      "export": "Esporta rapidamente file puliti",
+      "recording-status": "Stato registrazione a colpo d’occhio",
+      "editor-trim": "Ritaglia e perfeziona prima di condividere"
+    },
+    "ja": {
+      "menu-bar": "メニューバーから録画",
+      "area-capture": "ピクセル単位で範囲をキャプチャ",
+      "transcripts": "ローカルで文字起こし、話者を識別",
+      "export": "高品質なファイルをすばやく書き出し",
+      "recording-status": "録画状況をひと目で確認",
+      "editor-trim": "共有前にトリミングと調整"
+    },
+    "ko": {
+      "menu-bar": "메뉴 막대에서 녹화",
+      "area-capture": "픽셀 단위로 영역 캡처",
+      "transcripts": "로컬에서 전사하고 화자 식별",
+      "export": "깔끔한 파일을 빠르게 내보내기",
+      "recording-status": "녹화 상태를 한눈에",
+      "editor-trim": "공유 전에 자르고 다듬기"
+    },
+    "vi": {
+      "menu-bar": "Ghi từ thanh menu",
+      "area-capture": "Chụp vùng chính xác từng pixel",
+      "transcripts": "Chép lời cục bộ, nhận diện người nói",
+      "export": "Xuất tệp gọn, nhanh chóng",
+      "recording-status": "Trạng thái ghi hình trong nháy mắt",
+      "editor-trim": "Cắt và tinh chỉnh trước khi chia sẻ"
+    },
+    "zh-Hans": {
+      "menu-bar": "从菜单栏开始录制",
+      "area-capture": "像素级精准区域录制",
+      "transcripts": "本地转写，识别说话人",
+      "export": "快速导出清晰文件",
+      "recording-status": "录制状态一目了然",
+      "editor-trim": "分享前裁剪并优化"
+    },
+    "pt-BR": {
+      "menu-bar": "Grave pela barra de menus",
+      "area-capture": "Captura de área com precisão de pixel",
+      "transcripts": "Transcreva localmente, identifique os falantes",
+      "export": "Exporte arquivos limpos com rapidez",
+      "recording-status": "Status da gravação em um relance",
+      "editor-trim": "Recorte e ajuste antes de compartilhar"
+    },
+    "pt-PT": {
+      "menu-bar": "Grave pela barra de menus",
+      "area-capture": "Captura de área com precisão ao píxel",
+      "transcripts": "Transcreva localmente, identifique os oradores",
+      "export": "Exporte ficheiros limpos rapidamente",
+      "recording-status": "Estado da gravação num relance",
+      "editor-trim": "Recorte e ajuste antes de partilhar"
+    }
+  }
+}
