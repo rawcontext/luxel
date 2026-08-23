@@ -35,6 +35,7 @@ final class LuxelStatusItemController: NSObject {
     var notchInteractionTask: Task<Void, Never>?
     var notchSurfaceRefreshTask: Task<Void, Never>?
     var replayBufferStateTask: Task<Void, Never>?
+    var voiceDetectionLifecycleTask: Task<Void, Never>?
     var applicationResignActiveObserver: NSObjectProtocol?
     var menuPanel: NSPanel?
     var menuHostingController: NSHostingController<AnyView>?
@@ -74,6 +75,7 @@ final class LuxelStatusItemController: NSObject {
         installURLHandler()
         startStatusRefresh()
         startReplayBuffer()
+        startVoiceDetection()
         startNotchSurface()
         refreshStatusItem()
         recoverInterruptedRecording()
@@ -201,6 +203,12 @@ extension LuxelStatusItemController {
         }
         Task { @MainActor [weak model] in
             await model?.reconcileReplayBufferOnLaunch()
+        }
+    }
+
+    func startVoiceDetection() {
+        voiceDetectionLifecycleTask = Task { @MainActor [weak model] in
+            await model?.watchVoiceDetectionLifecycle()
         }
     }
 

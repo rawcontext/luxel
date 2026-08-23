@@ -64,6 +64,7 @@ extension LuxelSettingsView {
             }
             .onChange(of: model.settings) {
                 model.saveSettings()
+                model.scheduleVoiceDetectionReconciliation()
                 Task {
                     await model.refreshNotchSurface()
                 }

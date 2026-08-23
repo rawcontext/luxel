@@ -147,6 +147,14 @@ private struct LuxelSettingsActionScene<Content: Scene>: Scene {
             }
         }
         applicationDelegate.installURLHandler()
+        applicationDelegate.voiceDetectionPromptActions = { [weak model] action in
+            Task { @MainActor in
+                await model?.handleVoiceDetectionPromptAction(action)
+            }
+        }
+        applicationDelegate.prepareForTermination = { [weak model] in
+            await model?.shutdownVoiceDetection()
+        }
         windowPresenter.install(openSettingsAction: openSettingsAction)
         self.content = content()
     }
@@ -182,6 +190,8 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
     }
     private var pendingVoiceDetectionPromptActions: [VoiceDetectionPromptAction] = []
     private var voiceDetectionNotificationController: VoiceDetectionNotificationController?
+    var prepareForTermination: (@MainActor () async -> Void)?
+    private var terminationTask: Task<Void, Never>?
 
     func applicationWillFinishLaunching(_: Notification) {
         installURLHandler()
@@ -202,6 +212,22 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
             forEventClass: AEEventClass(kInternetEventClass),
             andEventID: AEEventID(kAEGetURL)
         )
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let prepareForTermination else {
+            return .terminateNow
+        }
+        guard terminationTask == nil else {
+            return .terminateLater
+        }
+
+        terminationTask = Task { @MainActor [weak self] in
+            await prepareForTermination()
+            sender.reply(toApplicationShouldTerminate: true)
+            self?.terminationTask = nil
+        }
+        return .terminateLater
     }
 
     func handleVoiceDetectionPromptAction(_ action: VoiceDetectionPromptAction) {

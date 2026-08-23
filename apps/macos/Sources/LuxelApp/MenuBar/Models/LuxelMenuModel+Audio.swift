@@ -3,7 +3,8 @@ import LuxelCore
 @MainActor
 extension LuxelMenuModel {
     func refreshAudioInputDevices() {
-        _ = resolveSelectedAudioInputDevice()
+        audioInputDevices = audioInputDeviceService.availableInputDevices()
+        scheduleVoiceDetectionReconciliation()
     }
 
     func watchAudioInputDeviceUpdates() async {

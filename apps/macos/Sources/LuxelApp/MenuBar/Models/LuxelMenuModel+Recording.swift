@@ -234,39 +234,14 @@ extension LuxelMenuModel {
             return
         }
 
-        activeNotchRecordingActionID = notchRecordingActionID
-        recordingState = .starting
-
         do {
             let preparedRequest = try makeAudioRecordingRequest()
-            recordingNoticeMessage = preparedRequest.noticeMessage
-            if preparedRequest.request.captureKeystrokes {
-                await keystrokeLivePreviewPanelController.prepareForCapture(
-                    isEnabled: settings.keystrokeLivePreviewEnabled
-                )
-            }
-
-            let recordingName = preparedRequest.request.outputFileURL
-                .deletingPathExtension()
-                .lastPathComponent
-            let outputPlan = try recordingOutputFinalizationPlan(
-                for: preparedRequest.request.outputFileURL
-            )
-            let activeRecording = try await audioRecordingLifecycleService.startRecording(
+            await startPreparedAudioOnlyRecording(
                 preparedRequest.request,
-                name: recordingName,
-                outputPlan: outputPlan
+                noticeMessage: preparedRequest.noticeMessage,
+                notchRecordingActionID: notchRecordingActionID
             )
-            recordingState = .recording(
-                activeRecording,
-                RecordingMenuClock(startedAt: activeRecording.date)
-            )
-            if preparedRequest.request.captureKeystrokes {
-                keystrokeRecordingSession.start()
-            }
         } catch {
-            keystrokeRecordingSession.cancel()
-            await keystrokeLivePreviewPanelController.close()
             recordingState = .failed(errorMessage(error))
         }
     }

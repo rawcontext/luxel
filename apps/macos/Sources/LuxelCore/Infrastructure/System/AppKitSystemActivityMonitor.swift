@@ -12,6 +12,7 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
     private let sessionDidResignActiveNotification: Notification.Name
     private let sessionDidBecomeActiveNotification: Notification.Name
     private let displayChangeNotification: Notification.Name
+    private let applicationDidBecomeActiveNotification: Notification.Name
     private let isOnBatteryPower: @Sendable () -> Bool
     private let startPowerSourceObserver: PowerSourceObserverFactory
 
@@ -33,19 +34,21 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
             .sessionDidBecomeActiveNotification,
         displayChangeNotification: Notification.Name = NSApplication
             .didChangeScreenParametersNotification,
+        applicationDidBecomeActiveNotification: Notification.Name = NSApplication
+            .didBecomeActiveNotification,
         isOnBatteryPower: @escaping @Sendable () -> Bool = AppKitSystemActivityMonitor.isOnBatteryPower,
         startPowerSourceObserver: @escaping PowerSourceObserverFactory = AppKitSystemActivityMonitor
             .startIOKitPowerSourceObserver
     ) {
-        self.workspaceNotificationCenter = workspaceNotificationCenter
-        self.applicationNotificationCenter = applicationNotificationCenter
-        self.screensDidSleepNotification = screensDidSleepNotification
-        self.screensDidWakeNotification = screensDidWakeNotification
-        self.sessionDidResignActiveNotification = sessionDidResignActiveNotification
-        self.sessionDidBecomeActiveNotification = sessionDidBecomeActiveNotification
-        self.displayChangeNotification = displayChangeNotification
-        self.isOnBatteryPower = isOnBatteryPower
-        self.startPowerSourceObserver = startPowerSourceObserver
+        (self.workspaceNotificationCenter, self.applicationNotificationCenter) =
+            (workspaceNotificationCenter, applicationNotificationCenter)
+        (self.screensDidSleepNotification, self.screensDidWakeNotification) =
+            (screensDidSleepNotification, screensDidWakeNotification)
+        (self.sessionDidResignActiveNotification, self.sessionDidBecomeActiveNotification) =
+            (sessionDidResignActiveNotification, sessionDidBecomeActiveNotification)
+        (self.displayChangeNotification, self.applicationDidBecomeActiveNotification) =
+            (displayChangeNotification, applicationDidBecomeActiveNotification)
+        self.isOnBatteryPower = isOnBatteryPower; self.startPowerSourceObserver = startPowerSourceObserver
     }
 
     public var currentPauseReasons: Set<ReplayBufferPauseReason> {
@@ -84,6 +87,11 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
                     name: displayChangeNotification,
                     continuation: continuation,
                     event: .displayConfigurationChanged
+                ),
+                observe(
+                    center: applicationNotificationCenter,
+                    name: applicationDidBecomeActiveNotification, continuation: continuation,
+                    event: .applicationDidBecomeActive
                 )
             ]
             let cancelPowerSourceObserver = startPowerSourceObserver { [isOnBatteryPower] in

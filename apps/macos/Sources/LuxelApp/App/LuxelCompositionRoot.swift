@@ -34,14 +34,15 @@ enum LuxelCompositionRoot {
 
     static func replayBufferService(
         settingsStore: any SettingsStore,
-        exclusionRegistry: CaptureExclusionRegistry
+        exclusionRegistry: CaptureExclusionRegistry,
+        systemActivityMonitor: any SystemActivityMonitor = AppKitSystemActivityMonitor()
     ) -> ReplayBufferService {
         ReplayBufferService(
             engine: replayBufferEngine(
                 settingsStore: settingsStore,
                 exclusionRegistry: exclusionRegistry
             ),
-            systemActivityMonitor: AppKitSystemActivityMonitor()
+            systemActivityMonitor: systemActivityMonitor
         )
     }
 

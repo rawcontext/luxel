@@ -111,6 +111,12 @@ public actor VoiceDetectionService {
     ) -> [VoiceDetectionEffect] {
         switch action {
         case .startRecording:
+            guard hasOutstandingPrompt,
+                  case .prompted = state,
+                  eligibility.canRunDetector
+            else {
+                return [.activateApplication]
+            }
             hasOutstandingPrompt = false
             state = .off
             positiveFrames.removeAll(keepingCapacity: false)

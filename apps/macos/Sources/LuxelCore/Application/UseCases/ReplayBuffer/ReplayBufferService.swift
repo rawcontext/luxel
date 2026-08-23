@@ -131,6 +131,9 @@ public final class ReplayBufferService: @unchecked Sendable {
             case .displayConfigurationChanged:
                 try await pauseForSystemReason(.displayChanged)
                 try await resumeSystemReason(.displayChanged)
+
+            case .applicationDidBecomeActive:
+                break
             }
         } catch {
             return

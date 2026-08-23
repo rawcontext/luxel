@@ -75,6 +75,34 @@ extension LuxelMenuModel {
         )
     }
 
+    func makeSpeechPromptAudioRecordingRequest(
+        now: Date = Date()
+    ) throws -> AudioRecordingRequest {
+        audioInputDevices = audioInputDeviceService.availableInputDevices()
+        let selectedID = settings.audioInputDeviceID ?? AudioInputDeviceID.systemDefault
+        guard let selectedDevice = audioInputDevices.first(where: { $0.id == selectedID }) else {
+            throw VoiceDetectionRecordingRequestError.selectedMicrophoneUnavailable
+        }
+
+        let microphoneDeviceID = selectedDevice.id == AudioInputDeviceID.systemDefault
+            ? nil
+            : selectedDevice.id
+        let audio: RecordingAudioMode =
+            settings.recordSystemAudio && captureCapabilities.systemAudioTrackAvailable
+            ? .systemAndMicrophone(deviceID: microphoneDeviceID)
+            : .microphone(deviceID: microphoneDeviceID)
+
+        return try AudioRecordingRequest(
+            outputFileURL: try nextAudioRecordingFileURL(
+                now: now,
+                format: settings.audioOnlyFormat
+            ),
+            audio: audio,
+            format: settings.audioOnlyFormat,
+            captureKeystrokes: false
+        )
+    }
+
     func rememberLastCapture(from request: RecordingRequest, capturedAt: Date) {
         guard settings.rememberLastCapture else {
             return
@@ -182,10 +210,14 @@ extension LuxelMenuModel {
         }?.directory
     }
 
-    private func nextAudioRecordingFileURL(now: Date, format: AudioRecordingFormat) throws -> URL {
+    func nextAudioRecordingFileURL(now: Date, format: AudioRecordingFormat) throws -> URL {
         let recordingName = RecordingName.timestamped(now: now).value
         return settings.recordingsDirectory
             .appending(path: recordingName)
             .appendingPathExtension(format.fileExtension)
     }
+}
+
+enum VoiceDetectionRecordingRequestError: Error, Equatable {
+    case selectedMicrophoneUnavailable
 }
