@@ -127,7 +127,7 @@ public actor FluidAudioVoiceActivityDetector: VoiceActivityDetecting {
     }
 }
 
-private struct VoiceActivityInferencePipeline {
+struct VoiceActivityInferencePipeline {
     private let manager: VadManager
     private let converter = VoiceActivityAudioConverter()
     private var framer = VoiceActivitySampleFramer()
@@ -136,6 +136,14 @@ private struct VoiceActivityInferencePipeline {
 
     init(manager: VadManager) async {
         self.manager = manager
+        streamState = await manager.makeStreamState()
+    }
+
+    init(modelURL: URL) async throws {
+        let configuration = MLModelConfiguration()
+        configuration.computeUnits = VadConfig.default.computeUnits
+        let model = try MLModel(contentsOf: modelURL, configuration: configuration)
+        manager = VadManager(config: .default, vadModel: model)
         streamState = await manager.makeStreamState()
     }
 
@@ -306,7 +314,7 @@ final class VoiceActivityBufferQueue<Element: Sendable>: @unchecked Sendable {
     }
 }
 
-private struct CapturedVoiceActivityBuffer: @unchecked Sendable {
+struct CapturedVoiceActivityBuffer: @unchecked Sendable {
     let buffer: AVAudioPCMBuffer
     let presentationTime: CMTime
     let duration: CMTime
