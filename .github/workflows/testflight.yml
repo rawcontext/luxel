@@ -30,6 +30,7 @@ jobs:
     permissions:
       contents: read
     env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
       APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
       APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
@@ -45,7 +46,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Read tool versions
         id: tool-versions
@@ -54,7 +55,7 @@ jobs:
           echo "ruby=${ruby_version}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
         with:
           ruby-version: ${{ steps.tool-versions.outputs.ruby }}
           bundler-cache: true

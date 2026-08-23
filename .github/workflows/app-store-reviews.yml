@@ -32,10 +32,13 @@ permissions:
 jobs:
   test:
     name: Test App Store sync
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
 
       - name: Run tests
         run: |
@@ -48,7 +51,7 @@ jobs:
     name: Sync actionable App Store feedback
     needs: test
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 8 * * *'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ github.token }}
       APP_STORE_CONNECT_APP_ID: "6800438206"
@@ -58,7 +61,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
 
       - name: Sync App Store reviews
         run: ruby .github/scripts/sync_app_store_reviews.rb
@@ -73,7 +79,7 @@ jobs:
     name: Create weekly App Store digest
     needs: test
     if: github.event.schedule == '15 8 * * 6' || (github.event_name == 'workflow_dispatch' && (inputs.digest == 'weekly' || inputs.digest == 'all'))
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ github.token }}
       APP_STORE_CONNECT_APP_ID: "6800438206"
@@ -87,14 +93,17 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
 
       - name: Create weekly digest
         run: ruby .github/scripts/sync_app_store_digests.rb
 
       - name: Upload source reports
         if: always() && hashFiles('app-store-reports/weekly/**') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: app-store-weekly-reports-${{ github.run_id }}
           path: app-store-reports/weekly
@@ -106,7 +115,7 @@ jobs:
       - test
       - weekly-digest
     if: always() && needs.test.result == 'success' && (github.event.schedule == '30 8 8 * *' || (github.event_name == 'workflow_dispatch' && (inputs.digest == 'monthly' || inputs.digest == 'all')))
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ github.token }}
       APP_STORE_CONNECT_APP_ID: "6800438206"
@@ -120,14 +129,17 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
 
       - name: Create monthly digest
         run: ruby .github/scripts/sync_app_store_digests.rb
 
       - name: Upload source reports
         if: always() && hashFiles('app-store-reports/monthly/**') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: app-store-monthly-reports-${{ github.run_id }}
           path: app-store-reports/monthly
