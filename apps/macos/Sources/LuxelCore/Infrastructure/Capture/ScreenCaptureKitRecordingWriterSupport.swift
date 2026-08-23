@@ -63,7 +63,8 @@ struct RecordingAudioLevelMixer {
     }
 
     mutating func update(_ sample: AudioLevelSample, outputType: SCStreamOutputType)
-    -> AudioLevelSample? {
+        -> AudioLevelSample?
+    {
         switch outputType {
         case .audio:
             guard capturesSystemAudio else {
@@ -94,7 +95,7 @@ struct RecordingAudioLevelMixer {
         to handler: (@Sendable (AudioLevelSample) -> Void)?
     ) {
         guard let sample = CMSampleBufferAudioLevelSampler.sample(from: sampleBuffer),
-              let combinedSample = update(sample, outputType: outputType)
+            let combinedSample = update(sample, outputType: outputType)
         else {
             return
         }

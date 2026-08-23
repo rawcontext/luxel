@@ -1,8 +1,9 @@
 import Foundation
-@testable import LuxelApp
-@testable import LuxelCore
 import LuxelTestSupport
 import Testing
+
+@testable import LuxelApp
+@testable import LuxelCore
 
 @Suite("Voice detection recording requests")
 @MainActor
@@ -28,9 +29,11 @@ struct VoiceDetectionRecordingRequestTests {
             now: Date(timeIntervalSince1970: 1_800_000_000)
         )
 
-        #expect(request.audio == (includeSystemAudio
-                                    ? .systemAndMicrophone(deviceID: "mic-1")
-                                    : .microphone(deviceID: "mic-1")))
+        #expect(
+            request.audio
+                == (includeSystemAudio
+                    ? .systemAndMicrophone(deviceID: "mic-1")
+                    : .microphone(deviceID: "mic-1")))
         #expect(request.format == .alac)
         #expect(!request.captureKeystrokes)
         #expect(request.outputFileURL.deletingLastPathComponent().path == recordingsDirectory.path)
@@ -67,11 +70,12 @@ struct VoiceDetectionRecordingRequestTests {
         #expect(fixture.model.recordingState.activeRecording?.options.isAudioOnly == true)
 
         if let stagingDirectory = requests.first?.outputFileURL.deletingLastPathComponent(),
-           stagingDirectory.path.hasPrefix(
-            FileManager.default.temporaryDirectory
-                .appending(path: "Luxel/Recordings")
-                .path
-           ) {
+            stagingDirectory.path.hasPrefix(
+                FileManager.default.temporaryDirectory
+                    .appending(path: "Luxel/Recordings")
+                    .path
+            )
+        {
             try? FileManager.default.removeItem(at: stagingDirectory)
         }
     }

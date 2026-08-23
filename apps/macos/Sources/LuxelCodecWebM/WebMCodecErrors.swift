@@ -12,8 +12,8 @@ public enum WebMCodecError: Error, Equatable, LocalizedError {
         case .unsupportedFormat(let format):
             "WebM export does not support \(format.prettyName)."
         case .invalidConfiguration(let message),
-             .encoderFailure(let message),
-             .muxerFailure(let message):
+            .encoderFailure(let message),
+            .muxerFailure(let message):
             message
         }
     }

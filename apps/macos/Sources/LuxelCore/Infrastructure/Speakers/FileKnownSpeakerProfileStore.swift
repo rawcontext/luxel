@@ -72,7 +72,8 @@ public final class FileKnownSpeakerProfileStore: KnownSpeakerProfileStore, @unch
         defer { lock.unlock() }
         let clipID = UUID()
         let storedURL = clipsDirectory.appending(
-            path: "\(clipID.uuidString).\(audioURL.pathExtension.isEmpty ? "m4a" : audioURL.pathExtension)"
+            path:
+                "\(clipID.uuidString).\(audioURL.pathExtension.isEmpty ? "m4a" : audioURL.pathExtension)"
         )
         try fileManager.createDirectory(at: clipsDirectory, withIntermediateDirectories: true)
         try fileManager.copyItem(at: audioURL, to: storedURL)
@@ -130,7 +131,8 @@ public final class FileKnownSpeakerProfileStore: KnownSpeakerProfileStore, @unch
     /// (names, embeddings, clips) changes, so match-count metadata updates do
     /// not invalidate cached transcripts.
     static func revision(for profiles: [KnownSpeakerProfile]) -> String {
-        let identity = profiles
+        let identity =
+            profiles
             .sorted { $0.id.uuidString < $1.id.uuidString }
             .map { profile in
                 let embeddingIDs = profile.embeddings.map(\.id.uuidString).sorted()
@@ -190,13 +192,15 @@ public final class FileKnownSpeakerProfileStore: KnownSpeakerProfileStore, @unch
             duplicate.matchedRecordingCount - duplicateRecordings.count
 
         var embeddingIDs = Set(profile.embeddings.map(\.id))
-        profile.embeddings.append(contentsOf: duplicate.embeddings.filter {
-            embeddingIDs.insert($0.id).inserted
-        })
+        profile.embeddings.append(
+            contentsOf: duplicate.embeddings.filter {
+                embeddingIDs.insert($0.id).inserted
+            })
         var clipIDs = Set(profile.exampleClips.map(\.id))
-        profile.exampleClips.append(contentsOf: duplicate.exampleClips.filter {
-            clipIDs.insert($0.id).inserted
-        })
+        profile.exampleClips.append(
+            contentsOf: duplicate.exampleClips.filter {
+                clipIDs.insert($0.id).inserted
+            })
         profile.matchedRecordingCount =
             canonicalRecordings.union(duplicateRecordings).count
             + untrackedCanonicalMatches

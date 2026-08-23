@@ -68,7 +68,9 @@ public struct CommandLineAutomationBootstrapInvocation: Equatable, Sendable {
             URLQueryItem(name: "endpoint", value: endpoint.absoluteString)
         ]
         if let clientName { items.append(URLQueryItem(name: "clientName", value: clientName)) }
-        if let clientID { items.append(URLQueryItem(name: "clientID", value: clientID.uuidString.lowercased())) }
+        if let clientID {
+            items.append(URLQueryItem(name: "clientID", value: clientID.uuidString.lowercased()))
+        }
         if let requestDigest { items.append(URLQueryItem(name: "requestDigest", value: requestDigest)) }
         if let timestamp { items.append(URLQueryItem(name: "timestamp", value: String(timestamp))) }
         if let nonce { items.append(URLQueryItem(name: "nonce", value: nonce)) }
@@ -79,10 +81,10 @@ public struct CommandLineAutomationBootstrapInvocation: Equatable, Sendable {
 
     fileprivate var canonicalAuthenticationData: Data? {
         guard action == .run,
-              let clientID,
-              let requestDigest,
-              let timestamp,
-              let nonce
+            let clientID,
+            let requestDigest,
+            let timestamp,
+            let nonce
         else { return nil }
         return Data(
             [
@@ -106,9 +108,11 @@ public enum CommandLineAutomationBootstrapParser {
         guard url.scheme?.lowercased() == expectedScheme.lowercased(), url.host == "cli" else {
             throw CommandLineAutomationBootstrapError.invalidURL
         }
-        guard let action = CommandLineAutomationBootstrapAction(
-            rawValue: url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        ) else {
+        guard
+            let action = CommandLineAutomationBootstrapAction(
+                rawValue: url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            )
+        else {
             throw CommandLineAutomationBootstrapError.invalidURL
         }
         let query = try uniqueQuery(url)
@@ -117,7 +121,7 @@ public enum CommandLineAutomationBootstrapParser {
             throw CommandLineAutomationBootstrapError.unsupportedProtocolVersion(version)
         }
         guard let requestID = UUID(uuidString: try required("requestID", in: query)),
-              let endpoint = URL(string: try required("endpoint", in: query))
+            let endpoint = URL(string: try required("endpoint", in: query))
         else {
             throw CommandLineAutomationBootstrapError.invalidURL
         }
@@ -138,7 +142,7 @@ public enum CommandLineAutomationBootstrapParser {
             )
         case .run:
             guard let clientID = UUID(uuidString: try required("clientID", in: query)),
-                  let timestamp = Int64(try required("timestamp", in: query))
+                let timestamp = Int64(try required("timestamp", in: query))
             else {
                 throw CommandLineAutomationBootstrapError.invalidURL
             }
@@ -146,10 +150,10 @@ public enum CommandLineAutomationBootstrapParser {
             let nonce = try required("nonce", in: query)
             let signature = try required("signature", in: query)
             guard digest.count == 64,
-                  digest.allSatisfy(\.isHexDigit),
-                  (16...128).contains(nonce.count),
-                  signature.count == 64,
-                  signature.allSatisfy(\.isHexDigit)
+                digest.allSatisfy(\.isHexDigit),
+                (16...128).contains(nonce.count),
+                signature.count == 64,
+                signature.allSatisfy(\.isHexDigit)
             else {
                 throw CommandLineAutomationBootstrapError.invalidURL
             }
@@ -168,19 +172,21 @@ public enum CommandLineAutomationBootstrapParser {
     }
 
     private static func uniqueQuery(_ url: URL) throws -> [String: String] {
-        guard let percentEncodedQuery = URLComponents(
-            url: url,
-            resolvingAgainstBaseURL: false
-        )?.percentEncodedQuery else {
+        guard
+            let percentEncodedQuery = URLComponents(
+                url: url,
+                resolvingAgainstBaseURL: false
+            )?.percentEncodedQuery
+        else {
             return [:]
         }
         var values: [String: String] = [:]
         for pair in percentEncodedQuery.split(separator: "&", omittingEmptySubsequences: false) {
             let parts = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
             guard parts.count == 2,
-                  let name = formQueryValue(String(parts[0])),
-                  let value = formQueryValue(String(parts[1])),
-                  values[name] == nil
+                let name = formQueryValue(String(parts[0])),
+                let value = formQueryValue(String(parts[1])),
+                values[name] == nil
             else {
                 throw CommandLineAutomationBootstrapError.invalidURL
             }
@@ -204,16 +210,16 @@ public enum CommandLineAutomationBootstrapParser {
         let pathComponents = endpoint.pathComponents
         let sessionToken = pathComponents.count == 3 ? pathComponents[2] : ""
         guard endpoint.scheme == "http",
-              endpoint.user == nil,
-              endpoint.password == nil,
-              endpoint.port != nil,
-              endpoint.query == nil,
-              endpoint.fragment == nil,
-              endpoint.host == "127.0.0.1" || endpoint.host == "::1",
-              pathComponents.count == 3,
-              pathComponents[1] == "session",
-              (32...128).contains(sessionToken.count),
-              sessionToken.allSatisfy(\.isHexDigit)
+            endpoint.user == nil,
+            endpoint.password == nil,
+            endpoint.port != nil,
+            endpoint.query == nil,
+            endpoint.fragment == nil,
+            endpoint.host == "127.0.0.1" || endpoint.host == "::1",
+            pathComponents.count == 3,
+            pathComponents[1] == "session",
+            (32...128).contains(sessionToken.count),
+            sessionToken.allSatisfy(\.isHexDigit)
         else {
             throw CommandLineAutomationBootstrapError.nonLoopbackEndpoint
         }
@@ -252,12 +258,12 @@ public enum CommandLineAutomationBootstrapError: Error, Equatable, Sendable {
     case unsupportedProtocolVersion(Int)
 }
 
-private extension Sequence where Element == UInt8 {
-    var hexString: String { map { String(format: "%02x", $0) }.joined() }
+extension Sequence where Element == UInt8 {
+    fileprivate var hexString: String { map { String(format: "%02x", $0) }.joined() }
 }
 
-private extension Data {
-    func constantTimeEquals(_ other: Data) -> Bool {
+extension Data {
+    fileprivate func constantTimeEquals(_ other: Data) -> Bool {
         guard count == other.count else { return false }
         var difference: UInt8 = 0
         for (lhs, rhs) in zip(self, other) { difference |= lhs ^ rhs }

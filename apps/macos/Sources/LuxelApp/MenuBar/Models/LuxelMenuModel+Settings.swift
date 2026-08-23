@@ -19,10 +19,12 @@ extension LuxelMenuModel {
 
     func configureEditor(_ editorModel: LuxelEditorModel) {
         configuredEditorModel = editorModel
-        editorModel.configureExportMemory(settings.perFormatExportMemory) { [weak self] format, memory in
+        editorModel.configureExportMemory(settings.perFormatExportMemory) {
+            [weak self] format, memory in
             self?.rememberExportMemory(memory, for: format)
         }
-        editorModel.configureLastSelectedExportFormat(settings.lastSelectedExportFormat) { [weak self] format in
+        editorModel.configureLastSelectedExportFormat(settings.lastSelectedExportFormat) {
+            [weak self] format in
             self?.rememberLastSelectedExportFormat(format)
         }
         editorModel.configureDiscard(
@@ -62,14 +64,18 @@ extension LuxelMenuModel {
 
     func addCommandLineFolderGrant() {
         do {
-            guard let directory = try bookmarkedDirectoryPicker.chooseDirectory(
-                currentDirectory: settings.recordingsDirectory
-            ) else {
+            guard
+                let directory = try bookmarkedDirectoryPicker.chooseDirectory(
+                    currentDirectory: settings.recordingsDirectory
+                )
+            else {
                 return
             }
-            guard !settings.commandLineFolderGrants.contains(where: {
-                $0.directory.url.standardizedFileURL == directory.url.standardizedFileURL
-            }) else {
+            guard
+                !settings.commandLineFolderGrants.contains(where: {
+                    $0.directory.url.standardizedFileURL == directory.url.standardizedFileURL
+                })
+            else {
                 return
             }
             settings.commandLineFolderGrants.append(
@@ -95,7 +101,9 @@ extension LuxelMenuModel {
     func setCommandLineControlEnabled(_ enabled: Bool) {
         settings.commandLineControlEnabled = enabled
         if !enabled {
-            commandLineJobs.values.forEach { $0.cancel() }
+            for job in commandLineJobs.values {
+                job.cancel()
+            }
         }
         saveSettings()
     }

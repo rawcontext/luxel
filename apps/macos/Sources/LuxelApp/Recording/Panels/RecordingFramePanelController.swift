@@ -15,12 +15,12 @@ final class RecordingFramePanelController {
         await close()
 
         guard case .area = request.target,
-              let frame = CaptureTargetScreenRectResolver.rect(
+            let frame = CaptureTargetScreenRectResolver.rect(
                 for: request.target,
                 availableTargets: availableTargets
-              ),
-              frame.width > 0,
-              frame.height > 0
+            ),
+            frame.width > 0,
+            frame.height > 0
         else {
             return
         }

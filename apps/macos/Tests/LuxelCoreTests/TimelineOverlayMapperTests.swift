@@ -16,10 +16,11 @@ struct TimelineOverlayMapperTests {
             editPlan: editPlan()
         )
 
-        #expect(try mapper.map([block]).map(\.timeRange) == [
-            TimeRange(start: 1, end: 3),
-            TimeRange(start: 3, end: 5)
-        ])
+        #expect(
+            try mapper.map([block]).map(\.timeRange) == [
+                TimeRange(start: 1, end: 3),
+                TimeRange(start: 3, end: 5)
+            ])
     }
 
     @Test("caption mapper splits cues around timeline cuts")
@@ -38,10 +39,11 @@ struct TimelineOverlayMapperTests {
             editPlan: editPlan()
         )
 
-        #expect(try mapper.map(track).cues.map(\.timeRange) == [
-            TimeRange(start: 1, end: 3),
-            TimeRange(start: 3, end: 5)
-        ])
+        #expect(
+            try mapper.map(track).cues.map(\.timeRange) == [
+                TimeRange(start: 1, end: 3),
+                TimeRange(start: 3, end: 5)
+            ])
     }
 
     private func editPlan() throws -> TimelineEditPlan {

@@ -33,7 +33,9 @@ final class CameraCutoutOutputBufferPool: @unchecked Sendable {
         self.outputSize = outputSize
         let width = Int(outputSize.width.rounded(.up))
         let height = Int(outputSize.height.rounded(.up))
-        let poolAttributes: [CFString: Any] = [kCVPixelBufferPoolMinimumBufferCountKey: Self.bufferCount]
+        let poolAttributes: [CFString: Any] = [
+            kCVPixelBufferPoolMinimumBufferCountKey: Self.bufferCount
+        ]
         let bufferAttributes: [CFString: Any] = [
             kCVPixelBufferWidthKey: width,
             kCVPixelBufferHeightKey: height,

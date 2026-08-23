@@ -160,7 +160,7 @@ public enum TranscriptSegmentationValidator {
             let trustedEnd = turnSpans[turnSpans.count - 1].end
 
             guard isClose(candidate.start, trustedStart),
-                  isClose(candidate.end, trustedEnd)
+                isClose(candidate.end, trustedEnd)
             else {
                 throw TranscriptModelError.invalidTurnTiming(candidate.id)
             }
@@ -203,7 +203,7 @@ public enum TranscriptSegmentationValidator {
                 throw TranscriptModelError.missingSpan(spanID)
             }
             guard expectedSpanIndex < spans.endIndex,
-                  spans[expectedSpanIndex].id == spanID
+                spans[expectedSpanIndex].id == spanID
             else {
                 throw TranscriptModelError.reorderedSpan(spanID)
             }
@@ -238,7 +238,7 @@ public enum TranscriptSegmentationValidator {
 
     private static func commonSource(for spans: [TimedTranscriptSpan]) -> TranscriptSourceLabel? {
         guard let firstSource = spans.first?.source,
-              spans.allSatisfy({ $0.source == firstSource })
+            spans.allSatisfy({ $0.source == firstSource })
         else {
             return nil
         }
@@ -255,7 +255,7 @@ public enum TranscriptSegmentationValidator {
             throw TranscriptModelError.mixedTurnSpeakers(turnID)
         }
         guard let speakerID = distinctSpeakerIDs.first,
-              spans.allSatisfy({ $0.speakerID == speakerID })
+            spans.allSatisfy({ $0.speakerID == speakerID })
         else {
             return nil
         }

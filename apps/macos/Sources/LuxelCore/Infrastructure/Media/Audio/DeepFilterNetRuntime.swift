@@ -47,7 +47,7 @@ final class DeepFilterNetNetwork {
         let output = try model.prediction(from: input)
 
         guard let erbMask = output.featureValue(for: "erb_mask")?.multiArrayValue,
-              let coefficients = output.featureValue(for: "df_coefs")?.multiArrayValue
+            let coefficients = output.featureValue(for: "df_coefs")?.multiArrayValue
         else {
             throw StudioVoiceModelError.inferenceFailed("Core ML output is incomplete.")
         }

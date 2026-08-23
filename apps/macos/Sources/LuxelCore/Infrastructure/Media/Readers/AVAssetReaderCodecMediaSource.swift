@@ -57,9 +57,11 @@ public final class AVAssetReaderCodecMediaSource: CodecMediaSource, @unchecked S
             outputPixelSize: outputPixelSize,
             request: request
         )
-        try startVideoReading(composition: composition, output: videoOutput, frameRate: request.frameRate)
+        try startVideoReading(
+            composition: composition, output: videoOutput, frameRate: request.frameRate)
 
-        let includesAudio = !request.outputShouldMute
+        let includesAudio =
+            !request.outputShouldMute
             && (input.preparedAudio != nil || !sourceAudioTracks.isEmpty)
         if includesAudio {
             try await prepareAudioReader(

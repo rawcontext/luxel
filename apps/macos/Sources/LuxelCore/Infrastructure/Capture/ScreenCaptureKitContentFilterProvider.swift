@@ -51,9 +51,9 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
         from content: SCShareableContent
     ) async throws -> SCShareableContent {
         guard activatesWindowTargetsBeforeCapture,
-              let window = content.windows.first(where: { $0.windowID == windowID }),
-              let processID = window.owningApplication?.processID,
-              await activateOwningApplicationIfNeeded(processID: processID)
+            let window = content.windows.first(where: { $0.windowID == windowID }),
+            let processID = window.owningApplication?.processID,
+            await activateOwningApplicationIfNeeded(processID: processID)
         else {
             return content
         }
@@ -65,8 +65,8 @@ public struct ShareableContentFilterProvider: ScreenCaptureKitContentFilterProvi
     private func activateOwningApplicationIfNeeded(processID: pid_t) async -> Bool {
         await MainActor.run {
             guard processID != NSRunningApplication.current.processIdentifier,
-                  let application = NSRunningApplication(processIdentifier: processID),
-                  !application.isActive
+                let application = NSRunningApplication(processIdentifier: processID),
+                !application.isActive
             else {
                 return false
             }

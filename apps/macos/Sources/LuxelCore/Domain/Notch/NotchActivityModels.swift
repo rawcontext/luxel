@@ -23,8 +23,8 @@ public enum NotchActivity: Equatable, Sendable {
         case .completed, .error:
             true
         case .dormant, .idleHover, .arming, .recording, .paused, .replayBuffering, .processing,
-             .exporting,
-             .nowPlaying:
+            .exporting,
+            .nowPlaying:
             false
         }
     }
@@ -63,7 +63,7 @@ public struct NotchReplayBufferCoverage: Codable, Equatable, Sendable {
 
     public init(coveredDuration: TimeInterval, requestedDuration: TimeInterval) throws {
         guard coveredDuration.isFinite, coveredDuration >= 0,
-              requestedDuration.isFinite, requestedDuration > 0
+            requestedDuration.isFinite, requestedDuration > 0
         else {
             throw NotchActivityError.invalidReplayCoverage
         }
@@ -135,7 +135,7 @@ public struct NotchNowPlayingSnapshot: Codable, Equatable, Sendable {
 
     public init(elapsed: TimeInterval, duration: TimeInterval) throws {
         guard elapsed.isFinite, elapsed >= 0,
-              duration.isFinite, duration > 0
+            duration.isFinite, duration > 0
         else {
             throw NotchActivityError.invalidPlaybackTime
         }

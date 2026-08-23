@@ -93,11 +93,13 @@ public struct TranscriptWordCutPlanner: Equatable, Sendable {
             kind: .transcriptSentence,
             transcriptSpanIDs: selectedWords.map(\.id)
         )
-        guard try editPlan.inserting(
-            cut,
-            within: trimRange,
-            minimumRetainedDuration: minimumRetainedDuration
-        ) != nil else {
+        guard
+            try editPlan.inserting(
+                cut,
+                within: trimRange,
+                minimumRetainedDuration: minimumRetainedDuration
+            ) != nil
+        else {
             return nil
         }
         return cut

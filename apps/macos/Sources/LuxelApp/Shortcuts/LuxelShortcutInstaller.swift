@@ -116,7 +116,7 @@ struct LuxelShortcutInstaller: View {
     private func fullscreenRecordingShortcutRegistration() -> LuxelShortcutRegistration {
         LuxelShortcutRegistration(rawShortcut: model.settings.recordFullscreenShortcut) {
             guard model.screenRecordingStatus == .authorized,
-                  model.fullscreenCaptureTarget != nil
+                model.fullscreenCaptureTarget != nil
             else {
                 return
             }

@@ -76,7 +76,8 @@ final class CameraBackgroundEffectTelemetry: @unchecked Sendable {
         let p95Index = max(0, Int(Double(max(0, sortedLatencies.count - 1)) * 0.95))
         let p95Latency = sortedLatencies.isEmpty ? 0 : sortedLatencies[p95Index]
         let maximumLatency = sortedLatencies.last ?? 0
-        let averageProcessing = snapshot.processedFrameCount == 0
+        let averageProcessing =
+            snapshot.processedFrameCount == 0
             ? 0
             : snapshot.processingMilliseconds / Double(snapshot.processedFrameCount)
         let sessionMilliseconds = startedAt.duration(to: .now).cameraMilliseconds
@@ -106,8 +107,8 @@ final class CameraBackgroundEffectTelemetry: @unchecked Sendable {
     private static let signposter = OSSignposter(logger: logger)
 }
 
-private extension Duration {
-    var cameraMilliseconds: Double {
+extension Duration {
+    fileprivate var cameraMilliseconds: Double {
         let components = self.components
         return Double(components.seconds) * 1_000
             + Double(components.attoseconds) / 1_000_000_000_000_000

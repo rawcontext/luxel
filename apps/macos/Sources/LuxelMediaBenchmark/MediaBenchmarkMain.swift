@@ -4,7 +4,8 @@ import Foundation
 import ImageIO
 import LuxelCore
 
-private let expectedFixtureSHA256 = "40f7319a4714d0e138999c94959be2c966d25ab3ccf0c71e5c702d4a266755ec"
+private let expectedFixtureSHA256 =
+    "40f7319a4714d0e138999c94959be2c966d25ab3ccf0c71e5c702d4a266755ec"
 
 @main
 enum MediaBenchmarkMain {
@@ -63,7 +64,8 @@ enum MediaBenchmarkMain {
         outputDirectory: URL,
         runs: Int
     ) async throws -> MediaBenchmarkCaseResult {
-        let outputURL = outputDirectory
+        let outputURL =
+            outputDirectory
             .appending(path: benchmarkCase.id)
             .appendingPathExtension(benchmarkCase.format.fileExtension)
         let request = try benchmarkCase.request(fixtureURL: fixtureURL)
@@ -109,8 +111,8 @@ enum MediaBenchmarkMain {
         outputURL: URL
     ) async throws {
         guard exported.fileURL == outputURL,
-              exported.format == benchmarkCase.format,
-              exported.pixelSize == request.pixelSize
+            exported.format == benchmarkCase.format,
+            exported.pixelSize == request.pixelSize
         else {
             throw MediaBenchmarkError.invalidOutput("\(benchmarkCase.id): exporter metadata mismatch")
         }
@@ -134,7 +136,7 @@ enum MediaBenchmarkMain {
             }
         case .gifFrames:
             guard data.starts(with: Data("GIF8".utf8)),
-                  let source = CGImageSourceCreateWithURL(outputURL as CFURL, nil)
+                let source = CGImageSourceCreateWithURL(outputURL as CFURL, nil)
             else {
                 throw MediaBenchmarkError.invalidOutput("\(benchmarkCase.id): invalid GIF")
             }

@@ -42,8 +42,8 @@ public final class CoreGraphicsActiveWindowCatalog: ActiveWindowCatalog {
 
         init?(dictionary: [String: Any]) {
             guard let id = dictionary.uint32Value(for: kCGWindowNumber),
-                  dictionary.intValue(for: kCGWindowLayer) == 0,
-                  dictionary.doubleValue(for: kCGWindowAlpha, default: 1) > 0
+                dictionary.intValue(for: kCGWindowLayer) == 0,
+                dictionary.doubleValue(for: kCGWindowAlpha, default: 1) > 0
             else {
                 return nil
             }

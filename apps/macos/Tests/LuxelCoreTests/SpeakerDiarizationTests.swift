@@ -1,6 +1,8 @@
 import Foundation
 import Testing
+
 @testable import LuxelCore
+
 // MARK: - Service orchestration
 
 @Suite("Local audio transcript service diarization")
@@ -261,7 +263,8 @@ struct TranscriptServiceDiarizationTests {
 
 private struct SingleSpanTranscriber: TimedSpeechTranscriber {
     func transcribe(_ request: TimedSpeechTranscriptionRequest) async throws
-    -> [TimedTranscriptSpan] {
+        -> [TimedTranscriptSpan]
+    {
         [
             try TimedTranscriptSpan(
                 id: "speech-0",

@@ -101,8 +101,8 @@ public struct RGBColor: Codable, Equatable, Hashable, Sendable {
 
     public init(red: Double, green: Double, blue: Double) throws {
         guard Self.isValidComponent(red),
-              Self.isValidComponent(green),
-              Self.isValidComponent(blue)
+            Self.isValidComponent(green),
+            Self.isValidComponent(blue)
         else {
             throw GIFEngineModelError.invalidColor
         }
@@ -258,7 +258,7 @@ public struct GIFCentisecondDelayPlan: Equatable, Sendable {
 
     public init(centisecondDelays: [Int]) throws {
         guard !centisecondDelays.isEmpty,
-              centisecondDelays.allSatisfy({ $0 > 0 })
+            centisecondDelays.allSatisfy({ $0 > 0 })
         else {
             throw GIFEngineModelError.invalidCentisecondDelay
         }

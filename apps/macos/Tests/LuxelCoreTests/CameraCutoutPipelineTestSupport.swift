@@ -64,8 +64,8 @@ extension CameraCutoutPipelineTests {
         }
         let encoded = try String(contentsOf: fixtureURL, encoding: .utf8)
         guard let data = Data(base64Encoded: encoded, options: .ignoreUnknownCharacters),
-              let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
-              let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
+            let imageSource = CGImageSourceCreateWithData(data as CFData, nil),
+            let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
         else {
             throw FixtureError.invalidPortraitFixture
         }
@@ -144,7 +144,8 @@ extension CameraCutoutPipelineTests {
         )
         try withLockedBaseAddress(of: buffer) { baseAddress, bytesPerRow in
             for rowIndex in 0..<height {
-                let row = baseAddress
+                let row =
+                    baseAddress
                     .advanced(by: rowIndex * bytesPerRow)
                     .assumingMemoryBound(to: UInt8.self)
                 for columnIndex in 0..<width {
@@ -172,7 +173,8 @@ extension CameraCutoutPipelineTests {
         )
         try withLockedBaseAddress(of: buffer) { baseAddress, bytesPerRow in
             for rowIndex in 0..<height {
-                let row = baseAddress
+                let row =
+                    baseAddress
                     .advanced(by: rowIndex * bytesPerRow)
                     .assumingMemoryBound(to: UInt16.self)
                 for columnIndex in 0..<width {

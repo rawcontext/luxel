@@ -168,9 +168,9 @@ extension LuxelMenuModel {
         case .cancelExport:
             cancelQuickExport()
         case .recordArea, .recordWindow, .recordFullscreen, .recordAudioOnly, .retry,
-             .toggleMute, .quickGIF, .markMoment, .clipReplay, .pauseReplayBuffer,
-             .cancelProcessing, .revealStorage, .reveal, .copy, .openInEditor,
-             .openInPreview, .save:
+            .toggleMute, .quickGIF, .markMoment, .clipReplay, .pauseReplayBuffer,
+            .cancelProcessing, .revealStorage, .reveal, .copy, .openInEditor,
+            .openInPreview, .save:
             break
         }
     }
@@ -197,8 +197,8 @@ extension LuxelMenuModel {
         case .countingDown(let startedAt, let duration):
             return .arming(remaining: max(0, duration - now.timeIntervalSince(startedAt)))
         case .recording(let recording, let clock),
-             .pausing(let recording, let clock),
-             .resuming(let recording, let clock):
+            .pausing(let recording, let clock),
+            .resuming(let recording, let clock):
             return .recording(
                 elapsed: clock.elapsed(at: now),
                 audioLevel: audioLevelSample,

@@ -24,7 +24,8 @@ public struct KeystrokeTimelineRecordingService: Sendable {
     }
 
     public func recordTimeline(_ request: KeystrokeTimelineRecordingRequest) async throws
-    -> KeystrokeTimeline {
+        -> KeystrokeTimeline
+    {
         var events: [KeystrokeSourceEvent] = []
         for await event in eventSource.events() {
             events.append(event)
@@ -114,8 +115,8 @@ private struct KeystrokeTimelineRecordingBuilder {
 
         case .pauseEnded(let wallTime, let cause):
             guard let mediaTime = mapper.mediaTime(forWallTime: wallTime),
-                  var starts = pauseStarts[cause],
-                  !starts.isEmpty
+                var starts = pauseStarts[cause],
+                !starts.isEmpty
             else {
                 return
             }

@@ -166,8 +166,8 @@ final class CameraPreviewPanelView: NSView {
 
     override func mouseDragged(with event: NSEvent) {
         guard let window,
-              let dragStartPoint,
-              let dragStartFrame
+            let dragStartPoint,
+            let dragStartFrame
         else {
             return
         }

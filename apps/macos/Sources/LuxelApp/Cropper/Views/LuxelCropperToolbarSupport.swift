@@ -107,7 +107,9 @@ extension LuxelCropperView {
     var captureKeystrokes: Binding<Bool> {
         Binding {
             model.capturesKeystrokes
-        } set: { model.setCaptureKeystrokes($0) }
+        } set: {
+            model.setCaptureKeystrokes($0)
+        }
     }
 
     @ViewBuilder

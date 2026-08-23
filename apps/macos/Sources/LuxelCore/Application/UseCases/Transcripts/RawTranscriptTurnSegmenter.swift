@@ -22,9 +22,10 @@ public struct RawTranscriptTurnSegmenter: TranscriptTurnSegmenter {
 
         for span in spans {
             if let last = current.last,
-               current.count >= maximumTurnSpanCount
-                || last.source != span.source
-                || last.speakerID != span.speakerID {
+                current.count >= maximumTurnSpanCount
+                    || last.source != span.source
+                    || last.speakerID != span.speakerID
+            {
                 groups.append(current)
                 current = []
             }

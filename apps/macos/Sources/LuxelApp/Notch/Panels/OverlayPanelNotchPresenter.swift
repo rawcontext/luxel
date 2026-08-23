@@ -93,9 +93,9 @@ final class OverlayPanelNotchPresenter: NotchPresenter, @unchecked Sendable {
                 morphInTask = Task { @MainActor [weak self] in
                     try? await Task.sleep(nanoseconds: 16_000_000)
                     guard !Task.isCancelled,
-                          self?.morphInGeneration == generation,
-                          let panel = self?.panel,
-                          let update = self?.currentUpdate
+                        self?.morphInGeneration == generation,
+                        let panel = self?.panel,
+                        let update = self?.currentUpdate
                     else {
                         return
                     }
@@ -306,7 +306,7 @@ extension OverlayPanelNotchPresenter {
     private func completePendingHoverExit() {
         hoverExitTask = nil
         guard isHovering,
-              !hoverRects.contains(where: { $0.contains(NSEvent.mouseLocation) })
+            !hoverRects.contains(where: { $0.contains(NSEvent.mouseLocation) })
         else {
             return
         }
@@ -329,8 +329,8 @@ extension OverlayPanelNotchPresenter {
 
     private func collapseExpandedNotchIfNeeded(at location: NSPoint) {
         guard currentUpdate?.presentationState == .expanded,
-              let currentGeometry,
-              !Self.expandedSurfaceHitRect(for: currentGeometry).contains(location)
+            let currentGeometry,
+            !Self.expandedSurfaceHitRect(for: currentGeometry).contains(location)
         else {
             return
         }

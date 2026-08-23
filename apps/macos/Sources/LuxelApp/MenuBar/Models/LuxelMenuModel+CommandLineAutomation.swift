@@ -152,17 +152,20 @@ extension LuxelMenuModel {
         )
         alert.informativeText = LuxelLocalization.format(
             "commandLine.pair.message",
-            defaultValue: "%@ wants to control Luxel. Approve only if you started `luxel pair` in Terminal.",
+            defaultValue:
+                "%@ wants to control Luxel. Approve only if you started `luxel pair` in Terminal.",
             clientName
         )
-        alert.addButton(withTitle: LuxelLocalization.string(
-            "commandLine.pair.allow",
-            defaultValue: "Allow"
-        ))
-        alert.addButton(withTitle: LuxelLocalization.string(
-            "commandLine.pair.deny",
-            defaultValue: "Deny"
-        ))
+        alert.addButton(
+            withTitle: LuxelLocalization.string(
+                "commandLine.pair.allow",
+                defaultValue: "Allow"
+            ))
+        alert.addButton(
+            withTitle: LuxelLocalization.string(
+                "commandLine.pair.deny",
+                defaultValue: "Deny"
+            ))
         NSApp.activate(ignoringOtherApps: true)
         return alert.runModal() == .alertFirstButtonReturn
     }
@@ -173,12 +176,12 @@ extension LuxelMenuModel {
         openRecording: @escaping @MainActor (URL) -> Void
     ) async throws {
         guard let clientID = invocation.clientID,
-              settings.commandLinePairedClients.contains(where: { $0.id == clientID })
+            settings.commandLinePairedClients.contains(where: { $0.id == clientID })
         else {
             throw LuxelCommandLineAutomationError.unknownClient
         }
         guard let secret = CommandLineCredentialStore().secret(clientID: clientID),
-              CommandLineAutomationAuthentication.authenticate(invocation, secret: secret)
+            CommandLineAutomationAuthentication.authenticate(invocation, secret: secret)
         else {
             throw LuxelCommandLineAutomationError.invalidAuthentication
         }
@@ -192,7 +195,8 @@ extension LuxelMenuModel {
             let requestData = try await CommandLineLoopbackClient().fetchRequest(
                 from: invocation.endpoint
             )
-            guard CommandLineAutomationAuthentication.digest(requestData) == invocation.requestDigest else {
+            guard CommandLineAutomationAuthentication.digest(requestData) == invocation.requestDigest
+            else {
                 throw LuxelCommandLineAutomationError.requestDigestMismatch
             }
             request = try JSONDecoder().decode(CommandLineAutomationRequest.self, from: requestData)
@@ -258,7 +262,7 @@ extension LuxelMenuModel {
         clientID: UUID
     ) throws {
         guard let timestamp = invocation.timestamp,
-              abs(Date().timeIntervalSince1970 - Double(timestamp)) <= 300
+            abs(Date().timeIntervalSince1970 - Double(timestamp)) <= 300
         else {
             throw LuxelCommandLineAutomationError.expiredRequest
         }
@@ -268,7 +272,7 @@ extension LuxelMenuModel {
         let nonceKey = "nonce:\(client):\(invocation.nonce ?? "")"
         let requestKey = "request:\(client):\(invocation.requestID.uuidString.lowercased())"
         guard commandLineNonces[nonceKey] == nil,
-              commandLineNonces[requestKey] == nil
+            commandLineNonces[requestKey] == nil
         else {
             throw LuxelCommandLineAutomationError.replayedRequest
         }
@@ -277,7 +281,8 @@ extension LuxelMenuModel {
     }
 
     private func markCommandLineClientUsed(_ clientID: UUID) {
-        guard let index = settings.commandLinePairedClients.firstIndex(where: { $0.id == clientID }) else {
+        guard let index = settings.commandLinePairedClients.firstIndex(where: { $0.id == clientID })
+        else {
             return
         }
         settings.commandLinePairedClients[index].lastUsedAt = Date()
@@ -399,7 +404,8 @@ extension LuxelMenuModel {
             guard let path = request.arguments.access?.path else {
                 throw LuxelCommandLineAutomationError.missingArguments
             }
-            return CommandLineAutomationResult(grant: try commandLineAccess(for: URL(fileURLWithPath: path)).summary)
+            return CommandLineAutomationResult(
+                grant: try commandLineAccess(for: URL(fileURLWithPath: path)).summary)
         case .accessList:
             return CommandLineAutomationResult(grants: commandLineAccessSummaries())
         case .accessRevoke:
@@ -430,12 +436,17 @@ extension LuxelMenuModel {
         if let outputDirectory {
             _ = try commandLineAccess(for: outputDirectory)
         }
-        let target: AutomationCaptureTarget = switch arguments.target {
-        case .display:
-            if arguments.displayID == "main" { .display(.main) } else { .display(.id(arguments.displayID ?? "")) }
-        case .activeWindow: .activeWindow
-        case .lastArea: .lastArea
-        }
+        let target: AutomationCaptureTarget =
+            switch arguments.target {
+            case .display:
+                if arguments.displayID == "main" {
+                    .display(.main)
+                } else {
+                    .display(.id(arguments.displayID ?? ""))
+                }
+            case .activeWindow: .activeWindow
+            case .lastArea: .lastArea
+            }
         let frameRate: AutomationRecordingFrameRate?
         if arguments.matchesDisplayFrameRate {
             frameRate = .matchDisplay
@@ -496,7 +507,8 @@ extension LuxelMenuModel {
 
     private func addCommandLineAccess(suggestedPath: String?) throws -> CommandLineAutomationResult {
         let suggested = suggestedPath.map(URL.init(fileURLWithPath:)) ?? settings.recordingsDirectory
-        guard let directory = try bookmarkedDirectoryPicker.chooseDirectory(currentDirectory: suggested) else {
+        guard let directory = try bookmarkedDirectoryPicker.chooseDirectory(currentDirectory: suggested)
+        else {
             throw LuxelCommandLineAutomationError.folderSelectionCanceled
         }
         if let existing = settings.commandLineFolderGrants.first(where: {
@@ -533,25 +545,31 @@ extension LuxelMenuModel {
     }
 
     private func commandLineAccessSummaries() -> [CommandLineFolderGrantSummary] {
-        let movies = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
+        let movies =
+            FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
             ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: "Movies")
-        var summaries = [CommandLineFolderGrantSummary(
-            id: stableCommandLineGrantID("movies"),
-            path: movies.path,
-            source: .movies,
-            status: .resolved
-        )]
-        summaries.append(CommandLineFolderGrantSummary(
-            id: stableCommandLineGrantID("recordings"),
-            path: settings.recordingsDirectory.path,
-            source: .recordings,
-            status: settings.recordingsDirectoryBookmark?.accessState ?? .resolved
-        ))
+        var summaries = [
+            CommandLineFolderGrantSummary(
+                id: stableCommandLineGrantID("movies"),
+                path: movies.path,
+                source: .movies,
+                status: .resolved
+            )
+        ]
+        summaries.append(
+            CommandLineFolderGrantSummary(
+                id: stableCommandLineGrantID("recordings"),
+                path: settings.recordingsDirectory.path,
+                source: .recordings,
+                status: settings.recordingsDirectoryBookmark?.accessState ?? .resolved
+            ))
         summaries.append(contentsOf: settings.commandLineFolderGrants.map(commandLineGrantSummary))
         return summaries
     }
 
-    private func commandLineGrantSummary(_ grant: CommandLineFolderGrant) -> CommandLineFolderGrantSummary {
+    private func commandLineGrantSummary(_ grant: CommandLineFolderGrant)
+        -> CommandLineFolderGrantSummary
+    {
         CommandLineFolderGrantSummary(
             id: grant.id,
             path: grant.directory.url.path,
@@ -562,7 +580,8 @@ extension LuxelMenuModel {
 
     private func stableCommandLineGrantID(_ value: String) -> UUID {
         let hex = CommandLineAutomationAuthentication.digest(Data(value.utf8))
-        let uuid = "\(hex.prefix(8))-\(hex.dropFirst(8).prefix(4))-4\(hex.dropFirst(13).prefix(3))-8\(hex.dropFirst(17).prefix(3))-\(hex.dropFirst(20).prefix(12))"
+        let uuid =
+            "\(hex.prefix(8))-\(hex.dropFirst(8).prefix(4))-4\(hex.dropFirst(13).prefix(3))-8\(hex.dropFirst(17).prefix(3))-\(hex.dropFirst(20).prefix(12))"
         return UUID(uuidString: uuid)!
     }
 
@@ -579,7 +598,8 @@ extension LuxelMenuModel {
                 bookmark: settings.recordingsDirectoryBookmark
             )
         }
-        let movies = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
+        let movies =
+            FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
             ?? FileManager.default.homeDirectoryForCurrentUser.appending(path: "Movies")
         if path(target, isInside: movies) {
             return ResolvedCommandLineAccess(summary: commandLineAccessSummaries()[0], bookmark: nil)
@@ -615,7 +635,8 @@ extension LuxelMenuModel {
         var bookmarks: [BookmarkedDirectory] = []
         for path in paths {
             if let bookmark = try commandLineAccess(for: path).bookmark,
-               !bookmarks.contains(where: { $0.url == bookmark.url }) {
+                !bookmarks.contains(where: { $0.url == bookmark.url })
+            {
                 bookmarks.append(bookmark)
             }
         }

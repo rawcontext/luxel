@@ -107,7 +107,9 @@ public final class KeystrokeChipImageRenderer {
 }
 
 public enum KeystrokeOverlayLayout {
-    public static func activeChips(at time: TimeInterval, in chips: [KeystrokeChip]) -> [KeystrokeChip] {
+    public static func activeChips(at time: TimeInterval, in chips: [KeystrokeChip])
+        -> [KeystrokeChip]
+    {
         chips.filter { $0.timeRange.start <= time && time < $0.timeRange.end }
             .sorted { $0.timeRange.start < $1.timeRange.start }
     }
@@ -118,20 +120,22 @@ public enum KeystrokeOverlayLayout {
         anchor: KeystrokeOverlayAnchor,
         margin: CGFloat = 32
     ) -> CGPoint {
-        let horizontalOrigin = switch anchor {
-        case .topLeft, .bottomLeft:
-            margin
-        case .topCenter, .bottomCenter:
-            (frameSize.width - overlaySize.width) / 2
-        case .topRight, .bottomRight:
-            frameSize.width - overlaySize.width - margin
-        }
-        let verticalOrigin = switch anchor {
-        case .bottomLeft, .bottomCenter, .bottomRight:
-            margin
-        case .topLeft, .topCenter, .topRight:
-            frameSize.height - overlaySize.height - margin
-        }
+        let horizontalOrigin =
+            switch anchor {
+            case .topLeft, .bottomLeft:
+                margin
+            case .topCenter, .bottomCenter:
+                (frameSize.width - overlaySize.width) / 2
+            case .topRight, .bottomRight:
+                frameSize.width - overlaySize.width - margin
+            }
+        let verticalOrigin =
+            switch anchor {
+            case .bottomLeft, .bottomCenter, .bottomRight:
+                margin
+            case .topLeft, .topCenter, .topRight:
+                frameSize.height - overlaySize.height - margin
+            }
         return CGPoint(x: max(0, horizontalOrigin), y: max(0, verticalOrigin))
     }
 }

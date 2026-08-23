@@ -1,7 +1,8 @@
 import AVFAudio
 import Foundation
-@testable import LuxelCore
 import Testing
+
+@testable import LuxelCore
 
 @Suite("Studio Voice runtime parity")
 struct StudioVoiceRuntimeParityTests {
@@ -273,10 +274,12 @@ struct StudioVoiceTests {
     private func peak(of url: URL) throws -> Double {
         let file = try AVAudioFile(forReading: url)
         let format = file.processingFormat
-        guard let buffer = AVAudioPCMBuffer(
-            pcmFormat: format,
-            frameCapacity: AVAudioFrameCount(file.length)
-        ) else {
+        guard
+            let buffer = AVAudioPCMBuffer(
+                pcmFormat: format,
+                frameCapacity: AVAudioFrameCount(file.length)
+            )
+        else {
             return 0
         }
         try file.read(into: buffer)
@@ -338,7 +341,9 @@ private actor SpyStudioVoiceEnhancer: StudioVoiceEnhancing {
         started = true
         let continuations = startContinuations
         startContinuations.removeAll()
-        continuations.forEach { $0.resume() }
+        for continuation in continuations {
+            continuation.resume()
+        }
         if let delay {
             try await Task.sleep(for: delay)
         }

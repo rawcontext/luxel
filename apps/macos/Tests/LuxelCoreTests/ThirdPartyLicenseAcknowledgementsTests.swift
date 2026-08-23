@@ -45,7 +45,8 @@ struct ThirdPartyLicenseAcknowledgementsTests {
             contentsOf: packageRoot.appending(path: "THIRD_PARTY_LICENSES.md"),
             encoding: .utf8
         )
-        let componentHeadings = markdown
+        let componentHeadings =
+            markdown
             .components(separatedBy: .newlines)
             .filter { $0.hasPrefix("## ") && $0 != "## Apache License, Version 2.0" }
 

@@ -7,7 +7,8 @@ struct WebcamOverlayModelTests {
     @Test("camera shapes preserve legacy values and stable display order")
     func cameraShapesPreserveLegacyValuesAndStableDisplayOrder() throws {
         #expect(CameraOverlayShape.allCases == [.circle, .roundedRect, .square])
-        #expect(try JSONDecoder().decode(CameraOverlayShape.self, from: Data(#""circle""#.utf8)) == .circle)
+        #expect(
+            try JSONDecoder().decode(CameraOverlayShape.self, from: Data(#""circle""#.utf8)) == .circle)
         #expect(
             try JSONDecoder().decode(
                 CameraOverlayShape.self,

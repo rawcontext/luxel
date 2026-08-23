@@ -101,7 +101,7 @@ final class ScreenCaptureKitAudioOnlyWriterSegment: @unchecked Sendable {
         continuation: CheckedContinuation<Void, any Error>
     ) {
         switch (pendingError, didStartWriting) {
-        case let (pendingError?, _):
+        case (let pendingError?, _):
             writer.cancelWriting()
             try? fileManager.removeItem(at: outputFileURL)
             continuation.resume(throwing: pendingError)

@@ -171,12 +171,13 @@ struct KeystrokeTimelineRecordingServiceTests {
             KeystrokeTimelineRecordingRequest(recordingDuration: 3)
         )
 
-        #expect(timeline.pauses == [
-            KeystrokePauseInterval(
-                timeRange: try TimeRange(start: 1, end: 3),
-                cause: .secureInput
-            )
-        ])
+        #expect(
+            timeline.pauses == [
+                KeystrokePauseInterval(
+                    timeRange: try TimeRange(start: 1, end: 3),
+                    cause: .secureInput
+                )
+            ])
         #expect(timeline.eventsOutsidePauses().isEmpty)
     }
 

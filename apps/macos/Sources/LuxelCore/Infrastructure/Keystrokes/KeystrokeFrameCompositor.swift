@@ -14,17 +14,17 @@ public final class KeystrokeFrameCompositor {
         at sourceTime: TimeInterval
     ) -> CGImage {
         guard let timeline,
-              let options,
-              options.isVisible,
-              let planned = try? KeystrokeChipPlanner(renderOptions: options)
+            let options,
+            options.isVisible,
+            let planned = try? KeystrokeChipPlanner(renderOptions: options)
                 .plannedChips(for: timeline)
         else {
             return frame
         }
         let chips = KeystrokeOverlayLayout.activeChips(at: sourceTime, in: planned)
         guard !chips.isEmpty,
-              let colorSpace = frame.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB),
-              let context = CGContext(
+            let colorSpace = frame.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB),
+            let context = CGContext(
                 data: nil,
                 width: frame.width,
                 height: frame.height,
@@ -32,7 +32,7 @@ public final class KeystrokeFrameCompositor {
                 bytesPerRow: 0,
                 space: colorSpace,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-              )
+            )
         else {
             return frame
         }

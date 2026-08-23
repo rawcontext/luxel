@@ -92,15 +92,15 @@ struct KeystrokeSidecarPersistenceServiceTests {
     func sidecarDocumentRejectsUnsupportedSchemaVersions() throws {
         let data = Data(
             """
-      {
-        "schemaVersion": 2,
-        "timeline": {
-          "schemaVersion": 1,
-          "events": [],
-          "pauses": []
-        }
-      }
-      """.utf8)
+            {
+              "schemaVersion": 2,
+              "timeline": {
+                "schemaVersion": 1,
+                "events": [],
+                "pauses": []
+              }
+            }
+            """.utf8)
 
         #expect(throws: KeystrokeModelError.unsupportedSidecarSchemaVersion) {
             _ = try JSONDecoder().decode(KeystrokeSidecarDocument.self, from: data)

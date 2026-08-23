@@ -5,31 +5,41 @@ extension LuxelEditorView {
     var keystrokesVisibleSelection: Binding<Bool> {
         Binding {
             model.keystrokeOptions?.isVisible ?? false
-        } set: { model.updateKeystrokeOptions(isVisible: $0) }
+        } set: {
+            model.updateKeystrokeOptions(isVisible: $0)
+        }
     }
 
     var keystrokeAnchorSelection: Binding<KeystrokeOverlayAnchor> {
         Binding {
             model.keystrokeOptions?.anchor ?? .bottomCenter
-        } set: { model.updateKeystrokeOptions(anchor: $0) }
+        } set: {
+            model.updateKeystrokeOptions(anchor: $0)
+        }
     }
 
     var keystrokeSizeSelection: Binding<KeystrokeOverlaySize> {
         Binding {
             model.keystrokeOptions?.size ?? .medium
-        } set: { model.updateKeystrokeOptions(size: $0) }
+        } set: {
+            model.updateKeystrokeOptions(size: $0)
+        }
     }
 
     var keystrokeThemeSelection: Binding<KeystrokeOverlayTheme> {
         Binding {
             model.keystrokeOptions?.theme ?? .darkGlass
-        } set: { model.updateKeystrokeOptions(theme: $0) }
+        } set: {
+            model.updateKeystrokeOptions(theme: $0)
+        }
     }
 
     var keystrokeDurationSelection: Binding<Double> {
         Binding {
             model.keystrokeOptions?.displayDuration ?? 1.5
-        } set: { model.updateKeystrokeOptions(displayDuration: $0) }
+        } set: {
+            model.updateKeystrokeOptions(displayDuration: $0)
+        }
     }
 
     func formatSelectionBinding(_ format: ExportFormat) -> Binding<Bool> {

@@ -81,11 +81,12 @@ struct AppBundleConfigurationTests {
         let accessedAPIs = try #require(
             manifest["NSPrivacyAccessedAPITypes"] as? [[String: Any]]
         )
-        let reasons = Dictionary(uniqueKeysWithValues: try accessedAPIs.map { entry in
-            let category = try #require(entry["NSPrivacyAccessedAPIType"] as? String)
-            let values = try #require(entry["NSPrivacyAccessedAPITypeReasons"] as? [String])
-            return (category, values)
-        })
+        let reasons = Dictionary(
+            uniqueKeysWithValues: try accessedAPIs.map { entry in
+                let category = try #require(entry["NSPrivacyAccessedAPIType"] as? String)
+                let values = try #require(entry["NSPrivacyAccessedAPITypeReasons"] as? [String])
+                return (category, values)
+            })
 
         #expect(!tracking)
         #expect(collectedData.isEmpty)
@@ -177,7 +178,8 @@ extension AppBundleConfigurationTests {
             script.contains("APPLE_TEAM_IDENTIFIER=\"${APPLE_TEAM_IDENTIFIER:-U65DCW9TAK}\""))
         #expect(script.contains("find_signing_identity_for_team 'Apple Development:'"))
         #expect(
-            script.contains("APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-com.rawcontext.luxel.dev}\""))
+            script.contains(
+                "APP_BUNDLE_IDENTIFIER=\"${APP_BUNDLE_IDENTIFIER:-com.rawcontext.luxel.dev}\""))
         #expect(script.contains("APP_DISPLAY_NAME=\"${APP_DISPLAY_NAME:-Luxel Dev}\""))
         #expect(script.contains("APP_URL_SCHEME=\"${APP_URL_SCHEME:-luxel-dev}\""))
         #expect(
@@ -225,10 +227,12 @@ extension AppBundleConfigurationTests {
         try rewriteLocalizedDisplayName(in: appPath, using: supportScript)
 
         for locale in LuxelLocalization.supportedLocales {
-            let source = localizations
+            let source =
+                localizations
                 .appending(path: "\(locale).lproj")
                 .appending(path: "InfoPlist.strings")
-            let assembled = resources
+            let assembled =
+                resources
                 .appending(path: "\(locale).lproj")
                 .appending(path: "InfoPlist.strings")
             let sourcePlist = try readPlist(at: source)

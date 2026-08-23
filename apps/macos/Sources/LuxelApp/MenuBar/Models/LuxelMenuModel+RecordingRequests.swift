@@ -84,7 +84,8 @@ extension LuxelMenuModel {
             throw VoiceDetectionRecordingRequestError.selectedMicrophoneUnavailable
         }
 
-        let microphoneDeviceID = selectedDevice.id == AudioInputDeviceID.systemDefault
+        let microphoneDeviceID =
+            selectedDevice.id == AudioInputDeviceID.systemDefault
             ? nil
             : selectedDevice.id
         let audio: RecordingAudioMode =
@@ -156,7 +157,8 @@ extension LuxelMenuModel {
     }
 
     private func recordingAudioModeWithAvailableSources(_ audio: RecordingAudioMode)
-    -> RecordingAudioMode {
+        -> RecordingAudioMode
+    {
         switch (
             audio.capturesSystemAudio && captureCapabilities.systemAudioTrackAvailable,
             audio.capturesMicrophone && captureCapabilities.microphoneTrackAvailable

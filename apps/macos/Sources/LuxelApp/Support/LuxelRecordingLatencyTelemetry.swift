@@ -55,13 +55,13 @@ enum LuxelRecordingLatencyTelemetry {
 
         logger.info(
             """
-      Recording start completed entry_point=\(span.entryPoint.rawValue, privacy: .public) \
-      result=\(result, privacy: .public) \
-      target_kind=\(target?.latencyTargetKind ?? "unknown", privacy: .public) \
-      elapsed_ms=\(elapsedMilliseconds, privacy: .public) \
-      budget_ms=\(budgetMilliseconds, privacy: .public) \
-      met_budget=\(metBudget, privacy: .public)
-      """
+            Recording start completed entry_point=\(span.entryPoint.rawValue, privacy: .public) \
+            result=\(result, privacy: .public) \
+            target_kind=\(target?.latencyTargetKind ?? "unknown", privacy: .public) \
+            elapsed_ms=\(elapsedMilliseconds, privacy: .public) \
+            budget_ms=\(budgetMilliseconds, privacy: .public) \
+            met_budget=\(metBudget, privacy: .public)
+            """
         )
         signposter.endInterval("Recording start", span.intervalState)
     }

@@ -131,16 +131,16 @@ struct SpeakerDiarizationModelStoreTests {
         expectedBytes: Int64
     ) throws {
         let manifest = """
-        {
-          "packageVersion": "\(packageVersion)",
-          "repository": "FluidInference/speaker-diarization-coreml",
-          "revision": "\(revision)",
-          "expectedBytes": \(expectedBytes),
-          "installedBytes": 4096,
-          "installDate": 773190000.0,
-          "licenseIdentifier": "cc-by-4.0"
-        }
-        """
+            {
+              "packageVersion": "\(packageVersion)",
+              "repository": "FluidInference/speaker-diarization-coreml",
+              "revision": "\(revision)",
+              "expectedBytes": \(expectedBytes),
+              "installedBytes": 4096,
+              "installDate": 773190000.0,
+              "licenseIdentifier": "cc-by-4.0"
+            }
+            """
         try Data(manifest.utf8).write(
             to: directory.appending(path: "luxel-model-manifest.json")
         )
@@ -175,14 +175,14 @@ struct SpeakerDiarizationModelStoreTests {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try Data([0x01]).write(to: directory.appending(path: "model.bin"))
         let manifest = """
-        {
-          "packageVersion": "0.15.6",
-          "repository": "FluidInference/speaker-diarization-coreml",
-          "revision": "test-revision",
-          "installedBytes": 1,
-          "installDate": 773190000.0
-        }
-        """
+            {
+              "packageVersion": "0.15.6",
+              "repository": "FluidInference/speaker-diarization-coreml",
+              "revision": "test-revision",
+              "installedBytes": 1,
+              "installDate": 773190000.0
+            }
+            """
         try Data(manifest.utf8).write(to: directory.appending(path: "luxel-model-manifest.json"))
 
         try await store.removeModel()
@@ -243,10 +243,11 @@ struct BundledSpeakerDiarizationTests {
             path: "Tests/LuxelCoreTests/Fixtures/VoiceDetection/speech-16k-mono.wav"
         )
 
-        let output = try await diarizer.diarize(SpeakerDiarizationRequest(
-            audioURL: speechURL,
-            modelRevision: FluidAudioSpeakerDiarizationModelStore.modelRevision
-        ))
+        let output = try await diarizer.diarize(
+            SpeakerDiarizationRequest(
+                audioURL: speechURL,
+                modelRevision: FluidAudioSpeakerDiarizationModelStore.modelRevision
+            ))
 
         #expect(!output.segments.isEmpty)
         #expect(Set(output.segments.map(\.speakerID)) == ["speaker-0"])

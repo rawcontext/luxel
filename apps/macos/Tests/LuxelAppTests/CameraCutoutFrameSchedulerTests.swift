@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import LuxelApp
 
 @Suite("Camera Cutout frame scheduler")

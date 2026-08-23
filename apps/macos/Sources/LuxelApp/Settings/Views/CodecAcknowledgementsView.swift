@@ -152,10 +152,11 @@ struct AcknowledgementBlock: Identifiable {
         // The top-of-file component list uses "1. libvpx — ..." entries; body
         // text such as license clauses keeps its own numbering as paragraphs.
         if let dotIndex = line.firstIndex(of: "."),
-           line.distance(from: line.startIndex, to: dotIndex) <= 2,
-           !line[line.startIndex..<dotIndex].isEmpty,
-           line[line.startIndex..<dotIndex].allSatisfy(\.isNumber),
-           line.contains(" — ") {
+            line.distance(from: line.startIndex, to: dotIndex) <= 2,
+            !line[line.startIndex..<dotIndex].isEmpty,
+            line[line.startIndex..<dotIndex].allSatisfy(\.isNumber),
+            line.contains(" — ")
+        {
             let itemStart = line.index(dotIndex, offsetBy: 1)
             return String(line[itemStart...]).trimmingCharacters(in: .whitespaces)
         }
@@ -186,8 +187,8 @@ struct AcknowledgementBlock: Identifiable {
 enum CodecAcknowledgementsResource {
     static func bundledText(bundle: Bundle = .main) -> String {
         guard let url = bundle.url(forResource: "ThirdPartyLicenses", withExtension: "md"),
-              let text = try? String(contentsOf: url, encoding: .utf8),
-              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let text = try? String(contentsOf: url, encoding: .utf8),
+            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else {
             return LuxelLocalization.string(
                 "acknowledgements.unavailable",

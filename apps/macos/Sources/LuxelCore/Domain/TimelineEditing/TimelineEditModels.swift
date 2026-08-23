@@ -20,8 +20,8 @@ public struct TimelineCut: Codable, Equatable, Identifiable, Sendable {
     ) throws {
         let normalizedID = id.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedID.isEmpty,
-              sourceRange.start.isFinite,
-              sourceRange.end.isFinite
+            sourceRange.start.isFinite,
+            sourceRange.end.isFinite
         else {
             throw TimelineEditingError.invalidCut
         }
@@ -109,7 +109,7 @@ public struct TimelineEditPlan: Codable, Equatable, Sendable {
             speed: .normal
         )
         guard let retainedDuration = try? mapper.unscaledOutputDuration,
-              retainedDuration >= minimumRetainedDuration
+            retainedDuration >= minimumRetainedDuration
         else {
             throw TimelineEditingError.insufficientRetainedDuration
         }
@@ -256,7 +256,7 @@ public struct EditedTimelineMapper: Equatable, Sendable {
         }
 
         guard let last = segments.last,
-              abs(unscaledTime - (last.outputStart + last.sourceRange.duration)) < 0.000_001
+            abs(unscaledTime - (last.outputStart + last.sourceRange.duration)) < 0.000_001
         else {
             return nil
         }

@@ -54,7 +54,8 @@ public func testSustainedSpeechEvents(
 
 @discardableResult
 public func createTestVoiceDetectionModelDirectory(at root: URL) throws -> URL {
-    let directory = root
+    let directory =
+        root
         .appending(path: "Models/voice-activity-detection")
         .appending(path: BundledVoiceActivityModelLocator.modelDirectoryName)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

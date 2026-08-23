@@ -277,7 +277,8 @@ extension ZoomPanModelTests {
     }
 
     func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws
-    -> CursorSample {
+        -> CursorSample
+    {
         try CursorSample(
             time: time,
             position: CursorPoint(x: xCoordinate, y: yCoordinate),

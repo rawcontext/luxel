@@ -162,15 +162,15 @@ struct CodecComplianceModelTests {
     @Test("license ledger markdown parser reads structured dependency entries")
     func licenseLedgerMarkdownParserReadsStructuredDependencyEntries() throws {
         let markdown = """
-      # Third-Party Licenses
+            # Third-Party Licenses
 
-      ## Dependency: libvpx
-      Name: libvpx
-      License: BSD-3-Clause
-      Copyright: Copyright 2026 The libvpx authors
-      License Text:
-      Redistribution and use in source and binary forms are permitted.
-      """
+            ## Dependency: libvpx
+            Name: libvpx
+            License: BSD-3-Clause
+            Copyright: Copyright 2026 The libvpx authors
+            License Text:
+            Redistribution and use in source and binary forms are permitted.
+            """
 
         let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
 
@@ -190,17 +190,17 @@ struct CodecComplianceModelTests {
     @Test("license ledger markdown parser stops dependency text at nondependency headings")
     func licenseLedgerMarkdownParserStopsDependencyTextAtNondependencyHeadings() throws {
         let markdown = """
-      ## Dependency: libvpx
-      Name: libvpx
-      License: BSD-3-Clause
-      Copyright: Copyright 2026 The libvpx authors
-      License Text:
-      Redistribution and use in source and binary forms are permitted.
+            ## Dependency: libvpx
+            Name: libvpx
+            License: BSD-3-Clause
+            Copyright: Copyright 2026 The libvpx authors
+            License Text:
+            Redistribution and use in source and binary forms are permitted.
 
-      ## Swift Argument Parser
+            ## Swift Argument Parser
 
-      This section is not a codec dependency.
-      """
+            This section is not a codec dependency.
+            """
 
         let ledger = try CodecLicenseLedgerMarkdownParser().parse(markdown)
 
@@ -214,13 +214,13 @@ extension CodecComplianceModelTests {
     @Test("license ledger markdown parser rejects unknown licenses")
     func licenseLedgerMarkdownParserRejectsUnknownLicenses() {
         let markdown = """
-      ## Dependency: forbidden
-      Name: Forbidden Codec
-      License: GPL-ish
-      Copyright: Copyright 2026 Example
-      License Text:
-      Example license text.
-      """
+            ## Dependency: forbidden
+            Name: Forbidden Codec
+            License: GPL-ish
+            Copyright: Copyright 2026 Example
+            License Text:
+            Example license text.
+            """
 
         #expect(
             throws: CodecLicenseLedgerMarkdownParserError.unknownLicense(
@@ -235,13 +235,13 @@ extension CodecComplianceModelTests {
     @Test("license ledger markdown parser requires license text")
     func licenseLedgerMarkdownParserRequiresLicenseText() {
         let markdown = """
-      ## Dependency: libopus
-      Name: libopus
-      License: BSD-3-Clause
-      Copyright: Copyright 2026 The Opus authors
-      License Text:
+            ## Dependency: libopus
+            Name: libopus
+            License: BSD-3-Clause
+            Copyright: Copyright 2026 The Opus authors
+            License Text:
 
-      """
+            """
 
         #expect(
             throws: CodecLicenseLedgerMarkdownParserError.missingLicenseText(

@@ -22,9 +22,11 @@ struct AnimatedFrameSchedule: Equatable, Sendable {
         )
 
         frameTimes = indices.compactMap { index in
-            guard let sourceTime = mapper.sourceTime(
-                forOutputTime: Double(index) / requestedFrameRate
-            ) else {
+            guard
+                let sourceTime = mapper.sourceTime(
+                    forOutputTime: Double(index) / requestedFrameRate
+                )
+            else {
                 return nil
             }
             return CMTime(
@@ -37,7 +39,8 @@ struct AnimatedFrameSchedule: Equatable, Sendable {
 }
 
 func animatedFrameSchedule(for request: ExportRequest, asset: AVURLAsset) async
--> AnimatedFrameSchedule {
+    -> AnimatedFrameSchedule
+{
     let sourceFrameRate = await sourceFrameRate(
         for: asset, fallback: request.frameRate.framesPerSecond)
     return AnimatedFrameSchedule(request: request, sourceFrameRate: sourceFrameRate)
@@ -45,9 +48,9 @@ func animatedFrameSchedule(for request: ExportRequest, asset: AVURLAsset) async
 
 private func sourceFrameRate(for asset: AVURLAsset, fallback: Int) async -> Double {
     guard let videoTrack = try? await asset.loadTracks(withMediaType: .video).first,
-          let nominalFrameRate = try? await videoTrack.load(.nominalFrameRate),
-          nominalFrameRate.isFinite,
-          nominalFrameRate > 0
+        let nominalFrameRate = try? await videoTrack.load(.nominalFrameRate),
+        nominalFrameRate.isFinite,
+        nominalFrameRate > 0
     else {
         return Double(fallback)
     }

@@ -63,8 +63,8 @@ extension LuxelEditorModel {
 
     var activeKeystrokeChips: [KeystrokeChip] {
         guard let keystrokeTimeline,
-              let keystrokeOptions,
-              let chips = try? KeystrokeChipPlanner(renderOptions: keystrokeOptions)
+            let keystrokeOptions,
+            let chips = try? KeystrokeChipPlanner(renderOptions: keystrokeOptions)
                 .plannedChips(for: keystrokeTimeline)
         else {
             return []
@@ -205,9 +205,10 @@ extension LuxelEditorModel {
     }
 
     func rebuildTranscriptWordCache() {
-        cachedTranscriptWords = transcript.flatMap {
-            try? TranscriptWordIndex(transcript: $0).words
-        } ?? []
+        cachedTranscriptWords =
+            transcript.flatMap {
+                try? TranscriptWordIndex(transcript: $0).words
+            } ?? []
         refreshVisibleTranscriptWordCache()
     }
 
@@ -273,8 +274,8 @@ extension LuxelEditorModel {
 
     var canNavigateToOlderRecording: Bool {
         guard !isExporting,
-              !isLoadingSource,
-              let recordingNavigationIndex
+            !isLoadingSource,
+            let recordingNavigationIndex
         else {
             return false
         }
@@ -284,8 +285,8 @@ extension LuxelEditorModel {
 
     var canNavigateToNewerRecording: Bool {
         guard !isExporting,
-              !isLoadingSource,
-              let recordingNavigationIndex
+            !isLoadingSource,
+            let recordingNavigationIndex
         else {
             return false
         }

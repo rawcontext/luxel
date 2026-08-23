@@ -11,7 +11,8 @@ public enum VoiceDetectionNotificationIdentifiers {
 
 public struct UserNotificationsSpeechPromptNotifier:
     VoiceRecordingPromptNotifying,
-    @unchecked Sendable {
+    @unchecked Sendable
+{
     private let center: (any VoiceRecordingPromptNotificationCenter)?
 
     public init(notificationCenter: UNUserNotificationCenter? = nil) {
@@ -39,9 +40,11 @@ public struct UserNotificationsSpeechPromptNotifier:
 
     @MainActor
     public func openSettings() {
-        guard let url = URL(
-            string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension"
-        ) else {
+        guard
+            let url = URL(
+                string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension"
+            )
+        else {
             return
         }
         NSWorkspace.shared.open(url)
@@ -103,7 +106,8 @@ protocol VoiceRecordingPromptNotificationCenter: Sendable {
 
 private struct UserNotificationCenterPromptClient:
     VoiceRecordingPromptNotificationCenter,
-    @unchecked Sendable {
+    @unchecked Sendable
+{
     let center: UNUserNotificationCenter
 
     func authorizationStatus() async -> VoiceDetectionAuthorizationStatus {
@@ -133,8 +137,8 @@ private struct UserNotificationCenterPromptClient:
     }
 }
 
-private extension UNAuthorizationStatus {
-    var voiceDetectionStatus: VoiceDetectionAuthorizationStatus {
+extension UNAuthorizationStatus {
+    fileprivate var voiceDetectionStatus: VoiceDetectionAuthorizationStatus {
         switch self {
         case .notDetermined:
             .notDetermined

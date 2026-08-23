@@ -171,7 +171,7 @@ public actor AV1MP4Muxer: CodecContainerMuxer {
             return nil
         }
         guard let sampleRate = configuration.audioSampleRate,
-              let channelCount = configuration.audioChannelCount
+            let channelCount = configuration.audioChannelCount
         else {
             throw AV1CodecError.muxerFailure("AV1 muxer requires audio stream metadata.")
         }

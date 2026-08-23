@@ -11,7 +11,8 @@ struct CropperQuickRecordingConfiguration {
         self.presets = presets
         self.activePresetID =
             if let activePresetID,
-               presets.contains(where: { $0.id == activePresetID }) {
+                presets.contains(where: { $0.id == activePresetID })
+            {
                 activePresetID
             } else {
                 nil

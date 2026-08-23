@@ -34,7 +34,8 @@ func packageRootURL() throws -> URL {
 }
 
 func fakeVideoPacket(index: Int, byteCount: Int, keyframeInterval: Int) throws
--> EncodedPacket {
+    -> EncodedPacket
+{
     try EncodedPacket(
         data: Data(repeating: UInt8(index % 255), count: byteCount),
         presentationTime: Double(index) / 30,
@@ -162,19 +163,21 @@ func runFFmpegPSNR(
     encodedURL: URL,
     pixelSize: PixelSize
 ) throws -> String {
-    let result = try runTestProcess(executable: ffmpeg, arguments: [
-        "-hide_banner",
-        "-nostats",
-        "-f", "rawvideo",
-        "-pixel_format", "yuv420p",
-        "-video_size", "\(pixelSize.width)x\(pixelSize.height)",
-        "-framerate", "30",
-        "-i", referenceURL.path,
-        "-i", encodedURL.path,
-        "-filter_complex", "[0:v][1:v]psnr",
-        "-f", "null",
-        "-"
-    ])
+    let result = try runTestProcess(
+        executable: ffmpeg,
+        arguments: [
+            "-hide_banner",
+            "-nostats",
+            "-f", "rawvideo",
+            "-pixel_format", "yuv420p",
+            "-video_size", "\(pixelSize.width)x\(pixelSize.height)",
+            "-framerate", "30",
+            "-i", referenceURL.path,
+            "-i", encodedURL.path,
+            "-filter_complex", "[0:v][1:v]psnr",
+            "-f", "null",
+            "-"
+        ])
     #expect(result.terminationStatus == 0)
     return result.output + "\n" + result.error
 }

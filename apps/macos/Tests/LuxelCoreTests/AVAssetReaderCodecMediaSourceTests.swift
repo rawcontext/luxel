@@ -106,8 +106,10 @@ struct AVAssetReaderCodecMediaSourceTests {
         #expect(frames.count == 2)
         #expect(!chunks.isEmpty)
         #expect(abs(frames[0].presentationTime) < 0.02)
-        #expect(zip(frames, frames.dropFirst()).allSatisfy { $0.presentationTime < $1.presentationTime })
-        #expect(zip(chunks, chunks.dropFirst()).allSatisfy { $0.presentationTime <= $1.presentationTime })
+        #expect(
+            zip(frames, frames.dropFirst()).allSatisfy { $0.presentationTime < $1.presentationTime })
+        #expect(
+            zip(chunks, chunks.dropFirst()).allSatisfy { $0.presentationTime <= $1.presentationTime })
     }
 
     @Test("source reads full zero-based prepared PCM instead of original audio")

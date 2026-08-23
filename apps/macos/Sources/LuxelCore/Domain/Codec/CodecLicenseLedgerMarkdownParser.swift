@@ -86,7 +86,8 @@ private struct CodecLicenseLedgerParseState {
                 dependencyID: dependencyID
             )
         }
-        let licenseText = licenseTextLines
+        let licenseText =
+            licenseTextLines
             .joined(separator: "\n")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !licenseText.isBlank else {

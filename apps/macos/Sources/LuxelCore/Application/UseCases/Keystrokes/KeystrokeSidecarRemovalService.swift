@@ -30,7 +30,7 @@ public struct KeystrokeSidecarRemovalService: Sendable {
         let siblingURL = KeystrokeSidecarDocument.sidecarURL(nextTo: mediaURL)
 
         guard let bundle,
-              let bundleSidecarURL = bundle.sidecarURL(for: .keystrokes)
+            let bundleSidecarURL = bundle.sidecarURL(for: .keystrokes)
         else {
             try removeIfPresent(siblingURL)
             return KeystrokeSidecarRemovalResult(updatedBundleManifest: nil)

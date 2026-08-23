@@ -77,7 +77,8 @@ struct LocalizationTests {
             packageRoot
             .appending(path: "Configuration/Luxel/Localizations")
         let englishData = try Data(
-            contentsOf: localizationsURL
+            contentsOf:
+                localizationsURL
                 .appending(path: "en.lproj")
                 .appending(path: "InfoPlist.strings")
         )
@@ -146,8 +147,8 @@ struct LocalizationTests {
 
                         let key = String(source[matchRange])
                         guard !key.contains(#"\("#),
-                              !nonLocalizedLiteralAllowlist.contains(key),
-                              !catalog.strings.keys.contains(key)
+                            !nonLocalizedLiteralAllowlist.contains(key),
+                            !catalog.strings.keys.contains(key)
                         else {
                             continue
                         }

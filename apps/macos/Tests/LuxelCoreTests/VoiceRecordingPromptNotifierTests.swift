@@ -1,7 +1,8 @@
 import Foundation
-@testable import LuxelCore
 import Testing
 @preconcurrency import UserNotifications
+
+@testable import LuxelCore
 
 @Suite("Speech prompt notifications")
 struct VoiceRecordingPromptNotificationTests {
@@ -27,23 +28,27 @@ struct VoiceRecordingPromptNotificationTests {
         try await notifier.postPrompt()
 
         let requests = center.requestSnapshots
-        #expect(requests.map(\.identifier) == [
-            VoiceDetectionNotificationIdentifiers.request,
-            VoiceDetectionNotificationIdentifiers.request
-        ])
-        #expect(requests.last?.categoryIdentifier
-                    == VoiceDetectionNotificationIdentifiers.category)
+        #expect(
+            requests.map(\.identifier) == [
+                VoiceDetectionNotificationIdentifiers.request,
+                VoiceDetectionNotificationIdentifiers.request
+            ])
+        #expect(
+            requests.last?.categoryIdentifier
+                == VoiceDetectionNotificationIdentifiers.category)
         #expect(requests.last?.title.isEmpty == false)
         #expect(requests.last?.body.isEmpty == false)
         #expect(requests.last?.hasSound == true)
-        #expect(center.removedPendingIdentifiers == [
-            [VoiceDetectionNotificationIdentifiers.request],
-            [VoiceDetectionNotificationIdentifiers.request]
-        ])
-        #expect(center.removedDeliveredIdentifiers == [
-            [VoiceDetectionNotificationIdentifiers.request],
-            [VoiceDetectionNotificationIdentifiers.request]
-        ])
+        #expect(
+            center.removedPendingIdentifiers == [
+                [VoiceDetectionNotificationIdentifiers.request],
+                [VoiceDetectionNotificationIdentifiers.request]
+            ])
+        #expect(
+            center.removedDeliveredIdentifiers == [
+                [VoiceDetectionNotificationIdentifiers.request],
+                [VoiceDetectionNotificationIdentifiers.request]
+            ])
     }
 
     @Test("removal cannot affect unrelated notifications")
@@ -53,16 +58,19 @@ struct VoiceRecordingPromptNotificationTests {
 
         await notifier.removePrompt()
 
-        #expect(center.removedPendingIdentifiers
-                    == [[VoiceDetectionNotificationIdentifiers.request]])
-        #expect(center.removedDeliveredIdentifiers
-                    == [[VoiceDetectionNotificationIdentifiers.request]])
+        #expect(
+            center.removedPendingIdentifiers
+                == [[VoiceDetectionNotificationIdentifiers.request]])
+        #expect(
+            center.removedDeliveredIdentifiers
+                == [[VoiceDetectionNotificationIdentifiers.request]])
     }
 }
 
 private final class PromptNotificationCenterSpy:
     VoiceRecordingPromptNotificationCenter,
-    @unchecked Sendable {
+    @unchecked Sendable
+{
     let currentAuthorization: VoiceDetectionAuthorizationStatus
     let requestedAuthorization: VoiceDetectionAuthorizationStatus
     private let lock = NSLock()

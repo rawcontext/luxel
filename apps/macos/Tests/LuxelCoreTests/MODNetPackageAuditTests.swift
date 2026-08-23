@@ -44,7 +44,8 @@ struct MODNetPackageAuditTests {
         process.environment = ProcessInfo.processInfo.environment.merging(
             [
                 "LUXEL_TEST_MODE": mode,
-                "LUXEL_TEST_MODEL_DIR": packageRoot
+                "LUXEL_TEST_MODEL_DIR":
+                    packageRoot
                     .appending(path: "Vendor/Models/modnet").path,
                 "PATH": "\(binDirectory.path):\(ProcessInfo.processInfo.environment["PATH"] ?? "")",
                 "TMPDIR": temporaryRoot.path

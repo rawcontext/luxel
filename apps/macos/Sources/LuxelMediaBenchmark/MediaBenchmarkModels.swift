@@ -185,15 +185,15 @@ enum MediaBenchmarkError: LocalizedError {
         switch self {
         case .usage:
             "Usage: luxel-media-benchmark --fixture <path> --output <path> [--runs 1...5]"
-        case let .invalidRunCount(value):
+        case .invalidRunCount(let value):
             "Invalid run count: \(value)"
-        case let .missingFixture(path):
+        case .missingFixture(let path):
             "Media benchmark fixture is missing: \(path)"
-        case let .fixtureChecksumMismatch(actual):
+        case .fixtureChecksumMismatch(let actual):
             "Media benchmark fixture checksum mismatch: \(actual)"
-        case let .invalidOutput(message):
+        case .invalidOutput(let message):
             message
-        case let .performanceFloorMissed(cases):
+        case .performanceFloorMissed(let cases):
             "Media benchmark performance floor missed: \(cases)"
         }
     }

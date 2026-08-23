@@ -15,7 +15,7 @@ extension LuxelStatusItemController {
             await prepareMenuForPopover()
 
             guard !Task.isCancelled,
-                  let button = statusItem.button
+                let button = statusItem.button
             else {
                 pendingPopoverOpenTask = nil
                 return
@@ -47,9 +47,9 @@ extension LuxelStatusItemController {
         Task { @MainActor [weak self, weak panel] in
             await Task.yield()
             guard let self,
-                  let panel,
-                  panel.isVisible,
-                  let button = self.statusItem.button
+                let panel,
+                panel.isVisible,
+                let button = self.statusItem.button
             else {
                 return
             }
@@ -172,8 +172,8 @@ extension LuxelStatusItemController {
         let convertedFrame = window.convertToScreen(button.convert(button.bounds, to: nil))
         let accessibilityFrame = button.accessibilityFrame()
         guard accessibilityFrame.width > 0,
-              accessibilityFrame.height > 0,
-              accessibilityFrame.minX.isFinite
+            accessibilityFrame.height > 0,
+            accessibilityFrame.minX.isFinite
         else {
             return convertedFrame
         }
@@ -190,9 +190,9 @@ extension LuxelStatusItemController {
         guard !isHandlingStatusItemStop else {
             Self.logger.info(
                 """
-        Status item stop ignored reason=stop-already-handling \
-        recording_state=\(self.model.recordingState.loggingDescription, privacy: .public)
-        """
+                Status item stop ignored reason=stop-already-handling \
+                recording_state=\(self.model.recordingState.loggingDescription, privacy: .public)
+                """
             )
             return
         }
@@ -201,9 +201,9 @@ extension LuxelStatusItemController {
         closePopover()
         Self.logger.info(
             """
-      Status item stop began recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
-      active_recording=\(self.model.recordingState.activeRecording?.name ?? "none", privacy: .private)
-      """
+            Status item stop began recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+            active_recording=\(self.model.recordingState.activeRecording?.name ?? "none", privacy: .private)
+            """
         )
 
         statusItemStopTask?.cancel()
@@ -236,7 +236,8 @@ extension LuxelStatusItemController {
             }
 
             let recordingState = self.model.recordingState.loggingDescription
-            Self.logger.info("Status item stop task started recording_state=\(recordingState, privacy: .public)")
+            Self.logger.info(
+                "Status item stop task started recording_state=\(recordingState, privacy: .public)")
             let stopAction = await model.stopRecording()
             guard !Task.isCancelled else {
                 Self.logger.info("Status item stop task cancelled after stop returned")
@@ -245,11 +246,11 @@ extension LuxelStatusItemController {
 
             Self.logger.info(
                 """
-        Status item stop task completed action=\(stopAction?.loggingDescription ?? "none", privacy: .public) \
-        recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
-        has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
-        error_message=\(self.model.recordingActionErrorMessage ?? "none", privacy: .public)
-        """
+                Status item stop task completed action=\(stopAction?.loggingDescription ?? "none", privacy: .public) \
+                recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+                has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
+                error_message=\(self.model.recordingActionErrorMessage ?? "none", privacy: .public)
+                """
             )
             handleStatusItemStopAction(stopAction)
         }
@@ -289,9 +290,9 @@ extension LuxelStatusItemController {
         let recordingName = model.recordingState.activeRecording?.name ?? "none"
         Self.logger.fault(
             """
-      Status item stop watchdog terminating app recording_state=\(recordingState, privacy: .public) \
-      active_recording=\(recordingName, privacy: .private)
-      """
+            Status item stop watchdog terminating app recording_state=\(recordingState, privacy: .public) \
+            active_recording=\(recordingName, privacy: .private)
+            """
         )
         NSApplication.shared.terminate(nil)
     }

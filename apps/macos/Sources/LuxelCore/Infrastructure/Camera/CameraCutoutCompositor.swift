@@ -224,7 +224,7 @@ public final class CameraCutoutCompositor: @unchecked Sendable {
     }
 }
 
-private extension CameraCutoutCompositor {
+extension CameraCutoutCompositor {
     private static func oneFrameDelayMatte(
         previous: CVPixelBuffer?,
         current: CVPixelBuffer,
@@ -273,8 +273,8 @@ private extension CameraCutoutCompositor {
         _ next: PendingPortraitFrame
     ) -> Bool {
         guard current.generation == next.generation,
-              current.timestamp.isValid,
-              next.timestamp.isValid
+            current.timestamp.isValid,
+            next.timestamp.isValid
         else {
             return false
         }

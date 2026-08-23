@@ -11,7 +11,8 @@ private enum CommandLineExportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingInput(let path): "Input file not found: \(path)"
-        case .outputExists(let path): "Output file already exists: \(path). Use --overwrite to replace it."
+        case .outputExists(let path):
+            "Output file already exists: \(path). Use --overwrite to replace it."
         case .outputIsDirectory(let path): "Output path is a directory: \(path)"
         case .unsupportedFormat(let message), .invalidOptions(let message): message
         }
@@ -211,7 +212,7 @@ extension LuxelMenuModel {
     private func validateCommandLineInput(_ url: URL) throws {
         var isDirectory = ObjCBool(false)
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
-              !isDirectory.boolValue
+            !isDirectory.boolValue
         else {
             throw CommandLineExportError.missingInput(url.path)
         }

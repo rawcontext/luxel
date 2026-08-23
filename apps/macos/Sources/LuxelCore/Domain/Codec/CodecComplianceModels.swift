@@ -92,16 +92,17 @@ public struct CodecDependency: Codable, Equatable, Identifiable, Sendable {
         )
     ]
 
-    public static let plannedNativeCodecStack = bundledNativeCodecStack + [
-        CodecDependency(
-            id: "libaom",
-            name: "libaom",
-            role: "Fallback AV1 video encode",
-            license: .bsd2Clause,
-            patentGrant: "AOM Patent License 1.0",
-            isFallbackOnly: true
-        )
-    ]
+    public static let plannedNativeCodecStack =
+        bundledNativeCodecStack + [
+            CodecDependency(
+                id: "libaom",
+                name: "libaom",
+                role: "Fallback AV1 video encode",
+                license: .bsd2Clause,
+                patentGrant: "AOM Patent License 1.0",
+                isFallbackOnly: true
+            )
+        ]
 
 }
 

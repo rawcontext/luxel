@@ -169,7 +169,7 @@ extension LuxelStatusItemController {
     func recoverInterruptedRecording() {
         Task { @MainActor [weak self] in
             guard let self,
-                  let recording = await model.recoverInterruptedRecording()
+                let recording = await model.recoverInterruptedRecording()
             else {
                 return
             }
@@ -300,7 +300,7 @@ extension LuxelStatusItemController {
 
     func refreshRecordingAudioLevelMonitoring() {
         guard let activeRecording = model.recordingState.activeRecording,
-              activeRecording.options.audio.capturesAudio
+            activeRecording.options.audio.capturesAudio
         else {
             stopRecordingAudioLevelMonitoring()
             return
@@ -336,12 +336,12 @@ extension LuxelStatusItemController {
     @objc func handleStatusItemClick() {
         Self.logger.info(
             """
-      Status item clicked has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
-      recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
-      is_handling_stop=\(self.isHandlingStatusItemStop, privacy: .public) \
-      button_configured=\(self.isStatusItemButtonConfigured, privacy: .public) \
-      popover_shown=\(self.isPopoverShown, privacy: .public)
-      """
+            Status item clicked has_active_recording=\(self.model.hasActiveRecording, privacy: .public) \
+            recording_state=\(self.model.recordingState.loggingDescription, privacy: .public) \
+            is_handling_stop=\(self.isHandlingStatusItemStop, privacy: .public) \
+            button_configured=\(self.isStatusItemButtonConfigured, privacy: .public) \
+            popover_shown=\(self.isPopoverShown, privacy: .public)
+            """
         )
 
         if NSApp.currentEvent?.type == .rightMouseUp {
@@ -364,7 +364,7 @@ extension LuxelStatusItemController {
 extension LuxelStatusItemController: NSWindowDelegate {
     func windowDidResignKey(_ notification: Notification) {
         guard let panel = notification.object as? NSPanel,
-              panel === menuPanel
+            panel === menuPanel
         else {
             return
         }

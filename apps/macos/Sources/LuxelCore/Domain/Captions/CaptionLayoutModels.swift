@@ -53,13 +53,13 @@ public struct CaptionCueBuilderConfiguration: Equatable, Sendable {
         speechPauseThreshold: TimeInterval = 0.6
     ) throws {
         guard maxCharactersPerLine > 0,
-              maxLines > 0,
-              minimumDuration > 0,
-              minimumDuration.isFinite,
-              maximumDuration >= minimumDuration,
-              maximumDuration.isFinite,
-              speechPauseThreshold >= 0,
-              speechPauseThreshold.isFinite
+            maxLines > 0,
+            minimumDuration > 0,
+            minimumDuration.isFinite,
+            maximumDuration >= minimumDuration,
+            maximumDuration.isFinite,
+            speechPauseThreshold >= 0,
+            speechPauseThreshold.isFinite
         else {
             throw CaptionModelError.invalidCueBuilderConfiguration
         }

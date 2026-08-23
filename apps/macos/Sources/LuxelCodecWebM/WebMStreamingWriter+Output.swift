@@ -39,7 +39,8 @@ extension WebMStreamingWriter {
         if var cluster = currentCluster {
             let relativeTimecode = packetTimecode - cluster.timecode
             if relativeTimecode >= Self.clusterDurationLimit
-                || cluster.blocks.count + simpleBlockPayloadSize(packet: packet) > Self.clusterPayloadLimit {
+                || cluster.blocks.count + simpleBlockPayloadSize(packet: packet) > Self.clusterPayloadLimit
+            {
                 try flushCurrentCluster()
                 try startCluster(timecode: packetTimecode, packet: packet)
                 return

@@ -26,7 +26,8 @@ struct LuxelEditorTranscriptPerformanceTests {
             for index in stride(from: 0, to: 18_000, by: 10) {
                 model.currentPlaybackTime = Double(index) * 0.3 + 0.1
                 if model.activeTranscriptSpanID != nil,
-                   model.activeTranscriptTurnID != nil {
+                    model.activeTranscriptTurnID != nil
+                {
                     activeWordCount += 1
                 }
             }

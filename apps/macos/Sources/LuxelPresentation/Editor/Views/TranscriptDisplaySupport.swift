@@ -93,7 +93,8 @@ struct TranscriptDisplayPlan {
             while let range = searchableTurn.text.range(of: normalizedQuery, range: searchRange) {
                 let spanIDs = searchableTurn.spanIDs(overlapping: range)
                 if let targetSpanID = spanIDs.first,
-                   let chunkID = chunkIDBySpanID[targetSpanID] {
+                    let chunkID = chunkIDBySpanID[targetSpanID]
+                {
                     matches.append(
                         TranscriptSearchMatch(
                             id: "\(searchTurn.turn.id)-match-\(matchIndex)",

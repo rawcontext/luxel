@@ -48,7 +48,8 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
             (sessionDidResignActiveNotification, sessionDidBecomeActiveNotification)
         (self.displayChangeNotification, self.applicationDidBecomeActiveNotification) =
             (displayChangeNotification, applicationDidBecomeActiveNotification)
-        self.isOnBatteryPower = isOnBatteryPower; self.startPowerSourceObserver = startPowerSourceObserver
+        self.isOnBatteryPower = isOnBatteryPower
+        self.startPowerSourceObserver = startPowerSourceObserver
     }
 
     public var currentPauseReasons: Set<ReplayBufferPauseReason> {
@@ -103,7 +104,9 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
             }
 
             continuation.onTermination = { _ in
-                registrations.forEach { $0.cancel() }
+                for registration in registrations {
+                    registration.cancel()
+                }
                 cancelPowerSourceObserver()
             }
         }

@@ -1,6 +1,7 @@
 import Foundation
 import LuxelCore
 import Testing
+
 @Suite("Codec export pipeline")
 struct CodecExportPipelineTests {
     @Test("pipeline writes encoded packets before finalizing")

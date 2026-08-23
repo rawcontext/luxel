@@ -92,14 +92,14 @@ struct CaptionSidecarPersistenceServiceTests {
     func sidecarDocumentRejectsUnsupportedSchemaVersions() throws {
         let data = Data(
             """
-      {
-        "schemaVersion": 2,
-        "track": {
-          "cues": [],
-          "language": "en"
-        }
-      }
-      """.utf8)
+            {
+              "schemaVersion": 2,
+              "track": {
+                "cues": [],
+                "language": "en"
+              }
+            }
+            """.utf8)
 
         #expect(throws: CaptionModelError.unsupportedSidecarSchemaVersion) {
             _ = try JSONDecoder().decode(CaptionSidecarDocument.self, from: data)

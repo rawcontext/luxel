@@ -94,9 +94,11 @@ func deepFilterNetApplyFiltering(
                     (frame * shape.filteredBins * shape.order + bin * shape.order + tap) * 2
                 let coefficientReal = coefficients[coefficientIndex]
                 let coefficientImaginary = coefficients[coefficientIndex + 1]
-                realSum += real[sourceIndex] * coefficientReal
+                realSum +=
+                    real[sourceIndex] * coefficientReal
                     - imaginary[sourceIndex] * coefficientImaginary
-                imaginarySum += imaginary[sourceIndex] * coefficientReal
+                imaginarySum +=
+                    imaginary[sourceIndex] * coefficientReal
                     + real[sourceIndex] * coefficientImaginary
             }
             outputReal[frame * shape.filteredBins + bin] = realSum

@@ -154,7 +154,7 @@ extension LuxelMenu {
                 model.settings.recordSystemAudio = true
                 model.saveSettings()
             case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch,
-                 .pausedByMacOS, .blocked:
+                .pausedByMacOS, .blocked:
                 presentPermissionPrompt(.systemAudio)
             }
         }
@@ -341,7 +341,7 @@ extension LuxelMenu {
             model.settings.recordSystemAudio = true
             model.saveSettings()
         case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch,
-             .pausedByMacOS, .blocked:
+            .pausedByMacOS, .blocked:
             presentPermissionPrompt(.systemAudio)
         }
     }
@@ -355,7 +355,7 @@ extension LuxelMenu {
             model.settings.recordAudio = true
             model.saveSettings()
         case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch,
-             .pausedByMacOS, .blocked:
+            .pausedByMacOS, .blocked:
             presentPermissionPrompt(.microphone)
         }
     }
@@ -369,7 +369,7 @@ extension LuxelMenu {
                 await model.enableDefaultCameraSource()
             }
         case .checking, .needsGrant, .requestInProgress, .openSettings, .grantedNeedsRelaunch,
-             .pausedByMacOS, .blocked:
+            .pausedByMacOS, .blocked:
             presentPermissionPrompt(.camera)
         }
     }

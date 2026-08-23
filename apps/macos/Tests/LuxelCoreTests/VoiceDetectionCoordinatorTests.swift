@@ -1,7 +1,8 @@
 import Foundation
-@testable import LuxelCore
 import LuxelTestSupport
 import Testing
+
+@testable import LuxelCore
 
 @Suite("Voice detection coordination")
 struct VoiceDetectionCoordinatorTests {
@@ -11,13 +12,16 @@ struct VoiceDetectionCoordinatorTests {
         let notifier = VoiceRecordingPromptNotifierSpy()
         let coordinator = VoiceDetectionCoordinator(detector: detector, notifier: notifier)
 
-        #expect(await coordinator.reconcile(eligibility: eligible())
-                    == .listening(microphoneName: "Test Mic"))
+        #expect(
+            await coordinator.reconcile(eligibility: eligible())
+                == .listening(microphoneName: "Test Mic"))
         #expect(await detector.events == [.start("mic-1")])
 
-        #expect(await coordinator.reconcile(eligibility: eligible(
-            notificationPermission: .denied
-        )) == .notificationsRequired)
+        #expect(
+            await coordinator.reconcile(
+                eligibility: eligible(
+                    notificationPermission: .denied
+                )) == .notificationsRequired)
         #expect(await detector.events == [.start("mic-1"), .stop])
     }
 

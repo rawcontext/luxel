@@ -154,16 +154,16 @@ struct CaptionModelTests {
 
         #expect(
             text == """
-        1
-        00:00:01,200 --> 00:00:03,400
-        Hello
-        world
+                1
+                00:00:01,200 --> 00:00:03,400
+                Hello
+                world
 
-        2
-        01:01:01,005 --> 01:01:02,500
-        Done
+                2
+                01:01:01,005 --> 01:01:02,500
+                Done
 
-        """)
+                """)
     }
 
     @Test("VTT serializer emits webvtt header and dot milliseconds")
@@ -174,16 +174,16 @@ struct CaptionModelTests {
 
         #expect(
             text == """
-        WEBVTT
+                WEBVTT
 
-        00:00:01.200 --> 00:00:03.400
-        Hello
-        world
+                00:00:01.200 --> 00:00:03.400
+                Hello
+                world
 
-        01:01:01.005 --> 01:01:02.500
-        Done
+                01:01:01.005 --> 01:01:02.500
+                Done
 
-        """)
+                """)
     }
 
     @Test("plain text serializer emits cue text only")
@@ -194,12 +194,12 @@ struct CaptionModelTests {
 
         #expect(
             text == """
-        Hello
-        world
+                Hello
+                world
 
-        Done
+                Done
 
-        """)
+                """)
     }
 
     @Test("serializers handle empty tracks")

@@ -22,7 +22,7 @@ extension CameraPreviewPanelController {
         session.commitConfiguration()
 
         guard !session.inputs.isEmpty,
-              videoOutput == nil || session.outputs.contains(where: { $0 === videoOutput })
+            videoOutput == nil || session.outputs.contains(where: { $0 === videoOutput })
         else {
             throw CameraPreviewPanelError.cannotAddInput
         }
@@ -71,7 +71,8 @@ extension CameraPreviewPanelController {
         let size = Self.constrainedPanelSize(size, in: constraintRect)
 
         if let displayID,
-           let origin = panelOriginsByDisplayID[displayID] {
+            let origin = panelOriginsByDisplayID[displayID]
+        {
             return NSRect(
                 origin: Self.constrainedOrigin(origin, size: size, in: constraintRect),
                 size: size

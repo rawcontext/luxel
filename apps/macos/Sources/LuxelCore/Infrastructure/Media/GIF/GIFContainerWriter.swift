@@ -78,13 +78,13 @@ public struct GIFContainerWriter: Sendable {
     ) throws {
         for frame in frames {
             guard frame.rect.originX + frame.rect.width <= pixelSize.width,
-                  frame.rect.originY + frame.rect.height <= pixelSize.height
+                frame.rect.originY + frame.rect.height <= pixelSize.height
             else {
                 throw GIFContainerWriterError.frameRectOutOfBounds
             }
 
             guard Int(frame.transparentColorIndex) < paletteSize,
-                  frame.colorIndexes.allSatisfy({ Int($0) < paletteSize })
+                frame.colorIndexes.allSatisfy({ Int($0) < paletteSize })
             else {
                 throw GIFContainerWriterError.colorIndexOutOfPalette
             }

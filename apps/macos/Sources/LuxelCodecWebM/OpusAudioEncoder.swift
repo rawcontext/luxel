@@ -15,7 +15,7 @@ public actor OpusAudioEncoder: CodecAudioEncoder {
 
     public func prepare(_ configuration: CodecAudioEncoderConfiguration) async throws {
         guard configuration.sampleRate == Self.requiredSampleRate,
-              configuration.channelCount == Self.requiredChannelCount
+            configuration.channelCount == Self.requiredChannelCount
         else {
             throw WebMCodecError.invalidConfiguration(
                 "Opus expects 48 kHz stereo PCM from the codec media source.")

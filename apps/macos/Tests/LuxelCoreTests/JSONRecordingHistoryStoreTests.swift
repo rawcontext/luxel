@@ -62,12 +62,12 @@ struct JSONRecordingHistoryStoreTests {
         let fixture = try makeStore(
             payload: legacyHistoryPayload(
                 recordingJSON: """
-          {
-            "date": "1970-01-01T00:00:01Z",
-            "fileURL": "file:///tmp/legacy.mp4",
-            "name": "Legacy"
-          }
-        """
+                      {
+                        "date": "1970-01-01T00:00:01Z",
+                        "fileURL": "file:///tmp/legacy.mp4",
+                        "name": "Legacy"
+                      }
+                    """
             )
         )
         expectLegacyRecording(
@@ -82,15 +82,15 @@ struct JSONRecordingHistoryStoreTests {
         let fixture = try makeStore(
             payload: legacyHistoryPayload(
                 recordingJSON: """
-          {
-            "date": "1970-01-01T00:00:01Z",
-            "fileURL": "file:///tmp/legacy-kind.mp4",
-            "name": "Legacy Kind",
-            "options": {
-              "frameRate": 30
-            }
-          }
-        """
+                      {
+                        "date": "1970-01-01T00:00:01Z",
+                        "fileURL": "file:///tmp/legacy-kind.mp4",
+                        "name": "Legacy Kind",
+                        "options": {
+                          "frameRate": 30
+                        }
+                      }
+                    """
             )
         )
         expectLegacyRecording(
@@ -107,22 +107,22 @@ struct JSONRecordingHistoryStoreTests {
         let fixture = try makeStore(
             payload: legacyHistoryPayload(
                 recordingJSON: """
-          {
-            "date": "1970-01-01T00:00:01Z",
-            "fileURL": "file:///tmp/legacy.mp4",
-            "kind": "recording",
-            "name": "Legacy",
-            "options": {
-              "frameRate": 30
-            }
-          },
-          {
-            "date": "1970-01-01T00:00:02Z",
-            "fileURL": "file:///tmp/legacy.png",
-            "kind": "\(retiredKind)",
-            "name": "Legacy Still"
-          }
-        """
+                      {
+                        "date": "1970-01-01T00:00:01Z",
+                        "fileURL": "file:///tmp/legacy.mp4",
+                        "kind": "recording",
+                        "name": "Legacy",
+                        "options": {
+                          "frameRate": 30
+                        }
+                      },
+                      {
+                        "date": "1970-01-01T00:00:02Z",
+                        "fileURL": "file:///tmp/legacy.png",
+                        "kind": "\(retiredKind)",
+                        "name": "Legacy Still"
+                      }
+                    """
             )
         )
         expectLegacyRecording(

@@ -116,7 +116,7 @@ extension LuxelMenu {
 
     private func alignSelectedCaptureTarget(kind: CaptureTargetKind) {
         guard model.selectedCaptureTarget?.kind != kind,
-              let target = model.captureTargets.first(where: { $0.kind == kind })
+            let target = model.captureTargets.first(where: { $0.kind == kind })
         else {
             return
         }

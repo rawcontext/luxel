@@ -98,7 +98,9 @@ final class LuxelCropperPanelController {
     }
 
     func close() {
-        panels.forEach { $0.close() }
+        for panel in panels {
+            panel.close()
+        }
         panels = []
         if let exclusionRegistrationID {
             self.exclusionRegistrationID = nil
@@ -118,7 +120,7 @@ final class LuxelCropperPanelController {
 
         for screen in NSScreen.screens {
             guard let displayID = screen.displayID,
-                  let display = displaysByID[displayID]
+                let display = displaysByID[displayID]
             else {
                 continue
             }

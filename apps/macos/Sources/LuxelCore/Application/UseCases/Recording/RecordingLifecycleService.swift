@@ -179,7 +179,7 @@ public final class RecordingLifecycleService: Sendable {
 
     private func runCountdownIfNeeded(_ schedule: RecordingSchedule?) async throws {
         guard let countdown = schedule?.countdown,
-              countdown > 0
+            countdown > 0
         else {
             return
         }
@@ -267,7 +267,8 @@ private actor RecordingLifecycleAutoStopState {
     private var isStopping = false
 
     func start(schedule: RecordingSchedule, startedAt: Date, now: Date)
-    -> RecordingLifecycleAutoStopTiming? {
+        -> RecordingLifecycleAutoStopTiming?
+    {
         clearStoredState()
 
         guard schedule.maxRecordedDuration != nil else {
@@ -343,10 +344,10 @@ private actor RecordingLifecycleAutoStopState {
 
     private func timing(at now: Date) -> RecordingLifecycleAutoStopTiming? {
         guard let schedule,
-              let maxRecordedDuration = schedule.maxRecordedDuration,
-              let clock,
-              clock.isRecording(at: now),
-              let remaining = clock.remainingRecordedTime(for: schedule, at: now)
+            let maxRecordedDuration = schedule.maxRecordedDuration,
+            let clock,
+            clock.isRecording(at: now),
+            let remaining = clock.remainingRecordedTime(for: schedule, at: now)
         else {
             return nil
         }

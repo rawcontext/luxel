@@ -106,8 +106,8 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
     static func mediaSubTypeSupportsAlpha(_ mediaSubType: CMVideoCodecType) -> Bool {
         switch mediaSubType {
         case kCMVideoCodecType_HEVCWithAlpha,
-             kCMVideoCodecType_AppleProRes4444,
-             kCMVideoCodecType_AppleProRes4444XQ:
+            kCMVideoCodecType_AppleProRes4444,
+            kCMVideoCodecType_AppleProRes4444XQ:
             true
         default:
             false
@@ -118,7 +118,8 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
         for audioTracks: [AVAssetTrack],
         unmarkedFallback: AudioTrackKind
     ) async throws
-    -> [AudioTrackKind] {
+        -> [AudioTrackKind]
+    {
         guard !audioTracks.isEmpty else {
             return []
         }

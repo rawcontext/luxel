@@ -146,11 +146,11 @@ public struct TranscriptTurn: Codable, Equatable, Identifiable, Sendable {
     ) throws {
         let normalizedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !id.isEmpty,
-              !spanIDs.isEmpty,
-              !normalizedText.isEmpty,
-              start.isFinite,
-              end.isFinite,
-              end > start
+            !spanIDs.isEmpty,
+            !normalizedText.isEmpty,
+            start.isFinite,
+            end.isFinite,
+            end > start
         else {
             throw TranscriptModelError.invalidTurn
         }
@@ -234,7 +234,8 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
     }
 
     public func replacingSpeakerLabel(_ label: TranscriptSpeakerLabel) throws
-    -> TurnSegmentedTranscript {
+        -> TurnSegmentedTranscript
+    {
         guard speakers.contains(where: { $0.id == label.id }) else {
             throw TranscriptModelError.unknownSpeaker(label.id)
         }

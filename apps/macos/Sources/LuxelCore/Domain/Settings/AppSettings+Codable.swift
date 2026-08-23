@@ -3,7 +3,8 @@ import Foundation
 extension AppSettings {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let cursor = try Self.cursorSettings(from: container); let keys = try Self.shortcutSettings(from: container)
+        let cursor = try Self.cursorSettings(from: container)
+        let keys = try Self.shortcutSettings(from: container)
         let recording = try Self.decodeRecordingSettings(from: container)
         let audioInput = try Self.decodeAudioInput(from: container)
         let transcription = try Self.decodeTranscriptionSettings(from: container)
@@ -13,62 +14,86 @@ extension AppSettings {
         recordingsDirectoryBookmark = try container.decodeIfPresent(
             BookmarkedDirectory.self, forKey: .recordingsDirectoryBookmark
         )
-        showCursor = cursor.showCursor; highlightClicks = cursor.highlightClicks
-        cursorMode = cursor.mode; cursorRenderOptions = cursor.renderOptions
+        showCursor = cursor.showCursor
+        highlightClicks = cursor.highlightClicks
+        cursorMode = cursor.mode
+        cursorRenderOptions = cursor.renderOptions
         keystrokeOverlayEnabled = cursor.keystrokeOverlayEnabled
         keystrokeLivePreviewEnabled = cursor.keystrokeLivePreviewEnabled
         keystrokeRenderOptions = cursor.keystrokeRenderOptions
         pauseKeystrokeCaptureShortcut = cursor.pauseKeystrokeCaptureShortcut
-        record60FPS = recording.records60FPS; recordingFrameRate = recording.frameRate
-        matchDisplayFrameRate = recording.matchesDisplayFrameRate; loopExports = recording.loopsExports
-        recordSystemAudio = recording.recordsSystemAudio; recordAudio = recording.recordsAudio
-        audioInputDeviceID = audioInput.id; audioInputDeviceName = audioInput.name
+        record60FPS = recording.records60FPS
+        recordingFrameRate = recording.frameRate
+        matchDisplayFrameRate = recording.matchesDisplayFrameRate
+        loopExports = recording.loopsExports
+        recordSystemAudio = recording.recordsSystemAudio
+        recordAudio = recording.recordsAudio
+        audioInputDeviceID = audioInput.id
+        audioInputDeviceName = audioInput.name
         audioOnlyFormat = recording.audioOnlyFormat
-        speechDetectionPromptsEnabled = try container.decodeIfPresent(
-            Bool.self,
-            forKey: .speechDetectionPromptsEnabled
-        ) ?? false
-        speechDetectionDisclosureAccepted = try container.decodeIfPresent(
-            Bool.self,
-            forKey: .speechDetectionDisclosureAccepted
-        ) ?? false
+        speechDetectionPromptsEnabled =
+            try container.decodeIfPresent(
+                Bool.self,
+                forKey: .speechDetectionPromptsEnabled
+            ) ?? false
+        speechDetectionDisclosureAccepted =
+            try container.decodeIfPresent(
+                Bool.self,
+                forKey: .speechDetectionDisclosureAccepted
+            ) ?? false
         transcriptTurnSegmentationEnabled = transcription.turnSegmentationEnabled
         transcriptSpeakerDiarizationEnabled = transcription.speakerDiarizationEnabled
         transcriptLanguageIdentifier = transcription.languageIdentifier
-        cameraDeviceID = capture.cameraDeviceID; cameraSeparateTrack = capture.cameraSeparateTrack
-        cameraPreviewStyle = capture.cameraPreviewStyle; cameraPreviewPlacements = capture.cameraPreviewPlacements
+        cameraDeviceID = capture.cameraDeviceID
+        cameraSeparateTrack = capture.cameraSeparateTrack
+        cameraPreviewStyle = capture.cameraPreviewStyle
+        cameraPreviewPlacements = capture.cameraPreviewPlacements
         replayBufferConfiguration = capture.replayBufferConfiguration
         replayBufferPreferredBufferLength = capture.replayBufferPreferredBufferLength
         replayBufferResumeOnLaunch = capture.replayBufferResumeOnLaunch
         replayBufferConsentAccepted = capture.replayBufferConsentAccepted
         alwaysShowReplayBufferIsland = capture.alwaysShowReplayBufferIsland
         replayClipDestination = capture.replayClipDestination
-        notchSurfaceSettings = capture.notchSurfaceSettings; enableShortcuts = capture.enableShortcuts
-        triggerCropperShortcut = keys.triggerCropper; toggleRecordingShortcut = keys.toggleRecording
+        notchSurfaceSettings = capture.notchSurfaceSettings
+        enableShortcuts = capture.enableShortcuts
+        triggerCropperShortcut = keys.triggerCropper
+        toggleRecordingShortcut = keys.toggleRecording
         recordActiveWindowShortcut = keys.recordActiveWindow
-        recordFullscreenShortcut = keys.recordFullscreen; audioOnlyRecordingShortcut = keys.audioOnlyRecording
-        quickRecordLastShortcut = keys.quickRecordLast; clipReplayBufferShortcut = keys.clipReplayBuffer
-        updatePreferences = general.updatePreferences; showTimeInMenuBar = general.showTimeInMenuBar
+        recordFullscreenShortcut = keys.recordFullscreen
+        audioOnlyRecordingShortcut = keys.audioOnlyRecording
+        quickRecordLastShortcut = keys.quickRecordLast
+        clipReplayBufferShortcut = keys.clipReplayBuffer
+        updatePreferences = general.updatePreferences
+        showTimeInMenuBar = general.showTimeInMenuBar
         hideMenuBarIcon = general.hideMenuBarIcon && notchSurfaceSettings.isEnabled
         launchAtLogin = general.launchAtLogin
         commandLineControlEnabled = general.commandLineControlEnabled
         commandLinePairedClients = general.commandLinePairedClients
         commandLineFolderGrants = general.commandLineFolderGrants
         notificationReminder = general.notificationReminder
-        allowURLAutomation = true; urlAutomationGrants = general.urlAutomationGrants
-        exportPresets = general.exportPresets; quickExportPresetID = general.quickExportPresetID
-        rememberLastCapture = general.rememberLastCapture; loupeAlwaysOn = general.loupeAlwaysOn
-        dimOtherDisplays = general.dimOtherDisplays; restoreLastSelection = general.restoreLastSelection
-        userSizePresets = general.userSizePresets; lastCaptureMemory = general.lastCaptureMemory
+        allowURLAutomation = true
+        urlAutomationGrants = general.urlAutomationGrants
+        exportPresets = general.exportPresets
+        quickExportPresetID = general.quickExportPresetID
+        rememberLastCapture = general.rememberLastCapture
+        loupeAlwaysOn = general.loupeAlwaysOn
+        dimOtherDisplays = general.dimOtherDisplays
+        restoreLastSelection = general.restoreLastSelection
+        userSizePresets = general.userSizePresets
+        lastCaptureMemory = general.lastCaptureMemory
         perFormatExportMemory = general.perFormatExportMemory
-        lastSelectedExportFormat = general.lastSelectedExportFormat; confirmDiscard = general.confirmDiscard
-        defaultCountdown = general.defaultCountdown; lastStopAfter = general.lastStopAfter
+        lastSelectedExportFormat = general.lastSelectedExportFormat
+        confirmDiscard = general.confirmDiscard
+        defaultCountdown = general.defaultCountdown
+        lastStopAfter = general.lastStopAfter
     }
 
     private static func cursorSettings(from container: AppSettingsDecoder) throws
-    -> CursorSettings {
+        -> CursorSettings
+    {
         let showCursor = try container.decodeIfPresent(Bool.self, forKey: .showCursor) ?? true
-        let highlightClicks = try container.decodeIfPresent(Bool.self, forKey: .highlightClicks) ?? false
+        let highlightClicks =
+            try container.decodeIfPresent(Bool.self, forKey: .highlightClicks) ?? false
         return try CursorSettings(
             showCursor: showCursor,
             highlightClicks: highlightClicks,
@@ -96,7 +121,8 @@ extension AppSettings {
     }
 
     private static func decodeRecordingSettings(from container: AppSettingsDecoder) throws
-    -> RecordingSettings {
+        -> RecordingSettings
+    {
         let legacyRecord60FPS =
             try container.decodeIfPresent(Bool.self, forKey: .record60FPS)
             ?? true
@@ -138,7 +164,8 @@ extension AppSettings {
     }
 
     private static func decodeAudioInput(from container: AppSettingsDecoder) throws
-    -> AudioInputSettings {
+        -> AudioInputSettings
+    {
         let id: String?
         if container.contains(.audioInputDeviceID) {
             id = try container.decodeIfPresent(String.self, forKey: .audioInputDeviceID)
@@ -209,7 +236,9 @@ extension AppSettings {
         )
     }
 
-    private static func shortcutSettings(from container: AppSettingsDecoder) throws -> ShortcutSettings {
+    private static func shortcutSettings(from container: AppSettingsDecoder) throws
+        -> ShortcutSettings
+    {
         try ShortcutSettings(
             triggerCropper: container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut) ?? "",
             toggleRecording: container.decodeIfPresent(String.self, forKey: .toggleRecordingShortcut)
@@ -228,7 +257,8 @@ extension AppSettings {
     }
 
     private static func decodeGeneralSettings(from container: AppSettingsDecoder) throws
-    -> GeneralSettings {
+        -> GeneralSettings
+    {
         return try GeneralSettings(
             updatePreferences: container.decodeIfPresent(
                 UpdatePreferences.self, forKey: .updatePreferences) ?? .defaults,
@@ -313,7 +343,7 @@ extension AppSettings {
 
     static func supportedRecordingFrameRate(_ frameRate: FrameRate?) -> FrameRate? {
         guard let frameRate,
-              recordingFrameRateRange.contains(frameRate.framesPerSecond)
+            recordingFrameRateRange.contains(frameRate.framesPerSecond)
         else {
             return nil
         }

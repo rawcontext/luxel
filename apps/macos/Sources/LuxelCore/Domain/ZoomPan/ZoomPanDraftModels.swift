@@ -156,7 +156,8 @@ public struct ZoomBlockDraftCollection: Codable, Equatable, Sendable {
     }
 
     public func replacingBlock(id: ZoomBlockDraftID, with block: ZoomBlock) throws
-    -> ZoomBlockDraftCollection {
+        -> ZoomBlockDraftCollection
+    {
         try replacingDraft(id: id) { draft in
             try draft.replacingBlock(block)
         }
@@ -220,25 +221,25 @@ public struct ZoomProposalTuning: Codable, Equatable, Sendable {
         maxProposals: Int = 40
     ) throws {
         guard clusterTimeGap.isFinite,
-              clusterTimeGap > 0,
-              minimumClusterWeight.isFinite,
-              minimumClusterWeight > 0,
-              minimumBlockDuration.isFinite,
-              minimumBlockDuration > 0,
-              temporalPadding.isFinite,
-              temporalPadding >= 0,
-              targetPadding.isFinite,
-              targetPadding >= 0,
-              minimumZoom.isFinite,
-              maximumZoom.isFinite,
-              minimumZoom >= 1,
-              maximumZoom <= 3,
-              minimumZoom <= maximumZoom,
-              dwellDurationThreshold.isFinite,
-              dwellDurationThreshold > 0,
-              dwellMovementTolerance.isFinite,
-              dwellMovementTolerance >= 0,
-              maxProposals > 0
+            clusterTimeGap > 0,
+            minimumClusterWeight.isFinite,
+            minimumClusterWeight > 0,
+            minimumBlockDuration.isFinite,
+            minimumBlockDuration > 0,
+            temporalPadding.isFinite,
+            temporalPadding >= 0,
+            targetPadding.isFinite,
+            targetPadding >= 0,
+            minimumZoom.isFinite,
+            maximumZoom.isFinite,
+            minimumZoom >= 1,
+            maximumZoom <= 3,
+            minimumZoom <= maximumZoom,
+            dwellDurationThreshold.isFinite,
+            dwellDurationThreshold > 0,
+            dwellMovementTolerance.isFinite,
+            dwellMovementTolerance >= 0,
+            maxProposals > 0
         else {
             throw ZoomPanModelError.invalidProposalTuning
         }

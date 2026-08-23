@@ -130,7 +130,8 @@ final class CameraCutoutFrameScheduler<Frame: Sendable, Output: Sendable>: @unch
         case .ignored:
             break
         case .failed(let error):
-            Self.logger.error("Cutout frame processing failed: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error(
+                "Cutout frame processing failed: \(error.localizedDescription, privacy: .public)")
             onFailure(error)
         case .completed(let output, let nextFrame):
             if let output, isCurrent(generation) {
@@ -158,9 +159,9 @@ final class CameraCutoutFrameScheduler<Frame: Sendable, Output: Sendable>: @unch
 }
 
 final class CameraCutoutCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate,
-                                         @unchecked Sendable {
-    private let scheduler:
-        CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>
+    @unchecked Sendable
+{
+    private let scheduler: CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>
 
     init(scheduler: CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>) {
         self.scheduler = scheduler
@@ -188,8 +189,7 @@ final class CameraBackgroundEffectSessionPipeline: @unchecked Sendable {
 
     private let captureQueue = DispatchQueue(label: "media.luxel.cameraCutout.capture")
     private let compositor: CameraCutoutCompositor
-    private let scheduler:
-        CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>
+    private let scheduler: CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>
     private let captureDelegate: CameraCutoutCaptureDelegate
     private let telemetry: CameraBackgroundEffectTelemetry
 

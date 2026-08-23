@@ -81,9 +81,9 @@ public struct BundleManifest: Codable, Equatable, Sendable {
 
     static func validateBundleFileName(_ fileName: String) throws {
         guard !fileName.isEmpty,
-              !fileName.contains("/"),
-              fileName != ".",
-              fileName != ".."
+            !fileName.contains("/"),
+            fileName != ".",
+            fileName != ".."
         else {
             throw RecordingBundleError.invalidBundleFileName
         }

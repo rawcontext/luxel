@@ -1,8 +1,9 @@
 import Foundation
-@testable import LuxelApp
-@testable import LuxelCore
 import LuxelTestSupport
 import Testing
+
+@testable import LuxelApp
+@testable import LuxelCore
 
 @Suite("Voice detection settings flow")
 @MainActor
@@ -25,9 +26,10 @@ struct VoiceDetectionSettingsFlowTests {
 
         await fixture.model.approveVoiceDetectionDisclosure()
 
-        #expect(fixture.timeline.events == [
-            "save-settings", "request-notifications", "request-microphone"
-        ])
+        #expect(
+            fixture.timeline.events == [
+                "save-settings", "request-notifications", "request-microphone"
+            ])
         #expect(fixture.model.settings.speechDetectionPromptsEnabled)
         #expect(fixture.model.settings.speechDetectionDisclosureAccepted)
         #expect(fixture.model.voiceDetectionStatus == .listening(microphoneName: "Test Mic"))
@@ -70,9 +72,10 @@ struct VoiceDetectionSettingsFlowTests {
         fixture.model.settings.audioInputDeviceName = "Second Mic"
         await fixture.model.reconcileVoiceDetection()
 
-        #expect(await fixture.detector.events == [
-            .start("mic-1"), .stop, .start("mic-2")
-        ])
+        #expect(
+            await fixture.detector.events == [
+                .start("mic-1"), .stop, .start("mic-2")
+            ])
     }
 
     @Test("disablement stops capture and removes an outstanding prompt")
@@ -206,7 +209,8 @@ private struct VoiceDetectionSettingsSystemMonitor: SystemActivityMonitor {
 
 private final class VoiceDetectionSettingsNotifierSpy:
     VoiceRecordingPromptNotifying,
-    @unchecked Sendable {
+    @unchecked Sendable
+{
     let status: VoiceDetectionAuthorizationStatus
     let timeline: VoiceDetectionSettingsTimeline
     private let lock = NSLock()

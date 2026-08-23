@@ -4,15 +4,15 @@ enum DeepFilterNetNPZReader {
     static func load(from url: URL) throws -> DeepFilterNetAuxiliaryData {
         let arrays = try read(url: url)
         guard let erbFilterbank = arrays["erb_fb"],
-              let inverseERBFilterbank = arrays["erb_inv_fb"],
-              let window = arrays["window"],
-              let meanNormalizationState = arrays["mean_norm_state"],
-              let unitNormalizationState = arrays["unit_norm_state"],
-              erbFilterbank.count == 481 * 32,
-              inverseERBFilterbank.count == 32 * 481,
-              window.count == 960,
-              meanNormalizationState.count == 32,
-              unitNormalizationState.count == 96
+            let inverseERBFilterbank = arrays["erb_inv_fb"],
+            let window = arrays["window"],
+            let meanNormalizationState = arrays["mean_norm_state"],
+            let unitNormalizationState = arrays["unit_norm_state"],
+            erbFilterbank.count == 481 * 32,
+            inverseERBFilterbank.count == 32 * 481,
+            window.count == 960,
+            meanNormalizationState.count == 32,
+            unitNormalizationState.count == 96
         else {
             throw StudioVoiceModelError.invalidAuxiliaryData
         }
@@ -33,9 +33,9 @@ enum DeepFilterNetNPZReader {
 
         while offset + 30 <= data.count {
             guard data[offset] == 0x50,
-                  data[offset + 1] == 0x4b,
-                  data[offset + 2] == 0x03,
-                  data[offset + 3] == 0x04
+                data[offset + 1] == 0x4b,
+                data[offset + 2] == 0x03,
+                data[offset + 3] == 0x04
             else {
                 break
             }
@@ -47,10 +47,11 @@ enum DeepFilterNetNPZReader {
                 throw StudioVoiceModelError.invalidAuxiliaryData
             }
 
-            var name = String(
-                data: data.subdata(in: nameStart..<(nameStart + nameLength)),
-                encoding: .utf8
-            ) ?? ""
+            var name =
+                String(
+                    data: data.subdata(in: nameStart..<(nameStart + nameLength)),
+                    encoding: .utf8
+                ) ?? ""
             if name.hasSuffix(".npy") {
                 name.removeLast(4)
             }
@@ -68,11 +69,11 @@ enum DeepFilterNetNPZReader {
             }
             let payloadStart = nameStart + nameLength + extraLength
             guard payloadStart + sizes.uncompressed <= data.count,
-                  let floats = parseNPY(
+                let floats = parseNPY(
                     data,
                     offset: payloadStart,
                     byteCount: sizes.uncompressed
-                  )
+                )
             else {
                 throw StudioVoiceModelError.invalidAuxiliaryData
             }
@@ -130,14 +131,15 @@ enum DeepFilterNetNPZReader {
             )
         }
 
-        let fortranOrder = payload.header.contains("'fortran_order': True")
+        let fortranOrder =
+            payload.header.contains("'fortran_order': True")
             || payload.header.contains("\"fortran_order\": True")
         guard fortranOrder else {
             return raw
         }
         guard let shape = parseShape(fromNPYHeader: payload.header),
-              shape.count > 1,
-              elementCount(of: shape, limit: raw.count) == raw.count
+            shape.count > 1,
+            elementCount(of: shape, limit: raw.count) == raw.count
         else {
             return nil
         }
@@ -151,10 +153,10 @@ enum DeepFilterNetNPZReader {
         byteCount: Int
     ) -> DeepFilterNetNPYPayload? {
         guard offset >= 0,
-              byteCount >= 10,
-              offset + byteCount <= data.count,
-              data[offset] == 0x93,
-              data[offset + 1] == 0x4e
+            byteCount >= 10,
+            offset + byteCount <= data.count,
+            data[offset] == 0x93,
+            data[offset + 1] == 0x4e
         else {
             return nil
         }
@@ -178,14 +180,14 @@ enum DeepFilterNetNPZReader {
         let floatStart = headerStart + headerLength
         let floatByteCount = byteCount - headerSize - headerLength
         guard headerLength > 0,
-              floatStart <= offset + byteCount,
-              floatByteCount > 0,
-              floatByteCount.isMultiple(of: MemoryLayout<Float>.size),
-              floatStart + floatByteCount <= data.count,
-              let header = String(
+            floatStart <= offset + byteCount,
+            floatByteCount > 0,
+            floatByteCount.isMultiple(of: MemoryLayout<Float>.size),
+            floatStart + floatByteCount <= data.count,
+            let header = String(
                 data: data[headerStart..<floatStart],
                 encoding: .ascii
-              )
+            )
         else {
             return nil
         }
@@ -209,8 +211,8 @@ enum DeepFilterNetNPZReader {
 
     private static func parseShape(fromNPYHeader header: String) -> [Int]? {
         guard let shapeKey = header.range(of: "shape"),
-              let open = header[shapeKey.upperBound...].firstIndex(of: "("),
-              let close = header[open...].firstIndex(of: ")")
+            let open = header[shapeKey.upperBound...].firstIndex(of: "("),
+            let close = header[open...].firstIndex(of: ")")
         else {
             return nil
         }
@@ -232,7 +234,8 @@ enum DeepFilterNetNPZReader {
         var rowMajorStrides = [Int](repeating: 1, count: shape.count)
         if shape.count > 1 {
             for dimension in stride(from: shape.count - 2, through: 0, by: -1) {
-                rowMajorStrides[dimension] = rowMajorStrides[dimension + 1]
+                rowMajorStrides[dimension] =
+                    rowMajorStrides[dimension + 1]
                     * shape[dimension + 1]
             }
         }

@@ -7,11 +7,11 @@ extension SettingsTests {
     func legacyRecordAudioSettingEnablesBothAudioSources() throws {
         let data = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "recordAudio": true
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "recordAudio": true
+            }
+            """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -23,12 +23,12 @@ extension SettingsTests {
     func systemAndMicrophoneAudioSettingsDecodeIndependently() throws {
         let data = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "recordSystemAudio": true,
-          "recordAudio": false
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "recordSystemAudio": true,
+                "recordAudio": false
+            }
+            """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 
@@ -103,14 +103,14 @@ extension SettingsTests {
     func decodingMenuBarIconHidingRespectsNotchSurfaceState() throws {
         let data = Data(
             """
-      {
-          "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
-          "hideMenuBarIcon": true,
-          "notchSurfaceSettings": {
-              "isEnabled": false
-          }
-      }
-      """.utf8)
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "hideMenuBarIcon": true,
+                "notchSurfaceSettings": {
+                    "isEnabled": false
+                }
+            }
+            """.utf8)
 
         let settings = try JSONDecoder().decode(AppSettings.self, from: data)
 

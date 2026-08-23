@@ -50,8 +50,8 @@ struct LuxelEditorVideoStageLayoutTests {
     }
 }
 
-private extension NSView {
-    var ancestors: [NSView] {
+extension NSView {
+    fileprivate var ancestors: [NSView] {
         var views: [NSView] = []
         var ancestor = superview
 
@@ -63,7 +63,7 @@ private extension NSView {
         return views
     }
 
-    var descendants: [NSView] {
+    fileprivate var descendants: [NSView] {
         subviews + subviews.flatMap(\.descendants)
     }
 }

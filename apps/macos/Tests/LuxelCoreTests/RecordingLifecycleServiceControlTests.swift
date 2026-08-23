@@ -30,7 +30,8 @@ extension RecordingLifecycleServiceTests {
 
     @Test("pause keeps active recording when recorder fails")
     func pauseKeepsActiveRecordingWhenRecorderFails() async throws {
-        let recorder = RecordingLifecycleRecorderSpy(pauseError: RecordingLifecycleRecorderError.pauseFailed)
+        let recorder = RecordingLifecycleRecorderSpy(
+            pauseError: RecordingLifecycleRecorderError.pauseFailed)
         let context = makeActiveRecordingContext(recorder: recorder)
 
         await #expect(throws: RecordingLifecycleRecorderError.pauseFailed) {
@@ -67,7 +68,8 @@ extension RecordingLifecycleServiceTests {
 
     @Test("resume keeps active recording when recorder fails")
     func resumeKeepsActiveRecordingWhenRecorderFails() async throws {
-        let recorder = RecordingLifecycleRecorderSpy(resumeError: RecordingLifecycleRecorderError.resumeFailed)
+        let recorder = RecordingLifecycleRecorderSpy(
+            resumeError: RecordingLifecycleRecorderError.resumeFailed)
         let context = makeActiveRecordingContext(recorder: recorder)
 
         await #expect(throws: RecordingLifecycleRecorderError.resumeFailed) {
@@ -180,8 +182,8 @@ private struct AutoStopContext {
     let request: RecordingRequest
 }
 
-private extension RecordingLifecycleServiceTests {
-    func makeActiveRecordingContext(
+extension RecordingLifecycleServiceTests {
+    fileprivate func makeActiveRecordingContext(
         recorder: RecordingLifecycleRecorderSpy
     ) -> ActiveRecordingContext {
         let store = InMemoryRecordingHistoryStore()
@@ -199,7 +201,7 @@ private extension RecordingLifecycleServiceTests {
         )
     }
 
-    func makeAutoStopContext(
+    fileprivate func makeAutoStopContext(
         recorder: RecordingLifecycleRecorderSpy = RecordingLifecycleRecorderSpy(),
         userNotifier: RecordingLifecycleUserNotifierSpy = RecordingLifecycleUserNotifierSpy()
     ) throws -> AutoStopContext {

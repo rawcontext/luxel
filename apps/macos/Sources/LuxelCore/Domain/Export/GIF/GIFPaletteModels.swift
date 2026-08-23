@@ -183,7 +183,7 @@ public struct MedianCutPaletteBuilder: Sendable {
         var boxes = [MedianCutColorBox(colors: weightedColors)]
         while boxes.count < maxColorCount {
             guard let boxIndex = boxes.bestSplittableBoxIndex(),
-                  let splitBoxes = boxes[boxIndex].split()
+                let splitBoxes = boxes[boxIndex].split()
             else {
                 break
             }

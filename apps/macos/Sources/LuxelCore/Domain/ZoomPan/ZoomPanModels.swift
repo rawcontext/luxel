@@ -15,12 +15,12 @@ public struct NormalizedRect: Codable, Equatable, Sendable {
 
     public init(x originX: Double, y originY: Double, width: Double, height: Double) throws {
         guard [originX, originY, width, height].allSatisfy(\.isFinite),
-              originX >= 0,
-              originY >= 0,
-              width > 0,
-              height > 0,
-              originX + width <= 1,
-              originY + height <= 1
+            originX >= 0,
+            originY >= 0,
+            width > 0,
+            height > 0,
+            originX + width <= 1,
+            originY + height <= 1
         else {
             throw ZoomPanModelError.invalidNormalizedRect
         }
@@ -234,12 +234,12 @@ public struct CameraPath: Equatable, Sendable {
     ) throws -> CameraTransform {
         var transform = try transform(for: block)
         guard let cursorTimeline,
-              let sample = try CursorPathSmoother.sample(
+            let sample = try CursorPathSmoother.sample(
                 at: time,
                 from: cursorTimeline.samples,
                 level: cursorSmoothing,
                 frameSize: sourceSize
-              )
+            )
         else {
             return transform
         }
@@ -343,7 +343,8 @@ public struct CameraPath: Equatable, Sendable {
     }
 
     private func transform(scale: Double, centeredAt center: NormalizedPoint) throws
-    -> CameraTransform {
+        -> CameraTransform
+    {
         let size = 1 / scale
         return try transform(
             scale: scale,

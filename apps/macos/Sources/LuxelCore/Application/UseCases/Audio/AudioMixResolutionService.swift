@@ -51,9 +51,11 @@ public struct AudioMixResolutionService: Sendable {
         for request: ExportRequest,
         measuredPeaks: [AudioTrackKind: Double]
     ) -> [AudioTrackKind: Double] {
-        let mixPlan = request.audioMix ?? AudioMixPlan(
-            tracks: [AudioTrackMix(kind: .system)]
-        )
+        let mixPlan =
+            request.audioMix
+            ?? AudioMixPlan(
+                tracks: [AudioTrackMix(kind: .system)]
+            )
         guard !request.outputShouldMute else {
             return mutedGains(for: mixPlan)
         }

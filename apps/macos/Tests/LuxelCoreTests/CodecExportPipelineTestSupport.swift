@@ -3,7 +3,8 @@ import LuxelCore
 
 extension CodecAudioChunk {
     init(dataString: String, presentationTime: TimeInterval, duration: TimeInterval)
-    throws {
+        throws
+    {
         try self.init(
             pcmData: Data(dataString.utf8),
             presentationTime: presentationTime,

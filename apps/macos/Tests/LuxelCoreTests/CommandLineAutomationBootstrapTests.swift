@@ -17,7 +17,8 @@ struct CommandLineAutomationBootstrapTests {
 
     @Test("Pairing URLs accept only loopback callback endpoints")
     func pairingURL() throws {
-        let request = "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Terminal"
+        let request =
+            "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Terminal"
         let callback = "http%3A%2F%2F127.0.0.1%3A43123%2Fsession%2F0123456789abcdef0123456789abcdef"
         let url = try #require(URL(string: "\(request)&endpoint=\(callback)"))
         let invocation = try CommandLineAutomationBootstrapParser.parse(
@@ -31,7 +32,8 @@ struct CommandLineAutomationBootstrapTests {
 
     @Test("Pairing URLs decode form-encoded client names")
     func pairingClientName() throws {
-        let request = "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Luxel+CLI%2BE2E"
+        let request =
+            "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Luxel+CLI%2BE2E"
         let callback = "http%3A%2F%2F127.0.0.1%3A43123%2Fsession%2F0123456789abcdef0123456789abcdef"
         let url = try #require(URL(string: "\(request)&endpoint=\(callback)"))
         let invocation = try CommandLineAutomationBootstrapParser.parse(
@@ -76,9 +78,11 @@ struct CommandLineAutomationBootstrapTests {
 
     @Test("Remote endpoints are rejected")
     func rejectsRemoteEndpoint() throws {
-        let url = try #require(URL(string:
-                                    "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Terminal&endpoint=https%3A%2F%2Fexample.com%2Fsession"
-        ))
+        let url = try #require(
+            URL(
+                string:
+                    "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Terminal&endpoint=https%3A%2F%2Fexample.com%2Fsession"
+            ))
         #expect(throws: CommandLineAutomationBootstrapError.nonLoopbackEndpoint) {
             try CommandLineAutomationBootstrapParser.parse(url, expectedScheme: "luxel")
         }
@@ -86,9 +90,11 @@ struct CommandLineAutomationBootstrapTests {
 
     @Test("Predictable callback routes are rejected")
     func rejectsPredictableCallbackRoute() throws {
-        let url = try #require(URL(string:
-                                    "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Terminal&endpoint=http%3A%2F%2F127.0.0.1%3A43123%2Fsession"
-        ))
+        let url = try #require(
+            URL(
+                string:
+                    "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Terminal&endpoint=http%3A%2F%2F127.0.0.1%3A43123%2Fsession"
+            ))
         #expect(throws: CommandLineAutomationBootstrapError.nonLoopbackEndpoint) {
             try CommandLineAutomationBootstrapParser.parse(url, expectedScheme: "luxel")
         }

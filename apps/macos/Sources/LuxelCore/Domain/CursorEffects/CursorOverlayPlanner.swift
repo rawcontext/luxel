@@ -231,8 +231,8 @@ public enum CursorOverlayPlanner {
         recordingDuration: TimeInterval
     ) throws -> CursorSpotlightPlan? {
         guard let options = options.spotlight,
-              let sample,
-              try spotlightIsActive(at: time, timeline: timeline, recordingDuration: recordingDuration)
+            let sample,
+            try spotlightIsActive(at: time, timeline: timeline, recordingDuration: recordingDuration)
         else {
             return nil
         }

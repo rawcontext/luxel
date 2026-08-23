@@ -15,10 +15,12 @@ public struct AVFoundationEditorPreviewAssetBuilder: Sendable {
 
         for mediaType in [AVMediaType.video, .audio] {
             for sourceTrack in try await asset.loadTracks(withMediaType: mediaType) {
-                guard let track = composition.addMutableTrack(
-                    withMediaType: mediaType,
-                    preferredTrackID: kCMPersistentTrackID_Invalid
-                ) else {
+                guard
+                    let track = composition.addMutableTrack(
+                        withMediaType: mediaType,
+                        preferredTrackID: kCMPersistentTrackID_Invalid
+                    )
+                else {
                     throw AVFoundationPreviewBuilderError.cannotCreateTrack
                 }
                 didCreateTrack = true

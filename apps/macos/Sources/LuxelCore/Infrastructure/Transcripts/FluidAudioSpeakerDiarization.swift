@@ -64,8 +64,9 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
             )
         }
         if let manifest = loadManifest(),
-           isCurrentManifest(manifest),
-           installedModelIsValid() {
+            isCurrentManifest(manifest),
+            installedModelIsValid()
+        {
             return .ready(
                 installedBytes: installedBytes() ?? manifest.installedBytes,
                 modelRevision: Self.modelRevision
@@ -83,7 +84,7 @@ public actor FluidAudioSpeakerDiarizationModelStore: SpeakerDiarizationModelStor
         }
 
         guard let bundledModelDirectory,
-              fileManager.fileExists(atPath: bundledModelDirectory.path)
+            fileManager.fileExists(atPath: bundledModelDirectory.path)
         else {
             failureMessage = "The speaker model is missing from the app bundle."
             throw ModelInstallError.bundledModelMissing
@@ -216,7 +217,8 @@ public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
     }
 
     public func diarize(_ request: SpeakerDiarizationRequest) async throws
-    -> SpeakerDiarizationOutput {
+        -> SpeakerDiarizationOutput
+    {
         var audioURL = request.audioURL
         var temporaryURL: URL?
         if let audioTrackIndex = try await isolationTrackIndex(for: request) {
@@ -249,7 +251,8 @@ public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
     /// readers target audio files, so movie containers are exported to a
     /// temporary M4A first.
     private func isolationTrackIndex(for request: SpeakerDiarizationRequest) async throws
-    -> Int? {
+        -> Int?
+    {
         if let audioTrackIndex = request.audioTrackIndex {
             return audioTrackIndex
         }
@@ -260,7 +263,8 @@ public struct FluidAudioSpeakerDiarizer: SpeakerDiarizer {
     }
 
     static func loadModelsOffline(from modelsDirectory: URL) async throws
-    -> OfflineDiarizerModels {
+        -> OfflineDiarizerModels
+    {
         ModelHub.offlineMode = true
         return try await OfflineDiarizerModels.load(from: modelsDirectory)
     }

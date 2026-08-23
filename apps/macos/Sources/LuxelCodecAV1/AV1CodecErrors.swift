@@ -12,8 +12,8 @@ public enum AV1CodecError: Error, Equatable, LocalizedError {
         case .unsupportedFormat(let format):
             "AV1 export does not support \(format.prettyName)."
         case .invalidConfiguration(let message),
-             .encoderFailure(let message),
-             .muxerFailure(let message):
+            .encoderFailure(let message),
+            .muxerFailure(let message):
             message
         }
     }

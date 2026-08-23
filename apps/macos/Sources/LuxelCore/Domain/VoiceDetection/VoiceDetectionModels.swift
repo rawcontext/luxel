@@ -98,7 +98,7 @@ public struct VoiceDetectionEligibility: Equatable, Sendable {
         case .preparing, .listening:
             true
         case .off, .pausedWhileRecording, .pausedWhileLocked, .microphoneAccessRequired,
-             .notificationsRequired, .selectedMicrophoneUnavailable, .unavailable:
+            .notificationsRequired, .selectedMicrophoneUnavailable, .unavailable:
             false
         }
     }

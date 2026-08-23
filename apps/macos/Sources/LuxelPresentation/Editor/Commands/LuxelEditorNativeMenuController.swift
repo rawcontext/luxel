@@ -43,12 +43,12 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
         case #selector(togglePlayback):
             model.hasSource
         case #selector(openExportedFile),
-             #selector(revealExportedFile),
-             #selector(saveExportedFileAs),
-             #selector(openExportedFileWithApplication),
-             #selector(copyExportedFile),
-             #selector(copyExportedFilePath),
-             #selector(shareExportedFile):
+            #selector(revealExportedFile),
+            #selector(saveExportedFileAs),
+            #selector(openExportedFileWithApplication),
+            #selector(copyExportedFile),
+            #selector(copyExportedFilePath),
+            #selector(shareExportedFile):
             model.exportedURL != nil
         default:
             true
@@ -261,7 +261,7 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
 
     @objc private func shareExportedFile() {
         guard let exportedURL = model.exportedURL,
-              let contentView = NSApplication.shared.keyWindow?.contentView
+            let contentView = NSApplication.shared.keyWindow?.contentView
         else {
             return
         }

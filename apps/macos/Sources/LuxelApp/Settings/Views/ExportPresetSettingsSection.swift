@@ -74,7 +74,7 @@ struct ExportPresetSettingsSection: View {
 
     private func quickPresetLabel(_ presetID: UUID?) -> String {
         guard let presetID,
-              let preset = settings.exportPresets.first(where: { $0.id == presetID })
+            let preset = settings.exportPresets.first(where: { $0.id == presetID })
         else {
             return "None"
         }
@@ -100,12 +100,14 @@ struct ExportPresetSettingsSection: View {
 
     private var currentSelectedPresetID: UUID? {
         if let selectedPresetID,
-           settings.exportPresets.contains(where: { $0.id == selectedPresetID }) {
+            settings.exportPresets.contains(where: { $0.id == selectedPresetID })
+        {
             return selectedPresetID
         }
 
         if let quickExportPresetID = settings.quickExportPresetID,
-           settings.exportPresets.contains(where: { $0.id == quickExportPresetID }) {
+            settings.exportPresets.contains(where: { $0.id == quickExportPresetID })
+        {
             return quickExportPresetID
         }
 
@@ -125,7 +127,7 @@ struct ExportPresetSettingsSection: View {
 
     private func duplicateSelectedPreset() {
         guard let presetID = currentSelectedPresetID,
-              let preset = try? settings.duplicateExportPreset(id: presetID)
+            let preset = try? settings.duplicateExportPreset(id: presetID)
         else {
             return
         }
@@ -292,7 +294,8 @@ private struct ExportPresetEditor: View {
     private var frameRateChoices: [Int] {
         var choices = [0, 12, 24, 30, 60]
         if let current = preset.frameRate?.framesPerSecond,
-           !choices.contains(current) {
+            !choices.contains(current)
+        {
             choices.append(current)
         }
 

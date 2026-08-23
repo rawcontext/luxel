@@ -98,7 +98,8 @@ public struct KnownSpeakerMatcher: Sendable {
                     && $0.vector.count == embedding.count
             }
             guard
-                let best = compatible
+                let best =
+                    compatible
                     .map({ Self.cosineSimilarity($0.vector, embedding) })
                     .max()
             else {

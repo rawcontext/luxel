@@ -156,25 +156,28 @@ extension CGEventTapKeystrokeRecorder {
             return
         }
 
-        let mask = (CGEventMask(1) << CGEventType.keyDown.rawValue)
+        let mask =
+            (CGEventMask(1) << CGEventType.keyDown.rawValue)
             | (CGEventMask(1) << CGEventType.flagsChanged.rawValue)
-        guard let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .listenOnly,
-            eventsOfInterest: mask,
-            callback: { _, type, event, userInfo in
-                guard let userInfo else {
+        guard
+            let tap = CGEvent.tapCreate(
+                tap: .cgSessionEventTap,
+                place: .headInsertEventTap,
+                options: .listenOnly,
+                eventsOfInterest: mask,
+                callback: { _, type, event, userInfo in
+                    guard let userInfo else {
+                        return Unmanaged.passUnretained(event)
+                    }
+                    let recorder = Unmanaged<CGEventTapKeystrokeRecorder>
+                        .fromOpaque(userInfo)
+                        .takeUnretainedValue()
+                    recorder.handle(type: type, event: event)
                     return Unmanaged.passUnretained(event)
-                }
-                let recorder = Unmanaged<CGEventTapKeystrokeRecorder>
-                    .fromOpaque(userInfo)
-                    .takeUnretainedValue()
-                recorder.handle(type: type, event: event)
-                return Unmanaged.passUnretained(event)
-            },
-            userInfo: Unmanaged.passUnretained(self).toOpaque()
-        ) else {
+                },
+                userInfo: Unmanaged.passUnretained(self).toOpaque()
+            )
+        else {
             finishUnavailable(status: .eventDeliveryUnavailable)
             return
         }
@@ -237,7 +240,7 @@ extension CGEventTapKeystrokeRecorder {
         let isSecureInputEnabled = IsSecureEventInputEnabled()
         let transition = lock.withLock { () -> ([KeystrokeSourceEvent], KeystrokeCaptureStatus)? in
             guard eventContinuation != nil,
-                  isSecureInputPaused != isSecureInputEnabled
+                isSecureInputPaused != isSecureInputEnabled
             else {
                 return nil
             }
@@ -355,7 +358,8 @@ extension CGEventTapKeystrokeRecorder {
 
     private static func characters(in event: CGEvent) -> String? {
         var length = 0
-        event.keyboardGetUnicodeString(maxStringLength: 0, actualStringLength: &length, unicodeString: nil)
+        event.keyboardGetUnicodeString(
+            maxStringLength: 0, actualStringLength: &length, unicodeString: nil)
         guard length > 0 else {
             return nil
         }

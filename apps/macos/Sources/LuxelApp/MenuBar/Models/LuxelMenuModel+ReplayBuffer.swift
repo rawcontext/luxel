@@ -15,7 +15,7 @@ extension LuxelMenuModel {
 
     func reconcileReplayBufferOnLaunch() async {
         guard settings.replayBufferResumeOnLaunch,
-              settings.replayBufferConfiguration != nil
+            settings.replayBufferConfiguration != nil
         else {
             return
         }
@@ -51,10 +51,10 @@ extension LuxelMenuModel {
         settings.replayBufferResumeOnLaunch = isEnabled
 
         guard isEnabled,
-              settings.replayBufferConfiguration == nil,
-              let configuration = replayBufferConfiguration(
+            settings.replayBufferConfiguration == nil,
+            let configuration = replayBufferConfiguration(
                 bufferLength: settings.replayBufferPreferredBufferLength
-              )
+            )
         else {
             saveSettings()
             return

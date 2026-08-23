@@ -57,7 +57,8 @@ extension TranscriptCardContent {
         if matches.isEmpty {
             selectedSearchMatchID = nil
         } else if let selectedSearchMatchID,
-                  matches.contains(where: { $0.id == selectedSearchMatchID }) {
+            matches.contains(where: { $0.id == selectedSearchMatchID })
+        {
         } else {
             selectedSearchMatchID = matches[0].id
         }
@@ -69,7 +70,8 @@ extension TranscriptCardContent {
             return
         }
         let selectedIndex = selectedSearchMatchIndex ?? 0
-        let previousIndex = selectedIndex == 0
+        let previousIndex =
+            selectedIndex == 0
             ? searchMatches.index(before: searchMatches.endIndex)
             : selectedIndex - 1
         selectedSearchMatchID = searchMatches[previousIndex].id
@@ -88,7 +90,7 @@ extension TranscriptCardContent {
 
     func speakerChipInfo(for turn: TranscriptTurn) -> TranscriptSpeakerChip? {
         guard let speakerID = turn.speakerID,
-              let index = transcript.speakers.firstIndex(where: { $0.id == speakerID })
+            let index = transcript.speakers.firstIndex(where: { $0.id == speakerID })
         else {
             return nil
         }

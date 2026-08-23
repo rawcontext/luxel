@@ -8,7 +8,7 @@ public protocol AutomationCommandExecutor: Sendable {
     func openPreferences(_ pane: AutomationPreferencesPane?) async throws -> AutomationExecutionResult
     func openLatestRecording(reveal: Bool) async throws -> AutomationExecutionResult
     func transcribe(_ options: AutomationTranscriptionOptions) async throws
-    -> AutomationExecutionResult
+        -> AutomationExecutionResult
 }
 
 public enum AutomationCommandExecutorError: Error, Equatable, Sendable {
@@ -17,7 +17,8 @@ public enum AutomationCommandExecutorError: Error, Equatable, Sendable {
 
 extension AutomationCommandExecutor {
     public func transcribe(_ options: AutomationTranscriptionOptions) async throws
-    -> AutomationExecutionResult {
+        -> AutomationExecutionResult
+    {
         throw AutomationCommandExecutorError.unsupportedCommand
     }
 }

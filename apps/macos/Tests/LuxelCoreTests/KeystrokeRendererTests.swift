@@ -104,10 +104,11 @@ struct KeystrokeRendererTests {
             speed: try PlaybackSpeed(2)
         )
 
-        #expect(try mapper.mapSourceRange(chip.timeRange) == [
-            TimeRange(start: 0.5, end: 1.5),
-            TimeRange(start: 1.5, end: 2.5)
-        ])
+        #expect(
+            try mapper.mapSourceRange(chip.timeRange) == [
+                TimeRange(start: 0.5, end: 1.5),
+                TimeRange(start: 1.5, end: 2.5)
+            ])
     }
 
     private func makeFrame(width: Int, height: Int) throws -> CGImage {

@@ -32,7 +32,7 @@ public struct KeystrokeChipPlanner: Sendable {
     }
 }
 
-private extension KeystrokeChipPlanner {
+extension KeystrokeChipPlanner {
     private func processCurrentEvent(
         in events: [KeystrokeEvent],
         state: inout PlanningState
@@ -145,7 +145,8 @@ private extension KeystrokeChipPlanner {
         plannedChips: inout [KeystrokeChip]
     ) throws {
         if let lastTime = typingRun.lastTime,
-           time - lastTime > rules.typingCoalescingInterval {
+            time - lastTime > rules.typingCoalescingInterval
+        {
             try flushTypingRun(&typingRun, into: &plannedChips)
         }
 
@@ -180,7 +181,7 @@ private extension KeystrokeChipPlanner {
     ) -> RepeatGroup? {
         let event = events[index]
         guard event.kind == .keyDown,
-              let displayText = specialText(for: event) ?? typingText(for: event)
+            let displayText = specialText(for: event) ?? typingText(for: event)
         else {
             return nil
         }
@@ -191,9 +192,9 @@ private extension KeystrokeChipPlanner {
         while groupEndIndex < events.endIndex {
             let next = events[groupEndIndex]
             guard next.kind == .keyDown,
-                  next.isRepeat,
-                  next.keyCode == event.keyCode,
-                  (specialText(for: next) ?? typingText(for: next)) == displayText
+                next.isRepeat,
+                next.keyCode == event.keyCode,
+                (specialText(for: next) ?? typingText(for: next)) == displayText
             else {
                 break
             }
@@ -217,8 +218,8 @@ private extension KeystrokeChipPlanner {
 
     private func shortcutText(for event: KeystrokeEvent) -> String? {
         guard event.kind == .keyDown,
-              !event.modifiers.subtracting([.shift]).isEmpty,
-              let keyText = specialText(for: event) ?? characterText(for: event)
+            !event.modifiers.subtracting([.shift]).isEmpty,
+            let keyText = specialText(for: event) ?? characterText(for: event)
         else {
             return nil
         }
@@ -228,7 +229,7 @@ private extension KeystrokeChipPlanner {
 
     private func characterText(for event: KeystrokeEvent) -> String? {
         guard let characters = event.characters,
-              !characters.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            !characters.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         else {
             return nil
         }
@@ -238,9 +239,9 @@ private extension KeystrokeChipPlanner {
 
     private func typingText(for event: KeystrokeEvent) -> String? {
         guard event.kind == .keyDown,
-              event.modifiers.subtracting([.shift]).isEmpty,
-              specialText(for: event) == nil,
-              let characters = characterText(for: event)
+            event.modifiers.subtracting([.shift]).isEmpty,
+            specialText(for: event) == nil,
+            let characters = characterText(for: event)
         else {
             return nil
         }
@@ -293,7 +294,8 @@ private extension KeystrokeChipPlanner {
         to plannedChips: inout [KeystrokeChip]
     ) throws {
         while activeChipIndexes(at: chip.timeRange.start, in: plannedChips).count
-                >= rules.maxVisibleChips {
+            >= rules.maxVisibleChips
+        {
             guard let evictedIndex = activeChipIndexes(at: chip.timeRange.start, in: plannedChips).first
             else {
                 break

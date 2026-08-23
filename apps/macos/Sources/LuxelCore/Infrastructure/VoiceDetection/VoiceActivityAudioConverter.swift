@@ -136,12 +136,14 @@ final class VoiceActivityAudioConverter: @unchecked Sendable {
             return
         }
 
-        guard let monoFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: format.sampleRate,
-            channels: 1,
-            interleaved: false
-        ) else {
+        guard
+            let monoFormat = AVAudioFormat(
+                commonFormat: .pcmFormatFloat32,
+                sampleRate: format.sampleRate,
+                channels: 1,
+                interleaved: false
+            )
+        else {
             throw VoiceActivityAudioConversionError.sourceFormatUnavailable
         }
 

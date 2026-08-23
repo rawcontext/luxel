@@ -30,7 +30,8 @@ public struct CursorTimelineRecordingService: Sendable {
     }
 
     public func recordTimeline(_ request: CursorTimelineRecordingRequest) async throws
-    -> CursorTimeline {
+        -> CursorTimeline
+    {
         let mapper = try MediaTimeMapper(
             recordingDuration: request.recordingDuration,
             pauses: request.pauses

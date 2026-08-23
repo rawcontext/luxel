@@ -75,8 +75,8 @@ public struct LuxelGlassWindowTransparencyConfigurator: NSViewRepresentable {
     }
 }
 
-public extension View {
-    func luxelGlassSceneWindowChrome() -> some View {
+extension View {
+    public func luxelGlassSceneWindowChrome() -> some View {
         containerBackground(.clear, for: .window)
             .toolbar(removing: .title)
             .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)

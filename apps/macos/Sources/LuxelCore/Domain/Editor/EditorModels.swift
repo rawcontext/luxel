@@ -218,7 +218,8 @@ public struct EditorExportDraft: Codable, Equatable, Sendable {
         zoomBlocks = try container.decodeIfPresent([ZoomBlock].self, forKey: .zoomBlocks) ?? []
         shouldMute = try container.decode(Bool.self, forKey: .shouldMute)
         audioMix = try container.decodeIfPresent(AudioMixPlan.self, forKey: .audioMix)
-        studioVoiceEnabled = try container.decodeIfPresent(Bool.self, forKey: .studioVoiceEnabled) ?? false
+        studioVoiceEnabled =
+            try container.decodeIfPresent(Bool.self, forKey: .studioVoiceEnabled) ?? false
         cursorOptions = try container.decodeIfPresent(CursorRenderOptions.self, forKey: .cursorOptions)
         keystrokeOptions = try container.decodeIfPresent(
             KeystrokeRenderOptions.self, forKey: .keystrokeOptions)

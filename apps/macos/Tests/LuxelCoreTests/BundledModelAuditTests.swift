@@ -32,7 +32,8 @@ struct BundledModelAuditTests {
             let directory = try temporaryModelCopy(specification)
             defer { try? FileManager.default.removeItem(at: directory.deletingLastPathComponent()) }
 
-            let externalArtifact = packageRoot
+            let externalArtifact =
+                packageRoot
                 .appending(path: "Vendor/Models/\(specification.modelDirectory)")
                 .appending(path: specification.artifactDirectory)
             try rewriteArtifactDirectory(
@@ -58,7 +59,8 @@ struct BundledModelAuditTests {
             try FileManager.default.removeItem(at: artifact)
             try FileManager.default.createSymbolicLink(
                 at: artifact,
-                withDestinationURL: packageRoot
+                withDestinationURL:
+                    packageRoot
                     .appending(path: "Vendor/Models/\(specification.modelDirectory)")
                     .appending(path: specification.artifactDirectory)
             )
@@ -204,8 +206,8 @@ private struct ModelAuditSpecification {
     let auditor: String
 }
 
-private extension SHA256.Digest {
-    var hexString: String {
+extension SHA256.Digest {
+    fileprivate var hexString: String {
         map { String(format: "%02x", $0) }.joined()
     }
 }

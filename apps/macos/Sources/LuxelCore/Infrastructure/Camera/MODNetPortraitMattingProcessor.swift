@@ -118,7 +118,8 @@ public final class MODNetPortraitMattingProcessor: @unchecked Sendable {
     private func renderCenterCrop(_ cameraFrame: CVPixelBuffer, to destination: CVPixelBuffer) {
         let image = Self.centerCroppedImage(CIImage(cvPixelBuffer: cameraFrame))
         let scale = CGFloat(Self.inputSize) / image.extent.width
-        let resized = image
+        let resized =
+            image
             .transformed(by: CGAffineTransform(translationX: -image.extent.minX, y: -image.extent.minY))
             .transformed(by: CGAffineTransform(scaleX: scale, y: scale))
         context.render(
@@ -215,7 +216,8 @@ public final class MODNetPortraitMattingProcessor: @unchecked Sendable {
 
         let bytesPerRow = CVPixelBufferGetBytesPerRow(matte)
         for rowIndex in stride(from: 0, to: inputSize, by: 8) {
-            let row = baseAddress
+            let row =
+                baseAddress
                 .advanced(by: rowIndex * bytesPerRow)
                 .assumingMemoryBound(to: UInt16.self)
             for columnIndex in stride(from: 0, to: inputSize, by: 8) {
@@ -247,8 +249,8 @@ public final class MODNetPortraitMattingProcessor: @unchecked Sendable {
     private static let logger = Logger(subsystem: "com.rawcontext.luxel", category: "CameraCutout")
 }
 
-private extension Duration {
-    var milliseconds: Double {
+extension Duration {
+    fileprivate var milliseconds: Double {
         let components = self.components
         return Double(components.seconds) * 1_000
             + Double(components.attoseconds) / 1_000_000_000_000_000
