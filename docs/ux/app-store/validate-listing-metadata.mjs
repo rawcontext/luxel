@@ -4,6 +4,11 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  parseLocaleMetadata,
+  parseTaggedJson,
+  requiredLocales,
+} from "./listing-metadata-support.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDirectory, "../../..");
@@ -11,19 +16,6 @@ const metadataPath = resolve(scriptDirectory, "listing-metadata.md");
 const markdown = await readFile(metadataPath, "utf8");
 const reviewNotes = await readFile(resolve(repositoryRoot, "docs/app-review/review-notes.txt"), "utf8");
 
-const requiredLocales = [
-  "en-US",
-  "de-DE",
-  "es-ES",
-  "fr-FR",
-  "it",
-  "ja",
-  "ko",
-  "vi",
-  "zh-Hans",
-  "pt-BR",
-  "pt-PT",
-];
 const requiredFields = [
   "name",
   "subtitle",
@@ -54,14 +46,6 @@ const screenshotReferences = [
 ];
 const canonicalSpeechScreenshotHash = "1a8051f2d614d27eb301063db1cf58e9ce3ccac151f81c79eae20dadc167db6c";
 
-function parseTaggedJson(tag) {
-  const pattern = new RegExp(
-    "<!-- " + tag + " -->\\s*```json\\s*([\\s\\S]*?)\\s*```",
-    "g",
-  );
-  return [...markdown.matchAll(pattern)].map((match) => JSON.parse(match[1]));
-}
-
 function characterCount(value) {
   return Array.from(value).length;
 }
@@ -72,8 +56,8 @@ function assert(condition, message) {
   }
 }
 
-const locales = parseTaggedJson("APP-STORE-LOCALE");
-const screenshotPlans = parseTaggedJson("APP-STORE-SCREENSHOTS");
+const locales = parseLocaleMetadata(markdown);
+const screenshotPlans = parseTaggedJson(markdown, "APP-STORE-SCREENSHOTS");
 assert(screenshotPlans.length === 1, "Expected one APP-STORE-SCREENSHOTS JSON block");
 
 const screenshotPlan = screenshotPlans[0];

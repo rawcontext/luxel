@@ -35,6 +35,26 @@ platform :mac do
       changelog: testflight_changelog(options)
     )
   end
+
+  desc "Upload localized metadata to an editable App Store Connect version"
+  lane :sync_app_store_metadata do |options|
+    upload_to_app_store(
+      api_key: app_store_connect_api_key_from_env,
+      app_identifier: APP_IDENTIFIER,
+      app_version: app_store_version(options),
+      metadata_path: app_store_metadata_path(options),
+      platform: "osx",
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: false,
+      submit_for_review: false,
+      automatic_release: false,
+      edit_live: false,
+      use_live_version: false,
+      force: true,
+      run_precheck_before_submit: false
+    )
+  end
 end
 
 def app_store_connect_api_key_from_env
@@ -148,6 +168,25 @@ def testflight_changelog(options)
   return nil if changelog.to_s.strip == ""
 
   changelog
+end
+
+def app_store_version(options)
+  version = options[:app_version] || ENV["APP_STORE_VERSION"]
+  version = version.to_s.strip
+  UI.user_error!("Missing app_version or APP_STORE_VERSION") if version == ""
+  UI.user_error!("App Store version must match <major>.<minor>[.<patch>]") unless version.match?(/\A\d+\.\d+(?:\.\d+)?\z/)
+
+  version
+end
+
+def app_store_metadata_path(options)
+  path = options[:metadata_path] || ENV["APP_STORE_METADATA_PATH"]
+  UI.user_error!("Missing metadata_path or APP_STORE_METADATA_PATH") if path.to_s.strip == ""
+
+  path = File.expand_path(path, REPO_ROOT)
+  UI.user_error!("Expected generated metadata directory at #{path}") unless Dir.exist?(path)
+
+  path
 end
 
 def fastlane_work_dir
