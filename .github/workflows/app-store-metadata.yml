@@ -24,7 +24,6 @@ jobs:
       APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
       APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
       APP_STORE_VERSION: ${{ inputs.app_version }}
-      APP_STORE_METADATA_PATH: ${{ runner.temp }}/luxel-app-store-metadata
 
     steps:
       - name: Check out repository
@@ -48,6 +47,9 @@ jobs:
           ruby-version: ${{ steps.ruby-version.outputs.ruby }}
           bundler-cache: true
           working-directory: apps/macos
+
+      - name: Configure temporary metadata path
+        run: echo "APP_STORE_METADATA_PATH=$RUNNER_TEMP/luxel-app-store-metadata" >> "$GITHUB_ENV"
 
       - name: Validate metadata source and exporter
         run: |
