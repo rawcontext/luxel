@@ -44,6 +44,24 @@ copy_luxel_app_resources() {
 	fi
 }
 
+set_luxel_localized_bundle_display_name() {
+	local display_name="$1"
+	local info_plist_strings
+
+	while IFS= read -r -d '' info_plist_strings; do
+		/usr/libexec/PlistBuddy \
+			-c "Set :CFBundleDisplayName ${display_name}" \
+			-c "Set :CFBundleName ${display_name}" \
+			"${info_plist_strings}"
+	done < <(
+		find "${APP_PATH}/Contents/Resources" \
+			-maxdepth 2 \
+			-path '*.lproj/InfoPlist.strings' \
+			-type f \
+			-print0
+	)
+}
+
 prepare_luxel_app_executables() {
 	chmod +x "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 	xcrun strip -x "${APP_PATH}/Contents/MacOS/${APP_NAME}"

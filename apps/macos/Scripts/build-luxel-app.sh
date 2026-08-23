@@ -60,6 +60,7 @@ cp "${INFO_PLIST}" "${APP_PATH}/Contents/Info.plist"
 configure_luxel_app_icon
 copy_luxel_app_payload
 copy_luxel_app_resources
+set_luxel_localized_bundle_display_name "${APP_DISPLAY_NAME}"
 prepare_luxel_app_executables
 
 codesign \

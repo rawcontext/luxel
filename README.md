@@ -133,6 +133,10 @@ Local development builds must use the script defaults: `com.rawcontext.luxel.dev
 production values, do not use the Mac App Store packaging script for local runs, and
 do not replace or launch `/Applications/Luxel.app`. That path is reserved for the
 TestFlight or App Store build with bundle identifier `com.rawcontext.luxel`.
+The local build also rewrites every copied `InfoPlist.strings` name to `Luxel Dev`,
+so macOS menus, notifications, accessibility surfaces, and permission rows remain
+visibly distinct from production in every supported locale. Its TCC permissions are
+stored separately under `com.rawcontext.luxel.dev`.
 
 Do not launch this binary directly:
 
