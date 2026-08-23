@@ -183,10 +183,11 @@ SCRIPT_CHECKS = {
     "Vendor/build-native-codecs.sh": [
         'generate-native-codec-manifest.py" --verify-toolchain-only',
         'generate-native-codec-manifest.py"',
+        'audit-native-codecs.py" --verify-installed-toolchain',
     ],
     "Vendor/build-webm-codecs.sh": [
         'generate-native-codec-manifest.py" --verify-toolchain-only',
-        'Scripts/audit-native-codecs.py"',
+        'Scripts/audit-native-codecs.py" --verify-installed-toolchain',
     ],
     "Vendor/build-libopus.sh": [
         'VERSION="1.6.1"',
@@ -540,11 +541,12 @@ def run_self_tests(manifest: dict[str, object], ledger: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--verify-installed-toolchain", action="store_true")
     arguments = parser.parse_args()
 
     manifest = load_manifest()
     ledger = (PACKAGE_ROOT / "THIRD_PARTY_LICENSES.md").read_text(encoding="utf-8")
-    verify_manifest(manifest, verify_installed_toolchain=True)
+    verify_manifest(manifest, verify_installed_toolchain=arguments.verify_installed_toolchain)
     verify_scripts()
     verify_ledger(ledger, manifest["artifacts"])
     if arguments.self_test:
