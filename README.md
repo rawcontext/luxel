@@ -111,6 +111,7 @@ Run commands from the repository root unless a section says otherwise.
 | `bun run build` | Run `turbo run build` across workspace packages. |
 | `bun run test` | Run `turbo run test`; currently includes Swift tests for the macOS package. |
 | `bun run lint` | Run `turbo run lint`; currently SwiftLint for the macOS package. |
+| `bun run --cwd apps/macos bench:media` | Run the headless release media-export benchmark and fixed performance gates. |
 | `bun run app:build` | Build a signed local dev `.app` bundle. |
 | `bun run app:build:mas` | Build a Mac App Store package path through the MAS script. |
 | `bun run check:codec-licenses` | Validate third-party codec license ledger expectations. |

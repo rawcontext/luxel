@@ -16,6 +16,10 @@ let package = Package(
         .executable(
             name: "luxel-transcription-benchmark",
             targets: ["LuxelTranscriptionBenchmark"]
+        ),
+        .executable(
+            name: "luxel-media-benchmark",
+            targets: ["LuxelMediaBenchmark"]
         )
     ],
     dependencies: [
@@ -39,6 +43,14 @@ let package = Package(
             dependencies: [
                 "LuxelCore",
                 .product(name: "FluidAudio", package: "FluidAudio")
+            ]
+        ),
+        .executableTarget(
+            name: "LuxelMediaBenchmark",
+            dependencies: [
+                "LuxelCore",
+                "LuxelCodecAV1",
+                "LuxelCodecWebM"
             ]
         ),
         .target(name: "LuxelPresentation", dependencies: ["LuxelCore"]),
