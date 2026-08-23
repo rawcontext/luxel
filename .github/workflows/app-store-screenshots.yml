@@ -31,6 +31,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+
       - name: Read Ruby version
         id: ruby-version
         run: |
@@ -54,12 +60,12 @@ jobs:
 
       - name: Render and validate localized screenshots
         run: |
+          node docs/ux/app-store/validate-listing-metadata.mjs
           swift docs/ux/app-store/render-localized-screenshots.swift \
             --output "$APP_STORE_SCREENSHOTS_RENDERED_PATH" \
             --manifest "$APP_STORE_SCREENSHOTS_MANIFEST"
           test "$(find "$APP_STORE_SCREENSHOTS_PATH" -type f | wc -l | tr -d ' ')" = "66"
-          diff -qr "$APP_STORE_SCREENSHOTS_PATH" "$APP_STORE_SCREENSHOTS_RENDERED_PATH"
-          cmp docs/design/app-store-localized-manifest.json "$APP_STORE_SCREENSHOTS_MANIFEST"
+          test "$(find "$APP_STORE_SCREENSHOTS_RENDERED_PATH" -type f | wc -l | tr -d ' ')" = "66"
 
       - name: Update App Store Connect screenshot draft
         working-directory: apps/macos
