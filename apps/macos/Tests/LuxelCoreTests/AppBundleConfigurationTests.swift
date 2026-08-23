@@ -193,6 +193,22 @@ extension AppBundleConfigurationTests {
         #expect(script.contains("Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 ${APP_URL_SCHEME}"))
     }
 
+    @Test("voice detection soak requires the signed development identity and listening consent")
+    func voiceDetectionSoakRequiresSignedDevelopmentIdentityAndListeningConsent() throws {
+        let script = try scriptSource("validate-voice-detection-soak.sh")
+
+        #expect(script.contains("EXPECTED_BUNDLE_IDENTIFIER=\"com.rawcontext.luxel.dev\""))
+        #expect(script.contains("EXPECTED_DISPLAY_NAME=\"Luxel Dev\""))
+        #expect(script.contains("EXPECTED_URL_SCHEME=\"luxel-dev\""))
+        #expect(script.contains("EXPECTED_TEAM_IDENTIFIER=\"U65DCW9TAK\""))
+        #expect(script.contains("DEFAULT_DURATION_SECONDS=28800"))
+        #expect(script.contains("--confirm-listening"))
+        #expect(script.contains("codesign --verify --deep --strict"))
+        #expect(script.contains("audit-voice-activity-detection-model.sh"))
+        #expect(script.contains("average < 5.0"))
+        #expect(!script.contains("/Applications/Luxel.app/Contents/MacOS/Luxel"))
+    }
+
     @Test("signing scripts select identities from the Raw Context team")
     func signingScriptsSelectIdentitiesFromRawContextTeam() throws {
         let support = try scriptSource("signing-identity-support.sh")
