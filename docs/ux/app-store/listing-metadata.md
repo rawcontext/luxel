@@ -540,5 +540,5 @@ If any of those facts change, stop submission and re-answer App Privacy before r
 
 1. Run `bun docs/ux/app-store/validate-listing-metadata.mjs`.
 2. Render the gallery locally to a temporary directory and inspect the complete output before changing App Store Connect.
-3. Dispatch App Store Localized Screenshots with the editable version number. The workflow re-renders the gallery, requires a byte-for-byte match with the checked-in assets, and uploads all 11 locale directories.
+3. Dispatch App Store Localized Screenshots with the editable version number. The workflow verifies the checked-in asset hashes, exercises the renderer on the runner, and uploads all 11 committed locale directories.
 4. Confirm the workflow succeeded. It must not upload a binary, change text metadata, submit for review, or publish the version.
