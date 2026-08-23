@@ -7,3 +7,4 @@ pre-commit 4.6.2
 swiftlint 0.65.1
 pipx 1.16.7
 uv 0.12.5
+cmake 4.4.2

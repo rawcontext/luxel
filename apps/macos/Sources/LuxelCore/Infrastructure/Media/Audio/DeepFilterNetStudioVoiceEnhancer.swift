@@ -1,5 +1,5 @@
-// Adapted from soniqo/speech-swift v0.0.21 at commit
-// 7609977be837a6529bd04300c6b963e735300070 under Apache-2.0.
+// Adapted from soniqo/speech-swift v0.0.26 at commit
+// f9af2f34d196eacca85d13fe508d8ed71919671f under Apache-2.0.
 // Modified to load only explicit bundled resources and process bounded windows.
 
 import Accelerate

@@ -5,14 +5,18 @@ Luxel ships the following third-party components:
 1. libvpx — BSD-3-Clause — WebM (VP8/VP9) video export
 2. libopus — BSD-3-Clause — WebM/Opus audio export
 3. SVT-AV1 — BSD-3-Clause-Clear — AV1 video export
-4. FluidAudio — Apache License 2.0 — local speaker diarization engine
-5. fastcluster — BSD-2-Clause — hierarchical clustering code included by FluidAudio
-6. VBx — Apache License 2.0 — speaker clustering implementation included by FluidAudio
-7. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
-8. FluidInference silero-vad-coreml — MIT — bundled local voice activity detection model
-9. aufklarer/DeepFilterNet3-CoreML — Apache License 2.0 — bundled Studio Voice Core ML model
-10. soniqo/speech-swift — Apache License 2.0 — adapted Studio Voice signal-processing runtime
-11. ZHKKKe/MODNet — Apache License 2.0 — bundled local camera portrait-matting model
+4. AOM-derived SVT-AV1 components — BSD-2-Clause — AV1 codec primitives embedded in SVT-AV1
+5. dav1d-derived SVT-AV1 assembly — BSD-2-Clause — ARM assembly embedded in SVT-AV1
+6. fastfeat — BSD-3-Clause — FAST corner detection embedded in SVT-AV1
+7. FluidAudio — Apache License 2.0 — local speaker diarization engine
+8. NemoTextProcessing — Apache-2.0 — statically linked text normalization supplied by FluidAudio
+9. fastcluster — BSD-2-Clause — hierarchical clustering code included by FluidAudio
+10. VBx — Apache License 2.0 — speaker clustering implementation included by FluidAudio
+11. FluidInference speaker-diarization-coreml — CC-BY-4.0 — bundled speaker diarization Core ML models
+12. FluidInference silero-vad-coreml — MIT — bundled local voice activity detection model
+13. aufklarer/DeepFilterNet3-CoreML — Apache License 2.0 — bundled Studio Voice Core ML model
+14. soniqo/speech-swift — Apache License 2.0 — adapted Studio Voice signal-processing runtime
+15. ZHKKKe/MODNet — Apache License 2.0 — bundled local camera portrait-matting model
 
 The license notices and required attributions for each component follow in the
 same order. Shared license text is reproduced once and referenced by every
@@ -242,15 +246,139 @@ Alliance for Open Media Patent License 1.0
    the Alliance for Open Media as a Final Deliverable for which this
    License was issued.
 
+## Dependency: svt-av1-aom
+Name: AOM-derived SVT-AV1 components
+License: BSD-2-Clause
+Copyright: Copyright (c) 2019, Alliance for Open Media. All rights reserved.
+License Text:
+Copyright (c) 2019, Alliance for Open Media. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the
+   distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+The Alliance for Open Media Patent License 1.0 reproduced with the SVT-AV1 notice applies to these components.
+
+## Dependency: svt-av1-dav1d
+Name: dav1d-derived SVT-AV1 assembly
+License: BSD-2-Clause
+Copyright: Copyright © 2018 VideoLAN and dav1d authors; Copyright © 2015, 2018 Janne Grunau; Copyright © 2015 Martin Storsjo
+License Text:
+Copyright © 2018, VideoLAN and dav1d authors
+Copyright © 2015, 2018 Janne Grunau
+Copyright © 2015 Martin Storsjo
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+## Dependency: svt-av1-fastfeat
+Name: fastfeat
+License: BSD-3-Clause
+Copyright: Copyright (c) 2006, 2008 Edward Rosten. All rights reserved.
+License Text:
+Copyright (c) 2006, 2008 Edward Rosten
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the University of Cambridge nor the names of its
+  contributors may be used to endorse or promote products derived from this
+  software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
 ## FluidAudio
 
-Luxel includes the FluidAudio Swift SDK for local speaker diarization.
+Luxel includes FluidAudio v0.15.6 at commit
+`4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b` for local speaker diarization
+and bundled Silero VAD inference. Luxel enables FluidAudio's offline mode and
+loads only audited local model directories; it does not use FluidAudio's model
+download fallback.
 
 License: Apache License 2.0 (full text reproduced in the "Apache License, Version 2.0" section below)
 
 Copyright: Copyright 2025 Fluid Inference Inc.
 
-Upstream license file: https://github.com/FluidInference/FluidAudio/blob/main/LICENSE
+Upstream license file: https://github.com/FluidInference/FluidAudio/blob/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b/LICENSE
+
+## NemoTextProcessing (included by FluidAudio)
+
+FluidAudio v0.15.6 statically links `NemoTextProcessing` from
+`FluidInference/text-processing-rs` v0.3.0 at commit
+`27d75c401c225771fc16053dc551a887c2fbfc50`. SwiftPM verifies the
+49,419,751-byte XCFramework release archive with checksum
+`76d0ee9a32b1ee2193231299180ca9bc4fc7e98794e771b3d55d66498352d85f`.
+It is a build-time binary dependency and performs no runtime download.
+
+License: Apache License 2.0 (full text reproduced below)
+
+The binary includes weighted-FST grammars derived from NVIDIA NeMo Text
+Processing at commit `1f1263579fe57ba7ed783cad3dddee710fcc5064`
+(Apache-2.0, Copyright NVIDIA CORPORATION & AFFILIATES) and permissively
+licensed Rust dependencies including rustfst and flate2 (MIT OR Apache-2.0).
+
+Upstream notice: https://github.com/FluidInference/FluidAudio/blob/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b/ThirdPartyLicenses/NemoTextProcessing-LICENSE.md
+
+Source: https://github.com/FluidInference/text-processing-rs/tree/v0.3.0
 
 ## fastcluster (included by FluidAudio)
 
@@ -261,7 +389,7 @@ License: BSD 2-Clause License
 
 Copyright: Until package version 1.1.23: Copyright 2011 Daniel Müllner; all changes from version 1.1.24 on: Copyright Google Inc. All rights reserved.
 
-Upstream notice: https://github.com/FluidInference/FluidAudio/blob/19600a485baa4998812e4654b70d2bab8f2c9949/ThirdPartyLicenses/fastcluster-LICENSE.md
+Upstream notice: https://github.com/FluidInference/FluidAudio/blob/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b/ThirdPartyLicenses/fastcluster-LICENSE.md
 
 Copyright:
   * Until package version 1.1.23: © 2011 Daniel Müllner <https://danifold.net>
@@ -284,7 +412,7 @@ License: Apache License 2.0 (full text reproduced in the "Apache License, Versio
 
 Copyright: Copyright 2021-2024 BUT Speech@FIT (original VBx project)
 
-Upstream notice: https://github.com/FluidInference/FluidAudio/blob/19600a485baa4998812e4654b70d2bab8f2c9949/ThirdPartyLicenses/vbx-LICENSE.md
+Upstream notice: https://github.com/FluidInference/FluidAudio/blob/4dbf4f9f9a5ff3a53ade848d7ba4e3df13db859b/ThirdPartyLicenses/vbx-LICENSE.md
 
 ## FluidInference speaker-diarization-coreml (bundled model)
 
@@ -292,7 +420,9 @@ Luxel bundles the `FluidInference/speaker-diarization-coreml` Core ML models
 (based on `pyannote/speaker-diarization-community-1` and WeSpeaker) in the app
 at `Contents/Resources/Models/speaker-diarization` (vendored from
 `Vendor/Models/speaker-diarization`) to power the "Identify Speakers" feature.
-The model is installed from the app bundle only; Luxel never downloads it.
+The exact model revision is
+`1ed7a662fdc7109e36d822db793ee6eebdaf8594`. The model is installed from the
+app bundle only; Luxel never downloads it.
 
 License: Creative Commons Attribution 4.0 International (CC-BY-4.0), https://creativecommons.org/licenses/by/4.0/
 
@@ -352,8 +482,8 @@ Model card: https://huggingface.co/aufklarer/DeepFilterNet3-CoreML
 ## soniqo/speech-swift (adapted runtime)
 
 Luxel includes a modified, narrow adaptation of the DeepFilterNet3 signal
-processing code from `soniqo/speech-swift` v0.0.21 at revision
-`7609977be837a6529bd04300c6b963e735300070`. The adaptation removes MLX,
+processing code from `soniqo/speech-swift` v0.0.26 at revision
+`f9af2f34d196eacca85d13fe508d8ed71919671f`. The adaptation removes MLX,
 downloader, cache, and unrelated speech-model dependencies; it loads only the
 explicit model and auxiliary-data URLs supplied by Luxel and processes bounded
 PCM windows.
@@ -385,7 +515,7 @@ and the converted model does not require networking at runtime.
 
 ## Apache License, Version 2.0
 
-The following license text applies to FluidAudio, VBx,
+The following license text applies to FluidAudio, NemoTextProcessing, VBx,
 DeepFilterNet3-CoreML, the adapted speech-swift runtime, and MODNet.
 
                                  Apache License

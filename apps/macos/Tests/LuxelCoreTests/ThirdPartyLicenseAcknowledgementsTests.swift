@@ -2,6 +2,40 @@ import Foundation
 import LuxelTestSupport
 import Testing
 
+private let expectedThirdPartyComponentHeadings = [
+    "## Dependency: libvpx",
+    "## Dependency: libopus",
+    "## Dependency: svt-av1",
+    "## Dependency: svt-av1-aom",
+    "## Dependency: svt-av1-dav1d",
+    "## Dependency: svt-av1-fastfeat",
+    "## FluidAudio",
+    "## NemoTextProcessing (included by FluidAudio)",
+    "## fastcluster (included by FluidAudio)",
+    "## VBx (included by FluidAudio)",
+    "## FluidInference speaker-diarization-coreml (bundled model)",
+    "## FluidInference silero-vad-coreml (bundled model)",
+    "## aufklarer/DeepFilterNet3-CoreML (bundled model)",
+    "## soniqo/speech-swift (adapted runtime)",
+    "## ZHKKKe/MODNet (bundled model)"
+]
+
+private let expectedThirdPartyResourcePaths = [
+    "Vendor/Artifacts/CVPX.xcframework",
+    "Vendor/Artifacts/COpus.xcframework",
+    "Vendor/Artifacts/CSVTAV1.xcframework",
+    "Vendor/Models/speaker-diarization",
+    "Vendor/Models/voice-activity-detection",
+    "Vendor/Models/studio-voice",
+    "Vendor/Models/modnet",
+    "Vendor/Models/speaker-diarization/LICENSE.txt",
+    "Vendor/Models/speaker-diarization/NOTICE.md",
+    "Vendor/Models/speaker-diarization/model-manifest.json",
+    "Vendor/Models/studio-voice/LICENSE.txt",
+    "Vendor/Models/studio-voice/NOTICE.md",
+    "Vendor/Models/studio-voice/manifest.json"
+]
+
 @Suite("Third-party license acknowledgements")
 struct ThirdPartyLicenseAcknowledgementsTests {
     @Test("acknowledgements cover every shipped third-party component")
@@ -15,19 +49,7 @@ struct ThirdPartyLicenseAcknowledgementsTests {
             .components(separatedBy: .newlines)
             .filter { $0.hasPrefix("## ") && $0 != "## Apache License, Version 2.0" }
 
-        #expect(componentHeadings == [
-            "## Dependency: libvpx",
-            "## Dependency: libopus",
-            "## Dependency: svt-av1",
-            "## FluidAudio",
-            "## fastcluster (included by FluidAudio)",
-            "## VBx (included by FluidAudio)",
-            "## FluidInference speaker-diarization-coreml (bundled model)",
-            "## FluidInference silero-vad-coreml (bundled model)",
-            "## aufklarer/DeepFilterNet3-CoreML (bundled model)",
-            "## soniqo/speech-swift (adapted runtime)",
-            "## ZHKKKe/MODNet (bundled model)"
-        ])
+        #expect(componentHeadings == expectedThirdPartyComponentHeadings)
 
         let packageResolved = try JSONDecoder().decode(
             ResolvedPackage.self,
@@ -35,15 +57,7 @@ struct ThirdPartyLicenseAcknowledgementsTests {
         )
         #expect(Set(packageResolved.pins.map(\.identity)) == ["fluidaudio"])
 
-        for path in [
-            "Vendor/Artifacts/CVPX.xcframework",
-            "Vendor/Artifacts/COpus.xcframework",
-            "Vendor/Artifacts/CSVTAV1.xcframework",
-            "Vendor/Models/speaker-diarization",
-            "Vendor/Models/voice-activity-detection",
-            "Vendor/Models/studio-voice",
-            "Vendor/Models/modnet"
-        ] {
+        for path in expectedThirdPartyResourcePaths {
             #expect(FileManager.default.fileExists(atPath: packageRoot.appending(path: path).path))
         }
     }

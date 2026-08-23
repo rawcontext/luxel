@@ -70,6 +70,25 @@ public struct CodecDependency: Codable, Equatable, Identifiable, Sendable {
             role: "AV1 video encode",
             license: .bsd3ClauseClear,
             patentGrant: "Alliance for Open Media Patent License 1.0"
+        ),
+        CodecDependency(
+            id: "svt-av1-aom",
+            name: "AOM-derived SVT-AV1 components",
+            role: "AV1 codec primitives embedded in SVT-AV1",
+            license: .bsd2Clause,
+            patentGrant: "Alliance for Open Media Patent License 1.0"
+        ),
+        CodecDependency(
+            id: "svt-av1-dav1d",
+            name: "dav1d-derived SVT-AV1 assembly",
+            role: "ARM assembly embedded in SVT-AV1",
+            license: .bsd2Clause
+        ),
+        CodecDependency(
+            id: "svt-av1-fastfeat",
+            name: "fastfeat",
+            role: "FAST corner detection embedded in SVT-AV1",
+            license: .bsd3Clause
         )
     ]
 

@@ -4,6 +4,7 @@ set -euo pipefail
 VERSION="1.6.1"
 ARCH="arm64"
 DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-26.0}"
+SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORK_DIR="${ROOT}/.build/vendor"
 TARBALL="${WORK_DIR}/opus-${VERSION}.tar.gz"
@@ -32,6 +33,8 @@ cmake \
 	-DCMAKE_BUILD_TYPE=Release \
 	-DCMAKE_OSX_ARCHITECTURES="${ARCH}" \
 	-DCMAKE_OSX_DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET}" \
+	-DCMAKE_OSX_SYSROOT="${SDK_PATH}" \
+	-DCMAKE_C_FLAGS="-ffile-prefix-map=${SOURCE_DIR}=opus-${VERSION}" \
 	-DOPUS_BUILD_PROGRAMS=OFF \
 	-DOPUS_BUILD_TESTING=OFF \
 	-DOPUS_INSTALL_PKG_CONFIG_MODULE=OFF \
@@ -39,6 +42,7 @@ cmake \
 	-DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}"
 
 cmake --build "${BUILD_DIR}" --config Release --target install
+xcrun ranlib -D "${INSTALL_DIR}/lib/libopus.a"
 
 mkdir -p "${HEADERS_DIR}"
 cp -R "${INSTALL_DIR}/include/opus" "${HEADERS_DIR}/opus"

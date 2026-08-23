@@ -85,7 +85,10 @@ func deepFilterNetApplyFiltering(
             var realSum: Float = 0
             var imaginarySum: Float = 0
             for tap in 0..<shape.order {
-                let sourceFrame = min(max(frame + tap - padding, 0), shape.frameCount - 1)
+                let sourceFrame = frame + tap - padding
+                guard sourceFrame >= 0, sourceFrame < shape.frameCount else {
+                    continue
+                }
                 let sourceIndex = sourceFrame * shape.frequencyBins + bin
                 let coefficientIndex =
                     (frame * shape.filteredBins * shape.order + bin * shape.order + tap) * 2

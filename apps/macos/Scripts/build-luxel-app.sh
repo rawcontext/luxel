@@ -10,6 +10,11 @@ ENTITLEMENTS="${ENTITLEMENTS:-${PACKAGE_ROOT}/Configuration/Luxel/Luxel.Develope
 THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
 STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
 APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
+CODEC_LICENSE_CHECKER="${PACKAGE_ROOT}/Scripts/check-codec-licenses.sh"
+SPEAKER_DIARIZATION_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/speaker-diarization"
+SPEAKER_DIARIZATION_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-speaker-diarization-model.sh"
+STUDIO_VOICE_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/studio-voice"
+STUDIO_VOICE_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-studio-voice-model.sh"
 MODNET_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/modnet"
 MODNET_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-modnet-model.sh"
 VAD_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/voice-activity-detection"
@@ -42,6 +47,9 @@ fi
 
 cd "${PACKAGE_ROOT}"
 
+"${CODEC_LICENSE_CHECKER}"
+bash "${SPEAKER_DIARIZATION_MODEL_AUDITOR}" "${SPEAKER_DIARIZATION_MODEL_DIR}"
+bash "${STUDIO_VOICE_MODEL_AUDITOR}" "${STUDIO_VOICE_MODEL_DIR}"
 "${MODNET_MODEL_AUDITOR}" "${MODNET_MODEL_DIR}"
 "${VAD_MODEL_AUDITOR}" "${VAD_MODEL_DIR}"
 
@@ -72,6 +80,8 @@ codesign \
 	"${APP_PATH}"
 
 codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
+bash "${SPEAKER_DIARIZATION_MODEL_AUDITOR}" "${APP_PATH}"
+bash "${STUDIO_VOICE_MODEL_AUDITOR}" "${APP_PATH}"
 "${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
 "${VAD_MODEL_AUDITOR}" "${APP_PATH}"
 

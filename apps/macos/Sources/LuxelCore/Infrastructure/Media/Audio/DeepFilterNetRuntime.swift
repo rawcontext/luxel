@@ -13,7 +13,17 @@ struct DeepFilterNetConfiguration {
 
     var frequencyBins: Int { fftSize / 2 + 1 }
     var normalizationAlpha: Float {
-        exp(-Float(hopSize) / Float(sampleRate) / normalizationTimeConstant)
+        let unrounded = exp(-Float(hopSize) / Float(sampleRate) / normalizationTimeConstant)
+        var scale: Float = 1_000
+
+        while scale.isFinite {
+            let rounded = (unrounded * scale).rounded() / scale
+            if rounded < 1 {
+                return rounded
+            }
+            scale *= 10
+        }
+        return unrounded
     }
 }
 

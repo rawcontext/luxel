@@ -115,7 +115,44 @@ enum DeepFilterNetNPZReader {
         offset: Int,
         byteCount: Int
     ) -> [Float]? {
-        guard byteCount >= 10,
+        guard let payload = npyPayload(data, offset: offset, byteCount: byteCount) else {
+            return nil
+        }
+
+        var raw = [Float](
+            repeating: 0,
+            count: payload.byteCount / MemoryLayout<Float>.size
+        )
+        _ = raw.withUnsafeMutableBytes { destination in
+            data.copyBytes(
+                to: destination,
+                from: payload.start..<(payload.start + payload.byteCount)
+            )
+        }
+
+        let fortranOrder = payload.header.contains("'fortran_order': True")
+            || payload.header.contains("\"fortran_order\": True")
+        guard fortranOrder else {
+            return raw
+        }
+        guard let shape = parseShape(fromNPYHeader: payload.header),
+              shape.count > 1,
+              elementCount(of: shape, limit: raw.count) == raw.count
+        else {
+            return nil
+        }
+
+        return fortranToRowMajor(raw, shape: shape)
+    }
+
+    private static func npyPayload(
+        _ data: Data,
+        offset: Int,
+        byteCount: Int
+    ) -> DeepFilterNetNPYPayload? {
+        guard offset >= 0,
+              byteCount >= 10,
+              offset + byteCount <= data.count,
               data[offset] == 0x93,
               data[offset + 1] == 0x4e
         else {
@@ -123,24 +160,97 @@ enum DeepFilterNetNPZReader {
         }
 
         let majorVersion = data[offset + 6]
-        let headerLength = majorVersion == 1
-            ? Int(readUInt16(data, at: offset + 8))
-            : Int(readUInt32(data, at: offset + 8))
-        let headerSize = majorVersion == 1 ? 10 : 12
-        let floatStart = offset + headerSize + headerLength
-        let floatByteCount = byteCount - headerSize - headerLength
-        guard floatByteCount >= 0, floatByteCount.isMultiple(of: 4) else {
+        let headerLength: Int
+        switch majorVersion {
+        case 1:
+            headerLength = Int(readUInt16(data, at: offset + 8))
+        case 2, 3:
+            guard byteCount >= 12 else {
+                return nil
+            }
+            headerLength = Int(readUInt32(data, at: offset + 8))
+        default:
             return nil
         }
 
-        var floats = [Float](repeating: 0, count: floatByteCount / 4)
-        _ = floats.withUnsafeMutableBytes { destination in
-            data.copyBytes(
-                to: destination,
-                from: floatStart..<(floatStart + floatByteCount)
-            )
+        let headerSize = majorVersion == 1 ? 10 : 12
+        let headerStart = offset + headerSize
+        let floatStart = headerStart + headerLength
+        let floatByteCount = byteCount - headerSize - headerLength
+        guard headerLength > 0,
+              floatStart <= offset + byteCount,
+              floatByteCount > 0,
+              floatByteCount.isMultiple(of: MemoryLayout<Float>.size),
+              floatStart + floatByteCount <= data.count,
+              let header = String(
+                data: data[headerStart..<floatStart],
+                encoding: .ascii
+              )
+        else {
+            return nil
         }
-        return floats
+        return DeepFilterNetNPYPayload(
+            header: header,
+            start: floatStart,
+            byteCount: floatByteCount
+        )
+    }
+
+    private static func elementCount(of shape: [Int], limit: Int) -> Int? {
+        var count = 1
+        for dimension in shape {
+            guard dimension > 0, count <= limit / dimension else {
+                return nil
+            }
+            count *= dimension
+        }
+        return count
+    }
+
+    private static func parseShape(fromNPYHeader header: String) -> [Int]? {
+        guard let shapeKey = header.range(of: "shape"),
+              let open = header[shapeKey.upperBound...].firstIndex(of: "("),
+              let close = header[open...].firstIndex(of: ")")
+        else {
+            return nil
+        }
+
+        let contents = header[header.index(after: open)..<close]
+        var dimensions: [Int] = []
+        for part in contents.split(separator: ",") {
+            let value = part.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let dimension = Int(value) else {
+                return nil
+            }
+            dimensions.append(dimension)
+        }
+        return dimensions.isEmpty ? nil : dimensions
+    }
+
+    /// NumPy stores Fortran-order arrays column-major; Luxel's DSP expects row-major arrays.
+    private static func fortranToRowMajor(_ input: [Float], shape: [Int]) -> [Float] {
+        var rowMajorStrides = [Int](repeating: 1, count: shape.count)
+        if shape.count > 1 {
+            for dimension in stride(from: shape.count - 2, through: 0, by: -1) {
+                rowMajorStrides[dimension] = rowMajorStrides[dimension + 1]
+                    * shape[dimension + 1]
+            }
+        }
+
+        var output = [Float](repeating: 0, count: input.count)
+        for rowMajorIndex in output.indices {
+            var remainder = rowMajorIndex
+            var fortranIndex = 0
+            var fortranStride = 1
+            for dimension in shape.indices {
+                let coordinate = remainder / rowMajorStrides[dimension]
+                remainder %= rowMajorStrides[dimension]
+                fortranIndex += coordinate * fortranStride
+                fortranStride *= shape[dimension]
+            }
+            output[rowMajorIndex] = input[fortranIndex]
+        }
+        return output
     }
 
     private static func readUInt16(_ data: Data, at offset: Int) -> UInt16 {
@@ -154,4 +264,10 @@ enum DeepFilterNetNPZReader {
     private static func readUInt64(_ data: Data, at offset: Int) -> UInt64 {
         data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: offset, as: UInt64.self) }
     }
+}
+
+private struct DeepFilterNetNPYPayload {
+    let header: String
+    let start: Int
+    let byteCount: Int
 }

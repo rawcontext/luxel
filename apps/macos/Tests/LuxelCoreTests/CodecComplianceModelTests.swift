@@ -40,7 +40,13 @@ struct CodecComplianceModelTests {
         #expect(policy.deniedShippedDependencies(in: CodecDependency.plannedNativeCodecStack).isEmpty)
         #expect(
             CodecDependency.plannedNativeCodecStack.map(\.id) == [
-                "libvpx", "libopus", "svt-av1", "libaom"
+                "libvpx",
+                "libopus",
+                "svt-av1",
+                "svt-av1-aom",
+                "svt-av1-dav1d",
+                "svt-av1-fastfeat",
+                "libaom"
             ])
         #expect(CodecDependency.plannedNativeCodecStack.last?.isFallbackOnly == true)
     }
@@ -107,7 +113,15 @@ struct CodecComplianceModelTests {
     func licenseGatePassesForBundledCodecDependencies() throws {
         let (_, report) = try bundledCodecLicenseValidation()
 
-        #expect(CodecDependency.bundledNativeCodecStack.map(\.id) == ["libvpx", "libopus", "svt-av1"])
+        #expect(
+            CodecDependency.bundledNativeCodecStack.map(\.id) == [
+                "libvpx",
+                "libopus",
+                "svt-av1",
+                "svt-av1-aom",
+                "svt-av1-dav1d",
+                "svt-av1-fastfeat"
+            ])
         #expect(report.isPassing)
         #expect(report.violations.isEmpty)
     }
@@ -116,7 +130,15 @@ struct CodecComplianceModelTests {
     func thirdPartyLicensesLedgerFilePassesCurrentReleaseGate() throws {
         let (ledger, report) = try bundledCodecLicenseValidation()
 
-        #expect(ledger.entries.map(\.dependencyID) == ["libvpx", "libopus", "svt-av1"])
+        #expect(
+            ledger.entries.map(\.dependencyID) == [
+                "libvpx",
+                "libopus",
+                "svt-av1",
+                "svt-av1-aom",
+                "svt-av1-dav1d",
+                "svt-av1-fastfeat"
+            ])
         #expect(report.isPassing)
         #expect(report.violations.isEmpty)
     }
@@ -243,6 +265,9 @@ extension CodecComplianceModelTests {
                 .missingLedgerEntry(dependencyID: "libvpx"),
                 .missingLedgerEntry(dependencyID: "libopus"),
                 .missingLedgerEntry(dependencyID: "svt-av1"),
+                .missingLedgerEntry(dependencyID: "svt-av1-aom"),
+                .missingLedgerEntry(dependencyID: "svt-av1-dav1d"),
+                .missingLedgerEntry(dependencyID: "svt-av1-fastfeat"),
                 .missingLedgerEntry(dependencyID: "libaom")
             ])
     }

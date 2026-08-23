@@ -13,15 +13,11 @@ copy_luxel_app_payload() {
 	cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 	cp "${PRIVACY_MANIFEST}" "${APP_PATH}/Contents/Resources/PrivacyInfo.xcprivacy"
 	cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
-	if [[ -d "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" ]]; then
-		mkdir -p "${APP_PATH}/Contents/Resources/Models"
-		cp -R "${PACKAGE_ROOT}/Vendor/Models/speaker-diarization" "${APP_PATH}/Contents/Resources/Models/"
-	fi
-	if [[ -d "${PACKAGE_ROOT}/Vendor/Models/studio-voice" ]]; then
-		mkdir -p "${APP_PATH}/Contents/Resources/Models"
-		cp -R "${PACKAGE_ROOT}/Vendor/Models/studio-voice" "${APP_PATH}/Contents/Resources/Models/"
-	fi
 	mkdir -p "${APP_PATH}/Contents/Resources/Models"
+	cp -R "${SPEAKER_DIARIZATION_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
+	bash "${SPEAKER_DIARIZATION_MODEL_AUDITOR}" "${APP_PATH}"
+	cp -R "${STUDIO_VOICE_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
+	bash "${STUDIO_VOICE_MODEL_AUDITOR}" "${APP_PATH}"
 	cp -R "${MODNET_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
 	"${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
 	cp -R "${VAD_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"

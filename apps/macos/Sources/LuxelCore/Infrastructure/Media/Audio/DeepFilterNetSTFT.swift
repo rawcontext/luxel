@@ -8,12 +8,14 @@ final class DeepFilterNetSTFT {
     private let window: [Float]
     private let forwardSetup: OpaquePointer
     private let inverseSetup: OpaquePointer
+    private let analysisScale: Float
 
     init(fftSize: Int, hopSize: Int, window: [Float]) {
         self.fftSize = fftSize
         self.hopSize = hopSize
         frequencyBins = fftSize / 2 + 1
         self.window = window
+        analysisScale = 1 / Float(fftSize)
         forwardSetup = vDSP_DFT_zop_CreateSetup(nil, vDSP_Length(fftSize), .FORWARD)!
         inverseSetup = vDSP_DFT_zop_CreateSetup(nil, vDSP_Length(fftSize), .INVERSE)!
     }
@@ -62,6 +64,7 @@ final class DeepFilterNetSTFT {
                 &outputReal,
                 &outputImaginary
             )
+            scaleAnalysisOutput(real: &outputReal, imaginary: &outputImaginary)
             let destination = frame * frequencyBins
             for bin in 0..<frequencyBins {
                 real[destination + bin] = outputReal[bin]
@@ -77,6 +80,29 @@ final class DeepFilterNetSTFT {
             memory = [Float](repeating: 0, count: overlapSize - memory.count) + memory
         }
         return (real, imaginary)
+    }
+
+    private func scaleAnalysisOutput(
+        real: inout [Float],
+        imaginary: inout [Float]
+    ) {
+        var scale = analysisScale
+        vDSP_vsmul(
+            real,
+            1,
+            &scale,
+            &real,
+            1,
+            vDSP_Length(frequencyBins)
+        )
+        vDSP_vsmul(
+            imaginary,
+            1,
+            &scale,
+            &imaginary,
+            1,
+            vDSP_Length(frequencyBins)
+        )
     }
 
     func inverse(
@@ -131,15 +157,6 @@ final class DeepFilterNetSTFT {
             &buffers.inverseImaginary
         )
 
-        var scale = 1 / Float(fftSize)
-        vDSP_vsmul(
-            buffers.inverseReal,
-            1,
-            &scale,
-            &buffers.inverseReal,
-            1,
-            vDSP_Length(fftSize)
-        )
         var windowed = [Float](repeating: 0, count: fftSize)
         vDSP_vmul(
             buffers.inverseReal,

@@ -164,8 +164,8 @@ public enum SpeakerModelCatalog {
     public static let speakerDiarization = SpeakerDiarizationModelInfo(
         displayName: "Speaker Diarization (Pyannote/WeSpeaker VBx)",
         repository: "FluidInference/speaker-diarization-coreml",
-        revision: nil,
-        expectedDownloadBytes: 21_600_000,
+        revision: "1ed7a662fdc7109e36d822db793ee6eebdaf8594",
+        expectedDownloadBytes: 21_776_918,
         licenseIdentifier: "cc-by-4.0"
     )
 }

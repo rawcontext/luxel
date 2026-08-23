@@ -19,6 +19,59 @@
       1,
       4160
     ],
+    "inputs": {
+      "audio": {
+        "dataType": "Float32",
+        "name": "audio_input",
+        "shape": [
+          1,
+          4160
+        ]
+      },
+      "cellState": {
+        "dataType": "Float32",
+        "name": "cell_state",
+        "shape": [
+          1,
+          128
+        ]
+      },
+      "hiddenState": {
+        "dataType": "Float32",
+        "name": "hidden_state",
+        "shape": [
+          1,
+          128
+        ]
+      }
+    },
+    "outputs": {
+      "cellState": {
+        "dataType": "Float32",
+        "name": "new_cell_state",
+        "shape": [
+          1,
+          128
+        ]
+      },
+      "hiddenState": {
+        "dataType": "Float32",
+        "name": "new_hidden_state",
+        "shape": [
+          1,
+          128
+        ]
+      },
+      "probability": {
+        "dataType": "Float32",
+        "name": "vad_output",
+        "shape": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
     "sampleRate": 16000,
     "stateSize": 128
   },

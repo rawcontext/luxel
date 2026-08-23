@@ -216,6 +216,10 @@ typedef struct EbSvtAv1EncConfiguration {
      * Min value is -2.
      * Max value is 13.
      * Default is 12.
+     *
+     * When PRESET_CHANGE_EVENT is used to change the preset on the fly, this
+     * value is served as minimum possible preset value. The actual preset value
+     * is stored in pcs->enc_mode.
      */
     int8_t enc_mode;
 
@@ -645,7 +649,7 @@ typedef struct EbSvtAv1EncConfiguration {
 
     bool enable_overlays;
     /**
-     * @brief Tune for a particular metric; 0: VQ, 1: PSNR, 2: SSIM, 3: IQ (Image Quality), 4: MS-SSIM.
+     * @brief Tune for a particular metric; 0: VQ, 1: PSNR, 2: SSIM, 3: IQ (Image Quality), 4: MS-SSIM, 5: VMAF.
      *
      * Default is 1.
      */
@@ -965,10 +969,87 @@ typedef struct EbSvtAv1EncConfiguration {
      */
     double ac_bias;
 
+    /**
+     * @brief High Bit-Depth Mode Decision, used to control the bit-depth of the mode decision path.
+     * -1: preset determined (auto)
+     * 0: full 8-bit MD
+     * 1: full 10-bit MD
+     * 2: hybrid 8/10-bit MD
+     * Default is -1
+     */
+    int hbd_mds;
+
+    /**
+     * @brief Enable MCTF for key frames.
+     * 0 = off
+     * 1 = on
+     * Default is 1. */
+    bool enable_tf_key;
+
+    /**
+     * @brief Max Intra Bitrate Percentage
+     *
+     * Maximum bitrate for intra frames, expressed as a percentage of the
+     * target bitrate. 0 means no limit.
+     *
+     * Default is 300.
+     */
+    uint32_t max_intra_bitrate_pct;
+
+    /**
+     * @brief Max Inter Bitrate Percentage
+     *
+     * Maximum bitrate for inter frames, expressed as a percentage of the
+     * target bitrate. 0 means no limit.
+     *
+     * Default is 0.
+     */
+    uint32_t max_inter_bitrate_pct;
+
+    /**
+     * @brief Enable Intra Block Copy
+     *
+     * false: off
+     * true: on (default, preset-based)
+     *
+     * Default is true. */
+    bool enable_intrabc;
+
+    /**
+     * @brief Ref-frame management — number of simultaneously STOREd refs
+     * the application may hold.
+     *
+     * 0 (default): feature disabled; legacy reference selection and the
+     *              legacy buffer-pool size are preserved BIT-EXACTLY. No
+     *              extra memory is allocated.
+     * 1..4       : enable the STORE / CLEAR / USE event API. The
+     *              ref-buffer pool grows by this many entries (one full
+     *              picture buffer each) to hold the locked anchors.
+     *              The encoder still uses all 8 DPB slots dynamically;
+     *              STORE locks one slot at a time, and CLEAR releases.
+     *
+     * Validation (svt_av1_verify_settings):
+     *   - max_managed_refs <= 4
+     *   - if > 0: pred_structure must be LOW_DELAY.
+     *
+     * ABI note: this field was added in place of one padding byte. The
+     * library expects EbSvtAv1EncConfiguration to be zero-initialized
+     * before configuration (which svt_av1_enc_init_handle guarantees);
+     * applications building this struct manually with uninitialized
+     * memory could silently inherit a non-zero value here from prior
+     * stack contents and unexpectedly enable the feature.
+     */
+    uint8_t max_managed_refs;
+
     // clang-format off
     /* Add 128 Byte Padding to Struct to avoid changing the size of the public configuration struct */
     uint8_t padding[128
         - sizeof(PredStructure) + sizeof (uint8_t) // pred_strucutre type was changed from uint8_t to PredStructure
+        - sizeof(int) // This was added to take into account the new hbd_mds field while keeping previous ABI compat
+        - sizeof(bool) // add the ability to shut MCTF for key frames
+        - sizeof(uint32_t) * 2 // max intra/inter bitrates
+        - sizeof(bool) // enable_intrabc
+        - sizeof(uint8_t) // max_managed_refs (ref-frame mgmt)
     ];
     // clang-format on
 } EbSvtAv1EncConfiguration;

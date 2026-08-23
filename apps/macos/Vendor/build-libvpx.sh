@@ -13,6 +13,8 @@ INSTALL_DIR="${WORK_DIR}/libvpx-install"
 HEADERS_DIR="${WORK_DIR}/libvpx-xcframework-headers"
 ARTIFACT="${ROOT}/Vendor/Artifacts/CVPX.xcframework"
 REPO_URL="https://chromium.googlesource.com/webm/libvpx"
+INSTALL_PREFIX="/usr/local"
+INSTALLED_ROOT="${INSTALL_DIR}${INSTALL_PREFIX}"
 
 mkdir -p "${WORK_DIR}" "${ROOT}/Vendor/Artifacts"
 rm -rf "${SOURCE_DIR}" "${BUILD_DIR}" "${INSTALL_DIR}" "${HEADERS_DIR}" "${ARTIFACT}"
@@ -28,9 +30,9 @@ fi
 mkdir -p "${BUILD_DIR}"
 (
 	cd "${BUILD_DIR}"
-	MACOSX_DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET}" "${SOURCE_DIR}/configure" \
+	MACOSX_DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET}" "../libvpx-${TAG#v}/configure" \
 		--target="${ARCH_TARGET}" \
-		--prefix="${INSTALL_DIR}" \
+		--prefix="${INSTALL_PREFIX}" \
 		--extra-cflags="-mmacosx-version-min=${DEPLOYMENT_TARGET}" \
 		--extra-cxxflags="-mmacosx-version-min=${DEPLOYMENT_TARGET}" \
 		--enable-pic \
@@ -47,10 +49,12 @@ mkdir -p "${BUILD_DIR}"
 		--disable-install-docs
 )
 
-MACOSX_DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET}" make -C "${BUILD_DIR}" -j"$(sysctl -n hw.ncpu)" install
+MACOSX_DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET}" make -C "${BUILD_DIR}" -j"$(sysctl -n hw.ncpu)"
+MACOSX_DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET}" make -C "${BUILD_DIR}" DESTDIR="${INSTALL_DIR}" install
+xcrun ranlib -D "${INSTALLED_ROOT}/lib/libvpx.a"
 
 mkdir -p "${HEADERS_DIR}"
-cp -R "${INSTALL_DIR}/include/vpx" "${HEADERS_DIR}/vpx"
+cp -R "${INSTALLED_ROOT}/include/vpx" "${HEADERS_DIR}/vpx"
 cat >"${HEADERS_DIR}/module.modulemap" <<'MODULEMAP'
 module CVPX {
     umbrella "vpx"
@@ -60,6 +64,6 @@ MODULEMAP
 
 xcodebuild \
 	-create-xcframework \
-	-library "${INSTALL_DIR}/lib/libvpx.a" \
+	-library "${INSTALLED_ROOT}/lib/libvpx.a" \
 	-headers "${HEADERS_DIR}" \
 	-output "${ARTIFACT}"
