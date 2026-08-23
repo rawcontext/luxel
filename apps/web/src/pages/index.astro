@@ -57,6 +57,12 @@ const replayBufferPoints = [
   "Clip to the editor or a configured quick export destination"
 ];
 
+const speechDetectionPoints = [
+  "Optional and off by default, with a clear disclosure before notification and microphone access",
+  "Uses the selected microphone and pauses during recordings or while your Mac is locked or asleep",
+  "Treats sustained speech-like sound as a cue, not as guaranteed meeting or call detection"
+];
+
 const editorFacts = [
   "MP4, HEVC MP4, ProRes 422, ProRes 4444, GIF, APNG, WebM, AV1, and audio-only exports",
   "Compact, Balanced, High, lossless, size estimates, level, and normalize controls",
@@ -294,6 +300,40 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <ul class="points">
                 {replayBufferPoints.map((point) => <li>{point}</li>)}
               </ul>
+            </div>
+          </article>
+
+          <article class="feature-row" id="speech-detection">
+            <div class="feature-row__copy">
+              <p class="chip chip--green">Prompt</p>
+              <h3>Know when it may be time to record</h3>
+              <p>
+                Speech Detection Prompts can listen for sustained speech-like audio and ask whether
+                you want to start an audio recording. Detection runs locally while Luxel is open.
+                It never starts recording on its own.
+              </p>
+              <ol class="prompt-flow" aria-label="Speech detection prompt flow">
+                <li><span>1</span>Listen locally</li>
+                <li><span>2</span>Detect a cue</li>
+                <li><span>3</span>Show a prompt</li>
+                <li><span>4</span>You choose</li>
+              </ol>
+              <ul class="points">
+                {speechDetectionPoints.map((point) => <li>{point}</li>)}
+              </ul>
+              <p class="feature-row__note">
+                Before you choose Start Recording, microphone frames are discarded. Luxel creates
+                no pre-roll, media file, history item, transcript, sidecar, or cloud upload.
+              </p>
+            </div>
+            <div class="feature-row__media">
+              <img
+                src="/screenshots/luxel-settings-speech-detection.png"
+                alt="Luxel Recording settings showing Speech Detection off by default and its local-audio disclosure"
+                width="2064"
+                height="1744"
+                loading="lazy"
+              />
             </div>
           </article>
 
