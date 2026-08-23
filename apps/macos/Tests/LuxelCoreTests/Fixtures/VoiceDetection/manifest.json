@@ -1,13 +1,22 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "speechSource": {
     "dataset": "LibriSpeech ASR dummy / LibriSpeech dev-clean",
+    "datasetRepository": "hf-internal-testing/librispeech_asr_dummy",
+    "datasetRevision": "5be91486e11a2d616f4ec5db8d3fd248585ac07a",
     "recordingID": "1272-128104-0000",
     "sourceIndex": 0,
-    "sourceRowsURL": "https://datasets-server.huggingface.co/rows?dataset=hf-internal-testing%2Flibrispeech_asr_dummy&config=clean&split=validation&offset=0&length=1",
+    "sourceRowsURL": "https://datasets-server.huggingface.co/rows?dataset=hf-internal-testing%2Flibrispeech_asr_dummy&config=clean&split=validation&offset=0&length=1&revision=5be91486e11a2d616f4ec5db8d3fd248585ac07a",
+    "sourceAssetPath": "/cached-assets/hf-internal-testing/librispeech_asr_dummy/--/5be91486e11a2d616f4ec5db8d3fd248585ac07a/--/clean/validation/0/audio/audio.flac",
+    "sourceAudioByteCount": 120041,
+    "sourceAudioSha256": "4e25e22555cd16e90edb0a3b49fdcf1fe652b2a1250ab643634db33895c75b41",
     "datasetURL": "https://www.openslr.org/12",
     "license": "CC BY 4.0",
     "transcript": "MISTER QUILTER IS THE APOSTLE OF THE MIDDLE CLASSES AND WE ARE GLAD TO WELCOME HIS GOSPEL"
+  },
+  "generationToolchain": {
+    "python": "3.13.15",
+    "ffmpeg": "8.1.2"
   },
   "fixtures": [
     {
