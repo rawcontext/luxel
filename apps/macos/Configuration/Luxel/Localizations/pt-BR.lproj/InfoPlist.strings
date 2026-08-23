@@ -1,7 +1,7 @@
 "CFBundleDisplayName" = "Luxel";
 "CFBundleName" = "Luxel";
 "NSCameraUsageDescription" = "O Luxel usa sua câmera somente quando você ativa a pré-visualização da câmera ou a gravação da trilha de câmera.";
-"NSMicrophoneUsageDescription" = "O Luxel grava áudio do microfone somente quando você ativa a captura de microfone para uma gravação de tela.";
+"NSMicrophoneUsageDescription" = "O Luxel usa o microfone quando você ativa a gravação do microfone ou os avisos de detecção de fala. A detecção acontece neste Mac e o áudio só é salvo depois que você inicia uma gravação.";
 "NSScreenCaptureUsageDescription" = "O Luxel captura sua tela somente quando você inicia uma gravação.";
 "NSSpeechRecognitionUsageDescription" = "O Luxel usa reconhecimento de fala no dispositivo para transcrever gravações de áudio no editor de exportação.";
 "NSHumanReadableCopyright" = "Copyright © 2026 Context. Todos os direitos reservados.";

@@ -1,7 +1,7 @@
 "CFBundleDisplayName" = "Luxel";
 "CFBundleName" = "Luxel";
 "NSCameraUsageDescription" = "Luxel verwendet deine Kamera nur, wenn du die Kameravorschau oder die Aufnahme einer Kameraspur aktivierst.";
-"NSMicrophoneUsageDescription" = "Luxel nimmt Mikrofon-Audio nur auf, wenn du die Mikrofonaufnahme für eine Bildschirmaufnahme aktivierst.";
+"NSMicrophoneUsageDescription" = "Luxel verwendet dein Mikrofon, wenn du Mikrofonaufnahmen oder Hinweise zur Spracherkennung aktivierst. Die Spracherkennung erfolgt auf diesem Mac, und Audio wird erst gespeichert, nachdem du eine Aufnahme startest.";
 "NSScreenCaptureUsageDescription" = "Luxel erfasst deinen Bildschirm nur, wenn du eine Aufnahme startest.";
 "NSSpeechRecognitionUsageDescription" = "Luxel verwendet Spracherkennung auf dem Gerät, um Audioaufnahmen im Export-Editor zu transkribieren.";
 "NSHumanReadableCopyright" = "Copyright © 2026 Context. Alle Rechte vorbehalten.";

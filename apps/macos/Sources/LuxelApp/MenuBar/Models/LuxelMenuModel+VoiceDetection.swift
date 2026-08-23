@@ -50,6 +50,55 @@ extension LuxelMenuModel {
         return status
     }
 
+    func approveVoiceDetectionDisclosure() async {
+        settings.speechDetectionDisclosureAccepted = true
+        settings.speechDetectionPromptsEnabled = true
+        saveSettings()
+
+        _ = await voiceDetection.coordinator.requestNotificationAuthorization()
+        microphoneStatus = await permissionClient.request(.microphone)
+        await reconcileVoiceDetection()
+    }
+
+    func cancelVoiceDetectionDisclosure() async {
+        settings.speechDetectionDisclosureAccepted = false
+        settings.speechDetectionPromptsEnabled = false
+        saveSettings()
+        await reconcileVoiceDetection()
+    }
+
+    func enablePreviouslyDisclosedVoiceDetection() async {
+        guard settings.speechDetectionDisclosureAccepted else {
+            return
+        }
+        settings.speechDetectionPromptsEnabled = true
+        saveSettings()
+
+        _ = await voiceDetection.coordinator.requestNotificationAuthorization()
+        microphoneStatus = await permissionClient.request(.microphone)
+        await reconcileVoiceDetection()
+    }
+
+    func disableVoiceDetectionPrompts() async {
+        settings.speechDetectionPromptsEnabled = false
+        saveSettings()
+        await reconcileVoiceDetection()
+    }
+
+    func recoverVoiceDetectionMicrophoneAccess() async {
+        if microphoneStatus == .notDetermined || microphoneStatus == .unknown {
+            microphoneStatus = await permissionClient.request(.microphone)
+        } else if microphoneStatus != .authorized {
+            await permissionClient.openSettings(for: .microphone)
+        }
+        await reconcileVoiceDetection()
+    }
+
+    func recoverVoiceDetectionNotificationAccess() async {
+        _ = await voiceDetection.coordinator.recoverNotificationAuthorization()
+        await reconcileVoiceDetection()
+    }
+
     func handleVoiceDetectionPromptAction(_ action: VoiceDetectionPromptAction) async {
         await refreshPermissions()
         await reconcileVoiceDetection()
@@ -75,6 +124,7 @@ extension LuxelMenuModel {
     private func voiceDetectionEligibility() async -> VoiceDetectionEligibility {
         let notificationPermission =
             await voiceDetection.coordinator.notificationAuthorizationStatus()
+        voiceDetectionNotificationStatus = notificationPermission
         let microphone = selectedVoiceDetectionMicrophone()
 
         return VoiceDetectionEligibility(

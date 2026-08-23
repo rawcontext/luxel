@@ -11,6 +11,7 @@ struct LuxelSettingsView: View {
 
     @Environment(\.openWindow) var openWindow
     @State var isShowingAcknowledgements = false
+    @State var isShowingSpeechDetectionDisclosure = false
     @State var recordingFrameRateMessage: String?
     @State var editingShortcutCommandID: String?
     @State var shortcutSearchText = ""
@@ -84,6 +85,36 @@ extension LuxelSettingsView {
             }
             .sheet(isPresented: $isShowingAcknowledgements) {
                 CodecAcknowledgementsView(text: CodecAcknowledgementsResource.bundledText())
+            }
+            .alert(
+                speechDetectionString(
+                    "settings.speechDetection.disclosure.title",
+                    "Enable Speech Detection Prompts?"
+                ),
+                isPresented: $isShowingSpeechDetectionDisclosure
+            ) {
+                Button(speechDetectionString(
+                    "settings.speechDetection.disclosure.enable",
+                    "Enable"
+                )) {
+                    Task { await model.approveVoiceDetectionDisclosure() }
+                }
+                Button(
+                    speechDetectionString(
+                        "settings.speechDetection.disclosure.cancel",
+                        "Cancel"
+                    ),
+                    role: .cancel
+                ) {
+                    Task { await model.cancelVoiceDetectionDisclosure() }
+                }
+            } message: {
+                Text(speechDetectionString(
+                    "settings.speechDetection.disclosure.body",
+                    "Luxel will listen to the selected microphone while it is running and notify "
+                        + "you after it detects sustained speech. Detection happens on this Mac, "
+                        + "and audio is not saved unless you start recording."
+                ))
             }
     }
 

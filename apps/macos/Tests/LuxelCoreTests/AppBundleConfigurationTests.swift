@@ -37,7 +37,8 @@ struct AppBundleConfigurationTests {
 
         let microphonePurpose = try #require(plist["NSMicrophoneUsageDescription"] as? String)
         #expect(microphonePurpose.contains("microphone"))
-        #expect(microphonePurpose.contains("screen recording"))
+        #expect(microphonePurpose.contains("speech detection"))
+        #expect(microphonePurpose.contains("saved only after you start recording"))
 
         let cameraPurpose = try #require(plist["NSCameraUsageDescription"] as? String)
         #expect(cameraPurpose.contains("camera"))

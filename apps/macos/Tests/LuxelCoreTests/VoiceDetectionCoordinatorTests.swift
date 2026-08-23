@@ -135,6 +135,7 @@ private actor VoiceRecordingPromptNotifierSpy: VoiceRecordingPromptNotifying {
 
     func authorizationStatus() -> VoiceDetectionAuthorizationStatus { .authorized }
     func requestAuthorization() -> VoiceDetectionAuthorizationStatus { .authorized }
+    nonisolated func openSettings() {}
 
     func postPrompt() async {
         postCount += 1

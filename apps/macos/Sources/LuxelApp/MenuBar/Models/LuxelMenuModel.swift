@@ -19,6 +19,7 @@ final class LuxelMenuModel {
     var keystrokeCaptureStatus: KeystrokeCaptureStatus = .idle
     var audioLevelSample: AudioLevelSample = .silent
     var voiceDetectionStatus: VoiceDetectionRuntimeStatus = .off
+    var voiceDetectionNotificationStatus: VoiceDetectionAuthorizationStatus = .notDetermined
     var audioInputDevices: [AudioInputDeviceOption] = [.systemDefault]
     var cameraDevices: [CameraDeviceOption] = []
     var notchDisplays: [NotchDisplayDescriptor] = []

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 @preconcurrency import UserNotifications
 
@@ -34,6 +35,16 @@ public struct UserNotificationsSpeechPromptNotifier:
             return .denied
         }
         return await center.requestAuthorization()
+    }
+
+    @MainActor
+    public func openSettings() {
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension"
+        ) else {
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 
     public func postPrompt() async throws {

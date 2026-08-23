@@ -41,6 +41,17 @@ public actor VoiceDetectionCoordinator {
         await notifier.requestAuthorization()
     }
 
+    public func recoverNotificationAuthorization() async -> VoiceDetectionAuthorizationStatus {
+        let status = await notifier.authorizationStatus()
+        if status == .notDetermined {
+            return await notifier.requestAuthorization()
+        }
+        if status == .denied {
+            await notifier.openSettings()
+        }
+        return status
+    }
+
     @discardableResult
     public func reconcile(
         eligibility: VoiceDetectionEligibility
