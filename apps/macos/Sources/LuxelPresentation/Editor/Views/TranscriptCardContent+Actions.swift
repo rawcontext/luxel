@@ -105,12 +105,29 @@ extension TranscriptCardContent {
         _ transcript: TurnSegmentedTranscript,
         words: [TranscriptEditableWord]
     ) {
+        let metadata =
+            markdownMetadata
+            ?? TranscriptMarkdownMetadata(
+                title: "Transcript",
+                sourceFileName: nil,
+                recordedAt: nil,
+                duration: transcript.turns.last?.end ?? 0
+            )
         let text = TranscriptCopyTextBuilder().text(
             transcript: transcript,
             visibleWords: words,
-            hasCuts: !cutReviewItems.isEmpty
+            hasCuts: !cutReviewItems.isEmpty,
+            metadata: metadata
         )
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
+        let item = NSPasteboardItem()
+        item.setString(
+            text,
+            forType: NSPasteboard.PasteboardType("net.daringfireball.markdown")
+        )
+        item.setString(text, forType: .string)
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.writeObjects([item])
     }
 }
