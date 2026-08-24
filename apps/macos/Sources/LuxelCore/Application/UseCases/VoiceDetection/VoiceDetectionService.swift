@@ -10,8 +10,8 @@ public actor VoiceDetectionService {
 
         public init(
             entryProbability: Float = 0.85,
-            sustainedSpeechDuration: TimeInterval = 1,
-            candidateWindowDuration: TimeInterval = 1.5,
+            sustainedSpeechDuration: TimeInterval = 10,
+            candidateWindowDuration: TimeInterval = 12,
             rearmSilenceDuration: TimeInterval = 30,
             promptCooldown: TimeInterval = 300
         ) {

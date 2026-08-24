@@ -72,8 +72,8 @@ struct VoiceDetectionFixtureTests {
             case .prompt:
                 #expect(result.promptCount == 1, "Expected one prompt for \(fixture.file)")
                 #expect(
-                    result.firstPromptSecondsFromStart.map { $0 <= 2 } == true,
-                    "Prompt was late for \(fixture.file)"
+                    result.firstPromptSecondsFromStart.map { (10...12).contains($0) } == true,
+                    "Prompt time was outside the 10–12 second window for \(fixture.file)"
                 )
             case .noPrompt:
                 #expect(result.promptCount == 0, "Unexpected prompt for \(fixture.file)")

@@ -42,11 +42,11 @@ public actor TestVoiceActivityDetectorSpy: VoiceActivityDetecting {
 public func testSustainedSpeechEvents(
     startingAt startTime: TimeInterval = 0
 ) -> [VoiceActivityDetectorEvent] {
-    (0..<4).map { index in
+    (0..<40).map { index in
         .observation(
             VoiceActivityObservation(
                 probability: 0.95,
-                observedAt: Date(timeIntervalSince1970: startTime + Double(index) * 0.25)
+                observedAt: Date(timeIntervalSince1970: startTime + Double(index) * 0.256)
             )
         )
     }
