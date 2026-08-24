@@ -131,6 +131,7 @@ struct AudioTranscriptPreview: View {
             canDeleteSelectedWord: model.canDeleteSelectedTranscriptWord,
             canUndoLastCut: model.canUndoLastTranscriptCut,
             canClose: model.canCloseTranscriptPanel,
+            markdownMetadata: model.source.map { TranscriptMarkdownMetadata(source: $0) },
             closeTranscript: {
                 model.hideTranscriptPanel()
             },

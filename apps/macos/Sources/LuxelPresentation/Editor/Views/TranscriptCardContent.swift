@@ -24,6 +24,7 @@ struct TranscriptCardContent: View {
     let canDeleteSelectedWord: Bool
     let canUndoLastCut: Bool
     let canClose: Bool
+    let markdownMetadata: TranscriptMarkdownMetadata?
     let closeTranscript: () -> Void
     let selectWord: (TranscriptEditableWord, Bool, Bool) -> Void
     let deleteSelectedWord: () -> Bool
@@ -52,6 +53,7 @@ struct TranscriptCardContent: View {
         canDeleteSelectedWord: Bool,
         canUndoLastCut: Bool,
         canClose: Bool,
+        markdownMetadata: TranscriptMarkdownMetadata? = nil,
         guidanceDefaults: UserDefaults = .standard,
         closeTranscript: @escaping () -> Void,
         selectWord: @escaping (TranscriptEditableWord, Bool, Bool) -> Void,
@@ -72,6 +74,7 @@ struct TranscriptCardContent: View {
         self.canDeleteSelectedWord = canDeleteSelectedWord
         self.canUndoLastCut = canUndoLastCut
         self.canClose = canClose
+        self.markdownMetadata = markdownMetadata
         self.closeTranscript = closeTranscript
         self.selectWord = selectWord
         self.deleteSelectedWord = deleteSelectedWord
@@ -171,8 +174,8 @@ struct TranscriptCardContent: View {
                 Image(systemName: "doc.on.doc")
             }
             .buttonStyle(LuxelGlassCircleButtonStyle())
-            .help("Copy transcript")
-            .accessibilityLabel("Copy transcript")
+            .help("Copy as Markdown")
+            .accessibilityLabel("Copy as Markdown")
 
             if canClose {
                 Button {
@@ -292,8 +295,8 @@ extension TranscriptCardContent {
                     Image(systemName: "doc.on.doc")
                 }
                 .buttonStyle(LuxelGlassCircleButtonStyle(side: 24))
-                .help("Copy transcript")
-                .accessibilityLabel("Copy transcript")
+                .help("Copy as Markdown")
+                .accessibilityLabel("Copy as Markdown")
             }
 
             if !cutReviewItems.isEmpty

@@ -6,17 +6,21 @@ import Testing
 
 @Suite("Transcript copy text")
 struct TranscriptCopyTextBuilderTests {
-    @Test("no-cut copy uses original turn text exactly")
+    @Test("no-cut copy preserves original turn text in Markdown")
     func noCutCopyPreservesOriginalText() throws {
         let transcript = try sampleTranscript()
 
         let text = TranscriptCopyTextBuilder().text(
             transcript: transcript,
             visibleWords: [],
-            hasCuts: false
+            hasCuts: false,
+            metadata: metadata,
+            exportedAt: Date(timeIntervalSince1970: 0)
         )
 
-        #expect(text == "Wait... what?")
+        #expect(text.hasSuffix("# Demo\n\n`00:00`\n\nWait... what?\n"))
+        #expect(text.contains("word_count: 2"))
+        #expect(text.contains("edited: false"))
     }
 
     @Test("cut copy uses only visible edited words")
@@ -34,10 +38,14 @@ struct TranscriptCopyTextBuilderTests {
         let text = TranscriptCopyTextBuilder().text(
             transcript: transcript,
             visibleWords: visible,
-            hasCuts: true
+            hasCuts: true,
+            metadata: metadata,
+            exportedAt: Date(timeIntervalSince1970: 0)
         )
 
-        #expect(text == "Wait...")
+        #expect(text.hasSuffix("# Demo\n\n`00:00`\n\nWait...\n"))
+        #expect(text.contains("word_count: 1"))
+        #expect(text.contains("edited: true"))
     }
 
     @Test("copy omits the audio source while preserving the speaker label")
@@ -48,15 +56,89 @@ struct TranscriptCopyTextBuilderTests {
         let text = TranscriptCopyTextBuilder().text(
             transcript: transcript,
             visibleWords: [],
-            hasCuts: false
+            hasCuts: false,
+            metadata: metadata,
+            exportedAt: Date(timeIntervalSince1970: 0)
         )
 
-        #expect(text == "Speaker 1: Wait... what?")
+        #expect(text.hasSuffix("**Speaker 1** · `00:00`\n\nWait... what?\n"))
+        #expect(!text.contains("Microphone"))
+    }
+
+    @Test("copy includes structured front matter")
+    func copyIncludesFrontMatter() throws {
+        let transcript = try sampleTranscript(
+            provenance: TranscriptionProvenance(
+                engine: .parakeetTDTv3,
+                modelRevision: "v3",
+                configurationRevision: "balanced"
+            )
+        )
+
+        let text = TranscriptCopyTextBuilder().text(
+            transcript: transcript,
+            visibleWords: [],
+            hasCuts: false,
+            metadata: metadata,
+            exportedAt: Date(timeIntervalSince1970: 0)
+        )
+
+        #expect(text.hasPrefix("---\ntitle: \"Demo\""))
+        #expect(text.contains("source_file: \"Demo.mov\""))
+        #expect(text.contains("recorded_at: \"1970-01-01T00:00:00Z\""))
+        #expect(text.contains("duration_seconds: 65.500"))
+        #expect(text.contains("language: \"en-US\""))
+        #expect(text.contains("transcription_engine: \"parakeetTDTv3\""))
+        #expect(text.contains("model_revision: \"v3\""))
+        #expect(text.contains("configuration_revision: \"balanced\""))
+    }
+
+    @Test("copy escapes transcript Markdown syntax")
+    func copyEscapesTranscriptMarkdown() throws {
+        let span = try TimedTranscriptSpan(
+            id: "markdown",
+            text: "# Heading with *emphasis*",
+            start: 65,
+            end: 66
+        )
+        let transcript = try TurnSegmentedTranscript(
+            spans: [span],
+            turns: [
+                TranscriptTurn(
+                    id: "turn",
+                    spanIDs: [span.id],
+                    start: span.start,
+                    end: span.end,
+                    text: span.text
+                )
+            ],
+            localeIdentifier: "en_US"
+        )
+
+        let text = TranscriptCopyTextBuilder().text(
+            transcript: transcript,
+            visibleWords: [],
+            hasCuts: false,
+            metadata: metadata,
+            exportedAt: Date(timeIntervalSince1970: 0)
+        )
+
+        #expect(text.hasSuffix("`01:05`\n\n\\# Heading with \\*emphasis\\*\n"))
+    }
+
+    private var metadata: TranscriptMarkdownMetadata {
+        TranscriptMarkdownMetadata(
+            title: "Demo",
+            sourceFileName: "Demo.mov",
+            recordedAt: Date(timeIntervalSince1970: 0),
+            duration: 65.5
+        )
     }
 
     private func sampleTranscript(
         source: TranscriptSourceLabel? = nil,
-        speaker: TranscriptSpeakerLabel? = nil
+        speaker: TranscriptSpeakerLabel? = nil,
+        provenance: TranscriptionProvenance? = nil
     ) throws -> TurnSegmentedTranscript {
         let spans = try [
             TimedTranscriptSpan(
@@ -90,7 +172,8 @@ struct TranscriptCopyTextBuilderTests {
                 )
             ],
             localeIdentifier: "en_US",
-            speakers: speaker.map { [$0] } ?? []
+            speakers: speaker.map { [$0] } ?? [],
+            transcriptionProvenance: provenance
         )
     }
 }
