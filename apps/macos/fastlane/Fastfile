@@ -149,7 +149,7 @@ def ensure_time_sensitive_notifications_capability!
   end
   return if enabled
 
-  bundle_id.create_capability(TIME_SENSITIVE_NOTIFICATIONS_CAPABILITY)
+  bundle_id.update_capability(TIME_SENSITIVE_NOTIFICATIONS_CAPABILITY, enabled: true)
 end
 
 def update_app_review_notes!(version)
