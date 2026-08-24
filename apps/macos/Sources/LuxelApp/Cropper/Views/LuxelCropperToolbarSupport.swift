@@ -63,6 +63,8 @@ extension LuxelCropperView {
             NSSound.beep()
             return
         }
+
+        isEditingStopAfterDuration = false
     }
 
     func applyCustomAspectRatio() {

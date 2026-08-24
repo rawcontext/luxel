@@ -15,8 +15,10 @@ struct LuxelCropperView: View {
     @State var activeDragTarget: CropperDragTarget?
     @State var currentCameraConfiguration: CropperCameraConfiguration?
     @State var isEditingDimensions = false
+    @State var isEditingStopAfterDuration = false
     @State var dimensionWidthText = ""
     @State var dimensionHeightText = ""
+    @FocusState var isCustomStopAfterFocused: Bool
 
     @Bindable var model: LuxelCropperModel
     let cameraConfiguration: CropperCameraConfiguration
