@@ -9,6 +9,7 @@ default_platform(:mac)
 
 APP_IDENTIFIER = "com.rawcontext.luxel"
 APPLE_ACCOUNT = ENV["FASTLANE_USER"]
+APPLE_TEAM_ID = "U65DCW9TAK"
 REPO_ROOT = File.expand_path("..", __dir__)
 PACKAGE_PATH = File.join(REPO_ROOT, ".build/mas/Luxel.pkg")
 APP_STORE_PROFILE_NAME = "Luxel Mac App Store"
@@ -52,7 +53,7 @@ platform :mac do
     get_provisioning_profile(
       api_key: api_key,
       app_identifier: APP_IDENTIFIER,
-      team_id: "U65DCW9TAK",
+      team_id: APPLE_TEAM_ID,
       platform: "macos",
       provisioning_name: APP_STORE_PROFILE_NAME,
       force: true,
@@ -149,7 +150,39 @@ def ensure_time_sensitive_notifications_capability!
   end
   return if enabled
 
-  bundle_id.update_capability(TIME_SENSITIVE_NOTIFICATIONS_CAPABILITY, enabled: true)
+  body = {
+    data: {
+      type: "bundleIds",
+      id: bundle_id.id,
+      attributes: {
+        permissions: { edit: true, delete: true },
+        seedId: bundle_id.seed_id,
+        teamId: APPLE_TEAM_ID
+      },
+      relationships: {
+        bundleIdCapabilities: {
+          data: [
+            {
+              type: "bundleIdCapabilities",
+              attributes: { enabled: true, settings: [] },
+              relationships: {
+                capability: {
+                  data: {
+                    type: "capabilities",
+                    id: TIME_SENSITIVE_NOTIFICATIONS_CAPABILITY
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+  Spaceship::ConnectAPI.client.provisioning_request_client.patch(
+    "v1/bundleIds/#{bundle_id.id}",
+    body
+  )
 end
 
 def update_app_review_notes!(version)
