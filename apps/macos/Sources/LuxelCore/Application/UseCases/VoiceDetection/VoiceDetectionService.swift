@@ -110,7 +110,7 @@ public actor VoiceDetectionService {
         at date: Date
     ) -> [VoiceDetectionEffect] {
         switch action {
-        case .startRecording:
+        case .startRecording, .defaultAction:
             guard hasOutstandingPrompt,
                 case .prompted = state,
                 eligibility.canRunDetector
@@ -130,8 +130,6 @@ public actor VoiceDetectionService {
                 state = .prompted(promptedAt: promptedAt, silenceStartedAt: date)
             }
             return [.removePrompt]
-        case .defaultAction:
-            return [.activateApplication]
         }
     }
 

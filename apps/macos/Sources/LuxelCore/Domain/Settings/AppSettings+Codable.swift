@@ -71,6 +71,7 @@ extension AppSettings {
         commandLinePairedClients = general.commandLinePairedClients
         commandLineFolderGrants = general.commandLineFolderGrants
         notificationReminder = general.notificationReminder
+        exportCompletionNotificationsEnabled = general.exportCompletionNotificationsEnabled
         allowURLAutomation = true
         urlAutomationGrants = general.urlAutomationGrants
         exportPresets = general.exportPresets
@@ -281,6 +282,10 @@ extension AppSettings {
             ) ?? [],
             notificationReminder: container.decodeIfPresent(Bool.self, forKey: .notificationReminder)
                 ?? true,
+            exportCompletionNotificationsEnabled: container.decodeIfPresent(
+                Bool.self,
+                forKey: .exportCompletionNotificationsEnabled
+            ) ?? true,
             urlAutomationGrants: container.decodeIfPresent(
                 [String].self, forKey: .urlAutomationGrants) ?? [],
             exportPresets: container.decodeIfPresent(

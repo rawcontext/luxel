@@ -20,6 +20,7 @@ final class LuxelMenuModel {
     var audioLevelSample: AudioLevelSample = .silent
     var voiceDetectionStatus: VoiceDetectionRuntimeStatus = .off
     var voiceDetectionNotificationStatus: VoiceDetectionAuthorizationStatus = .notDetermined
+    var appNotificationSettings: AppNotificationSettings = .unavailable
     var audioInputDevices: [AudioInputDeviceOption] = [.systemDefault]
     var cameraDevices: [CameraDeviceOption] = []
     var notchDisplays: [NotchDisplayDescriptor] = []
@@ -55,6 +56,7 @@ final class LuxelMenuModel {
         LuxelCompositionRoot.knownSpeakerProfileStore()
     @ObservationIgnored let settingsStore: any SettingsStore
     @ObservationIgnored let permissionClient: any PermissionClient
+    @ObservationIgnored let userNotifier: any UserNotifier
     @ObservationIgnored let launchAtLoginService: LaunchAtLoginService
     @ObservationIgnored let recordingHistoryService: RecordingHistoryService
     @ObservationIgnored let recordingLifecycleService: RecordingLifecycleService
@@ -128,6 +130,7 @@ final class LuxelMenuModel {
     init(
         settingsStore: any SettingsStore = LuxelCompositionRoot.settingsStore(),
         permissionClient: any PermissionClient = ApplePermissionClient(),
+        userNotifier: any UserNotifier = AppKitUserNotifier(),
         launchAtLoginService: LaunchAtLoginService = LaunchAtLoginService(
             client: SMAppServiceLaunchAtLoginClient()
         ),
@@ -181,6 +184,7 @@ final class LuxelMenuModel {
 
         self.settingsStore = settingsStore
         self.permissionClient = permissionClient
+        self.userNotifier = userNotifier
         self.launchAtLoginService = launchAtLoginService
         self.recordingHistoryService = recordingHistoryService
         self.captureTargetService = captureTargetService

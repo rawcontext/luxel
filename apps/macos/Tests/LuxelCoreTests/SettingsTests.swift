@@ -71,6 +71,7 @@ extension SettingsTests {
         #expect(settings.commandLinePairedClients.isEmpty)
         #expect(settings.commandLineFolderGrants.isEmpty)
         #expect(settings.notificationReminder)
+        #expect(settings.exportCompletionNotificationsEnabled)
         #expect(settings.allowURLAutomation)
         #expect(settings.urlAutomationGrants.isEmpty)
         #expect(settings.exportPresets == ExportPreset.builtInDefaults)
@@ -102,6 +103,30 @@ extension SettingsTests {
         #expect(!settings.commandLineControlEnabled)
         #expect(settings.commandLinePairedClients.isEmpty)
         #expect(settings.commandLineFolderGrants.isEmpty)
+    }
+
+    @Test("export completion notifications default on and decode explicit opt-out")
+    func exportCompletionNotificationsSetting() throws {
+        let missingData = Data(
+            """
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/"
+            }
+            """.utf8)
+        let disabledData = Data(
+            """
+            {
+                "recordingsDirectory": "file:///Users/example/Movies/Luxel/",
+                "exportCompletionNotificationsEnabled": false
+            }
+            """.utf8)
+
+        #expect(
+            try JSONDecoder().decode(AppSettings.self, from: missingData)
+                .exportCompletionNotificationsEnabled)
+        #expect(
+            !(try JSONDecoder().decode(AppSettings.self, from: disabledData)
+                .exportCompletionNotificationsEnabled))
     }
 
     @Test("transcript turn segmentation setting defaults off and decodes explicit override")

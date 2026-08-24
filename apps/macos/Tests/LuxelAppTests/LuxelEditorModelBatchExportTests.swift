@@ -11,6 +11,7 @@ extension LuxelEditorModelTests {
         let fileSystem = SpyFileSystem()
         let fileActionClient = StubExportedFileActionClient()
         var rememberedFormats: [ExportFormat] = []
+        var completedExports: [[URL]] = []
         let model = makeModel(
             exporter: exporter,
             fileSystem: fileSystem,
@@ -19,6 +20,7 @@ extension LuxelEditorModelTests {
                 rememberedFormats.append(format)
             })
         )
+        model.configureExportCompletion { completedExports.append($0) }
         let batchDirectory = URL(fileURLWithPath: "/tmp/source Export", isDirectory: true)
 
         await model.open(
@@ -47,6 +49,15 @@ extension LuxelEditorModelTests {
         model.openExportedFile()
         #expect(fileActionClient.openedURLs == [batchDirectory])
         #expect(rememberedFormats == [.hevc, .mp4, .gif])
+        #expect(
+            completedExports == [
+                [
+                    URL(fileURLWithPath: "/tmp/source Export/source Export HEVC.mp4"),
+                    URL(fileURLWithPath: "/tmp/source Export/source Export H.264.mp4"),
+                    URL(fileURLWithPath: "/tmp/source Export/source Export GIF.gif")
+                ]
+            ]
+        )
     }
 
     private func expectCapturedBatchExports(

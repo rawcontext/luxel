@@ -75,9 +75,11 @@ extension LuxelEditorModelTests {
     @Test("completed export shows progress panel actions")
     func completedExportShowsProgressPanelActions() async throws {
         let exportedURL = URL(fileURLWithPath: "/tmp/source Export.mp4")
+        var completedExports: [[URL]] = []
         let model = makeModel(
             exporter: StubMediaExporter(exportedMedia: try exportedMedia(fileURL: exportedURL))
         )
+        model.configureExportCompletion { completedExports.append($0) }
 
         await model.open(
             fileURL: URL(fileURLWithPath: "/tmp/source.mp4"),
@@ -94,6 +96,7 @@ extension LuxelEditorModelTests {
         #expect(model.exportPanelSystemImage == "checkmark.circle")
         #expect(model.exportProgressValue == 1)
         #expect(!model.canRetryExport)
+        #expect(completedExports == [[exportedURL]])
     }
 
     @Test("failed export can retry")

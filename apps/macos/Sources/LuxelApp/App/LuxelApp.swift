@@ -189,13 +189,13 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
         }
     }
     private var pendingVoiceDetectionPromptActions: [VoiceDetectionPromptAction] = []
-    private var voiceDetectionNotificationController: VoiceDetectionNotificationController?
+    private var notificationController: LuxelNotificationController?
     var prepareForTermination: (@MainActor () async -> Void)?
     private var terminationTask: Task<Void, Never>?
 
     func applicationWillFinishLaunching(_: Notification) {
         installURLHandler()
-        installVoiceDetectionNotificationController()
+        installNotificationController()
     }
 
     func installURLHandler() {
@@ -278,18 +278,23 @@ final class LuxelApplicationDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func installVoiceDetectionNotificationController() {
+    private func installNotificationController() {
         guard Bundle.main.bundleURL.pathExtension == "app" else {
             return
         }
 
-        let controller = VoiceDetectionNotificationController { [weak self] action in
-            Task { @MainActor in
-                self?.handleVoiceDetectionPromptAction(action)
+        let controller = LuxelNotificationController(
+            actionHandler: { [weak self] action in
+                Task { @MainActor in
+                    self?.handleVoiceDetectionPromptAction(action)
+                }
+            },
+            exportHandler: { fileURLs in
+                NSWorkspace.shared.activateFileViewerSelecting(fileURLs)
             }
-        }
+        )
         controller.install(on: .current())
-        voiceDetectionNotificationController = controller
+        notificationController = controller
     }
 }
 

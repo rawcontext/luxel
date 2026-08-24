@@ -245,7 +245,8 @@ private let intentionalEnglishFallbackKeys: [String: Set<String>] = [
     ],
     "fr": [
         "1 min", "10 s", "3 s", "30 s", "5 min", "5 s", "Audio", "Destination", "Format",
-        "Microphone", "Source", "common.ok", "recording.countdown.seconds", "⌫"
+        "Microphone", "Source", "common.ok", "recording.countdown.seconds",
+        "settings.notifications.sidebar.title", "⌫"
     ],
     "it": [
         "1 min", "10 s", "3 s", "30 s", "5 min", "5 s", "Audio", "FPS", "Preset", "common.ok",

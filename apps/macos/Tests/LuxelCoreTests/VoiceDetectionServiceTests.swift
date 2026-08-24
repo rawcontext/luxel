@@ -127,14 +127,14 @@ struct VoiceDetectionServiceTests {
         #expect(await service.handle(positive(at: 2)) == [])
     }
 
-    @Test("only explicit start action requests recording")
-    func onlyExplicitStartRequestsRecording() async {
+    @Test("notification click and explicit action both request recording")
+    func notificationClickAndExplicitActionRequestRecording() async {
         let defaultService = VoiceDetectionService()
         _ = await defaultService.reconcile(eligibility: eligible())
         await reachPrompt(defaultService)
         #expect(
             await defaultService.handlePromptAction(.defaultAction, at: date(1))
-                == [.activateApplication]
+                == [.removePrompt, .stopDetector, .startRecording]
         )
 
         let startService = VoiceDetectionService()

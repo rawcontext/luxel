@@ -39,6 +39,7 @@ struct VoiceRecordingPromptNotificationTests {
         #expect(requests.last?.title.isEmpty == false)
         #expect(requests.last?.body.isEmpty == false)
         #expect(requests.last?.hasSound == true)
+        #expect(requests.last?.interruptionLevel == .timeSensitive)
         #expect(
             center.removedPendingIdentifiers == [
                 [VoiceDetectionNotificationIdentifiers.request],
@@ -106,7 +107,8 @@ private final class PromptNotificationCenterSpy:
                     categoryIdentifier: request.content.categoryIdentifier,
                     title: request.content.title,
                     body: request.content.body,
-                    hasSound: request.content.sound != nil
+                    hasSound: request.content.sound != nil,
+                    interruptionLevel: request.content.interruptionLevel
                 )
             )
         }
@@ -147,4 +149,5 @@ private struct PromptRequestSnapshot: Sendable {
     let title: String
     let body: String
     let hasSound: Bool
+    let interruptionLevel: UNNotificationInterruptionLevel
 }

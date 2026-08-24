@@ -92,37 +92,43 @@ struct LuxelApplicationDelegateTests {
         #expect(receivedActions == [.dismiss, .startRecording])
     }
 
-    @Test("notification identifiers map recording consent separately from body clicks")
+    @Test("notification identifiers preserve default clicks for recording policy")
     func notificationActionMapping() {
         #expect(
-            VoiceDetectionNotificationController.action(
+            LuxelNotificationController.action(
                 for: VoiceDetectionNotificationIdentifiers.startRecordingAction
             ) == .startRecording)
         #expect(
-            VoiceDetectionNotificationController.action(
+            LuxelNotificationController.action(
                 for: VoiceDetectionNotificationIdentifiers.dismissAction
             ) == .dismiss)
         #expect(
-            VoiceDetectionNotificationController.action(
+            LuxelNotificationController.action(
                 for: UNNotificationDismissActionIdentifier
             ) == .dismiss)
         #expect(
-            VoiceDetectionNotificationController.action(
+            LuxelNotificationController.action(
                 for: UNNotificationDefaultActionIdentifier
             ) == .defaultAction)
-        #expect(VoiceDetectionNotificationController.action(for: "unrelated") == nil)
+        #expect(LuxelNotificationController.action(for: "unrelated") == nil)
     }
 
-    @Test("speech prompts present as foreground banners with sound")
+    @Test("supported notifications present as foreground banners, list entries, and sound")
     func speechPromptPresentation() {
-        let speechOptions = VoiceDetectionNotificationController.presentationOptions(
+        let speechOptions = LuxelNotificationController.presentationOptions(
             categoryIdentifier: VoiceDetectionNotificationIdentifiers.category
         )
 
         #expect(speechOptions.contains(.banner))
+        #expect(speechOptions.contains(.list))
         #expect(speechOptions.contains(.sound))
         #expect(
-            VoiceDetectionNotificationController.presentationOptions(
+            LuxelNotificationController.presentationOptions(
+                categoryIdentifier: ExportCompletionNotificationIdentifiers.category
+            ).contains(.banner)
+        )
+        #expect(
+            LuxelNotificationController.presentationOptions(
                 categoryIdentifier: "unrelated"
             ).isEmpty)
     }
@@ -130,7 +136,7 @@ struct LuxelApplicationDelegateTests {
     @Test("notification response handling calls completion exactly once on every path")
     func responseCompletion() {
         let actionRecorder = VoiceDetectionPromptActionRecorder()
-        let controller = VoiceDetectionNotificationController {
+        let controller = LuxelNotificationController {
             actionRecorder.append($0)
         }
         var completionCount = 0
@@ -162,7 +168,7 @@ struct LuxelApplicationDelegateTests {
 
     @Test("speech prompt category registers stable actions")
     func notificationCategory() {
-        let category = VoiceDetectionNotificationController.category
+        let category = LuxelNotificationController.category
 
         #expect(category.identifier == VoiceDetectionNotificationIdentifiers.category)
         #expect(
@@ -172,6 +178,46 @@ struct LuxelApplicationDelegateTests {
             ])
         #expect(category.actions.allSatisfy { !$0.title.isEmpty })
         #expect(category.options.contains(.customDismissAction))
+    }
+
+    @Test("export notification clicks and actions reveal every exported file")
+    func exportNotificationActions() {
+        let actionRecorder = VoiceDetectionPromptActionRecorder()
+        let exportRecorder = ExportNotificationRecorder()
+        let controller = LuxelNotificationController(
+            actionHandler: { actionRecorder.append($0) },
+            exportHandler: { exportRecorder.append($0) }
+        )
+        let fileURLs = [
+            URL(fileURLWithPath: "/tmp/first.mp4"),
+            URL(fileURLWithPath: "/tmp/second.gif")
+        ]
+        let userInfo: [AnyHashable: Any] = [
+            ExportCompletionNotificationIdentifiers.filePathsUserInfoKey:
+                fileURLs.map(\.path)
+        ]
+        var completionCount = 0
+
+        for action in [
+            UNNotificationDefaultActionIdentifier,
+            ExportCompletionNotificationIdentifiers.showInFinderAction
+        ] {
+            controller.handleResponse(
+                categoryIdentifier: ExportCompletionNotificationIdentifiers.category,
+                actionIdentifier: action,
+                userInfo: userInfo
+            ) {
+                completionCount += 1
+            }
+        }
+
+        #expect(exportRecorder.fileURLGroups == [fileURLs, fileURLs])
+        #expect(actionRecorder.actions.isEmpty)
+        #expect(completionCount == 2)
+        #expect(
+            LuxelNotificationController.exportCategory.actions.map(\.identifier)
+                == [ExportCompletionNotificationIdentifiers.showInFinderAction]
+        )
     }
 
     @Test("status item right click exposes the overflow quick actions")
@@ -213,6 +259,21 @@ private final class VoiceDetectionPromptActionRecorder: @unchecked Sendable {
     func append(_ action: VoiceDetectionPromptAction) {
         lock.withLock {
             recordedActions.append(action)
+        }
+    }
+}
+
+private final class ExportNotificationRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recordedFileURLGroups: [[URL]] = []
+
+    var fileURLGroups: [[URL]] {
+        lock.withLock { recordedFileURLGroups }
+    }
+
+    func append(_ fileURLs: [URL]) {
+        lock.withLock {
+            recordedFileURLGroups.append(fileURLs)
         }
     }
 }

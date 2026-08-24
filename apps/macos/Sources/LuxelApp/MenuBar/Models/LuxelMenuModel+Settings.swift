@@ -27,6 +27,11 @@ extension LuxelMenuModel {
             [weak self] format in
             self?.rememberLastSelectedExportFormat(format)
         }
+        editorModel.configureExportCompletion { [weak self] fileURLs in
+            Task { @MainActor in
+                await self?.notifyExportCompleted(fileURLs: fileURLs)
+            }
+        }
         editorModel.configureDiscard(
             confirmDiscard: settings.confirmDiscard,
             onDiscard: { [weak self] _ in

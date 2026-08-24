@@ -100,6 +100,12 @@ BUNDLE_IDENTIFIER="$(plist_read "${INFO_PLIST}" ":CFBundleIdentifier")"
 PROFILE_APP_IDENTIFIER="$(plist_read "${PROFILE_PLIST}" ":Entitlements:application-identifier")"
 PROFILE_TEAM_IDENTIFIER="$(plist_read "${PROFILE_PLIST}" ":Entitlements:com.apple.developer.team-identifier")"
 PROFILE_BETA_REPORTS_ACTIVE="$(plist_read "${PROFILE_PLIST}" ":Entitlements:beta-reports-active")"
+PROFILE_TIME_SENSITIVE_NOTIFICATIONS="$(
+	plist_read "${PROFILE_PLIST}" ":Entitlements:com.apple.developer.usernotifications.time-sensitive"
+)"
+APP_TIME_SENSITIVE_NOTIFICATIONS="$(
+	plist_read "${BASE_ENTITLEMENTS}" ":com.apple.developer.usernotifications.time-sensitive"
+)"
 
 if [[ -z "${BUNDLE_IDENTIFIER}" ]]; then
 	echo "CFBundleIdentifier is missing from ${INFO_PLIST}." >&2
@@ -119,6 +125,11 @@ fi
 EXPECTED_APP_IDENTIFIER="${PROFILE_TEAM_IDENTIFIER}.${BUNDLE_IDENTIFIER}"
 if [[ -n "${PROFILE_APP_IDENTIFIER}" && "${PROFILE_APP_IDENTIFIER}" != "${EXPECTED_APP_IDENTIFIER}" ]]; then
 	echo "Provisioning profile App ID ${PROFILE_APP_IDENTIFIER} does not match ${EXPECTED_APP_IDENTIFIER}." >&2
+	exit 1
+fi
+
+if [[ "${APP_TIME_SENSITIVE_NOTIFICATIONS}" == "true" && "${PROFILE_TIME_SENSITIVE_NOTIFICATIONS}" != "true" ]]; then
+	echo "Provisioning profile is missing the Time Sensitive Notifications capability." >&2
 	exit 1
 fi
 

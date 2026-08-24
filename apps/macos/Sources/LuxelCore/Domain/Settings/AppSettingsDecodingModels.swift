@@ -53,6 +53,7 @@ extension AppSettings {
         case commandLinePairedClients
         case commandLineFolderGrants
         case notificationReminder
+        case exportCompletionNotificationsEnabled
         case allowURLAutomation
         case urlAutomationGrants
         case exportPresets
@@ -156,6 +157,7 @@ struct GeneralSettings {
     let commandLinePairedClients: [CommandLinePairedClient]
     let commandLineFolderGrants: [CommandLineFolderGrant]
     let notificationReminder: Bool
+    let exportCompletionNotificationsEnabled: Bool
     let urlAutomationGrants: [String]
     let exportPresets: [ExportPreset]
     let quickExportPresetID: UUID?
