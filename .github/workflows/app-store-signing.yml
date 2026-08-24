@@ -1,0 +1,55 @@
+name: App Store Signing Profile
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: app-store-signing
+  cancel-in-progress: false
+
+jobs:
+  refresh-profile:
+    name: Enable Capability and Refresh Profile
+    runs-on: macos-26
+    permissions:
+      contents: read
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+      APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+      APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+      APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+      MAC_APP_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.MAC_APP_DISTRIBUTION_CERTIFICATE_BASE64 }}
+      MAC_APP_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.MAC_APP_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+      MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_BASE64: ${{ secrets.MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_BASE64 }}
+      MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_PASSWORD: ${{ secrets.MAC_INSTALLER_DISTRIBUTION_CERTIFICATE_PASSWORD }}
+      MAC_APP_STORE_PROFILE_OUTPUT_PATH: ${{ runner.temp }}/luxel-signing
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Read Ruby version
+        id: ruby-version
+        run: |
+          ruby_version="$(awk '$1 == "ruby" { print $2 }' .tool-versions)"
+          echo "ruby=${ruby_version}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        with:
+          ruby-version: ${{ steps.ruby-version.outputs.ruby }}
+          bundler-cache: true
+          working-directory: apps/macos
+
+      - name: Enable Time Sensitive Notifications and refresh profile
+        working-directory: apps/macos
+        run: bundle exec fastlane mac refresh_app_store_profile
+
+      - name: Upload refreshed profile
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: luxel-mac-app-store-profile
+          path: ${{ env.MAC_APP_STORE_PROFILE_OUTPUT_PATH }}/Luxel_Mac_App_Store.mobileprovision
+          if-no-files-found: error
+          retention-days: 1
