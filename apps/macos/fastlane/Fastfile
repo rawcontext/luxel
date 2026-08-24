@@ -11,6 +11,8 @@ APP_IDENTIFIER = "com.rawcontext.luxel"
 APPLE_ACCOUNT = ENV["FASTLANE_USER"]
 REPO_ROOT = File.expand_path("..", __dir__)
 PACKAGE_PATH = File.join(REPO_ROOT, ".build/mas/Luxel.pkg")
+APP_STORE_PROFILE_NAME = "Luxel Mac App Store"
+TIME_SENSITIVE_NOTIFICATIONS_CAPABILITY = "USERNOTIFICATIONS_TIMESENSITIVE"
 
 platform :mac do
   desc "Build a Mac App Store package for Luxel"
@@ -33,6 +35,65 @@ platform :mac do
       skip_waiting_for_build_processing: true,
       uses_non_exempt_encryption: false,
       changelog: testflight_changelog(options)
+    )
+  end
+
+  desc "Enable Time Sensitive Notifications and refresh the Mac App Store profile"
+  lane :refresh_app_store_profile do |options|
+    api_key = app_store_connect_api_key_from_env
+    ensure_time_sensitive_notifications_capability!
+    import_signing_certificates
+
+    output_path = options[:output_path] || ENV["MAC_APP_STORE_PROFILE_OUTPUT_PATH"]
+    UI.user_error!("Missing output_path or MAC_APP_STORE_PROFILE_OUTPUT_PATH") if output_path.to_s.strip == ""
+    output_path = File.expand_path(output_path.to_s, REPO_ROOT)
+    FileUtils.mkdir_p(output_path)
+
+    get_provisioning_profile(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      team_id: "U65DCW9TAK",
+      platform: "macos",
+      provisioning_name: APP_STORE_PROFILE_NAME,
+      force: true,
+      skip_install: true,
+      output_path: output_path,
+      filename: "Luxel_Mac_App_Store.mobileprovision"
+    )
+  end
+
+  desc "Update only App Review notes and submit an existing build for automatic release"
+  lane :submit_app_store_release do |options|
+    app_version = app_store_version(options)
+    build_number = app_store_build_number(options)
+    api_key = app_store_connect_api_key_from_env
+
+    app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+    UI.user_error!("Could not find App Store Connect app #{APP_IDENTIFIER}") unless app
+    app.ensure_version!(app_version, platform: Spaceship::ConnectAPI::Platform::MAC_OS)
+
+    version = app.get_app_store_versions(
+      filter: { versionString: app_version, platform: Spaceship::ConnectAPI::Platform::MAC_OS },
+      includes: nil
+    ).find { |candidate| candidate.version_string == app_version }
+    UI.user_error!("Could not find macOS App Store version #{app_version}") unless version
+    update_app_review_notes!(version)
+
+    upload_to_app_store(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      app_version: app_version,
+      build_number: build_number,
+      platform: "osx",
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: true,
+      skip_app_version_update: true,
+      submit_for_review: true,
+      automatic_release: true,
+      phased_release: false,
+      force: true,
+      run_precheck_before_submit: false
     )
   end
 
@@ -76,6 +137,32 @@ platform :mac do
       force: true,
       run_precheck_before_submit: false
     )
+  end
+end
+
+def ensure_time_sensitive_notifications_capability!
+  bundle_id = Spaceship::ConnectAPI::BundleId.find(APP_IDENTIFIER)
+  UI.user_error!("Could not find Apple Developer bundle ID #{APP_IDENTIFIER}") unless bundle_id
+
+  enabled = bundle_id.get_capabilities.any? do |capability|
+    capability.capability_type == TIME_SENSITIVE_NOTIFICATIONS_CAPABILITY
+  end
+  return if enabled
+
+  bundle_id.create_capability(TIME_SENSITIVE_NOTIFICATIONS_CAPABILITY)
+end
+
+def update_app_review_notes!(version)
+  notes_path = File.join(REPO_ROOT, "../../docs/app-review/review-notes.txt")
+  notes = File.read(notes_path).strip
+  UI.user_error!("App Review notes must not be empty") if notes == ""
+  UI.user_error!("App Review notes exceed Apple's 4,000-byte limit") if notes.bytesize > 4_000
+
+  detail = version.fetch_app_store_review_detail
+  if detail
+    detail.update(attributes: { notes: notes })
+  else
+    version.create_app_store_review_detail(attributes: { notes: notes })
   end
 end
 
@@ -199,6 +286,15 @@ def app_store_version(options)
   UI.user_error!("App Store version must match <major>.<minor>[.<patch>]") unless version.match?(/\A\d+\.\d+(?:\.\d+)?\z/)
 
   version
+end
+
+def app_store_build_number(options)
+  build_number = options[:build_number] || ENV["APP_STORE_BUILD_NUMBER"]
+  build_number = build_number.to_s.strip
+  UI.user_error!("Missing build_number or APP_STORE_BUILD_NUMBER") if build_number == ""
+  UI.user_error!("App Store build number must contain only digits") unless build_number.match?(/\A\d+\z/)
+
+  build_number
 end
 
 def app_store_metadata_path(options)
