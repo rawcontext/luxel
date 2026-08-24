@@ -19,7 +19,6 @@ struct TranscriptCopyTextBuilderTests {
         )
 
         #expect(text.hasSuffix("# Demo\n\n`00:00`\n\nWait... what?\n"))
-        #expect(text.contains("word_count: 2"))
         #expect(text.contains("edited: false"))
     }
 
@@ -44,7 +43,6 @@ struct TranscriptCopyTextBuilderTests {
         )
 
         #expect(text.hasSuffix("# Demo\n\n`00:00`\n\nWait...\n"))
-        #expect(text.contains("word_count: 1"))
         #expect(text.contains("edited: true"))
     }
 
@@ -88,9 +86,10 @@ struct TranscriptCopyTextBuilderTests {
         #expect(text.contains("recorded_at: \"1970-01-01T00:00:00Z\""))
         #expect(text.contains("duration_seconds: 65.500"))
         #expect(text.contains("language: \"en-US\""))
-        #expect(text.contains("transcription_engine: \"parakeetTDTv3\""))
         #expect(text.contains("model_revision: \"v3\""))
-        #expect(text.contains("configuration_revision: \"balanced\""))
+        #expect(!text.contains("transcription_engine:"))
+        #expect(!text.contains("configuration_revision:"))
+        #expect(!text.contains("word_count:"))
     }
 
     @Test("copy escapes transcript Markdown syntax")

@@ -55,14 +55,10 @@ struct TranscriptCopyTextBuilder {
             return (turn, turnText)
         }
 
-        let wordCount = renderedTurns.reduce(0) { count, renderedTurn in
-            count + renderedTurn.1.split(whereSeparator: \.isWhitespace).count
-        }
         let frontMatter = frontMatter(
             transcript: transcript,
             metadata: metadata,
             exportedAt: exportedAt,
-            wordCount: wordCount,
             hasCuts: hasCuts
         )
 
@@ -83,7 +79,6 @@ struct TranscriptCopyTextBuilder {
         transcript: TurnSegmentedTranscript,
         metadata: TranscriptMarkdownMetadata,
         exportedAt: Date,
-        wordCount: Int,
         hasCuts: Bool
     ) -> [String] {
         var lines = ["---", "title: \(yamlString(metadata.title))"]
@@ -99,16 +94,9 @@ struct TranscriptCopyTextBuilder {
             "language: \(yamlString(transcript.localeIdentifier.replacingOccurrences(of: "_", with: "-")))"
         )
         lines.append("speaker_count: \(transcript.speakers.count)")
-        lines.append("word_count: \(wordCount)")
         lines.append("edited: \(hasCuts)")
-        if let provenance = transcript.transcriptionProvenance {
-            lines.append("transcription_engine: \(yamlString(provenance.engine.rawValue))")
-            if let modelRevision = provenance.modelRevision {
-                lines.append("model_revision: \(yamlString(modelRevision))")
-            }
-            if let configurationRevision = provenance.configurationRevision {
-                lines.append("configuration_revision: \(yamlString(configurationRevision))")
-            }
+        if let modelRevision = transcript.transcriptionProvenance?.modelRevision {
+            lines.append("model_revision: \(yamlString(modelRevision))")
         }
         lines.append("---")
         return lines
