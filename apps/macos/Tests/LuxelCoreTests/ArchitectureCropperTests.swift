@@ -28,6 +28,23 @@ extension ArchitectureTests {
         #expect(viewSource.contains(".keyboardShortcut(\"z\", modifiers: [.command, .shift])"))
     }
 
+    @Test("cropper edits custom stop duration in a focusable popover")
+    func cropperEditsCustomStopDurationInPopover() throws {
+        let packageRoot = try packageRootURL()
+        let viewSource = try sourceContents(
+            under: packageRoot.appending(path: "Sources/LuxelApp/Cropper/Views"))
+
+        #expect(viewSource.contains("@State var isEditingStopAfterDuration = false"))
+        #expect(viewSource.contains("@FocusState var isCustomStopAfterFocused: Bool"))
+        #expect(viewSource.contains("isEditingStopAfterDuration = true"))
+        #expect(
+            viewSource.contains(
+                ".popover(isPresented: $isEditingStopAfterDuration, arrowEdge: .bottom)"))
+        #expect(viewSource.contains("var stopAfterDurationEditor: some View"))
+        #expect(viewSource.contains("TextField(\"h:mm:ss\", text: customStopAfterText)"))
+        #expect(viewSource.contains("isEditingStopAfterDuration = false"))
+    }
+
     @Test("cropper renders snap guides while drawing selections")
     func cropperRendersSnapGuidesWhileDrawingSelections() throws {
         let sources = try cropperSources()

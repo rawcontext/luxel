@@ -164,12 +164,8 @@ extension LuxelCropperView {
 
             Divider()
 
-            TextField("h:mm:ss", text: customStopAfterText)
-                .frame(width: 84)
-                .help("Enter a custom automatic stop duration.")
-
             Button {
-                applyCustomStopAfterDuration()
+                isEditingStopAfterDuration = true
             } label: {
                 Label("Set Custom", systemImage: "timer")
             }
@@ -184,9 +180,35 @@ extension LuxelCropperView {
         .menuStyle(.button)
         .buttonStyle(.plain)
         .frame(width: Self.toolbarCircleSide, height: Self.toolbarCircleSide)
+        .popover(isPresented: $isEditingStopAfterDuration, arrowEdge: .bottom) {
+            stopAfterDurationEditor
+        }
         .accessibilityLabel("Stop After")
         .accessibilityValue(model.stopAfterSummary)
         .help("Stop recording automatically. Current: \(model.stopAfterSummary).")
+    }
+
+    var stopAfterDurationEditor: some View {
+        HStack(spacing: 8) {
+            TextField("h:mm:ss", text: customStopAfterText)
+                .frame(width: 84)
+                .focused($isCustomStopAfterFocused)
+                .accessibilityLabel("Enter a custom automatic stop duration.")
+                .onSubmit {
+                    applyCustomStopAfterDuration()
+                }
+
+            Button("Apply") {
+                applyCustomStopAfterDuration()
+            }
+            .keyboardShortcut(.defaultAction)
+        }
+        .textFieldStyle(.roundedBorder)
+        .monospacedDigit()
+        .padding(12)
+        .onAppear {
+            isCustomStopAfterFocused = true
+        }
     }
 
     var aspectRatioMenu: some View {
