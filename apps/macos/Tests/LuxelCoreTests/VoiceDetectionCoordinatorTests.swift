@@ -44,7 +44,7 @@ struct VoiceDetectionCoordinatorTests {
         #expect(await timeline.events.suffix(2) == ["remove-prompt", "stop-detector"])
     }
 
-    @Test("dismiss, body clicks, and stale recording actions cannot start recording")
+    @Test("dismiss and stale recording actions cannot start recording")
     func nonConsentAndStaleActions() async {
         let coordinator = VoiceDetectionCoordinator(
             detector: TestVoiceActivityDetectorSpy(),
@@ -72,10 +72,11 @@ struct VoiceDetectionCoordinatorTests {
             of: VoiceDetectionCoordinatorOutcome.self,
             returning: [VoiceDetectionCoordinatorOutcome].self
         ) { group in
-            for _ in 0..<2 {
-                group.addTask {
-                    await coordinator.handlePromptAction(.startRecording)
-                }
+            group.addTask {
+                await coordinator.handlePromptAction(.startRecording)
+            }
+            group.addTask {
+                await coordinator.handlePromptAction(.defaultAction)
             }
 
             var outcomes: [VoiceDetectionCoordinatorOutcome] = []

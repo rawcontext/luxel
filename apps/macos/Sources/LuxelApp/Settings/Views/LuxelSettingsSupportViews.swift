@@ -1,3 +1,4 @@
+import LuxelCore
 import LuxelPresentation
 import SwiftUI
 
@@ -8,6 +9,7 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
     case shortcuts
     case notch
     case replayBuffer
+    case notifications
     case transcripts
     case commandLine
     case system
@@ -30,6 +32,11 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Notch"
         case .replayBuffer:
             "Replay Buffer"
+        case .notifications:
+            LuxelLocalization.string(
+                "settings.notifications.sidebar.title",
+                defaultValue: "Notifications"
+            )
         case .transcripts:
             "Transcripts"
         case .commandLine:
@@ -53,6 +60,11 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "Built-in notch display controls and fallback behavior."
         case .replayBuffer:
             "Always-on recent capture and clip behavior."
+        case .notifications:
+            LuxelLocalization.string(
+                "settings.notifications.sidebar.subtitle",
+                defaultValue: "System delivery and notification types."
+            )
         case .transcripts:
             "Transcription language, turn segmentation, and speaker identification."
         case .commandLine:
@@ -76,6 +88,8 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
             "laptopcomputer"
         case .replayBuffer:
             "gobackward"
+        case .notifications:
+            "bell.badge"
         case .transcripts:
             "text.alignleft"
         case .commandLine:

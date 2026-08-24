@@ -18,27 +18,43 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
         self.shouldNotifyRecordingFinished = shouldNotifyRecordingFinished
     }
 
+    public func notificationSettings() async -> AppNotificationSettings {
+        guard let notificationCenter = resolvedNotificationCenter else {
+            return .unavailable
+        }
+
+        let settings = await notificationCenter.notificationSettings()
+        return AppNotificationSettings(
+            authorizationStatus: settings.authorizationStatus.appNotificationStatus,
+            timeSensitiveSetting: settings.timeSensitiveSetting.appNotificationSetting
+        )
+    }
+
+    public func requestAuthorization() async -> AppNotificationSettings {
+        guard let notificationCenter = resolvedNotificationCenter else {
+            return .unavailable
+        }
+
+        _ = try? await notificationCenter.requestAuthorization(options: [.alert, .sound])
+        return await notificationSettings()
+    }
+
     public func notifyExportCompleted(fileURL: URL, presetName: String) async throws {
-        guard let notificationCenter = notificationCenter ?? Self.currentNotificationCenter() else {
+        try await notifyExportCompleted(fileURLs: [fileURL], sourceName: presetName)
+    }
+
+    public func notifyExportCompleted(fileURLs: [URL], sourceName: String) async throws {
+        guard !fileURLs.isEmpty,
+            let notificationCenter = resolvedNotificationCenter,
+            await notificationSettings().isAuthorized
+        else {
             return
         }
 
-        let isAuthorized = try await notificationCenter.requestAuthorization(options: [.alert, .sound])
-        guard isAuthorized else {
-            return
-        }
-
-        let content = UNMutableNotificationContent()
-        content.title = LuxelLocalization.string(
-            "notifications.exportComplete.title",
-            defaultValue: "Export Complete")
-        content.body = LuxelLocalization.format(
-            "notifications.exportComplete.body",
-            defaultValue: "%@ saved %@",
-            presetName,
-            fileURL.lastPathComponent)
-        content.sound = .default
-
+        let content = Self.exportCompletedContent(
+            fileURLs: fileURLs,
+            sourceName: sourceName
+        )
         let request = UNNotificationRequest(
             identifier: "luxel.export.\(UUID().uuidString)",
             content: content,
@@ -47,8 +63,41 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
         try await notificationCenter.add(request)
     }
 
+    static func exportCompletedContent(
+        fileURLs: [URL],
+        sourceName: String
+    ) -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        content.title = LuxelLocalization.string(
+            "notifications.exportComplete.title",
+            defaultValue: "Export Complete")
+        if fileURLs.count == 1, let fileURL = fileURLs.first {
+            content.body = LuxelLocalization.format(
+                "notifications.exportComplete.body",
+                defaultValue: "%@ saved %@",
+                sourceName,
+                fileURL.lastPathComponent
+            )
+        } else {
+            content.body = LuxelLocalization.format(
+                "notifications.exportComplete.batchBody",
+                defaultValue: "%@ saved %@ files",
+                sourceName,
+                String(fileURLs.count)
+            )
+        }
+        content.categoryIdentifier = ExportCompletionNotificationIdentifiers.category
+        content.threadIdentifier = ExportCompletionNotificationIdentifiers.category
+        content.userInfo = [
+            ExportCompletionNotificationIdentifiers.filePathsUserInfoKey:
+                fileURLs.map(\.path)
+        ]
+        content.sound = .default
+        return content
+    }
+
     public func notifyRecordingAutoStopped(duration: TimeInterval) async throws {
-        guard let notificationCenter = notificationCenter ?? Self.currentNotificationCenter() else {
+        guard let notificationCenter = resolvedNotificationCenter else {
             return
         }
 
@@ -85,5 +134,39 @@ public struct UserNotificationsNotifier: UserNotifier, @unchecked Sendable {
         }
 
         return .current()
+    }
+
+    private var resolvedNotificationCenter: UNUserNotificationCenter? {
+        notificationCenter ?? Self.currentNotificationCenter()
+    }
+}
+
+extension UNAuthorizationStatus {
+    fileprivate var appNotificationStatus: AppNotificationAuthorizationStatus {
+        switch self {
+        case .notDetermined:
+            .notDetermined
+        case .authorized, .provisional, .ephemeral:
+            .authorized
+        case .denied:
+            .denied
+        @unknown default:
+            .unavailable
+        }
+    }
+}
+
+extension UNNotificationSetting {
+    fileprivate var appNotificationSetting: AppNotificationDeliverySetting {
+        switch self {
+        case .enabled:
+            .enabled
+        case .disabled:
+            .disabled
+        case .notSupported:
+            .unavailable
+        @unknown default:
+            .unavailable
+        }
     }
 }

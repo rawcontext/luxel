@@ -129,6 +129,7 @@ extension LuxelEditorModel {
         updateExportJob(id: 0, exported: exported)
         exportProgress = .completed(format: exported.format)
         status = .exported(exported.fileURL)
+        onExportCompleted?([exported.fileURL])
     }
 
     func finishBatchExport(
@@ -149,7 +150,9 @@ extension LuxelEditorModel {
             actionTitle: "Exported \(exportedMedia.count) files",
             progress: 1
         )
-        status = .exportedBatch(exportedMedia.map(\.fileURL))
+        let fileURLs = exportedMedia.map(\.fileURL)
+        status = .exportedBatch(fileURLs)
+        onExportCompleted?(fileURLs)
     }
 
     func finishSavedOriginal(_ fileURL: URL) {

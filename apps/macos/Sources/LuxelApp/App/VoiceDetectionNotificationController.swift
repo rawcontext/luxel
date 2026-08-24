@@ -2,18 +2,23 @@ import Foundation
 import LuxelCore
 @preconcurrency import UserNotifications
 
-final class VoiceDetectionNotificationController: NSObject,
+final class LuxelNotificationController: NSObject,
     UNUserNotificationCenterDelegate,
     @unchecked Sendable
 {
     private let actionHandler: @Sendable (VoiceDetectionPromptAction) -> Void
+    private let exportHandler: @Sendable ([URL]) -> Void
 
-    init(actionHandler: @escaping @Sendable (VoiceDetectionPromptAction) -> Void) {
+    init(
+        actionHandler: @escaping @Sendable (VoiceDetectionPromptAction) -> Void,
+        exportHandler: @escaping @Sendable ([URL]) -> Void = { _ in }
+    ) {
         self.actionHandler = actionHandler
+        self.exportHandler = exportHandler
     }
 
     func install(on center: UNUserNotificationCenter) {
-        center.setNotificationCategories([Self.category])
+        center.setNotificationCategories([Self.category, Self.exportCategory])
         center.delegate = self
     }
 
@@ -37,6 +42,7 @@ final class VoiceDetectionNotificationController: NSObject,
         handleResponse(
             categoryIdentifier: response.notification.request.content.categoryIdentifier,
             actionIdentifier: response.actionIdentifier,
+            userInfo: response.notification.request.content.userInfo,
             completionHandler: completionHandler
         )
     }
@@ -44,28 +50,37 @@ final class VoiceDetectionNotificationController: NSObject,
     func handleResponse(
         categoryIdentifier: String,
         actionIdentifier: String,
+        userInfo: [AnyHashable: Any] = [:],
         completionHandler: () -> Void
     ) {
         defer {
             completionHandler()
         }
 
-        guard categoryIdentifier == VoiceDetectionNotificationIdentifiers.category,
+        if categoryIdentifier == VoiceDetectionNotificationIdentifiers.category,
             let action = Self.action(for: actionIdentifier)
-        else {
-            return
+        {
+            actionHandler(action)
+        } else if categoryIdentifier == ExportCompletionNotificationIdentifiers.category,
+            Self.isExportRevealAction(actionIdentifier)
+        {
+            let fileURLs = Self.exportedFileURLs(userInfo: userInfo)
+            if !fileURLs.isEmpty {
+                exportHandler(fileURLs)
+            }
         }
-
-        actionHandler(action)
     }
 
     static func presentationOptions(
         categoryIdentifier: String
     ) -> UNNotificationPresentationOptions {
-        guard categoryIdentifier == VoiceDetectionNotificationIdentifiers.category else {
+        guard
+            categoryIdentifier == VoiceDetectionNotificationIdentifiers.category
+                || categoryIdentifier == ExportCompletionNotificationIdentifiers.category
+        else {
             return []
         }
-        return [.banner, .sound]
+        return [.banner, .list, .sound]
     }
 
     static func action(for identifier: String) -> VoiceDetectionPromptAction? {
@@ -105,5 +120,38 @@ final class VoiceDetectionNotificationController: NSObject,
             intentIdentifiers: [],
             options: [.customDismissAction]
         )
+    }
+
+    static var exportCategory: UNNotificationCategory {
+        let showInFinder = UNNotificationAction(
+            identifier: ExportCompletionNotificationIdentifiers.showInFinderAction,
+            title: LuxelLocalization.string(
+                "Show in Finder",
+                defaultValue: "Show in Finder"
+            ),
+            options: []
+        )
+        return UNNotificationCategory(
+            identifier: ExportCompletionNotificationIdentifiers.category,
+            actions: [showInFinder],
+            intentIdentifiers: [],
+            options: []
+        )
+    }
+
+    static func isExportRevealAction(_ identifier: String) -> Bool {
+        identifier == UNNotificationDefaultActionIdentifier
+            || identifier == ExportCompletionNotificationIdentifiers.showInFinderAction
+    }
+
+    static func exportedFileURLs(userInfo: [AnyHashable: Any]) -> [URL] {
+        guard
+            let paths = userInfo[
+                ExportCompletionNotificationIdentifiers.filePathsUserInfoKey
+            ] as? [String]
+        else {
+            return []
+        }
+        return paths.filter { !$0.isEmpty }.map(URL.init(fileURLWithPath:))
     }
 }

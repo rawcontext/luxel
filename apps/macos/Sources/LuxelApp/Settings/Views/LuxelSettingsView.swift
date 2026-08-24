@@ -52,6 +52,7 @@ extension LuxelSettingsView {
             }
             .task {
                 await model.refreshPermissions()
+                await model.refreshAppNotificationSettings()
                 model.refreshAudioInputDevices()
                 model.refreshCameraDevices()
                 await model.watchAudioInputDeviceUpdates()
@@ -221,6 +222,8 @@ extension LuxelSettingsView {
             notchSettingsForm
         case .replayBuffer:
             replayBufferSettingsForm
+        case .notifications:
+            notificationsSettingsForm
         case .transcripts:
             transcriptsSettingsForm
         case .commandLine:

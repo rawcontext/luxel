@@ -163,6 +163,12 @@ extension LuxelEditorModel {
         resetEditorUndoStack()
     }
 
+    public func configureExportCompletion(
+        _ onExportCompleted: (@MainActor ([URL]) -> Void)?
+    ) {
+        self.onExportCompleted = onExportCompleted
+    }
+
     public func configureDiscard(
         confirmDiscard: Bool,
         onDiscard: (@MainActor (URL) -> Void)? = nil,

@@ -149,6 +149,7 @@ public final class LuxelEditorModel {
     @ObservationIgnored var onConfirmDiscardChange: (@MainActor (Bool) -> Void)?
     @ObservationIgnored var onDiscardRecording: (@MainActor (URL) -> Void)?
     @ObservationIgnored var onSourceFileRenamed: (@MainActor (URL, URL) throws -> Void)?
+    @ObservationIgnored var onExportCompleted: (@MainActor ([URL]) -> Void)?
     @ObservationIgnored let errorReporter: any ErrorReporter
 
     public init(

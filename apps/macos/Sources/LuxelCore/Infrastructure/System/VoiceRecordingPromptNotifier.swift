@@ -67,6 +67,7 @@ public struct UserNotificationsSpeechPromptNotifier:
             defaultValue: "Start an audio recording?"
         )
         content.categoryIdentifier = VoiceDetectionNotificationIdentifiers.category
+        content.interruptionLevel = .timeSensitive
         content.sound = .default
 
         try await center.add(

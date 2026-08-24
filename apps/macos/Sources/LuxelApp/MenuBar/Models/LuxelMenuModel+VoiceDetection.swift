@@ -47,6 +47,7 @@ extension LuxelMenuModel {
         async -> VoiceDetectionAuthorizationStatus
     {
         let status = await voiceDetection.coordinator.requestNotificationAuthorization()
+        await refreshAppNotificationSettings()
         scheduleVoiceDetectionReconciliation()
         return status
     }
@@ -57,6 +58,7 @@ extension LuxelMenuModel {
         saveSettings()
 
         _ = await voiceDetection.coordinator.requestNotificationAuthorization()
+        await refreshAppNotificationSettings()
         microphoneStatus = await permissionClient.request(.microphone)
         await reconcileVoiceDetection()
     }
@@ -76,6 +78,7 @@ extension LuxelMenuModel {
         saveSettings()
 
         _ = await voiceDetection.coordinator.requestNotificationAuthorization()
+        await refreshAppNotificationSettings()
         microphoneStatus = await permissionClient.request(.microphone)
         await reconcileVoiceDetection()
     }
@@ -97,6 +100,7 @@ extension LuxelMenuModel {
 
     func recoverVoiceDetectionNotificationAccess() async {
         _ = await voiceDetection.coordinator.recoverNotificationAuthorization()
+        await refreshAppNotificationSettings()
         await reconcileVoiceDetection()
     }
 
@@ -126,6 +130,7 @@ extension LuxelMenuModel {
         let notificationPermission =
             await voiceDetection.coordinator.notificationAuthorizationStatus()
         voiceDetectionNotificationStatus = notificationPermission
+        appNotificationSettings = await userNotifier.notificationSettings()
         let microphone = selectedVoiceDetectionMicrophone()
 
         return VoiceDetectionEligibility(

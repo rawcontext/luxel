@@ -130,6 +130,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var commandLinePairedClients: [CommandLinePairedClient]
     public var commandLineFolderGrants: [CommandLineFolderGrant]
     public var notificationReminder: Bool
+    public var exportCompletionNotificationsEnabled: Bool
     public var allowURLAutomation: Bool
     public var urlAutomationGrants: [String]
     public var exportPresets: [ExportPreset]
@@ -217,6 +218,7 @@ extension AppSettings {
         commandLinePairedClients: [CommandLinePairedClient] = [],
         commandLineFolderGrants: [CommandLineFolderGrant] = [],
         notificationReminder: Bool = true,
+        exportCompletionNotificationsEnabled: Bool = true,
         allowURLAutomation: Bool = true,
         urlAutomationGrants: [String] = [],
         exportPresets: [ExportPreset] = ExportPreset.builtInDefaults,
@@ -297,6 +299,7 @@ extension AppSettings {
         self.commandLinePairedClients = commandLinePairedClients
         self.commandLineFolderGrants = commandLineFolderGrants
         self.notificationReminder = notificationReminder
+        self.exportCompletionNotificationsEnabled = exportCompletionNotificationsEnabled
         self.allowURLAutomation = true
         self.urlAutomationGrants = urlAutomationGrants
         self.exportPresets = exportPresets

@@ -57,6 +57,7 @@ struct AppBundleConfigurationTests {
         #expect(entitlements["com.apple.security.app-sandbox"] == nil)
         #expect(entitlements["com.apple.security.device.audio-input"] as? Bool == true)
         #expect(entitlements["com.apple.security.device.camera"] as? Bool == true)
+        #expect(entitlements["com.apple.developer.usernotifications.time-sensitive"] == nil)
         #expect(entitlements["com.apple.security.files.user-selected.read-write"] == nil)
         #expect(entitlements["com.apple.security.get-task-allow"] == nil)
     }
@@ -70,7 +71,23 @@ struct AppBundleConfigurationTests {
         #expect(entitlements["com.apple.security.files.bookmarks.app-scope"] as? Bool == true)
         #expect(entitlements["com.apple.security.files.user-selected.read-write"] as? Bool == true)
         #expect(entitlements["com.apple.security.network.client"] as? Bool == true)
+        #expect(
+            entitlements["com.apple.developer.usernotifications.time-sensitive"] as? Bool == true
+        )
         #expect(entitlements["com.apple.security.network.server"] == nil)
+
+        let buildScript = try String(
+            contentsOf: packageRootURL().appending(
+                path: "Scripts/build-luxel-mas-pkg.sh"
+            ),
+            encoding: .utf8
+        )
+        #expect(buildScript.contains("PROFILE_TIME_SENSITIVE_NOTIFICATIONS"))
+        #expect(
+            buildScript.contains(
+                "Provisioning profile is missing the Time Sensitive Notifications capability."
+            )
+        )
     }
 
     @Test("signed app declares local-only privacy practices")
