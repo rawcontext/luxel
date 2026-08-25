@@ -1,0 +1,1201 @@
+---
+import { defaultLocale, type Locale } from "../i18n/config";
+import { menuBarDemoCopy } from "../i18n/menu-bar-demo";
+
+/**
+ * Interactive macOS menu bar demo with Luxel as a status item.
+ * Recreates option 11a from the Claude Design handoff: click the status
+ * icon to toggle the capture panel, switch modes, pick targets from native
+ * menus, and hit record to swap the status item for the live recording pill.
+ * UI state only — nothing records.
+ */
+
+interface Props {
+  locale?: Locale;
+}
+
+const { locale = defaultLocale } = Astro.props;
+const t = menuBarDemoCopy(locale);
+
+const menuTitles = [t.menuFile, t.menuEdit, t.menuView, t.menuGo, t.menuWindow, t.menuHelp];
+const trimmedMenuCount = 3;
+
+const modes = [
+  { mode: "display", label: t.modeDisplay },
+  { mode: "window", label: t.modeWindow },
+  { mode: "area", label: t.modeArea },
+  { mode: "audio", label: t.modeAudio }
+];
+
+const recordAppLabel = (name: string) => t.recordApp.replace("{name}", name);
+
+const devices = [
+  { key: "sys", label: t.ariaSystemAudio, on: true },
+  { key: "mic", label: t.ariaMicrophone, on: false },
+  { key: "cam", label: t.ariaCamera, on: false }
+];
+
+const handwritingFonts: Partial<Record<Locale, string>> = {
+  ja: "Yomogi",
+  ko: "Gaegu",
+  "zh-Hans": "Long Cang"
+};
+const handFont = handwritingFonts[locale] ?? "Patrick Hand";
+const handFontHref = `https://fonts.googleapis.com/css2?family=${handFont.replaceAll(" ", "+")}&display=swap&text=${encodeURIComponent(t.tryMe)}`;
+
+const targetGroups = [
+  {
+    mode: "display",
+    options: [
+      { label: t.display1, chip: t.display1, rec: t.recordDisplay1 },
+      { label: t.display2, chip: t.display2, rec: t.recordDisplay2 }
+    ]
+  },
+  {
+    mode: "window",
+    options: [
+      { label: t.frontWindow, chip: t.frontWindow, rec: t.recordFrontWindow },
+      ...["Safari", "Google Chrome", t.notesApp, "Keynote", "Figma"].map((name) => ({
+        label: name,
+        chip: name,
+        rec: recordAppLabel(name)
+      }))
+    ]
+  },
+  {
+    mode: "area",
+    options: [
+      { label: t.areaSize, chip: t.areaChip, rec: t.recordSelection },
+      { label: t.selectNewArea, chip: t.selectNewArea, rec: t.recordSelection }
+    ]
+  },
+  {
+    mode: "audio",
+    options: [
+      { label: t.systemAudioMic, chip: t.systemAudioMic, rec: t.recordAudio },
+      { label: t.systemAudioOnly, chip: t.systemAudioOnly, rec: t.recordAudio },
+      { label: t.microphoneOnly, chip: t.microphoneOnly, rec: t.recordAudio }
+    ]
+  }
+];
+---
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href={handFontHref} />
+
+<section class="mbdemo" data-mode="display" data-sys data-locale={locale} aria-label={t.ariaSection}>
+  <div class="mbdemo__bar">
+    <div class="mbdemo__menus">
+      <span class="mbdemo__menuitem mbdemo__menuitem--glyph" aria-hidden="true">
+        <span class="mbdemo__glyph"><span></span></span>
+      </span>
+      <span class="mbdemo__menuitem mbdemo__menuitem--app" aria-hidden="true">Luxel</span>
+      {
+        menuTitles.map((title, index) => (
+          <span
+            class:list={[
+              "mbdemo__menuitem",
+              { "mbdemo__menuitem--trim": index >= menuTitles.length - trimmedMenuCount }
+            ]}
+            aria-hidden="true"
+          >
+            {title}
+          </span>
+        ))
+      }
+    </div>
+    <div class="mbdemo__status">
+      <button type="button" class="mbdemo__statusicon" data-mb-toggle aria-expanded="false" aria-label={t.ariaTogglePanel}>
+        <span class="mbdemo__glyph"><span></span></span>
+      </button>
+      <button type="button" class="mbdemo__live" data-mb-stop aria-label={t.ariaStopRecording}>
+        <span class="mbdemo__livedot"></span>
+        <span class="mbdemo__wave">
+          <span class="mbdemo__wavetrack">
+            <span class="mbdemo__wavegroup"><i style="height:9px"></i><i style="height:3px"></i><i style="height:3px"></i><i style="height:11px"></i><i style="height:6px"></i><i style="height:12px"></i><i style="height:3px"></i><i style="height:8px"></i><i style="height:4px"></i><i style="height:10px"></i><i style="height:3px"></i><i style="height:13px"></i><i style="height:7px"></i><i style="height:11px"></i></span>
+            <span class="mbdemo__wavegroup"><i style="height:9px"></i><i style="height:3px"></i><i style="height:3px"></i><i style="height:11px"></i><i style="height:6px"></i><i style="height:12px"></i><i style="height:3px"></i><i style="height:8px"></i><i style="height:4px"></i><i style="height:10px"></i><i style="height:3px"></i><i style="height:13px"></i><i style="height:7px"></i><i style="height:11px"></i></span>
+          </span>
+        </span>
+        <span class="mbdemo__livetime" data-mb-time>0:00</span>
+        <span class="mbdemo__livestop"></span>
+      </button>
+      <span class="mbdemo__sysicon" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.88)" stroke-width="1.9" stroke-linecap="round"><path d="M12 18.5h.01"></path><path d="M8.8 15.2a4.5 4.5 0 0 1 6.4 0"></path><path d="M5.9 12.1a8.7 8.7 0 0 1 12.2 0"></path><path d="M3 9a13 13 0 0 1 18 0"></path></svg>
+      </span>
+      <span class="mbdemo__sysicon mbdemo__sysicon--battery" aria-hidden="true">
+        <svg width="22" height="12" viewBox="0 0 28 14"><rect x="1" y="1.5" width="22" height="11" rx="3" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.4"></rect><rect x="3" y="3.5" width="14" height="7" rx="1.5" fill="rgba(255,255,255,.9)"></rect><path d="M25 5v4a2.4 2.4 0 0 0 0-4z" fill="rgba(255,255,255,.5)"></path></svg>
+      </span>
+      <span class="mbdemo__sysicon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.88)" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="4.5" width="19" height="6" rx="3"></rect><circle cx="6.5" cy="7.5" r="1.6" fill="rgba(255,255,255,.88)" stroke="none"></circle><rect x="2.5" y="13.5" width="19" height="6" rx="3"></rect><circle cx="17.5" cy="16.5" r="1.6" fill="rgba(255,255,255,.88)" stroke="none"></circle></svg>
+      </span>
+      <span class="mbdemo__clock" data-mb-clock aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <div class="mbdemo__tryme" style={`font-family: "${handFont}", "Bradley Hand", "Marker Felt", Noteworthy, cursive`}>
+    <span>{t.tryMe}</span>
+    <svg class="mbdemo__arrow" width="56" height="24" viewBox="0 0 56 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 19c14 4 34-2 48-12"></path><path d="M43.5 5.5L50 7l-2 6.5"></path></svg>
+    <svg class="mbdemo__spark mbdemo__spark--1" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 0l1.4 4.6L12 6 7.4 7.4 6 12 4.6 7.4 0 6l4.6-1.4z" fill="currentColor"></path></svg>
+    <svg class="mbdemo__spark mbdemo__spark--2" width="9" height="9" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 0l1.4 4.6L12 6 7.4 7.4 6 12 4.6 7.4 0 6l4.6-1.4z" fill="currentColor"></path></svg>
+    <svg class="mbdemo__spark mbdemo__spark--3" width="8" height="8" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 0l1.4 4.6L12 6 7.4 7.4 6 12 4.6 7.4 0 6l4.6-1.4z" fill="currentColor"></path></svg>
+  </div>
+
+  <div class="mbdemo__panel">
+    <div class="mbdemo__island mbdemo__island--capture">
+      <div class="mbdemo__segs">
+        {
+          modes.map(({ mode, label }) => (
+            <button type="button" class="mbdemo__seg" data-mb-mode={mode}>
+              {mode === "display" && (
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="13" rx="3" /><path d="M12 17v4" /><path d="M8 21h8" /></svg>
+              )}
+              {mode === "window" && (
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.5" /><path d="M3 9h18" /></svg>
+              )}
+              {mode === "area" && (
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6.5A2.5 2.5 0 0 1 6.5 4H9" /><path d="M15 4h2.5A2.5 2.5 0 0 1 20 6.5V9" /><path d="M20 15v2.5a2.5 2.5 0 0 1-2.5 2.5H15" /><path d="M9 20H6.5A2.5 2.5 0 0 1 4 17.5V15" /></svg>
+              )}
+              {mode === "audio" && (
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 10v4" /><path d="M7.5 7v10" /><path d="M12 4v16" /><path d="M16.5 7v10" /><path d="M21 10v4" /></svg>
+              )}
+              <span>{label}</span>
+            </button>
+          ))
+        }
+      </div>
+      <div class="mbdemo__recwrap">
+        <button type="button" class="mbdemo__ring" data-mb-record aria-label={t.ariaToggleRecording}>
+          <span class="mbdemo__ringinner"></span>
+        </button>
+        <span class="mbdemo__cap">
+          <span class="mbdemo__cap-idle" data-mb-rec-label>{t.recordDisplay1}</span>
+          <span class="mbdemo__cap-live">{t.recording}&ensp;<span data-mb-time>0:00</span>&ensp;·&ensp;{t.clickToStop}</span>
+        </span>
+        <div class="mbdemo__target">
+          <span class="mbdemo__tchip" aria-hidden="true">
+            <span data-mb-target-label>{t.display1}</span>
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9.5l4-4.5 4 4.5"></path><path d="M8 14.5l4 4.5 4-4.5"></path></svg>
+          </span>
+          {
+            targetGroups.map(({ mode, options }) => (
+              <select class="mbdemo__tselect" data-mb-select={mode} aria-label={t.ariaTarget}>
+                {options.map((option, index) => (
+                  <option selected={index === 0} data-chip-label={option.chip} data-rec-label={option.rec}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="mbdemo__island mbdemo__island--library">
+      <div class="mbdemo__file">
+        <div class="mbdemo__thumb">
+          <span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M7 5v14M17 5v14M3 9.5h4M3 14.5h4M17 9.5h4M17 14.5h4"></path></svg>
+          </span>
+        </div>
+        <div class="mbdemo__filemeta">
+          <div class="mbdemo__filename">Luxel 2026-08-24</div>
+          <div class="mbdemo__filesub">00:22 · 10.8 MB · MP4</div>
+        </div>
+        <div class="mbdemo__folder">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.6l2.2 2.3h7.2A2.5 2.5 0 0 1 21 9.8v6.7a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5V7.5z"></path></svg>
+        </div>
+      </div>
+      <div class="mbdemo__divider"></div>
+      <div class="mbdemo__devices">
+        {
+          devices.map(({ key, label, on }) => (
+            <div class="mbdemo__devgroup">
+              <button
+                type="button"
+                class="mbdemo__dev"
+                {...{ [`data-mb-${key}`]: true }}
+                aria-pressed={String(on)}
+                aria-label={label}
+              >
+                {key === "sys" && (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3.5 9.5v5H7l5 4v-14l-5 4H3.5z" fill="currentColor" stroke="none" /><path d="M15.5 9a4.5 4.5 0 0 1 0 6" /><path d="M18.5 6.5a8.5 8.5 0 0 1 0 11" /><path class="mbdemo__slash" d="M4.5 4l15 16" /></svg>
+                )}
+                {key === "mic" && (
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="11.5" rx="3" /><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0" /><path d="M12 18v3.5" /><path class="mbdemo__slash" d="M4.5 4l15 16" /></svg>
+                )}
+                {key === "cam" && (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="3.5" /><path d="M15.5 10.5l6-3.5v10l-6-3.5" /><path class="mbdemo__slash" d="M4.5 4l15 16" /></svg>
+                )}
+              </button>
+              <span class="mbdemo__devsep"></span>
+              <span class="mbdemo__devchev">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5l5.5 5.5 5.5-5.5" /></svg>
+              </span>
+            </div>
+          ))
+        }
+        <div class="mbdemo__more">
+          <span class="mbdemo__morebtn" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8" fill="currentColor"></circle><circle cx="12" cy="12" r="1.8" fill="currentColor"></circle><circle cx="19" cy="12" r="1.8" fill="currentColor"></circle></svg>
+          </span>
+          <select class="mbdemo__mselect" data-mb-more aria-label={t.ariaMore}>
+            <option data-action="settings">{t.settings}</option>
+            <option data-action="quit">{t.quitLuxel}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  (() => {
+    const root = document.querySelector(".mbdemo");
+    if (!root) {
+      return;
+    }
+
+    const timeLabels = root.querySelectorAll("[data-mb-time]");
+    const recLabel = root.querySelector("[data-mb-rec-label]");
+    const chipLabel = root.querySelector("[data-mb-target-label]");
+    const panelToggle = root.querySelector("[data-mb-toggle]");
+    const panel = root.querySelector(".mbdemo__panel");
+    const clock = root.querySelector("[data-mb-clock]");
+
+    let seconds = 0;
+    let timer = 0;
+
+    const setTime = () => {
+      const text = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+      timeLabels.forEach((label) => {
+        label.textContent = text;
+      });
+    };
+
+    const setOpen = (on) => {
+      root.toggleAttribute("data-open", on);
+      panelToggle.setAttribute("aria-expanded", String(on));
+    };
+
+    const syncLabels = () => {
+      const picked = root.querySelector(`[data-mb-select="${root.dataset.mode}"]`).selectedOptions[0];
+      recLabel.textContent = picked.dataset.recLabel;
+      chipLabel.textContent = picked.dataset.chipLabel;
+    };
+
+    const stopRecording = () => {
+      clearInterval(timer);
+      seconds = 0;
+      setTime();
+      root.toggleAttribute("data-recording", false);
+      setOpen(true);
+    };
+
+    const startRecording = () => {
+      clearInterval(timer);
+      seconds = 0;
+      setTime();
+      root.toggleAttribute("data-recording", true);
+      setOpen(false);
+      timer = setInterval(() => {
+        seconds += 1;
+        setTime();
+      }, 1000);
+    };
+
+    const toggleRecording = () => {
+      if (root.hasAttribute("data-recording")) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    };
+
+    panelToggle.addEventListener("click", () => {
+      setOpen(!root.hasAttribute("data-open"));
+    });
+
+    const liveStop = root.querySelector("[data-mb-stop]");
+
+    document.addEventListener("click", (event) => {
+      if (!root.hasAttribute("data-open")) {
+        return;
+      }
+      if (
+        panel.contains(event.target) ||
+        panelToggle.contains(event.target) ||
+        liveStop.contains(event.target)
+      ) {
+        return;
+      }
+      setOpen(false);
+    });
+
+    liveStop.addEventListener("click", toggleRecording);
+    root.querySelector("[data-mb-record]").addEventListener("click", toggleRecording);
+
+    root.querySelectorAll("[data-mb-mode]").forEach((segment) => {
+      segment.addEventListener("click", () => {
+        if (root.hasAttribute("data-recording")) {
+          return;
+        }
+        root.dataset.mode = segment.dataset.mbMode;
+        syncLabels();
+      });
+    });
+
+    root.querySelectorAll("[data-mb-select]").forEach((select) => {
+      select.addEventListener("change", syncLabels);
+    });
+
+    const moreSelect = root.querySelector("[data-mb-more]");
+    moreSelect.selectedIndex = -1;
+    moreSelect.addEventListener("change", () => {
+      if (moreSelect.selectedOptions[0]?.dataset.action === "quit") {
+        setOpen(false);
+      }
+      moreSelect.selectedIndex = -1;
+    });
+
+    [["data-mb-sys", "data-sys"], ["data-mb-mic", "data-mic"], ["data-mb-cam", "data-cam"]].forEach(
+      ([selector, flag]) => {
+        const device = root.querySelector(`[${selector}]`);
+        device.addEventListener("click", () => {
+          const on = !root.hasAttribute(flag);
+          root.toggleAttribute(flag, on);
+          device.setAttribute("aria-pressed", String(on));
+        });
+      }
+    );
+
+    const weekdayFormat = new Intl.DateTimeFormat(root.dataset.locale, { weekday: "short" });
+    const clockFormat = new Intl.DateTimeFormat(root.dataset.locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    });
+    const tickClock = () => {
+      const now = new Date();
+      clock.textContent = `${weekdayFormat.format(now)} ${clockFormat.format(now)}`;
+    };
+    tickClock();
+    setInterval(tickClock, 10000);
+
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      root.classList.add("mbdemo--intro");
+      setTimeout(() => root.classList.remove("mbdemo--intro"), 3100);
+    }
+  })();
+</script>
+
+<style>
+  .mbdemo {
+    --mb-tint: #ff453a;
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    color: rgb(255 255 255 / 0.96);
+  }
+
+  /* keep the floating site nav below the stuck menu bar */
+  :global(.mbdemo ~ .nav) {
+    top: 48px;
+  }
+
+  :where(.mbdemo button) {
+    padding: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    text-align: inherit;
+  }
+
+  /* ---- menu bar ---- */
+  .mbdemo__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 34px;
+    padding-inline: 24px;
+    background: rgb(18 18 28 / 0.62);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.06);
+  }
+
+  .mbdemo__menus {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 13px;
+  }
+
+  .mbdemo__menuitem {
+    padding: 3px 10px;
+    border-radius: 6px;
+    color: rgb(255 255 255 / 0.85);
+    cursor: default;
+    white-space: nowrap;
+  }
+
+  .mbdemo__menuitem--glyph {
+    display: grid;
+    place-items: center;
+  }
+
+  .mbdemo__menuitem--app {
+    color: inherit;
+    font-weight: 700;
+  }
+
+  .mbdemo__glyph {
+    display: grid;
+    place-items: center;
+    width: 15px;
+    height: 15px;
+    border: 2px solid rgb(255 255 255 / 0.92);
+    border-radius: 50%;
+  }
+
+  .mbdemo__glyph span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.92);
+  }
+
+  .mbdemo__status {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .mbdemo__statusicon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 24px;
+    border-radius: 6px;
+    transition: background 150ms ease;
+  }
+
+  .mbdemo__statusicon:active {
+    transform: scale(0.94);
+  }
+
+  .mbdemo[data-open] .mbdemo__statusicon {
+    background: rgb(255 255 255 / 0.22);
+  }
+
+  .mbdemo[data-recording] .mbdemo__statusicon {
+    display: none;
+  }
+
+  .mbdemo__live {
+    display: none;
+    align-items: center;
+    gap: 9px;
+    padding: 5px 11px 5px 10px;
+    border-radius: 9px;
+    background: rgb(10 10 16 / 0.72);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.09);
+    transition: background 150ms ease;
+  }
+
+  .mbdemo[data-recording] .mbdemo__live {
+    display: flex;
+  }
+
+  .mbdemo__live:active {
+    transform: scale(0.96);
+  }
+
+  .mbdemo__livedot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--mb-tint);
+    box-shadow: 0 0 9px rgb(255 69 58 / 0.7);
+  }
+
+  .mbdemo__wave {
+    display: flex;
+    align-items: center;
+    width: 58px;
+    height: 14px;
+    overflow: hidden;
+  }
+
+  .mbdemo__wavetrack {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    animation: mbdemo-wave 2.6s linear infinite;
+  }
+
+  .mbdemo__wavegroup {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-right: 2px;
+  }
+
+  .mbdemo__wavegroup i {
+    width: 2px;
+    border-radius: 1px;
+    background: #ff5348;
+  }
+
+  .mbdemo__wavegroup i:nth-child(n + 8) {
+    background: rgb(255 255 255 / 0.85);
+  }
+
+  .mbdemo__livetime {
+    color: rgb(255 255 255 / 0.95);
+    font: 600 12px ui-monospace, Menlo, monospace;
+  }
+
+  .mbdemo__livestop {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    background: rgb(255 255 255 / 0.92);
+  }
+
+  .mbdemo__sysicon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 24px;
+    border-radius: 6px;
+    cursor: default;
+  }
+
+  .mbdemo__clock {
+    min-width: 74px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: rgb(255 255 255 / 0.88);
+    font-size: 12.5px;
+    font-weight: 500;
+    text-align: end;
+    white-space: nowrap;
+    cursor: default;
+  }
+
+  /* ---- try-me label ---- */
+  .mbdemo__tryme {
+    position: absolute;
+    top: 0;
+    right: 272px;
+    display: flex;
+    align-items: center;
+    height: 34px;
+    color: rgb(255 255 255 / 0.9);
+    font-size: 17.5px;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    transform: rotate(-2.5deg);
+    white-space: nowrap;
+  }
+
+  /* runs underneath the text and sweeps up to the status icon */
+  .mbdemo__arrow {
+    position: absolute;
+    top: 21px;
+    right: -26px;
+    opacity: 0.85;
+  }
+
+  .mbdemo__spark {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .mbdemo__spark--1 {
+    top: 0;
+    right: 8px;
+  }
+
+  .mbdemo__spark--2 {
+    top: 2px;
+    right: -16px;
+  }
+
+  .mbdemo__spark--3 {
+    top: 14px;
+    left: -13px;
+  }
+
+  /* one-time intro: note pops in, arrow draws itself, icon pings, sparkles twinkle */
+  .mbdemo--intro .mbdemo__tryme span {
+    animation: mbdemo-note-pop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 150ms both;
+  }
+
+  .mbdemo--intro .mbdemo__arrow path:first-child {
+    stroke-dasharray: 62;
+    animation: mbdemo-draw 550ms ease-out 700ms both;
+  }
+
+  .mbdemo--intro .mbdemo__arrow path:last-child {
+    animation: mbdemo-head 200ms ease-out 1150ms both;
+  }
+
+  .mbdemo--intro .mbdemo__spark--1 {
+    animation: mbdemo-twinkle 650ms ease-in-out 1250ms both;
+  }
+
+  .mbdemo--intro .mbdemo__spark--2 {
+    animation: mbdemo-twinkle 650ms ease-in-out 1500ms both;
+  }
+
+  .mbdemo--intro .mbdemo__spark--3 {
+    animation: mbdemo-twinkle 650ms ease-in-out 1700ms both;
+  }
+
+  .mbdemo--intro .mbdemo__statusicon::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 8px;
+    box-shadow: 0 0 0 2px rgb(255 255 255 / 0.55);
+    animation: mbdemo-ping 850ms ease-out 1300ms 2 both;
+  }
+
+  @keyframes mbdemo-note-pop {
+    0% {
+      opacity: 0;
+      transform: translateY(6px) scale(0.7) rotate(-8deg);
+    }
+
+    60% {
+      opacity: 1;
+      transform: translateY(-1px) scale(1.06) rotate(-1deg);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1) rotate(0deg);
+    }
+  }
+
+  @keyframes mbdemo-draw {
+    from {
+      stroke-dashoffset: 62;
+    }
+
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes mbdemo-head {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes mbdemo-twinkle {
+    0% {
+      opacity: 0;
+      transform: scale(0.2) rotate(0deg);
+    }
+
+    40% {
+      opacity: 1;
+      transform: scale(1.15) rotate(25deg);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(0.4) rotate(50deg);
+    }
+  }
+
+  @keyframes mbdemo-ping {
+    0% {
+      opacity: 0.9;
+      transform: scale(0.7);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1.45);
+    }
+  }
+
+  .mbdemo[data-open] .mbdemo__tryme,
+  .mbdemo[data-recording] .mbdemo__tryme {
+    display: none;
+  }
+
+  /* ---- panel ---- */
+  .mbdemo__panel {
+    position: absolute;
+    top: 42px;
+    right: 128px;
+    z-index: 60;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    width: 340px;
+  }
+
+  .mbdemo[data-open] .mbdemo__panel {
+    display: flex;
+  }
+
+  .mbdemo__island {
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, rgb(74 74 92 / 0.52), rgb(30 30 40 / 0.62));
+    backdrop-filter: blur(54px) saturate(200%);
+    -webkit-backdrop-filter: blur(54px) saturate(200%);
+  }
+
+  .mbdemo__island--capture {
+    position: relative;
+    z-index: 1;
+    gap: 6px;
+    padding: 10px 10px 16px;
+    border-radius: 30px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.18),
+      inset 0 0 0 1px rgb(255 255 255 / 0.06),
+      0 24px 60px rgb(0 0 0 / 0.55),
+      0 3px 12px rgb(0 0 0 / 0.3);
+  }
+
+  .mbdemo__island--library {
+    gap: 8px;
+    padding: 9px;
+    border-radius: 26px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.18),
+      inset 0 0 0 1px rgb(255 255 255 / 0.06),
+      0 20px 50px rgb(0 0 0 / 0.5);
+  }
+
+  .mbdemo__segs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    padding: 6px 4px;
+    border-radius: 20px;
+    background: rgb(0 0 0 / 0.18);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.25);
+  }
+
+  .mbdemo__seg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 15px 0 13px;
+    border-radius: 16px;
+    color: rgb(255 255 255 / 0.48);
+    transition:
+      background 180ms ease,
+      color 180ms ease;
+  }
+
+  .mbdemo__seg:active {
+    transform: scale(0.96);
+  }
+
+  .mbdemo__seg span {
+    max-width: 100%;
+    overflow: hidden;
+    padding-inline: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mbdemo[data-mode="display"] [data-mb-mode="display"],
+  .mbdemo[data-mode="window"] [data-mb-mode="window"],
+  .mbdemo[data-mode="area"] [data-mb-mode="area"],
+  .mbdemo[data-mode="audio"] [data-mb-mode="audio"] {
+    background: rgb(255 255 255 / 0.16);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.2),
+      0 2px 8px rgb(0 0 0 / 0.3);
+    color: rgb(255 255 255 / 0.96);
+  }
+
+  .mbdemo__recwrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding-block-start: 12px;
+  }
+
+  .mbdemo__ring {
+    display: grid;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgb(16 16 24 / 0.4);
+    box-shadow:
+      inset 0 0 0 3px rgb(255 255 255 / 0.92),
+      0 12px 32px rgb(0 0 0 / 0.45),
+      0 0 40px color-mix(in srgb, var(--mb-tint) 22%, transparent);
+    transition:
+      transform 180ms ease,
+      box-shadow 250ms ease;
+  }
+
+  .mbdemo__ring:hover {
+    transform: scale(1.05);
+  }
+
+  .mbdemo__ring:active {
+    transform: scale(0.93);
+  }
+
+  .mbdemo[data-recording] .mbdemo__ring {
+    box-shadow:
+      inset 0 0 0 3px rgb(255 255 255 / 1),
+      0 12px 32px rgb(0 0 0 / 0.5),
+      0 0 60px color-mix(in srgb, var(--mb-tint) 55%, transparent);
+  }
+
+  .mbdemo__ringinner {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 50% 28%,
+      color-mix(in srgb, var(--mb-tint) 72%, #fff),
+      color-mix(in srgb, var(--mb-tint) 88%, #000) 78%
+    );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.35),
+      0 4px 18px color-mix(in srgb, var(--mb-tint) 55%, transparent);
+    transition:
+      width 220ms ease,
+      height 220ms ease,
+      border-radius 220ms ease;
+  }
+
+  .mbdemo[data-recording] .mbdemo__ringinner {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .mbdemo__cap {
+    max-width: 100%;
+    overflow: hidden;
+    padding-inline: 12px;
+    color: rgb(255 255 255 / 0.85);
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    transition: color 200ms ease;
+    white-space: nowrap;
+  }
+
+  .mbdemo[data-recording] .mbdemo__cap {
+    color: color-mix(in srgb, var(--mb-tint) 55%, #fff);
+  }
+
+  .mbdemo__cap-live {
+    display: none;
+  }
+
+  .mbdemo[data-recording] .mbdemo__cap-idle {
+    display: none;
+  }
+
+  .mbdemo[data-recording] .mbdemo__cap-live {
+    display: inline;
+  }
+
+  .mbdemo__target {
+    position: relative;
+    max-width: 100%;
+  }
+
+  .mbdemo__tchip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 15px 9px 17px;
+    border-radius: 17px;
+    background: rgb(255 255 255 / 0.08);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1);
+    transition: background 150ms ease;
+  }
+
+  .mbdemo__target:hover .mbdemo__tchip {
+    background: rgb(255 255 255 / 0.16);
+  }
+
+  .mbdemo__tchip > span {
+    overflow: hidden;
+    color: rgb(255 255 255 / 0.75);
+    font-size: 12px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mbdemo__tchip svg {
+    flex: none;
+    opacity: 0.55;
+  }
+
+  .mbdemo__tselect,
+  .mbdemo__mselect {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    color: transparent;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .mbdemo__tselect {
+    display: none;
+  }
+
+  .mbdemo[data-mode="display"] [data-mb-select="display"],
+  .mbdemo[data-mode="window"] [data-mb-select="window"],
+  .mbdemo[data-mode="area"] [data-mb-select="area"],
+  .mbdemo[data-mode="audio"] [data-mb-select="audio"] {
+    display: block;
+  }
+
+  /* ---- library island ---- */
+  .mbdemo__file {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 6px 6px 6px 7px;
+    border-radius: 18px;
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+
+  .mbdemo__file:hover {
+    background: rgb(255 255 255 / 0.07);
+  }
+
+  .mbdemo__thumb {
+    position: relative;
+    width: 60px;
+    height: 38px;
+    overflow: hidden;
+    border-radius: 10px;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgb(255 255 255 / 0.05) 0 8px,
+        rgb(255 255 255 / 0.02) 8px 16px
+      ),
+      linear-gradient(160deg, #23233a, #101018);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  }
+
+  .mbdemo__thumb span {
+    position: absolute;
+    bottom: 3px;
+    left: 4px;
+    color: rgb(255 255 255 / 0.85);
+  }
+
+  .mbdemo__filemeta {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mbdemo__filename {
+    overflow: hidden;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mbdemo__filesub {
+    margin-block-start: 1px;
+    color: rgb(255 255 255 / 0.5);
+    font-size: 10.5px;
+  }
+
+  .mbdemo__folder {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.08);
+    color: rgb(255 255 255 / 0.85);
+    transition: background 150ms ease;
+  }
+
+  .mbdemo__folder:hover {
+    background: rgb(255 255 255 / 0.16);
+  }
+
+  .mbdemo__divider {
+    height: 1px;
+    margin-inline: 8px;
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  .mbdemo__devices {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 3px 2px;
+  }
+
+  .mbdemo__devgroup {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 18px;
+    background: rgb(255 255 255 / 0.07);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+
+  .mbdemo__dev {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 36px;
+    color: rgb(255 255 255 / 0.42);
+    transition:
+      background 150ms ease,
+      color 150ms ease;
+  }
+
+  .mbdemo__dev:hover {
+    background: rgb(255 255 255 / 0.09);
+  }
+
+  .mbdemo__dev:active {
+    transform: scale(0.92);
+  }
+
+  .mbdemo[data-sys] [data-mb-sys],
+  .mbdemo[data-mic] [data-mb-mic],
+  .mbdemo[data-cam] [data-mb-cam] {
+    color: rgb(255 255 255 / 0.92);
+  }
+
+  .mbdemo[data-sys] [data-mb-sys] .mbdemo__slash,
+  .mbdemo[data-mic] [data-mb-mic] .mbdemo__slash,
+  .mbdemo[data-cam] [data-mb-cam] .mbdemo__slash {
+    stroke: transparent;
+  }
+
+  .mbdemo__devsep {
+    width: 1px;
+    height: 18px;
+    background: rgb(255 255 255 / 0.12);
+  }
+
+  .mbdemo__devchev {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 36px;
+    color: rgb(255 255 255 / 0.55);
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+
+  .mbdemo__devchev:hover {
+    background: rgb(255 255 255 / 0.09);
+  }
+
+  .mbdemo__more {
+    position: relative;
+  }
+
+  .mbdemo__morebtn {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.09);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+    color: rgb(255 255 255 / 0.8);
+    transition: background 150ms ease;
+  }
+
+  .mbdemo__more:hover .mbdemo__morebtn {
+    background: rgb(255 255 255 / 0.16);
+  }
+
+  @keyframes mbdemo-wave {
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mbdemo__wavetrack,
+    .mbdemo--intro .mbdemo__tryme span,
+    .mbdemo--intro .mbdemo__arrow path,
+    .mbdemo--intro .mbdemo__spark,
+    .mbdemo--intro .mbdemo__statusicon::after {
+      animation: none;
+    }
+  }
+
+  @media (max-width: 880px) {
+    .mbdemo__menuitem--trim {
+      display: none;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .mbdemo__menuitem:not(.mbdemo__menuitem--glyph):not(.mbdemo__menuitem--app) {
+      display: none;
+    }
+
+    .mbdemo__tryme {
+      display: none;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .mbdemo__panel {
+      right: 10px;
+      width: min(340px, calc(100vw - 20px));
+    }
+  }
+
+  @media (max-width: 400px) {
+    .mbdemo__sysicon--battery {
+      display: none;
+    }
+  }
+</style>

@@ -4,6 +4,7 @@ import InstallCommand from "../components/InstallCommand.astro";
 import LocaleRedirect from "../components/LocaleRedirect.astro";
 import LocalizedContent from "../components/LocalizedContent.astro";
 import LocalizedSeo from "../components/LocalizedSeo.astro";
+import MenuBarDemo from "../components/MenuBarDemo.astro";
 import SiteNav from "../components/SiteNav.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { commonCopy } from "../i18n/common";
@@ -147,6 +148,8 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
         <span class="ambient__glow ambient__glow--right"></span>
         <span class="ambient__glow ambient__glow--low"></span>
       </div>
+
+      <MenuBarDemo locale={locale} />
 
       <SiteNav locale={locale} links={navLinks} ariaLabel={translate(locale, "Page sections")} />
 
