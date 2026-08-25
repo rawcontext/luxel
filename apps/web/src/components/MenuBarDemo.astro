@@ -135,7 +135,7 @@ const targetGroups = [
 
   <div class="mbdemo__tryme" style={`font-family: "${handFont}", "Bradley Hand", "Marker Felt", Noteworthy, cursive`}>
     <span>{t.tryMe}</span>
-    <svg width="34" height="20" viewBox="0 0 34 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16.5c9 1.5 19-1 28.5-9.5"></path><path d="M24.5 5.5l6.5 1-1.5 6.5"></path></svg>
+    <svg width="56" height="24" viewBox="0 0 56 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 19c14 4 34-2 48-12"></path><path d="M43.5 5.5L50 7l-2 6.5"></path></svg>
   </div>
 
   <div class="mbdemo__panel">
@@ -587,10 +587,9 @@ const targetGroups = [
   .mbdemo__tryme {
     position: absolute;
     top: 0;
-    right: 268px;
+    right: 304px;
     display: flex;
     align-items: center;
-    gap: 7px;
     height: 34px;
     color: rgb(255 255 255 / 0.9);
     font-size: 17.5px;
@@ -600,8 +599,11 @@ const targetGroups = [
     white-space: nowrap;
   }
 
+  /* springs from the text, dips below the bar, and aims at the status icon */
   .mbdemo__tryme svg {
-    margin-block-start: 6px;
+    position: absolute;
+    top: 18px;
+    left: calc(100% + 5px);
     opacity: 0.85;
   }
 
