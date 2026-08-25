@@ -5,6 +5,7 @@ import { defaultLocale, type Locale, type PublicPagePath } from "../i18n/config"
 import { translate } from "../i18n/text";
 import LocaleRedirect from "./LocaleRedirect.astro";
 import LocalizedSeo from "./LocalizedSeo.astro";
+import MenuBarDemo from "./MenuBarDemo.astro";
 import SiteFooter from "./SiteFooter.astro";
 import SiteNav from "./SiteNav.astro";
 
@@ -51,6 +52,8 @@ const copy = commonCopy(locale);
         <span class="ambient__glow ambient__glow--hero"></span>
         {showsLeftGlow && <span class="ambient__glow ambient__glow--left"></span>}
       </div>
+
+      <MenuBarDemo locale={locale} />
 
       <SiteNav
         locale={locale}
