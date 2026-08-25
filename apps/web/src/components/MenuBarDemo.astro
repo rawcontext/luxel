@@ -41,7 +41,6 @@ const handwritingFonts: Partial<Record<Locale, string>> = {
   "zh-Hans": "Long Cang"
 };
 const handFont = handwritingFonts[locale] ?? "Patrick Hand";
-const handFontHref = `https://fonts.googleapis.com/css2?family=${handFont.replaceAll(" ", "+")}&display=swap&text=${encodeURIComponent(t.tryMe)}`;
 
 const targetGroups = [
   {
@@ -79,10 +78,6 @@ const targetGroups = [
   }
 ];
 ---
-
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href={handFontHref} />
 
 <section class="mbdemo" data-mode="display" data-sys data-locale={locale} aria-label={t.ariaSection}>
   <div class="mbdemo__bar">
@@ -383,7 +378,13 @@ const targetGroups = [
     tickClock();
     setInterval(tickClock, 10000);
 
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    // play the intro only when arriving at the site, not when navigating
+    // between our own pages; nothing is stored in the browser
+    let internalNavigation = false;
+    try {
+      internalNavigation = new URL(document.referrer).origin === location.origin;
+    } catch {}
+    if (!internalNavigation && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       root.classList.add("mbdemo--intro");
       setTimeout(() => root.classList.remove("mbdemo--intro"), 3100);
     }
@@ -391,6 +392,40 @@ const targetGroups = [
 </script>
 
 <style>
+  /* self-hosted handwriting faces for the try-me label, subset to just the
+     label glyphs (public/fonts); regenerate the woff2 files if tryMe changes */
+  @font-face {
+    font-family: "Patrick Hand";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/patrick-hand-tryme.woff2") format("woff2");
+  }
+
+  @font-face {
+    font-family: "Yomogi";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/yomogi-tryme.woff2") format("woff2");
+  }
+
+  @font-face {
+    font-family: "Gaegu";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/gaegu-tryme.woff2") format("woff2");
+  }
+
+  @font-face {
+    font-family: "Long Cang";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("/fonts/long-cang-tryme.woff2") format("woff2");
+  }
+
   .mbdemo {
     --mb-tint: #ff453a;
     position: sticky;
