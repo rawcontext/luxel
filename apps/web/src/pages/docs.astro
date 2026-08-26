@@ -1043,6 +1043,24 @@ luxel export request.json output.webm --overwrite --json
 luxel transcribe demo.m4a &gt; demo.txt
 luxel transcribe demo.mp4 --output demo.json --format json --diarize --overwrite</code></pre>
             </article>
+
+            <article>
+              <h3>Agent skills</h3>
+              <p>
+                Install Luxel Skills to teach compatible coding agents how to use the full CLI or
+                create focused WebM evidence for reviews.
+              </p>
+              <pre><code>npx skills add https://github.com/rawcontext/luxel-skills
+npx skills add https://github.com/rawcontext/luxel-skills --skill luxel
+npx skills add https://github.com/rawcontext/luxel-skills --skill luxel-evidence</code></pre>
+              <p class="tip">
+                Choose luxel for command reference and operations, or luxel-evidence for an
+                intentional recording and attachment workflow.
+              </p>
+              <p>
+                <a href="https://github.com/rawcontext/luxel-skills">View Luxel Skills on GitHub</a>.
+              </p>
+            </article>
           </div>
 
           <div class="mini-reference">
