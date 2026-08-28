@@ -12,6 +12,7 @@ actor SpyAudioTranscriptService: AudioTranscriptService {
     private let transcriptResult: TurnSegmentedTranscript?
     private let transcriptError: (any Error)?
     private let delay: Duration?
+    private let completionGate: TranscriptCompletionGate?
     private let progressFractions: [Double]
     private var capturedRequests: [AudioTranscriptRequest] = []
 
@@ -19,11 +20,13 @@ actor SpyAudioTranscriptService: AudioTranscriptService {
         transcript: TurnSegmentedTranscript? = nil,
         error: (any Error)? = nil,
         delay: Duration? = nil,
+        completionGate: TranscriptCompletionGate? = nil,
         progressFractions: [Double] = []
     ) {
         self.transcriptResult = transcript
         self.transcriptError = error
         self.delay = delay
+        self.completionGate = completionGate
         self.progressFractions = progressFractions
     }
 
@@ -48,6 +51,7 @@ actor SpyAudioTranscriptService: AudioTranscriptService {
         for request: AudioTranscriptRequest
     ) async throws -> TurnSegmentedTranscript? {
         capturedRequests.append(request)
+        await completionGate?.waitUntilOpen()
         if let delay {
             try await Task.sleep(for: delay)
         }
@@ -60,6 +64,27 @@ actor SpyAudioTranscriptService: AudioTranscriptService {
 
     func requests() -> [AudioTranscriptRequest] {
         capturedRequests
+    }
+}
+
+actor TranscriptCompletionGate {
+    private var isOpen = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func waitUntilOpen() async {
+        guard !isOpen else {
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+
+    func open() {
+        isOpen = true
+        continuation?.resume()
+        continuation = nil
     }
 }
 

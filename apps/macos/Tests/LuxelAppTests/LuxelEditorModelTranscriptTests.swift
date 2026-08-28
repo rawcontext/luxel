@@ -110,9 +110,10 @@ extension LuxelEditorModelTranscriptTests {
         let helper = LuxelEditorModelTests()
         let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
         let source = try SourceMedia.audioOnly(fileURL: sourceURL, duration: 92)
+        let completionGate = TranscriptCompletionGate()
         let transcriptService = SpyAudioTranscriptService(
             transcript: try helper.sampleTranscript(source: .microphone),
-            delay: .milliseconds(150),
+            completionGate: completionGate,
             progressFractions: [0.2, 0.6]
         )
         let model = helper.makeModel(
@@ -132,6 +133,7 @@ extension LuxelEditorModelTranscriptTests {
         #expect(model.visibleTranscript == nil)
         #expect(model.transcriptExtractionProgress == 0.6)
 
+        await completionGate.open()
         _ = try await helper.waitForTranscript(model)
         #expect(!model.shouldShowTranscriptProgress)
         #expect(!model.isTranscriptExtractionActive)
