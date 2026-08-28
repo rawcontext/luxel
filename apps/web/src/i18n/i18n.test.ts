@@ -42,6 +42,22 @@ describe("locale parity", () => {
       expect(values.every((value) => typeof value === "string" && value.trim().length > 0)).toBe(true);
     }
   });
+
+  test("matches the app transcription language options exactly", () => {
+    const settings = readFileSync(
+      path.join(repositoryRoot, "apps/macos/Sources/LuxelApp/Settings/Views/LuxelSettingsView+Transcripts.swift"),
+      "utf8"
+    );
+    const homepage = readFileSync(path.join(webRoot, "src/pages/index.astro"), "utf8");
+    const appBlock = settings.match(/transcriptLanguageOptions: \[String\?\] = \[([\s\S]*?)\n    \]/)?.[1];
+    const websiteBlock = homepage.match(/const transcriptionLanguages = \[([\s\S]*?)\n\];/)?.[1];
+    const appIdentifiers = [...(appBlock?.matchAll(/"([^"]+)"/g) ?? [])].map((match) => match[1]);
+    const websiteIdentifiers = [...(websiteBlock?.matchAll(/identifier: "([^"]+)"/g) ?? [])].map(
+      (match) => match[1]
+    );
+
+    expect(websiteIdentifiers).toEqual(appIdentifiers);
+  });
 });
 
 describe("browser language negotiation", () => {
@@ -80,6 +96,24 @@ describe("static localized output", () => {
 
     for (const locale of translatedLocales) {
       expect(readBuiltPage(locale, "/docs")).not.toContain("Documentation sections");
+    }
+  });
+
+  test("renders the full transcription language list without English marketing fallback", () => {
+    for (const locale of translatedLocales) {
+      const html = readBuiltPage(locale, "/");
+      const languageList = html.match(
+        /<ul class="transcription-languages__list"[\s\S]*?<\/ul>/
+      )?.[0];
+
+      expect(languageList?.match(/<li>/g)).toHaveLength(29);
+      expect(html).not.toContain("Luxel - Screen recorder and transcription for Mac");
+      expect(html).not.toContain("Luxel is a Mac screen recorder for screen and system audio capture");
+      expect(html).not.toContain("Record your Mac screen with system audio or your microphone");
+      expect(html).not.toContain("Turn video and audio into searchable text on your Mac.");
+      expect(html).not.toContain("Can Luxel turn Japanese voice into text?");
+      expect(html).not.toContain("Speech to text in 29 language options.");
+      expect(html).not.toContain("Supported transcription languages");
     }
   });
 

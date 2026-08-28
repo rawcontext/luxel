@@ -15,8 +15,8 @@ for (const page of pages) {
 }
 
 for (const source of [
-  "Luxel - Screen recording for Mac",
-  "Luxel is a Mac menu bar recorder for screen capture, replay buffer clips, local transcripts, command-line automation, and polished exports.",
+  "Luxel - Screen recorder and transcription for Mac",
+  "Luxel is a Mac screen recorder for screen and system audio capture, replay buffer clips, local video and audio transcription in multiple languages, automation, and polished exports.",
   "Page sections",
   "Luxel Documentation",
   "Luxel user documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, command-line control, automation, localization, settings, and troubleshooting.",

@@ -860,6 +860,113 @@
     font-weight: 500;
   }
 
+  /* ---- common recording tasks ---- */
+  .how-to {
+    display: grid;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+    gap: 72px;
+    align-items: start;
+  }
+
+  .how-to__head {
+    max-width: 430px;
+  }
+
+  .how-to .eyebrow {
+    color: rgb(255 255 255 / 0.62);
+  }
+
+  .how-to__list {
+    border-block-start: 1px solid rgb(255 255 255 / 0.12);
+  }
+
+  .how-to__item {
+    position: relative;
+    padding: 27px 20px 28px 30px;
+    border-block-end: 1px solid rgb(255 255 255 / 0.12);
+  }
+
+  .how-to__item::before {
+    position: absolute;
+    inset-block-start: 36px;
+    inset-inline-start: 4px;
+    width: 7px;
+    height: 7px;
+    content: "";
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 20px rgb(143 134 255 / 0.7);
+  }
+
+  .how-to__item h3 {
+    margin-block-end: 9px;
+    font-size: 20px;
+    font-weight: 650;
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+  }
+
+  .how-to__item p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  .transcription-languages {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+    gap: 54px;
+    margin-block-start: 18px;
+    padding: 38px 40px;
+    border-radius: 28px;
+    background: var(--panel-bg);
+    box-shadow: var(--panel-shadow);
+  }
+
+  .transcription-languages__copy h3 {
+    margin-block-end: 13px;
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  .transcription-languages__copy > p:not(.eyebrow) {
+    color: var(--muted);
+    font-size: 13.5px;
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  .transcription-languages__list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 24px;
+    align-content: start;
+  }
+
+  .transcription-languages__list li {
+    position: relative;
+    padding: 8px 4px 8px 14px;
+    border-block-end: 1px solid rgb(255 255 255 / 0.08);
+    color: rgb(255 255 255 / 0.72);
+    font-size: 12.5px;
+  }
+
+  .transcription-languages__list li::before {
+    position: absolute;
+    inset-block-start: 15px;
+    inset-inline-start: 0;
+    width: 4px;
+    height: 4px;
+    content: "";
+    border-radius: 50%;
+    background: var(--green);
+  }
+
   /* ---- notch scene ---- */
   .notch-scene {
     position: relative;
@@ -1315,6 +1422,20 @@
       padding-block-start: 88px;
     }
 
+    .how-to {
+      grid-template-columns: 1fr;
+      gap: 34px;
+    }
+
+    .how-to__head {
+      max-width: 620px;
+    }
+
+    .transcription-languages {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+
     .feature-row,
     .feature-row--flip {
       grid-template-columns: 1fr;
@@ -1403,6 +1524,15 @@
 
     .banner--cta {
       padding: 44px 24px;
+    }
+
+    .transcription-languages {
+      padding: 30px 24px;
+    }
+
+    .transcription-languages__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 18px;
     }
 
     .notch-scene__cluster span:not(.notch-scene__app):not(.live-dot--menubar) {
