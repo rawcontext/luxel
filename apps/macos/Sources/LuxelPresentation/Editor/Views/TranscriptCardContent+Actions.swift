@@ -57,8 +57,7 @@ extension TranscriptCardContent {
         if matches.isEmpty {
             selectedSearchMatchID = nil
         } else if let selectedSearchMatchID,
-            matches.contains(where: { $0.id == selectedSearchMatchID })
-        {
+            matches.contains(where: { $0.id == selectedSearchMatchID }) {
         } else {
             selectedSearchMatchID = matches[0].id
         }

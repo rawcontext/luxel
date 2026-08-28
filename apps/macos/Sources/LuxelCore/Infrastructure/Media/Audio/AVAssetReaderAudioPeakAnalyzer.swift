@@ -10,8 +10,7 @@ public struct AVAssetReaderAudioPeakAnalyzer: AudioPeakAnalyzer {
     public init() {}
 
     public func measurePeaks(_ request: AudioPeakAnalysisRequest) async throws -> [AudioTrackKind:
-        Double]
-    {
+        Double] {
         guard !request.audioTracks.isEmpty else {
             return [:]
         }

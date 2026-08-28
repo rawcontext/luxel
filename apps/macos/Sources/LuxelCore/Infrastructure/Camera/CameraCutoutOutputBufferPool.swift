@@ -55,6 +55,11 @@ final class CameraCutoutOutputBufferPool: @unchecked Sendable {
             throw CameraCutoutCompositorError.cannotCreateOutputBuffer
         }
 
+        self.pool = pool
+        self.slots = try Self.makeSlots(pool: pool)
+    }
+
+    private static func makeSlots(pool: CVPixelBufferPool) throws -> [Slot] {
         var slots: [Slot] = []
         for _ in 0..<Self.bufferCount {
             var buffer: CVPixelBuffer?
@@ -80,8 +85,7 @@ final class CameraCutoutOutputBufferPool: @unchecked Sendable {
             )
             slots.append(Slot(buffer: buffer))
         }
-        self.pool = pool
-        self.slots = slots
+        return slots
     }
 
     func acquire() -> CameraCutoutOutputBufferLease? {

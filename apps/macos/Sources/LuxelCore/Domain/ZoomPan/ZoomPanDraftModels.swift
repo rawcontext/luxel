@@ -156,8 +156,7 @@ public struct ZoomBlockDraftCollection: Codable, Equatable, Sendable {
     }
 
     public func replacingBlock(id: ZoomBlockDraftID, with block: ZoomBlock) throws
-        -> ZoomBlockDraftCollection
-    {
+        -> ZoomBlockDraftCollection {
         try replacingDraft(id: id) { draft in
             try draft.replacingBlock(block)
         }

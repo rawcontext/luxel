@@ -10,88 +10,35 @@ extension AppSettings {
         let transcription = try Self.decodeTranscriptionSettings(from: container)
         let capture = try Self.decodeCaptureSurfaceSettings(from: container)
         let general = try Self.decodeGeneralSettings(from: container)
-        recordingsDirectory = try container.decode(URL.self, forKey: .recordingsDirectory)
-        recordingsDirectoryBookmark = try container.decodeIfPresent(
+        let speechPromptsEnabled =
+            try container.decodeIfPresent(Bool.self, forKey: .speechDetectionPromptsEnabled)
+            ?? false
+        let speechDisclosureAccepted =
+            try container.decodeIfPresent(Bool.self, forKey: .speechDetectionDisclosureAccepted)
+            ?? false
+        let recordingsDirectory = try container.decode(URL.self, forKey: .recordingsDirectory)
+        let recordingsDirectoryBookmark = try container.decodeIfPresent(
             BookmarkedDirectory.self, forKey: .recordingsDirectoryBookmark
         )
-        showCursor = cursor.showCursor
-        highlightClicks = cursor.highlightClicks
-        cursorMode = cursor.mode
-        cursorRenderOptions = cursor.renderOptions
-        keystrokeOverlayEnabled = cursor.keystrokeOverlayEnabled
-        keystrokeLivePreviewEnabled = cursor.keystrokeLivePreviewEnabled
-        keystrokeRenderOptions = cursor.keystrokeRenderOptions
-        pauseKeystrokeCaptureShortcut = cursor.pauseKeystrokeCaptureShortcut
-        record60FPS = recording.records60FPS
-        recordingFrameRate = recording.frameRate
-        matchDisplayFrameRate = recording.matchesDisplayFrameRate
-        loopExports = recording.loopsExports
-        recordSystemAudio = recording.recordsSystemAudio
-        recordAudio = recording.recordsAudio
-        audioInputDeviceID = audioInput.id
-        audioInputDeviceName = audioInput.name
-        audioOnlyFormat = recording.audioOnlyFormat
-        speechDetectionPromptsEnabled =
-            try container.decodeIfPresent(
-                Bool.self,
-                forKey: .speechDetectionPromptsEnabled
-            ) ?? false
-        speechDetectionDisclosureAccepted =
-            try container.decodeIfPresent(
-                Bool.self,
-                forKey: .speechDetectionDisclosureAccepted
-            ) ?? false
-        transcriptTurnSegmentationEnabled = transcription.turnSegmentationEnabled
-        transcriptSpeakerDiarizationEnabled = transcription.speakerDiarizationEnabled
-        transcriptLanguageIdentifier = transcription.languageIdentifier
-        cameraDeviceID = capture.cameraDeviceID
-        cameraSeparateTrack = capture.cameraSeparateTrack
-        cameraPreviewStyle = capture.cameraPreviewStyle
-        cameraPreviewPlacements = capture.cameraPreviewPlacements
-        replayBufferConfiguration = capture.replayBufferConfiguration
-        replayBufferPreferredBufferLength = capture.replayBufferPreferredBufferLength
-        replayBufferResumeOnLaunch = capture.replayBufferResumeOnLaunch
-        replayBufferConsentAccepted = capture.replayBufferConsentAccepted
-        alwaysShowReplayBufferIsland = capture.alwaysShowReplayBufferIsland
-        replayClipDestination = capture.replayClipDestination
-        notchSurfaceSettings = capture.notchSurfaceSettings
-        enableShortcuts = capture.enableShortcuts
-        triggerCropperShortcut = keys.triggerCropper
-        toggleRecordingShortcut = keys.toggleRecording
-        recordActiveWindowShortcut = keys.recordActiveWindow
-        recordFullscreenShortcut = keys.recordFullscreen
-        audioOnlyRecordingShortcut = keys.audioOnlyRecording
-        quickRecordLastShortcut = keys.quickRecordLast
-        clipReplayBufferShortcut = keys.clipReplayBuffer
-        updatePreferences = general.updatePreferences
-        showTimeInMenuBar = general.showTimeInMenuBar
-        hideMenuBarIcon = general.hideMenuBarIcon && notchSurfaceSettings.isEnabled
-        launchAtLogin = general.launchAtLogin
-        commandLineControlEnabled = general.commandLineControlEnabled
-        commandLinePairedClients = general.commandLinePairedClients
-        commandLineFolderGrants = general.commandLineFolderGrants
-        notificationReminder = general.notificationReminder
-        exportCompletionNotificationsEnabled = general.exportCompletionNotificationsEnabled
-        allowURLAutomation = true
-        urlAutomationGrants = general.urlAutomationGrants
-        exportPresets = general.exportPresets
-        quickExportPresetID = general.quickExportPresetID
-        rememberLastCapture = general.rememberLastCapture
-        loupeAlwaysOn = general.loupeAlwaysOn
-        dimOtherDisplays = general.dimOtherDisplays
-        restoreLastSelection = general.restoreLastSelection
-        userSizePresets = general.userSizePresets
-        lastCaptureMemory = general.lastCaptureMemory
-        perFormatExportMemory = general.perFormatExportMemory
-        lastSelectedExportFormat = general.lastSelectedExportFormat
-        confirmDiscard = general.confirmDiscard
-        defaultCountdown = general.defaultCountdown
-        lastStopAfter = general.lastStopAfter
+        var settings = AppSettings(
+            recordingsDirectory: recordingsDirectory,
+            recordingsDirectoryBookmark: recordingsDirectoryBookmark
+        )
+        settings.apply(cursor)
+        settings.apply(recording, audioInput: audioInput)
+        settings.apply(
+            transcription,
+            speechPromptsEnabled: speechPromptsEnabled,
+            speechDisclosureAccepted: speechDisclosureAccepted
+        )
+        settings.apply(capture)
+        settings.apply(keys)
+        settings.apply(general)
+        self = settings
     }
 
     private static func cursorSettings(from container: AppSettingsDecoder) throws
-        -> CursorSettings
-    {
+        -> CursorSettings {
         let showCursor = try container.decodeIfPresent(Bool.self, forKey: .showCursor) ?? true
         let highlightClicks =
             try container.decodeIfPresent(Bool.self, forKey: .highlightClicks) ?? false
@@ -122,8 +69,7 @@ extension AppSettings {
     }
 
     private static func decodeRecordingSettings(from container: AppSettingsDecoder) throws
-        -> RecordingSettings
-    {
+        -> RecordingSettings {
         let legacyRecord60FPS =
             try container.decodeIfPresent(Bool.self, forKey: .record60FPS)
             ?? true
@@ -165,8 +111,7 @@ extension AppSettings {
     }
 
     private static func decodeAudioInput(from container: AppSettingsDecoder) throws
-        -> AudioInputSettings
-    {
+        -> AudioInputSettings {
         let id: String?
         if container.contains(.audioInputDeviceID) {
             id = try container.decodeIfPresent(String.self, forKey: .audioInputDeviceID)
@@ -238,8 +183,7 @@ extension AppSettings {
     }
 
     private static func shortcutSettings(from container: AppSettingsDecoder) throws
-        -> ShortcutSettings
-    {
+        -> ShortcutSettings {
         try ShortcutSettings(
             triggerCropper: container.decodeIfPresent(String.self, forKey: .triggerCropperShortcut) ?? "",
             toggleRecording: container.decodeIfPresent(String.self, forKey: .toggleRecordingShortcut)
@@ -258,8 +202,7 @@ extension AppSettings {
     }
 
     private static func decodeGeneralSettings(from container: AppSettingsDecoder) throws
-        -> GeneralSettings
-    {
+        -> GeneralSettings {
         return try GeneralSettings(
             updatePreferences: container.decodeIfPresent(
                 UpdatePreferences.self, forKey: .updatePreferences) ?? .defaults,
@@ -297,23 +240,42 @@ extension AppSettings {
             dimOtherDisplays: container.decodeIfPresent(Bool.self, forKey: .dimOtherDisplays) ?? false,
             restoreLastSelection: container.decodeIfPresent(Bool.self, forKey: .restoreLastSelection)
                 ?? true,
-            userSizePresets: removingRemovedBuiltInSizePresets(
-                from: container.decodeIfPresent([CaptureSizePreset].self, forKey: .userSizePresets)
-                    ?? CaptureSizePreset.builtInDefaults
-            ),
+            userSizePresets: decodeUserSizePresets(from: container),
             lastCaptureMemory: container.decodeIfPresent(
                 LastCaptureMemory.self, forKey: .lastCaptureMemory),
-            perFormatExportMemory: container.decodeIfPresent(
-                [ExportFormat: ExportMemory].self,
-                forKey: .perFormatExportMemory
-            ) ?? [:],
-            lastSelectedExportFormat: container.decodeIfPresent(
-                ExportFormat.self,
-                forKey: .lastSelectedExportFormat
-            ),
+            perFormatExportMemory: decodePerFormatExportMemory(from: container),
+            lastSelectedExportFormat: decodeLastSelectedExportFormat(from: container),
             confirmDiscard: container.decodeIfPresent(Bool.self, forKey: .confirmDiscard) ?? true,
             defaultCountdown: container.decodeIfPresent(TimeInterval.self, forKey: .defaultCountdown),
             lastStopAfter: container.decodeIfPresent(TimeInterval.self, forKey: .lastStopAfter)
+        )
+    }
+
+    private static func decodeUserSizePresets(
+        from container: AppSettingsDecoder
+    ) throws -> [CaptureSizePreset] {
+        removingRemovedBuiltInSizePresets(
+            from: try container.decodeIfPresent(
+                [CaptureSizePreset].self, forKey: .userSizePresets)
+                ?? CaptureSizePreset.builtInDefaults
+        )
+    }
+
+    private static func decodePerFormatExportMemory(
+        from container: AppSettingsDecoder
+    ) throws -> [ExportFormat: ExportMemory] {
+        try container.decodeIfPresent(
+            [ExportFormat: ExportMemory].self,
+            forKey: .perFormatExportMemory
+        ) ?? [:]
+    }
+
+    private static func decodeLastSelectedExportFormat(
+        from container: AppSettingsDecoder
+    ) throws -> ExportFormat? {
+        try container.decodeIfPresent(
+            ExportFormat.self,
+            forKey: .lastSelectedExportFormat
         )
     }
 

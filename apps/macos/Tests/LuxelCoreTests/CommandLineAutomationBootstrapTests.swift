@@ -78,11 +78,11 @@ struct CommandLineAutomationBootstrapTests {
 
     @Test("Remote endpoints are rejected")
     func rejectsRemoteEndpoint() throws {
+        let query =
+            "requestID=00000000-0000-0000-0000-000000000001"
+            + "&clientName=Terminal&endpoint=https%3A%2F%2Fexample.com%2Fsession"
         let url = try #require(
-            URL(
-                string:
-                    "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Terminal&endpoint=https%3A%2F%2Fexample.com%2Fsession"
-            ))
+            URL(string: "luxel://cli/pair?\(query)"))
         #expect(throws: CommandLineAutomationBootstrapError.nonLoopbackEndpoint) {
             try CommandLineAutomationBootstrapParser.parse(url, expectedScheme: "luxel")
         }
@@ -90,11 +90,12 @@ struct CommandLineAutomationBootstrapTests {
 
     @Test("Predictable callback routes are rejected")
     func rejectsPredictableCallbackRoute() throws {
+        let query =
+            "requestID=00000000-0000-0000-0000-000000000001"
+            + "&clientName=Terminal"
+            + "&endpoint=http%3A%2F%2F127.0.0.1%3A43123%2Fsession"
         let url = try #require(
-            URL(
-                string:
-                    "luxel://cli/pair?requestID=00000000-0000-0000-0000-000000000001&clientName=Terminal&endpoint=http%3A%2F%2F127.0.0.1%3A43123%2Fsession"
-            ))
+            URL(string: "luxel://cli/pair?\(query)"))
         #expect(throws: CommandLineAutomationBootstrapError.nonLoopbackEndpoint) {
             try CommandLineAutomationBootstrapParser.parse(url, expectedScheme: "luxel")
         }

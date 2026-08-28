@@ -95,8 +95,7 @@ struct GIFContainerWriterTests {
             if abs(Int(decoded[offset]) - Int(expected.red)) > 2
                 || abs(Int(decoded[offset + 1]) - Int(expected.green)) > 2
                 || abs(Int(decoded[offset + 2]) - Int(expected.blue)) > 2
-                || decoded[offset + 3] != 255
-            {
+                || decoded[offset + 3] != 255 {
                 mismatchedPixelCount += 1
             }
         }

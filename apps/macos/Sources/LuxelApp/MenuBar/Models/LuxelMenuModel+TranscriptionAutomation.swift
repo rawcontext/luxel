@@ -53,8 +53,7 @@ extension LuxelMenuModel {
         }
         if let outputURL = options.outputURL,
             FileManager.default.fileExists(atPath: outputURL.path),
-            !options.overwrite
-        {
+            !options.overwrite {
             throw AutomationTranscriptionError.outputExists
         }
     }

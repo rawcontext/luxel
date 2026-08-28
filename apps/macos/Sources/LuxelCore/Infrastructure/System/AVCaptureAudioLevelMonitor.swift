@@ -108,8 +108,7 @@ private final class AudioLevelCaptureSession: @unchecked Sendable {
 
         if let deviceID,
             deviceID != AudioInputDeviceID.systemDefault,
-            let device = discoverySession.devices.first(where: { $0.uniqueID == deviceID })
-        {
+            let device = discoverySession.devices.first(where: { $0.uniqueID == deviceID }) {
             return device
         }
 
@@ -123,8 +122,7 @@ private enum AudioLevelCaptureSessionError: Error {
 }
 
 private final class AudioLevelSampleBufferDelegate: NSObject,
-    AVCaptureAudioDataOutputSampleBufferDelegate
-{
+    AVCaptureAudioDataOutputSampleBufferDelegate {
     private let continuation: AsyncStream<AudioLevelSample>.Continuation
 
     init(continuation: AsyncStream<AudioLevelSample>.Continuation) {

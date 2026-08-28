@@ -63,8 +63,7 @@ struct CaptureSizePresetSettingsSection: View {
 
     private var currentSelectedPresetID: UUID? {
         if let selectedPresetID,
-            settings.userSizePresets.contains(where: { $0.id == selectedPresetID })
-        {
+            settings.userSizePresets.contains(where: { $0.id == selectedPresetID }) {
             return selectedPresetID
         }
 

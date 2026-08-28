@@ -145,8 +145,7 @@ extension KeystrokeChipPlanner {
         plannedChips: inout [KeystrokeChip]
     ) throws {
         if let lastTime = typingRun.lastTime,
-            time - lastTime > rules.typingCoalescingInterval
-        {
+            time - lastTime > rules.typingCoalescingInterval {
             try flushTypingRun(&typingRun, into: &plannedChips)
         }
 
@@ -294,8 +293,7 @@ extension KeystrokeChipPlanner {
         to plannedChips: inout [KeystrokeChip]
     ) throws {
         while activeChipIndexes(at: chip.timeRange.start, in: plannedChips).count
-            >= rules.maxVisibleChips
-        {
+            >= rules.maxVisibleChips {
             guard let evictedIndex = activeChipIndexes(at: chip.timeRange.start, in: plannedChips).first
             else {
                 break

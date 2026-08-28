@@ -236,12 +236,10 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         let currentApplication = NSRunningApplication.current
         if let sourceApplication,
             sourceApplication.processIdentifier != currentApplication.processIdentifier,
-            !sourceApplication.isTerminated
-        {
+            !sourceApplication.isTerminated {
             _ = currentApplication.activate(from: sourceApplication, options: .activateAllWindows)
         } else if let frontmostApplication = NSWorkspace.shared.frontmostApplication,
-            frontmostApplication.processIdentifier != currentApplication.processIdentifier
-        {
+            frontmostApplication.processIdentifier != currentApplication.processIdentifier {
             _ = currentApplication.activate(from: frontmostApplication, options: .activateAllWindows)
         } else {
             NSApplication.shared.activate()

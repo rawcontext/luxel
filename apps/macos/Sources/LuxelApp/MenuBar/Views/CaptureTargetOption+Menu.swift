@@ -49,8 +49,7 @@ extension CaptureTargetOption {
         }
 
         if let processIdentifier = owningApplicationProcessIdentifier,
-            let icon = NSRunningApplication(processIdentifier: processIdentifier)?.icon
-        {
+            let icon = NSRunningApplication(processIdentifier: processIdentifier)?.icon {
             icon.size = NSSize(width: 18, height: 18)
             return icon
         }

@@ -56,8 +56,7 @@ final class LuxelAutomationCommandExecutor: AutomationCommandExecutor, @unchecke
     }
 
     func transcribe(_ options: AutomationTranscriptionOptions) async throws
-        -> AutomationExecutionResult
-    {
+        -> AutomationExecutionResult {
         try await execute(.transcribe(options))
     }
 }

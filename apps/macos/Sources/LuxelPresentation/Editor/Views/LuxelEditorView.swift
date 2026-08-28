@@ -127,8 +127,7 @@ extension LuxelEditorView {
             }
             if let options = model.keystrokeOptions,
                 options.isVisible,
-                !model.activeKeystrokeChips.isEmpty
-            {
+                !model.activeKeystrokeChips.isEmpty {
                 KeystrokeChipStackView(chips: model.activeKeystrokeChips, options: options)
                     .padding(28)
                     .frame(

@@ -4,8 +4,7 @@ import LuxelCore
 
 final class LuxelNotificationController: NSObject,
     UNUserNotificationCenterDelegate,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     private let actionHandler: @Sendable (VoiceDetectionPromptAction) -> Void
     private let exportHandler: @Sendable ([URL]) -> Void
 
@@ -58,12 +57,10 @@ final class LuxelNotificationController: NSObject,
         }
 
         if categoryIdentifier == VoiceDetectionNotificationIdentifiers.category,
-            let action = Self.action(for: actionIdentifier)
-        {
+            let action = Self.action(for: actionIdentifier) {
             actionHandler(action)
         } else if categoryIdentifier == ExportCompletionNotificationIdentifiers.category,
-            Self.isExportRevealAction(actionIdentifier)
-        {
+            Self.isExportRevealAction(actionIdentifier) {
             let fileURLs = Self.exportedFileURLs(userInfo: userInfo)
             if !fileURLs.isEmpty {
                 exportHandler(fileURLs)

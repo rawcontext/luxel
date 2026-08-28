@@ -141,6 +141,39 @@ typealias StubFileSystem = AlwaysExistingTestFileSystem
 typealias SpyFileSystem = TestFileSystemSpy
 typealias CopiedFile = TestCopiedFile
 
+struct AudioTranscriptHarness {
+    let sourceURL: URL
+    let transcriptService: SpyAudioTranscriptService
+    let model: LuxelEditorModel
+}
+
+@MainActor
+func makeAudioTranscriptHarness(
+    audioTracks: [AudioTrackKind] = [.system],
+    authorizationService: any SpeechRecognitionAuthorizationService =
+        StubSpeechAuthorizationService(state: .authorized)
+) throws -> AudioTranscriptHarness {
+    let helper = LuxelEditorModelTests()
+    let sourceURL = URL(fileURLWithPath: "/tmp/audio.m4a")
+    let source = try SourceMedia.audioOnly(
+        fileURL: sourceURL,
+        duration: 12,
+        audioTracks: audioTracks
+    )
+    let transcriptService = SpyAudioTranscriptService(
+        transcript: try helper.sampleTranscript(source: .microphone)
+    )
+    return AudioTranscriptHarness(
+        sourceURL: sourceURL,
+        transcriptService: transcriptService,
+        model: helper.makeModel(
+            metadataReader: StubMetadataReader(source: source),
+            audioTranscriptService: transcriptService,
+            speechRecognitionAuthorizationService: authorizationService
+        )
+    )
+}
+
 @MainActor
 final class StubExportedFileActionClient: ExportedFileActionClient {
     let saveDestination: URL?

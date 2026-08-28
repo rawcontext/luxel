@@ -234,8 +234,7 @@ public struct TurnSegmentedTranscript: Codable, Equatable, Sendable {
     }
 
     public func replacingSpeakerLabel(_ label: TranscriptSpeakerLabel) throws
-        -> TurnSegmentedTranscript
-    {
+        -> TurnSegmentedTranscript {
         guard speakers.contains(where: { $0.id == label.id }) else {
             throw TranscriptModelError.unknownSpeaker(label.id)
         }

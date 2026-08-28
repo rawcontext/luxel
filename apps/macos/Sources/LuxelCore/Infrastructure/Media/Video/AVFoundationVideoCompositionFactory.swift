@@ -179,8 +179,7 @@ extension AVFoundationVideoCompositionFactory {
     }
 
     private func compositionGeometry(sourceVideoTrack: AVAssetTrack) async throws
-        -> VideoCompositionGeometry
-    {
+        -> VideoCompositionGeometry {
         let naturalSize = try await sourceVideoTrack.load(.naturalSize)
         let preferredTransform = try await sourceVideoTrack.load(.preferredTransform)
         let transformedRect = CGRect(origin: .zero, size: naturalSize).applying(preferredTransform)

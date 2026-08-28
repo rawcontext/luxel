@@ -159,8 +159,7 @@ struct EditorSpeakersCard: View {
 extension EditorSpeakersCard {
 
     private func voiceHeader(_ voice: DetectedSpeakerVoice, showsMatchCheck: Bool = false)
-        -> some View
-    {
+        -> some View {
         HStack(spacing: 8) {
             speakerDot(voice)
 

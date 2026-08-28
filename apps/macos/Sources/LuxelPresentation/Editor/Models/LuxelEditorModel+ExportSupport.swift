@@ -231,8 +231,7 @@ extension LuxelEditorModel {
         }
 
         if URL(fileURLWithPath: fileName).pathExtension.isEmpty,
-            !sourceURL.pathExtension.isEmpty
-        {
+            !sourceURL.pathExtension.isEmpty {
             fileName += ".\(sourceURL.pathExtension)"
         }
 

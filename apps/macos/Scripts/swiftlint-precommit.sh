@@ -23,5 +23,6 @@ fi
 
 swift format format --in-place --parallel "${swift_files[@]}"
 swift format lint --strict "${swift_files[@]}"
+swiftlint lint --fix --quiet --config .swiftlint.yml "${swift_files[@]}"
+swiftlint lint --strict --quiet --config .swiftlint.yml "${swift_files[@]}"
 git add -- "${swift_files[@]}"
-swiftlint lint --quiet --config .swiftlint.yml "${swift_files[@]}"

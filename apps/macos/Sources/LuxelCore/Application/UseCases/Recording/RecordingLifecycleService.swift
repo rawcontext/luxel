@@ -275,8 +275,7 @@ private actor RecordingLifecycleAutoStopState {
     private var isStopping = false
 
     func start(schedule: RecordingSchedule, startedAt: Date, now: Date)
-        -> RecordingLifecycleAutoStopTiming?
-    {
+        -> RecordingLifecycleAutoStopTiming? {
         clearStoredState()
 
         guard schedule.maxRecordedDuration != nil else {

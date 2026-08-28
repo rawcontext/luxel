@@ -34,8 +34,7 @@ func packageRootURL() throws -> URL {
 }
 
 func fakeVideoPacket(index: Int, byteCount: Int, keyframeInterval: Int) throws
-    -> EncodedPacket
-{
+    -> EncodedPacket {
     try EncodedPacket(
         data: Data(repeating: UInt8(index % 255), count: byteCount),
         presentationTime: Double(index) / 30,

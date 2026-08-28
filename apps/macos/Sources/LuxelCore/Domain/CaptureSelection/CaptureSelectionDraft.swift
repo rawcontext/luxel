@@ -128,14 +128,12 @@ public struct CaptureSelectionDraft: Codable, Equatable, Sendable {
     }
 
     public func applyingAspectRatioPreset(_ preset: CaptureAspectRatioPreset) throws
-        -> CaptureSelectionDraft
-    {
+        -> CaptureSelectionDraft {
         try applyingAspectRatio(preset.aspectRatio)
     }
 
     public func applyingAspectRatio(_ aspectRatio: CaptureAspectRatio?) throws
-        -> CaptureSelectionDraft
-    {
+        -> CaptureSelectionDraft {
         guard let aspectRatio else {
             return self
         }

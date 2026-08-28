@@ -8,8 +8,7 @@ extension LuxelCompositionRoot {
     }
 
     static func speakerDiarizationArtifactsStore()
-        -> SpeakerDiarizationArtifactsFileStore
-    {
+        -> SpeakerDiarizationArtifactsFileStore {
         SpeakerDiarizationArtifactsFileStore(
             directory: diarizationArtifactsDirectory
         )

@@ -70,8 +70,7 @@ struct VoiceRecordingPromptNotificationTests {
 
 private final class PromptNotificationCenterSpy:
     VoiceRecordingPromptNotificationCenter,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     let currentAuthorization: VoiceDetectionAuthorizationStatus
     let requestedAuthorization: VoiceDetectionAuthorizationStatus
     private let lock = NSLock()

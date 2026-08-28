@@ -100,14 +100,12 @@ struct ExportPresetSettingsSection: View {
 
     private var currentSelectedPresetID: UUID? {
         if let selectedPresetID,
-            settings.exportPresets.contains(where: { $0.id == selectedPresetID })
-        {
+            settings.exportPresets.contains(where: { $0.id == selectedPresetID }) {
             return selectedPresetID
         }
 
         if let quickExportPresetID = settings.quickExportPresetID,
-            settings.exportPresets.contains(where: { $0.id == quickExportPresetID })
-        {
+            settings.exportPresets.contains(where: { $0.id == quickExportPresetID }) {
             return quickExportPresetID
         }
 
@@ -294,8 +292,7 @@ private struct ExportPresetEditor: View {
     private var frameRateChoices: [Int] {
         var choices = [0, 12, 24, 30, 60]
         if let current = preset.frameRate?.framesPerSecond,
-            !choices.contains(current)
-        {
+            !choices.contains(current) {
             choices.append(current)
         }
 

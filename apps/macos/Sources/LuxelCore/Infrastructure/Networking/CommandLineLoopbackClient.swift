@@ -57,8 +57,7 @@ public struct CommandLineLoopbackClient: Sendable {
 }
 
 private final class CommandLineNoRedirectDelegate: NSObject, URLSessionTaskDelegate,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     func urlSession(
         _ session: URLSession,
         task: URLSessionTask,

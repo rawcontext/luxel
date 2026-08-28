@@ -139,8 +139,10 @@ final class LuxelMenuModel {
         captureTargetService: CaptureTargetService = CaptureTargetService(
             catalog: ScreenCaptureKitCaptureTargetCatalog()
         ),
-        captureExclusionRegistry: CaptureExclusionRegistry = CaptureExclusionRegistry(),
-        recordingFramePanelController: RecordingFramePanelController = RecordingFramePanelController(),
+        captureExclusionRegistry exclusionRegistry: CaptureExclusionRegistry =
+            CaptureExclusionRegistry(),
+        recordingFramePanelController frameController: RecordingFramePanelController =
+            RecordingFramePanelController(),
         audioInputDeviceService: AudioInputDeviceService = AudioInputDeviceService(
             catalog: AVFoundationAudioInputDeviceCatalog(),
             updateSource: AVFoundationAudioInputDeviceUpdateSource()
@@ -148,15 +150,16 @@ final class LuxelMenuModel {
         cameraDeviceService: CameraDeviceService = CameraDeviceService(
             catalog: AVFoundationCameraDeviceCatalog()
         ),
-        cameraPreviewPanelController: CameraPreviewPanelController = CameraPreviewPanelController(),
-        audioLevelMonitorFactory: @escaping () -> any AudioLevelMonitor = {
+        cameraPreviewPanelController preview: CameraPreviewPanelController =
+            CameraPreviewPanelController(),
+        audioLevelMonitorFactory levelMonitorFactory: @escaping () -> any AudioLevelMonitor = {
             AVCaptureAudioLevelMonitor()
         },
         fileWorkflowService: ExportedFileWorkflowService = ExportedFileWorkflowService(
             client: AppKitExportedFileActionClient()
         ),
         bookmarkedDirectoryPicker: any BookmarkedDirectoryPicker = AppKitBookmarkedDirectoryPicker(),
-        directoryAccessService: BookmarkedDirectoryAccessService =
+        directoryAccessService directoryAccess: BookmarkedDirectoryAccessService =
             LuxelCompositionRoot
             .bookmarkedDirectoryAccessService(),
         quickExportService: QuickExportService? = nil,
@@ -165,8 +168,9 @@ final class LuxelMenuModel {
         voiceDetectionCoordinator: VoiceDetectionCoordinator? = nil,
         voiceDetectionModelLocator: BundledVoiceActivityModelLocator = .init(),
         systemActivityMonitor: any SystemActivityMonitor = AppKitSystemActivityMonitor(),
-        permissionGuidanceService: PermissionGuidanceService = PermissionGuidanceService(),
-        lastCaptureRecordingPlanner: LastCaptureRecordingPlanner = LastCaptureRecordingPlanner(),
+        permissionGuidanceService guidance: PermissionGuidanceService = PermissionGuidanceService(),
+        lastCaptureRecordingPlanner lastCapturePlanner: LastCaptureRecordingPlanner =
+            LastCaptureRecordingPlanner(),
         activeWindowCatalog: any ActiveWindowCatalog = CoreGraphicsActiveWindowCatalog(),
         activeWindowCaptureTargetResolver: ActiveWindowCaptureTargetResolver =
             ActiveWindowCaptureTargetResolver(),
@@ -182,23 +186,15 @@ final class LuxelMenuModel {
     ) {
         let recordingAudioLevelBroadcaster = AudioLevelBroadcaster()
 
-        self.settingsStore = settingsStore
-        self.permissionClient = permissionClient
-        self.userNotifier = userNotifier
-        self.launchAtLoginService = launchAtLoginService
-        self.recordingHistoryService = recordingHistoryService
-        self.captureTargetService = captureTargetService
-        self.captureExclusionRegistry = captureExclusionRegistry
-        self.recordingFramePanelController = recordingFramePanelController
-        self.audioInputDeviceService = audioInputDeviceService
-        self.cameraDeviceService = cameraDeviceService
-        self.cameraPreviewPanelController = cameraPreviewPanelController
-        self.audioLevelMonitorFactory = audioLevelMonitorFactory
+        (self.settingsStore, self.permissionClient) = (settingsStore, permissionClient)
+        (self.userNotifier, self.launchAtLoginService) = (userNotifier, launchAtLoginService)
+        (self.recordingHistoryService, self.captureTargetService) = (recordingHistoryService, captureTargetService)
+        (self.captureExclusionRegistry, self.recordingFramePanelController) = (exclusionRegistry, frameController)
+        (self.audioInputDeviceService, self.cameraDeviceService) = (audioInputDeviceService, cameraDeviceService)
+        (self.cameraPreviewPanelController, self.audioLevelMonitorFactory) = (preview, levelMonitorFactory)
         self.recordingAudioLevelMonitorFactory = { recordingAudioLevelBroadcaster }
-        self.fileWorkflowService = fileWorkflowService
-        self.bookmarkedDirectoryPicker = bookmarkedDirectoryPicker
-        self.directoryAccessService = directoryAccessService
-        self.permissionGuidanceService = permissionGuidanceService
+        (self.fileWorkflowService, self.bookmarkedDirectoryPicker) = (fileWorkflowService, bookmarkedDirectoryPicker)
+        (self.directoryAccessService, self.permissionGuidanceService) = (directoryAccess, guidance)
         self.voiceDetection = VoiceDetectionModelDependencies(
             coordinator: voiceDetectionCoordinator,
             modelLocator: voiceDetectionModelLocator,
@@ -221,17 +217,12 @@ final class LuxelMenuModel {
                 replayBufferService: resolvedReplayBufferService,
                 history: recordingHistoryService
             )
-        self.lastCaptureRecordingPlanner = lastCaptureRecordingPlanner
-        self.activeWindowCatalog = activeWindowCatalog
+        (self.lastCaptureRecordingPlanner, self.activeWindowCatalog) = (lastCapturePlanner, activeWindowCatalog)
         self.activeWindowCaptureTargetResolver = activeWindowCaptureTargetResolver
-        self.pointerDisplayProvider = pointerDisplayProvider
-        self.notchDisplayProvider = notchDisplayProvider
-        let resolvedNotchPresenter =
-            notchPresenter
-            ?? OverlayPanelNotchPresenter(exclusionRegistry: captureExclusionRegistry)
-        self.notchCoordinator = NotchCoordinator(presenter: resolvedNotchPresenter)
-        self.fullscreenCaptureTargetResolver = fullscreenCaptureTargetResolver
-        self.errorReporter = errorReporter
+        (self.pointerDisplayProvider, self.notchDisplayProvider) = (pointerDisplayProvider, notchDisplayProvider)
+        let presenter = notchPresenter ?? OverlayPanelNotchPresenter(exclusionRegistry: exclusionRegistry)
+        self.notchCoordinator = NotchCoordinator(presenter: presenter)
+        (self.fullscreenCaptureTargetResolver, self.errorReporter) = (fullscreenCaptureTargetResolver, errorReporter)
         self.appMetadata = appMetadata
         let lifecycleServices = Self.makeRecordingLifecycleServices(
             .init(
@@ -239,11 +230,9 @@ final class LuxelMenuModel {
                 history: recordingHistoryService, replayBufferService: resolvedReplayBufferService,
                 recorder: recorder, audioRecorder: audioRecorder
             ))
-        recordingLifecycleService = lifecycleServices.video
-        audioRecordingLifecycleService = lifecycleServices.audio
+        (recordingLifecycleService, audioRecordingLifecycleService) = (lifecycleServices.video, lifecycleServices.audio)
         let loadedSettings = (try? settingsStore.load()) ?? LuxelCompositionRoot.defaultSettings
-        self.settings = loadedSettings
-        self.launchAtLogin = loadedSettings.launchAtLogin
+        (self.settings, self.launchAtLogin) = (loadedSettings, loadedSettings.launchAtLogin)
         finishInitialization()
     }
 
@@ -252,38 +241,9 @@ final class LuxelMenuModel {
         prepareSpeakerModelIfNeeded()
     }
 
-    private static func makeRecordingLifecycleServices(
-        _ dependencies: RecordingLifecycleDependencies
-    ) -> RecordingLifecycleServices {
-        let outputFinalizer = LuxelCompositionRoot.recordingOutputFinalizer()
-        let terminationProtection = ProcessInfoRecordingProtection()
-        let publishAudioLevel: @Sendable (AudioLevelSample) -> Void = {
-            dependencies.broadcaster.publish($0)
-        }
-        let video = RecordingLifecycleService(
-            recorder: dependencies.recorder
-                ?? LuxelCompositionRoot.captureRecorder(
-                    exclusionRegistry: dependencies.exclusionRegistry,
-                    audioLevelHandler: publishAudioLevel
-                ),
-            history: dependencies.history,
-            userNotifier: UserNotificationsNotifier(),
-            outputFinalizer: outputFinalizer,
-            replayBufferService: dependencies.replayBufferService,
-            terminationProtection: terminationProtection
-        )
-        let audio = AudioRecordingLifecycleService(
-            recorder: dependencies.audioRecorder
-                ?? LuxelCompositionRoot.audioRecorder(audioLevelHandler: publishAudioLevel),
-            history: dependencies.history,
-            outputFinalizer: outputFinalizer,
-            terminationProtection: terminationProtection
-        )
-        return RecordingLifecycleServices(video: video, audio: audio)
-    }
 }
 
-private struct RecordingLifecycleDependencies {
+struct RecordingLifecycleDependencies {
     let broadcaster: AudioLevelBroadcaster
     let exclusionRegistry: CaptureExclusionRegistry
     let history: RecordingHistoryService
@@ -292,7 +252,7 @@ private struct RecordingLifecycleDependencies {
     let audioRecorder: (any AudioRecorder)?
 }
 
-private struct RecordingLifecycleServices {
+struct RecordingLifecycleServices {
     let video: RecordingLifecycleService
     let audio: AudioRecordingLifecycleService
 }

@@ -322,8 +322,7 @@ struct CapturedVoiceActivityBuffer: @unchecked Sendable {
 
 private final class VoiceActivitySampleBufferDelegate: NSObject,
     AVCaptureAudioDataOutputSampleBufferDelegate,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     private let lock = NSLock()
     private let bufferQueue: VoiceActivityBufferQueue<CapturedVoiceActivityBuffer>
     private var overflowed = false

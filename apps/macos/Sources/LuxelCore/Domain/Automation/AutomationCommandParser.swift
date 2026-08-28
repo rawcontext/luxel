@@ -64,8 +64,7 @@ public enum AutomationCommandParser {
             .split(separator: "/")
             .first
             .map(String.init),
-            !pathAction.isEmpty
-        {
+            !pathAction.isEmpty {
             return pathAction
         }
 
@@ -176,8 +175,7 @@ public enum AutomationCommandParser {
     }
 
     private static func preferencesPane(in query: AutomationQuery) throws
-        -> AutomationPreferencesPane?
-    {
+        -> AutomationPreferencesPane? {
         guard let pane = query.value(for: "pane") else {
             return nil
         }
@@ -256,8 +254,7 @@ public enum AutomationCommandParser {
 
         if let url = URL(string: value),
             url.isFileURL,
-            !url.path.isEmpty
-        {
+            !url.path.isEmpty {
             return url.standardizedFileURL
         }
 

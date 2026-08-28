@@ -69,23 +69,8 @@ struct UserDefaultsSettingsStoreTests {
             ),
             showTimeInMenuBar: false, hideMenuBarIcon: false, launchAtLogin: false,
             commandLineControlEnabled: true,
-            commandLinePairedClients: [
-                CommandLinePairedClient(
-                    id: UUID(uuidString: "00000000-0000-0000-0000-000000000403")!,
-                    name: "Terminal",
-                    pairedAt: Date(timeIntervalSince1970: 1_800_000_000)
-                )
-            ],
-            commandLineFolderGrants: [
-                CommandLineFolderGrant(
-                    id: UUID(uuidString: "00000000-0000-0000-0000-000000000404")!,
-                    directory: BookmarkedDirectory(
-                        url: URL(fileURLWithPath: "/tmp/cli", isDirectory: true),
-                        bookmarkData: Data([0x63, 0x6c, 0x69])
-                    ),
-                    createdAt: Date(timeIntervalSince1970: 1_800_000_001)
-                )
-            ],
+            commandLinePairedClients: persistedCommandLineClients(),
+            commandLineFolderGrants: persistedCommandLineFolderGrants(),
             notificationReminder: false, allowURLAutomation: true,
             urlAutomationGrants: ["com.example.terminal"], exportPresets: [fixture.preset],
             quickExportPresetID: fixture.presetID, rememberLastCapture: false, loupeAlwaysOn: true,
@@ -96,6 +81,29 @@ struct UserDefaultsSettingsStoreTests {
             lastSelectedExportFormat: .webm, confirmDiscard: false,
             defaultCountdown: 5, lastStopAfter: 60
         )
+    }
+
+    private func persistedCommandLineClients() -> [CommandLinePairedClient] {
+        [
+            CommandLinePairedClient(
+                id: UUID(uuidString: "00000000-0000-0000-0000-000000000403")!,
+                name: "Terminal",
+                pairedAt: Date(timeIntervalSince1970: 1_800_000_000)
+            )
+        ]
+    }
+
+    private func persistedCommandLineFolderGrants() -> [CommandLineFolderGrant] {
+        [
+            CommandLineFolderGrant(
+                id: UUID(uuidString: "00000000-0000-0000-0000-000000000404")!,
+                directory: BookmarkedDirectory(
+                    url: URL(fileURLWithPath: "/tmp/cli", isDirectory: true),
+                    bookmarkData: Data([0x63, 0x6c, 0x69])
+                ),
+                createdAt: Date(timeIntervalSince1970: 1_800_000_001)
+            )
+        ]
     }
 
     private func persistedSettingsFixture() throws -> PersistedSettingsFixture {

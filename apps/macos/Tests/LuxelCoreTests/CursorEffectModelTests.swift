@@ -316,8 +316,7 @@ extension CursorEffectModelTests {
     }
 
     private func cursorSample(time: TimeInterval, x xCoordinate: Double, y yCoordinate: Double) throws
-        -> CursorSample
-    {
+        -> CursorSample {
         try testCursorSample(time: time, x: xCoordinate, y: yCoordinate)
     }
 }

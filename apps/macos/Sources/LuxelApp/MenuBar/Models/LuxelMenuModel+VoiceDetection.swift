@@ -44,8 +44,7 @@ extension LuxelMenuModel {
     }
 
     func requestVoiceDetectionNotificationAuthorization()
-        async -> VoiceDetectionAuthorizationStatus
-    {
+        async -> VoiceDetectionAuthorizationStatus {
         let status = await voiceDetection.coordinator.requestNotificationAuthorization()
         await refreshAppNotificationSettings()
         scheduleVoiceDetectionReconciliation()

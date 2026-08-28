@@ -302,8 +302,7 @@ extension TranscriptCardContent {
             if !cutReviewItems.isEmpty
                 || canDeleteSelectedWord
                 || canUndoLastCut
-                || editStatusMessage != nil
-            {
+                || editStatusMessage != nil {
                 HStack(spacing: 8) {
                     transcriptEditActionButtons(side: 24)
 

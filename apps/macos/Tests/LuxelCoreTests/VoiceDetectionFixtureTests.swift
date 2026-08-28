@@ -102,12 +102,7 @@ struct VoiceDetectionFixtureTests {
         while file.framePosition < file.length {
             let remaining = AVAudioFrameCount(file.length - file.framePosition)
             let capacity = min(remaining, chunkSizes[chunkIndex % chunkSizes.count])
-            let buffer = try #require(
-                AVAudioPCMBuffer(
-                    pcmFormat: file.processingFormat,
-                    frameCapacity: capacity
-                ))
-            try file.read(into: buffer, frameCount: capacity)
+            let buffer = try readBuffer(from: file, capacity: capacity)
             let sampleRate = Int32(file.processingFormat.sampleRate)
             let observations = try await pipeline.process(
                 CapturedVoiceActivityBuffer(
@@ -146,6 +141,19 @@ struct VoiceDetectionFixtureTests {
             firstPromptSecondsFromStart: firstPromptSeconds,
             modelFrameCount: modelFrameIndex
         )
+    }
+
+    private func readBuffer(
+        from file: AVAudioFile,
+        capacity: AVAudioFrameCount
+    ) throws -> AVAudioPCMBuffer {
+        let buffer = try #require(
+            AVAudioPCMBuffer(
+                pcmFormat: file.processingFormat,
+                frameCapacity: capacity
+            ))
+        try file.read(into: buffer, frameCount: capacity)
+        return buffer
     }
 }
 

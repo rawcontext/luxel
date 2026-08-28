@@ -41,8 +41,7 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
     }
 
     public func save(_ transcript: TurnSegmentedTranscript, for request: AudioTranscriptRequest)
-        throws
-    {
+        throws {
         let fileURL = try cacheFileURL(for: request)
         try fileManager.createDirectory(
             at: fileURL.deletingLastPathComponent(),

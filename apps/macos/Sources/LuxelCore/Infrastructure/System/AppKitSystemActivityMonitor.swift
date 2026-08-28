@@ -58,43 +58,7 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
 
     public func events() -> AsyncStream<SystemActivityEvent> {
         AsyncStream { continuation in
-            let registrations = [
-                observe(
-                    center: workspaceNotificationCenter,
-                    name: screensDidSleepNotification,
-                    continuation: continuation,
-                    event: .pauseReasonBecameActive(.displaySleep)
-                ),
-                observe(
-                    center: workspaceNotificationCenter,
-                    name: screensDidWakeNotification,
-                    continuation: continuation,
-                    event: .pauseReasonBecameInactive(.displaySleep)
-                ),
-                observe(
-                    center: workspaceNotificationCenter,
-                    name: sessionDidResignActiveNotification,
-                    continuation: continuation,
-                    event: .pauseReasonBecameActive(.locked)
-                ),
-                observe(
-                    center: workspaceNotificationCenter,
-                    name: sessionDidBecomeActiveNotification,
-                    continuation: continuation,
-                    event: .pauseReasonBecameInactive(.locked)
-                ),
-                observe(
-                    center: applicationNotificationCenter,
-                    name: displayChangeNotification,
-                    continuation: continuation,
-                    event: .displayConfigurationChanged
-                ),
-                observe(
-                    center: applicationNotificationCenter,
-                    name: applicationDidBecomeActiveNotification, continuation: continuation,
-                    event: .applicationDidBecomeActive
-                )
-            ]
+            let registrations = notificationRegistrations(continuation: continuation)
             let cancelPowerSourceObserver = startPowerSourceObserver { [isOnBatteryPower] in
                 continuation.yield(
                     isOnBatteryPower()
@@ -110,6 +74,49 @@ public final class AppKitSystemActivityMonitor: SystemActivityMonitor, @unchecke
                 cancelPowerSourceObserver()
             }
         }
+    }
+
+    private func notificationRegistrations(
+        continuation: AsyncStream<SystemActivityEvent>.Continuation
+    ) -> [NotificationRegistration] {
+        [
+            observe(
+                center: workspaceNotificationCenter,
+                name: screensDidSleepNotification,
+                continuation: continuation,
+                event: .pauseReasonBecameActive(.displaySleep)
+            ),
+            observe(
+                center: workspaceNotificationCenter,
+                name: screensDidWakeNotification,
+                continuation: continuation,
+                event: .pauseReasonBecameInactive(.displaySleep)
+            ),
+            observe(
+                center: workspaceNotificationCenter,
+                name: sessionDidResignActiveNotification,
+                continuation: continuation,
+                event: .pauseReasonBecameActive(.locked)
+            ),
+            observe(
+                center: workspaceNotificationCenter,
+                name: sessionDidBecomeActiveNotification,
+                continuation: continuation,
+                event: .pauseReasonBecameInactive(.locked)
+            ),
+            observe(
+                center: applicationNotificationCenter,
+                name: displayChangeNotification,
+                continuation: continuation,
+                event: .displayConfigurationChanged
+            ),
+            observe(
+                center: applicationNotificationCenter,
+                name: applicationDidBecomeActiveNotification,
+                continuation: continuation,
+                event: .applicationDidBecomeActive
+            )
+        ]
     }
 
     private func observe(

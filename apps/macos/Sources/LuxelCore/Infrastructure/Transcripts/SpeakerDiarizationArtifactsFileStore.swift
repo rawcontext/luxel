@@ -1,8 +1,7 @@
 import Foundation
 
 public final class SpeakerDiarizationArtifactsFileStore:
-    SpeakerDiarizationArtifactsStore, @unchecked Sendable
-{
+    SpeakerDiarizationArtifactsStore, @unchecked Sendable {
     public static let schemaVersion = 1
 
     private let directory: URL

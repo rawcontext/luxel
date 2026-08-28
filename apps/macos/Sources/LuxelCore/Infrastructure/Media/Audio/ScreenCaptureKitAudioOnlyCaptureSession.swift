@@ -4,8 +4,7 @@ import Foundation
 @preconcurrency import ScreenCaptureKit
 
 final class ScreenCaptureKitAudioOnlyCaptureSession: NSObject, SCStreamOutput,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     private static let streamStartTimeout: Duration = .seconds(10)
     private static let streamStopTimeout: Duration = .seconds(5)
 

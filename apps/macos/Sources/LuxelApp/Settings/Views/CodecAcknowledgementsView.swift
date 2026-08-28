@@ -155,8 +155,7 @@ struct AcknowledgementBlock: Identifiable {
             line.distance(from: line.startIndex, to: dotIndex) <= 2,
             !line[line.startIndex..<dotIndex].isEmpty,
             line[line.startIndex..<dotIndex].allSatisfy(\.isNumber),
-            line.contains(" — ")
-        {
+            line.contains(" — ") {
             let itemStart = line.index(dotIndex, offsetBy: 1)
             return String(line[itemStart...]).trimmingCharacters(in: .whitespaces)
         }

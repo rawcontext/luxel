@@ -157,8 +157,7 @@ extension LuxelMenuModel {
     }
 
     private func recordingAudioModeWithAvailableSources(_ audio: RecordingAudioMode)
-        -> RecordingAudioMode
-    {
+        -> RecordingAudioMode {
         switch (
             audio.capturesSystemAudio && captureCapabilities.systemAudioTrackAvailable,
             audio.capturesMicrophone && captureCapabilities.microphoneTrackAvailable

@@ -107,8 +107,7 @@ public enum ZoomProposalEngine {
 
         for sample in timeline.samples.dropFirst() {
             if normalizedDistance(from: dwellStart.position, to: sample.position, sourceSize: sourceSize)
-                > tuning.dwellMovementTolerance
-            {
+                > tuning.dwellMovementTolerance {
                 try appendDwellPoint(
                     from: dwellStart, through: last, sourceSize: sourceSize, tuning: tuning, to: &points
                 )
@@ -158,8 +157,7 @@ public enum ZoomProposalEngine {
 
         for point in points {
             if let last = currentCluster.last,
-                point.time - last.time > tuning.clusterTimeGap
-            {
+                point.time - last.time > tuning.clusterTimeGap {
                 clusters.append(currentCluster)
                 currentCluster = []
             }

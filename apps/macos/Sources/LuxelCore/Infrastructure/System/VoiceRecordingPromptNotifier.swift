@@ -11,8 +11,7 @@ public enum VoiceDetectionNotificationIdentifiers {
 
 public struct UserNotificationsSpeechPromptNotifier:
     VoiceRecordingPromptNotifying,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     private let center: (any VoiceRecordingPromptNotificationCenter)?
 
     public init(notificationCenter: UNUserNotificationCenter? = nil) {
@@ -107,8 +106,7 @@ protocol VoiceRecordingPromptNotificationCenter: Sendable {
 
 private struct UserNotificationCenterPromptClient:
     VoiceRecordingPromptNotificationCenter,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     let center: UNUserNotificationCenter
 
     func authorizationStatus() async -> VoiceDetectionAuthorizationStatus {

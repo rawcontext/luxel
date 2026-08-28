@@ -108,8 +108,7 @@ public final class KeystrokeChipImageRenderer {
 
 public enum KeystrokeOverlayLayout {
     public static func activeChips(at time: TimeInterval, in chips: [KeystrokeChip])
-        -> [KeystrokeChip]
-    {
+        -> [KeystrokeChip] {
         chips.filter { $0.timeRange.start <= time && time < $0.timeRange.end }
             .sorted { $0.timeRange.start < $1.timeRange.start }
     }

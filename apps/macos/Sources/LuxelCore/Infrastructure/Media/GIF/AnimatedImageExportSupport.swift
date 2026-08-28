@@ -67,8 +67,7 @@ extension ExportRequest {
     }
 
     func animatedCameraTransform(at sourceTime: CMTime, cameraPath: CameraPath?) throws
-        -> CameraTransform
-    {
+        -> CameraTransform {
         guard let cameraPath,
             let outputTime = timelineMapper.outputTime(forSourceTime: sourceTime.seconds)
         else {

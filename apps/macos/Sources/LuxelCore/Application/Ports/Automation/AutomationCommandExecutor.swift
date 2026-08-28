@@ -17,8 +17,7 @@ public enum AutomationCommandExecutorError: Error, Equatable, Sendable {
 
 extension AutomationCommandExecutor {
     public func transcribe(_ options: AutomationTranscriptionOptions) async throws
-        -> AutomationExecutionResult
-    {
+        -> AutomationExecutionResult {
         throw AutomationCommandExecutorError.unsupportedCommand
     }
 }

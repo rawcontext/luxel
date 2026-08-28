@@ -63,8 +63,7 @@ struct RecordingAudioLevelMixer {
     }
 
     mutating func update(_ sample: AudioLevelSample, outputType: SCStreamOutputType)
-        -> AudioLevelSample?
-    {
+        -> AudioLevelSample? {
         switch outputType {
         case .audio:
             guard capturesSystemAudio else {

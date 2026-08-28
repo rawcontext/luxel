@@ -83,8 +83,7 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
     }
 
     public func transcript(for request: AudioTranscriptRequest) async throws
-        -> TurnSegmentedTranscript?
-    {
+        -> TurnSegmentedTranscript? {
         try await transcript(for: request, progress: { _ in })
     }
 
@@ -206,8 +205,7 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
     }
 
     private func effectiveRequest(for request: AudioTranscriptRequest) async throws
-        -> AudioTranscriptRequest
-    {
+        -> AudioTranscriptRequest {
         var effective = request.replacingTurnSegmentationMode(turnSegmentationMode())
         if let locale = transcriptLocaleOverride() {
             effective = effective.replacingLocale(locale)
@@ -253,8 +251,7 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
     }
 
     private static func stableSortedSpans(_ spans: [TimedTranscriptSpan]) throws
-        -> [TimedTranscriptSpan]
-    {
+        -> [TimedTranscriptSpan] {
         let sortedSpans = spans.sorted {
             if $0.start == $1.start {
                 if $0.end == $1.end {

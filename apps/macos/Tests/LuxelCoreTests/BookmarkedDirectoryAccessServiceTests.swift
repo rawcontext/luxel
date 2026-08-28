@@ -205,8 +205,7 @@ private struct StubBookmarkedDirectoryResolver: BookmarkedDirectoryResolver {
 }
 
 private final class SpySecurityScopedResourceAccess: SecurityScopedResourceAccess,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     private let startsSuccessfully: Bool
     private(set) var startedURLs: [URL] = []
     private(set) var stoppedURLs: [URL] = []

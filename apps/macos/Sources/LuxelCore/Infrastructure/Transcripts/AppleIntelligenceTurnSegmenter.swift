@@ -203,8 +203,7 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
             let projectedCharacterCount = currentCharacterCount + span.text.count
             if !current.isEmpty,
                 current.count >= maximumChunkSpanCount
-                    || projectedCharacterCount > maximumChunkCharacterCount
-            {
+                    || projectedCharacterCount > maximumChunkCharacterCount {
                 chunks.append(current)
                 current = []
                 currentCharacterCount = 0

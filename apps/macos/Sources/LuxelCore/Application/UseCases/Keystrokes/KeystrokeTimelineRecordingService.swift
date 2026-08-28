@@ -24,8 +24,7 @@ public struct KeystrokeTimelineRecordingService: Sendable {
     }
 
     public func recordTimeline(_ request: KeystrokeTimelineRecordingRequest) async throws
-        -> KeystrokeTimeline
-    {
+        -> KeystrokeTimeline {
         var events: [KeystrokeSourceEvent] = []
         for await event in eventSource.events() {
             events.append(event)

@@ -27,8 +27,7 @@ public struct PermissionGuidanceService: Sendable {
     public init() {}
 
     public func guidance(for permission: SystemPermission, status: PermissionStatus)
-        -> PermissionGuidance
-    {
+        -> PermissionGuidance {
         switch permission {
         case .screenRecording:
             screenRecordingGuidance(status: status)

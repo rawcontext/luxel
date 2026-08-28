@@ -117,8 +117,7 @@ public struct CaptureCapabilityState: Equatable, Sendable {
     }
 
     public func presentation(for source: CapturePermissionSource)
-        -> CaptureSourcePermissionPresentation
-    {
+        -> CaptureSourcePermissionPresentation {
         switch source {
         case .screenPixels:
             screen

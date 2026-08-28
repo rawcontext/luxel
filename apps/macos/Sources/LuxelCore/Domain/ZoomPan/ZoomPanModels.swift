@@ -343,8 +343,7 @@ public struct CameraPath: Equatable, Sendable {
     }
 
     private func transform(scale: Double, centeredAt center: NormalizedPoint) throws
-        -> CameraTransform
-    {
+        -> CameraTransform {
         let size = 1 / scale
         return try transform(
             scale: scale,

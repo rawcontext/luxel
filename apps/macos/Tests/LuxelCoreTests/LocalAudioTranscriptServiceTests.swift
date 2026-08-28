@@ -143,8 +143,7 @@ struct LocalAudioTranscriptServiceTests {
 
 private struct AcousticEchoTimedSpeechTranscriber: TimedSpeechTranscriber {
     func transcribe(_ request: TimedSpeechTranscriptionRequest) async throws
-        -> [TimedTranscriptSpan]
-    {
+        -> [TimedTranscriptSpan] {
         switch request.source {
         case .system:
             try [

@@ -101,41 +101,44 @@ extension LuxelMenuModel {
         explicit: String?,
         output: URL
     ) throws -> ExportFormat {
-        let format: ExportFormat
-        if let explicit {
-            guard let parsed = ExportFormat(rawValue: explicit.lowercased()) else {
-                throw CommandLineExportError.unsupportedFormat("Unsupported format: \(explicit)")
-            }
-            format = parsed
-        } else {
-            switch output.pathExtension.lowercased() {
-            case "gif": format = .gif
-            case "mp4": format = .mp4
-            case "webm": format = .webm
-            case "apng": format = .apng
-            case "wav": format = .wav
-            case "caf": format = .caf
-            case "flac": format = .flac
-            case "mov":
-                throw CommandLineExportError.invalidOptions(
-                    "Use --format prores422 or --format prores4444 for .mov output."
-                )
-            case "m4a":
-                throw CommandLineExportError.invalidOptions(
-                    "Use --format m4a or --format alac for .m4a output."
-                )
-            default:
-                throw CommandLineExportError.unsupportedFormat(
-                    "Unsupported output extension: .\(output.pathExtension)"
-                )
-            }
-        }
+        let format =
+            try explicit.map { explicit in
+                guard let format = ExportFormat(rawValue: explicit.lowercased()) else {
+                    throw CommandLineExportError.unsupportedFormat("Unsupported format: \(explicit)")
+                }
+                return format
+            } ?? inferredCommandLineExportFormat(output: output)
+
         guard output.pathExtension.lowercased() == format.fileExtension else {
             throw CommandLineExportError.invalidOptions(
                 "--format \(format.rawValue) requires .\(format.fileExtension) output."
             )
         }
         return format
+    }
+
+    private func inferredCommandLineExportFormat(output: URL) throws -> ExportFormat {
+        switch output.pathExtension.lowercased() {
+        case "gif": .gif
+        case "mp4": .mp4
+        case "webm": .webm
+        case "apng": .apng
+        case "wav": .wav
+        case "caf": .caf
+        case "flac": .flac
+        case "mov":
+            throw CommandLineExportError.invalidOptions(
+                "Use --format prores422 or --format prores4444 for .mov output."
+            )
+        case "m4a":
+            throw CommandLineExportError.invalidOptions(
+                "Use --format m4a or --format alac for .m4a output."
+            )
+        default:
+            throw CommandLineExportError.unsupportedFormat(
+                "Unsupported output extension: .\(output.pathExtension)"
+            )
+        }
     }
 
     private func commandLineExportQuality(

@@ -307,8 +307,7 @@ extension NotchActivityPresentation {
     }
 
     private static func nowPlayingViewModel(snapshot: NotchNowPlayingSnapshot)
-        -> NotchActivityViewModel
-    {
+        -> NotchActivityViewModel {
         let elapsed = RecordingDurationFormatter.elapsedTime(snapshot.elapsed)
         let duration = RecordingDurationFormatter.elapsedTime(snapshot.duration)
         return NotchActivityViewModel(

@@ -7,15 +7,13 @@ public struct FullscreenCaptureTargetResolver: Sendable {
         selectedTargetID: String?
     ) -> CaptureTargetOption? {
         if let pointerDisplayID,
-            let pointerTarget = displayTarget(from: targets, matching: pointerDisplayID)
-        {
+            let pointerTarget = displayTarget(from: targets, matching: pointerDisplayID) {
             return pointerTarget
         }
 
         if let selectedTargetID,
             let selectedTarget = targets.first(where: { $0.id == selectedTargetID }),
-            case .display = selectedTarget.target
-        {
+            case .display = selectedTarget.target {
             return selectedTarget
         }
 

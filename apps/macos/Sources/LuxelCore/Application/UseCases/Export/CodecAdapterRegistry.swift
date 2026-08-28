@@ -56,8 +56,7 @@ public struct CodecAdapterRegistry: Sendable {
     }
 
     public func exportSizeEstimator(nativeEstimator: any ExportSizeEstimator)
-        -> any ExportSizeEstimator
-    {
+        -> any ExportSizeEstimator {
         RegisteredCodecExportSizeEstimator(
             nativeEstimator: nativeEstimator,
             externalEstimators: Dictionary(

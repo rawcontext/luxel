@@ -118,8 +118,7 @@ extension LuxelEditorModel {
     func preferredExportFormatForSource() -> ExportFormat {
         if hasAudioOnlySource {
             if let lastSelectedExportFormat,
-                supportedFormats.contains(lastSelectedExportFormat)
-            {
+                supportedFormats.contains(lastSelectedExportFormat) {
                 return lastSelectedExportFormat
             }
             return supportedFormats.first ?? .m4a
@@ -136,8 +135,7 @@ extension LuxelEditorModel {
         lastSelectedExportFormat: ExportFormat?
     ) -> ExportFormat {
         if let lastSelectedExportFormat,
-            supportedFormats.contains(lastSelectedExportFormat)
-        {
+            supportedFormats.contains(lastSelectedExportFormat) {
             return lastSelectedExportFormat
         }
         if supportedFormats.contains(.webm) {

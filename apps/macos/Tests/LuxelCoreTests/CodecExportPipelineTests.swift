@@ -188,7 +188,7 @@ struct CodecExportPipelineTests {
     }
 }
 
-private actor PipelineEventLog {
+actor PipelineEventLog {
     private var events: [String] = []
     private var waiters: [String: [CheckedContinuation<Void, Never>]] = [:]
 
@@ -369,33 +369,5 @@ private actor StubAudioEncoder: CodecAudioEncoder {
     func finish() async throws -> [EncodedPacket] {
         await events.append("audio.finish")
         return [try EncodedPacket(dataString: "af", presentationTime: 1, duration: 0, isKeyFrame: true)]
-    }
-}
-
-private actor StubContainerMuxer: CodecContainerMuxer {
-    private let events: PipelineEventLog
-
-    init(events: PipelineEventLog) {
-        self.events = events
-    }
-
-    func begin(_ configuration: CodecMuxerConfiguration) async throws {
-        let tracks = configuration.tracks.map(\.rawValue).joined(separator: ",")
-        await events.append(
-            "muxer.begin:\(configuration.format.rawValue):\(tracks)"
-        )
-    }
-
-    func write(_ packet: EncodedPacket, to track: CodecTrack) async throws {
-        let packetText = String(bytes: packet.data, encoding: .utf8) ?? ""
-        await events.append("muxer.write:\(track.rawValue):\(packetText)")
-    }
-
-    func finalize() async throws {
-        await events.append("muxer.finalize")
-    }
-
-    func cancel() async {
-        await events.append("muxer.cancel")
     }
 }

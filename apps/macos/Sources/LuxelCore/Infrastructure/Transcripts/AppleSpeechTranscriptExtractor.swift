@@ -31,8 +31,7 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
     }
 
     public func transcribe(_ request: TimedSpeechTranscriptionRequest) async throws
-        -> [TimedTranscriptSpan]
-    {
+        -> [TimedTranscriptSpan] {
         try await ensureSpeechAuthorization()
         guard Speech.SpeechTranscriber.isAvailable else {
             throw AppleSpeechTranscriptError.unavailable
@@ -128,8 +127,7 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
                     if let request =
                         try await Speech.AssetInventory.assetInstallationRequest(
                             supporting: modules
-                        )
-                    {
+                        ) {
                         try await request.downloadAndInstall()
                     }
                 } catch is CancellationError {

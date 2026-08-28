@@ -32,32 +32,7 @@ public struct CommandLineAutomationRequest: Codable, Equatable, Sendable {
             throw CommandLineAutomationValidationError.unsupportedProtocolVersion(protocolVersion)
         }
 
-        switch command {
-        case .record:
-            try require(arguments.recording != nil)
-        case .toggle:
-            try require(arguments.onlyContainsRecording)
-        case .clip:
-            try require(arguments.clip != nil)
-        case .latest:
-            try require(arguments.latest != nil)
-        case .preferences:
-            try require(arguments.preferences != nil)
-        case .editor:
-            try require(arguments.editor != nil)
-        case .convert:
-            try require(arguments.convert != nil)
-        case .export:
-            try require(arguments.export != nil)
-        case .transcribe:
-            try require(arguments.transcribe != nil)
-        case .accessAdd, .accessCheck, .accessRevoke:
-            try require(arguments.access != nil)
-        case .cancel:
-            try require(arguments.cancel != nil)
-        case .stop, .accessList, .doctor:
-            try require(arguments.isEmpty)
-        }
+        try require(arguments.hasExpectedPayload(for: command))
 
         try arguments.validate(for: command)
     }
@@ -69,7 +44,8 @@ public struct CommandLineAutomationRequest: Codable, Equatable, Sendable {
     }
 }
 
-public enum CommandLineAutomationCommand: String, CaseIterable, Codable, Equatable, Sendable {
+public enum CommandLineAutomationCommand: String, CaseIterable, Codable, Equatable, Hashable,
+    Sendable {
     case record
     case stop
     case toggle
@@ -132,6 +108,28 @@ public struct CommandLineAutomationArguments: Codable, Equatable, Sendable {
         payloadCount == (recording == nil ? 0 : 1)
     }
 
+    fileprivate func hasExpectedPayload(for command: CommandLineAutomationCommand) -> Bool {
+        let expectations: [CommandLineAutomationCommand: Bool] = [
+            .record: recording != nil,
+            .stop: isEmpty,
+            .toggle: onlyContainsRecording,
+            .clip: clip != nil,
+            .latest: latest != nil,
+            .preferences: preferences != nil,
+            .editor: editor != nil,
+            .convert: convert != nil,
+            .export: export != nil,
+            .transcribe: transcribe != nil,
+            .accessAdd: access != nil,
+            .accessCheck: access != nil,
+            .accessList: isEmpty,
+            .accessRevoke: access != nil,
+            .doctor: isEmpty,
+            .cancel: cancel != nil
+        ]
+        return expectations[command] == true
+    }
+
     private var payloadCount: Int {
         [
             recording != nil,
@@ -152,37 +150,58 @@ public struct CommandLineAutomationArguments: Codable, Equatable, Sendable {
             throw CommandLineAutomationValidationError.unexpectedArguments(command)
         }
 
-        if let recording {
-            try recording.validate()
+        try recording?.validate()
+        try validateClip()
+        try convert?.validate()
+        try validateEditor()
+        try validateExport()
+        try validateTranscription()
+        try validateAccess(for: command)
+    }
+
+    private func validateClip() throws {
+        guard let seconds = clip?.seconds, seconds <= 0 else {
+            return
         }
-        if let clip, let seconds = clip.seconds, seconds <= 0 {
-            throw CommandLineAutomationValidationError.invalidValue("seconds")
+        throw CommandLineAutomationValidationError.invalidValue("seconds")
+    }
+
+    private func validateEditor() throws {
+        guard editor?.inputPath.isEmpty == true else {
+            return
         }
-        if let convert {
-            try convert.validate()
+        throw CommandLineAutomationValidationError.invalidValue("inputPath")
+    }
+
+    private func validateExport() throws {
+        guard let export, export.requestPath.isEmpty || export.outputPath.isEmpty else {
+            return
         }
-        if let editor, editor.inputPath.isEmpty {
-            throw CommandLineAutomationValidationError.invalidValue("inputPath")
+        throw CommandLineAutomationValidationError.invalidValue("exportPath")
+    }
+
+    private func validateTranscription() throws {
+        guard transcribe?.inputPath.isEmpty == true else {
+            return
         }
-        if let export, export.requestPath.isEmpty || export.outputPath.isEmpty {
-            throw CommandLineAutomationValidationError.invalidValue("exportPath")
+        throw CommandLineAutomationValidationError.invalidValue("inputPath")
+    }
+
+    private func validateAccess(for command: CommandLineAutomationCommand) throws {
+        guard let access else {
+            return
         }
-        if let transcribe, transcribe.inputPath.isEmpty {
-            throw CommandLineAutomationValidationError.invalidValue("inputPath")
-        }
-        if let access {
-            switch command {
-            case .accessAdd, .accessCheck:
-                guard access.path?.isEmpty == false, access.grantID == nil else {
-                    throw CommandLineAutomationValidationError.invalidValue("path")
-                }
-            case .accessRevoke:
-                guard access.grantID != nil, access.path == nil else {
-                    throw CommandLineAutomationValidationError.invalidValue("grantID")
-                }
-            default:
-                throw CommandLineAutomationValidationError.unexpectedArguments(command)
+        switch command {
+        case .accessAdd, .accessCheck:
+            guard access.path?.isEmpty == false, access.grantID == nil else {
+                throw CommandLineAutomationValidationError.invalidValue("path")
             }
+        case .accessRevoke:
+            guard access.grantID != nil, access.path == nil else {
+                throw CommandLineAutomationValidationError.invalidValue("grantID")
+            }
+        default:
+            throw CommandLineAutomationValidationError.unexpectedArguments(command)
         }
     }
 }
@@ -222,8 +241,7 @@ public struct CommandLineRecordingArguments: Codable, Equatable, Sendable {
             throw CommandLineAutomationValidationError.invalidValue("displayID")
         }
         if let framesPerSecond,
-            !AppSettings.recordingFrameRateRange.contains(framesPerSecond)
-        {
+            !AppSettings.recordingFrameRateRange.contains(framesPerSecond) {
             throw CommandLineAutomationValidationError.invalidValue("framesPerSecond")
         }
         if framesPerSecond != nil, matchesDisplayFrameRate {
@@ -369,288 +387,4 @@ public struct CommandLineCropRect: Codable, Equatable, Sendable {
         case width
         case height
     }
-}
-
-public struct CommandLineExportArguments: Codable, Equatable, Sendable {
-    public let requestPath: String
-    public let outputPath: String
-    public let overwrite: Bool
-
-    public init(requestPath: String, outputPath: String, overwrite: Bool = false) {
-        self.requestPath = requestPath
-        self.outputPath = outputPath
-        self.overwrite = overwrite
-    }
-}
-
-public struct CommandLineTranscribeArguments: Codable, Equatable, Sendable {
-    public let inputPath: String
-    public let locale: String?
-    public let outputPath: String?
-    public let semanticTurns: Bool
-    public let diarize: Bool
-    public let format: CommandLineTranscriptFormat
-    public let overwrite: Bool
-
-    public init(
-        inputPath: String,
-        locale: String? = nil,
-        outputPath: String? = nil,
-        semanticTurns: Bool = false,
-        diarize: Bool = false,
-        format: CommandLineTranscriptFormat = .text,
-        overwrite: Bool = false
-    ) {
-        self.inputPath = inputPath
-        self.locale = locale
-        self.outputPath = outputPath
-        self.semanticTurns = semanticTurns
-        self.diarize = diarize
-        self.format = format
-        self.overwrite = overwrite
-    }
-}
-
-public enum CommandLineTranscriptFormat: String, Codable, Equatable, Sendable {
-    case text
-    case json
-}
-
-public struct CommandLineAccessArguments: Codable, Equatable, Sendable {
-    public let path: String?
-    public let grantID: UUID?
-
-    public init(path: String? = nil, grantID: UUID? = nil) {
-        self.path = path
-        self.grantID = grantID
-    }
-}
-
-public struct CommandLineCancelArguments: Codable, Equatable, Sendable {
-    public let jobID: UUID
-
-    public init(jobID: UUID) {
-        self.jobID = jobID
-    }
-}
-
-public struct CommandLineAutomationOutputOptions: Codable, Equatable, Sendable {
-    public let json: Bool
-    public let progress: Bool
-    public let quiet: Bool
-
-    public init(json: Bool = false, progress: Bool = false, quiet: Bool = false) {
-        self.json = json
-        self.progress = progress
-        self.quiet = quiet
-    }
-}
-
-public enum CommandLineAutomationEventKind: String, Codable, Equatable, Sendable {
-    case accepted
-    case progress
-    case result
-    case error
-    case canceled
-}
-
-public struct CommandLineAutomationEvent: Codable, Equatable, Sendable {
-    public let protocolVersion: Int
-    public let requestID: UUID
-    public let sequence: Int
-    public let kind: CommandLineAutomationEventKind
-    public let jobID: UUID?
-    public let progress: CommandLineAutomationProgress?
-    public let result: CommandLineAutomationResult?
-    public let error: CommandLineAutomationErrorPayload?
-
-    public init(
-        protocolVersion: Int = CommandLineAutomationProtocol.version,
-        requestID: UUID,
-        sequence: Int,
-        kind: CommandLineAutomationEventKind,
-        jobID: UUID? = nil,
-        progress: CommandLineAutomationProgress? = nil,
-        result: CommandLineAutomationResult? = nil,
-        error: CommandLineAutomationErrorPayload? = nil
-    ) {
-        self.protocolVersion = protocolVersion
-        self.requestID = requestID
-        self.sequence = sequence
-        self.kind = kind
-        self.jobID = jobID
-        self.progress = progress
-        self.result = result
-        self.error = error
-    }
-}
-
-public struct CommandLineAutomationProgress: Codable, Equatable, Sendable {
-    public let phase: String
-    public let fraction: Double?
-    public let message: String?
-
-    public init(phase: String, fraction: Double? = nil, message: String? = nil) {
-        self.phase = phase
-        self.fraction = fraction.map { min(max($0, 0), 1) }
-        self.message = message
-    }
-}
-
-public struct CommandLineAutomationResult: Codable, Equatable, Sendable {
-    public let filePath: String?
-    public let recordingID: String?
-    public let text: String?
-    public let contentType: String?
-    public let export: CommandLineExportResult?
-    public let doctor: CommandLineDoctorReport?
-    public let grants: [CommandLineFolderGrantSummary]?
-    public let grant: CommandLineFolderGrantSummary?
-    public let pairing: CommandLinePairingCredential?
-
-    public init(
-        filePath: String? = nil,
-        recordingID: String? = nil,
-        text: String? = nil,
-        contentType: String? = nil,
-        export: CommandLineExportResult? = nil,
-        doctor: CommandLineDoctorReport? = nil,
-        grants: [CommandLineFolderGrantSummary]? = nil,
-        grant: CommandLineFolderGrantSummary? = nil,
-        pairing: CommandLinePairingCredential? = nil
-    ) {
-        self.filePath = filePath
-        self.recordingID = recordingID
-        self.text = text
-        self.contentType = contentType
-        self.export = export
-        self.doctor = doctor
-        self.grants = grants
-        self.grant = grant
-        self.pairing = pairing
-    }
-}
-
-public struct CommandLineExportResult: Codable, Equatable, Sendable {
-    public let filePath: String
-    public let format: String
-    public let width: Int
-    public let height: Int
-    public let shouldMute: Bool
-    public let fileSizeBytes: Int64?
-
-    public init(
-        filePath: String,
-        format: String,
-        width: Int,
-        height: Int,
-        shouldMute: Bool,
-        fileSizeBytes: Int64? = nil
-    ) {
-        self.filePath = filePath
-        self.format = format
-        self.width = width
-        self.height = height
-        self.shouldMute = shouldMute
-        self.fileSizeBytes = fileSizeBytes
-    }
-}
-
-public struct CommandLineDoctorReport: Codable, Equatable, Sendable {
-    public let appVersion: String
-    public let appBuild: String
-    public let minimumProtocolVersion: Int
-    public let maximumProtocolVersion: Int
-    public let capabilities: [String]
-    public let commandLineControlEnabled: Bool
-    public let recordingsDirectoryPath: String
-    public let screenRecordingStatus: String
-    public let microphoneStatus: String
-    public let cameraStatus: String
-
-    public init(
-        appVersion: String,
-        appBuild: String,
-        minimumProtocolVersion: Int = CommandLineAutomationProtocol.version,
-        maximumProtocolVersion: Int = CommandLineAutomationProtocol.version,
-        capabilities: [String] = CommandLineAutomationProtocol.capabilities,
-        commandLineControlEnabled: Bool,
-        recordingsDirectoryPath: String,
-        screenRecordingStatus: String,
-        microphoneStatus: String,
-        cameraStatus: String
-    ) {
-        self.appVersion = appVersion
-        self.appBuild = appBuild
-        self.minimumProtocolVersion = minimumProtocolVersion
-        self.maximumProtocolVersion = maximumProtocolVersion
-        self.capabilities = capabilities
-        self.commandLineControlEnabled = commandLineControlEnabled
-        self.recordingsDirectoryPath = recordingsDirectoryPath
-        self.screenRecordingStatus = screenRecordingStatus
-        self.microphoneStatus = microphoneStatus
-        self.cameraStatus = cameraStatus
-    }
-}
-
-public struct CommandLineFolderGrantSummary: Codable, Equatable, Identifiable, Sendable {
-    public let id: UUID
-    public let path: String
-    public let source: CommandLineFolderGrantSource
-    public let status: BookmarkedDirectoryAccessState
-
-    public init(
-        id: UUID,
-        path: String,
-        source: CommandLineFolderGrantSource,
-        status: BookmarkedDirectoryAccessState
-    ) {
-        self.id = id
-        self.path = path
-        self.source = source
-        self.status = status
-    }
-}
-
-public enum CommandLineFolderGrantSource: String, Codable, Equatable, Sendable {
-    case movies
-    case recordings
-    case additional
-}
-
-public struct CommandLinePairingCredential: Codable, Equatable, Sendable {
-    public let clientID: UUID
-    public let secret: String
-    public let appVersion: String
-    public let protocolVersion: Int
-
-    public init(
-        clientID: UUID,
-        secret: String,
-        appVersion: String,
-        protocolVersion: Int = CommandLineAutomationProtocol.version
-    ) {
-        self.clientID = clientID
-        self.secret = secret
-        self.appVersion = appVersion
-        self.protocolVersion = protocolVersion
-    }
-}
-
-public struct CommandLineAutomationErrorPayload: Codable, Equatable, Sendable {
-    public let code: String
-    public let message: String
-    public let recoveryCommand: String?
-
-    public init(code: String, message: String, recoveryCommand: String? = nil) {
-        self.code = code
-        self.message = message
-        self.recoveryCommand = recoveryCommand
-    }
-}
-
-public enum CommandLineAutomationValidationError: Error, Equatable, Sendable {
-    case unsupportedProtocolVersion(Int)
-    case unexpectedArguments(CommandLineAutomationCommand)
-    case invalidValue(String)
 }

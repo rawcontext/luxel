@@ -143,7 +143,8 @@ extension ArchitectureTests {
     @Test("keystroke lifecycle and compositor cover every visual export path")
     func keystrokeLifecycleAndCompositorCoverEveryVisualExportPath() throws {
         let lifecycle = try sourceText(for: [
-            "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+RecordingLifecycle.swift"
+            "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+RecordingLifecycle.swift",
+            "Sources/LuxelApp/MenuBar/Models/LuxelMenuModel+RecordingPause.swift"
         ])
         let avFoundation = try sourceText(for: [
             "Sources/LuxelCore/Infrastructure/Media/Export/AVFoundationMediaExporter.swift"

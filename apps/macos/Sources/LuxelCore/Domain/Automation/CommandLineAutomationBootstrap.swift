@@ -129,46 +129,66 @@ public enum CommandLineAutomationBootstrapParser {
 
         switch action {
         case .pair:
-            let clientName = try required("clientName", in: query)
-            guard !clientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                throw CommandLineAutomationBootstrapError.invalidURL
-            }
-            return CommandLineAutomationBootstrapInvocation(
-                action: action,
-                requestID: requestID,
-                endpoint: endpoint,
-                clientName: clientName,
-                protocolVersion: version
-            )
+            return try pairInvocation(
+                requestID: requestID, endpoint: endpoint, query: query, version: version)
         case .run:
-            guard let clientID = UUID(uuidString: try required("clientID", in: query)),
-                let timestamp = Int64(try required("timestamp", in: query))
-            else {
-                throw CommandLineAutomationBootstrapError.invalidURL
-            }
-            let digest = try required("requestDigest", in: query)
-            let nonce = try required("nonce", in: query)
-            let signature = try required("signature", in: query)
-            guard digest.count == 64,
-                digest.allSatisfy(\.isHexDigit),
-                (16...128).contains(nonce.count),
-                signature.count == 64,
-                signature.allSatisfy(\.isHexDigit)
-            else {
-                throw CommandLineAutomationBootstrapError.invalidURL
-            }
-            return CommandLineAutomationBootstrapInvocation(
-                action: action,
-                requestID: requestID,
-                endpoint: endpoint,
-                clientID: clientID,
-                requestDigest: digest.lowercased(),
-                timestamp: timestamp,
-                nonce: nonce,
-                signature: signature.lowercased(),
-                protocolVersion: version
-            )
+            return try runInvocation(
+                requestID: requestID, endpoint: endpoint, query: query, version: version)
         }
+    }
+
+    private static func pairInvocation(
+        requestID: UUID,
+        endpoint: URL,
+        query: [String: String],
+        version: Int
+    ) throws -> CommandLineAutomationBootstrapInvocation {
+        let clientName = try required("clientName", in: query)
+        guard !clientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw CommandLineAutomationBootstrapError.invalidURL
+        }
+        return CommandLineAutomationBootstrapInvocation(
+            action: .pair,
+            requestID: requestID,
+            endpoint: endpoint,
+            clientName: clientName,
+            protocolVersion: version
+        )
+    }
+
+    private static func runInvocation(
+        requestID: UUID,
+        endpoint: URL,
+        query: [String: String],
+        version: Int
+    ) throws -> CommandLineAutomationBootstrapInvocation {
+        guard let clientID = UUID(uuidString: try required("clientID", in: query)),
+            let timestamp = Int64(try required("timestamp", in: query))
+        else {
+            throw CommandLineAutomationBootstrapError.invalidURL
+        }
+        let digest = try required("requestDigest", in: query)
+        let nonce = try required("nonce", in: query)
+        let signature = try required("signature", in: query)
+        guard digest.count == 64,
+            digest.allSatisfy(\.isHexDigit),
+            (16...128).contains(nonce.count),
+            signature.count == 64,
+            signature.allSatisfy(\.isHexDigit)
+        else {
+            throw CommandLineAutomationBootstrapError.invalidURL
+        }
+        return CommandLineAutomationBootstrapInvocation(
+            action: .run,
+            requestID: requestID,
+            endpoint: endpoint,
+            clientID: clientID,
+            requestDigest: digest.lowercased(),
+            timestamp: timestamp,
+            nonce: nonce,
+            signature: signature.lowercased(),
+            protocolVersion: version
+        )
     }
 
     private static func uniqueQuery(_ url: URL) throws -> [String: String] {

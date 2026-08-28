@@ -39,8 +39,7 @@ struct AnimatedFrameSchedule: Equatable, Sendable {
 }
 
 func animatedFrameSchedule(for request: ExportRequest, asset: AVURLAsset) async
-    -> AnimatedFrameSchedule
-{
+    -> AnimatedFrameSchedule {
     let sourceFrameRate = await sourceFrameRate(
         for: asset, fallback: request.frameRate.framesPerSecond)
     return AnimatedFrameSchedule(request: request, sourceFrameRate: sourceFrameRate)

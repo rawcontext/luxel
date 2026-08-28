@@ -71,8 +71,7 @@ extension CameraPreviewPanelController {
         let size = Self.constrainedPanelSize(size, in: constraintRect)
 
         if let displayID,
-            let origin = panelOriginsByDisplayID[displayID]
-        {
+            let origin = panelOriginsByDisplayID[displayID] {
             return NSRect(
                 origin: Self.constrainedOrigin(origin, size: size, in: constraintRect),
                 size: size

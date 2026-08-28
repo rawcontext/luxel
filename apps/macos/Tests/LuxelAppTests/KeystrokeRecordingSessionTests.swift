@@ -153,8 +153,7 @@ private func temporaryKeystrokeDirectory() throws -> URL {
 }
 
 private final class FakeKeystrokeCaptureEventSource: KeystrokeCaptureEventSource,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     private let lock = NSLock()
     private var eventContinuation: AsyncStream<KeystrokeSourceEvent>.Continuation?
     private var statusContinuation: AsyncStream<KeystrokeCaptureStatus>.Continuation?

@@ -209,8 +209,7 @@ private struct VoiceDetectionSettingsSystemMonitor: SystemActivityMonitor {
 
 private final class VoiceDetectionSettingsNotifierSpy:
     VoiceRecordingPromptNotifying,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     let status: VoiceDetectionAuthorizationStatus
     let timeline: VoiceDetectionSettingsTimeline
     private let lock = NSLock()

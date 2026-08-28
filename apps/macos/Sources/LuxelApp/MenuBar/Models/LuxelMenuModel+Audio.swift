@@ -69,8 +69,7 @@ extension LuxelMenuModel {
         )
 
         if settings.audioInputDeviceID != resolution.device.id
-            || settings.audioInputDeviceName != resolution.device.name
-        {
+            || settings.audioInputDeviceName != resolution.device.name {
             settings.audioInputDeviceID = resolution.device.id
             settings.audioInputDeviceName = resolution.device.name
             saveSettings()

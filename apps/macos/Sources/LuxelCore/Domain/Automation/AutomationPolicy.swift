@@ -44,8 +44,7 @@ public enum AutomationPolicy {
         }
 
         if let callerID = context.callerID,
-            settings.urlAutomationGrants.contains(callerID)
-        {
+            settings.urlAutomationGrants.contains(callerID) {
             return .allow
         }
 

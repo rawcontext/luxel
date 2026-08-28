@@ -22,12 +22,7 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
     public func snapshot() async throws -> CaptureTargetCatalogSnapshot {
         let content = try await SCShareableContent.current
         let displayItems = try content.displays.enumerated().map {
-            index, display -> (
-                bounds: DisplayBounds,
-                target: CaptureTargetOption
-            ) in
-            let bounds = try displayBounds(for: display)
-            return (bounds, try displayTarget(for: bounds, index: index))
+            try displayItem(index: $0.offset, display: $0.element)
         }
         let windowTargets = menuFilter.visibleTargets(
             from: try content.windows.compactMap(windowTarget))
@@ -36,6 +31,14 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
             displays: displayItems.map(\.bounds),
             targets: displayItems.map(\.target) + windowTargets
         )
+    }
+
+    private func displayItem(
+        index: Int,
+        display: SCDisplay
+    ) throws -> (bounds: DisplayBounds, target: CaptureTargetOption) {
+        let bounds = try displayBounds(for: display)
+        return (bounds, try displayTarget(for: bounds, index: index))
     }
 
     private func displayTarget(for bounds: DisplayBounds, index: Int) throws -> CaptureTargetOption {

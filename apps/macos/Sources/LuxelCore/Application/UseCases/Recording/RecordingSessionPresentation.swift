@@ -108,8 +108,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
     }
 
     private static func countingDownContent(remaining: TimeInterval)
-        -> RecordingSessionPresentationContent
-    {
+        -> RecordingSessionPresentationContent {
         let countdownText = Self.countdownText(remaining)
         return RecordingSessionPresentationContent(
             menuBarTitle: Self.countdownMenuBarText(remaining),
@@ -129,8 +128,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
     }
 
     private static func recordingContent(timing: RecordingSessionTiming)
-        -> RecordingSessionPresentationContent
-    {
+        -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: ""),
             menuBarSystemImage: "record.circle",
@@ -152,8 +150,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
     }
 
     private static func pausingContent(timing: RecordingSessionTiming)
-        -> RecordingSessionPresentationContent
-    {
+        -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: "●"),
             menuBarSystemImage: "pause.circle",
@@ -172,8 +169,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
     }
 
     private static func pausedContent(timing: RecordingSessionTiming)
-        -> RecordingSessionPresentationContent
-    {
+        -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: ""),
             menuBarSystemImage: "pause.circle.fill",
@@ -190,8 +186,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
     }
 
     private static func resumingContent(timing: RecordingSessionTiming)
-        -> RecordingSessionPresentationContent
-    {
+        -> RecordingSessionPresentationContent {
         RecordingSessionPresentationContent(
             menuBarTitle: timing.menuBarTitle(prefix: "‖"),
             menuBarSystemImage: "play.circle",
@@ -226,8 +221,7 @@ public struct RecordingSessionPresentation: Equatable, Sendable {
     }
 
     private static func exportingContent(snapshot: ExportProgressSnapshot)
-        -> RecordingSessionPresentationContent
-    {
+        -> RecordingSessionPresentationContent {
         let progress = Int((snapshot.progress * 100).rounded())
         return RecordingSessionPresentationContent(
             menuBarTitle: "\(progress)%",

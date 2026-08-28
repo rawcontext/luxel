@@ -22,8 +22,7 @@ enum ScreenCaptureKitSampleAttachments {
             return nil
         }
         if let typedAttachments = attachmentsArray as? [[AnyHashable: Any]],
-            let attachments = typedAttachments.first
-        {
+            let attachments = typedAttachments.first {
             return attachments
         }
         let firstAttachment = (attachmentsArray as NSArray).firstObject

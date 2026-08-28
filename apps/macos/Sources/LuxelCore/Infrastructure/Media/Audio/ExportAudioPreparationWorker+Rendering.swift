@@ -57,8 +57,7 @@ extension ExportAudioPreparationWorker {
     ) async throws {
         var writtenFrames = 0
         while reader.status == .reading,
-            let sampleBuffer = output.copyNextSampleBuffer()
-        {
+            let sampleBuffer = output.copyNextSampleBuffer() {
             try Task.checkCancellation()
             var channels = try channels(from: sampleBuffer)
             let allowedFrames = min(channels[0].count, expectedFrames - writtenFrames)
@@ -89,8 +88,7 @@ extension ExportAudioPreparationWorker {
         var previousTail: [[Float]]?
 
         while reader.status == .reading,
-            let sampleBuffer = output.copyNextSampleBuffer()
-        {
+            let sampleBuffer = output.copyNextSampleBuffer() {
             try Task.checkCancellation()
             var channels = try channels(from: sampleBuffer)
             let allowedFrames = min(channels[0].count, expectedFrames - framesRead)

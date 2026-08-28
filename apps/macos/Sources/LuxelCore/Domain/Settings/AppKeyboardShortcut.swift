@@ -1,8 +1,7 @@
 import Foundation
 
 public enum AppKeyboardShortcutModifier: String, Codable, CaseIterable, Equatable, Hashable,
-    Sendable
-{
+    Sendable {
     case command
     case control
     case option

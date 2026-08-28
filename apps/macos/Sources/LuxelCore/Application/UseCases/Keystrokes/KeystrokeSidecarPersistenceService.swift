@@ -8,8 +8,7 @@ public struct KeystrokeSidecarPersistenceService: Sendable {
     }
 
     public func save(_ timeline: KeystrokeTimeline, in bundle: RecordingBundle) throws
-        -> RecordingBundle
-    {
+        -> RecordingBundle {
         try store.save(KeystrokeSidecarDocument(timeline: timeline), kind: .keystrokes, in: bundle)
     }
 

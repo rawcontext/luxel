@@ -159,8 +159,7 @@ final class CameraCutoutFrameScheduler<Frame: Sendable, Output: Sendable>: @unch
 }
 
 final class CameraCutoutCaptureDelegate: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate,
-    @unchecked Sendable
-{
+    @unchecked Sendable {
     private let scheduler: CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>
 
     init(scheduler: CameraCutoutFrameScheduler<CameraCutoutFrame, CameraCutoutCompositedFrame?>) {

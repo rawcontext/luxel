@@ -118,8 +118,7 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
         for audioTracks: [AVAssetTrack],
         unmarkedFallback: AudioTrackKind
     ) async throws
-        -> [AudioTrackKind]
-    {
+        -> [AudioTrackKind] {
         guard !audioTracks.isEmpty else {
             return []
         }

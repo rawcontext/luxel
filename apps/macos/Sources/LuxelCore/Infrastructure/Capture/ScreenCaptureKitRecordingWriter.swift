@@ -254,8 +254,7 @@ final class RecordingWriterSegment: @unchecked Sendable {
         enabled: Bool,
         kind: AudioTrackKind
     ) throws
-        -> AVAssetWriterInput?
-    {
+        -> AVAssetWriterInput? {
         guard enabled else {
             return nil
         }

@@ -367,8 +367,7 @@ extension LuxelCropperModel {
     }
 
     static func validInitialSelection(_ selection: CaptureRect?, display: DisplayBounds)
-        -> CaptureRect?
-    {
+        -> CaptureRect? {
         guard let selection,
             (try? CaptureSelectionDraft(display: display, topLeftSelection: selection)) != nil
         else {
