@@ -73,18 +73,32 @@ final class ScreenCaptureKitAudioOnlyCaptureSession: NSObject, SCStreamOutput,
         didOutputSampleBuffer sampleBuffer: CMSampleBuffer,
         of type: SCStreamOutputType
     ) {
+        guard Self.shouldForwardToWriter(type) else {
+            return
+        }
         segment.append(sampleBuffer, outputType: type)
     }
 
     private func addStreamOutputs(for request: AudioRecordingRequest) throws {
-        if request.audio.capturesSystemAudio {
-            try stream.addStreamOutput(self, type: .audio, sampleHandlerQueue: sampleHandlerQueue)
-        }
-
-        if request.audio.capturesMicrophone {
+        for outputType in Self.streamOutputTypes(for: request) {
             try stream.addStreamOutput(
-                self, type: .microphone, sampleHandlerQueue: sampleHandlerQueue)
+                self, type: outputType, sampleHandlerQueue: sampleHandlerQueue)
         }
+    }
+
+    static func streamOutputTypes(for request: AudioRecordingRequest) -> [SCStreamOutputType] {
+        var outputTypes: [SCStreamOutputType] = [.screen]
+        if request.audio.capturesSystemAudio {
+            outputTypes.append(.audio)
+        }
+        if request.audio.capturesMicrophone {
+            outputTypes.append(.microphone)
+        }
+        return outputTypes
+    }
+
+    static func shouldForwardToWriter(_ outputType: SCStreamOutputType) -> Bool {
+        outputType != .screen
     }
 
     private static func defaultDisplayContentFilter() async throws -> SCContentFilter {

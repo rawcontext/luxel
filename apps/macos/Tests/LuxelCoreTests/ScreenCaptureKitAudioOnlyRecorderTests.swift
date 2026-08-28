@@ -52,4 +52,45 @@ struct ScreenCaptureKitAudioOnlyRecorderTests {
         #expect(configuration.microphoneCaptureDeviceID == nil)
         #expect(configuration.excludesCurrentProcessAudio)
     }
+
+    @Test("stream outputs consume screen frames for every audio source combination")
+    func streamOutputsConsumeScreenFrames() throws {
+        let requestsAndOutputs: [(AudioRecordingRequest, [SCStreamOutputType])] = [
+            (
+                try AudioRecordingRequest(
+                    outputFileURL: URL(fileURLWithPath: "/tmp/system.m4a"),
+                    audio: .system
+                ),
+                [.screen, .audio]
+            ),
+            (
+                try AudioRecordingRequest(
+                    outputFileURL: URL(fileURLWithPath: "/tmp/microphone.m4a"),
+                    audio: .microphone(deviceID: "mic-1")
+                ),
+                [.screen, .microphone]
+            ),
+            (
+                try AudioRecordingRequest(
+                    outputFileURL: URL(fileURLWithPath: "/tmp/combined.m4a"),
+                    audio: .systemAndMicrophone(deviceID: "mic-1")
+                ),
+                [.screen, .audio, .microphone]
+            )
+        ]
+
+        for (request, expectedOutputs) in requestsAndOutputs {
+            #expect(
+                ScreenCaptureKitAudioOnlyCaptureSession.streamOutputTypes(for: request)
+                    == expectedOutputs
+            )
+        }
+    }
+
+    @Test("screen frames stop before the audio writer")
+    func screenFramesStopBeforeAudioWriter() {
+        #expect(!ScreenCaptureKitAudioOnlyCaptureSession.shouldForwardToWriter(.screen))
+        #expect(ScreenCaptureKitAudioOnlyCaptureSession.shouldForwardToWriter(.audio))
+        #expect(ScreenCaptureKitAudioOnlyCaptureSession.shouldForwardToWriter(.microphone))
+    }
 }
