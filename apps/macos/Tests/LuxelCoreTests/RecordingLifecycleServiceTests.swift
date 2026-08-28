@@ -171,6 +171,7 @@ final class RecordingLifecycleOutputFileSystem: FileSystem, @unchecked Sendable 
     private var existingFiles: Set<URL>
     private let moveError: (any Error)?
     private(set) var movedFiles: [RecordingLifecycleOutputMove] = []
+    private(set) var removedFiles: [URL] = []
 
     init(existingFiles: Set<URL>, moveError: (any Error)? = nil) {
         self.existingFiles = existingFiles
@@ -207,6 +208,7 @@ final class RecordingLifecycleOutputFileSystem: FileSystem, @unchecked Sendable 
 
     func removeFile(at url: URL) throws {
         existingFiles.remove(url)
+        removedFiles.append(url)
     }
 
     func trashItem(at url: URL) throws {}

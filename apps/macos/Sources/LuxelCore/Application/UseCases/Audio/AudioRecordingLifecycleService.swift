@@ -4,16 +4,20 @@ public final class AudioRecordingLifecycleService: Sendable {
     private let recorder: any AudioRecorder
     private let history: RecordingHistoryService
     private let outputFinalizer: any RecordingOutputFinalizer
+    private let terminationProtection: any RecordingTerminationProtection
     private let outputState = AudioRecordingLifecycleOutputState()
 
     public init(
         recorder: any AudioRecorder,
         history: RecordingHistoryService,
-        outputFinalizer: any RecordingOutputFinalizer = PassthroughRecordingOutputFinalizer()
+        outputFinalizer: any RecordingOutputFinalizer = PassthroughRecordingOutputFinalizer(),
+        terminationProtection: any RecordingTerminationProtection =
+            NoopRecordingTerminationProtection()
     ) {
         self.recorder = recorder
         self.history = history
         self.outputFinalizer = outputFinalizer
+        self.terminationProtection = terminationProtection
     }
 
     @discardableResult
@@ -24,6 +28,7 @@ public final class AudioRecordingLifecycleService: Sendable {
     ) async throws -> ActiveRecording {
         let outputPlan = outputPlan ?? .direct(request.outputFileURL)
         await outputState.set(outputPlan)
+        terminationProtection.recordingWillStart()
 
         let activeRecording = history.setCurrentRecording(
             fileURL: outputPlan.stagingFileURL,
@@ -38,6 +43,7 @@ public final class AudioRecordingLifecycleService: Sendable {
         } catch {
             await outputState.clear()
             history.clearCurrentRecording()
+            terminationProtection.recordingDidEnd()
             throw error
         }
     }
@@ -54,6 +60,7 @@ public final class AudioRecordingLifecycleService: Sendable {
         } catch {
             history.clearCurrentRecording()
             await outputState.clear()
+            terminationProtection.recordingDidEnd()
             throw RecordingLifecycleError.outputFinalizationFailed(error.preferredLocalizedDescription)
         }
 
@@ -64,10 +71,12 @@ public final class AudioRecordingLifecycleService: Sendable {
             )
         else {
             await outputState.clear()
+            terminationProtection.recordingDidEnd()
             throw RecordingLifecycleError.noActiveRecording
         }
 
         await outputState.clear()
+        terminationProtection.recordingDidEnd()
         return recording
     }
 

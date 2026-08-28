@@ -69,13 +69,11 @@ struct VoiceDetectionRecordingRequestTests {
         #expect(events.firstIndex(of: "stop-detector")! < events.firstIndex(of: "start-recorder")!)
         #expect(fixture.model.recordingState.activeRecording?.options.isAudioOnly == true)
 
-        if let stagingDirectory = requests.first?.outputFileURL.deletingLastPathComponent(),
-            stagingDirectory.path.hasPrefix(
-                FileManager.default.temporaryDirectory
-                    .appending(path: "Luxel/Recordings")
-                    .path
+        if let stagingDirectory = requests.first?.outputFileURL.deletingLastPathComponent() {
+            #expect(
+                stagingDirectory.deletingLastPathComponent().standardizedFileURL
+                    == LuxelCompositionRoot.recordingStagingDirectory.standardizedFileURL
             )
-        {
             try? FileManager.default.removeItem(at: stagingDirectory)
         }
     }

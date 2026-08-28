@@ -9,6 +9,7 @@ public final class RecordingLifecycleService: Sendable {
     private let userNotifier: (any UserNotifier)?
     private let outputFinalizer: any RecordingOutputFinalizer
     private let replayBufferService: ReplayBufferService?
+    private let terminationProtection: any RecordingTerminationProtection
     private let autoStopState = RecordingLifecycleAutoStopState()
     private let autoStopEvents = RecordingLifecycleAutoStopEvents()
     private let outputState = RecordingLifecycleOutputState()
@@ -21,7 +22,9 @@ public final class RecordingLifecycleService: Sendable {
         countdownSleeper: any RecordingCountdownSleeper = TaskRecordingCountdownSleeper(),
         userNotifier: (any UserNotifier)? = nil,
         outputFinalizer: any RecordingOutputFinalizer = PassthroughRecordingOutputFinalizer(),
-        replayBufferService: ReplayBufferService? = nil
+        replayBufferService: ReplayBufferService? = nil,
+        terminationProtection: any RecordingTerminationProtection =
+            NoopRecordingTerminationProtection()
     ) {
         self.recorder = recorder
         self.history = history
@@ -31,6 +34,7 @@ public final class RecordingLifecycleService: Sendable {
         self.userNotifier = userNotifier
         self.outputFinalizer = outputFinalizer
         self.replayBufferService = replayBufferService
+        self.terminationProtection = terminationProtection
     }
 
     public var autoStoppedRecordings: AsyncStream<PastRecording> {
@@ -53,6 +57,7 @@ public final class RecordingLifecycleService: Sendable {
             throw error
         }
 
+        terminationProtection.recordingWillStart()
         let activeRecording = history.setCurrentRecording(
             fileURL: outputPlan.stagingFileURL,
             name: name,
@@ -72,6 +77,7 @@ public final class RecordingLifecycleService: Sendable {
             await autoStopState.clear()
             await outputState.clear()
             history.clearCurrentRecording()
+            terminationProtection.recordingDidEnd()
             throw error
         }
     }
@@ -137,6 +143,7 @@ public final class RecordingLifecycleService: Sendable {
 
         await autoStopState.clear()
         await outputState.clear()
+        terminationProtection.recordingDidEnd()
         return recording
     }
 
@@ -200,6 +207,7 @@ public final class RecordingLifecycleService: Sendable {
         history.clearCurrentRecording()
         await autoStopState.clear()
         await outputState.clear()
+        terminationProtection.recordingDidEnd()
     }
 }
 

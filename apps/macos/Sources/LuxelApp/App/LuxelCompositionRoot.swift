@@ -205,9 +205,9 @@ enum LuxelCompositionRoot {
     }
 
     static var recordingStagingDirectory: URL {
-        FileManager.default.temporaryDirectory
+        applicationSupportDirectory
             .appending(path: "Luxel", directoryHint: .isDirectory)
-            .appending(path: "Recordings", directoryHint: .isDirectory)
+            .appending(path: "Recording Staging", directoryHint: .isDirectory)
     }
 
     private static var recordingHistoryFileURL: URL {

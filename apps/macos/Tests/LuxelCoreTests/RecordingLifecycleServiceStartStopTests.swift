@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 extension RecordingLifecycleServiceTests {
@@ -118,7 +119,10 @@ extension RecordingLifecycleServiceTests {
 
     @Test("stop finalizes staged recording to final URL")
     func stopFinalizesStagedRecordingToFinalURL() async throws {
-        let context = try makeStagedRecordingContext()
+        let terminationProtection = RecordingProtectionSpy()
+        let context = try makeStagedRecordingContext(
+            terminationProtection: terminationProtection
+        )
 
         _ = try await startStagedRecording(context)
         let recording = try await context.service.stopRecording(recordingName: "Finished")
@@ -133,6 +137,12 @@ extension RecordingLifecycleServiceTests {
                     destinationURL: context.finalURL
                 )
             ])
+        #expect(
+            context.fileSystem.removedFiles == [context.stagingURL.deletingLastPathComponent()]
+        )
+        #expect(
+            terminationProtection.events == [.recordingWillStart, .recordingDidEnd]
+        )
     }
 
     @Test("stop keeps staged recording when final move fails")
@@ -223,7 +233,9 @@ private struct StagedRecordingContext {
 extension RecordingLifecycleServiceTests {
     fileprivate func makeStagedRecordingContext(
         outputExists: Bool = true,
-        moveError: (any Error)? = nil
+        moveError: (any Error)? = nil,
+        terminationProtection: any RecordingTerminationProtection =
+            NoopRecordingTerminationProtection()
     ) throws -> StagedRecordingContext {
         let store = InMemoryRecordingHistoryStore()
         let recorder = RecordingLifecycleRecorderSpy()
@@ -236,7 +248,8 @@ extension RecordingLifecycleServiceTests {
         let service = RecordingLifecycleService(
             recorder: recorder,
             history: makeHistory(store: store, fileSystem: fileSystem),
-            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem)
+            outputFinalizer: FileSystemRecordingOutputFinalizer(fileSystem: fileSystem),
+            terminationProtection: terminationProtection
         )
         return StagedRecordingContext(
             store: store,

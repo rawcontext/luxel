@@ -21,6 +21,7 @@ final class ScreenCaptureKitAudioOnlyWriterSegment: @unchecked Sendable {
         audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
     ) throws {
         let writer = try AVAssetWriter(outputURL: outputFileURL, fileType: .m4a)
+        AVAssetWriterCrashRecovery.configure(writer)
         let systemAudioInput = try Self.makeAudioInput(
             for: writer,
             enabled: request.audio.capturesSystemAudio,

@@ -109,6 +109,7 @@ final class RecordingWriterSegment: @unchecked Sendable {
         audioLevelHandler: (@Sendable (AudioLevelSample) -> Void)?
     ) throws {
         let writer = try AVAssetWriter(outputURL: outputFileURL, fileType: .mp4)
+        AVAssetWriterCrashRecovery.configure(writer)
         let videoInput = AVAssetWriterInput(
             mediaType: .video,
             outputSettings: ScreenCaptureKitRecordingVideoSettings.outputSettings(for: request)

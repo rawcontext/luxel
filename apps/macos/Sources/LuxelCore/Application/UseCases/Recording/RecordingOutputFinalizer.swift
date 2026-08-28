@@ -144,6 +144,7 @@ public struct FileSystemRecordingOutputFinalizer: RecordingOutputFinalizer {
     ) throws -> RecordingOutputFinalizationResult {
         try fileSystem.createDirectory(at: plan.finalFileURL.deletingLastPathComponent())
         try fileSystem.moveFile(from: plan.stagingFileURL, to: plan.finalFileURL)
+        try? fileSystem.removeFile(at: plan.stagingFileURL.deletingLastPathComponent())
         return RecordingOutputFinalizationResult(fileURL: plan.finalFileURL)
     }
 }
