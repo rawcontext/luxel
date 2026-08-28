@@ -90,10 +90,6 @@ const howToGuides = [
     text: "Open a Luxel recording or another approved local media file, choose the spoken language, and create the transcript on your Mac. Search the text and jump to spoken words in the editor, or use the CLI to write text or JSON."
   },
   {
-    title: "Can Luxel turn Japanese voice into text?",
-    text: "Yes. Set Transcript Language to Japanese and Luxel transcribes Japanese speech into Japanese text locally. It transcribes the language being spoken; it does not translate Japanese into English or another language."
-  },
-  {
     title: "How do I record audio only on a Mac?",
     text: "Choose a microphone and AAC or ALAC in Recording settings, then start Audio from the menu bar or use the Audio Only shortcut. Luxel saves an M4A file that you can play, transcribe, and export."
   }
@@ -433,9 +429,8 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
               <p class="chip chip--indigo">Text</p>
               <h3>Local transcripts</h3>
               <p>
-                Turn video and audio into searchable text on your Mac. Choose the spoken
-                language—including Japanese—for new transcripts, then search and jump through the
-                text in the editor.
+                Turn video and audio into searchable text on your Mac. Choose from all 29 supported
+                transcription language options, then search and jump through the text in the editor.
               </p>
               <ul class="points">
                 {transcriptPoints.map((point) => <li>{point}</li>)}
@@ -532,7 +527,7 @@ const exportFormats = ["MP4", "HEVC", "ProRes", "GIF", "APNG", "WebM", "AV1", "M
           <div class="transcription-languages">
             <div class="transcription-languages__copy">
               <p class="eyebrow">Transcription languages</p>
-              <h3>Speech to text in 29 language options.</h3>
+              <h3>All 29 supported transcription languages.</h3>
               <p>
                 Choose the language spoken in your video or audio before you transcribe. Luxel
                 processes the media on your Mac and writes the transcript in that same language.

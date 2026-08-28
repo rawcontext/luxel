@@ -111,8 +111,7 @@ describe("static localized output", () => {
       expect(html).not.toContain("Luxel is a Mac screen recorder for screen and system audio capture");
       expect(html).not.toContain("Record your Mac screen with system audio or your microphone");
       expect(html).not.toContain("Turn video and audio into searchable text on your Mac.");
-      expect(html).not.toContain("Can Luxel turn Japanese voice into text?");
-      expect(html).not.toContain("Speech to text in 29 language options.");
+      expect(html).not.toContain("All 29 supported transcription languages.");
       expect(html).not.toContain("Supported transcription languages");
     }
   });
