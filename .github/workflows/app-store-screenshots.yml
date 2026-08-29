@@ -37,18 +37,10 @@ jobs:
           node-version: 24.19.0
           package-manager-cache: false
 
-      - name: Read Ruby version
-        id: ruby-version
-        run: |
-          ruby_version="$(awk '$1 == "ruby" { print $2 }' .tool-versions)"
-          echo "ruby=${ruby_version}" >> "$GITHUB_OUTPUT"
-
       - name: Set up Ruby
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        uses: ./.github/actions/setup-ruby
         with:
-          ruby-version: ${{ steps.ruby-version.outputs.ruby }}
-          bundler-cache: true
-          working-directory: apps/macos
+          bundle-install: "true"
 
       - name: Configure temporary screenshot paths
         run: |
