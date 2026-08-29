@@ -303,6 +303,13 @@ extension AppBundleConfigurationTests {
         #expect(script.contains("LuxelCore resource bundle was not copied"))
     }
 
+    @Test("Mac App Store provisioning profile is readable after installation")
+    func macAppStoreProvisioningProfileIsReadableAfterInstallation() throws {
+        let script = try scriptSource("build-luxel-mas-pkg.sh")
+
+        #expect(script.contains("chmod 644 \"${APP_PATH}/Contents/embedded.provisionprofile\""))
+    }
+
     @Test("build script requires team signing")
     func buildScriptRequiresTeamSigning() throws {
         let scriptURL = try packageRootURL().appending(path: "Scripts/build-luxel-app.sh")

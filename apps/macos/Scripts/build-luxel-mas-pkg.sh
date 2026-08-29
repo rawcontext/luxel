@@ -164,6 +164,7 @@ fi
 /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "${APP_PATH}/Contents/Info.plist"
 
 cp "${PROVISIONING_PROFILE}" "${APP_PATH}/Contents/embedded.provisionprofile"
+chmod 644 "${APP_PATH}/Contents/embedded.provisionprofile"
 copy_luxel_app_payload
 copy_luxel_app_resources
 while IFS= read -r -d '' bundle_plist; do
