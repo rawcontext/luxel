@@ -19,7 +19,7 @@ concurrency:
 jobs:
   submit:
     name: Update Review Instructions and Submit
-    runs-on: macos-26
+    runs-on: [self-hosted, macOS, ARM64, eudoxus-desktop]
     permissions:
       contents: read
     env:

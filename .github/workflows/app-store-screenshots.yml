@@ -15,7 +15,7 @@ concurrency:
 jobs:
   sync-screenshots:
     name: Update Localized Screenshots
-    runs-on: macos-26
+    runs-on: [self-hosted, macOS, ARM64, eudoxus-desktop]
     permissions:
       contents: read
     env:

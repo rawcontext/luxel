@@ -26,7 +26,7 @@ concurrency:
 jobs:
   testflight:
     name: Build and Upload to TestFlight
-    runs-on: macos-26
+    runs-on: [self-hosted, macOS, ARM64, eudoxus-desktop]
     permissions:
       contents: read
     env:

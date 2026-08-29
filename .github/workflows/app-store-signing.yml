@@ -10,7 +10,7 @@ concurrency:
 jobs:
   refresh-profile:
     name: Enable Capability and Refresh Profile
-    runs-on: macos-26
+    runs-on: [self-hosted, macOS, ARM64, eudoxus-desktop]
     permissions:
       contents: read
     env:
