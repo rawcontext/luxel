@@ -40,7 +40,16 @@ runs:
           exit 1
         fi
 
+        toolchain_bin="${developer_dir}/Toolchains/XcodeDefault.xctoolchain/usr/bin"
+        sdk_root="${developer_dir}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
+        test -x "${toolchain_bin}/swift"
+        test -d "${sdk_root}"
+
         echo "DEVELOPER_DIR=${developer_dir}" >> "${GITHUB_ENV}"
+        echo "SDKROOT=${sdk_root}" >> "${GITHUB_ENV}"
+        echo "CC=${toolchain_bin}/clang" >> "${GITHUB_ENV}"
+        echo "CXX=${toolchain_bin}/clang++" >> "${GITHUB_ENV}"
+        echo "${toolchain_bin}" >> "${GITHUB_PATH}"
 
     - name: Ensure pinned Ruby is installed
       shell: bash
@@ -73,4 +82,6 @@ runs:
       run: |
         bundle_path="${RUNNER_TEMP}/luxel-bundle"
         echo "BUNDLE_PATH=${bundle_path}" >> "${GITHUB_ENV}"
-        BUNDLE_PATH="${bundle_path}" bundle install --jobs 4 --retry 3
+        DEVELOPER_DIR=/Library/Developer/CommandLineTools \
+          BUNDLE_PATH="${bundle_path}" \
+          bundle install --jobs 4 --retry 3
