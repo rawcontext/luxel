@@ -180,6 +180,7 @@ if [[ ! -d "${APP_PATH}/Contents/Resources/Luxel_LuxelCore.bundle" ]]; then
 fi
 
 prepare_luxel_app_executables
+xattr -dr com.apple.quarantine "${APP_PATH}"
 
 codesign \
 	--force \

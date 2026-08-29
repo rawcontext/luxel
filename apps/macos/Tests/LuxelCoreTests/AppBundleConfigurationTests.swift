@@ -308,6 +308,7 @@ extension AppBundleConfigurationTests {
         let script = try scriptSource("build-luxel-mas-pkg.sh")
 
         #expect(script.contains("chmod 644 \"${APP_PATH}/Contents/embedded.provisionprofile\""))
+        #expect(script.contains("xattr -dr com.apple.quarantine \"${APP_PATH}\""))
     }
 
     @Test("build script requires team signing")
