@@ -16,7 +16,12 @@ runs:
       run: |
         selected_dir="$(env -u DEVELOPER_DIR xcode-select -p 2>/dev/null || true)"
         shopt -s nullglob
-        candidates=("${DEVELOPER_DIR:-}" "${selected_dir}" /Applications/Xcode*.app/Contents/Developer)
+        candidates=(
+          "${DEVELOPER_DIR:-}"
+          "${selected_dir}"
+          "$HOME"/Applications/Xcode*.app/Contents/Developer
+          /Applications/Xcode*.app/Contents/Developer
+        )
         expected_version=$'Xcode 26.6\nBuild version 17F113'
         developer_dir=""
 
