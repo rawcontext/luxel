@@ -180,7 +180,11 @@ if [[ ! -d "${APP_PATH}/Contents/Resources/Luxel_LuxelCore.bundle" ]]; then
 fi
 
 prepare_luxel_app_executables
-xattr -dr com.apple.quarantine "${APP_PATH}"
+xattr -dr com.apple.quarantine "${APP_PATH}" 2>/dev/null || true
+if [[ -n "$(find "${APP_PATH}" -xattrname com.apple.quarantine -print -quit)" ]]; then
+	echo "Assembled app contains a quarantined file." >&2
+	exit 1
+fi
 
 codesign \
 	--force \

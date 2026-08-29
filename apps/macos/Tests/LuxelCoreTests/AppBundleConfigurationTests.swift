@@ -309,6 +309,7 @@ extension AppBundleConfigurationTests {
 
         #expect(script.contains("chmod 644 \"${APP_PATH}/Contents/embedded.provisionprofile\""))
         #expect(script.contains("xattr -dr com.apple.quarantine \"${APP_PATH}\""))
+        #expect(script.contains("find \"${APP_PATH}\" -xattrname com.apple.quarantine"))
     }
 
     @Test("build script requires team signing")
