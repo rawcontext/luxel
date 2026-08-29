@@ -10,16 +10,36 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Select pinned Xcode
+      if: inputs.bundle-install == 'true'
+      shell: bash
+      run: |
+        selected_dir="$(env -u DEVELOPER_DIR xcode-select -p 2>/dev/null || true)"
+        shopt -s nullglob
+        candidates=("${DEVELOPER_DIR:-}" "${selected_dir}" /Applications/Xcode*.app/Contents/Developer)
+        expected_version=$'Xcode 26.6\nBuild version 17F113'
+        developer_dir=""
+
+        for candidate in "${candidates[@]}"; do
+          [[ -d "${candidate}" ]] || continue
+          version="$(DEVELOPER_DIR="${candidate}" xcodebuild -version 2>/dev/null || true)"
+
+          if [[ "${version}" == "${expected_version}" ]]; then
+            developer_dir="${candidate}"
+            break
+          fi
+        done
+
+        if [[ -z "${developer_dir}" ]]; then
+          echo "Xcode 26.6 build 17F113 is not installed on this runner." >&2
+          exit 1
+        fi
+
+        echo "DEVELOPER_DIR=${developer_dir}" >> "${GITHUB_ENV}"
+
     - name: Ensure pinned Ruby is installed
       shell: bash
       run: |
-        if [[ ! -d "${DEVELOPER_DIR:-}" ]]; then
-          developer_dir="$(env -u DEVELOPER_DIR xcode-select -p)"
-          test -d "${developer_dir}"
-          export DEVELOPER_DIR="${developer_dir}"
-          echo "DEVELOPER_DIR=${developer_dir}" >> "${GITHUB_ENV}"
-        fi
-
         expected_version="$(awk '$1 == "ruby" { print $2 }' .tool-versions)"
 
         if ! /opt/homebrew/bin/brew list --versions ruby >/dev/null 2>&1; then
