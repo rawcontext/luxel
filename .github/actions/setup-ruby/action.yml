@@ -13,6 +13,13 @@ runs:
     - name: Ensure pinned Ruby is installed
       shell: bash
       run: |
+        if [[ ! -d "${DEVELOPER_DIR:-}" ]]; then
+          developer_dir="$(env -u DEVELOPER_DIR xcode-select -p)"
+          test -d "${developer_dir}"
+          export DEVELOPER_DIR="${developer_dir}"
+          echo "DEVELOPER_DIR=${developer_dir}" >> "${GITHUB_ENV}"
+        fi
+
         expected_version="$(awk '$1 == "ruby" { print $2 }' .tool-versions)"
 
         if ! /opt/homebrew/bin/brew list --versions ruby >/dev/null 2>&1; then
