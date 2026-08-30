@@ -15,7 +15,7 @@ concurrency:
 jobs:
   sync-metadata:
     name: Update Metadata Draft
-    runs-on: [self-hosted, macOS, ARM64, eudoxus-desktop]
+    runs-on: [self-hosted, macOS, ARM64, luxel-desktop]
     permissions:
       contents: read
     env:

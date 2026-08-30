@@ -19,7 +19,7 @@ concurrency:
 jobs:
   submit:
     name: Update Review Instructions and Submit
-    runs-on: [self-hosted, macOS, ARM64, eudoxus-desktop]
+    runs-on: [self-hosted, macOS, ARM64, luxel-desktop]
     permissions:
       contents: read
     env:

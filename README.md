@@ -340,7 +340,7 @@ apps/macos/Scripts/swiftlint-precommit.sh
 
 Releases run through GitHub Actions, not local Fastlane commands. The workflow is defined in `.github/workflows/testflight.yml`.
 
-The TestFlight workflow runs on `macos-26` and starts from either:
+The TestFlight workflow runs on the repository-scoped Luxel Mac Mini runner and starts from either:
 
 - A pushed tag matching `v*`.
 - A manual `workflow_dispatch` run with optional `marketing_version`, `build_number`, and TestFlight changelog inputs.
