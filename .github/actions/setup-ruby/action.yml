@@ -60,6 +60,10 @@ runs:
           HOMEBREW_NO_AUTO_UPDATE=1 /opt/homebrew/bin/brew install ruby
         fi
 
+        if ! /opt/homebrew/bin/brew list --versions gh >/dev/null 2>&1; then
+          HOMEBREW_NO_AUTO_UPDATE=1 /opt/homebrew/bin/brew install gh
+        fi
+
         ruby_bin="$(/opt/homebrew/bin/brew --prefix ruby)/bin"
         actual_version="$("${ruby_bin}/ruby" -e 'print RUBY_VERSION')"
 
