@@ -5,7 +5,7 @@ import { translate } from "../../i18n/text";
 
 export const prerender = false;
 
-const defaultRepository = "ccheney/luxel";
+const defaultRepository = "ccheney/luxel-support";
 const supportAssignee = "ccheney";
 const maxMessageLength = 8000;
 const maxEmailLength = 254;
@@ -159,20 +159,32 @@ async function createGitHubIssue({
   message: string;
   origin: string | null;
 }): Promise<Response> {
-  const [owner, repo] = repository.split("/");
-  if (!owner || !repo) {
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) {
     return new Response(null, { status: 500 });
   }
 
-  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
+  const headers = {
+    Accept: "application/vnd.github+json",
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    "User-Agent": "luxel-support-form",
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
+  const repositoryUrl = `https://api.github.com/repos/${repository}`;
+
+  try {
+    const response = await fetch(repositoryUrl, { headers, redirect: "error" });
+    if (!response.ok || (await response.json()).private !== true) {
+      return new Response(null, { status: 503 });
+    }
+  } catch {
+    return new Response(null, { status: 503 });
+  }
+
+  const response = await fetch(`${repositoryUrl}/issues`, {
     method: "POST",
-    headers: {
-      Accept: "application/vnd.github+json",
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "User-Agent": "luxel-support-form",
-      "X-GitHub-Api-Version": "2022-11-28"
-    },
+    headers,
+    redirect: "error",
     body: JSON.stringify({
       title: supportTitle(message),
       body: supportBody({ email, message, origin }),
