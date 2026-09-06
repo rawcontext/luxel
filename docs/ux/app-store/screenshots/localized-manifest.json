@@ -1,0 +1,680 @@
+{
+  "files" : [
+    {
+      "bytes" : 3020739,
+      "heading" : "Record From Menu Bar",
+      "id" : "menu-bar",
+      "locale" : "en-US",
+      "output" : "en-US/01-record-from-menu-bar.png",
+      "position" : 1,
+      "sha256" : "34540d19783c1e3778d111d7c4aa67264f51ea95087ba352cc6d3623f2b6fa10",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 648983,
+      "heading" : "Über die Menüleiste aufnehmen",
+      "id" : "menu-bar",
+      "locale" : "de-DE",
+      "output" : "de-DE/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "40647241541423ce3f5dc521dc9cb5242bed8190d37a1bfbff6055711dbf1a31",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 653422,
+      "heading" : "Graba desde la barra de menús",
+      "id" : "menu-bar",
+      "locale" : "es-ES",
+      "output" : "es-ES/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "2704340bb1871b2cdb03c36c3916b36d8c4c91e55e549691acee822f6d8df990",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 656273,
+      "heading" : "Enregistrez depuis la barre des menus",
+      "id" : "menu-bar",
+      "locale" : "fr-FR",
+      "output" : "fr-FR/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "06f5e06d06e640d7f49616d8f5538bfbe2775b8e6843aa04f60e069013304dfc",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 646955,
+      "heading" : "Registra dalla barra dei menu",
+      "id" : "menu-bar",
+      "locale" : "it",
+      "output" : "it/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "894536c00a3424e5f8e06f08a72fd88edd4e7c2c08fc4b514e6e2b61272ee4ba",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 623668,
+      "heading" : "メニューバーから録画",
+      "id" : "menu-bar",
+      "locale" : "ja",
+      "output" : "ja/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "b8a68d86f04d6fefc24f7baacbd3547b49f2f579a3705b7dd672bb87c728fa31",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 615907,
+      "heading" : "메뉴 막대에서 녹화",
+      "id" : "menu-bar",
+      "locale" : "ko",
+      "output" : "ko/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "a7c37403610beb21f842783678e3bf8f517f69dbf42f798d20f6f2054cb69558",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 620082,
+      "heading" : "Ghi từ thanh menu",
+      "id" : "menu-bar",
+      "locale" : "vi",
+      "output" : "vi/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "59ec713cdf0abafb214a8a2b96ff9146b7f2dbb94ecdb5bf1489aead774667e2",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 631350,
+      "heading" : "从菜单栏开始录制",
+      "id" : "menu-bar",
+      "locale" : "zh-Hans",
+      "output" : "zh-Hans/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "c9c8d9fde4bda97cf8c220ba0cb405dc89993dbd1bfe3e590cdf8512a4972072",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 643092,
+      "heading" : "Grave pela barra de menus",
+      "id" : "menu-bar",
+      "locale" : "pt-BR",
+      "output" : "pt-BR/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "cb5872c8fca73fff2e1aa588c9a121fcc9146085d64f36e3d753cfd06c70dbd0",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 643092,
+      "heading" : "Grave pela barra de menus",
+      "id" : "menu-bar",
+      "locale" : "pt-PT",
+      "output" : "pt-PT/01-record-from-menu-bar.jpg",
+      "position" : 1,
+      "sha256" : "cb5872c8fca73fff2e1aa588c9a121fcc9146085d64f36e3d753cfd06c70dbd0",
+      "source" : "docs/ux/app-store/screenshots/app-store-05-menu-bar.png"
+    },
+    {
+      "bytes" : 2682576,
+      "heading" : "Pixel-Perfect Area Capture",
+      "id" : "area-capture",
+      "locale" : "en-US",
+      "output" : "en-US/02-pixel-perfect-area-capture.png",
+      "position" : 2,
+      "sha256" : "877b7801713193206b7acaabb338bea97f45cb6a8566c0b9acfbd7f65330f10b",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 563739,
+      "heading" : "Pixelgenaue Bereichsaufnahme",
+      "id" : "area-capture",
+      "locale" : "de-DE",
+      "output" : "de-DE/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "0ff332be135a03cc558705208c8fd4d7e9f38264f13445e4407346070d88267f",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 572694,
+      "heading" : "Captura de área con precisión de píxel",
+      "id" : "area-capture",
+      "locale" : "es-ES",
+      "output" : "es-ES/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "7f43f37462215a1d73d22b8b3be3c48748eaa084d706d48e590c41a5c7d6d9a5",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 557094,
+      "heading" : "Capture de zone au pixel près",
+      "id" : "area-capture",
+      "locale" : "fr-FR",
+      "output" : "fr-FR/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "9faaeb059a11638567881823820f988b7e05d20ec67b2955a004f139e0cb34dd",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 554016,
+      "heading" : "Cattura area precisa al pixel",
+      "id" : "area-capture",
+      "locale" : "it",
+      "output" : "it/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "a043f07a501751970146603e82b0be4221b8d682de69b9200fadf6ded0b947dc",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 562753,
+      "heading" : "ピクセル単位で範囲をキャプチャ",
+      "id" : "area-capture",
+      "locale" : "ja",
+      "output" : "ja/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "8a2814c4ceaf13640091d45f2f90c0e647be74efbd64b458f1b3ea5e966456cc",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 538260,
+      "heading" : "픽셀 단위로 영역 캡처",
+      "id" : "area-capture",
+      "locale" : "ko",
+      "output" : "ko/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "cc5094e089f7ad3f9bcdf73cae5cea2a40ed33bb0def1ae0ad8be02c598423b2",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 558004,
+      "heading" : "Chụp vùng chính xác từng pixel",
+      "id" : "area-capture",
+      "locale" : "vi",
+      "output" : "vi/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "3dcaf6d8044b4d14a10af56897cb5912be93c28af7d3d59d79b6baa90127669b",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 561366,
+      "heading" : "像素级精准区域录制",
+      "id" : "area-capture",
+      "locale" : "zh-Hans",
+      "output" : "zh-Hans/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "5047f0dbdc4f78eb478b1ee3d2e0a5876d9bb6e106d0c427d9317eaa92e75361",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 574711,
+      "heading" : "Captura de área com precisão de pixel",
+      "id" : "area-capture",
+      "locale" : "pt-BR",
+      "output" : "pt-BR/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "723ebf6eb6ccc23501a8fbfdeb6b915985aba12f230c8ae2e0b6db2ba83682a4",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 574473,
+      "heading" : "Captura de área com precisão ao píxel",
+      "id" : "area-capture",
+      "locale" : "pt-PT",
+      "output" : "pt-PT/02-pixel-perfect-area-capture.jpg",
+      "position" : 2,
+      "sha256" : "ce2e12bff388ee52248105bc098b06f4435f8098520b3ab1cbf53ccab72c6f7c",
+      "source" : "docs/ux/app-store/screenshots/app-store-01-area-capture.png"
+    },
+    {
+      "bytes" : 3627308,
+      "heading" : "Transcribe Locally, Identify Speakers",
+      "id" : "transcripts",
+      "locale" : "en-US",
+      "output" : "en-US/03-transcribe-locally-identify-speakers.png",
+      "position" : 3,
+      "sha256" : "69ba4ac5cb430aa3128c7295c72bdf5cfd943e596f961936b32967fa24ababe3",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 746374,
+      "heading" : "Lokal transkribieren, Sprecher erkennen",
+      "id" : "transcripts",
+      "locale" : "de-DE",
+      "output" : "de-DE/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "625a0a8c82afc185f7967439b579bf4163e6f1938a72f8e29c06a2a8b16e1398",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 748346,
+      "heading" : "Transcribe en local, identifica hablantes",
+      "id" : "transcripts",
+      "locale" : "es-ES",
+      "output" : "es-ES/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "542e9c8888eb77f5d07698feb79b7c32897a5fe6d94bb6d982d86e540ed24bee",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 738690,
+      "heading" : "Transcrivez en local, identifiez les locuteurs",
+      "id" : "transcripts",
+      "locale" : "fr-FR",
+      "output" : "fr-FR/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "f1204386967177b3f50d9ffdb87d3e51578a93af9382509906052dd6358b0a7c",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 739136,
+      "heading" : "Trascrivi in locale, identifica i parlanti",
+      "id" : "transcripts",
+      "locale" : "it",
+      "output" : "it/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "bf214e9bd93ee324bc692e398c8507118eb692b4a9f034519ec59373ad2e402d",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 731811,
+      "heading" : "ローカルで文字起こし、話者を識別",
+      "id" : "transcripts",
+      "locale" : "ja",
+      "output" : "ja/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "4417e1c8641ab44c54df1a8d1551d6091c9e31cf4dff9f20f7a245a4de35a5f3",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 719295,
+      "heading" : "로컬에서 전사하고 화자 식별",
+      "id" : "transcripts",
+      "locale" : "ko",
+      "output" : "ko/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "5376de5278b7aef1056161c78d6f0120aa94c06cc252206b276996a99f579933",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 743324,
+      "heading" : "Chép lời cục bộ, nhận diện người nói",
+      "id" : "transcripts",
+      "locale" : "vi",
+      "output" : "vi/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "f90f5a72b1ef7683241afdfeed5ed64c80793250c07e76c90ba5f474e53dd8a7",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 719197,
+      "heading" : "本地转写，识别说话人",
+      "id" : "transcripts",
+      "locale" : "zh-Hans",
+      "output" : "zh-Hans/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "45680c0b79473ff6182f2b3e9ad2bbf7c78d345be5b62524eaa77eea667fbc26",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 742304,
+      "heading" : "Transcreva localmente, identifique os falantes",
+      "id" : "transcripts",
+      "locale" : "pt-BR",
+      "output" : "pt-BR/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "657006d9b36eaa09576e9d1ffd42e3ea99d9089387dacb07c66ec4f183f26eab",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 742429,
+      "heading" : "Transcreva localmente, identifique os oradores",
+      "id" : "transcripts",
+      "locale" : "pt-PT",
+      "output" : "pt-PT/03-transcribe-locally-identify-speakers.jpg",
+      "position" : 3,
+      "sha256" : "52f5e724e86335e7403ccf4b5df4790bbdb9c74b2810a57301e82f54e6003199",
+      "source" : "docs/ux/app-store/screenshots/app-store-06-transcripts.png"
+    },
+    {
+      "bytes" : 2573442,
+      "heading" : "Export Clean, Fast Files",
+      "id" : "export",
+      "locale" : "en-US",
+      "output" : "en-US/04-export-clean-fast-files.png",
+      "position" : 4,
+      "sha256" : "c140a96060759f9823d5eb6c0d4813ce6e5bda5b53794352f1c60e1475737664",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 641948,
+      "heading" : "Saubere Dateien schnell exportieren",
+      "id" : "export",
+      "locale" : "de-DE",
+      "output" : "de-DE/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "6d8827e0fa9bc85a95680ddec43663ec919eb0c6adb1fc582ffee0bcbf862b85",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 640381,
+      "heading" : "Exporta archivos limpios rápidamente",
+      "id" : "export",
+      "locale" : "es-ES",
+      "output" : "es-ES/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "bb47a14975c450f02a731c131dd120591812dc2a18f58fff648ce0bf62b99dff",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 641215,
+      "heading" : "Exportez vite des fichiers impeccables",
+      "id" : "export",
+      "locale" : "fr-FR",
+      "output" : "fr-FR/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "7b91fb8261028232077fd3ef57def624fa067bb5319c83e5db18e14328d14f3c",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 625189,
+      "heading" : "Esporta rapidamente file puliti",
+      "id" : "export",
+      "locale" : "it",
+      "output" : "it/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "8d07b8ebea2a831b75ee9668e9772568d62d4d55dfecde78b9d354d835f8e281",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 627109,
+      "heading" : "高品質なファイルをすばやく書き出し",
+      "id" : "export",
+      "locale" : "ja",
+      "output" : "ja/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "2f7cdf2f69df362ba017bdca64c7017aa1928b9d2cbb39adf1b85d7d8ab401ec",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 616985,
+      "heading" : "깔끔한 파일을 빠르게 내보내기",
+      "id" : "export",
+      "locale" : "ko",
+      "output" : "ko/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "bf880b79eea37cfdbca60cd44388b5aed94b70e2e17c967f5932855607c8a0bb",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 622127,
+      "heading" : "Xuất tệp gọn, nhanh chóng",
+      "id" : "export",
+      "locale" : "vi",
+      "output" : "vi/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "293c648142c7aec83d2fb4db8fa5d527df627ca7c079df811c0833bceff2967a",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 610609,
+      "heading" : "快速导出清晰文件",
+      "id" : "export",
+      "locale" : "zh-Hans",
+      "output" : "zh-Hans/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "6112536356349c541cd4072ddc20af71f907b02e0a7ee26fd1d2b26aff225f97",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 638967,
+      "heading" : "Exporte arquivos limpos com rapidez",
+      "id" : "export",
+      "locale" : "pt-BR",
+      "output" : "pt-BR/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "9b830b35fe095460e98c27c32e02482a4a50e0cc1bb90ab53aeffb8c2411fc94",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 639141,
+      "heading" : "Exporte ficheiros limpos rapidamente",
+      "id" : "export",
+      "locale" : "pt-PT",
+      "output" : "pt-PT/04-export-clean-fast-files.jpg",
+      "position" : 4,
+      "sha256" : "9543d6ff94e0f7a6d2e806a5cfd330498c723b4f4e8fc4618789aab9d10d1093",
+      "source" : "docs/ux/app-store/screenshots/app-store-04-export.png"
+    },
+    {
+      "bytes" : 3010455,
+      "heading" : "Glanceable Recording Status",
+      "id" : "recording-status",
+      "locale" : "en-US",
+      "output" : "en-US/05-glanceable-recording-status.png",
+      "position" : 5,
+      "sha256" : "9f5f3f3b7c2679c980df11135ffa9e076596791c77af894572ac9d8b950e59db",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 601983,
+      "heading" : "Aufnahmestatus auf einen Blick",
+      "id" : "recording-status",
+      "locale" : "de-DE",
+      "output" : "de-DE/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "4faf6578e067a29c44419aa0d30b78d47c824a5c4036ad94ac8abc60972d6afc",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 609748,
+      "heading" : "Estado de grabación de un vistazo",
+      "id" : "recording-status",
+      "locale" : "es-ES",
+      "output" : "es-ES/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "2d75b6c0ec43a5e20d9e1c9e1536d3b2cf939796a586a30f9203445f8826d7a4",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 609342,
+      "heading" : "État d’enregistrement en un coup d’œil",
+      "id" : "recording-status",
+      "locale" : "fr-FR",
+      "output" : "fr-FR/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "e42907df547bfca0a9da449b3a52c8d883c400c50690e3839344f498755fb25b",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 614465,
+      "heading" : "Stato registrazione a colpo d’occhio",
+      "id" : "recording-status",
+      "locale" : "it",
+      "output" : "it/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "9bd439f72b5ca44549e83f4d7e7de5d0848b56aac692c41abab9d525c953aada",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 602587,
+      "heading" : "録画状況をひと目で確認",
+      "id" : "recording-status",
+      "locale" : "ja",
+      "output" : "ja/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "809fdf57000ccf248a9aa22bd79df07c97a9e4e9c020db1e3f69484c7122efe8",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 577815,
+      "heading" : "녹화 상태를 한눈에",
+      "id" : "recording-status",
+      "locale" : "ko",
+      "output" : "ko/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "e3df122ba41eda7eeab0052897d025a44b192bb3b88cf2d0d33d31cd74fa4f39",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 603865,
+      "heading" : "Trạng thái ghi hình trong nháy mắt",
+      "id" : "recording-status",
+      "locale" : "vi",
+      "output" : "vi/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "5da08660d55b63a91791c5f64fd8646981d4cfae8c2130563adccd7e63a220c1",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 584560,
+      "heading" : "录制状态一目了然",
+      "id" : "recording-status",
+      "locale" : "zh-Hans",
+      "output" : "zh-Hans/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "f78c161fe42a369e60e6ba4ac560b0e4b392f7e35d3103df20c40166499ebddc",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 610814,
+      "heading" : "Status da gravação em um relance",
+      "id" : "recording-status",
+      "locale" : "pt-BR",
+      "output" : "pt-BR/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "c6b325c988d5fc1d1db97f9408bccb8b37066f7e255320c88e8035f8ff15a409",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 607980,
+      "heading" : "Estado da gravação num relance",
+      "id" : "recording-status",
+      "locale" : "pt-PT",
+      "output" : "pt-PT/05-glanceable-recording-status.jpg",
+      "position" : 5,
+      "sha256" : "b899fb604c965d884f3353ab25ed940ec0db41d614bea382a95527a8c5bc7f02",
+      "source" : "docs/ux/app-store/screenshots/app-store-03-recording-status.png"
+    },
+    {
+      "bytes" : 2844961,
+      "heading" : "Trim & Tune Before Share",
+      "id" : "editor-trim",
+      "locale" : "en-US",
+      "output" : "en-US/06-trim-tune-before-share.png",
+      "position" : 6,
+      "sha256" : "3c460fa0833037da8e635e44c619fcb2790038c1cdf90fe59da6c21cc98cd049",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 637347,
+      "heading" : "Vor dem Teilen zuschneiden und optimieren",
+      "id" : "editor-trim",
+      "locale" : "de-DE",
+      "output" : "de-DE/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "1999c908f2a7a1c8816c653f1500893de899a9cb644e1931e36be3b77bcebad3",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 643136,
+      "heading" : "Recorta y ajusta antes de compartir",
+      "id" : "editor-trim",
+      "locale" : "es-ES",
+      "output" : "es-ES/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "d526edb3a899d5481a92cb21d19fa037e18bfde3f962974cf6f9050bb786c2b5",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 642809,
+      "heading" : "Découpez et ajustez avant de partager",
+      "id" : "editor-trim",
+      "locale" : "fr-FR",
+      "output" : "fr-FR/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "c8264d5720d1c3eb90532f3bc591ac6fb1cc9df900caa70f08dd2c39b59c6e38",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 643871,
+      "heading" : "Ritaglia e perfeziona prima di condividere",
+      "id" : "editor-trim",
+      "locale" : "it",
+      "output" : "it/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "ddfba5619418dc106f21fa2d166a9c2888ad92c09e6888debb99bf2ffc6089e3",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 624203,
+      "heading" : "共有前にトリミングと調整",
+      "id" : "editor-trim",
+      "locale" : "ja",
+      "output" : "ja/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "8da011b9f87fc35f1837bc71caf88bbd501f8bbd0bd24b7182ed55c03edb9c4c",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 610192,
+      "heading" : "공유 전에 자르고 다듬기",
+      "id" : "editor-trim",
+      "locale" : "ko",
+      "output" : "ko/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "02b927e96ecb54586f57ea76dd27ac145ab6ab13b1044a340c03cd7a83d82225",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 634742,
+      "heading" : "Cắt và tinh chỉnh trước khi chia sẻ",
+      "id" : "editor-trim",
+      "locale" : "vi",
+      "output" : "vi/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "1aeac636ee10e5c3608244f6fe946c5b948f5acb5b83dcc4cf467cae7d933543",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 618771,
+      "heading" : "分享前裁剪并优化",
+      "id" : "editor-trim",
+      "locale" : "zh-Hans",
+      "output" : "zh-Hans/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "1808fb0bed95f66489c892f8fa527da509ef35150bc09e6a1e8744a4d8779960",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 642062,
+      "heading" : "Recorte e ajuste antes de compartilhar",
+      "id" : "editor-trim",
+      "locale" : "pt-BR",
+      "output" : "pt-BR/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "386e5e0fc2cb559154cbb44d08a4372d90a7beffe872f58110b951c3b731d9e1",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    },
+    {
+      "bytes" : 640186,
+      "heading" : "Recorte e ajuste antes de partilhar",
+      "id" : "editor-trim",
+      "locale" : "pt-PT",
+      "output" : "pt-PT/06-trim-tune-before-share.jpg",
+      "position" : 6,
+      "sha256" : "2fa901c87ff772ec43926e961f496cec2d9fba0cbffc41022cb2bbc58f16213a",
+      "source" : "docs/ux/app-store/screenshots/app-store-02-editor-trim.png"
+    }
+  ],
+  "height" : 1800,
+  "locales" : [
+    "en-US",
+    "de-DE",
+    "es-ES",
+    "fr-FR",
+    "it",
+    "ja",
+    "ko",
+    "vi",
+    "zh-Hans",
+    "pt-BR",
+    "pt-PT"
+  ],
+  "schemaVersion" : 1,
+  "width" : 2880
+}

@@ -3,7 +3,7 @@
     {
       "id": "menu-bar",
       "position": 1,
-      "source": "docs/design/app-store-05-menu-bar.png",
+      "source": "docs/ux/app-store/screenshots/app-store-05-menu-bar.png",
       "outputStem": "record-from-menu-bar",
       "anchorTop": 40,
       "anchorBottom": 320,
@@ -15,7 +15,7 @@
     {
       "id": "area-capture",
       "position": 2,
-      "source": "docs/design/app-store-01-area-capture.png",
+      "source": "docs/ux/app-store/screenshots/app-store-01-area-capture.png",
       "outputStem": "pixel-perfect-area-capture",
       "anchorTop": 100,
       "anchorBottom": 400,
@@ -27,7 +27,7 @@
     {
       "id": "transcripts",
       "position": 3,
-      "source": "docs/design/app-store-06-transcripts.png",
+      "source": "docs/ux/app-store/screenshots/app-store-06-transcripts.png",
       "outputStem": "transcribe-locally-identify-speakers",
       "anchorTop": 50,
       "anchorBottom": 325,
@@ -39,7 +39,7 @@
     {
       "id": "export",
       "position": 4,
-      "source": "docs/design/app-store-04-export.png",
+      "source": "docs/ux/app-store/screenshots/app-store-04-export.png",
       "outputStem": "export-clean-fast-files",
       "anchorTop": 40,
       "anchorBottom": 320,
@@ -51,7 +51,7 @@
     {
       "id": "recording-status",
       "position": 5,
-      "source": "docs/design/app-store-03-recording-status.png",
+      "source": "docs/ux/app-store/screenshots/app-store-03-recording-status.png",
       "outputStem": "glanceable-recording-status",
       "anchorTop": 100,
       "anchorBottom": 390,
@@ -63,7 +63,7 @@
     {
       "id": "editor-trim",
       "position": 6,
-      "source": "docs/design/app-store-02-editor-trim.png",
+      "source": "docs/ux/app-store/screenshots/app-store-02-editor-trim.png",
       "outputStem": "trim-tune-before-share",
       "anchorTop": 40,
       "anchorBottom": 300,

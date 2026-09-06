@@ -8,7 +8,6 @@ require "shellwords"
 default_platform(:mac)
 
 APP_IDENTIFIER = "com.rawcontext.luxel"
-APPLE_ACCOUNT = ENV["FASTLANE_USER"]
 APPLE_TEAM_ID = "U65DCW9TAK"
 REPO_ROOT = File.expand_path("..", __dir__)
 PACKAGE_PATH = File.join(REPO_ROOT, ".build/mas/Luxel.pkg")
@@ -186,7 +185,7 @@ def ensure_time_sensitive_notifications_capability!
 end
 
 def update_app_review_notes!(version)
-  notes_path = File.join(REPO_ROOT, "../../docs/app-review/review-notes.txt")
+  notes_path = File.join(REPO_ROOT, "../../docs/ux/app-store/review-notes.txt")
   notes = File.read(notes_path).strip
   UI.user_error!("App Review notes must not be empty") if notes == ""
   UI.user_error!("App Review notes exceed Apple's 4,000-byte limit") if notes.bytesize > 4_000

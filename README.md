@@ -1,6 +1,6 @@
 # Luxel
 
-Luxel is a native macOS menu bar screen recorder inspired by Luxel and rebuilt in Swift. The app records displays, windows, selected regions, audio, and automation-driven workflows, then exports through Apple-native media pipelines plus in-process native WebM and AV1 adapters.
+Luxel is a native macOS menu bar screen recorder built in Swift. The app records displays, windows, selected regions, audio, and automation-driven workflows, then exports through Apple-native media pipelines plus in-process native WebM and AV1 adapters.
 
 <p align="right">
   <a href="https://apps.apple.com/us/app/luxel/id6800438206?mt=12" style="text-decoration: none;">
@@ -8,7 +8,7 @@ Luxel is a native macOS menu bar screen recorder inspired by Luxel and rebuilt i
   </a>
 </p>
 
-This repository is a monorepo for the macOS app, marketing/docs website, release scripts, and product planning docs. The standalone Rust CLI lives in [rawcontext/luxel-cli](https://github.com/rawcontext/luxel-cli).
+This repository is a monorepo for the macOS app, marketing/docs website, release scripts, and App Store tools. The standalone Rust CLI lives in [rawcontext/luxel-cli](https://github.com/rawcontext/luxel-cli).
 
 ## Start Here
 
@@ -46,7 +46,7 @@ This repository is a monorepo for the macOS app, marketing/docs website, release
 ├── apps/
 │   ├── macos/                        SwiftPM macOS app, tests, and signing scripts
 │   └── web/                          Astro website and user docs
-├── docs/                             Architecture decisions, plans, release docs
+├── docs/ux/app-store/                 App Store metadata, screenshots, and tools
 └── packages/                         Reserved workspace package directory
 ```
 
@@ -65,15 +65,7 @@ apps/macos/Scripts                    Local build, signing, packaging, validatio
 apps/macos/fastlane                   Fastlane lanes used by TestFlight CI
 ```
 
-Important docs:
-
-```text
-docs/Luxel-swift-reimplementation-plan.md     Product and architecture intent
-docs/luxel-v1-codec-decision.md             Current v1 export format decision
-docs/native-codec-export-decision.md        Native codec constraints and follow-up criteria
-docs/future/README.md                       Indexed backlog for post-v1 feature specs
-docs/testflight-ci.md                       TestFlight CI secret and workflow notes
-```
+App Store metadata, review notes, screenshot sources, and localization tools live together in `docs/ux/app-store`.
 
 ## Toolchain
 
@@ -345,4 +337,15 @@ The TestFlight workflow runs on the repository-scoped Luxel Mac Mini runner and 
 - A pushed tag matching `v*`.
 - A manual `workflow_dispatch` run with optional `marketing_version`, `build_number`, and TestFlight changelog inputs.
 
-CI checks out the repository, reads the Ruby version from `.tool-versions`, installs Bundler dependencies for `apps/macos`, verifies Xcode, then runs the Fastlane TestFlight lane inside CI. Release signing and App Store Connect credentials come from GitHub repository secrets described in [docs/testflight-ci.md](docs/testflight-ci.md).
+## Private support submissions
+
+The website sends support messages and reply email addresses to the private
+`ccheney/luxel-support` repository. Configure `GITHUB_SUPPORT_REPO` and
+`GITHUB_SUPPORT_TOKEN` in the hosting environment; the token needs repository
+metadata read access and issues write access. The endpoint checks that the
+repository is private before sending contact details or message text.
+Reply to the email address in the private issue. Create a separate public issue
+with a summary that contains no personal information when needed.
+
+App Store workflows read the Apple account email from the `FASTLANE_USER`
+GitHub Actions secret. Local Fastlane commands use the same environment variable.

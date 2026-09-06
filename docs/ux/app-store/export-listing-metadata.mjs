@@ -11,7 +11,7 @@ import {
 const scriptPath = fileURLToPath(import.meta.url);
 const scriptDirectory = dirname(scriptPath);
 const defaultSourcePath = resolve(scriptDirectory, "listing-metadata.md");
-const defaultReviewNotesPath = resolve(scriptDirectory, "../../app-review/review-notes.txt");
+const defaultReviewNotesPath = resolve(scriptDirectory, "review-notes.txt");
 
 export async function exportListingMetadata({
   sourcePath = defaultSourcePath,

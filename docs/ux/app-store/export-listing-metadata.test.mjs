@@ -12,7 +12,7 @@ import {
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const sourcePath = resolve(scriptDirectory, "listing-metadata.md");
-const reviewNotesPath = resolve(scriptDirectory, "../../app-review/review-notes.txt");
+const reviewNotesPath = resolve(scriptDirectory, "review-notes.txt");
 
 async function readTree(rootPath) {
   const files = {};

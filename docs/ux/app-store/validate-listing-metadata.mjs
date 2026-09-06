@@ -14,13 +14,13 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDirectory, "../../..");
 const metadataPath = resolve(scriptDirectory, "listing-metadata.md");
 const markdown = await readFile(metadataPath, "utf8");
-const reviewNotes = await readFile(resolve(repositoryRoot, "docs/app-review/review-notes.txt"), "utf8");
+const reviewNotes = await readFile(resolve(repositoryRoot, "docs/ux/app-store/review-notes.txt"), "utf8");
 const screenshotConfiguration = JSON.parse(
   await readFile(resolve(scriptDirectory, "localized-screenshot-headings.json"), "utf8"),
 );
-const committedScreenshotRoot = resolve(repositoryRoot, "docs/design/app-store-localized");
+const committedScreenshotRoot = resolve(repositoryRoot, "docs/ux/app-store/screenshots/localized");
 const committedScreenshotManifest = JSON.parse(
-  await readFile(resolve(repositoryRoot, "docs/design/app-store-localized-manifest.json"), "utf8"),
+  await readFile(resolve(repositoryRoot, "docs/ux/app-store/screenshots/localized-manifest.json"), "utf8"),
 );
 
 const requiredFields = [
@@ -43,12 +43,12 @@ const characterLimits = {
   whatsNew: 4_000,
 };
 const screenshotReferences = [
-  ["docs/design/app-store-05-menu-bar.png", "menu-bar"],
-  ["docs/design/app-store-01-area-capture.png", "area-capture"],
-  ["docs/design/app-store-06-transcripts.png", "transcripts"],
-  ["docs/design/app-store-04-export.png", "export"],
-  ["docs/design/app-store-03-recording-status.png", "recording-status"],
-  ["docs/design/app-store-02-editor-trim.png", "editor-trim"],
+  ["docs/ux/app-store/screenshots/app-store-05-menu-bar.png", "menu-bar"],
+  ["docs/ux/app-store/screenshots/app-store-01-area-capture.png", "area-capture"],
+  ["docs/ux/app-store/screenshots/app-store-06-transcripts.png", "transcripts"],
+  ["docs/ux/app-store/screenshots/app-store-04-export.png", "export"],
+  ["docs/ux/app-store/screenshots/app-store-03-recording-status.png", "recording-status"],
+  ["docs/ux/app-store/screenshots/app-store-02-editor-trim.png", "editor-trim"],
 ];
 
 function characterCount(value) {

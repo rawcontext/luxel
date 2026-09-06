@@ -45,7 +45,7 @@ jobs:
       - name: Configure temporary screenshot paths
         run: |
           {
-            echo "APP_STORE_SCREENSHOTS_PATH=$GITHUB_WORKSPACE/docs/design/app-store-localized"
+            echo "APP_STORE_SCREENSHOTS_PATH=$GITHUB_WORKSPACE/docs/ux/app-store/screenshots/localized"
             echo "APP_STORE_SCREENSHOTS_RENDERED_PATH=$RUNNER_TEMP/luxel-app-store-screenshots"
             echo "APP_STORE_SCREENSHOTS_MANIFEST=$RUNNER_TEMP/luxel-app-store-screenshots.json"
           } >> "$GITHUB_ENV"
