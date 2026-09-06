@@ -12,12 +12,12 @@ struct TranscriptSpeakerPaletteTests {
         )
     }
 
-    @Test("provides distinct colors for the reported known speakers")
+    @Test("provides distinct colors for seven example speakers")
     func distinguishesReportedSpeakers() {
         let names = [
             "Taylor Reed",
             "Morgan Lee",
-            "ccheney",
+            "Casey Brooks",
             "Jordan Smith",
             "Alex Rivera",
             "Avery Chen",
