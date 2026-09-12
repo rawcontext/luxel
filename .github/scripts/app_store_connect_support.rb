@@ -6,9 +6,7 @@ require "json"
 require "net/http"
 require "openssl"
 require "open3"
-require "stringio"
 require "uri"
-require "zlib"
 
 module AppStoreConnectSupport
   API_ORIGIN = "https://api.appstoreconnect.apple.com"
@@ -65,46 +63,17 @@ module AppStoreConnectSupport
     JSON.parse(response.body)
   end
 
-  def post_json(url, token, value)
-    response = request(
-      url,
-      token: token,
-      method: Net::HTTP::Post,
-      accept: "application/json",
-      content_type: "application/json",
-      body: JSON.generate(value)
-    )
-    JSON.parse(response.body)
-  end
-
-  def get_bytes(url, token: nil)
-    request(url, token: token, accept: "application/octet-stream", accept_encoding: "identity").body
-  end
-
-  def get_gzip_report(url, token:, request: method(:request))
-    request.call(url, token: token, accept: "application/a-gzip", accept_encoding: "identity").body
-  end
-
-  def request(url, token:, method: Net::HTTP::Get, accept:, content_type: nil, body: nil, accept_encoding: nil)
+  def request(url, token:, accept:)
     uri = URI(url)
-    request = method.new(uri)
+    request = Net::HTTP::Get.new(uri)
     request["Authorization"] = "Bearer #{token}" if token
     request["Accept"] = accept
-    request["Accept-Encoding"] = accept_encoding if accept_encoding
-    request["Content-Type"] = content_type if content_type
-    request.body = body if body
     response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 30) do |http|
       http.request(request)
     end
     return response if response.is_a?(Net::HTTPSuccess)
 
     raise RequestError.new(response.code, response.body)
-  end
-
-  def gunzip(value)
-    return value unless value.byteslice(0, 2) == "\x1F\x8B".b
-
-    Zlib::GzipReader.new(StringIO.new(value)).read
   end
 
   def paginated_data(url, token, get: method(:get_json))
