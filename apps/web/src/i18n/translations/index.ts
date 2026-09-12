@@ -19,8 +19,10 @@ import koDocs1 from "./ko-docs-1.json";
 import koDocs2 from "./ko-docs-2.json";
 import ptBR from "./pt-BR.json";
 import ptPT from "./pt-PT.json";
-import ptDocs1 from "./pt-docs-1.json";
-import ptDocs2 from "./pt-docs-2.json";
+import ptBRDocs1 from "./pt-BR-docs-1.json";
+import ptBRDocs2 from "./pt-BR-docs-2.json";
+import ptPTDocs1 from "./pt-PT-docs-1.json";
+import ptPTDocs2 from "./pt-PT-docs-2.json";
 import sources from "./sources.json";
 import vi from "./vi.json";
 import viDocs1 from "./vi-docs-1.json";
@@ -40,8 +42,8 @@ const localizedValues: Record<TranslatedLocale, string[]> = {
   ko: [...ko, ...koDocs1, ...koDocs2],
   vi: [...vi, ...viDocs1, ...viDocs2],
   "zh-Hans": [...zhHans, ...zhHansDocs1, ...zhHansDocs2],
-  "pt-BR": [...ptBR, ...ptDocs1, ...ptDocs2],
-  "pt-PT": [...ptPT, ...ptDocs1, ...ptDocs2]
+  "pt-BR": [...ptBR, ...ptBRDocs1, ...ptBRDocs2],
+  "pt-PT": [...ptPT, ...ptPTDocs1, ...ptPTDocs2]
 };
 
 export const translations = Object.fromEntries(

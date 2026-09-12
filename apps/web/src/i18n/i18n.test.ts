@@ -2,6 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
+import { commonCopy } from "./common";
+import { menuBarDemoCopy } from "./menu-bar-demo";
+
 import {
   defaultLocale,
   localizedPath,
@@ -16,6 +19,23 @@ const translationsRoot = path.join(import.meta.dir, "translations");
 const translatedLocales = supportedLocales.filter((locale) => locale !== defaultLocale);
 
 describe("locale parity", () => {
+  test("covers every navigation and interactive-demo string and preserves placeholders", () => {
+    const flatten = (copy: object, prefix = ""): Record<string, string> => Object.fromEntries(
+      Object.entries(copy).flatMap(([key, value]) => typeof value === "string"
+        ? [[`${prefix}${key}`, value]]
+        : Object.entries(flatten(value, `${prefix}${key}.`)))
+    );
+    const english = flatten({ common: commonCopy("en"), demo: menuBarDemoCopy("en") });
+    for (const locale of supportedLocales) {
+      const copy = flatten({ common: commonCopy(locale), demo: menuBarDemoCopy(locale) });
+      expect(Object.keys(copy).sort()).toEqual(Object.keys(english).sort());
+      for (const [key, value] of Object.entries(copy)) {
+        expect(value.trim().length).toBeGreaterThan(0);
+        expect(value.match(/\{\w+\}/g) ?? []).toEqual(english[key].match(/\{\w+\}/g) ?? []);
+      }
+    }
+  });
+
   test("matches the macOS app locale list exactly", () => {
     const swift = readFileSync(
       path.join(repositoryRoot, "apps/macos/Sources/LuxelCore/Application/Localization/LuxelLocalization.swift"),
@@ -31,11 +51,10 @@ describe("locale parity", () => {
     const sourceCount = readJson("sources.json").length;
 
     for (const locale of translatedLocales) {
-      const docsLocale = locale.startsWith("pt-") ? "pt" : locale;
       const values = [
         ...readJson(`${locale}.json`),
-        ...readJson(`${docsLocale}-docs-1.json`),
-        ...readJson(`${docsLocale}-docs-2.json`)
+        ...readJson(`${locale}-docs-1.json`),
+        ...readJson(`${locale}-docs-2.json`)
       ];
 
       expect(values).toHaveLength(sourceCount);
@@ -81,6 +100,17 @@ describe("browser language negotiation", () => {
 });
 
 describe("static localized output", () => {
+  test("uses the appropriate Portuguese regional documentation", () => {
+    const brazil = readBuiltPage("pt-BR", "/docs");
+    const portugal = readBuiltPage("pt-PT", "/docs");
+    expect(brazil).toContain("Gravação de tela e áudio do sistema");
+    expect(brazil).toContain("Avisos de Detecção de Fala");
+    expect(brazil).not.toContain("A deteção de fala não está a ouvir");
+    expect(portugal).toContain("Gravação do ecrã e do áudio do sistema");
+    expect(portugal).toContain("Ficheiros recentes");
+    expect(portugal).not.toContain("Arquivos recentes");
+  });
+
   test("renders every page at a locale-prefixed URL", () => {
     for (const locale of translatedLocales) {
       for (const pagePath of publicPagePaths) {
