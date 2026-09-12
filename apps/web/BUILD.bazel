@@ -9,7 +9,7 @@ load("//tools/bazel:web_settings.bzl", "web_config")
 
 package(default_visibility = ["//:__pkg__"])
 
-filegroup(
+copy_to_bin(
     name = "duplication_sources",
     srcs = glob([
         "src/**",

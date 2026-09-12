@@ -14,7 +14,8 @@ BUILD_FLAGS=(
   "--//apps/web:turnstile_site_key=${PUBLIC_TURNSTILE_SITE_KEY:-}"
 )
 if [[ "${VERCEL:-}" == "1" ]]; then
-  CACHE_ROOT="$REPOSITORY_ROOT/apps/web/.vercel/cache/bazel"
+  # Vercel persists node_modules caches even when its output merger drops config.cache.
+  CACHE_ROOT="$REPOSITORY_ROOT/apps/web/node_modules/.cache/bazel"
   export BAZELISK_HOME="$CACHE_ROOT/bazelisk"
   BUILD_FLAGS+=("--disk_cache=$CACHE_ROOT/actions" "--repository_cache=$CACHE_ROOT/repository" "--repo_contents_cache=")
 fi

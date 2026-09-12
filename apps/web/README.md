@@ -16,7 +16,7 @@ Dependencies are resolved from the root `pnpm-lock.yaml`. Bazel supplies Node.js
 
 The `luxel-media` project uses `rawcontext/luxel`, root directory `apps/web`, and production branch `master`. The checked-in `vercel.json` selects the custom Bazel build and Vercel Build Output API. The generated output retains Astro's routes and server function for the support form.
 
-`tools/bazel/vercel-build.sh` builds only the website, exports its declared output to `apps/web/.vercel/output`, and keeps Bazel caches under `.vercel/cache` on Vercel. The output configuration asks Vercel to preserve the action, repository archive, and Bazelisk caches between deployments. Pull-request previews build the site without running unit tests.
+`tools/bazel/vercel-build.sh` builds only the website, exports its declared output to `apps/web/.vercel/output`, and keeps Bazel action, repository archive, and Bazelisk caches under `node_modules/.cache/bazel` on Vercel. This uses Vercel’s persisted dependency cache; unpacked repository trees remain outside it. Pull-request previews build the site without running unit tests.
 
 For a local export:
 

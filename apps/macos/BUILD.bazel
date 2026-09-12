@@ -20,7 +20,7 @@ load("//tools/bazel:validated_files.bzl", "validated_files")
 
 package(default_visibility = ["//:__pkg__"])
 
-filegroup(
+copy_to_bin(
     name = "duplication_sources",
     srcs = glob([
         "Sources/**",
