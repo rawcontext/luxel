@@ -74,11 +74,31 @@ jobs:
           bun install --frozen-lockfile
           bunx turbo run test --filter=@luxel/cli --filter=@luxel/web
 
+      - name: Build and test macOS localizations
+        working-directory: apps/macos
+        run: swift test --filter LocalizationTests
+
       - name: Test macOS package
+        timeout-minutes: 5
         working-directory: apps/macos
         run: |
-          swift test --filter LocalizationTests
-          swift test
+          (
+            sleep 90
+            for test_pid in $(pgrep -x swiftpm-testing); do
+              sample "$test_pid" 5 -file "$RUNNER_TEMP/swift-test-$test_pid.sample.txt" || true
+            done
+          ) &
+          sampler_pid=$!
+          trap 'kill "$sampler_pid" 2>/dev/null || true' EXIT
+          swift test --skip-build
+
+      - name: Upload stalled-test diagnostics
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: swift-test-diagnostics
+          path: ${{ runner.temp }}/swift-test-*.sample.txt
+          if-no-files-found: ignore
 
       - name: Test App Store metadata exporter
         run: node --test app-store/export-listing-metadata.test.mjs
