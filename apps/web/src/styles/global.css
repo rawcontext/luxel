@@ -340,6 +340,11 @@
     box-shadow: 0 0 10px rgb(255 69 58 / 0.8);
   }
 
+  .hero__badge a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
   .hero__title {
     margin-block-start: 26px;
     font-size: clamp(44px, 7vw, 76px);
