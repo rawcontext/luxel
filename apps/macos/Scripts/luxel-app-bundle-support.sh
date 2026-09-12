@@ -13,6 +13,7 @@ copy_luxel_app_payload() {
 	cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
 	cp "${PRIVACY_MANIFEST}" "${APP_PATH}/Contents/Resources/PrivacyInfo.xcprivacy"
 	cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
+	cp "${PACKAGE_ROOT}/../../LICENSE" "${APP_PATH}/Contents/Resources/LICENSE.txt"
 	mkdir -p "${APP_PATH}/Contents/Resources/Models"
 	cp -R "${SPEAKER_DIARIZATION_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
 	bash "${SPEAKER_DIARIZATION_MODEL_AUDITOR}" "${APP_PATH}"

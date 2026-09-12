@@ -53,6 +53,7 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             --title "Luxel CLI ${GITHUB_REF_NAME#cli-v}" \
+            --latest=false \
             --generate-notes \
             apps/cli/dist/luxel-macos-universal.tar.gz \
             apps/cli/dist/luxel-macos-universal.tar.gz.sha256

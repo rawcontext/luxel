@@ -1377,9 +1377,16 @@
 
   .footer__links {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
     gap: 18px;
     font-size: 12.5px;
+  }
+
+  .footer__github {
+    display: inline-flex;
+    align-items: center;
   }
 }
 

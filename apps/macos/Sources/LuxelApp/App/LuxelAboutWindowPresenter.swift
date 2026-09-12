@@ -24,7 +24,7 @@ final class LuxelAboutWindowPresenter {
         let window = NSWindow(contentViewController: hostingController)
         window.title = "About \(metadata.displayName)"
         window.styleMask = [.titled, .closable]
-        window.setContentSize(NSSize(width: 360, height: 380))
+        window.setContentSize(NSSize(width: 360, height: 410))
         window.center()
         window.isReleasedWhenClosed = false
         self.window = window
@@ -62,6 +62,11 @@ private struct LuxelAboutView: View {
 
             VStack(spacing: 8) {
                 Link("luxel.media", destination: LuxelAboutLinks.website)
+
+                HStack(spacing: 12) {
+                    Link("GitHub Repository", destination: LuxelAboutLinks.repository)
+                    Link("MIT License", destination: LuxelAboutLinks.license)
+                }
 
                 HStack(spacing: 12) {
                     Link("Report an Issue", destination: LuxelAboutLinks.support)
@@ -104,6 +109,8 @@ private struct LuxelAboutView: View {
 
 private enum LuxelAboutLinks {
     static let website = URL(string: "https://luxel.media")!
+    static let repository = URL(string: "https://github.com/rawcontext/luxel")!
+    static let license = URL(string: "https://github.com/rawcontext/luxel/blob/master/LICENSE")!
     static let support = URL(string: "https://luxel.media/support")!
     static let appStore = URL(
         string: "https://apps.apple.com/us/app/luxel/id6800438206?mt=12")!

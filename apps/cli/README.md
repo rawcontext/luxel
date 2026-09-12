@@ -153,6 +153,19 @@ protocol fixtures.
 The monorepo's CLI packaging workflow accepts manual runs from `master` and
 owner-created `cli-v<version>` tags. The tag version must match `Cargo.toml`.
 
-While the monorepo is private, the website installer uses the existing public
-release feed in `rawcontext/luxel-cli`. Keep those release assets available until
-the monorepo is public and its CLI release assets have been published.
+The website installer downloads the `cli-v1.0.0` release from this repository.
+Anonymous downloads become available when the repository is public.
+
+## License
+
+Luxel CLI is [MIT licensed](LICENSE). Its dependency notices are in
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). Both files ship in the release
+archive; the installer keeps them in `~/.local/share/licenses/luxel/`.
+
+After changing Cargo dependencies, regenerate the notices from `apps/cli`:
+
+```sh
+python3 scripts/generate-license-notices.py
+```
+
+Packaging verifies that these notices match the locked macOS dependency graph.

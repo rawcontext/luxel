@@ -2,8 +2,7 @@
 set -eu
 
 asset="luxel-macos-universal.tar.gz"
-# Keep public downloads available while the monorepo is private.
-release_base_url="${LUXEL_RELEASE_BASE_URL:-https://github.com/rawcontext/luxel-cli/releases/latest/download}"
+release_base_url="${LUXEL_RELEASE_BASE_URL:-https://github.com/rawcontext/luxel/releases/download/cli-v1.0.0}"
 default_install_dir="${HOME}/.local/bin"
 install_dir="${LUXEL_INSTALL_DIR:-$default_install_dir}"
 
@@ -18,7 +17,7 @@ case "$(uname -m)" in
   *) fail "Apple Silicon or Intel hardware is required" ;;
 esac
 
-for command in curl install shasum tar; do
+for command in curl install shasum tar sort; do
   command -v "$command" >/dev/null 2>&1 || fail "$command is required"
 done
 
@@ -40,12 +39,17 @@ esac
 actual_checksum="$(shasum -a 256 "$archive" | awk '{ print $1 }')"
 [ "$actual_checksum" = "$expected_checksum" ] || fail "the release checksum did not match"
 
-[ "$(tar -tzf "$archive")" = "luxel" ] || fail "the release archive is invalid"
+[ "$(tar -tzf "$archive" | LC_ALL=C sort)" = "$(printf '%s\n' LICENSE THIRD_PARTY_LICENSES.md luxel)" ] || fail "the release archive is invalid"
 mkdir -p "$work_dir/extracted" "$install_dir"
 tar -xzf "$archive" -C "$work_dir/extracted"
-[ -f "$work_dir/extracted/luxel" ] || fail "the release archive does not contain luxel"
+for file in luxel LICENSE THIRD_PARTY_LICENSES.md; do
+  [ -f "$work_dir/extracted/$file" ] && [ ! -L "$work_dir/extracted/$file" ] || fail "the release archive is missing $file"
+done
 
 install -m 755 "$work_dir/extracted/luxel" "$install_dir/luxel"
+license_dir="$install_dir/../share/licenses/luxel"
+mkdir -p "$license_dir"
+install -m 644 "$work_dir/extracted/LICENSE" "$work_dir/extracted/THIRD_PARTY_LICENSES.md" "$license_dir/"
 printf 'Installed luxel to %s/luxel\n' "$install_dir"
 
 case ":${PATH:-}:" in

@@ -15,6 +15,7 @@ type CommonCopy = {
     tagline: string;
     aria: string;
     home: string;
+    license: string;
   };
   installCommand: {
     copy: string;
@@ -49,7 +50,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Screen recording for Mac",
       aria: "Footer",
-      home: "Home"
+      home: "Home",
+      license: "MIT License"
     },
     installCommand: {
       copy: "Copy",
@@ -82,7 +84,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Bildschirmaufnahme für den Mac",
       aria: "Fußzeile",
-      home: "Startseite"
+      home: "Startseite",
+      license: "MIT-Lizenz"
     },
     installCommand: {
       copy: "Kopieren",
@@ -115,7 +118,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Grabación de pantalla para Mac",
       aria: "Pie de página",
-      home: "Inicio"
+      home: "Inicio",
+      license: "Licencia MIT"
     },
     installCommand: {
       copy: "Copiar",
@@ -148,7 +152,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Enregistrement d’écran pour Mac",
       aria: "Pied de page",
-      home: "Accueil"
+      home: "Accueil",
+      license: "Licence MIT"
     },
     installCommand: {
       copy: "Copier",
@@ -181,7 +186,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Registrazione schermo per Mac",
       aria: "Piè di pagina",
-      home: "Home"
+      home: "Home",
+      license: "Licenza MIT"
     },
     installCommand: {
       copy: "Copia",
@@ -214,7 +220,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Mac用画面収録",
       aria: "フッター",
-      home: "ホーム"
+      home: "ホーム",
+      license: "MITライセンス"
     },
     installCommand: {
       copy: "コピー",
@@ -247,7 +254,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Mac용 화면 녹화",
       aria: "바닥글",
-      home: "홈"
+      home: "홈",
+      license: "MIT 라이선스"
     },
     installCommand: {
       copy: "복사",
@@ -280,7 +288,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Ghi màn hình cho Mac",
       aria: "Chân trang",
-      home: "Trang chủ"
+      home: "Trang chủ",
+      license: "Giấy phép MIT"
     },
     installCommand: {
       copy: "Sao chép",
@@ -313,7 +322,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Mac 屏幕录制",
       aria: "页脚",
-      home: "首页"
+      home: "首页",
+      license: "MIT 许可证"
     },
     installCommand: {
       copy: "复制",
@@ -346,7 +356,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Gravação de tela para Mac",
       aria: "Rodapé",
-      home: "Início"
+      home: "Início",
+      license: "Licença MIT"
     },
     installCommand: {
       copy: "Copiar",
@@ -379,7 +390,8 @@ const common: Record<Locale, CommonCopy> = {
     footer: {
       tagline: "· Gravação de ecrã para Mac",
       aria: "Rodapé",
-      home: "Início"
+      home: "Início",
+      license: "Licença MIT"
     },
     installCommand: {
       copy: "Copiar",

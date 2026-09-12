@@ -55,3 +55,12 @@ bun run --cwd apps/web dev
 ```
 
 See [AGENTS.md](AGENTS.md) for contribution guidance.
+
+## License
+
+Luxel's original code is licensed under the [MIT License](LICENSE),
+copyright © 2026 Raw Context LLC. Third-party code and models retain their
+own licenses; the MIT license does not replace those terms. See the
+[macOS acknowledgements](apps/macos/THIRD_PARTY_LICENSES.md) and
+[CLI acknowledgements](apps/cli/THIRD_PARTY_LICENSES.md), plus the
+[website notices](apps/web/THIRD_PARTY_LICENSES.md).

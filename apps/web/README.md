@@ -22,7 +22,7 @@ The `luxel-media` project uses:
 - Build command: `bun run --cwd ../.. vercel-build`
 - Output directory: detected by the Astro Vercel adapter
 
-Run Vercel CLI commands from the monorepo root. After linking the project, an
+Run Vercel CLI commands from a clean checkout of the monorepo root. After linking the project, an
 authenticated production deployment uses:
 
 ```sh
@@ -42,6 +42,6 @@ Source and documentation links point to
 [`apps/cli`](https://github.com/rawcontext/luxel/tree/master/apps/cli), where the CLI
 README lives. These GitHub links require repository access while the monorepo is private.
 
-The public installer temporarily keeps the existing `rawcontext/luxel-cli` release
-feed so downloads remain available. Move the feed only after the monorepo is public
-and its CLI release assets are available.
+The installer targets the monorepo's `cli-v1.0.0` release. Source links and anonymous
+release downloads return 404 while the repository is private. Keep the CLI's
+versioned download URL aligned with published `cli-v<version>` release assets.

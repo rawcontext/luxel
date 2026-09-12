@@ -131,6 +131,7 @@ extension AppBundleConfigurationTests {
         #expect(script.contains("source \"${PACKAGE_ROOT}/Scripts/luxel-app-bundle-support.sh\""))
         #expect(support.contains("Contents/Resources"))
         #expect(support.contains("ThirdPartyLicenses.md"))
+        #expect(support.contains("Contents/Resources/LICENSE.txt"))
     }
 
     @Test("signed app scripts bundle Studio Voice model resources")

@@ -1,5 +1,36 @@
 # Third-Party License Maintenance
 
+Luxel's original code is MIT licensed at the monorepo root. Vendored and adapted
+third-party code and model files keep their existing licenses. Both signed app
+builds include `LICENSE.txt` and `ThirdPartyLicenses.md` in their resources.
+
+## MIT distribution review (2026-09-11)
+
+The pinned distribution uses the following licenses. None requires Luxel's
+original code to adopt a copyleft license; distribution still requires the
+notices and conditions for each component.
+
+| Components | License and retained obligations |
+| --- | --- |
+| libvpx, Opus, SVT-AV1 and its embedded components, fastcluster | BSD variants; preserve copyright, license, disclaimer, non-endorsement, and applicable patent grants. The Clear BSD license itself grants no patent rights. |
+| FluidAudio, NemoTextProcessing, VBx, DeepFilterNet, adapted speech-swift runtime, MODNet | Apache-2.0; retain license, attribution and NOTICE contents, mark adapted files, and retain patent terms. |
+| Speaker diarization models | CC-BY-4.0; retain model attribution, provenance, license link and modification status. These model files are not relicensed as MIT. |
+| Silero VAD | MIT; retain its copyright and permission notice. |
+| Rust crates linked by NemoTextProcessing | MIT, Apache-2.0, and Unicode-3.0; the exact pinned crate notices are included under NemoTextProcessing in the ledger. |
+
+The review covers the native artifact manifest, pinned FluidAudio package and
+its static binary target, adapted runtime source, and all four bundled model
+manifests. The CLI's separate notice generator covers both macOS Cargo target
+graphs and rejects unreviewed license expressions during packaging.
+
+Sources: [Apache redistribution guidance](https://www.apache.org/foundation/license-faq#Distribute-changes),
+[CC-BY-4.0 conditions](https://creativecommons.org/licenses/by/4.0/),
+[MIT terms](https://opensource.org/license/mit), and
+[Unicode terms](https://www.unicode.org/license.txt). Component-specific source
+revisions and license texts are recorded in the acknowledgements and manifests.
+
+## Updating dependencies
+
 Before distributing an additional third-party library or model, add its exact
 upstream license text, copyright notice, source, and required attribution to
 `THIRD_PARTY_LICENSES.md`. The shipped acknowledgments file must contain only
