@@ -21,7 +21,6 @@ node_modules/
 .vercel/output/
 .turbo/
 .DS_Store
-apps/web/public/videos/luxel-app-review.mp4
 xcuserdata/
 *.xcuserstate
 *.xcscmblueprint
