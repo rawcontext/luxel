@@ -13,6 +13,11 @@ TestFlight uses `pull_request_target` only for the `closed` event so signing cre
 
 App Store review submission remains a separate manual workflow restricted to `ccheney` on `master`. No workflow subscribes to pull-request opening/update events, issue comments, or fork events.
 
+Unit tests run only after an owner merge into `master`. The TestFlight workflow
+tests the exact merge commit (Swift, CLI, website, and automation scripts), then
+uploads only if that test job succeeds. Manual validation, scheduled feedback
+sync, and CLI packaging do not run unit tests.
+
 ## Branch access
 
 The repository is currently private in the `rawcontext` organization on GitHub Free. Branch rulesets are not enforced in that configuration. Once the repository is public, restore these rulesets for `master` and the default branch:
@@ -55,4 +60,5 @@ actionlint
 gh workflow run validate-automation.yml --ref master
 ```
 
-The manual validation workflow checks the hosted runner, Ruby/Fastlane setup, workflow trust policy, App Store sync tests, CLI workspace checks, and macOS package tests. It does not require release credentials.
+The manual validation workflow checks the hosted runner, Ruby/Fastlane setup,
+and CLI linting. It does not run unit tests or require release credentials.

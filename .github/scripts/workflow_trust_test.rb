@@ -97,6 +97,23 @@ class WorkflowTrustTest < Minitest::Test
     end
   end
 
+  def test_unit_tests_run_only_after_merge_and_gate_testflight
+    jobs = workflows.fetch("testflight.yml").fetch("jobs")
+    assert_equal "unit_tests", jobs.fetch("testflight").fetch("needs")
+    assert_equal jobs.fetch("testflight").fetch("if"), jobs.fetch("unit_tests").fetch("if")
+
+    workflows.each do |name, workflow|
+      workflow.fetch("jobs").each do |job_name, job|
+        job.fetch("steps").each do |step|
+          command = step.fetch("run", "")
+          next unless command.match?(/swift test|cargo test|turbo run [^\n]*\btest\b|_test\.rb/)
+
+          assert_equal ["testflight.yml", "unit_tests"], [name, job_name]
+        end
+      end
+    end
+  end
+
   private
 
   def testflight_allowed?(context)

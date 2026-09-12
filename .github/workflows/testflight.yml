@@ -10,7 +10,78 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  unit_tests:
+    name: Unit tests after merge
+    if: >-
+      github.repository == 'rawcontext/luxel' &&
+      github.repository_id == '1269656539' &&
+      github.actor_id == '302437' &&
+      github.triggering_actor == 'ccheney' &&
+      github.event_name == 'pull_request_target' &&
+      github.event.action == 'closed' &&
+      github.ref == 'refs/heads/master' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.merged_by.id == 302437 &&
+      github.event.pull_request.base.ref == 'master' &&
+      github.event.pull_request.base.repo.id == 1269656539 &&
+      github.event.pull_request.merge_commit_sha != ''
+    runs-on: macos-26
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Set up Ruby and Fastlane
+        uses: ./.github/actions/setup-ruby
+        with:
+          bundle-install: "true"
+
+      - name: Verify toolchain
+        run: |
+          test "$RUNNER_ENVIRONMENT" = "github-hosted"
+          test "$(uname -m)" = "arm64"
+          xcodebuild -version
+          swift --version
+          ruby --version
+          gh --version
+
+      - name: Test workflow policy and App Store sync
+        run: |
+          gem install minitest --version 6.0.6 --no-document
+          ruby .github/scripts/workflow_trust_test.rb
+          ruby .github/scripts/sync_app_store_reviews_test.rb
+          ruby .github/scripts/sync_app_store_crashes_test.rb
+          ruby .github/scripts/sync_app_store_actionable_test.rb
+
+      - name: Verify Fastlane loads
+        working-directory: apps/macos
+        run: bundle exec fastlane lanes
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+
+      - name: Test CLI and website workspaces
+        run: |
+          bun install --frozen-lockfile
+          bunx turbo run test --filter=@luxel/cli --filter=@luxel/web
+
+      - name: Test macOS package
+        working-directory: apps/macos
+        run: |
+          swift test --filter LocalizationTests
+          swift test
+
   testflight:
+    needs: unit_tests
     name: Build and Upload to TestFlight
     if: >-
       github.repository == 'rawcontext/luxel' &&

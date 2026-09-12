@@ -37,7 +37,7 @@ jobs:
           test "$GITHUB_REF_NAME" = "cli-v$version"
 
       - name: Check and package CLI
-        run: bunx turbo run lint test package --filter=@luxel/cli
+        run: bunx turbo run lint package --filter=@luxel/cli
 
       - name: Upload CLI artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

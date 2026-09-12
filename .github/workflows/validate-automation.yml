@@ -38,14 +38,6 @@ jobs:
           ruby --version
           gh --version
 
-      - name: Test workflow policy and App Store sync
-        run: |
-          gem install minitest --version 6.0.6 --no-document
-          ruby .github/scripts/workflow_trust_test.rb
-          ruby .github/scripts/sync_app_store_reviews_test.rb
-          ruby .github/scripts/sync_app_store_crashes_test.rb
-          ruby .github/scripts/sync_app_store_actionable_test.rb
-
       - name: Verify Fastlane loads
         working-directory: apps/macos
         run: bundle exec fastlane lanes
@@ -55,11 +47,7 @@ jobs:
         with:
           bun-version-file: package.json
 
-      - name: Test CLI workspace
+      - name: Lint CLI workspace
         run: |
           bun install --frozen-lockfile
-          bunx turbo run lint test --filter=@luxel/cli
-
-      - name: Test macOS package
-        working-directory: apps/macos
-        run: swift test
+          bunx turbo run lint --filter=@luxel/cli
