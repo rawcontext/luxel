@@ -11,7 +11,7 @@ jobs:
   refresh-profile:
     name: Enable Capability and Refresh Profile
     if: >-
-      github.repository == 'ccheney/luxel' &&
+      github.repository == 'rawcontext/luxel' &&
       github.repository_id == '1269656539' &&
       github.actor_id == '302437' &&
       github.triggering_actor == 'ccheney' &&

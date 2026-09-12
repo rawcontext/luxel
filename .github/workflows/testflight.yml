@@ -13,7 +13,7 @@ jobs:
   testflight:
     name: Build and Upload to TestFlight
     if: >-
-      github.repository == 'ccheney/luxel' &&
+      github.repository == 'rawcontext/luxel' &&
       github.repository_id == '1269656539' &&
       github.actor_id == '302437' &&
       github.triggering_actor == 'ccheney' &&

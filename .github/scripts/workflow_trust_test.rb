@@ -14,7 +14,7 @@ class WorkflowTrustTest < Minitest::Test
     "validate-automation.yml" => ["workflow_dispatch"]
   }.freeze
   IDENTITY_GATE = [
-    "github.repository == 'ccheney/luxel'",
+    "github.repository == 'rawcontext/luxel'",
     "github.repository_id == '1269656539'",
     "github.actor_id == '302437'",
     "github.triggering_actor == 'ccheney'"
@@ -111,7 +111,7 @@ class WorkflowTrustTest < Minitest::Test
 
   def owner_merge_context
     {
-      "repository" => "ccheney/luxel", "repository_id" => "1269656539",
+      "repository" => "rawcontext/luxel", "repository_id" => "1269656539",
       "actor_id" => "302437", "triggering_actor" => "ccheney",
       "event_name" => "pull_request_target", "ref" => "refs/heads/master",
       "event" => {

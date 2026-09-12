@@ -14,10 +14,10 @@ App Store review submission remains a separate manual workflow restricted to `cc
 
 ## Branch access
 
-Two active repository rulesets protect `master` and the default branch:
+The repository is currently private in the `rawcontext` organization on GitHub Free. Branch rulesets are not enforced in that configuration. Once the repository is public, restore these rulesets for `master` and the default branch:
 
-- [Owner-only master updates](https://github.com/ccheney/luxel/rules/22996583) permits updates and PR merges only by the owner account, `ccheney` (user ID `302437`). Normal owner pushes remain allowed.
-- [Protect master history](https://github.com/ccheney/luxel/rules/22996718) blocks deletion and force pushes for everyone, including the owner.
+- [Owner-only master updates](rulesets/master-owner-updates.json) permits updates and PR merges only by `ccheney` (user ID `302437`). Normal owner pushes remain allowed.
+- [Protect master history](rulesets/master-history.json) blocks deletion and force pushes for everyone, including the owner.
 
 The definitions are checked in under `.github/rulesets/`. `CODEOWNERS` routes reviews to `ccheney`, and repository auto-merge is disabled. Contributors can open pull requests from forks once the repository is public; opening a pull request does not grant write or merge access.
 
@@ -30,16 +30,16 @@ Private-repository fork workflows are disabled, with no write tokens or secrets 
 Before changing visibility:
 
 ```sh
-gh api --method PUT repos/ccheney/luxel/actions/permissions -F enabled=false
+gh api --method PUT repos/rawcontext/luxel/actions/permissions -F enabled=false
 ```
 
-After the repository is public:
+After the repository is public, restore or create the two rulesets from `.github/rulesets/` and verify that they are active. Then configure the fork-approval policy before re-enabling Actions:
 
 ```sh
-gh api --method PUT repos/ccheney/luxel/actions/permissions/fork-pr-contributor-approval \
+gh api --method PUT repos/rawcontext/luxel/actions/permissions/fork-pr-contributor-approval \
   -f approval_policy=all_external_contributors
-gh api repos/ccheney/luxel/actions/permissions/fork-pr-contributor-approval
-gh api --method PUT repos/ccheney/luxel/actions/permissions -F enabled=true
+gh api repos/rawcontext/luxel/actions/permissions/fork-pr-contributor-approval
+gh api --method PUT repos/rawcontext/luxel/actions/permissions -F enabled=true
 ```
 
 Do not approve external-contributor workflows. A pull request can change or add workflow files, so the checks in the current workflows do not replace GitHub's fork-approval policy. Fork owners control Actions in their own repositories; those runs cannot access a runner or credentials registered to this repository.

@@ -14,7 +14,7 @@ A native macOS menu bar recorder with screen and audio capture, replay buffer, l
 Requires an Apple silicon Mac running macOS 26+, Xcode with Swift 6.2 or newer, [Bun](https://bun.sh/docs/installation), and an Apple Development signing certificate installed through Xcode.
 
 ```sh
-git clone https://github.com/ccheney/luxel.git
+git clone https://github.com/rawcontext/luxel.git
 cd luxel
 bun install --frozen-lockfile
 ```
