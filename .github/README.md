@@ -12,12 +12,21 @@ The workflows do not subscribe to pull requests, pull-request target events, iss
 
 ## Before making the repository public
 
-Private-repository fork workflows are disabled, with no write tokens or secrets passed to forks. GitHub does not expose the public fork-approval policy while a repository is private. After changing visibility, require approval for **all external contributors** before approving any workflow runs:
+Private-repository fork workflows are disabled, with no write tokens or secrets passed to forks. GitHub does not expose the public fork-approval policy while a repository is private. Keep Actions disabled during the visibility change, then require approval for **all external contributors** before re-enabling Actions.
+
+Before changing visibility:
+
+```sh
+gh api --method PUT repos/ccheney/luxel/actions/permissions -F enabled=false
+```
+
+After the repository is public:
 
 ```sh
 gh api --method PUT repos/ccheney/luxel/actions/permissions/fork-pr-contributor-approval \
   -f approval_policy=all_external_contributors
 gh api repos/ccheney/luxel/actions/permissions/fork-pr-contributor-approval
+gh api --method PUT repos/ccheney/luxel/actions/permissions -F enabled=true
 ```
 
 Do not approve external-contributor workflows. A pull request can change or add workflow files, so the checks in the current workflows do not replace GitHub's fork-approval policy. Fork owners control Actions in their own repositories; those runs cannot access a runner or credentials registered to this repository.
