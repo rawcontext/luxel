@@ -1,9 +1,0 @@
-[mcp_servers.google_ads]
-command = "/bin/zsh"
-args = [".codex/run-google-ads-mcp.sh"]
-cwd = "."
-env_vars = [
-  "GOOGLE_APPLICATION_CREDENTIALS",
-]
-env = { GOOGLE_CLOUD_PROJECT = "luxel-22b82", GOOGLE_PROJECT_ID = "luxel-22b82" }
-startup_timeout_sec = 120
