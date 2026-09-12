@@ -69,14 +69,57 @@ jobs:
         with:
           bun-version-file: package.json
 
+      - name: Cache Rust dependencies and compiled tests
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/cli/target
+          key: ${{ runner.os }}-${{ runner.arch }}-rust-${{ hashFiles('apps/cli/rust-toolchain.toml', 'apps/cli/Cargo.lock') }}-${{ hashFiles('apps/cli/src/**', 'apps/cli/tests/**') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-rust-${{ hashFiles('apps/cli/rust-toolchain.toml', 'apps/cli/Cargo.lock') }}-
+
       - name: Test CLI and website workspaces
         run: |
           bun install --frozen-lockfile
           bunx turbo run test --filter=@luxel/cli --filter=@luxel/web
 
+      - name: Restore Swift build cache
+        id: swift-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            apps/macos/.build/artifacts
+            apps/macos/.build/checkouts
+            apps/macos/.build/repositories
+            apps/macos/.build/arm64-apple-macosx
+            apps/macos/.build/build.db
+            apps/macos/.build/debug.yaml
+            apps/macos/.build/release.yaml
+            apps/macos/.build/workspace-state.json
+          key: ${{ runner.os }}-${{ runner.arch }}-swiftpm-xcode26.6-17F113-v1-${{ hashFiles('apps/macos/Package.swift', 'apps/macos/Package.resolved', 'apps/macos/Vendor/Artifacts/manifest.json') }}-${{ hashFiles('apps/macos/Sources/**', 'apps/macos/Tests/**') }}-tests
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-swiftpm-xcode26.6-17F113-v1-${{ hashFiles('apps/macos/Package.swift', 'apps/macos/Package.resolved', 'apps/macos/Vendor/Artifacts/manifest.json') }}-
+
       - name: Build and test macOS localizations
         working-directory: apps/macos
         run: swift test --filter LocalizationTests
+
+      - name: Save compiled Swift test cache
+        if: steps.swift-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            apps/macos/.build/artifacts
+            apps/macos/.build/checkouts
+            apps/macos/.build/repositories
+            apps/macos/.build/arm64-apple-macosx
+            apps/macos/.build/build.db
+            apps/macos/.build/debug.yaml
+            apps/macos/.build/release.yaml
+            apps/macos/.build/workspace-state.json
+          key: ${{ steps.swift-cache.outputs.cache-primary-key }}
 
       - name: Test macOS package
         timeout-minutes: 5
@@ -147,6 +190,23 @@ jobs:
 
       - name: Verify Xcode
         run: xcodebuild -version
+
+      - name: Cache Swift release build products
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            apps/macos/.build/artifacts
+            apps/macos/.build/checkouts
+            apps/macos/.build/repositories
+            apps/macos/.build/arm64-apple-macosx
+            apps/macos/.build/build.db
+            apps/macos/.build/debug.yaml
+            apps/macos/.build/release.yaml
+            apps/macos/.build/workspace-state.json
+          key: ${{ runner.os }}-${{ runner.arch }}-swiftpm-xcode26.6-17F113-v1-${{ hashFiles('apps/macos/Package.swift', 'apps/macos/Package.resolved', 'apps/macos/Vendor/Artifacts/manifest.json') }}-${{ hashFiles('apps/macos/Sources/**', 'apps/macos/Tests/**') }}-release
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-swiftpm-xcode26.6-17F113-v1-${{ hashFiles('apps/macos/Package.swift', 'apps/macos/Package.resolved', 'apps/macos/Vendor/Artifacts/manifest.json') }}-${{ hashFiles('apps/macos/Sources/**', 'apps/macos/Tests/**') }}-
+            ${{ runner.os }}-${{ runner.arch }}-swiftpm-xcode26.6-17F113-v1-${{ hashFiles('apps/macos/Package.swift', 'apps/macos/Package.resolved', 'apps/macos/Vendor/Artifacts/manifest.json') }}-
 
       - name: Set timestamp build number
         run: echo "BUILD_NUMBER=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_ENV"

@@ -18,6 +18,12 @@ tests the exact merge commit (Swift, CLI, website, and automation scripts), then
 uploads only if that test job succeeds. Manual validation, scheduled feedback
 sync, and CLI packaging do not run unit tests.
 
+SwiftPM dependencies and compiled test/release products are cached by runner
+architecture, exact Xcode build, package lock, native-codec manifest, and source
+hash. Rust dependency and target caches follow the pinned toolchain and lockfile.
+Cache hits never skip test execution. Cache paths exclude signing certificates,
+provisioning profiles, Fastlane credentials, and packaged App Store uploads.
+
 ## Branch access
 
 The repository is public in the `rawcontext` organization. GitHub Free enforces
