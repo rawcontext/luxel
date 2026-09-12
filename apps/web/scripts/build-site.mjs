@@ -11,8 +11,8 @@ await import("./generate-llms.mjs");
 const outputConfigPath = new URL("../.vercel/output/config.json", import.meta.url);
 const outputConfig = JSON.parse(await readFile(outputConfigPath, "utf8"));
 outputConfig.cache = [
-  ".vercel/cache/bazel/actions/**",
-  ".vercel/cache/bazel/repository/content_addressable/**",
-  ".vercel/cache/bazel/bazelisk/**"
+  "apps/web/.vercel/cache/bazel/actions/**",
+  "apps/web/.vercel/cache/bazel/repository/content_addressable/**",
+  "apps/web/.vercel/cache/bazel/bazelisk/**"
 ];
 await writeFile(outputConfigPath, JSON.stringify(outputConfig, null, 2) + "\n");

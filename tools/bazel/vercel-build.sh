@@ -29,3 +29,6 @@ fi
 rm -rf "$DESTINATION"
 cp -R "$OUTPUT" "$DESTINATION"
 chmod -R u+w "$DESTINATION"
+if [[ "${VERCEL:-}" == "1" ]]; then
+  du -sh "$CACHE_ROOT/actions" "$CACHE_ROOT/repository/content_addressable" "$CACHE_ROOT/bazelisk"
+fi
