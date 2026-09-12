@@ -1,15 +1,16 @@
-VERSION 1.3.1
+VERSION 1.4.0
 
 1. ACCESS
 Luxel is a native Mac menu-bar recorder for macOS 26.0+. It has no Dock icon or initial window. Launch it from Applications and use its menu-bar icon. No account, credentials, subscription, demo data, or sample file is required.
 
-2. VERSION 1.3.1 CHANGE
-Performance improvements and bug fixes.
+2. VERSION 1.4.0 CHANGES
+Show or hide timestamps in Markdown transcripts directly from the editor. Also includes bug fixes and performance improvements.
 
 3. REVIEW STEPS
 1) Start a screen or audio-only recording from the menu bar.
 2) Stop the recording after a short interval.
 3) Confirm the saved recording opens and plays normally.
+4) Transcribe the recording, then use the timestamp toggle beside Copy as Markdown in the editor to show or hide timestamps in the copied transcript. Timestamps are hidden by default.
 
 4. PRIVACY AND PERMISSIONS
 This update adds no account, network service, data collection, or new permission. Recording, transcription, editing, and export remain local to the Mac.
