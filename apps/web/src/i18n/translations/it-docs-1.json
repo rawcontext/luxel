@@ -121,7 +121,7 @@
   "Quando Luxel rileva un segnale, la notifica propone Avvia registrazione e Ignora. Avvia registrazione avvia una registrazione solo audio con il microfono selezionato. Ignora non esegue alcuna azione e l’apertura della notifica attiva Luxel senza registrare.",
   "Le modalità Full immersion e altre impostazioni delle notifiche di macOS possono ritardare o nascondere l’avviso. Un avviso è un aiuto, non una garanzia che Luxel riconosca una conversazione.",
   "Cosa elabora Luxel",
-  "Mentre la funzione è attiva, Luxel analizza continuamente brevi frame del microfono sul Mac. Prima che tu scelga esplicitamente Avvia registrazione, questi frame vengono eliminati e Luxel non crea pre-roll, file multimediali, elementi della cronologia, trascrizioni, file accessori o caricamenti sul cloud.",
+  "Quando la funzione è attiva, Luxel analizza continuamente brevi segmenti audio del microfono sul Mac. Prima che tu scelga esplicitamente Avvia registrazione, questi segmenti vengono eliminati e Luxel non crea pre-registrazioni, file multimediali, elementi della cronologia, trascrizioni, file accessori o caricamenti sul cloud.",
   "Il rilevatore cerca solo suoni continui simili alla voce. Non esamina lo stato delle app e non decide se stai partecipando a una riunione o a una chiamata.",
   "Pause automatiche",
   "Luxel mette in pausa l’analisi del microfono durante una registrazione attiva e quando il Mac è bloccato o il display è in stop. L’analisi riprende automaticamente quando la registrazione termina o il Mac torna attivo e sbloccato.",

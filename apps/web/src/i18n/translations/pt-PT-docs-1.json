@@ -121,7 +121,7 @@
   "Quando o Luxel deteta um sinal, a notificação oferece Iniciar Gravação e Ignorar. Iniciar Gravação começa uma gravação apenas de áudio com o microfone selecionado. Ignorar não faz nada, e abrir a notificação ativa o Luxel sem gravar.",
   "Os modos Concentração e outras definições de notificação do macOS podem atrasar ou ocultar o aviso. Um aviso é uma conveniência, não uma garantia de que o Luxel reconhecerá uma conversa.",
   "O que o Luxel processa",
-  "Enquanto a funcionalidade está ativada, o Luxel analisa continuamente fotogramas curtos do microfone no Mac. Antes de escolher explicitamente Iniciar Gravação, esses fotogramas são eliminados e o Luxel não cria pré-gravação, ficheiro multimédia, item do histórico, transcrição, ficheiro auxiliar ou envio para a nuvem.",
+  "Enquanto a funcionalidade está ativada, o Luxel analisa continuamente pequenos blocos de áudio do microfone no Mac. Antes de escolher explicitamente Iniciar Gravação, esses blocos são descartados e o Luxel não cria pré-gravações, ficheiros multimédia, itens do histórico, transcrições, ficheiros auxiliares nem envios para a nuvem.",
   "O detetor procura apenas sons contínuos semelhantes à fala. Não verifica o estado das aplicações nem decide se está numa reunião ou chamada.",
   "Pausas automáticas",
   "O Luxel pausa a análise do microfone durante uma gravação ativa e quando o Mac está bloqueado ou o ecrã está em repouso. A análise continua automaticamente quando a gravação termina ou quando o Mac volta a estar acordado e desbloqueado.",

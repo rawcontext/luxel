@@ -121,7 +121,7 @@
   "Khi Luxel phát hiện tín hiệu, thông báo đưa ra Bắt đầu ghi và Bỏ qua. Bắt đầu ghi sẽ bắt đầu một bản ghi chỉ có âm thanh bằng micrô đã chọn. Bỏ qua không thực hiện hành động nào, còn việc mở thông báo sẽ kích hoạt Luxel mà không ghi.",
   "Chế độ Tập trung và các cài đặt thông báo macOS khác có thể trì hoãn hoặc ẩn lời nhắc. Lời nhắc chỉ là tiện ích, không bảo đảm Luxel nhận ra một cuộc trò chuyện.",
   "Nội dung Luxel xử lý",
-  "Khi tính năng đang bật, Luxel liên tục phân tích các khung micrô ngắn trên máy Mac. Trước khi bạn chủ động chọn Bắt đầu ghi, những khung này bị loại bỏ và Luxel không tạo phần âm thanh trước, tệp phương tiện, mục lịch sử, bản chép lời, tệp phụ hay nội dung tải lên đám mây.",
+  "Khi tính năng đang bật, Luxel liên tục phân tích các đoạn âm thanh ngắn từ micrô trên máy Mac. Trước khi bạn chủ động chọn Bắt đầu ghi, những đoạn âm thanh này sẽ bị loại bỏ. Luxel không tạo phần ghi trước, tệp phương tiện, mục lịch sử, bản chép lời, tệp phụ hay nội dung tải lên đám mây.",
   "Bộ phát hiện chỉ tìm âm thanh liên tục giống giọng nói. Bộ phát hiện không kiểm tra trạng thái ứng dụng hay quyết định bạn có đang trong cuộc họp hoặc cuộc gọi hay không.",
   "Tạm dừng tự động",
   "Luxel tạm dừng phân tích micrô khi một bản ghi đang hoạt động và khi máy Mac bị khóa hoặc màn hình đang ngủ. Phân tích tự động tiếp tục khi bản ghi kết thúc hoặc máy Mac thức và được mở khóa trở lại.",

@@ -121,7 +121,7 @@
   "Lorsque Luxel détecte un signal, la notification propose Démarrer l’enregistrement et Ignorer. Démarrer l’enregistrement lance un enregistrement audio uniquement avec le microphone sélectionné. Ignorer ne fait rien, et l’ouverture de la notification active Luxel sans enregistrer.",
   "Les modes Concentration et les autres réglages de notification de macOS peuvent retarder ou masquer l’invite. Une invite est une aide, pas une garantie que Luxel reconnaisse une conversation.",
   "Ce que Luxel traite",
-  "Lorsque la fonction est activée, Luxel analyse en continu de courtes trames du microphone sur votre Mac. Avant que vous choisissiez explicitement Démarrer l’enregistrement, ces trames sont supprimées et Luxel ne crée aucun pré-enregistrement, fichier multimédia, élément d’historique, transcription, fichier annexe ou envoi vers le cloud.",
+  "Lorsque la fonction est activée, Luxel analyse en continu de courts segments audio du microphone sur votre Mac. Avant que vous choisissiez explicitement Démarrer l’enregistrement, ces segments sont supprimés et Luxel ne crée aucun pré-enregistrement, fichier multimédia, élément d’historique, transcription, fichier annexe ou envoi vers le cloud.",
   "Le détecteur recherche uniquement un son continu ressemblant à de la parole. Il n’examine pas l’état des apps et ne décide pas si vous participez à une réunion ou à un appel.",
   "Pauses automatiques",
   "Luxel met l’analyse du microphone en pause pendant un enregistrement actif et lorsque votre Mac est verrouillé ou que son écran est en veille. L’analyse reprend automatiquement à la fin de l’enregistrement ou lorsque votre Mac est de nouveau éveillé et déverrouillé.",

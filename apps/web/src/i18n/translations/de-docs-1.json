@@ -121,7 +121,7 @@
   "Wenn Luxel ein Signal erkennt, bietet die Mitteilung „Aufnahme starten“ und „Schließen“ an. „Aufnahme starten“ beginnt genau eine reine Audioaufnahme mit dem ausgewählten Mikrofon. „Schließen“ führt keine Aktion aus; das Öffnen der Mitteilung aktiviert Luxel, ohne aufzunehmen.",
   "Fokusmodi und andere macOS-Mitteilungseinstellungen können den Hinweis verzögern oder ausblenden. Ein Hinweis ist eine Hilfestellung und keine Garantie, dass Luxel ein Gespräch erkennt.",
   "Was Luxel verarbeitet",
-  "Solange die Funktion aktiviert ist, analysiert Luxel fortlaufend kurze Mikrofonframes auf deinem Mac. Bevor du ausdrücklich „Aufnahme starten“ auswählst, werden diese Frames verworfen und Luxel erstellt weder Vorlauf noch Mediendatei, Verlaufseintrag, Transkript, Begleitdatei oder Cloud-Upload.",
+  "Solange die Funktion aktiviert ist, analysiert Luxel fortlaufend kurze Audioblöcke des Mikrofons auf deinem Mac. Bevor du ausdrücklich „Aufnahme starten“ auswählst, werden diese Audioblöcke verworfen. Luxel erstellt weder Voraufnahmen noch Mediendateien, Verlaufseinträge, Transkripte, Begleitdateien oder Cloud-Uploads.",
   "Der Detektor sucht nur nach anhaltenden sprachähnlichen Geräuschen. Er prüft keinen App-Status und entscheidet nicht, ob du dich in einer Besprechung oder einem Anruf befindest.",
   "Automatische Pausen",
   "Luxel pausiert die Mikrofonanalyse während einer aktiven Aufnahme sowie wenn dein Mac gesperrt ist oder das Display schläft. Die Analyse wird automatisch fortgesetzt, wenn die Aufnahme endet oder dein Mac wieder wach und entsperrt ist.",
