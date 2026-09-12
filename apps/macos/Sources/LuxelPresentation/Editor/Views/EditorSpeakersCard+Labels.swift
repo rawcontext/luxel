@@ -13,7 +13,7 @@ extension EditorSpeakersCard {
         count == 1 ? LuxelLocalization.string("1 speaker") : LuxelLocalization.format("%d speakers", count)
     }
 
-    private func formatDuration(_ duration: TimeInterval) -> String {
+    func formatDuration(_ duration: TimeInterval) -> String {
         let totalSeconds = max(0, Int(duration.rounded()))
         return String(format: "%d:%02d", totalSeconds / 60, totalSeconds % 60)
     }
