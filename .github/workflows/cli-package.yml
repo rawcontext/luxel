@@ -17,18 +17,16 @@ jobs:
     runs-on: macos-26
     permissions:
       contents: write
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
 
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version-file: package.json
-
-      - name: Install workspace dependencies
-        run: bun install --frozen-lockfile
+      - name: Set up Bazel
+        id: bazel
+        uses: ./.github/actions/setup-bazel
 
       - name: Validate release tag
         if: github.ref_type == 'tag'
@@ -36,18 +34,14 @@ jobs:
           version="$(python3 -c 'import tomllib; print(tomllib.load(open("apps/cli/Cargo.toml", "rb"))["package"]["version"])')"
           test "$GITHUB_REF_NAME" = "cli-v$version"
 
-      - name: Install pinned Rust toolchain before parallel tasks
-        working-directory: apps/cli
-        run: rustup toolchain install
-
       - name: Check and package CLI
-        run: bunx turbo run lint package --filter=@luxel/cli
+        run: bazel build --config=ci --config=release //apps/cli:package //apps/cli:clippy //apps/cli:format
 
       - name: Upload CLI artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: luxel-universal-apple-darwin
-          path: apps/cli/dist/*
+          path: bazel-bin/apps/cli/dist/*
           if-no-files-found: error
 
       - name: Publish CLI release
@@ -59,5 +53,13 @@ jobs:
             --title "Luxel CLI ${GITHUB_REF_NAME#cli-v}" \
             --latest=false \
             --generate-notes \
-            apps/cli/dist/luxel-macos-universal.tar.gz \
-            apps/cli/dist/luxel-macos-universal.tar.gz.sha256
+            bazel-bin/apps/cli/dist/luxel-macos-universal.tar.gz \
+            bazel-bin/apps/cli/dist/luxel-macos-universal.tar.gz.sha256
+
+      - name: Save Bazel caches
+        if: always() && !cancelled()
+        uses: ./.github/actions/save-bazel-cache
+        with:
+          action-cache-key: ${{ steps.bazel.outputs.action-cache-key }}
+          repository-cache-key: ${{ steps.bazel.outputs.repository-cache-key }}
+          repository-cache-hit: ${{ steps.bazel.outputs.repository-cache-hit }}

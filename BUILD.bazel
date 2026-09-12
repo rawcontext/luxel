@@ -1,0 +1,117 @@
+load("@buildifier_prebuilt//:rules.bzl", "buildifier_test")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//:jscpd/package_json.bzl", jscpd = "bin")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "LICENSE",
+    ".swiftlint.yml",
+    ".tool-versions",
+])
+
+npm_link_all_packages(name = "node_modules")
+
+jscpd.jscpd_test(
+    name = "duplication",
+    args = [
+        "apps/macos/Sources",
+        "apps/macos/Tests",
+        "apps/macos/Scripts",
+        "apps/macos/fastlane",
+        "apps/web/src",
+        "apps/web/scripts",
+        "apps/web/astro.config.mjs",
+        "--exit-code",
+    ],
+    data = [
+        "//apps/macos:duplication_sources",
+        "//apps/web:duplication_sources",
+    ],
+    tags = ["manual"],
+)
+
+filegroup(
+    name = "repository_test_data",
+    testonly = True,
+    srcs = glob([".github/**"]) + [
+        ".swiftlint.yml",
+        ".tool-versions",
+        "AGENTS.md",
+        "LICENSE",
+        "README.md",
+        "//.github/actions:sources",
+        "//.github/scripts:sources",
+        "//.github/workflows:sources",
+    ],
+)
+
+filegroup(
+    name = "build",
+    srcs = [
+        "//apps/cli:luxel_universal",
+        "//apps/macos:app",
+        "//apps/web:build",
+    ],
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        "//.github/scripts:tests",
+        "//app-store:tests",
+        "//apps/cli:tests",
+        "//apps/macos:tests",
+        "//apps/web:tests",
+    ],
+)
+
+buildifier_test(
+    name = "buildifier_test",
+    size = "small",
+    srcs = [
+        "BUILD.bazel",
+        "MODULE.bazel",
+        "REPO.bazel",
+        "//.github/actions:build_files",
+        "//.github/scripts:build_files",
+        "//.github/workflows:build_files",
+        "//app-store:build_files",
+        "//apps/cli:build_files",
+        "//apps/macos:build_files",
+        "//apps/web:build_files",
+        "//tools/bazel:build_files",
+    ],
+    lint_mode = "warn",
+    mode = "check",
+    tags = ["lint"],
+)
+
+test_suite(
+    name = "lint",
+    tests = [
+        ":buildifier_test",
+        "//apps/cli:lint",
+        "//apps/web:lint",
+        "//tools/bazel:swiftlint_test",
+    ],
+)
+
+platform(
+    name = "macos_arm64",
+    constraint_values = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:macos",
+    ],
+)
+
+platform(
+    name = "macos_x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:macos",
+    ],
+)

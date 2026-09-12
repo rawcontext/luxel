@@ -11,50 +11,46 @@ A native macOS menu bar recorder with screen and audio capture, replay buffer, l
 
 ## Run locally
 
-Requires an Apple silicon Mac running macOS 26+, Xcode with Swift 6.2 or newer, [Bun](https://bun.sh/docs/installation), and an Apple Development signing certificate installed through Xcode.
+Requires an Apple silicon Mac running macOS 26+, Xcode 26.6, [Bazelisk](https://github.com/bazelbuild/bazelisk), and an Apple Development signing certificate installed through Xcode. Bazel downloads the other pinned build tools and dependencies.
 
 ```sh
 git clone https://github.com/rawcontext/luxel.git
 cd luxel
-bun install --frozen-lockfile
 ```
 
 Replace `YOUR_TEAM_ID` with your Apple Developer team ID, then build and open the app:
 
 ```sh
-APPLE_TEAM_IDENTIFIER=YOUR_TEAM_ID bun run --cwd apps/macos app:build
+APPLE_TEAM_IDENTIFIER=YOUR_TEAM_ID apps/macos/Scripts/build-luxel-app.sh
 open "apps/macos/dist/Luxel Dev.app"
 ```
 
-The development app is named **Luxel Dev** and runs from the menu bar. Grant Screen Recording, Microphone, and Camera access when prompted for the features you use.
+The development app is named **Luxel Dev** and runs from the menu bar. Grant Screen Recording, Microphone, and Camera access when prompted for the features you use. Always run the signed development bundle.
 
-Use the signed `Luxel Dev.app` bundle for local runs. Launching the raw Swift executable can cause repeated macOS permission prompts.
-
-## Check changes
-
-With Node.js and SwiftLint installed, run from the repository root:
+## Build and check
 
 ```sh
-bun run test
-bun run lint
+bazel build //:build
+bazel test //:tests //:lint
 ```
 
-For a focused Swift test run:
+Bazel builds Swift, Rust, and TypeScript in one dependency graph and caches builds, tests, and lint checks. For focused checks:
 
 ```sh
-cd apps/macos
-swift test --filter LocalizationTests
+bazel test //apps/macos:localization_tests
+bazel test //apps/cli:tests //apps/cli:lint
+bazel test //apps/web:tests
 ```
+
+See [BUILDING.md](BUILDING.md) for targets, toolchains, caching, and release packaging, and [AGENTS.md](AGENTS.md) for contribution guidance.
 
 ## Website
 
-With Node.js installed, run the website locally from the repository root:
-
 ```sh
-bun run --cwd apps/web dev
+bazel run //apps/web:dev
 ```
 
-See [AGENTS.md](AGENTS.md) for contribution guidance.
+The website's [build and deployment documentation](apps/web/README.md) covers Vercel.
 
 ## License
 

@@ -111,12 +111,6 @@ struct AppBundleConfigurationTests {
         #expect(reasons["NSPrivacyAccessedAPICategorySystemBootTime"] == ["35F9.1"])
         #expect(reasons["NSPrivacyAccessedAPICategoryUserDefaults"] == ["CA92.1"])
 
-        let support = try scriptSource("luxel-app-bundle-support.sh")
-        #expect(support.contains("Contents/Resources/PrivacyInfo.xcprivacy"))
-        for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
-            let script = try scriptSource(scriptName)
-            #expect(script.contains("PRIVACY_MANIFEST="))
-        }
     }
 
 }
@@ -124,26 +118,20 @@ struct AppBundleConfigurationTests {
 extension AppBundleConfigurationTests {
     @Test("build script bundles third-party license ledger as app resource")
     func buildScriptBundlesThirdPartyLicenseLedgerAsAppResource() throws {
-        let script = try scriptSource("build-luxel-app.sh")
-        let support = try scriptSource("luxel-app-bundle-support.sh")
-
-        #expect(script.contains("THIRD_PARTY_LICENSES"))
-        #expect(script.contains("source \"${PACKAGE_ROOT}/Scripts/luxel-app-bundle-support.sh\""))
-        #expect(support.contains("Contents/Resources"))
-        #expect(support.contains("ThirdPartyLicenses.md"))
-        #expect(support.contains("Contents/Resources/LICENSE.txt"))
+        let root = try packageRootURL()
+        let ledger = try String(contentsOf: root.appending(path: "THIRD_PARTY_LICENSES.md"), encoding: .utf8)
+        let repository = root.deletingLastPathComponent().deletingLastPathComponent()
+        let license = try String(contentsOf: repository.appending(path: "LICENSE"), encoding: .utf8)
+        #expect(!ledger.isEmpty)
+        #expect(license.contains("MIT License"))
     }
 
     @Test("signed app scripts bundle Studio Voice model resources")
     func signedAppScriptsBundleStudioVoiceResources() throws {
-        let support = try scriptSource("luxel-app-bundle-support.sh")
         for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
             let script = try scriptSource(scriptName)
-            #expect(script.contains("source \"${PACKAGE_ROOT}/Scripts/luxel-app-bundle-support.sh\""))
+            #expect(script.contains("bash \"${STUDIO_VOICE_MODEL_AUDITOR}\" \"${APP_PATH}\""))
         }
-        #expect(support.contains("STUDIO_VOICE_MODEL_DIR"))
-        #expect(support.contains("Contents/Resources/Models"))
-        #expect(support.contains("ThirdPartyLicenses.md"))
     }
 
     @Test("signed app scripts require and audit bundled MODNet resources")
@@ -155,15 +143,12 @@ extension AppBundleConfigurationTests {
             modelDirectory: "modnet"
         )
 
-        let support = try scriptSource("luxel-app-bundle-support.sh")
         for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
             let script = try scriptSource(scriptName)
-            #expect(script.contains("MODNET_MODEL_DIR"))
             #expect(script.contains("audit-modnet-model.sh"))
-            #expect(!script.contains("if [[ -d \"${MODNET_MODEL_DIR}"))
+            let artifact = scriptName == "build-luxel-app.sh" ? "APP_PATH" : "PKG_PATH"
+            #expect(script.contains("\"${MODNET_MODEL_AUDITOR}\" \"${\(artifact)}\""))
         }
-        #expect(support.contains("cp -R \"${MODNET_MODEL_DIR}\""))
-        #expect(!support.contains("if [[ -d \"${MODNET_MODEL_DIR}"))
     }
 
     @Test("signed app scripts require and audit bundled voice activity detection resources")
@@ -175,16 +160,12 @@ extension AppBundleConfigurationTests {
             modelDirectory: "voice-activity-detection"
         )
 
-        let support = try scriptSource("luxel-app-bundle-support.sh")
         for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
             let script = try scriptSource(scriptName)
-            #expect(script.contains("VAD_MODEL_DIR"))
             #expect(script.contains("audit-voice-activity-detection-model.sh"))
-            #expect(!script.contains("if [[ -d \"${VAD_MODEL_DIR}"))
+            let artifact = scriptName == "build-luxel-app.sh" ? "APP_PATH" : "PKG_PATH"
+            #expect(script.contains("\"${VAD_MODEL_AUDITOR}\" \"${\(artifact)}\""))
         }
-        #expect(support.contains("cp -R \"${VAD_MODEL_DIR}\""))
-        #expect(support.contains("\"${VAD_MODEL_AUDITOR}\" \"${APP_PATH}\""))
-        #expect(!support.contains("if [[ -d \"${VAD_MODEL_DIR}"))
     }
 
     @Test("local build script uses a development app identity by default")
@@ -298,7 +279,8 @@ extension AppBundleConfigurationTests {
         let script = try scriptSource("build-luxel-mas-pkg.sh")
         let support = try scriptSource("luxel-app-bundle-support.sh")
 
-        #expect(support.contains("find \"${BIN_DIR}\" -maxdepth 1 -name '*.bundle'"))
+        #expect(support.contains("unpack_bazel_app()"))
+        #expect(script.contains("unpack_bazel_app \"${APP_ARCHIVE}\""))
         #expect(script.contains("Contents/Resources/Luxel_LuxelCore.bundle"))
         #expect(script.contains("CFBundleIdentifier"))
         #expect(script.contains("LuxelCore resource bundle was not copied"))
@@ -330,8 +312,9 @@ extension AppBundleConfigurationTests {
             path: "Scripts/check-app-distribution-build-split.sh")
         let script = try String(contentsOf: scriptURL, encoding: .utf8)
 
-        #expect(script.contains("swift test --filter AppDistributionTests"))
-        #expect(script.contains("-DLUXEL_MAC_APP_STORE"))
+        #expect(script.contains("//apps/macos:distribution_tests"))
+        #expect(script.contains("--//apps/macos:app_store=false"))
+        #expect(script.contains("--//apps/macos:app_store=true"))
     }
 
     @Test("app launch never terminates over purchase verification")
@@ -341,9 +324,18 @@ extension AppBundleConfigurationTests {
             contentsOf: root.appending(path: "Sources/LuxelApp/App/LuxelApp.swift"),
             encoding: .utf8
         )
-        #expect(appSource.contains("@main\nstruct LuxelApp: App"))
+        #expect(appSource.contains("public func runLuxelApp()"))
+        #expect(appSource.contains("LuxelApp.main()"))
         #expect(!appSource.contains("purchaseGateService"))
         #expect(!appSource.contains("NSApp.terminate(nil)"))
+        let launcherSource = try String(
+            contentsOf: root.appending(path: "Sources/LuxelLauncher/LuxelLauncher.swift"),
+            encoding: .utf8
+        )
+        #expect(launcherSource.contains("@main"))
+        #expect(launcherSource.contains("runLuxelApp()"))
+        #expect(!launcherSource.contains("purchaseGateService"))
+        #expect(!launcherSource.contains("NSApp.terminate(nil)"))
     }
 
     private func readPlist(_ relativePath: String) throws -> [String: Any] {

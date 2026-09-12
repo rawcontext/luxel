@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Codec compliance models")
@@ -375,6 +376,6 @@ extension CodecComplianceModelTests {
     }
 
     private func packageRootURL() throws -> URL {
-        try sharedPackageRootURL()
+        try testPackageRootURL()
     }
 }

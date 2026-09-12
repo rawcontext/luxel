@@ -1,0 +1,21 @@
+common --repository_cache=~/.cache/luxel/bazel/repository
+common --repo_env=PYTHONDONTWRITEBYTECODE=1
+build --disk_cache=~/.cache/luxel/bazel/actions
+build --action_env=PYTHONDONTWRITEBYTECODE=1
+build --verbose_failures
+build --incompatible_default_to_explicit_init_py
+build --xcode_version=26.6
+build --macos_minimum_os=26.0
+build --@rules_rust//:clippy_flags=-Dwarnings
+# Rust's debug stripping can produce proc-macro libraries rejected by macOS 27.
+# https://github.com/rust-lang/rust/issues/157750
+build --@rules_rust//rust/settings:extra_exec_rustc_flag=-Cstrip=none
+test --test_output=errors
+
+build:release --compilation_mode=opt
+build:debug --compilation_mode=dbg
+build:app-store --compilation_mode=opt
+build:app-store --//apps/macos:app_store=true
+common:ci --lockfile_mode=error
+
+try-import %workspace%/.bazelrc.local

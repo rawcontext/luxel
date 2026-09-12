@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @Suite("Localization")
@@ -272,7 +273,7 @@ private struct StringCatalogStringUnit: Decodable {
     let value: String
 }
 
-private let packageRoot = URL(fileURLWithPath: #filePath)
+private let packageRoot = testSourceFileURL()
     .deletingLastPathComponent()
     .deletingLastPathComponent()
     .deletingLastPathComponent()

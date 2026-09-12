@@ -5,22 +5,33 @@ import argparse
 import json
 from pathlib import Path
 import subprocess
+import tomllib
 
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--check", action="store_true")
+parser.add_argument("--bazel-manifest", type=Path)
+parser.add_argument("--output", type=Path)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
 packages = {}
-for target in ["aarch64-apple-darwin", "x86_64-apple-darwin"]:
-    metadata = json.loads(subprocess.check_output([
-        "cargo", "metadata", "--format-version", "1", "--locked",
-        "--filter-platform", target,
-    ], cwd=root))
-    resolved = {node["id"] for node in metadata["resolve"]["nodes"]}
-    for package in metadata["packages"]:
-        if package["id"] in resolved and package["source"] is not None:
-            packages[package["id"]] = package
+if args.bazel_manifest:
+    for manifest_path in json.loads(args.bazel_manifest.read_text()):
+        manifest = Path(manifest_path)
+        package = tomllib.loads(manifest.read_text())["package"]
+        packages[(package["name"], package["version"])] = {
+            **package, "manifest_path": str(manifest),
+        }
+else:
+    for target in ["aarch64-apple-darwin", "x86_64-apple-darwin"]:
+        metadata = json.loads(subprocess.check_output([
+            "cargo", "metadata", "--format-version", "1", "--locked",
+            "--filter-platform", target,
+        ], cwd=root))
+        resolved = {node["id"] for node in metadata["resolve"]["nodes"]}
+        for package in metadata["packages"]:
+            if package["id"] in resolved and package["source"] is not None:
+                packages[package["id"]] = package
 
 sections = [
     "# Luxel CLI third-party licenses\n\n"
@@ -58,7 +69,7 @@ for package in sorted(packages.values(), key=lambda item: (item["name"], item["v
     )
 
 output = "\n\n".join(sections) + "\n"
-destination = root / "THIRD_PARTY_LICENSES.md"
+destination = args.output or root / "THIRD_PARTY_LICENSES.md"
 if args.check:
     if not destination.exists() or destination.read_text() != output:
         raise SystemExit("Regenerate CLI notices with python3 scripts/generate-license-notices.py")

@@ -24,7 +24,7 @@ or Fish. Open a new terminal after installation.
 
 - macOS 26 or later
 - Luxel installed and launched at least once
-- Rust 1.97 or later when building from source
+- Bazelisk and Xcode 26.6 when building from source
 
 ## Build from source
 
@@ -33,8 +33,9 @@ The CLI lives in `apps/cli` in the [Luxel monorepo](https://github.com/rawcontex
 ```sh
 git clone https://github.com/rawcontext/luxel.git
 cd luxel/apps/cli
-cargo build --release
-install -m 755 target/release/luxel ~/.local/bin/luxel
+bazel build --config=release //apps/cli:luxel_universal
+mkdir -p ~/.local/bin
+install -m 755 "$(bazel cquery --config=release --output=files //apps/cli:luxel_universal)" ~/.local/bin/luxel
 ```
 
 ## First use
@@ -124,51 +125,13 @@ The full command and option reference is also available at
 
 ## Development
 
-From the monorepo root, Bun and Turborepo run the package's tasks:
-
-When using rustup, first run `rustup toolchain install` from `apps/cli` to
-install the pinned compiler, components, and targets before parallel Turbo tasks.
+Run these commands from the monorepo root. Bazel supplies Rust 1.97.1 and imports the exact dependency graph from `Cargo.toml` and `Cargo.lock`.
 
 ```sh
-bun install --frozen-lockfile
-bun run lint --filter=@luxel/cli
-bun run test --filter=@luxel/cli
-bun run build --filter=@luxel/cli
-bun run package --filter=@luxel/cli
+bazel test //apps/cli:tests //apps/cli:lint
+bazel build --config=release //apps/cli:package
 ```
 
-`build` produces the universal macOS binary. `package` creates the archive and
-checksum in `apps/cli/dist`. The web build is independent and does not compile the CLI.
+The package contains both Apple silicon and Intel binaries. The archive and checksum are in `bazel-bin/apps/cli/dist/`. License validation uses the resolved Bazel dependency graph and the checked-in notices.
 
-The equivalent native checks can be run from `apps/cli`:
-
-```sh
-cargo fmt --check
-cargo clippy --all-targets --all-features --locked -- -D warnings
-cargo test --all-targets --all-features --locked
-```
-
-The fixtures under `protocol/v1/fixtures` are byte-for-schema peers of Luxel's Swift
-protocol fixtures.
-
-## Releases
-
-The monorepo's CLI packaging workflow accepts manual runs from `master` and
-owner-created `cli-v<version>` tags. The tag version must match `Cargo.toml`.
-
-The website installer downloads the `cli-v1.0.0` release from this repository.
-The repository and release downloads are public.
-
-## License
-
-Luxel CLI is [MIT licensed](LICENSE). Its dependency notices are in
-[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). Both files ship in the release
-archive; the installer keeps them in `~/.local/share/licenses/luxel/`.
-
-After changing Cargo dependencies, regenerate the notices from `apps/cli`:
-
-```sh
-python3 scripts/generate-license-notices.py
-```
-
-Packaging verifies that these notices match the locked macOS dependency graph.
+Protocol fixtures under `protocol/v1/fixtures` remain shared with the macOS app's protocol tests. See the monorepo's [build documentation](../../BUILDING.md) for cache and toolchain details.

@@ -1,6 +1,7 @@
 @preconcurrency import AVFoundation
 import CryptoKit
 import Foundation
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelCore
@@ -248,7 +249,7 @@ extension VoiceDetectionEligibility {
     )
 }
 
-private let packageRoot = URL(fileURLWithPath: #filePath)
+private let packageRoot = testSourceFileURL()
     .deletingLastPathComponent()
     .deletingLastPathComponent()
     .deletingLastPathComponent()

@@ -1,0 +1,143 @@
+module(
+    name = "luxel",
+    version = "1.4.0",
+)
+
+bazel_dep(name = "apple_support", version = "2.8.2")
+bazel_dep(name = "bazel_skylib", version = "1.9.2")
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_cc", version = "0.2.22")
+bazel_dep(name = "rules_rust", version = "0.74.0")
+bazel_dep(name = "rules_apple", version = "5.0.0")
+bazel_dep(name = "rules_swift", version = "4.0.1")
+bazel_dep(name = "rules_swift_package_manager", version = "1.23.0")
+bazel_dep(name = "aspect_rules_js", version = "3.4.1")
+bazel_dep(name = "rules_nodejs", version = "6.7.5")
+bazel_dep(name = "bazel_lib", version = "3.7.2")
+
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.4", dev_dependency = True)
+
+bazel_dep(name = "rules_pkg", version = "1.3.0")
+bazel_dep(name = "rules_python", version = "2.3.3")
+bazel_dep(name = "rules_shell", version = "0.8.0")
+bazel_dep(name = "rules_ruby", version = "0.28.0")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2024",
+    versions = ["1.97.1"],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.from_cargo(
+    name = "crates",
+    cargo_lockfile = "//apps/cli:Cargo.lock",
+    manifests = ["//apps/cli:Cargo.toml"],
+    supported_platform_triples = [
+        "aarch64-apple-darwin",
+        "x86_64-apple-darwin",
+    ],
+)
+use_repo(crate, "crates")
+
+swift_deps = use_extension("@rules_swift_package_manager//:extensions.bzl", "swift_deps")
+swift_deps.from_package(
+    resolved = "//apps/macos:Package.resolved",
+    swift = "//apps/macos:Package.swift",
+)
+use_repo(swift_deps, "swift_package", "swiftpkg_fluidaudio")
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+node.toolchain(node_version = "24.19.0")
+use_repo(node, "nodejs_toolchains")
+
+register_toolchains("@nodejs_toolchains//:all")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm.npm_translate_lock(
+    name = "npm",
+    lifecycle_hooks_execution_requirements = {"*": []},
+    pnpm_lock = "//:pnpm-lock.yaml",
+)
+use_repo(npm, "npm")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+
+# The pinned ruleset packages 3.13.13; its runtime manifest does not yet include 3.13.15.
+python.toolchain(python_version = "3.13.13")
+
+ruby = use_extension("@rules_ruby//ruby:extensions.bzl", "ruby")
+ruby.toolchain(
+    name = "ruby",
+    portable_ruby = True,
+    portable_ruby_checksums = {
+        "macos-arm64": "2f0650366fd55f64cd10ee2165ea590566089ff78748e1bba613af3a37d46b30",
+        "macos-x86_64": "fde2884849b648e7e31ab4e43ce83321fd452889735f998551a8ec9834aa669d",
+        "linux-arm64": "ccb1c297d6b9043f34482b37a024e5baa8056cd46b102e139df11690f60c81e2",
+        "linux-x86_64": "f23649f1ed808a95fec395931fe2ffce694de3e6ec5039868e886679a490dbaf",
+    },
+    portable_ruby_release_suffix = "2",
+    version = "4.0.6",
+)
+ruby.bundle_fetch(
+    name = "automation_gems",
+    gem_checksums = {
+        "base64-0.3.0": "27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b",
+        "drb-2.2.3": "0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373",
+        "minitest-6.0.6": "153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1",
+        "prism-1.9.0": "7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85",
+    },
+    gemfile = "//.github/scripts:Gemfile",
+    gemfile_lock = "//.github/scripts:Gemfile.lock",
+)
+use_repo(ruby, "automation_gems", "ruby", "ruby_toolchains")
+
+register_toolchains("@ruby_toolchains//:all")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+host_runtime = use_repo_rule("//tools/bazel:host_runtime.bzl", "host_runtime")
+
+host_runtime(name = "host_runtime")
+
+http_archive(
+    name = "swiftlint_binary",
+    build_file_content = "exports_files([\"swiftlint\"], visibility = [\"//visibility:public\"])",
+    sha256 = "c1e429b0599cf1b516f369a2d9ec04eaf0e436f3c12b637df8851fa52ff694d0",
+    urls = ["https://github.com/realm/SwiftLint/releases/download/0.65.1/portable_swiftlint.zip"],
+)
+
+http_archive(
+    name = "bun_darwin_arm64",
+    build_file_content = "exports_files([\"bun\"], visibility = [\"//visibility:public\"])",
+    sha256 = "90987a3a16d7db556d886ac3d551e7b6d3edf0a1cf43acaed622e8676be1d12f",
+    strip_prefix = "bun-darwin-aarch64",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-darwin-aarch64.zip"],
+)
+
+http_archive(
+    name = "bun_darwin_x64",
+    build_file_content = "exports_files([\"bun\"], visibility = [\"//visibility:public\"])",
+    sha256 = "80520d7e17526308c9185d261679ac6d27798d3803a0e9f7ff9121ab8affb012",
+    strip_prefix = "bun-darwin-x64",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-darwin-x64.zip"],
+)
+
+http_archive(
+    name = "bun_linux_arm64",
+    build_file_content = "exports_files([\"bun\"], visibility = [\"//visibility:public\"])",
+    sha256 = "54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7",
+    strip_prefix = "bun-linux-aarch64",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-aarch64.zip"],
+)
+
+http_archive(
+    name = "bun_linux_x64",
+    build_file_content = "exports_files([\"bun\"], visibility = [\"//visibility:public\"])",
+    sha256 = "c678040f14fe0440eb839d37cbd0ce4c051a32da72806ac97de6a6aab6bf728f",
+    strip_prefix = "bun-linux-x64-baseline",
+    urls = ["https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-x64-baseline.zip"],
+)

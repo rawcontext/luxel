@@ -32,27 +32,13 @@ struct CodecExportPipelineTests {
         #expect(exported.format == .webm)
         #expect(exported.pixelSize == pixelSize)
         #expect(!exported.shouldMute)
-        #expect(
-            await events.snapshot() == [
-                "source.prepare:webm",
-                "video.prepare:4x4:30:balanced",
-                "audio.prepare:48000:2:balanced",
-                "muxer.begin:webm:video,audio",
-                "source.video:0",
-                "source.audio:0",
-                "video.encode:0",
-                "muxer.write:video:v0",
-                "source.video:0.033",
-                "audio.encode:0",
-                "muxer.write:audio:a0",
-                "video.encode:0.033",
-                "muxer.write:video:v33",
-                "video.finish",
-                "audio.finish",
-                "muxer.write:video:vf",
-                "muxer.write:audio:af",
-                "muxer.finalize"
-            ])
+        let snapshot = await events.snapshot()
+        // Prefetch may finish before or after encoding the preceding frame.
+        #expect(snapshot.filter { $0 != "source.video:0.033" } == expectedPacketEvents)
+        #expect(snapshot.count == expectedPacketEvents.count + 1)
+        let prefetch = try #require(snapshot.firstIndex(of: "source.video:0.033"))
+        #expect(prefetch > (try #require(snapshot.firstIndex(of: "source.video:0"))))
+        #expect(prefetch < (try #require(snapshot.firstIndex(of: "video.encode:0.033"))))
     }
     @Test("muted requests skip audio source and encoder")
     func mutedRequestsSkipAudioSourceAndEncoder() async throws {
@@ -371,3 +357,24 @@ private actor StubAudioEncoder: CodecAudioEncoder {
         return [try EncodedPacket(dataString: "af", presentationTime: 1, duration: 0, isKeyFrame: true)]
     }
 }
+
+private let expectedPacketEvents = [
+    "source.prepare:webm",
+    "video.prepare:4x4:30:balanced",
+    "audio.prepare:48000:2:balanced",
+    "muxer.begin:webm:video,audio",
+    "source.video:0",
+    "source.audio:0",
+    "video.encode:0",
+    "muxer.write:video:v0",
+    "audio.encode:0",
+    "muxer.write:audio:a0",
+    "video.encode:0.033",
+    "muxer.write:video:v33",
+    "video.finish",
+    "audio.finish",
+    "muxer.write:video:vf",
+    "muxer.write:audio:af",
+    "muxer.finalize"
+
+]

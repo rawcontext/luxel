@@ -1,25 +1,21 @@
 {
   "name": "luxel",
   "private": true,
-  "packageManager": "bun@1.4.0",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "packageManager": "pnpm@12.4.1",
   "scripts": {
-    "build": "turbo run build",
-    "vercel-build": "turbo run build --filter=@luxel/web",
-    "package": "turbo run package",
-    "test": "turbo run test",
-    "lint": "turbo run lint",
-    "check:duplication": "jscpd apps/macos/Sources apps/macos/Tests apps/macos/Scripts apps/macos/fastlane apps/web/src apps/web/scripts apps/web/astro.config.mjs --exit-code",
-    "app:build": "turbo run app:build",
-    "app:build:mas": "turbo run app:build:mas",
-    "check:codec-licenses": "turbo run check:codec-licenses",
-    "check:distribution": "turbo run check:distribution"
+    "build": "bazel build //:build",
+    "vercel-build": "bash tools/bazel/vercel-build.sh",
+    "package": "bazel build --config=release //apps/cli:package",
+    "test": "bazel test //:tests",
+    "lint": "bazel test //:lint",
+    "check:duplication": "bazel test //:duplication",
+    "app:build": "apps/macos/Scripts/build-luxel-app.sh",
+    "app:build:mas": "apps/macos/Scripts/build-luxel-mas-pkg.sh",
+    "check:codec-licenses": "bazel test //apps/macos:codec_compliance_tests",
+    "check:distribution": "apps/macos/Scripts/check-app-distribution-build-split.sh"
   },
   "devDependencies": {
     "jscpd": "5.0.16",
-    "turbo": "2.10.11"
+    "@bazel/bazelisk": "1.28.1"
   }
 }

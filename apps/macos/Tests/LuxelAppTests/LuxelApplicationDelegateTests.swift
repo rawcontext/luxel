@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 import UserNotifications
 
@@ -222,7 +223,7 @@ struct LuxelApplicationDelegateTests {
 
     @Test("status item right click exposes the overflow quick actions")
     func statusItemRightClickQuickActions() throws {
-        let packageRoot = URL(fileURLWithPath: #filePath)
+        let packageRoot = testSourceFileURL()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()

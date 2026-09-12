@@ -14,12 +14,12 @@ apps/macos/.build/
 apps/macos/.bench/
 apps/macos/dist/
 apps/web/.astro/
-apps/web/.turbo/
 apps/web/.vercel/output/
 apps/web/dist/
 node_modules/
 .vercel/output/
-.turbo/
+bazel-*
+.bazelrc.local
 .DS_Store
 xcuserdata/
 *.xcuserstate

@@ -1,0 +1,87 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_ruby//ruby:defs.bzl", "rb_test")
+
+package(default_visibility = ["//:__pkg__"])
+
+exports_files([
+    "Gemfile",
+    "Gemfile.lock",
+])
+
+filegroup(
+    name = "build_files",
+    srcs = ["BUILD.bazel"],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob([
+        "*.rb",
+        "*.py",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+rb_test(
+    name = "workflow_trust_test",
+    srcs = ["workflow_trust_test.rb"],
+    data = [
+        "//.github/actions:sources",
+        "//.github/workflows:sources",
+    ],
+    deps = ["@automation_gems"],
+)
+
+rb_test(
+    name = "reviews_test",
+    srcs = [
+        "app_store_connect_support.rb",
+        "sync_app_store_reviews.rb",
+        "sync_app_store_reviews_test.rb",
+    ],
+    main = "sync_app_store_reviews_test.rb",
+    deps = ["@automation_gems"],
+)
+
+rb_test(
+    name = "crashes_test",
+    srcs = [
+        "app_store_connect_support.rb",
+        "sync_app_store_crashes.rb",
+        "sync_app_store_crashes_test.rb",
+    ],
+    main = "sync_app_store_crashes_test.rb",
+    deps = ["@automation_gems"],
+)
+
+rb_test(
+    name = "actionable_test",
+    srcs = [
+        "app_store_connect_support.rb",
+        "sync_app_store_actionable.rb",
+        "sync_app_store_actionable_test.rb",
+    ],
+    main = "sync_app_store_actionable_test.rb",
+    deps = ["@automation_gems"],
+)
+
+py_test(
+    name = "owner_merge_test",
+    srcs = [
+        "verify_owner_merge.py",
+        "verify_owner_merge_test.py",
+    ],
+    imports = ["."],
+    main = "verify_owner_merge_test.py",
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":actionable_test",
+        ":crashes_test",
+        ":owner_merge_test",
+        ":reviews_test",
+        ":workflow_trust_test",
+    ],
+)

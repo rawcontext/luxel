@@ -1,0 +1,34 @@
+name: Set up cached Bazel
+description: Install Bazelisk and restore repository archives and build/test/lint actions.
+outputs:
+  action-cache-key:
+    description: Key for saving this job's action cache.
+    value: ${{ steps.actions.outputs.cache-primary-key }}
+  repository-cache-key:
+    description: Key for saving downloaded dependency archives.
+    value: ${{ steps.repositories.outputs.cache-primary-key }}
+  repository-cache-hit:
+    description: Whether the dependency archive cache was an exact match.
+    value: ${{ steps.repositories.outputs.cache-hit }}
+runs:
+  using: composite
+  steps:
+    - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+      with:
+        bazelisk-version: 1.29.0
+        bazelisk-cache: true
+    - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      id: repositories
+      with:
+        path: ~/.cache/luxel/bazel/repository/content_addressable
+        key: bazel-repositories-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.bazelversion', 'MODULE.bazel.lock') }}
+        restore-keys: |
+          bazel-repositories-v1-${{ runner.os }}-${{ runner.arch }}-
+    - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      id: actions
+      with:
+        path: ~/.cache/luxel/bazel/actions
+        key: bazel-actions-v1-${{ runner.os }}-${{ runner.arch }}-xcode26.6-${{ hashFiles('.bazelversion') }}-${{ github.sha }}-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          bazel-actions-v1-${{ runner.os }}-${{ runner.arch }}-xcode26.6-${{ hashFiles('.bazelversion') }}-${{ github.sha }}-
+          bazel-actions-v1-${{ runner.os }}-${{ runner.arch }}-xcode26.6-${{ hashFiles('.bazelversion') }}-

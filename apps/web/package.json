@@ -4,12 +4,12 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/generate-llms.mjs",
+    "build": "bazel build //apps/web:build",
     "i18n:extract": "node scripts/extract-i18n-sources.mjs",
-    "generate:llms": "node scripts/generate-llms.mjs",
-    "test": "node scripts/extract-i18n-sources.mjs --check && bun test && sh scripts/test-installer.sh dist/client/cli/install.sh",
-    "test:installer": "sh scripts/test-installer.sh dist/client/cli/install.sh",
-    "preview": "astro preview"
+    "test": "bazel test //apps/web:tests",
+    "test:installer": "bazel test //apps/web:installer_test",
+    "preview": "astro preview",
+    "lint": "bazel test //apps/web:lint"
   },
   "dependencies": {
     "@astrojs/vercel": "11.0.7",

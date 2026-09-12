@@ -14,7 +14,7 @@ public enum TestFileSupportError: Error {
 }
 
 public func testPackageRootURL(from filePath: String = #filePath) throws -> URL {
-    var url = URL(fileURLWithPath: filePath)
+    var url = testSourceFileURL(from: filePath)
     while url.lastPathComponent != "Tests" {
         let parent = url.deletingLastPathComponent()
         guard parent.path != url.path else {
