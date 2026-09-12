@@ -103,7 +103,7 @@ class WorkflowTrustTest < Minitest::Test
       workflow.fetch("jobs").each do |job_name, job|
         job.fetch("steps").each do |step|
           command = step.fetch("run", "")
-          next unless command.match?(/swift test|cargo test|node --test|verify_owner_merge_test.py|turbo run [^\n]*\btest\b|_test\.rb/)
+          next unless command.match?(/swift test|cargo test|node --test|verify_owner_merge_test.py|bazel test|_test\.rb/)
 
           assert_equal ["testflight.yml", "unit_tests"], [name, job_name]
         end
@@ -112,26 +112,36 @@ class WorkflowTrustTest < Minitest::Test
   end
 
   def test_build_caches_exclude_signing_material_and_do_not_skip_tests
-    jobs = workflows.fetch("testflight.yml").fetch("jobs")
     allowed_paths = %w[
-      apps/macos/.build/artifacts apps/macos/.build/checkouts apps/macos/.build/repositories
-      apps/macos/.build/arm64-apple-macosx apps/macos/.build/build.db apps/macos/.build/debug.yaml
-      apps/macos/.build/release.yaml apps/macos/.build/workspace-state.json
-      ~/.cargo/registry ~/.cargo/git apps/cli/target
+      ~/.cache/luxel/bazel/actions
+      ~/.cache/luxel/bazel/repository/content_addressable
     ]
-    jobs.each_value do |job|
-      job.fetch("steps").each do |step|
-        next unless step.fetch("uses", "").start_with?("actions/cache")
-
-        step.fetch("with").fetch("path").lines.map(&:strip).each do |path|
-          assert_includes allowed_paths, path
-        end
+    %w[setup-bazel save-bazel-cache].each do |name|
+      path = File.expand_path("../actions/#{name}/action.yml", __dir__)
+      action = YAML.safe_load(File.read(path))
+      caches = action.fetch("runs").fetch("steps").select do |step|
+        step.fetch("uses", "").start_with?("actions/cache/")
       end
+      assert_equal allowed_paths.sort, caches.map { |step| step.fetch("with").fetch("path") }.sort
     end
+
+    jobs = workflows.fetch("testflight.yml").fetch("jobs")
     tests = jobs.fetch("unit_tests").fetch("steps").select do |step|
-      step.fetch("run", "").match?(/swift test|turbo run test|node --test/)
+      step.fetch("run", "").match?(/bazel test/)
     end
-    tests.each { |step| refute step.key?("if"), "Cache hits must not skip #{step.fetch('name')}" }
+    refute_empty tests
+    tests.each do |step|
+      refute step.key?("if"), "Cache hits must not skip #{step.fetch('name')}"
+      assert_includes step.fetch("run"), "//:tests"
+      assert_includes step.fetch("run"), "//:lint"
+      refute_includes step.fetch("run"), "--nocache_test_results"
+    end
+    %w[unit_tests testflight].each do |name|
+      steps = jobs.fetch(name).fetch("steps")
+      assert steps.any? { |step| step["uses"] == "./.github/actions/setup-bazel" }
+      save = steps.find { |step| step["uses"] == "./.github/actions/save-bazel-cache" }
+      assert_equal "always() && !cancelled()", save.fetch("if")
+    end
   end
 
   private

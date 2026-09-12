@@ -1,5 +1,6 @@
 import AVFAudio
 import Foundation
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelCore
@@ -64,7 +65,7 @@ struct StudioVoiceRuntimeParityTests {
     }
 
     private func packageRootURL() -> URL {
-        var url = URL(fileURLWithPath: #filePath)
+        var url = testSourceFileURL()
         while url.lastPathComponent != "Tests" {
             url.deleteLastPathComponent()
         }
@@ -306,7 +307,7 @@ struct StudioVoiceTests {
     }
 
     private func packageRootURL() -> URL {
-        var url = URL(fileURLWithPath: #filePath)
+        var url = testSourceFileURL()
         while url.lastPathComponent != "Tests" {
             url.deleteLastPathComponent()
         }

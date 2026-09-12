@@ -23,14 +23,17 @@ tests the exact merge commit (Swift, CLI, website, and automation scripts), then
 uploads only if that test job succeeds. Manual validation, scheduled feedback
 sync, and CLI packaging do not run unit tests.
 
-SwiftPM dependencies and compiled test/release products are cached by runner
-architecture, exact Xcode build, package lock, native-codec manifest, and source
-hash. Rust dependency and target caches follow the pinned toolchain and lockfile.
-Cache hits never skip test execution. Cache paths exclude signing certificates,
-provisioning profiles, Fastlane credentials, and packaged App Store uploads.
-The trusted `push` trigger grants normal cache access without overriding GitHub's
-read-only cache policy for contributor-triggered events. Merge verification must
-succeed before any test or publishing job can read or write these caches.
+Bazel builds and tests the Swift app, Rust CLI, TypeScript website, metadata,
+and automation checks. Repository archive caches and the content-addressed action
+cache persist between jobs and runs. The action cache includes compilation,
+unchanged test results, and lint results; changes to declared inputs invalidate
+only the affected work. CI saves completed actions even when a later check fails.
+Unpacked repository trees and output bases are not uploaded as caches.
+
+Signing, credential preparation, and publication remain outside Bazel's cacheable
+build actions. Only unsigned app bundles and declared build/test outputs enter
+the action cache. The trusted `push` trigger grants normal cache access; merge
+verification must succeed before test or publishing jobs can use these caches.
 
 ## Branch access
 

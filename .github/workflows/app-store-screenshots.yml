@@ -37,34 +37,30 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 24.19.0
-          package-manager-cache: false
+      - name: Set up Bazel
+        id: bazel
+        uses: ./.github/actions/setup-bazel
 
       - name: Set up Ruby
         uses: ./.github/actions/setup-ruby
         with:
           bundle-install: "true"
 
-      - name: Configure temporary screenshot paths
-        run: |
-          {
-            echo "APP_STORE_SCREENSHOTS_PATH=$GITHUB_WORKSPACE/app-store/screenshots/localized"
-            echo "APP_STORE_SCREENSHOTS_RENDERED_PATH=$RUNNER_TEMP/luxel-app-store-screenshots"
-            echo "APP_STORE_SCREENSHOTS_MANIFEST=$RUNNER_TEMP/luxel-app-store-screenshots.json"
-          } >> "$GITHUB_ENV"
-
       - name: Render and validate localized screenshots
         run: |
-          node app-store/validate-listing-metadata.mjs
-          swift app-store/render-localized-screenshots.swift \
-            --output "$APP_STORE_SCREENSHOTS_RENDERED_PATH" \
-            --manifest "$APP_STORE_SCREENSHOTS_MANIFEST"
-          test "$(find "$APP_STORE_SCREENSHOTS_PATH" -type f | wc -l | tr -d ' ')" = "66"
-          test "$(find "$APP_STORE_SCREENSHOTS_RENDERED_PATH" -type f | wc -l | tr -d ' ')" = "66"
+          bazel build --config=ci //app-store:metadata_check //app-store:localized_screenshots
+          rendered="$(bazel cquery --config=ci --output=files //app-store:screenshot_files)"
+          test "$(find "$GITHUB_WORKSPACE/$rendered" -type f | wc -l | tr -d ' ')" = "66"
+          echo "APP_STORE_SCREENSHOTS_PATH=$GITHUB_WORKSPACE/app-store/screenshots/localized" >> "$GITHUB_ENV"
 
       - name: Update App Store Connect screenshot draft
         working-directory: apps/macos
         run: bundle exec fastlane mac sync_app_store_screenshots
+
+      - name: Save Bazel caches
+        if: always() && !cancelled()
+        uses: ./.github/actions/save-bazel-cache
+        with:
+          action-cache-key: ${{ steps.bazel.outputs.action-cache-key }}
+          repository-cache-key: ${{ steps.bazel.outputs.repository-cache-key }}
+          repository-cache-hit: ${{ steps.bazel.outputs.repository-cache-hit }}

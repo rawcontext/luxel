@@ -20,15 +20,15 @@ if [[ -z "${SIGN_IDENTITY}" ]]; then
 	exit 1
 fi
 
-swift build -c release --product luxel-transcription-benchmark
-BIN_DIR="$(swift build -c release --show-bin-path)"
+bazel build --config=release //apps/macos:transcription_benchmark
+BINARY="${PACKAGE_ROOT}/../../$(bazel cquery --config=release --output=files //apps/macos:transcription_benchmark)"
 APP_PATH=".bench/transcription/Luxel Transcription Benchmark.app"
 EXECUTABLE="luxel-transcription-benchmark"
 
 rm -rf "${APP_PATH}"
 mkdir -p "${APP_PATH}/Contents/MacOS"
 cp "Configuration/Luxel/Info.plist" "${APP_PATH}/Contents/Info.plist"
-cp "${BIN_DIR}/${EXECUTABLE}" "${APP_PATH}/Contents/MacOS/${EXECUTABLE}"
+cp "${BINARY}" "${APP_PATH}/Contents/MacOS/${EXECUTABLE}"
 /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable ${EXECUTABLE}" "${APP_PATH}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.rawcontext.luxel.dev" "${APP_PATH}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Luxel Transcription Benchmark" "${APP_PATH}/Contents/Info.plist"

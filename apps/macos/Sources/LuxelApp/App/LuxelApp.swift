@@ -5,7 +5,11 @@ import LuxelPresentation
 import SwiftUI
 @preconcurrency import UserNotifications
 
-@main
+@MainActor
+public func runLuxelApp() {
+    LuxelApp.main()
+}
+
 struct LuxelApp: App {
     @NSApplicationDelegateAdaptor(LuxelApplicationDelegate.self) private var appDelegate
     @Environment(\.openSettings) private var openSettings

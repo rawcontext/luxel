@@ -17,7 +17,8 @@ private let expectedThirdPartyComponentHeadings = [
     "## FluidInference silero-vad-coreml (bundled model)",
     "## aufklarer/DeepFilterNet3-CoreML (bundled model)",
     "## soniqo/speech-swift (adapted runtime)",
-    "## ZHKKKe/MODNet (bundled model)"
+    "## ZHKKKe/MODNet (bundled model)",
+    "## Build-generated Swift resource accessors"
 ]
 
 private let expectedThirdPartyResourcePaths = [

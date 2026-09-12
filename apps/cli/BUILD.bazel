@@ -1,0 +1,204 @@
+load("@bazel_lib//lib:run_binary.bzl", "run_binary")
+load("@crates//:defs.bzl", "all_crate_deps")
+load("@rules_apple//apple:apple.bzl", "apple_universal_binary")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_rust//cargo:defs.bzl", "cargo_toml_env_vars")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_clippy_test", "rust_library", "rust_test", "rustfmt_test")
+load("//tools/bazel:rust_licenses.bzl", "rust_license_inputs")
+load("//tools/bazel:validated_files.bzl", "validated_files")
+
+package(default_visibility = ["//:__pkg__"])
+
+exports_files([
+    "Cargo.lock",
+    "Cargo.toml",
+])
+
+filegroup(
+    name = "build_files",
+    srcs = ["BUILD.bazel"],
+)
+
+cargo_toml_env_vars(
+    name = "package_env",
+    src = "Cargo.toml",
+)
+
+rust_library(
+    name = "luxel_cli",
+    srcs = glob(
+        ["src/**/*.rs"],
+        exclude = ["src/main.rs"],
+    ),
+    compile_data = glob(["protocol/**/*.json"]),
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    rustc_env_files = [":package_env"],
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = all_crate_deps(normal = True),
+)
+
+rust_binary(
+    name = "luxel",
+    srcs = ["src/main.rs"],
+    edition = "2024",
+    rustc_env_files = [":package_env"],
+    deps = [
+        ":luxel_cli",
+        "@crates//:clap",
+    ],
+)
+
+rust_test(
+    name = "unit_tests",
+    size = "small",
+    crate = ":luxel_cli",
+)
+
+rust_test(
+    name = "protocol_fixtures_test",
+    size = "small",
+    srcs = ["tests/protocol_fixtures.rs"],
+    compile_data = glob(["protocol/**/*.json"]),
+    edition = "2024",
+    deps = [
+        ":luxel_cli",
+        "@crates//:serde_json",
+    ],
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":protocol_fixtures_test",
+        ":unit_tests",
+    ],
+)
+
+rust_clippy_test(
+    name = "clippy",
+    size = "small",
+    tags = ["lint"],
+    targets = [
+        ":luxel_cli",
+        ":luxel",
+        ":unit_tests",
+        ":protocol_fixtures_test",
+    ],
+)
+
+rustfmt_test(
+    name = "format",
+    size = "small",
+    tags = ["lint"],
+    targets = [
+        ":luxel",
+        ":unit_tests",
+        ":protocol_fixtures_test",
+    ],
+)
+
+test_suite(
+    name = "lint",
+    tests = [
+        ":clippy",
+        ":format",
+    ],
+)
+
+apple_universal_binary(
+    name = "luxel_universal",
+    binary = ":luxel",
+    forced_cpus = [
+        "arm64",
+        "x86_64",
+    ],
+    minimum_os_version = "26.0",
+    platform_type = "macos",
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+pkg_files(
+    name = "cli_archive_binary",
+    srcs = [":luxel_universal"],
+    attributes = pkg_attributes(mode = "0755"),
+    renames = {":luxel_universal": "luxel"},
+)
+
+pkg_files(
+    name = "cli_archive_licenses",
+    srcs = [
+        "LICENSE",
+        "THIRD_PARTY_LICENSES.md",
+    ],
+    attributes = pkg_attributes(mode = "0644"),
+)
+
+pkg_tar(
+    name = "archive",
+    srcs = [
+        ":cli_archive_binary",
+        ":cli_archive_licenses",
+    ],
+    out = "dist/luxel-macos-universal.tar.gz",
+    extension = "tar.gz",
+    portable_mtime = True,
+)
+
+run_binary(
+    name = "archive_checksum",
+    srcs = [":archive"],
+    outs = ["dist/luxel-macos-universal.tar.gz.sha256"],
+    args = [
+        "$(location :archive)",
+        "$@",
+    ],
+    tool = "//tools/bazel:write_sha256",
+)
+
+py_binary(
+    name = "license_generator",
+    srcs = ["scripts/generate-license-notices.py"],
+    main = "scripts/generate-license-notices.py",
+)
+
+rust_license_inputs(
+    name = "license_inputs",
+    targets = [":luxel_universal"],
+)
+
+filegroup(
+    name = "license_sources",
+    srcs = [":license_inputs"],
+    output_group = "sources",
+)
+
+run_binary(
+    name = "license_check",
+    srcs = [
+        "THIRD_PARTY_LICENSES.md",
+        ":license_inputs",
+        ":license_sources",
+    ],
+    args = [
+        "--bazel-manifest",
+        "$(location :license_inputs)",
+        "--output",
+        "$(location THIRD_PARTY_LICENSES.md)",
+        "--check",
+    ],
+    stdout = "license-check.txt",
+    tool = ":license_generator",
+)
+
+validated_files(
+    name = "package",
+    srcs = [
+        ":archive",
+        ":archive_checksum",
+    ],
+    checks = [":license_check"],
+)

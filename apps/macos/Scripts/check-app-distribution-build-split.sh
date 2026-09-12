@@ -4,5 +4,5 @@ set -euo pipefail
 PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${PACKAGE_ROOT}"
 
-swift test --filter AppDistributionTests
-swift test --filter AppDistributionTests -Xswiftc -DLUXEL_MAC_APP_STORE
+bazel test --//apps/macos:app_store=false //apps/macos:distribution_tests
+bazel test --//apps/macos:app_store=true //apps/macos:distribution_tests

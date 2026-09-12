@@ -1,0 +1,25 @@
+name: Save Bazel caches
+description: Preserve successful Bazel actions even when a later test or upload fails.
+inputs:
+  action-cache-key:
+    required: true
+    description: Key returned by setup-bazel.
+  repository-cache-key:
+    required: true
+    description: Repository key returned by setup-bazel.
+  repository-cache-hit:
+    required: false
+    description: Whether the repository cache was already saved.
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: inputs.action-cache-key != ''
+      with:
+        path: ~/.cache/luxel/bazel/actions
+        key: ${{ inputs.action-cache-key }}
+    - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: inputs.repository-cache-key != '' && inputs.repository-cache-hit != 'true'
+      with:
+        path: ~/.cache/luxel/bazel/repository/content_addressable
+        key: ${{ inputs.repository-cache-key }}

@@ -1,4 +1,5 @@
 import Foundation
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelCore
@@ -256,7 +257,7 @@ struct BundledSpeakerDiarizationTests {
     }
 
     private func packageRootURL() -> URL {
-        var url = URL(fileURLWithPath: #filePath)
+        var url = testSourceFileURL()
         while url.lastPathComponent != "Tests" {
             url.deleteLastPathComponent()
         }

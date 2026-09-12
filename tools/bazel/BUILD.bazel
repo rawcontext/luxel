@@ -1,0 +1,128 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load(":executable_tool.bzl", "executable_tool")
+load(":file_manifest.bzl", "file_manifest")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "executable_tool.bzl",
+    "web_settings.bzl",
+    "swift_testing.bzl",
+    "host_runtime.bzl",
+    "rust_licenses.bzl",
+    "app_metadata.bzl",
+    "validated_files.bzl",
+    "run-bun-tests.sh",
+    "run-installer-test.sh",
+    "run-swift-tests.sh.tpl",
+    "SwiftTestingMain.swift",
+    "verify_app_bundle.py",
+])
+
+py_binary(
+    name = "prepare_test_resources",
+    srcs = ["prepare_test_resources.py"],
+)
+
+py_binary(
+    name = "write_sha256",
+    srcs = ["write_sha256.py"],
+)
+
+py_binary(
+    name = "prepare_app_metadata",
+    srcs = ["prepare_app_metadata.py"],
+)
+
+py_binary(
+    name = "run_python_script",
+    srcs = ["run_python_script.py"],
+)
+
+py_binary(
+    name = "validate_model",
+    srcs = ["validate_model.py"],
+)
+
+filegroup(
+    name = "build_files",
+    srcs = ["BUILD.bazel"] + glob(["*.bzl"]),
+)
+
+file_manifest(
+    name = "swiftlint_sources",
+    srcs = [
+        "SwiftTestingMain.swift",
+        "//apps/macos:swift_lint_sources",
+    ],
+)
+
+py_test(
+    name = "swiftlint_test",
+    size = "small",
+    srcs = ["run_swiftlint.py"],
+    args = [
+        "$(rlocationpath :swiftlint_sources)",
+        "$(rlocationpath //:.swiftlint.yml)",
+        "$(rlocationpath @swiftlint_binary//:swiftlint)",
+    ],
+    data = [
+        "SwiftTestingMain.swift",
+        ":swiftlint_sources",
+        "//:.swiftlint.yml",
+        "//apps/macos:swift_lint_sources",
+        "@host_runtime//:runtime.json",
+        "@swiftlint_binary//:swiftlint",
+    ],
+    main = "run_swiftlint.py",
+    tags = ["lint"],
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = ["@rules_python//python/runfiles"],
+)
+
+config_setting(
+    name = "darwin_arm64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "darwin_x64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "linux_arm64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "linux_x64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+alias(
+    name = "bun_platform",
+    actual = select({
+        ":darwin_arm64": "@bun_darwin_arm64//:bun",
+        ":darwin_x64": "@bun_darwin_x64//:bun",
+        ":linux_arm64": "@bun_linux_arm64//:bun",
+        ":linux_x64": "@bun_linux_x64//:bun",
+    }),
+)
+
+executable_tool(
+    name = "bun",
+    binary = ":bun_platform",
+)

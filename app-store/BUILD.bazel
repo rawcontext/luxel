@@ -1,0 +1,133 @@
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary", "js_test")
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@bazel_lib//lib:output_files.bzl", "output_files")
+load("@bazel_lib//lib:run_binary.bzl", "run_binary")
+load("@rules_swift//swift:swift_binary.bzl", "swift_binary")
+load("//tools/bazel:validated_files.bzl", "validated_files")
+
+package(default_visibility = ["//:__pkg__"])
+
+filegroup(
+    name = "build_files",
+    srcs = ["BUILD.bazel"],
+)
+
+filegroup(
+    name = "metadata_sources",
+    srcs = [
+        "export-listing-metadata.mjs",
+        "listing-metadata.md",
+        "listing-metadata-support.mjs",
+        "localized-screenshot-headings.json",
+        "review-notes.txt",
+    ] + glob(["screenshots/**"]),
+)
+
+js_binary(
+    name = "metadata_exporter",
+    data = [":metadata_sources"],
+    entry_point = "export-listing-metadata.mjs",
+    tags = ["manual"],
+)
+
+js_binary(
+    name = "metadata_validator",
+    data = [":metadata_sources"],
+    entry_point = "validate-listing-metadata.mjs",
+    tags = ["manual"],
+)
+
+js_run_binary(
+    name = "metadata_files",
+    srcs = [":metadata_sources"],
+    args = ["metadata/fastlane"],
+    chdir = package_name(),
+    out_dirs = ["metadata"],
+    tool = ":metadata_exporter",
+    use_execroot_entry_point = True,
+)
+
+js_run_binary(
+    name = "metadata_check",
+    srcs = [":metadata_sources"],
+    chdir = package_name(),
+    stdout = "metadata-validation.txt",
+    tool = ":metadata_validator",
+    use_execroot_entry_point = True,
+)
+
+validated_files(
+    name = "metadata",
+    srcs = [":metadata_files"],
+    checks = [":metadata_check"],
+)
+
+copy_file(
+    name = "renderer_main",
+    src = "render-localized-screenshots.swift",
+    out = "renderer/main.swift",
+)
+
+swift_binary(
+    name = "screenshot_renderer",
+    srcs = [":renderer_main"],
+    module_name = "AppStoreScreenshotRenderer",
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+run_binary(
+    name = "localized_screenshots",
+    srcs = glob(["screenshots/*.png"]) + [
+        "localized-screenshot-headings.json",
+        "@host_runtime//:runtime.json",
+    ],
+    outs = ["rendered_screenshots.json"],
+    args = [
+        "--output",
+        "$(RULEDIR)/rendered_screenshots",
+        "--manifest",
+        "$(location rendered_screenshots.json)",
+    ],
+    out_dirs = ["rendered_screenshots"],
+    target_compatible_with = ["@platforms//os:macos"],
+    tool = ":screenshot_renderer",
+)
+
+output_files(
+    name = "screenshot_files",
+    paths = ["app-store/rendered_screenshots"],
+    target = ":localized_screenshots",
+)
+
+js_test(
+    name = "metadata_export_test",
+    size = "small",
+    data = [
+        "export-listing-metadata.mjs",
+        "listing-metadata.md",
+        "listing-metadata-support.mjs",
+        "review-notes.txt",
+    ],
+    entry_point = "export-listing-metadata.test.mjs",
+    node_options = ["--test"],
+)
+
+js_test(
+    name = "metadata_validation_test",
+    size = "small",
+    data = glob(["screenshots/**"]) + [
+        "listing-metadata.md",
+        "listing-metadata-support.mjs",
+        "localized-screenshot-headings.json",
+        "review-notes.txt",
+    ],
+    entry_point = "validate-listing-metadata.mjs",
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":metadata_export_test",
+        ":metadata_validation_test",
+    ],
+)

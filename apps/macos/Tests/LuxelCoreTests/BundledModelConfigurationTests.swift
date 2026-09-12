@@ -12,23 +12,17 @@ struct BundledModelConfigurationTests {
             modelDirectory: "speaker-diarization"
         )
 
-        let support = try scriptSource("luxel-app-bundle-support.sh", root: root)
         for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
             let script = try scriptSource(scriptName, root: root)
-            #expect(script.contains("SPEAKER_DIARIZATION_MODEL_DIR"))
             #expect(script.contains("audit-speaker-diarization-model.sh"))
             #expect(
                 script.contains(
                     "bash \"${SPEAKER_DIARIZATION_MODEL_AUDITOR}\" \"${APP_PATH}\""))
-            #expect(!script.contains("if [[ -d \"${SPEAKER_DIARIZATION_MODEL_DIR}"))
         }
         let macAppStoreScript = try scriptSource("build-luxel-mas-pkg.sh", root: root)
         #expect(
             macAppStoreScript.contains(
                 "bash \"${SPEAKER_DIARIZATION_MODEL_AUDITOR}\" \"${PKG_PATH}\""))
-        #expect(support.contains("cp -R \"${SPEAKER_DIARIZATION_MODEL_DIR}\""))
-        #expect(support.contains("${SPEAKER_DIARIZATION_MODEL_AUDITOR}"))
-        #expect(!support.contains("if [[ -d \"${SPEAKER_DIARIZATION_MODEL_DIR}"))
     }
 
     @Test("signed app scripts require and audit bundled Studio Voice resources")
@@ -40,23 +34,17 @@ struct BundledModelConfigurationTests {
             modelDirectory: "studio-voice"
         )
 
-        let support = try scriptSource("luxel-app-bundle-support.sh", root: root)
         for scriptName in ["build-luxel-app.sh", "build-luxel-mas-pkg.sh"] {
             let script = try scriptSource(scriptName, root: root)
-            #expect(script.contains("STUDIO_VOICE_MODEL_DIR"))
             #expect(script.contains("audit-studio-voice-model.sh"))
             #expect(
                 script.contains(
                     "bash \"${STUDIO_VOICE_MODEL_AUDITOR}\" \"${APP_PATH}\""))
-            #expect(!script.contains("if [[ -d \"${STUDIO_VOICE_MODEL_DIR}"))
         }
         let macAppStoreScript = try scriptSource("build-luxel-mas-pkg.sh", root: root)
         #expect(
             macAppStoreScript.contains(
                 "bash \"${STUDIO_VOICE_MODEL_AUDITOR}\" \"${PKG_PATH}\""))
-        #expect(support.contains("cp -R \"${STUDIO_VOICE_MODEL_DIR}\""))
-        #expect(support.contains("${STUDIO_VOICE_MODEL_AUDITOR}"))
-        #expect(!support.contains("if [[ -d \"${STUDIO_VOICE_MODEL_DIR}"))
     }
 
     @Test("MODNet conversion isolates source and validates retained compiler output")

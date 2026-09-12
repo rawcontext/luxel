@@ -257,7 +257,7 @@ def verify_script_contents(relative_path: str, contents: str) -> None:
             fail(f"Native codec partial build contains forbidden global provenance generation: {relative_path}")
 
     if relative_path in ("Scripts/build-luxel-app.sh", "Scripts/build-luxel-mas-pkg.sh"):
-        if contents.index('"${CODEC_LICENSE_CHECKER}"') > contents.index("swift build"):
+        if contents.index('"${CODEC_LICENSE_CHECKER}"') > contents.index("bazel build"):
             fail(f"Native codec release gate must run before compilation in {relative_path}.")
 
 

@@ -1,0 +1,10 @@
+"""Exclude generated state from repository traversal."""
+
+ignore_directories([
+    "**/.astro",
+    "**/.build",
+    "**/.vercel",
+    "**/dist",
+    "**/node_modules",
+    "**/target",
+])

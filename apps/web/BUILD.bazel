@@ -1,0 +1,192 @@
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary", "js_run_devserver", "js_test")
+load("@bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+load("@bazel_lib//lib:output_files.bzl", "output_files")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//apps/web:astro/package_json.bzl", astro = "bin")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//tools/bazel:web_settings.bzl", "web_config")
+
+package(default_visibility = ["//:__pkg__"])
+
+copy_to_bin(
+    name = "duplication_sources",
+    srcs = glob([
+        "src/**",
+        "scripts/**",
+    ]) + ["astro.config.mjs"],
+)
+
+filegroup(
+    name = "build_files",
+    srcs = ["BUILD.bazel"],
+)
+
+npm_link_all_packages(name = "node_modules")
+
+astro.astro_binary(
+    name = "astro_cli",
+    chdir = package_name(),
+    tags = ["manual"],
+)
+
+js_run_devserver(
+    name = "dev",
+    args = ["dev"],
+    data = [
+        ":build_inputs",
+        ":node_modules/@astrojs/vercel",
+    ],
+    tool = ":astro_cli",
+)
+
+string_flag(
+    name = "site_url",
+    build_setting_default = "https://luxel.media",
+)
+
+string_flag(
+    name = "turnstile_site_key",
+    build_setting_default = "",
+)
+
+web_config(
+    name = "build_config",
+    site_url = ":site_url",
+    turnstile_site_key = ":turnstile_site_key",
+)
+
+filegroup(
+    name = "build_inputs",
+    srcs = glob(
+        [
+            "public/**",
+            "src/**",
+        ],
+        exclude = ["src/**/*.test.ts"],
+    ) + [
+        "astro.config.mjs",
+        "package.json",
+        "scripts/generate-llms.mjs",
+        "tsconfig.json",
+    ],
+)
+
+js_binary(
+    name = "build_site_tool",
+    data = [
+        ":build_inputs",
+        ":node_modules/@astrojs/vercel",
+        ":node_modules/astro",
+        ":node_modules/cheerio",
+        ":node_modules/turndown",
+        ":node_modules/turndown-plugin-gfm",
+    ],
+    entry_point = "scripts/build-site.mjs",
+    tags = ["manual"],
+)
+
+js_run_binary(
+    name = "build",
+    srcs = [
+        ":build_config",
+        ":build_inputs",
+    ],
+    args = ["build-config.json"],
+    chdir = package_name(),
+    env = {"ASTRO_TELEMETRY_DISABLED": "1"},
+    mnemonic = "AstroBuild",
+    out_dirs = [
+        "dist",
+        ".vercel/output",
+    ],
+    tool = ":build_site_tool",
+    use_execroot_entry_point = True,
+)
+
+output_files(
+    name = "dist",
+    paths = ["apps/web/dist"],
+    target = ":build",
+)
+
+output_files(
+    name = "vercel_output",
+    paths = ["apps/web/.vercel/output"],
+    target = ":build",
+)
+
+sh_test(
+    name = "i18n_tests",
+    size = "small",
+    srcs = ["//tools/bazel:run-bun-tests.sh"],
+    args = [
+        "$(rlocationpath //tools/bazel:bun)",
+        "$(rlocationpath :i18n_test_main)",
+    ],
+    data = [
+        ":build",
+        ":i18n_test_main",
+        ":test_inputs",
+        "//tools/bazel:bun",
+    ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+copy_to_bin(
+    name = "test_inputs",
+    srcs = [
+        "src/i18n/i18n.test.ts",
+        ":build_inputs",
+        "//apps/macos:marketing_contract_sources",
+    ],
+)
+
+output_files(
+    name = "i18n_test_main",
+    paths = ["apps/web/src/i18n/i18n.test.ts"],
+    target = ":test_inputs",
+)
+
+js_test(
+    name = "catalog_check",
+    size = "small",
+    args = ["--check"],
+    data = [
+        ":build",
+        ":build_inputs",
+        ":node_modules/cheerio",
+    ],
+    entry_point = "scripts/extract-i18n-sources.mjs",
+    tags = ["lint"],
+)
+
+sh_test(
+    name = "installer_test",
+    size = "small",
+    srcs = ["//tools/bazel:run-installer-test.sh"],
+    args = [
+        "$(rlocationpath scripts/test-installer.sh)",
+        "$(rlocationpath :dist)",
+    ],
+    data = [
+        "scripts/test-installer.sh",
+        "src/installer/install.sh",
+        ":dist",
+    ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":catalog_check",
+        ":i18n_tests",
+        ":installer_test",
+    ],
+)
+
+test_suite(
+    name = "lint",
+    tests = [":catalog_check"],
+)

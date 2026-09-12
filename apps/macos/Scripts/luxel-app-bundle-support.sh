@@ -9,36 +9,16 @@ configure_luxel_app_icon() {
 	/usr/libexec/PlistBuddy -c "Add :CFBundleIconName string ${APP_NAME}" "${app_info_plist}"
 }
 
-copy_luxel_app_payload() {
-	cp "${BIN_DIR}/${APP_NAME}" "${APP_PATH}/Contents/MacOS/${APP_NAME}"
-	cp "${PRIVACY_MANIFEST}" "${APP_PATH}/Contents/Resources/PrivacyInfo.xcprivacy"
-	cp "${THIRD_PARTY_LICENSES}" "${APP_PATH}/Contents/Resources/ThirdPartyLicenses.md"
-	cp "${PACKAGE_ROOT}/../../LICENSE" "${APP_PATH}/Contents/Resources/LICENSE.txt"
-	mkdir -p "${APP_PATH}/Contents/Resources/Models"
-	cp -R "${SPEAKER_DIARIZATION_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
-	bash "${SPEAKER_DIARIZATION_MODEL_AUDITOR}" "${APP_PATH}"
-	cp -R "${STUDIO_VOICE_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
-	bash "${STUDIO_VOICE_MODEL_AUDITOR}" "${APP_PATH}"
-	cp -R "${MODNET_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
-	"${MODNET_MODEL_AUDITOR}" "${APP_PATH}"
-	cp -R "${VAD_MODEL_DIR}" "${APP_PATH}/Contents/Resources/Models/"
-	"${VAD_MODEL_AUDITOR}" "${APP_PATH}"
-}
-
-copy_luxel_app_resources() {
-	"${APP_ICON_INSTALLER}" "${APP_PATH}/Contents/Resources"
-	find "${BIN_DIR}" -maxdepth 1 -name '*.bundle' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
-	find "${BIN_DIR}" -maxdepth 2 -name '*.lproj' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
-	if [[ -d "${PACKAGE_ROOT}/Configuration/Luxel/Localizations" ]]; then
-		find "${PACKAGE_ROOT}/Configuration/Luxel/Localizations" -maxdepth 1 -name '*.lproj' -type d -exec cp -R {} "${APP_PATH}/Contents/Resources/" \;
-	fi
-	if [[ -f "${STRING_CATALOG}" ]]; then
-		python3 \
-			"${PACKAGE_ROOT}/Scripts/compile-luxel-string-catalog.py" \
-			"${STRING_CATALOG}" \
-			"${APP_PATH}/Contents/Resources" \
-			"${APP_PATH}/Contents/Resources/Luxel_LuxelCore.bundle"
-	fi
+unpack_bazel_app() {
+	local archive="$1"
+	local staging
+	staging="$(mktemp -d "${TMPDIR:-/tmp}/luxel-bazel-bundle.XXXXXX")"
+	ditto -x -k "${archive}" "${staging}"
+	test -d "${staging}/Luxel.app"
+	mkdir -p "$(dirname "${APP_PATH}")"
+	rm -rf "${APP_PATH}"
+	mv "${staging}/Luxel.app" "${APP_PATH}"
+	rmdir "${staging}"
 }
 
 set_luxel_localized_bundle_display_name() {

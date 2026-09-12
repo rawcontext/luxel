@@ -5,6 +5,7 @@ import CoreVideo
 import Foundation
 import ImageIO
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 extension CameraCutoutPipelineTests {
@@ -35,7 +36,7 @@ extension CameraCutoutPipelineTests {
     }
 
     var vendoredModelURL: URL {
-        URL(fileURLWithPath: #filePath)
+        testSourceFileURL()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()

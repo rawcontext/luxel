@@ -1,0 +1,770 @@
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_lib//lib:output_files.bzl", "output_files")
+load("@bazel_lib//lib:run_binary.bzl", "run_binary")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@rules_apple//apple:apple.bzl", "apple_static_xcframework_import")
+load("@rules_apple//apple:macos.bzl", "macos_application")
+load("@rules_apple//apple:resources.bzl", "apple_resource_bundle")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@rules_swift//swift:swift_binary.bzl", "swift_binary")
+load("@rules_swift//swift:swift_interop_hint.bzl", "swift_interop_hint")
+load("@rules_swift//swift:swift_library.bzl", "swift_library")
+load("@rules_swift//swift:swift_test.bzl", "swift_test")
+load("@rules_swift_package_manager//swiftpkg:build_defs.bzl", "resource_bundle_accessor", "resource_bundle_infoplist")
+load("//tools/bazel:app_metadata.bzl", "app_metadata")
+load("//tools/bazel:swift_testing.bzl", "swift_test_resources", "swift_testing_test")
+load("//tools/bazel:validated_files.bzl", "validated_files")
+
+package(default_visibility = ["//:__pkg__"])
+
+copy_to_bin(
+    name = "duplication_sources",
+    srcs = glob([
+        "Sources/**",
+        "Tests/**",
+        "Scripts/*.py",
+        "Scripts/*.sh",
+    ]) + [
+        "fastlane/Appfile",
+        "fastlane/Fastfile",
+        "fastlane/README.md",
+    ],
+)
+
+swift_binary(
+    name = "media_benchmark",
+    srcs = glob(["Sources/LuxelMediaBenchmark/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelMediaBenchmark",
+    deps = [
+        ":LuxelCodecAV1",
+        ":LuxelCodecWebM",
+        ":LuxelCore",
+    ],
+)
+
+swift_binary(
+    name = "transcription_benchmark",
+    srcs = glob(["Sources/LuxelTranscriptionBenchmark/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelTranscriptionBenchmark",
+    deps = [
+        ":LuxelCore",
+        "@swiftpkg_fluidaudio//:FluidAudio",
+    ],
+)
+
+exports_files([
+    "Package.swift",
+    "Package.resolved",
+])
+
+filegroup(
+    name = "build_files",
+    srcs = ["BUILD.bazel"],
+)
+
+filegroup(
+    name = "swift_lint_sources",
+    srcs = glob([
+        "Sources/**/*.swift",
+        "Tests/**/*.swift",
+    ]) + ["Package.swift"],
+    visibility = ["//tools/bazel:__pkg__"],
+)
+
+bool_flag(
+    name = "app_store",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "mac_app_store",
+    flag_values = {":app_store": "true"},
+)
+
+copy_to_bin(
+    name = "marketing_contract_sources",
+    srcs = [
+        "Sources/LuxelApp/Settings/Views/LuxelSettingsView+Transcripts.swift",
+        "Sources/LuxelCore/Application/Localization/LuxelLocalization.swift",
+    ],
+    visibility = ["//apps/web:__pkg__"],
+)
+
+resource_bundle_infoplist(name = "core_resource_plist")
+
+resource_bundle_accessor(
+    name = "core_resource_accessor",
+    bundle_name = "Luxel_LuxelCore",
+)
+
+apple_resource_bundle(
+    name = "core_resources",
+    bundle_name = "Luxel_LuxelCore",
+    infoplists = [":core_resource_plist"],
+    resources = glob(["Sources/LuxelCore/Resources/**"]),
+)
+
+swift_library(
+    name = "LuxelCore",
+    srcs = glob(["Sources/LuxelCore/**/*.swift"]) + [":core_resource_accessor"],
+    copts = [
+        "-swift-version",
+        "6",
+    ] + select({
+        ":mac_app_store": ["-DLUXEL_MAC_APP_STORE"],
+        "//conditions:default": [],
+    }),
+    data = [":core_resources"],
+    module_name = "LuxelCore",
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = ["@swiftpkg_fluidaudio//:FluidAudio"],
+)
+
+swift_library(
+    name = "LuxelTestSupport",
+    testonly = True,
+    srcs = glob(["Tests/LuxelTestSupport/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelTestSupport",
+    deps = [
+        ":LuxelCore",
+        "@rules_swift//swift/runfiles",
+    ],
+)
+
+swift_library(
+    name = "LocalizationTestSources",
+    testonly = True,
+    srcs = ["Tests/LuxelCoreTests/LocalizationTests.swift"],
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelLocalizationTests",
+    deps = [
+        ":LuxelCore",
+        ":LuxelTestSupport",
+    ],
+)
+
+swift_test(
+    name = "_localization_tests_binary",
+    srcs = ["//tools/bazel:SwiftTestingMain.swift"],
+    discover_tests = False,
+    tags = ["manual"],
+    deps = [":LocalizationTestSources"],
+)
+
+swift_testing_test(
+    name = "localization_tests",
+    size = "medium",
+    binary = ":_localization_tests_binary",
+    resources = ":test_resources",
+    snapshot = ":test_snapshot",
+)
+
+apple_static_xcframework_import(
+    name = "CVPX",
+    xcframework_imports = glob(["Vendor/Artifacts/CVPX.xcframework/**"]),
+)
+
+apple_static_xcframework_import(
+    name = "COpus",
+    xcframework_imports = glob(["Vendor/Artifacts/COpus.xcframework/**"]),
+)
+
+apple_static_xcframework_import(
+    name = "CSVTAV1",
+    xcframework_imports = glob(["Vendor/Artifacts/CSVTAV1.xcframework/**"]),
+)
+
+swift_interop_hint(
+    name = "webm_interop",
+    module_name = "CWebMCodecShims",
+)
+
+swift_interop_hint(
+    name = "av1_interop",
+    module_name = "CAV1CodecShims",
+)
+
+cc_library(
+    name = "CWebMCodecShims",
+    srcs = ["Sources/CWebMCodecShims/LuxelWebMCodecShims.c"],
+    hdrs = ["Sources/CWebMCodecShims/include/LuxelWebMCodecShims.h"],
+    aspect_hints = [":webm_interop"],
+    includes = ["Sources/CWebMCodecShims/include"],
+    linkopts = ["-lc++"],
+    deps = [
+        ":COpus",
+        ":CVPX",
+    ],
+)
+
+cc_library(
+    name = "CAV1CodecShims",
+    srcs = ["Sources/CAV1CodecShims/LuxelAV1CodecShims.c"],
+    hdrs = ["Sources/CAV1CodecShims/include/LuxelAV1CodecShims.h"],
+    aspect_hints = [":av1_interop"],
+    includes = ["Sources/CAV1CodecShims/include"],
+    linkopts = ["-lc++"],
+    deps = [":CSVTAV1"],
+)
+
+swift_library(
+    name = "LuxelCodecWebM",
+    srcs = glob(["Sources/LuxelCodecWebM/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelCodecWebM",
+    deps = [
+        ":CWebMCodecShims",
+        ":LuxelCore",
+    ],
+)
+
+swift_library(
+    name = "LuxelCodecAV1",
+    srcs = glob(["Sources/LuxelCodecAV1/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelCodecAV1",
+    deps = [
+        ":CAV1CodecShims",
+        ":LuxelCore",
+    ],
+)
+
+swift_library(
+    name = "LuxelPresentation",
+    srcs = glob(["Sources/LuxelPresentation/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelPresentation",
+    deps = [":LuxelCore"],
+)
+
+swift_library(
+    name = "LuxelApp",
+    srcs = glob(["Sources/LuxelApp/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelApp",
+    deps = [
+        ":LuxelCodecAV1",
+        ":LuxelCodecWebM",
+        ":LuxelCore",
+        ":LuxelPresentation",
+    ],
+    alwayslink = True,
+)
+
+filegroup(
+    name = "test_data",
+    testonly = True,
+    srcs = glob(
+        [
+            "Sources/**",
+            "Tests/**",
+            "Scripts/**",
+            "Configuration/**",
+            "Vendor/**",
+        ],
+        exclude = ["**/.DS_Store"],
+    ) + [
+        "Package.resolved",
+        "Package.swift",
+        "THIRD_PARTY_LICENSES.md",
+        "//:repository_test_data",
+    ],
+)
+
+resource_bundle_infoplist(name = "fixtures_resource_plist")
+
+resource_bundle_accessor(
+    name = "fixtures_resource_accessor",
+    bundle_name = "Luxel_LuxelCoreTests",
+)
+
+apple_resource_bundle(
+    name = "test_fixtures",
+    testonly = True,
+    bundle_name = "Luxel_LuxelCoreTests",
+    infoplists = [":fixtures_resource_plist"],
+    resources = glob(["Tests/LuxelCoreTests/Fixtures/**"]),
+)
+
+swift_library(
+    name = "CoreTestSources",
+    testonly = True,
+    srcs = glob(
+        ["Tests/LuxelCoreTests/**/*.swift"],
+        exclude = [
+            "Tests/LuxelCoreTests/LocalizationTests.swift",
+            "Tests/LuxelCoreTests/FoundationBookmarkedDirectoryAdaptersTests.swift",
+            "Tests/LuxelCoreTests/CodecComplianceModelTests.swift",
+            "Tests/LuxelCoreTests/AppDistributionTests.swift",
+        ],
+    ) + [":fixtures_resource_accessor"],
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    data = [":test_fixtures"],
+    module_name = "LuxelCoreTests",
+    deps = [
+        ":LuxelCore",
+        ":LuxelTestSupport",
+    ],
+)
+
+swift_test(
+    name = "_core_tests_binary",
+    srcs = ["//tools/bazel:SwiftTestingMain.swift"],
+    discover_tests = False,
+    tags = ["manual"],
+    deps = [
+        ":CodecComplianceTestSources",
+        ":CoreTestSources",
+        ":DistributionTestSources",
+    ],
+)
+
+swift_testing_test(
+    name = "core_tests",
+    size = "medium",
+    binary = ":_core_tests_binary",
+    resources = ":test_resources",
+    snapshot = ":test_snapshot",
+)
+
+swift_library(
+    name = "AppTestSources",
+    testonly = True,
+    srcs = glob(["Tests/LuxelAppTests/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelAppTests",
+    deps = [
+        ":LuxelApp",
+        ":LuxelCore",
+        ":LuxelPresentation",
+        ":LuxelTestSupport",
+    ],
+)
+
+swift_test(
+    name = "_app_tests_binary",
+    srcs = ["//tools/bazel:SwiftTestingMain.swift"],
+    discover_tests = False,
+    tags = ["manual"],
+    deps = [":AppTestSources"],
+)
+
+swift_testing_test(
+    name = "app_tests",
+    size = "medium",
+    binary = ":_app_tests_binary",
+    resources = ":test_resources",
+    snapshot = ":test_snapshot",
+    # AppKit integration and application-support staging require the macOS host services.
+    tags = [
+        "no-remote-exec",
+        "no-sandbox",
+    ],
+)
+
+swift_library(
+    name = "WebMTestSources",
+    testonly = True,
+    srcs = glob(["Tests/LuxelCodecWebMTests/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelCodecWebMTests",
+    deps = [
+        ":LuxelCodecWebM",
+        ":LuxelCore",
+        ":LuxelTestSupport",
+    ],
+)
+
+swift_test(
+    name = "_webm_tests_binary",
+    srcs = ["//tools/bazel:SwiftTestingMain.swift"],
+    discover_tests = False,
+    tags = ["manual"],
+    deps = [":WebMTestSources"],
+)
+
+swift_testing_test(
+    name = "webm_tests",
+    size = "medium",
+    binary = ":_webm_tests_binary",
+    resources = ":test_resources",
+    snapshot = ":test_snapshot",
+)
+
+swift_library(
+    name = "AV1TestSources",
+    testonly = True,
+    srcs = glob(["Tests/LuxelCodecAV1Tests/**/*.swift"]),
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelCodecAV1Tests",
+    deps = [
+        ":LuxelCodecAV1",
+        ":LuxelCore",
+        ":LuxelTestSupport",
+    ],
+)
+
+swift_test(
+    name = "_av1_tests_binary",
+    srcs = ["//tools/bazel:SwiftTestingMain.swift"],
+    discover_tests = False,
+    tags = ["manual"],
+    deps = [":AV1TestSources"],
+)
+
+swift_testing_test(
+    name = "av1_tests",
+    size = "medium",
+    binary = ":_av1_tests_binary",
+    resources = ":test_resources",
+    snapshot = ":test_snapshot",
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":app_bundle_test",
+        ":app_tests",
+        ":av1_tests",
+        ":core_tests",
+        ":localization_tests",
+        ":system_tests",
+        ":webm_tests",
+    ],
+)
+
+swift_library(
+    name = "SystemTestSources",
+    testonly = True,
+    srcs = ["Tests/LuxelCoreTests/FoundationBookmarkedDirectoryAdaptersTests.swift"],
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelSystemTests",
+    deps = [":LuxelCore"],
+)
+
+swift_test(
+    name = "_system_tests_binary",
+    srcs = ["//tools/bazel:SwiftTestingMain.swift"],
+    discover_tests = False,
+    tags = ["manual"],
+    deps = [":SystemTestSources"],
+)
+
+swift_testing_test(
+    name = "system_tests",
+    size = "small",
+    binary = ":_system_tests_binary",
+    resources = ":test_resources",
+    snapshot = ":test_snapshot",
+    # Security-scoped bookmarks cannot be created from inside the build sandbox.
+    tags = [
+        "no-remote-exec",
+        "no-sandbox",
+    ],
+)
+
+copy_to_directory(
+    name = "test_snapshot",
+    testonly = True,
+    srcs = [":test_data"],
+    hardlink = "off",
+    root_paths = [],
+)
+
+swift_test_resources(
+    name = "test_resources",
+    testonly = True,
+    catalog = "Sources/LuxelCore/Resources/Localizable.xcstrings",
+    compiler = "Scripts/compile-luxel-string-catalog.py",
+    fixtures = glob(["Tests/LuxelCoreTests/Fixtures/**"]),
+)
+
+swift_library(
+    name = "LuxelLauncher",
+    srcs = ["Sources/LuxelLauncher/LuxelLauncher.swift"],
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelLauncher",
+    deps = [":LuxelApp"],
+)
+
+app_metadata(
+    name = "app_info",
+    src = "Configuration/Luxel/Info.plist",
+    app_store = ":app_store",
+)
+
+MODEL_NAMES = [
+    "speaker-diarization",
+    "studio-voice",
+    "modnet",
+    "voice-activity-detection",
+]
+
+[
+    copy_to_directory(
+        name = "model_" + model,
+        srcs = glob(
+            ["Vendor/Models/" + model + "/**"],
+            exclude = ["**/.DS_Store"],
+        ),
+        out = "model-inputs/" + model,
+        root_paths = ["apps/macos/Vendor/Models/" + model],
+    )
+    for model in MODEL_NAMES
+]
+
+py_binary(
+    name = "model_auditor",
+    srcs = ["Scripts/audit-bundled-model.py"],
+    main = "Scripts/audit-bundled-model.py",
+)
+
+[
+    run_binary(
+        name = "check_" + model,
+        srcs = [
+            ":model_" + model,
+            "Scripts/audit-bundled-model.py",
+        ],
+        args = [
+            "$(location Scripts/audit-bundled-model.py)",
+            model,
+            "$(location :model_" + model + ")",
+        ],
+        stdout = "checks/" + model + ".txt",
+        tool = "//tools/bazel:validate_model",
+    )
+    for model in MODEL_NAMES
+]
+
+copy_to_directory(
+    name = "app_models",
+    srcs = [":model_" + model for model in MODEL_NAMES],
+    out = "Models",
+    root_paths = ["apps/macos/model-inputs"],
+)
+
+copy_to_directory(
+    name = "codec_audit_snapshot",
+    srcs = glob(
+        [
+            "Vendor/Artifacts/**",
+            "Vendor/*.sh",
+            "Scripts/*.py",
+            "Scripts/build-luxel*.sh",
+        ],
+        exclude = ["**/.DS_Store"],
+    ) + [
+        "THIRD_PARTY_LICENSES.md",
+        "//:.tool-versions",
+    ],
+    hardlink = "off",
+    root_paths = [],
+)
+
+run_binary(
+    name = "codec_artifact_check",
+    srcs = [":codec_audit_snapshot"],
+    args = [
+        "$(location :codec_audit_snapshot)/apps/macos/Scripts/audit-native-codecs.py",
+        "--self-test",
+    ],
+    stdout = "checks/native-codecs.txt",
+    tool = "//tools/bazel:run_python_script",
+)
+
+validated_files(
+    name = "validated_models",
+    srcs = [":app_models"],
+    checks = [":check_" + model for model in MODEL_NAMES] + [":codec_artifact_check"],
+)
+
+copy_file(
+    name = "license_resource",
+    src = "//:LICENSE",
+    out = "resources/LICENSE.txt",
+)
+
+copy_file(
+    name = "notices_resource",
+    src = "THIRD_PARTY_LICENSES.md",
+    out = "resources/ThirdPartyLicenses.md",
+)
+
+macos_application(
+    name = "app",
+    additional_contents = {":validated_models": "Resources/Models"},
+    app_icons = glob(["Configuration/Luxel/Luxel.icon/**"]),
+    bundle_id = select({
+        ":mac_app_store": "com.rawcontext.luxel",
+        "//conditions:default": "com.rawcontext.luxel.dev",
+    }),
+    bundle_name = "Luxel",
+    executable_name = "Luxel",
+    features = ["disable_legacy_signing"],
+    infoplists = [":app_info"],
+    minimum_os_version = "26.0",
+    resources = [
+        "Configuration/Luxel/PrivacyInfo.xcprivacy",
+        ":license_resource",
+        ":notices_resource",
+    ],
+    strings = glob(["Configuration/Luxel/Localizations/**/*.strings"]),
+    deps = [":LuxelLauncher"],
+)
+
+output_files(
+    name = "app_archive",
+    paths = ["apps/macos/app.zip"],
+    target = ":app",
+)
+
+py_test(
+    name = "app_bundle_test",
+    size = "small",
+    srcs = ["//tools/bazel:verify_app_bundle.py"],
+    args = [
+        "$(rlocationpath :app_archive)",
+        "$(rlocationpath Configuration/Luxel/Info.plist)",
+        "$(rlocationpath Configuration/Luxel/PrivacyInfo.xcprivacy)",
+        "$(rlocationpath THIRD_PARTY_LICENSES.md)",
+        "$(rlocationpath //:LICENSE)",
+        "$(rlocationpath Sources/LuxelCore/Resources/Localizable.xcstrings)",
+        "$(rlocationpath Scripts/audit-bundled-model.py)",
+    ] + select({
+        ":mac_app_store": [
+            "com.rawcontext.luxel",
+            "Luxel",
+            "luxel",
+        ],
+        "//conditions:default": [
+            "com.rawcontext.luxel.dev",
+            "'Luxel Dev'",
+            "luxel-dev",
+        ],
+    }),
+    data = [
+        "Configuration/Luxel/Info.plist",
+        "Configuration/Luxel/PrivacyInfo.xcprivacy",
+        "Scripts/audit-bundled-model.py",
+        "Sources/LuxelCore/Resources/Localizable.xcstrings",
+        "THIRD_PARTY_LICENSES.md",
+        ":app_archive",
+        "//:LICENSE",
+    ],
+    main = "verify_app_bundle.py",
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = ["@rules_python//python/runfiles"],
+)
+
+swift_library(
+    name = "CodecComplianceTestSources",
+    testonly = True,
+    srcs = ["Tests/LuxelCoreTests/CodecComplianceModelTests.swift"],
+    copts = [
+        "-swift-version",
+        "6",
+    ],
+    module_name = "LuxelCodecComplianceTests",
+    deps = [
+        ":LuxelCore",
+        ":LuxelTestSupport",
+    ],
+)
+
+swift_test(
+    name = "_codec_compliance_tests_binary",
+    srcs = ["//tools/bazel:SwiftTestingMain.swift"],
+    discover_tests = False,
+    tags = ["manual"],
+    deps = [":CodecComplianceTestSources"],
+)
+
+swift_testing_test(
+    name = "codec_compliance_tests",
+    size = "small",
+    binary = ":_codec_compliance_tests_binary",
+    resources = ":test_resources",
+    snapshot = ":test_snapshot",
+    tags = ["manual"],
+)
+
+swift_library(
+    name = "DistributionTestSources",
+    testonly = True,
+    srcs = ["Tests/LuxelCoreTests/AppDistributionTests.swift"],
+    copts = [
+        "-swift-version",
+        "6",
+    ] + select({
+        ":mac_app_store": ["-DLUXEL_MAC_APP_STORE"],
+        "//conditions:default": [],
+    }),
+    module_name = "LuxelDistributionTests",
+    deps = [":LuxelCore"],
+)
+
+swift_test(
+    name = "_distribution_tests_binary",
+    srcs = ["//tools/bazel:SwiftTestingMain.swift"],
+    discover_tests = False,
+    tags = ["manual"],
+    deps = [":DistributionTestSources"],
+)
+
+swift_testing_test(
+    name = "distribution_tests",
+    size = "small",
+    binary = ":_distribution_tests_binary",
+    resources = ":test_resources",
+    snapshot = ":test_snapshot",
+    tags = ["manual"],
+)

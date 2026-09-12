@@ -1,0 +1,8 @@
+packages:
+  - apps/web
+
+hoist: false
+
+allowBuilds:
+  esbuild: true
+  sharp: true

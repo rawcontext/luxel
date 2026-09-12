@@ -1,5 +1,6 @@
 import Foundation
 import LuxelCore
+import LuxelTestSupport
 import Testing
 
 @testable import LuxelPresentation
@@ -274,7 +275,7 @@ struct TranscriptCardDiscoverabilityTests {
     }
 }
 
-private let packageRoot = URL(fileURLWithPath: #filePath)
+private let packageRoot = testSourceFileURL()
     .deletingLastPathComponent()
     .deletingLastPathComponent()
     .deletingLastPathComponent()

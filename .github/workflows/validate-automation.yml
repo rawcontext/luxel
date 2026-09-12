@@ -42,12 +42,17 @@ jobs:
         working-directory: apps/macos
         run: bundle exec fastlane lanes
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version-file: package.json
+      - name: Set up Bazel
+        id: bazel
+        uses: ./.github/actions/setup-bazel
 
       - name: Lint CLI workspace
-        run: |
-          bun install --frozen-lockfile
-          bunx turbo run lint --filter=@luxel/cli
+        run: bazel build --config=ci //apps/cli:clippy //apps/cli:format
+
+      - name: Save Bazel caches
+        if: always() && !cancelled()
+        uses: ./.github/actions/save-bazel-cache
+        with:
+          action-cache-key: ${{ steps.bazel.outputs.action-cache-key }}
+          repository-cache-key: ${{ steps.bazel.outputs.repository-cache-key }}
+          repository-cache-hit: ${{ steps.bazel.outputs.repository-cache-hit }}

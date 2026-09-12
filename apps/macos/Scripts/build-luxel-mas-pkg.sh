@@ -4,20 +4,14 @@ set -euo pipefail
 APP_NAME="Luxel"
 CONFIGURATION="${CONFIGURATION:-release}"
 PACKAGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPOSITORY_ROOT="$(cd "${PACKAGE_ROOT}/../.." && pwd)"
 INFO_PLIST="${PACKAGE_ROOT}/Configuration/Luxel/Info.plist"
 PRIVACY_MANIFEST="${PACKAGE_ROOT}/Configuration/Luxel/PrivacyInfo.xcprivacy"
 BASE_ENTITLEMENTS="${PACKAGE_ROOT}/Configuration/Luxel/Luxel.MacAppStore.entitlements"
-THIRD_PARTY_LICENSES="${PACKAGE_ROOT}/THIRD_PARTY_LICENSES.md"
-STRING_CATALOG="${PACKAGE_ROOT}/Sources/LuxelCore/Resources/Localizable.xcstrings"
-APP_ICON_INSTALLER="${PACKAGE_ROOT}/Scripts/install-luxel-app-icon.sh"
 CODEC_LICENSE_CHECKER="${PACKAGE_ROOT}/Scripts/check-codec-licenses.sh"
-SPEAKER_DIARIZATION_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/speaker-diarization"
 SPEAKER_DIARIZATION_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-speaker-diarization-model.sh"
-STUDIO_VOICE_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/studio-voice"
 STUDIO_VOICE_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-studio-voice-model.sh"
-MODNET_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/modnet"
 MODNET_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-modnet-model.sh"
-VAD_MODEL_DIR="${PACKAGE_ROOT}/Vendor/Models/voice-activity-detection"
 VAD_MODEL_AUDITOR="${PACKAGE_ROOT}/Scripts/audit-voice-activity-detection-model.sh"
 OUTPUT_DIR="${OUTPUT_DIR:-${PACKAGE_ROOT}/.build/mas}"
 APP_PATH="${APP_PATH:-${OUTPUT_DIR}/${APP_NAME}.app}"
@@ -58,10 +52,6 @@ require_file "${PROVISIONING_PROFILE}" "Mac App Store provisioning profile"
 require_file "${PRIVACY_MANIFEST}" "Privacy manifest"
 require_file "${BASE_ENTITLEMENTS}" "Mac App Store entitlements"
 "${CODEC_LICENSE_CHECKER}"
-bash "${SPEAKER_DIARIZATION_MODEL_AUDITOR}" "${SPEAKER_DIARIZATION_MODEL_DIR}"
-bash "${STUDIO_VOICE_MODEL_AUDITOR}" "${STUDIO_VOICE_MODEL_DIR}"
-"${MODNET_MODEL_AUDITOR}" "${MODNET_MODEL_DIR}"
-"${VAD_MODEL_AUDITOR}" "${VAD_MODEL_DIR}"
 
 if [[ -z "${APP_STORE_SIGN_IDENTITY}" ]]; then
 	APP_STORE_SIGN_IDENTITY="$(
@@ -142,17 +132,10 @@ fi
 
 cd "${PACKAGE_ROOT}"
 
-swift build \
-	--configuration "${CONFIGURATION}" \
-	-Xswiftc -DLUXEL_MAC_APP_STORE \
-	--product "${APP_NAME}"
-BIN_DIR="$(swift build --configuration "${CONFIGURATION}" --show-bin-path)"
-
-rm -rf "${APP_PATH}" "${PKG_PATH}"
-mkdir -p "${APP_PATH}/Contents/MacOS"
-mkdir -p "${APP_PATH}/Contents/Resources"
-
-cp "${INFO_PLIST}" "${APP_PATH}/Contents/Info.plist"
+bazel build --config="${CONFIGURATION}" --//apps/macos:app_store=true //apps/macos:app
+APP_ARCHIVE="${REPOSITORY_ROOT}/$(bazel cquery --config="${CONFIGURATION}" --//apps/macos:app_store=true --output=files //apps/macos:app)"
+unpack_bazel_app "${APP_ARCHIVE}"
+rm -f "${PKG_PATH}"
 configure_luxel_app_icon
 if [[ -n "${MARKETING_VERSION}" ]]; then
 	/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${MARKETING_VERSION}" "${APP_PATH}/Contents/Info.plist"
@@ -165,8 +148,6 @@ fi
 
 cp "${PROVISIONING_PROFILE}" "${APP_PATH}/Contents/embedded.provisionprofile"
 chmod 644 "${APP_PATH}/Contents/embedded.provisionprofile"
-copy_luxel_app_payload
-copy_luxel_app_resources
 while IFS= read -r -d '' bundle_plist; do
 	if ! /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${bundle_plist}" >/dev/null 2>&1; then
 		bundle_name="$(basename "$(dirname "${bundle_plist}")" .bundle)"
