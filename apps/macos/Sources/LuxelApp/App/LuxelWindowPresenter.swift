@@ -12,6 +12,7 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
     private var pendingSettingsPresentation = false
     private var pendingSettingsActivationSource: NSRunningApplication?
     private var settingsPresentationInFlight = false
+    private var editorPresentationInFlight = false
 
     private var editorWindow: NSWindow?
     private weak var settingsWindow: NSWindow?
@@ -25,6 +26,12 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         self.editorMenuController = LuxelEditorNativeMenuController(model: editorModel)
         super.init()
         installMenuRefreshObserver()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationWindowWillClose(_:)),
+            name: NSWindow.willCloseNotification,
+            object: nil
+        )
     }
 
     func openEditor(
@@ -81,17 +88,6 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         refreshEditorMenusIfNeeded()
     }
 
-    func settingsWindowWillClose(_ window: NSWindow) {
-        guard window === settingsWindow else {
-            return
-        }
-
-        Task { @MainActor [weak self] in
-            await Task.yield()
-            self?.restoreAccessoryActivationPolicyIfNoManagedWindowsVisible()
-        }
-    }
-
     private func makeEditorWindow() -> NSWindow {
         let hostingController = NSHostingController(rootView: LuxelEditorView(model: editorModel))
         let window = NSWindow(contentViewController: hostingController)
@@ -111,6 +107,7 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         _ window: NSWindow,
         activationSource: NSRunningApplication?
     ) {
+        editorPresentationInFlight = true
         Task { @MainActor [weak self, weak window, weak activationSource] in
             guard let self, let window else {
                 return
@@ -121,6 +118,7 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
             )
 
             present(window, activationSource: activationSource)
+            editorPresentationInFlight = false
             await Task.yield()
             present(window, activationSource: activationSource)
 
@@ -249,11 +247,6 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         pauseEditorPlaybackIfNeeded(for: notification)
-
-        Task { @MainActor [weak self] in
-            await Task.yield()
-            self?.restoreAccessoryActivationPolicyIfNoManagedWindowsVisible()
-        }
     }
 
     private func pauseEditorPlaybackIfNeeded(for notification: Notification) {
@@ -266,10 +259,15 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         editorModel.pausePlayback()
     }
 
-    private func restoreAccessoryActivationPolicyIfNoManagedWindowsVisible() {
-        guard !settingsPresentationInFlight,
+    @objc private func applicationWindowWillClose(_ notification: Notification) {
+        guard let closingWindow = notification.object as? NSWindow,
+            NSApplication.shared.activationPolicy() == .regular,
+            !settingsPresentationInFlight,
+            !editorPresentationInFlight,
             !NSApplication.shared.windows.contains(where: { window in
-                window.isVisible && window.canBecomeMain
+                // AppKit posts willClose before removing the window from the screen.
+                window !== closingWindow
+                    && (window.isMiniaturized || (window.isVisible && window.canBecomeMain))
             })
         else {
             return
@@ -281,18 +279,15 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
 
 struct LuxelSettingsWindowLifecycleObserver: NSViewRepresentable {
     let onWindowDidAppear: @MainActor (NSWindow) -> Void
-    let onWindowWillClose: @MainActor (NSWindow) -> Void
 
     func makeNSView(context: Context) -> LuxelSettingsWindowLifecycleView {
         LuxelSettingsWindowLifecycleView(
-            onWindowDidAppear: onWindowDidAppear,
-            onWindowWillClose: onWindowWillClose
+            onWindowDidAppear: onWindowDidAppear
         )
     }
 
     func updateNSView(_ nsView: LuxelSettingsWindowLifecycleView, context: Context) {
         nsView.onWindowDidAppear = onWindowDidAppear
-        nsView.onWindowWillClose = onWindowWillClose
         nsView.refreshWindowObservation()
     }
 }
@@ -300,16 +295,13 @@ struct LuxelSettingsWindowLifecycleObserver: NSViewRepresentable {
 @MainActor
 final class LuxelSettingsWindowLifecycleView: NSView {
     var onWindowDidAppear: @MainActor (NSWindow) -> Void
-    var onWindowWillClose: @MainActor (NSWindow) -> Void
 
     private weak var observedWindow: NSWindow?
 
     init(
-        onWindowDidAppear: @escaping @MainActor (NSWindow) -> Void,
-        onWindowWillClose: @escaping @MainActor (NSWindow) -> Void
+        onWindowDidAppear: @escaping @MainActor (NSWindow) -> Void
     ) {
         self.onWindowDidAppear = onWindowDidAppear
-        self.onWindowWillClose = onWindowWillClose
         super.init(frame: .zero)
     }
 
@@ -330,11 +322,6 @@ final class LuxelSettingsWindowLifecycleView: NSView {
 
         NotificationCenter.default.removeObserver(
             self,
-            name: NSWindow.willCloseNotification,
-            object: observedWindow
-        )
-        NotificationCenter.default.removeObserver(
-            self,
             name: NSWindow.didBecomeKeyNotification,
             object: observedWindow
         )
@@ -345,12 +332,6 @@ final class LuxelSettingsWindowLifecycleView: NSView {
         }
 
         onWindowDidAppear(window)
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(windowWillClose(_:)),
-            name: NSWindow.willCloseNotification,
-            object: window
-        )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(windowDidBecomeKey(_:)),
@@ -365,13 +346,5 @@ final class LuxelSettingsWindowLifecycleView: NSView {
         }
 
         onWindowDidAppear(window)
-    }
-
-    @objc private func windowWillClose(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow else {
-            return
-        }
-
-        onWindowWillClose(window)
     }
 }

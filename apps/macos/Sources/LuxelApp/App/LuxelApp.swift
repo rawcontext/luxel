@@ -94,8 +94,7 @@ struct LuxelApp: App {
                 .luxelGlassSceneWindowChrome()
                 .background {
                     LuxelSettingsWindowLifecycleObserver(
-                        onWindowDidAppear: windowPresenter.settingsWindowDidAppear,
-                        onWindowWillClose: windowPresenter.settingsWindowWillClose
+                        onWindowDidAppear: windowPresenter.settingsWindowDidAppear
                     )
                 }
             }
