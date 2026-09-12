@@ -1,0 +1,10 @@
+"Start a recording with ${applicationName}" = "Start a recording with ${applicationName}";
+"Record my screen with ${applicationName}" = "Record my screen with ${applicationName}";
+"Stop recording with ${applicationName}" = "Stop recording with ${applicationName}";
+"Stop ${applicationName}" = "Stop ${applicationName}";
+"Toggle recording with ${applicationName}" = "Toggle recording with ${applicationName}";
+"Toggle ${applicationName}" = "Toggle ${applicationName}";
+"Clip replay buffer with ${applicationName}" = "Clip replay buffer with ${applicationName}";
+"Clip the last moment with ${applicationName}" = "Clip the last moment with ${applicationName}";
+"Open latest recording with ${applicationName}" = "Open latest recording with ${applicationName}";
+"Show my latest ${applicationName} recording" = "Show my latest ${applicationName} recording";

@@ -67,7 +67,7 @@ struct CropperLoupeView: View {
                 metric("W", value: selection.width)
                 metric("H", value: selection.height)
             } else {
-                Text("No selection")
+                Text(LuxelLocalization.string("No selection"))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -79,7 +79,7 @@ struct CropperLoupeView: View {
 
     private func metric(_ label: String, value: Int) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: 11, alignment: .leading)
@@ -96,7 +96,7 @@ struct CropperLoupeView: View {
 
     private var selectionSummary: String {
         guard let selection = sample.readout.selection else {
-            return "No selection"
+            return LuxelLocalization.string("No selection")
         }
 
         return "\(selection.width)x\(selection.height)"

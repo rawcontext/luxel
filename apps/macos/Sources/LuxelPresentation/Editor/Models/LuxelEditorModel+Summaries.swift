@@ -46,7 +46,7 @@ extension LuxelEditorModel {
 
     func exportEstimateSummary(for format: ExportFormat) -> String? {
         if estimatingExportSizeFormats.contains(format) {
-            return "Estimating..."
+            return LuxelLocalization.string("Estimating...")
         }
 
         guard let exportEstimate = exportEstimatesByFormat[format] else {
@@ -94,7 +94,7 @@ extension LuxelEditorModel {
 
     var sourceSummary: String {
         guard let source else {
-            return "No recording loaded"
+            return LuxelLocalization.string("No recording loaded")
         }
 
         var parts = [
@@ -124,33 +124,33 @@ extension LuxelEditorModel {
     var statusMessage: String {
         switch status {
         case .empty:
-            "No recording loaded"
+            LuxelLocalization.string("No recording loaded")
         case .loading(let fileName):
-            "Loading \(fileName)"
+            LuxelLocalization.format("Loading %@", fileName)
         case .ready:
             sourceSummary
         case .exporting:
-            "Exporting \(selectedFormatSummary)"
+            LuxelLocalization.format("Exporting %@", selectedFormatSummary)
         case .savingOriginal:
-            "Saving original"
+            LuxelLocalization.string("Saving original")
         case .copyingFrame:
-            "Copying frame"
+            LuxelLocalization.string("Copying frame")
         case .savingFrame:
-            "Saving frame"
+            LuxelLocalization.string("Saving frame")
         case .copiedFrame:
-            "Copied frame"
+            LuxelLocalization.string("Copied frame")
         case .savedFrame(let url):
-            "Saved \(url.lastPathComponent)"
+            LuxelLocalization.format("Saved %@", url.lastPathComponent)
         case .exported(let url):
-            "Exported \(url.lastPathComponent)"
+            LuxelLocalization.format("Exported %@", url.lastPathComponent)
         case .exportedBatch(let urls):
-            "Exported \(urls.count) files"
+            LuxelLocalization.format("Exported %d files", urls.count)
         case .saved(let url):
-            "Saved \(url.lastPathComponent)"
+            LuxelLocalization.format("Saved %@", url.lastPathComponent)
         case .canceled:
-            "Export canceled"
+            LuxelLocalization.string("Export canceled")
         case .discarded(let fileName):
-            "Discarded \(fileName)"
+            LuxelLocalization.format("Discarded %@", fileName)
         case .failed(let message):
             message
         }

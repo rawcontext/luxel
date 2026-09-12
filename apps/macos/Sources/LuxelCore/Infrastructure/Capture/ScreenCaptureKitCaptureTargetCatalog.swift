@@ -53,7 +53,7 @@ public struct ScreenCaptureKitCaptureTargetCatalog: CaptureTargetCatalog {
         return CaptureTargetOption(
             id: "display-\(bounds.id.rawValue)",
             kind: .display,
-            title: "Display \(index + 1)",
+            title: LuxelLocalization.format("Display %d", index + 1),
             subtitle: "\(bounds.width)x\(bounds.height)",
             target: .display(bounds.id),
             pixelSize: size,

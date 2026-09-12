@@ -235,14 +235,14 @@ extension LuxelSettingsView {
         case 300:
             "5 Minutes"
         default:
-            "\(Int(seconds)) Seconds"
+            LuxelLocalization.format("replayBuffer.duration.seconds", defaultValue: "%d Seconds", Int(seconds))
         }
     }
 
     func notchAutoCollapseLabel(_ seconds: TimeInterval) -> String {
         switch Int(seconds) {
         case 0:
-            "Immediately"
+            LuxelLocalization.string("Immediately")
         case 3:
             "3 Seconds"
         case 6:
@@ -250,7 +250,7 @@ extension LuxelSettingsView {
         case 10:
             "10 Seconds"
         default:
-            "\(Int(seconds)) Seconds"
+            LuxelLocalization.format("replayBuffer.duration.seconds", defaultValue: "%d Seconds", Int(seconds))
         }
     }
 }

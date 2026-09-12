@@ -65,7 +65,7 @@ public enum SpeakerDiarizationTranscriptAnnotator {
             labels.append(
                 try TranscriptSpeakerLabel(
                     id: speakerID,
-                    displayName: match?.displayName ?? "Speaker \(labels.count + 1)",
+                    displayName: match?.displayName ?? LuxelLocalization.format("Speaker %d", labels.count + 1),
                     knownSpeakerID: match?.knownSpeakerID
                 ))
         }

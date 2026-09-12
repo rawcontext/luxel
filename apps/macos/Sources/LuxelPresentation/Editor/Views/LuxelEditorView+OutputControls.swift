@@ -37,7 +37,7 @@ extension LuxelEditorView {
                     HStack {
                         Text("Display Duration")
                         Spacer()
-                        Text("\(keystrokeDurationSelection.wrappedValue, specifier: "%.1f") s")
+                        Text(LuxelLocalization.format("%.1f s", keystrokeDurationSelection.wrappedValue))
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                     }
@@ -56,20 +56,20 @@ extension LuxelEditorView {
 
     private func keystrokeAnchorLabel(_ anchor: KeystrokeOverlayAnchor) -> String {
         switch anchor {
-        case .topLeft: "Top Left"
-        case .topCenter: "Top Center"
-        case .topRight: "Top Right"
-        case .bottomLeft: "Bottom Left"
-        case .bottomCenter: "Bottom Center"
-        case .bottomRight: "Bottom Right"
+        case .topLeft: LuxelLocalization.string("Top Left")
+        case .topCenter: LuxelLocalization.string("Top Center")
+        case .topRight: LuxelLocalization.string("Top Right")
+        case .bottomLeft: LuxelLocalization.string("Bottom Left")
+        case .bottomCenter: LuxelLocalization.string("Bottom Center")
+        case .bottomRight: LuxelLocalization.string("Bottom Right")
         }
     }
 
     private func keystrokeThemeLabel(_ theme: KeystrokeOverlayTheme) -> String {
         switch theme {
-        case .darkGlass: "Dark Glass"
-        case .lightGlass: "Light Glass"
-        case .highContrast: "High Contrast"
+        case .darkGlass: LuxelLocalization.string("Dark Glass")
+        case .lightGlass: LuxelLocalization.string("Light Glass")
+        case .highContrast: LuxelLocalization.string("High Contrast")
         }
     }
 
@@ -119,7 +119,7 @@ extension LuxelEditorView {
                             options: [EditorSizePreset?.none]
                                 + LuxelEditorModel.sizePresets.map(EditorSizePreset?.some)
                         ) { preset in
-                            preset?.label ?? "Custom"
+                            preset?.label ?? LuxelLocalization.string("Custom")
                         }
                         .accessibilityLabel("Size")
                         .help("Choose how much to resize exported video.")
@@ -211,7 +211,7 @@ extension LuxelEditorView {
         @ViewBuilder content: () -> Content
     ) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.system(size: 12.5, weight: .medium))
                 .foregroundStyle(.white.opacity(0.9))
                 .lineLimit(1)
@@ -229,7 +229,7 @@ extension LuxelEditorView {
     ) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
-                Text(label)
+                Text(LocalizedStringKey(label))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.white.opacity(0.9))
 
@@ -261,7 +261,7 @@ extension LuxelEditorView {
         steps: (normal: Int, shifted: Int)
     ) -> some View {
         Stepper {
-            TextField(title, value: value, format: .number)
+            TextField(LocalizedStringKey(title), value: value, format: .number)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12, design: .monospaced))
                 .frame(width: 56)
@@ -285,7 +285,7 @@ extension LuxelEditorView {
         steps: (normal: Double, shifted: Double)
     ) -> some View {
         Stepper {
-            TextField(title, value: value, format: .number.precision(.fractionLength(1)))
+            TextField(LocalizedStringKey(title), value: value, format: .number.precision(.fractionLength(1)))
                 .textFieldStyle(.plain)
                 .font(.system(size: 12, design: .monospaced))
                 .frame(width: 42)

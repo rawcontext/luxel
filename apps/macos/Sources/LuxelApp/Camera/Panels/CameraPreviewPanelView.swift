@@ -199,11 +199,11 @@ final class CameraPreviewPanelView: NSView {
         closeButton.bezelStyle = .circular
         closeButton.imagePosition = .imageOnly
         closeButton.image = NSImage(
-            systemSymbolName: "xmark", accessibilityDescription: "Close Camera Preview")
+            systemSymbolName: "xmark", accessibilityDescription: LuxelLocalization.string("Close Camera Preview"))
         closeButton.contentTintColor = .white
         closeButton.target = self
         closeButton.action = #selector(closePreview)
-        closeButton.toolTip = "Close Camera Preview"
+        closeButton.toolTip = LuxelLocalization.string("Close Camera Preview")
     }
 
     private func configurePreviewLayer(_ previewLayer: AVCaptureVideoPreviewLayer) {

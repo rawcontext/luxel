@@ -1,3 +1,4 @@
+import LuxelCore
 import SwiftUI
 
 struct EditorDisclosureCard<Content: View>: View {
@@ -29,7 +30,7 @@ struct EditorDisclosureCard<Content: View>: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 11, weight: .semibold))
                         .kerning(0.8)
                         .textCase(.uppercase)

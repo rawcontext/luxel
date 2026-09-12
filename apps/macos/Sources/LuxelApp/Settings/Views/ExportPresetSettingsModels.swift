@@ -18,7 +18,7 @@ enum PresetSizeSelection: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .original:
-            "Original"
+            LuxelLocalization.string("Original")
         case .percent75:
             "75%"
         case .percent50:
@@ -32,7 +32,7 @@ enum PresetSizeSelection: String, CaseIterable, Identifiable {
         case .percent10:
             "10%"
         case .maxWidth:
-            "Max Width"
+            LuxelLocalization.string("Max Width")
         }
     }
 
@@ -88,9 +88,9 @@ enum PresetDestinationSelection: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .recordingsDirectory:
-            "Recordings Folder"
+            LuxelLocalization.string("Recordings Folder")
         case .clipboard:
-            "Clipboard"
+            LuxelLocalization.string("Clipboard")
         }
     }
 }
@@ -99,13 +99,13 @@ extension ExportPresetPostAction {
     var label: String {
         switch self {
         case .none:
-            "None"
+            LuxelLocalization.string("None")
         case .revealInFinder:
-            "Reveal in Finder"
+            LuxelLocalization.string("Reveal in Finder")
         case .copyToClipboard:
-            "Copy to Clipboard"
+            LuxelLocalization.string("Copy to Clipboard")
         case .notifyWithThumbnail:
-            "Notify with Thumbnail"
+            LuxelLocalization.string("Notify with Thumbnail")
         }
     }
 }

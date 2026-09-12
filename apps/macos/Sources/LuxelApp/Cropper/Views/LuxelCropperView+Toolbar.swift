@@ -130,7 +130,7 @@ extension LuxelCropperView {
 
     var countdownMenu: some View {
         Menu {
-            countdownButton(title: "Off", duration: nil)
+            countdownButton(title: LuxelLocalization.string("Off"), duration: nil)
 
             Divider()
 
@@ -149,12 +149,12 @@ extension LuxelCropperView {
         .frame(width: Self.toolbarCircleSide, height: Self.toolbarCircleSide)
         .accessibilityLabel("Countdown")
         .accessibilityValue(model.countdownSummary)
-        .help("Delay recording after pressing Record. Current: \(model.countdownSummary).")
+        .help(LuxelLocalization.format("Delay recording after pressing Record. Current: %@.", model.countdownSummary))
     }
 
     var stopAfterMenu: some View {
         Menu {
-            stopAfterButton(title: "Off", duration: nil)
+            stopAfterButton(title: LuxelLocalization.string("Off"), duration: nil)
 
             Divider()
 
@@ -185,7 +185,7 @@ extension LuxelCropperView {
         }
         .accessibilityLabel("Stop After")
         .accessibilityValue(model.stopAfterSummary)
-        .help("Stop recording automatically. Current: \(model.stopAfterSummary).")
+        .help(LuxelLocalization.format("Stop recording automatically. Current: %@.", model.stopAfterSummary))
     }
 
     var stopAfterDurationEditor: some View {

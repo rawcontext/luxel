@@ -58,14 +58,14 @@ extension LuxelSettingsView {
     }
 
     private func transcriptsToggleRow(_ title: String, isOn: Binding<Bool>) -> some View {
-        Toggle(title, isOn: isOn)
+        Toggle(LocalizedStringKey(title), isOn: isOn)
             .toggleStyle(LuxelGlassSwitchToggleStyle())
             .frame(minHeight: LuxelGlassTheme.settingsRowHeight)
     }
 
     private func transcriptLanguageLabel(_ identifier: String?) -> String {
         guard let identifier else {
-            return "System Default"
+            return LuxelLocalization.string("System Default")
         }
 
         return Locale.current.localizedString(forIdentifier: identifier) ?? identifier
@@ -163,6 +163,7 @@ extension LuxelSettingsView {
     }
 
     private var knownSpeakersCountText: String {
-        model.knownSpeakers.count == 1 ? "1 saved" : "\(model.knownSpeakers.count) saved"
+        model.knownSpeakers.count == 1
+            ? LuxelLocalization.string("1 saved") : LuxelLocalization.format("%d saved", model.knownSpeakers.count)
     }
 }

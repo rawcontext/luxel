@@ -68,9 +68,9 @@ public enum ReplayClipDestination: String, Codable, CaseIterable, Equatable, Ide
     public var label: String {
         switch self {
         case .editor:
-            "Editor"
+            LuxelLocalization.string("Editor")
         case .quickExport:
-            "Quick Export"
+            LuxelLocalization.string("Quick Export")
         }
     }
 }

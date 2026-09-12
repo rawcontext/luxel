@@ -60,7 +60,7 @@ extension LuxelMenu {
     }
 
     private var cameraFooterPickerAccessibilityValue: String {
-        model.cropperCameraConfiguration().selectedDevice?.name ?? "Camera Off"
+        model.cropperCameraConfiguration().selectedDevice?.name ?? LuxelLocalization.string("Camera Off")
     }
 
     private var unavailableCameraDeviceID: String? {

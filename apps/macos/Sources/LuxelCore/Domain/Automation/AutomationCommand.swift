@@ -106,22 +106,22 @@ public enum AutomationCommand: Equatable, Sendable {
         }
     }
 
-    var actionDescription: String {
+    func confirmationMessage(callerName: String) -> String {
         switch self {
         case .record:
-            "start a screen recording"
+            LuxelLocalization.format("%@ wants to start a screen recording.", callerName)
         case .stop:
-            "stop recording"
+            LuxelLocalization.format("%@ wants to stop recording.", callerName)
         case .toggle:
-            "toggle recording"
+            LuxelLocalization.format("%@ wants to toggle recording.", callerName)
         case .clip:
-            "clip the replay buffer"
+            LuxelLocalization.format("%@ wants to clip the replay buffer.", callerName)
         case .preferences:
-            "open Luxel settings"
+            LuxelLocalization.format("%@ wants to open Luxel settings.", callerName)
         case .latest:
-            "open the latest recording"
+            LuxelLocalization.format("%@ wants to open the latest recording.", callerName)
         case .transcribe:
-            "transcribe a local media file"
+            LuxelLocalization.format("%@ wants to transcribe a local media file.", callerName)
         }
     }
 }

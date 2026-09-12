@@ -98,7 +98,10 @@ struct KnownSpeakerSettingsRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(isExpanded ? "Collapse speaker" : "Expand speaker to manage clips and name.")
+        .help(
+            isExpanded
+                ? LuxelLocalization.string("Collapse speaker")
+                : LuxelLocalization.string("Expand speaker to manage clips and name."))
     }
 
     private var avatar: some View {
@@ -120,7 +123,8 @@ struct KnownSpeakerSettingsRow: View {
         var parts: [String] = []
         parts.append(
             profile.exampleClips.count == 1
-                ? "1 example clip" : "\(profile.exampleClips.count) example clips")
+                ? LuxelLocalization.string("1 example clip")
+                : LuxelLocalization.format("%d example clips", profile.exampleClips.count))
         parts.append(matchedSummary)
         if let lastHeard = lastHeardText {
             parts.append(lastHeard)
@@ -210,8 +214,8 @@ struct KnownSpeakerSettingsRow: View {
 
     private var matchedSummary: String {
         profile.matchedRecordingCount == 1
-            ? "Matched in 1 recording"
-            : "Matched in \(profile.matchedRecordingCount) recordings"
+            ? LuxelLocalization.string("Matched in 1 recording")
+            : LuxelLocalization.format("Matched in %d recordings", profile.matchedRecordingCount)
     }
 
     private var expandedSummary: String {
@@ -228,7 +232,7 @@ struct KnownSpeakerSettingsRow: View {
             return nil
         }
 
-        return "Last heard \(lastMatchedAt.formatted(date: .abbreviated, time: .omitted))"
+        return LuxelLocalization.format("Last heard %@", lastMatchedAt.formatted(date: .abbreviated, time: .omitted))
     }
 
     private func clipDurationText(_ duration: TimeInterval) -> String {

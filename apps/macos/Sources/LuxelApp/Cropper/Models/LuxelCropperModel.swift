@@ -202,7 +202,7 @@ extension LuxelCropperModel {
 
     var stopAfterSummary: String {
         guard let stopAfterDuration else {
-            return "Off"
+            return LuxelLocalization.string("Off")
         }
 
         return Self.durationSummary(stopAfterDuration)
@@ -210,7 +210,7 @@ extension LuxelCropperModel {
 
     var countdownSummary: String {
         guard let countdownDuration else {
-            return "Off"
+            return LuxelLocalization.string("Off")
         }
 
         return Self.durationSummary(countdownDuration)
@@ -280,7 +280,7 @@ extension LuxelCropperModel {
             errorMessage = nil
             return true
         } catch {
-            errorMessage = "Use h:mm:ss from 0:01 to 12:00:00"
+            errorMessage = LuxelLocalization.string("Use h:mm:ss from 0:01 to 12:00:00")
             return false
         }
     }

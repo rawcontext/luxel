@@ -90,7 +90,7 @@ extension LuxelEditorModel {
             return selectedFormats[0].prettyName
         }
 
-        return "\(selectedFormats.count) Formats"
+        return LuxelLocalization.format("%d Formats", selectedFormats.count)
     }
 
     var includesAudio: Bool {
@@ -312,15 +312,15 @@ extension LuxelEditorModel {
         case .exporting, .savingOriginal:
             exportProgressTitle
         case .exported, .exportedBatch, .saved:
-            "Export Complete"
+            LuxelLocalization.string("Export Complete")
         case .copyingFrame, .savingFrame, .copiedFrame, .savedFrame:
             statusMessage
         case .canceled:
-            "Export Canceled"
+            LuxelLocalization.string("Export Canceled")
         case .failed:
-            "Export Failed"
+            LuxelLocalization.string("Export Failed")
         case .discarded:
-            "Recording Discarded"
+            LuxelLocalization.string("Recording Discarded")
         case .empty, .loading, .ready:
             exportProgressTitle
         }
@@ -331,15 +331,15 @@ extension LuxelEditorModel {
         case .exported(let url), .saved(let url):
             url.lastPathComponent
         case .exportedBatch(let urls):
-            "\(urls.count) files exported"
+            LuxelLocalization.format("%d files exported", urls.count)
         case .savingOriginal:
-            "Copying the source recording without re-encoding."
+            LuxelLocalization.string("Copying the source recording without re-encoding.")
         case .copyingFrame, .savingFrame, .copiedFrame, .savedFrame:
             statusMessage
         case .failed(let message):
             message
         case .canceled:
-            "The export was canceled before the output file was finished."
+            LuxelLocalization.string("The export was canceled before the output file was finished.")
         default:
             statusMessage
         }

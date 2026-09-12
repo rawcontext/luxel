@@ -95,7 +95,7 @@ extension LuxelMenu {
                 )
             )
             .help(presentation.message)
-            .accessibilityLabel(accessibilityLabel)
+            .accessibilityLabel(LuxelLocalization.string(accessibilityLabel))
             .accessibilityValue(presentation.statusTitle)
 
             footerControlDivider
@@ -125,7 +125,9 @@ extension LuxelMenu {
         .frame(height: Self.deviceControlHeight)
         .help("Choose audio source")
         .accessibilityLabel("Choose Audio Source")
-        .accessibilityValue(model.settings.recordSystemAudio ? "System Audio" : "Off")
+        .accessibilityValue(
+            model.settings.recordSystemAudio
+                ? LuxelLocalization.string("System Audio") : LuxelLocalization.string("Off"))
     }
 
     func footerPickerChevronLabel(width: CGFloat, height: CGFloat) -> some View {
@@ -297,7 +299,7 @@ extension LuxelMenu {
     }
 
     func recentRecordingOpenTitle(for recording: PastRecording) -> String {
-        "Open in editor"
+        LuxelLocalization.string("Open in editor")
     }
 
     func recentRecordingTitle(for recording: PastRecording) -> String {

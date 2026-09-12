@@ -242,7 +242,7 @@ public struct LuxelGlassSectionHeader: View {
     }
 
     public var body: some View {
-        Text(title)
+        Text(LocalizedStringKey(title))
             .font(.system(size: 12, weight: .semibold))
             .kerning(1)
             .textCase(.uppercase)
@@ -258,7 +258,7 @@ public struct LuxelGlassSectionFooter: View {
     }
 
     public var body: some View {
-        Text(text)
+        Text(LocalizedStringKey(text))
             .font(.system(size: 11.5))
             .foregroundStyle(.white.opacity(0.4))
             .fixedSize(horizontal: false, vertical: true)

@@ -1,3 +1,5 @@
+import LuxelCore
+
 enum EditorGIFLoopModeKind: String, CaseIterable, Equatable, Hashable {
     case forever
     case none
@@ -7,13 +9,13 @@ enum EditorGIFLoopModeKind: String, CaseIterable, Equatable, Hashable {
     var label: String {
         switch self {
         case .forever:
-            "Forever"
+            LuxelLocalization.string("Forever")
         case .none:
-            "Off"
+            LuxelLocalization.string("Off")
         case .count:
-            "Count"
+            LuxelLocalization.string("Count")
         case .bounce:
-            "Bounce"
+            LuxelLocalization.string("Bounce")
         }
     }
 }

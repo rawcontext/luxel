@@ -199,7 +199,10 @@ enum EditorDirectoryAccessError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .revoked(let url):
-            "Luxel no longer has permission to save to \(url.lastPathComponent). Choose the recordings folder again."
+            LuxelLocalization.format(
+                "quickExport.error.outputDirectoryAccessRevoked",
+                defaultValue: "Luxel no longer has permission to save to %@. Choose the recordings folder again.",
+                url.lastPathComponent)
         }
     }
 }

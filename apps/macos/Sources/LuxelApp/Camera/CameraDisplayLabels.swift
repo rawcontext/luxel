@@ -10,15 +10,15 @@ extension CameraDeviceKind {
     var settingsLabel: String {
         switch self {
         case .builtIn:
-            "Built-In"
+            LuxelLocalization.string("Built-In")
         case .external:
-            "External"
+            LuxelLocalization.string("External")
         case .continuity:
-            "Continuity"
+            LuxelLocalization.string("Continuity")
         case .deskView:
-            "Desk View"
+            LuxelLocalization.string("Desk View")
         case .unknown:
-            "Camera"
+            LuxelLocalization.string("Camera")
         }
     }
 }

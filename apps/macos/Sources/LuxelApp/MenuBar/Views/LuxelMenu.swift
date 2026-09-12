@@ -67,7 +67,7 @@ struct LuxelMenu: View {
             await model.watchAudioInputDeviceUpdates()
         }
         .alert(
-            Text(model.recoveryPrompt?.title ?? "Recording Recovery"),
+            Text(model.recoveryPrompt?.title ?? LuxelLocalization.string("Recording Recovery")),
             isPresented: recoveryPromptPresented,
             presenting: model.recoveryPrompt
         ) { prompt in
@@ -86,7 +86,7 @@ struct LuxelMenu: View {
             Text(prompt.message)
         }
         .alert(
-            Text(model.automationPrompt?.prompt.title ?? "URL Automation"),
+            Text(model.automationPrompt?.prompt.title ?? LuxelLocalization.string("URL Automation")),
             isPresented: automationPromptPresented,
             presenting: model.automationPrompt
         ) { _ in

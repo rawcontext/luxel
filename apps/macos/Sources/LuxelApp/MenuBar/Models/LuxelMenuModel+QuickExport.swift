@@ -4,7 +4,8 @@ import LuxelCore
 @MainActor
 extension LuxelMenuModel {
     func runQuickExport(recording: PastRecording, presetID: UUID) async -> RecordingStopAction? {
-        let presetName = settings.exportPresets.first { $0.id == presetID }?.name ?? "Quick Export"
+        let presetName =
+            settings.exportPresets.first { $0.id == presetID }?.name ?? LuxelLocalization.string("Quick Export")
         quickExportTask?.cancel()
 
         let task = Task {

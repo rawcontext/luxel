@@ -42,9 +42,9 @@ public enum TranscriptSourceLabel: String, Codable, CaseIterable, Equatable, Has
     public var displayName: String {
         switch self {
         case .system:
-            "System Audio"
+            LuxelLocalization.string("System Audio")
         case .microphone:
-            "Microphone"
+            LuxelLocalization.string("Microphone")
         }
     }
 }

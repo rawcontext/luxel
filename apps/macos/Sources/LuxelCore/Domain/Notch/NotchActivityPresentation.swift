@@ -144,7 +144,7 @@ extension NotchActivityPresentation {
             collapsedTitle: "",
             collapsedSystemImage: "circle",
             expandedTitle: "Luxel",
-            accessibilityLabel: "Luxel notch inactive"
+            accessibilityLabel: LuxelLocalization.string("Luxel notch inactive")
         )
     }
 
@@ -153,9 +153,9 @@ extension NotchActivityPresentation {
             collapsedTitle: "Luxel",
             collapsedSystemImage: "record.circle",
             expandedTitle: "Luxel",
-            expandedDetail: "Ready",
+            expandedDetail: LuxelLocalization.string("Ready"),
             actions: idleHoverActions,
-            accessibilityLabel: "Luxel ready"
+            accessibilityLabel: LuxelLocalization.string("Luxel ready")
         )
     }
 
@@ -173,12 +173,12 @@ extension NotchActivityPresentation {
         return NotchActivityViewModel(
             collapsedTitle: countdown,
             collapsedSystemImage: "hourglass",
-            expandedTitle: "Recording starts in \(countdown)",
-            expandedDetail: "Cancel before capture begins",
+            expandedTitle: LuxelLocalization.format("Recording starts in %@", countdown),
+            expandedDetail: LuxelLocalization.string("Cancel before capture begins"),
             actions: [
                 action(.cancel, "Cancel", "xmark.circle.fill", role: .destructive)
             ],
-            accessibilityLabel: "Luxel recording starts in \(countdown)"
+            accessibilityLabel: LuxelLocalization.format("Luxel recording starts in %@", countdown)
         )
     }
 
@@ -192,13 +192,15 @@ extension NotchActivityPresentation {
         return NotchActivityViewModel(
             collapsedTitle: elapsedText,
             collapsedSystemImage: "record.circle.fill",
-            expandedTitle: "Recording",
-            expandedDetail: "Elapsed \(elapsedText)",
+            expandedTitle: LuxelLocalization.string("Recording"),
+            expandedDetail: LuxelLocalization.format("Elapsed %@", elapsedText),
             leadingEarText: elapsedText,
-            trailingEarText: isMuted ? "Muted" : "Audio \(levelPercent(audioLevel.peak))",
+            trailingEarText: isMuted
+                ? LuxelLocalization.string("Muted")
+                : LuxelLocalization.format("Audio %@", levelPercent(audioLevel.peak)),
             audioLevel: isMuted ? nil : audioLevel,
             actions: recordingActions(replacing: actionToReplace),
-            accessibilityLabel: "Luxel recording, elapsed \(elapsedText)"
+            accessibilityLabel: LuxelLocalization.format("Luxel recording, elapsed %@", elapsedText)
         )
     }
 
@@ -210,12 +212,12 @@ extension NotchActivityPresentation {
         return NotchActivityViewModel(
             collapsedTitle: elapsedText,
             collapsedSystemImage: "pause.circle.fill",
-            expandedTitle: "Paused",
-            expandedDetail: "Paused at \(elapsedText)",
+            expandedTitle: LuxelLocalization.string("Paused"),
+            expandedDetail: LuxelLocalization.format("Paused at %@", elapsedText),
             leadingEarText: elapsedText,
-            trailingEarText: "Paused",
+            trailingEarText: LuxelLocalization.string("Paused"),
             actions: recordingActions(replacing: actionToReplace),
-            accessibilityLabel: "Luxel recording paused at \(elapsedText)"
+            accessibilityLabel: LuxelLocalization.format("Luxel recording paused at %@", elapsedText)
         )
     }
 
@@ -240,26 +242,26 @@ extension NotchActivityPresentation {
     ) -> NotchActivityViewModel {
         let progress = percent(coverage.progress)
         return NotchActivityViewModel(
-            collapsedTitle: "Buffer \(progress)",
+            collapsedTitle: LuxelLocalization.format("Buffer %@", progress),
             collapsedSystemImage: "gobackward",
-            expandedTitle: "Replay Buffer",
-            expandedDetail: "\(durationText(coverage.coveredDuration)) ready",
+            expandedTitle: LuxelLocalization.string("Replay Buffer"),
+            expandedDetail: LuxelLocalization.format("%@ ready", durationText(coverage.coveredDuration)),
             progress: coverage.progress,
             actions: [
                 action(.clipReplay, "Clip Replay", "gobackward", role: .primary),
                 action(.pauseReplayBuffer, "Pause Buffer", "pause.circle")
             ],
-            accessibilityLabel: "Luxel replay buffer \(progress) ready"
+            accessibilityLabel: LuxelLocalization.format("Luxel replay buffer %@ ready", progress)
         )
     }
 
     private static var processingViewModel: NotchActivityViewModel {
         NotchActivityViewModel(
-            collapsedTitle: "Processing",
+            collapsedTitle: LuxelLocalization.string("Processing"),
             collapsedSystemImage: "progress.indicator",
-            expandedTitle: "Finishing Recording",
-            expandedDetail: "Preparing the file",
-            accessibilityLabel: "Luxel finishing recording"
+            expandedTitle: LuxelLocalization.string("Finishing Recording"),
+            expandedDetail: LuxelLocalization.string("Preparing the file"),
+            accessibilityLabel: LuxelLocalization.string("Luxel finishing recording")
         )
     }
 
@@ -274,13 +276,13 @@ extension NotchActivityPresentation {
             actions: [
                 action(.cancelExport, "Cancel Export", "xmark.circle", role: .destructive)
             ],
-            accessibilityLabel: "Luxel exporting, \(progress) complete"
+            accessibilityLabel: LuxelLocalization.format("Luxel exporting, %@ complete", progress)
         )
     }
 
     private static func completedViewModel(artifact: NotchArtifact) -> NotchActivityViewModel {
         NotchActivityViewModel(
-            collapsedTitle: "Done",
+            collapsedTitle: LuxelLocalization.string("Done"),
             collapsedSystemImage: "checkmark.circle.fill",
             expandedTitle: completedTitle(for: artifact.kind),
             expandedDetail: artifact.fileURL.lastPathComponent,
@@ -290,19 +292,19 @@ extension NotchActivityPresentation {
                 action(.copy, "Copy", "doc.on.doc"),
                 action(.openInEditor, "Open in Editor", "rectangle.and.pencil.and.ellipsis")
             ],
-            accessibilityLabel: "Luxel completed \(artifact.fileURL.lastPathComponent)"
+            accessibilityLabel: LuxelLocalization.format("Luxel completed %@", artifact.fileURL.lastPathComponent)
         )
     }
 
     private static func errorViewModel(error: NotchError) -> NotchActivityViewModel {
         let actions = error.recoveryAction.map { [actionDescriptor(for: $0)] } ?? []
         return NotchActivityViewModel(
-            collapsedTitle: "Error",
+            collapsedTitle: LuxelLocalization.string("Error"),
             collapsedSystemImage: "exclamationmark.triangle.fill",
             expandedTitle: error.title,
             expandedDetail: error.message,
             actions: actions,
-            accessibilityLabel: "Luxel error: \(error.title)"
+            accessibilityLabel: LuxelLocalization.format("Luxel error: %@", error.title)
         )
     }
 
@@ -313,10 +315,10 @@ extension NotchActivityPresentation {
         return NotchActivityViewModel(
             collapsedTitle: elapsed,
             collapsedSystemImage: "play.circle",
-            expandedTitle: "Preview",
+            expandedTitle: LuxelLocalization.string("Preview"),
             expandedDetail: "\(elapsed) of \(duration)",
             progress: snapshot.progress,
-            accessibilityLabel: "Luxel preview at \(elapsed) of \(duration)"
+            accessibilityLabel: LuxelLocalization.format("Luxel preview at %@ of %@", elapsed, duration)
         )
     }
 
@@ -328,7 +330,7 @@ extension NotchActivityPresentation {
     ) -> NotchActivityActionDescriptor {
         NotchActivityActionDescriptor(
             id: id,
-            title: title,
+            title: LuxelLocalization.string(title),
             systemImage: systemImage,
             role: role
         )
@@ -374,9 +376,9 @@ extension NotchActivityPresentation {
     private static func completedTitle(for kind: NotchArtifactKind) -> String {
         switch kind {
         case .recording:
-            "Recording Ready"
+            LuxelLocalization.string("Recording Ready")
         case .export:
-            "Export Ready"
+            LuxelLocalization.string("Export Ready")
         }
     }
 }

@@ -61,16 +61,18 @@ public struct PermissionGuidanceService: Sendable {
         switch status {
         case .authorized:
             PermissionGuidance(
-                title: "Screen capture ready",
-                message: "Luxel can record your screen and system sound.",
-                actionTitle: "OK",
+                title: LuxelLocalization.string("Screen capture ready"),
+                message: LuxelLocalization.string("Luxel can record your screen and system sound."),
+                actionTitle: LuxelLocalization.string("OK"),
                 action: .request
             )
         case .notDetermined:
             PermissionGuidance(
-                title: "Screen capture is off",
-                message: "Turn Luxel on in Screen & System Audio Recording. "
-                    + "If Luxel is not listed, click + and add the app.",
+                title: LuxelLocalization.string("Screen capture is off"),
+                message: LuxelLocalization.string(
+                    "permissions.screen.instructions",
+                    defaultValue: "Turn Luxel on in Screen & System Audio Recording. If Luxel is not listed, "
+                        + "click + and add the app."),
                 actionTitle: LuxelLocalization.string(
                     "permissions.screen.enable",
                     defaultValue: "Enable Capture"),
@@ -78,10 +80,12 @@ public struct PermissionGuidanceService: Sendable {
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
-                title: "Screen capture is off",
-                message: "Turn Luxel on in Screen & System Audio Recording. "
-                    + "If Luxel is not listed, click + and add the app.",
-                actionTitle: "Open System Settings",
+                title: LuxelLocalization.string("Screen capture is off"),
+                message: LuxelLocalization.string(
+                    "permissions.screen.instructions",
+                    defaultValue: "Turn Luxel on in Screen & System Audio Recording. If Luxel is not listed, "
+                        + "click + and add the app."),
+                actionTitle: LuxelLocalization.string("Open System Settings"),
                 action: .openSettings
             )
         }
@@ -96,7 +100,7 @@ public struct PermissionGuidanceService: Sendable {
             PermissionGuidance(
                 title: presentation.title,
                 message: presentation.message,
-                actionTitle: "OK",
+                actionTitle: LuxelLocalization.string("OK"),
                 action: .request
             )
         case .offByUser:
@@ -112,8 +116,10 @@ public struct PermissionGuidanceService: Sendable {
             case .notDetermined:
                 PermissionGuidance(
                     title: presentation.title,
-                    message: "System sound uses macOS Screen & System Audio Recording. "
-                        + "If Luxel is not listed, click + and add the app.",
+                    message: LuxelLocalization.string(
+                        "permissions.systemAudio.instructions",
+                        defaultValue: "System sound uses macOS Screen & System Audio Recording. If Luxel is not "
+                            + "listed, click + and add the app."),
                     actionTitle: LuxelLocalization.string(
                         "permissions.systemAudio.enable",
                         defaultValue: "Enable System Sound"),
@@ -129,9 +135,11 @@ public struct PermissionGuidanceService: Sendable {
             case .denied, .restricted, .unknown:
                 PermissionGuidance(
                     title: presentation.title,
-                    message: "Turn Luxel on for system audio in Screen & System Audio Recording. "
-                        + "If Luxel is not listed, click + and add the app.",
-                    actionTitle: "Open System Settings",
+                    message: LuxelLocalization.string(
+                        "permissions.systemAudio.enable.instructions",
+                        defaultValue: "Turn Luxel on for system audio in Screen & System Audio Recording. If Luxel "
+                            + "is not listed, click + and add the app."),
+                    actionTitle: LuxelLocalization.string("Open System Settings"),
                     action: .openSettings
                 )
             }
@@ -142,8 +150,8 @@ public struct PermissionGuidanceService: Sendable {
         switch status {
         case .notDetermined:
             PermissionGuidance(
-                title: "Microphone is off",
-                message: "Allow microphone access to add your voice to recordings.",
+                title: LuxelLocalization.string("Microphone is off"),
+                message: LuxelLocalization.string("Allow microphone access to add your voice to recordings."),
                 actionTitle: LuxelLocalization.string(
                     "permissions.microphone.enable",
                     defaultValue: "Enable Mic"),
@@ -151,16 +159,16 @@ public struct PermissionGuidanceService: Sendable {
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
-                title: "Microphone is off",
-                message: "Allow microphone access to add your voice to recordings.",
-                actionTitle: "Open System Settings",
+                title: LuxelLocalization.string("Microphone is off"),
+                message: LuxelLocalization.string("Allow microphone access to add your voice to recordings."),
+                actionTitle: LuxelLocalization.string("Open System Settings"),
                 action: .openSettings
             )
         case .authorized:
             PermissionGuidance(
-                title: "Microphone on",
-                message: "Microphone audio will be included with recordings.",
-                actionTitle: "OK",
+                title: LuxelLocalization.string("Microphone on"),
+                message: LuxelLocalization.string("Microphone audio will be included with recordings."),
+                actionTitle: LuxelLocalization.string("OK"),
                 action: .request
             )
         }
@@ -177,8 +185,8 @@ public struct PermissionGuidanceService: Sendable {
         switch status {
         case .notDetermined:
             PermissionGuidance(
-                title: "Camera is off",
-                message: "Allow camera access to add your camera overlay.",
+                title: LuxelLocalization.string("Camera is off"),
+                message: LuxelLocalization.string("Allow camera access to add your camera overlay."),
                 actionTitle: LuxelLocalization.string(
                     "permissions.camera.enable",
                     defaultValue: "Enable Camera"),
@@ -186,16 +194,16 @@ public struct PermissionGuidanceService: Sendable {
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
-                title: "Camera is off",
-                message: "Allow camera access to add your camera overlay.",
-                actionTitle: "Open System Settings",
+                title: LuxelLocalization.string("Camera is off"),
+                message: LuxelLocalization.string("Allow camera access to add your camera overlay."),
+                actionTitle: LuxelLocalization.string("Open System Settings"),
                 action: .openSettings
             )
         case .authorized:
             PermissionGuidance(
-                title: "Camera on",
-                message: "Camera overlay will be included with recordings.",
-                actionTitle: "OK",
+                title: LuxelLocalization.string("Camera on"),
+                message: LuxelLocalization.string("Camera overlay will be included with recordings."),
+                actionTitle: LuxelLocalization.string("OK"),
                 action: .request
             )
         }
@@ -227,26 +235,31 @@ public struct PermissionGuidanceService: Sendable {
         switch status {
         case .authorized:
             PermissionGuidance(
-                title: "Keystroke capture ready",
-                message: "Luxel can capture key identities while an enabled recording is active.",
-                actionTitle: "OK",
+                title: LuxelLocalization.string("Keystroke capture ready"),
+                message: LuxelLocalization.string(
+                    "Luxel can capture key identities while an enabled recording is active."),
+                actionTitle: LuxelLocalization.string("OK"),
                 action: .request
             )
         case .notDetermined:
             PermissionGuidance(
-                title: "Allow keystroke capture?",
+                title: LuxelLocalization.string("Allow keystroke capture?"),
                 message:
-                    "Luxel stores typed characters and shortcut identities locally with the recording. "
-                    + "You can pause capture at any time and remove the data later.",
-                actionTitle: "Open System Settings",
+                    LuxelLocalization.string(
+                        "permissions.inputMonitoring.disclosure",
+                        defaultValue: "Luxel stores typed characters and shortcut identities locally with the "
+                            + "recording. You can pause capture at any time and remove the data later."),
+                actionTitle: LuxelLocalization.string("Open System Settings"),
                 action: .request
             )
         case .denied, .restricted, .unknown:
             PermissionGuidance(
-                title: "Input Monitoring is off",
-                message: "Turn Luxel on in Input Monitoring, then return and try again. "
-                    + "If permission is already on but capture remains unavailable, relaunch Luxel.",
-                actionTitle: "Open System Settings",
+                title: LuxelLocalization.string("Input Monitoring is off"),
+                message: LuxelLocalization.string(
+                    "permissions.inputMonitoring.instructions",
+                    defaultValue: "Turn Luxel on in Input Monitoring, then return and try again. If permission "
+                        + "is already on but capture remains unavailable, relaunch Luxel."),
+                actionTitle: LuxelLocalization.string("Open System Settings"),
                 action: .openSettings
             )
         }

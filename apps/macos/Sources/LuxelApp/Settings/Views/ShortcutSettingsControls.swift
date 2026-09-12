@@ -189,7 +189,7 @@ private struct LuxelShortcutSettingsRow: View {
                     ShortcutRecorderView(
                         onShortcut: recordShortcut,
                         onInvalidShortcut: {
-                            recorderMessage = "Use a letter or number with a modifier"
+                            recorderMessage = LuxelLocalization.string("Use a letter or number with a modifier")
                         },
                         onCancel: cancelEditing
                     )
@@ -204,8 +204,8 @@ private struct LuxelShortcutSettingsRow: View {
 
                     shortcutIconButton(
                         systemImage: "pencil",
-                        accessibilityLabel: "Change shortcut for \(command.title)",
-                        help: "Change shortcut for \(command.title)"
+                        accessibilityLabel: LuxelLocalization.format("Change shortcut for %@", command.title),
+                        help: LuxelLocalization.format("Change shortcut for %@", command.title)
                     ) {
                         editingCommandID = command.id
                     }
@@ -226,8 +226,8 @@ private struct LuxelShortcutSettingsRow: View {
         HStack(spacing: 8) {
             shortcutIconButton(
                 systemImage: "trash",
-                accessibilityLabel: "Clear shortcut for \(command.title)",
-                help: "Clear shortcut for \(command.title)"
+                accessibilityLabel: LuxelLocalization.format("Clear shortcut for %@", command.title),
+                help: LuxelLocalization.format("Clear shortcut for %@", command.title)
             ) {
                 command.selection.wrappedValue = ""
                 cancelEditing()
@@ -237,8 +237,8 @@ private struct LuxelShortcutSettingsRow: View {
 
             shortcutIconButton(
                 systemImage: "arrow.uturn.backward",
-                accessibilityLabel: "Reset shortcut for \(command.title)",
-                help: "Reset shortcut for \(command.title)"
+                accessibilityLabel: LuxelLocalization.format("Reset shortcut for %@", command.title),
+                help: LuxelLocalization.format("Reset shortcut for %@", command.title)
             ) {
                 command.selection.wrappedValue = command.defaultRawValue
                 cancelEditing()
@@ -252,11 +252,11 @@ private struct LuxelShortcutSettingsRow: View {
 
     private var shortcutWarning: String? {
         if let duplicate = duplicateCommand(forRawValue: command.selection.wrappedValue) {
-            return "Used by \(duplicate.title)"
+            return LuxelLocalization.format("Used by %@", duplicate.title)
         }
 
         if let conflict = conflictDetector.conflict(forRawValue: command.selection.wrappedValue) {
-            return "Conflicts with \(conflict.systemAction)"
+            return LuxelLocalization.format("Conflicts with %@", conflict.systemAction)
         }
 
         return nil
@@ -268,7 +268,7 @@ private struct LuxelShortcutSettingsRow: View {
 
     private func recordShortcut(_ shortcut: AppKeyboardShortcut) {
         if let duplicate = duplicateCommand(forRawValue: shortcut.rawValue) {
-            recorderMessage = "Used by \(duplicate.title)"
+            recorderMessage = LuxelLocalization.format("Used by %@", duplicate.title)
             return
         }
 

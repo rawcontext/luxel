@@ -13,16 +13,25 @@ struct RecoveryPrompt: Equatable {
     let isKnownRepairable: Bool
 
     var title: String {
-        isKnownRepairable ? "Repairable Recording Found" : "Corrupt Recording Found"
+        isKnownRepairable
+            ? LuxelLocalization.string("Repairable Recording Found")
+            : LuxelLocalization.string("Corrupt Recording Found")
     }
 
     var message: String {
         if isKnownRepairable {
-            return "Luxel found an interrupted recording with a known corruption signature. "
-                + "The file was left in place so you can inspect it or try a repair workflow later.\n\n\(reason)"
+            return LuxelLocalization.format(
+                "recovery.repairable.message",
+                defaultValue: "Luxel found an interrupted recording with a known corruption signature. The "
+                    + "file was left in place so you can inspect it or try a repair workflow "
+                    + "later.\n\n%@",
+                reason)
         }
 
-        return "Luxel found an interrupted recording that appears corrupt. "
-            + "A diagnostic was recorded so this failure can be investigated.\n\n\(reason)"
+        return LuxelLocalization.format(
+            "recovery.corrupt.message",
+            defaultValue: "Luxel found an interrupted recording that appears corrupt. A diagnostic was "
+                + "recorded so this failure can be investigated.\n\n%@",
+            reason)
     }
 }

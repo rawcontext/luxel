@@ -9,7 +9,7 @@ extension LuxelCropperView {
         let cameraConfiguration = effectiveCameraConfiguration
 
         Menu {
-            cameraDeviceButton(title: "Off", deviceID: nil)
+            cameraDeviceButton(title: LuxelLocalization.string("Off"), deviceID: nil)
 
             if !cameraConfiguration.devices.isEmpty {
                 Divider()
@@ -153,7 +153,8 @@ extension LuxelCropperView {
             captureKeystrokes.wrappedValue.toggle()
         } label: {
             toolbarCircleLabel(
-                model.capturesKeystrokes ? "Keystrokes On" : "Keystrokes Off",
+                model.capturesKeystrokes
+                    ? LuxelLocalization.string("Keystrokes On") : LuxelLocalization.string("Keystrokes Off"),
                 systemImage: model.capturesKeystrokes ? "keyboard.fill" : "keyboard",
                 isActive: model.capturesKeystrokes,
                 isDisabled: !model.canCaptureKeystrokes
@@ -163,7 +164,7 @@ extension LuxelCropperView {
         .frame(width: Self.toolbarCircleSide, height: Self.toolbarCircleSide)
         .disabled(!model.canCaptureKeystrokes)
         .accessibilityLabel("Capture Keystrokes")
-        .accessibilityValue(model.capturesKeystrokes ? "On" : "Off")
+        .accessibilityValue(model.capturesKeystrokes ? LuxelLocalization.string("On") : LuxelLocalization.string("Off"))
         .help("Capture typed characters and shortcut identities with this recording.")
     }
 

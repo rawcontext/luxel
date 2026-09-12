@@ -181,13 +181,13 @@ extension LuxelEditorView {
     func gifDitheringLabel(_ mode: GIFDitheringMode) -> String {
         switch mode {
         case .auto:
-            "Auto"
+            LuxelLocalization.string("Auto")
         case .none:
-            "None"
+            LuxelLocalization.string("None")
         case .ordered:
-            "Ordered"
+            LuxelLocalization.string("Ordered")
         case .diffusion:
-            "Diffusion"
+            LuxelLocalization.string("Diffusion")
         }
     }
 }

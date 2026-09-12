@@ -15,7 +15,7 @@ public struct AudioInputDeviceOption: Codable, Equatable, Identifiable, Sendable
 
     public static let systemDefault = AudioInputDeviceOption(
         id: AudioInputDeviceID.systemDefault,
-        name: "System Default"
+        name: LuxelLocalization.string("System Default")
     )
 }
 

@@ -1,0 +1,10 @@
+"Start a recording with ${applicationName}" = "用 ${applicationName} 开始录制";
+"Record my screen with ${applicationName}" = "用 ${applicationName} 录制屏幕";
+"Stop recording with ${applicationName}" = "用 ${applicationName} 停止录制";
+"Stop ${applicationName}" = "停止 ${applicationName}";
+"Toggle recording with ${applicationName}" = "用 ${applicationName} 切换录制";
+"Toggle ${applicationName}" = "切换 ${applicationName} 录制";
+"Clip replay buffer with ${applicationName}" = "用 ${applicationName} 保存回放缓冲区片段";
+"Clip the last moment with ${applicationName}" = "用 ${applicationName} 保存刚才的片段";
+"Open latest recording with ${applicationName}" = "用 ${applicationName} 打开最新录制";
+"Show my latest ${applicationName} recording" = "显示我最新的 ${applicationName} 录制";

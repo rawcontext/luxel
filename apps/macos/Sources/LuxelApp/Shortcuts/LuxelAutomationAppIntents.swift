@@ -309,7 +309,7 @@ private enum LuxelAppIntentError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .openFailed(let url):
-            "Failed to open \(url.absoluteString)."
+            LuxelLocalization.format("Failed to open %@.", url.absoluteString)
         }
     }
 }

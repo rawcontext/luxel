@@ -21,56 +21,56 @@ enum LuxelSettingsPane: CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .recording:
-            "Recording"
+            LuxelLocalization.string("Recording")
         case .output:
-            "Output"
+            LuxelLocalization.string("Output")
         case .presets:
-            "Presets"
+            LuxelLocalization.string("Presets")
         case .shortcuts:
-            "Shortcuts"
+            LuxelLocalization.string("Shortcuts")
         case .notch:
-            "Notch"
+            LuxelLocalization.string("Notch")
         case .replayBuffer:
-            "Replay Buffer"
+            LuxelLocalization.string("Replay Buffer")
         case .notifications:
             LuxelLocalization.string(
                 "settings.notifications.sidebar.title",
                 defaultValue: "Notifications"
             )
         case .transcripts:
-            "Transcripts"
+            LuxelLocalization.string("Transcripts")
         case .commandLine:
-            "Command Line"
+            LuxelLocalization.string("Command Line")
         case .system:
-            "System"
+            LuxelLocalization.string("System")
         }
     }
 
     var subtitle: String {
         switch self {
         case .recording:
-            "Capture, audio, and camera controls for new recordings."
+            LuxelLocalization.string("Capture, audio, and camera controls for new recordings.")
         case .output:
-            "Where recordings go and how exports behave."
+            LuxelLocalization.string("Where recordings go and how exports behave.")
         case .presets:
-            "Reusable export presets and cropper size presets."
+            LuxelLocalization.string("Reusable export presets and cropper size presets.")
         case .shortcuts:
-            "Keyboard shortcuts and URL automation."
+            LuxelLocalization.string("Keyboard shortcuts and URL automation.")
         case .notch:
-            "Built-in notch display controls and fallback behavior."
+            LuxelLocalization.string("Built-in notch display controls and fallback behavior.")
         case .replayBuffer:
-            "Always-on recent capture and clip behavior."
+            LuxelLocalization.string("Always-on recent capture and clip behavior.")
         case .notifications:
             LuxelLocalization.string(
                 "settings.notifications.sidebar.subtitle",
                 defaultValue: "System delivery and notification types."
             )
         case .transcripts:
-            "Transcription language, turn segmentation, and speaker identification."
+            LuxelLocalization.string("Transcription language, turn segmentation, and speaker identification.")
         case .commandLine:
-            "Install and configure the luxel command-line tool."
+            LuxelLocalization.string("Install and configure the luxel command-line tool.")
         case .system:
-            "App startup, updates, menu bar behavior, and acknowledgements."
+            LuxelLocalization.string("App startup, updates, menu bar behavior, and acknowledgements.")
         }
     }
 
@@ -180,7 +180,7 @@ struct SettingsRow<Content: View>: View {
     var body: some View {
         HStack(spacing: 12) {
             if let title {
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 13.5, weight: .medium))
                     .foregroundStyle(.white.opacity(0.95))
 
@@ -231,7 +231,7 @@ struct SettingsCapsuleButtonLabel: View {
     }
 
     var body: some View {
-        LuxelGlassTitleLabel(title, systemImage: systemImage)
+        LuxelGlassTitleLabel(LuxelLocalization.string(title), systemImage: systemImage)
             .foregroundStyle(.white.opacity(0.92))
             .padding(.horizontal, 12)
             .padding(.vertical, 7)

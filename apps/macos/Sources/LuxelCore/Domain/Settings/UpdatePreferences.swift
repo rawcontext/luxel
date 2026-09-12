@@ -29,9 +29,9 @@ public enum UpdateChannel: String, Codable, CaseIterable, Equatable, Identifiabl
     public var label: String {
         switch self {
         case .stable:
-            "Stable"
+            LuxelLocalization.string("Stable")
         case .beta:
-            "Beta"
+            LuxelLocalization.string("Beta")
         }
     }
 }

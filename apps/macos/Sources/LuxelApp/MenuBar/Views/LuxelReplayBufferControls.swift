@@ -79,7 +79,7 @@ struct LuxelReplayBufferControls: View {
     }
 
     private var replayBufferPowerTitle: String {
-        replayBufferCanStart ? "Start" : "Stop"
+        replayBufferCanStart ? LuxelLocalization.string("Start") : LuxelLocalization.string("Stop")
     }
 
     private var replayBufferPowerSystemImage: String {
@@ -109,7 +109,7 @@ struct LuxelReplayBufferControls: View {
             model.settings.replayBufferConfiguration?.bufferLength
             ?? model.settings.replayBufferPreferredBufferLength
 
-        return "Keeps the last \(replayBufferDurationLabel(seconds).lowercased())"
+        return LuxelLocalization.format("Keeps the last %@", replayBufferDurationLabel(seconds))
     }
 
     private var replayBufferPowerButton: some View {
@@ -181,15 +181,15 @@ struct LuxelReplayBufferControls: View {
     private func replayBufferDurationLabel(_ seconds: TimeInterval) -> String {
         switch Int(seconds) {
         case 30:
-            "30 Seconds"
+            LuxelLocalization.format("replayBuffer.duration.seconds", defaultValue: "%d Seconds", 30)
         case 60:
-            "1 Minute"
+            LuxelLocalization.string("replayBuffer.duration.oneMinute", defaultValue: "1 Minute")
         case 120:
-            "2 Minutes"
+            LuxelLocalization.format("replayBuffer.duration.minutes", defaultValue: "%d Minutes", 2)
         case 300:
-            "5 Minutes"
+            LuxelLocalization.format("replayBuffer.duration.minutes", defaultValue: "%d Minutes", 5)
         default:
-            "\(Int(seconds)) Seconds"
+            LuxelLocalization.format("replayBuffer.duration.seconds", defaultValue: "%d Seconds", Int(seconds))
         }
     }
 }

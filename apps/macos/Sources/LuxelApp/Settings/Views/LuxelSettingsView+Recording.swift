@@ -216,17 +216,17 @@ extension LuxelSettingsView {
                 defaultValue: "Remove a green-screen background with chroma key."
             )
         case .none:
-            return "Camera controls are available after you choose a camera."
+            return LuxelLocalization.string("Camera controls are available after you choose a camera.")
         }
     }
 
     func cameraDeviceLabel(_ deviceID: String?) -> String {
         guard let deviceID else {
-            return "Off"
+            return LuxelLocalization.string("Off")
         }
 
         guard let device = model.cameraDevices.first(where: { $0.id == deviceID }) else {
-            return "Unavailable Camera"
+            return LuxelLocalization.string("Unavailable Camera")
         }
 
         return device.settingsLabel

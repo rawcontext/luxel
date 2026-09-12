@@ -37,7 +37,10 @@ extension TranscriptCardContent {
         .padding(.vertical, 5)
         .background(.white.opacity(0.07), in: Capsule(style: .continuous))
         .help("Speaker count")
-        .accessibilityLabel("\(transcript.speakers.count) speakers detected")
+        .accessibilityLabel(
+            transcript.speakers.count == 1
+                ? LuxelLocalization.string("1 speaker detected")
+                : LuxelLocalization.format("%d speakers detected", transcript.speakers.count))
     }
 
     var selectedSearchMatchIndex: Int? {

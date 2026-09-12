@@ -6,9 +6,9 @@ extension LuxelMenu {
     var captureTargetChip: some View {
         switch captureMode {
         case .display:
-            captureTargetChipMenu(kind: .display, emptyTitle: "No display found")
+            captureTargetChipMenu(kind: .display, emptyTitle: LuxelLocalization.string("No display found"))
         case .window:
-            captureTargetChipMenu(kind: .window, emptyTitle: "No windows found")
+            captureTargetChipMenu(kind: .window, emptyTitle: LuxelLocalization.string("No windows found"))
         case .area:
             captureTargetChipLabel(areaTargetChipText, showsChevron: false)
         case .audio:
@@ -38,7 +38,7 @@ extension LuxelMenu {
         }
         .buttonStyle(.plain)
         .disabled(targets.isEmpty || model.hasActiveRecording)
-        .help("Choose \(kind == .display ? "display" : "window")")
+        .help(kind == .display ? LuxelLocalization.string("Choose display") : LuxelLocalization.string("Choose window"))
     }
 
     func captureTargetChipLabel(
@@ -76,10 +76,11 @@ extension LuxelMenu {
     var areaTargetChipText: String {
         if let memory = model.settings.lastCaptureMemory,
             case .area = memory.target {
-            return "\(memory.pixelSize.width) × \(memory.pixelSize.height) · reselect at record"
+            return LuxelLocalization.format(
+                "%d × %d · reselect at record", memory.pixelSize.width, memory.pixelSize.height)
         }
 
-        return "Choose area at record"
+        return LuxelLocalization.string("Choose area at record")
     }
 
     var audioTargetChipText: String {
@@ -87,18 +88,18 @@ extension LuxelMenu {
         let capturesMicrophone = model.settings.recordAudio
 
         if capturesSystemAudio, capturesMicrophone {
-            return "System Audio + Mic"
+            return LuxelLocalization.string("System Audio + Mic")
         }
 
         if capturesSystemAudio {
-            return "System Audio"
+            return LuxelLocalization.string("System Audio")
         }
 
         if capturesMicrophone {
-            return "Microphone"
+            return LuxelLocalization.string("Microphone")
         }
 
-        return "No audio input on"
+        return LuxelLocalization.string("No audio input on")
     }
 
     func captureTargetSelection(_ target: CaptureTargetOption) -> Binding<Bool> {
@@ -158,7 +159,7 @@ extension LuxelMenu {
     }
 
     var recordButtonHelp: String {
-        model.hasActiveRecording ? "Stop recording" : idleRecordDescription
+        model.hasActiveRecording ? LuxelLocalization.string("Stop recording") : idleRecordDescription
     }
 
 }

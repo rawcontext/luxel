@@ -224,14 +224,15 @@ extension LuxelEditorView {
 
     private var transcriptPreviewButtonTitle: String {
         if model.isTranscriptExtractionActive {
-            return "Transcribing"
+            return LuxelLocalization.string("Transcribing")
         }
 
-        return "Transcript"
+        return LuxelLocalization.string("Transcript")
     }
 
     private var transcriptPreviewButtonHelp: String {
-        model.isTranscriptPanelVisible ? "Hide transcript" : "Show transcript"
+        model.isTranscriptPanelVisible
+            ? LuxelLocalization.string("Hide transcript") : LuxelLocalization.string("Show transcript")
     }
 
     private func recordingNavigationButton(
@@ -258,7 +259,7 @@ extension LuxelEditorView {
                         }
                 }
                 .contentShape(Circle())
-                .accessibilityLabel(title)
+                .accessibilityLabel(LuxelLocalization.string(title))
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)

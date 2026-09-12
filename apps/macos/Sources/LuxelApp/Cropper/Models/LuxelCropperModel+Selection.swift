@@ -74,7 +74,7 @@ extension LuxelCropperModel {
             applyActiveAspectRatioToSelection()
             return true
         } catch {
-            errorMessage = "Use whole-number ratio values greater than 0"
+            errorMessage = LuxelLocalization.string("Use whole-number ratio values greater than 0")
             return false
         }
     }
@@ -359,11 +359,11 @@ extension LuxelCropperModel {
 
     static func durationSummary(_ duration: TimeInterval) -> String {
         if duration < 60 {
-            return "\(Int(duration)) s"
+            return LuxelLocalization.format("recording.countdown.seconds", defaultValue: "%d s", Int(duration))
         }
 
         let minutes = Int(duration / 60)
-        return "\(minutes) min"
+        return LuxelLocalization.format("%d min", minutes)
     }
 
     static func validInitialSelection(_ selection: CaptureRect?, display: DisplayBounds)

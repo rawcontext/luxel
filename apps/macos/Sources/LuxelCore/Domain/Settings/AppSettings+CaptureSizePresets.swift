@@ -5,7 +5,7 @@ extension AppSettings {
     public mutating func addCaptureSizePreset(id: UUID = UUID()) throws -> CaptureSizePreset {
         let preset = try CaptureSizePreset(
             id: id,
-            name: userSizePresets.uniquePresetName(base: "New Size"),
+            name: userSizePresets.uniquePresetName(base: LuxelLocalization.string("New Size")),
             pixelSize: PixelSize(width: 1280, height: 720)
         )
         userSizePresets.append(preset)
@@ -21,7 +21,7 @@ extension AppSettings {
 
         let copy = try CaptureSizePreset(
             id: newID,
-            name: userSizePresets.uniquePresetName(base: "\(preset.name) Copy"),
+            name: userSizePresets.uniquePresetName(base: LuxelLocalization.format("%@ Copy", preset.name)),
             pixelSize: preset.pixelSize
         )
         userSizePresets.append(copy)

@@ -36,9 +36,9 @@ extension LuxelCropperView {
             model.setCountdownDuration(duration)
         } label: {
             if model.countdownDuration == duration {
-                Label(title, systemImage: "checkmark")
+                Label(LocalizedStringKey(title), systemImage: "checkmark")
             } else {
-                Text(title)
+                Text(LocalizedStringKey(title))
             }
         }
         .help(countdownHelp(title: title, duration: duration))
@@ -50,9 +50,9 @@ extension LuxelCropperView {
             model.setStopAfterDuration(duration)
         } label: {
             if model.stopAfterDuration == duration {
-                Label(title, systemImage: "checkmark")
+                Label(LocalizedStringKey(title), systemImage: "checkmark")
             } else {
-                Text(title)
+                Text(LocalizedStringKey(title))
             }
         }
         .help(stopAfterHelp(title: title, duration: duration))
@@ -126,12 +126,15 @@ extension LuxelCropperView {
             onCameraSelectionChange(deviceID)
         } label: {
             if effectiveCameraConfiguration.selectedDeviceID == deviceID {
-                Label(title, systemImage: "checkmark")
+                Label(LocalizedStringKey(title), systemImage: "checkmark")
             } else {
-                Text(title)
+                Text(LocalizedStringKey(title))
             }
         }
-        .help(deviceID == nil ? "Turn off the camera overlay." : "Use \(title) as the camera overlay.")
+        .help(
+            deviceID == nil
+                ? LuxelLocalization.string("Turn off the camera overlay.")
+                : LuxelLocalization.format("Use %@ as the camera overlay.", title))
     }
 
     var effectiveCameraConfiguration: CropperCameraConfiguration {
@@ -139,7 +142,7 @@ extension LuxelCropperView {
     }
 
     var cameraToolbarText: String {
-        effectiveCameraConfiguration.selectedDevice?.name ?? "Camera Off"
+        effectiveCameraConfiguration.selectedDevice?.name ?? LuxelLocalization.string("Camera Off")
     }
 
     var cameraMenuSystemImage: String {
@@ -148,40 +151,44 @@ extension LuxelCropperView {
 
     var cameraMenuHelp: String {
         if let selectedDevice = effectiveCameraConfiguration.selectedDevice {
-            return "Camera overlay: \(selectedDevice.name)."
+            return LuxelLocalization.format("Camera overlay: %@.", selectedDevice.name)
         }
 
-        return "Choose a camera overlay for the recording."
+        return LuxelLocalization.string("Choose a camera overlay for the recording.")
     }
 
     var recordAudioHelp: String {
         if !model.canToggleRecordAudio {
-            return "Microphone permission is required to record mic audio."
+            return LuxelLocalization.string("Microphone permission is required to record mic audio.")
         }
 
         return model.recordsAudio
-            ? "Record microphone audio with this capture."
-            : "Do not record microphone audio with this capture."
+            ? LuxelLocalization.string("Record microphone audio with this capture.")
+            : LuxelLocalization.string("Do not record microphone audio with this capture.")
     }
 
     var primaryActionHelp: String {
         guard model.canRecordSelection else {
-            return "Drag to select an area first."
+            return LuxelLocalization.string("Drag to select an area first.")
         }
 
         return model.primaryActionHelp
     }
 
     var microphoneToolbarText: String {
-        model.recordsAudio ? "Mic On" : "Mic Off"
+        model.recordsAudio ? LuxelLocalization.string("Mic On") : LuxelLocalization.string("Mic Off")
     }
 
     private func countdownHelp(title: String, duration: TimeInterval?) -> String {
-        duration == nil ? "Start recording immediately." : "Wait \(title) before recording starts."
+        duration == nil
+            ? LuxelLocalization.string("Start recording immediately.")
+            : LuxelLocalization.format("Wait %@ before recording starts.", title)
     }
 
     private func stopAfterHelp(title: String, duration: TimeInterval?) -> String {
-        duration == nil ? "Keep recording until stopped manually." : "Stop recording after \(title)."
+        duration == nil
+            ? LuxelLocalization.string("Keep recording until stopped manually.")
+            : LuxelLocalization.format("Stop recording after %@.", title)
     }
 
     func updateCameraPreviewShape(_ shape: CameraOverlayShape) {

@@ -1,0 +1,10 @@
+"Start a recording with ${applicationName}" = "Bắt đầu ghi bằng ${applicationName}";
+"Record my screen with ${applicationName}" = "Ghi màn hình của tôi bằng ${applicationName}";
+"Stop recording with ${applicationName}" = "Dừng ghi bằng ${applicationName}";
+"Stop ${applicationName}" = "Dừng ${applicationName}";
+"Toggle recording with ${applicationName}" = "Bắt đầu hoặc dừng ghi bằng ${applicationName}";
+"Toggle ${applicationName}" = "Chuyển trạng thái ghi của ${applicationName}";
+"Clip replay buffer with ${applicationName}" = "Lưu đoạn từ bộ đệm phát lại bằng ${applicationName}";
+"Clip the last moment with ${applicationName}" = "Lưu khoảnh khắc vừa qua bằng ${applicationName}";
+"Open latest recording with ${applicationName}" = "Mở bản ghi mới nhất bằng ${applicationName}";
+"Show my latest ${applicationName} recording" = "Hiện bản ghi ${applicationName} mới nhất của tôi";

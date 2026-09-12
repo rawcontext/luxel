@@ -177,7 +177,7 @@ public struct AppKeyboardShortcutConflictDetector: Sendable {
             return nil
         }
 
-        return AppKeyboardShortcutConflict(shortcut: shortcut, systemAction: action)
+        return AppKeyboardShortcutConflict(shortcut: shortcut, systemAction: LuxelLocalization.string(action))
     }
 }
 

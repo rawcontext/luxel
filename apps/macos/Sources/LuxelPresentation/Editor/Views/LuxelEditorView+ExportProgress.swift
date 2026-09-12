@@ -7,7 +7,7 @@ extension LuxelEditorView {
             VStack(alignment: .leading, spacing: 12) {
                 if model.isExporting, !model.exportJobs.isEmpty {
                     if model.exportJobs.count > 1 {
-                        Text("Exporting \(model.exportJobs.count) files")
+                        Text(LuxelLocalization.format("Exporting %d files", model.exportJobs.count))
                             .font(.subheadline)
                             .fontWeight(.semibold)
 

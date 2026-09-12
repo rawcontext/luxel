@@ -1,4 +1,5 @@
 import AVFoundation
+import LuxelCore
 import SwiftUI
 
 enum EditorStageChromeStyle {
@@ -109,7 +110,9 @@ struct EditorPlaybackCapsule: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(model.playbackRequested ? "Pause" : "Play")
+            .accessibilityLabel(
+                model.playbackRequested ? LuxelLocalization.string("Pause") : LuxelLocalization.string("Play")
+            )
             .help("Play or pause the preview.")
 
             transportButton(
@@ -136,8 +139,8 @@ struct EditorPlaybackCapsule: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(accessibilityLabel)
-        .help(help)
+        .accessibilityLabel(LuxelLocalization.string(accessibilityLabel))
+        .help(LocalizedStringKey(help))
     }
 
     private var scrubberRow: some View {

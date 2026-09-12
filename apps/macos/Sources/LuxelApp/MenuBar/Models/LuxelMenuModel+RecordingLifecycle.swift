@@ -298,8 +298,8 @@ extension LuxelMenuModel {
         keystrokeRecordingSession.toggleUserPause()
         recordingNoticeMessage =
             keystrokeRecordingSession.isUserPaused
-            ? "Keystroke capture paused."
-            : "Keystroke capture resumed."
+            ? LuxelLocalization.string("Keystroke capture paused.")
+            : LuxelLocalization.string("Keystroke capture resumed.")
     }
 
     func discardActiveRecording() async {

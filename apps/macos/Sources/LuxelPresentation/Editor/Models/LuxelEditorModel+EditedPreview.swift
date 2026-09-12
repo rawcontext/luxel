@@ -28,12 +28,12 @@ extension LuxelEditorModel {
 
         guard let segments = try? previewTimelineMapper.sourceSegments else {
             isEditedPreviewReady = false
-            transcriptEditStatusMessage = "Could not build the edited preview."
+            transcriptEditStatusMessage = LuxelLocalization.string("Could not build the edited preview.")
             return
         }
 
         isEditedPreviewReady = false
-        transcriptEditStatusMessage = "Updating edited preview…"
+        transcriptEditStatusMessage = LuxelLocalization.string("Updating edited preview…")
         previewCompositionTask = Task { [weak self] in
             do {
                 let asset = try await AVFoundationEditorPreviewAssetBuilder().makePreviewAsset(
@@ -48,7 +48,7 @@ extension LuxelEditorModel {
                     sourceTime: sourceTime,
                     wasPlaying: wasPlaying
                 ) == true {
-                    self?.transcriptEditStatusMessage = successMessage ?? "Word cut"
+                    self?.transcriptEditStatusMessage = successMessage ?? LuxelLocalization.string("Word cut")
                 }
             } catch is CancellationError {
             } catch {
@@ -87,7 +87,7 @@ extension LuxelEditorModel {
         let item = AVPlayerItem(url: sourceURL)
         item.audioTimePitchAlgorithm = .timeDomain
         player.replaceCurrentItem(with: item)
-        transcriptEditStatusMessage = "Edited preview unavailable; undo the cut to export."
+        transcriptEditStatusMessage = LuxelLocalization.string("Edited preview unavailable; undo the cut to export.")
         isEditedPreviewReady = false
         previewCompositionTask = nil
     }

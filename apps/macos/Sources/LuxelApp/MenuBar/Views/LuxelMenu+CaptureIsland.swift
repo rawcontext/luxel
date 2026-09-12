@@ -10,13 +10,13 @@ enum LuxelCaptureMode: CaseIterable {
     var title: String {
         switch self {
         case .display:
-            "Display"
+            LuxelLocalization.string("Display")
         case .window:
-            "Window"
+            LuxelLocalization.string("Window")
         case .area:
-            "Area"
+            LuxelLocalization.string("Area")
         case .audio:
-            "Audio"
+            LuxelLocalization.string("Audio")
         }
     }
 
@@ -91,8 +91,8 @@ extension LuxelMenu {
         }
         .buttonStyle(.plain)
         .disabled(model.hasActiveRecording)
-        .help("\(mode.title) mode")
-        .accessibilityLabel("\(mode.title) mode")
+        .help(LuxelLocalization.format("%@ mode", mode.title))
+        .accessibilityLabel(LuxelLocalization.format("%@ mode", mode.title))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .animation(.easeOut(duration: 0.18), value: isSelected)
     }
@@ -196,13 +196,17 @@ extension LuxelMenu {
     private var idleRecordLabelText: String {
         switch captureMode {
         case .display:
-            "Record"
+            LuxelLocalization.string("Record")
         case .window:
-            effectiveCaptureTarget(kind: .window) != nil ? "Record" : "Choose a Window"
+            if effectiveCaptureTarget(kind: .window) != nil {
+                LuxelLocalization.string("Record")
+            } else {
+                LuxelLocalization.string("Choose a Window")
+            }
         case .area:
-            "Record Selection"
+            LuxelLocalization.string("Record Selection")
         case .audio:
-            "Record Audio"
+            LuxelLocalization.string("Record Audio")
         }
     }
 
@@ -210,33 +214,33 @@ extension LuxelMenu {
         switch captureMode {
         case .display:
             if let target = effectiveCaptureTarget(kind: .display) {
-                return "Record \(target.title)"
+                return LuxelLocalization.format("Record %@", target.title)
             }
 
-            return "Record Display"
+            return LuxelLocalization.string("Record Display")
         case .window:
             if let target = effectiveCaptureTarget(kind: .window) {
-                return "Record \(target.title)"
+                return LuxelLocalization.format("Record %@", target.title)
             }
 
-            return "Choose a Window"
+            return LuxelLocalization.string("Choose a Window")
         case .area:
-            return "Record Selection"
+            return LuxelLocalization.string("Record Selection")
         case .audio:
-            return "Record Audio"
+            return LuxelLocalization.string("Record Audio")
         }
     }
 
     private func activeRecordingLabelText(now: Date) -> String {
         switch model.recordingState {
         case .recording(_, let clock), .resuming(_, let clock):
-            "Recording \(Self.elapsedText(clock.elapsed(at: now))) · click to stop"
+            LuxelLocalization.format("Recording %@ · click to stop", Self.elapsedText(clock.elapsed(at: now)))
         case .paused(_, let clock), .pausing(_, let clock):
-            "Paused \(Self.elapsedText(clock.elapsed(at: now)))"
+            LuxelLocalization.format("Paused %@", Self.elapsedText(clock.elapsed(at: now)))
         case .countingDown:
-            "Starting · click to cancel"
+            LuxelLocalization.string("Starting · click to cancel")
         case .stopping:
-            "Finishing recording"
+            LuxelLocalization.string("Finishing recording")
         case .idle, .starting, .exporting, .failed:
             ""
         }

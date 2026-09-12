@@ -32,6 +32,14 @@ public enum LuxelLocalization {
         NSLocalizedString(key, bundle: localizationBundle, value: defaultValue, comment: "")
     }
 
+    public static func string(_ key: String) -> String {
+        string(key, defaultValue: key)
+    }
+
+    public static func format(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: string(key), locale: Locale.current, arguments: arguments)
+    }
+
     public static func format(
         _ key: String,
         defaultValue: String,

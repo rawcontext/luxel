@@ -328,11 +328,11 @@ enum EditorSourceRenameError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .emptyFileName:
-            "Filename cannot be empty."
+            LuxelLocalization.string("Filename cannot be empty.")
         case .invalidFileName:
-            "Filename contains invalid characters."
+            LuxelLocalization.string("Filename contains invalid characters.")
         case .destinationExists(let url):
-            "\(url.lastPathComponent) already exists."
+            LuxelLocalization.format("%@ already exists.", url.lastPathComponent)
         }
     }
 }

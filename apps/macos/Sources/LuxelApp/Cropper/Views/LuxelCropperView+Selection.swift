@@ -64,7 +64,7 @@ extension LuxelCropperView {
         }
         .appKitCursor(.arrow)
         .accessibilityLabel("Selection Size")
-        .accessibilityValue("\(selection.width) by \(selection.height)")
+        .accessibilityValue(LuxelLocalization.format("%d by %d", selection.width, selection.height))
         .help("Edit the exact selection size in pixels.")
     }
 

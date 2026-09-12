@@ -74,21 +74,22 @@ enum LuxelAutomationError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .denied:
-            "URL automation was denied"
+            LuxelLocalization.string("URL automation was denied")
         case .noRecentRecording:
-            "No recent recording is available"
+            LuxelLocalization.string("No recent recording is available")
         case .noQuickExportPreset:
-            "No quick export preset is selected"
+            LuxelLocalization.string("No quick export preset is selected")
         case .presetUnavailable(let name):
-            "No export preset named \(name)"
+            LuxelLocalization.format("No export preset named %@", name)
         case .quickExportFailed:
-            "Replay buffer quick export failed"
+            LuxelLocalization.string("Replay buffer quick export failed")
         case .replayBufferUnavailable:
-            "Replay buffer automation is unavailable until the replay buffer engine is available"
+            LuxelLocalization.string(
+                "Replay buffer automation is unavailable until the replay buffer engine is available")
         case .targetUnavailable:
-            "No matching capture target is available"
+            LuxelLocalization.string("No matching capture target is available")
         case .unavailable:
-            "URL automation is unavailable"
+            LuxelLocalization.string("URL automation is unavailable")
         }
     }
 }

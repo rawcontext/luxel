@@ -1,3 +1,5 @@
+import LuxelCore
+
 enum EditorSpeakerCountMode: String, CaseIterable, Equatable, Hashable {
     case automatic
     case exact
@@ -6,11 +8,11 @@ enum EditorSpeakerCountMode: String, CaseIterable, Equatable, Hashable {
     var label: String {
         switch self {
         case .automatic:
-            "Auto"
+            LuxelLocalization.string("Auto")
         case .exact:
-            "Exact"
+            LuxelLocalization.string("Exact")
         case .range:
-            "Range"
+            LuxelLocalization.string("Range")
         }
     }
 }

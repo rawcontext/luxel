@@ -283,7 +283,7 @@ public enum EditorSizePreset: String, CaseIterable, Codable, Equatable, Hashable
     public var label: String {
         switch self {
         case .original:
-            "Original"
+            LuxelLocalization.string("Original")
         case .percent75:
             "75%"
         case .percent50:

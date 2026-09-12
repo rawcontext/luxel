@@ -22,7 +22,7 @@ final class LuxelAboutWindowPresenter {
     private func makeWindow() -> NSWindow {
         let hostingController = NSHostingController(rootView: LuxelAboutView(metadata: metadata))
         let window = NSWindow(contentViewController: hostingController)
-        window.title = "About \(metadata.displayName)"
+        window.title = LuxelLocalization.format("About %@", metadata.displayName)
         window.styleMask = [.titled, .closable]
         window.setContentSize(NSSize(width: 360, height: 410))
         window.center()
@@ -47,7 +47,7 @@ private struct LuxelAboutView: View {
                 Text(metadata.displayName)
                     .font(.title2.weight(.semibold))
 
-                Text("Version \(metadata.versionSummary)")
+                Text(LuxelLocalization.format("Version %@", metadata.versionSummary))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }

@@ -76,7 +76,7 @@ struct ExportPresetSettingsSection: View {
         guard let presetID,
             let preset = settings.exportPresets.first(where: { $0.id == presetID })
         else {
-            return "None"
+            return LuxelLocalization.string("None")
         }
 
         return preset.name
@@ -213,7 +213,7 @@ private struct ExportPresetEditor: View {
                     selection: frameRateSelection,
                     options: frameRateChoices
                 ) { frameRate in
-                    frameRate == 0 ? "Source" : "\(frameRate) FPS"
+                    frameRate == 0 ? LuxelLocalization.string("Source") : "\(frameRate) FPS"
                 }
             }
             .help("Choose the exported video frame rate.")
@@ -251,7 +251,7 @@ private struct ExportPresetEditor: View {
             preset.name
         } set: { name in
             let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            preset.name = trimmedName.isEmpty ? "Untitled Preset" : name
+            preset.name = trimmedName.isEmpty ? LuxelLocalization.string("Untitled Preset") : name
         }
     }
 

@@ -167,7 +167,7 @@ private struct CaptureSizePresetEditor: View {
             preset.name
         } set: { name in
             let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            preset.name = trimmedName.isEmpty ? "Untitled Size" : name
+            preset.name = trimmedName.isEmpty ? LuxelLocalization.string("Untitled Size") : name
         }
     }
 

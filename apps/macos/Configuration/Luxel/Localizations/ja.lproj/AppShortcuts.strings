@@ -1,0 +1,10 @@
+"Start a recording with ${applicationName}" = "${applicationName}で収録を開始";
+"Record my screen with ${applicationName}" = "${applicationName}で画面を収録";
+"Stop recording with ${applicationName}" = "${applicationName}の収録を停止";
+"Stop ${applicationName}" = "${applicationName}を停止";
+"Toggle recording with ${applicationName}" = "${applicationName}の収録を切り替え";
+"Toggle ${applicationName}" = "${applicationName}を切り替え";
+"Clip replay buffer with ${applicationName}" = "${applicationName}でリプレイバッファを保存";
+"Clip the last moment with ${applicationName}" = "${applicationName}で直前の映像を保存";
+"Open latest recording with ${applicationName}" = "${applicationName}で最新の収録を開く";
+"Show my latest ${applicationName} recording" = "${applicationName}の最新の収録を表示";

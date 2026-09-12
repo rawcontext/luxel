@@ -3,7 +3,7 @@ import LuxelCore
 
 extension LuxelCropperModel {
     var primaryActionTitle: String {
-        "Record"
+        LuxelLocalization.string("Record")
     }
 
     var primaryActionSystemImage: String {
@@ -11,7 +11,7 @@ extension LuxelCropperModel {
     }
 
     var primaryActionHelp: String {
-        "Record the selected area."
+        LuxelLocalization.string("Record the selected area.")
     }
 }
 
@@ -40,21 +40,21 @@ extension CaptureResizeHandle {
     var helpTitle: String {
         switch self {
         case .topLeft:
-            "Resize top left"
+            LuxelLocalization.string("Resize top left")
         case .top:
-            "Resize top"
+            LuxelLocalization.string("Resize top")
         case .topRight:
-            "Resize top right"
+            LuxelLocalization.string("Resize top right")
         case .left:
-            "Resize left"
+            LuxelLocalization.string("Resize left")
         case .right:
-            "Resize right"
+            LuxelLocalization.string("Resize right")
         case .bottomLeft:
-            "Resize bottom left"
+            LuxelLocalization.string("Resize bottom left")
         case .bottom:
-            "Resize bottom"
+            LuxelLocalization.string("Resize bottom")
         case .bottomRight:
-            "Resize bottom right"
+            LuxelLocalization.string("Resize bottom right")
         }
     }
 }

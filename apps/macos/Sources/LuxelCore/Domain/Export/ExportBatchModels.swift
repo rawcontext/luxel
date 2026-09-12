@@ -94,7 +94,7 @@ public struct ExportPreset: Codable, Equatable, Identifiable, Sendable {
             return [
                 try ExportPreset(
                     id: quickGIFID,
-                    name: "Quick GIF",
+                    name: LuxelLocalization.string("Quick GIF"),
                     format: .gif,
                     sizeRule: .maxWidth(960),
                     frameRate: FrameRate(30),
@@ -103,7 +103,7 @@ public struct ExportPreset: Codable, Equatable, Identifiable, Sendable {
                 ),
                 try ExportPreset(
                     id: quickMP4ID,
-                    name: "Quick MP4",
+                    name: LuxelLocalization.string("Quick MP4"),
                     format: .mp4,
                     sizeRule: .original,
                     frameRate: nil,
@@ -241,7 +241,7 @@ public struct ExportProgressSnapshot: Codable, Equatable, Sendable {
     public static func preparing(format: ExportFormat) -> ExportProgressSnapshot {
         ExportProgressSnapshot(
             phase: .preparing,
-            actionTitle: "Preparing \(format.prettyName)",
+            actionTitle: LuxelLocalization.format("Preparing %@", format.prettyName),
             progress: 0
         )
     }
@@ -249,7 +249,7 @@ public struct ExportProgressSnapshot: Codable, Equatable, Sendable {
     public static func exporting(format: ExportFormat, progress: Double) -> ExportProgressSnapshot {
         ExportProgressSnapshot(
             phase: .exporting,
-            actionTitle: "Exporting \(format.prettyName)",
+            actionTitle: LuxelLocalization.format("Exporting %@", format.prettyName),
             progress: progress
         )
     }
@@ -270,7 +270,7 @@ public struct ExportProgressSnapshot: Codable, Equatable, Sendable {
     public static func completed(format: ExportFormat) -> ExportProgressSnapshot {
         ExportProgressSnapshot(
             phase: .completed,
-            actionTitle: "Exported \(format.prettyName)",
+            actionTitle: LuxelLocalization.format("Exported %@", format.prettyName),
             progress: 1
         )
     }
@@ -278,7 +278,7 @@ public struct ExportProgressSnapshot: Codable, Equatable, Sendable {
     public static func canceled(format: ExportFormat) -> ExportProgressSnapshot {
         ExportProgressSnapshot(
             phase: .canceled,
-            actionTitle: "Canceled \(format.prettyName)",
+            actionTitle: LuxelLocalization.format("Canceled %@", format.prettyName),
             progress: 1
         )
     }

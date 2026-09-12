@@ -24,8 +24,8 @@ struct TranscriptCardDiscoverabilityTests {
 
         #expect(!wordSource.contains(".focusable(false)"))
         #expect(wordSource.contains("Hold Shift while activating to extend the selection."))
-        #expect(
-            wordSource.contains(".accessibilityValue(isSelected ? \"Selected\" : \"Not selected\")"))
+        #expect(wordSource.contains("LuxelLocalization.string(\"Selected\")"))
+        #expect(wordSource.contains("LuxelLocalization.string(\"Not selected\")"))
         #expect(cardSource.contains(".focusable()"))
         #expect(cardSource.contains(".focusEffectDisabled()"))
     }

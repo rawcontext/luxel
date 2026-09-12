@@ -11,7 +11,7 @@ public enum CaptureAspectRatioPreset: String, CaseIterable, Codable, Equatable, 
     public var title: String {
         switch self {
         case .free:
-            "Free"
+            LuxelLocalization.string("Free")
         case .widescreen16x9:
             "16:9"
         case .standard4x3:

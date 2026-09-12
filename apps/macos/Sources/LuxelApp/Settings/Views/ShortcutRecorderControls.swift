@@ -64,7 +64,7 @@ final class ShortcutRecorderNSView: NSView {
         path.lineWidth = 1
         path.stroke()
 
-        let text = "Press shortcut" as NSString
+        let text = LuxelLocalization.string("Press shortcut") as NSString
         let attributes: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 15, weight: .medium),
             .foregroundColor: NSColor.white.withAlphaComponent(0.85)

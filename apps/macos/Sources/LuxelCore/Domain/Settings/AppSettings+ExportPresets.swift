@@ -5,7 +5,7 @@ extension AppSettings {
     public mutating func addExportPreset(id: UUID = UUID()) throws -> ExportPreset {
         let preset = try ExportPreset(
             id: id,
-            name: exportPresets.uniquePresetName(base: "New Preset"),
+            name: exportPresets.uniquePresetName(base: LuxelLocalization.string("New Preset")),
             format: .mp4,
             sizeRule: .original,
             frameRate: nil,
@@ -27,7 +27,7 @@ extension AppSettings {
 
         let copy = try ExportPreset(
             id: newID,
-            name: exportPresets.uniquePresetName(base: "\(preset.name) Copy"),
+            name: exportPresets.uniquePresetName(base: LuxelLocalization.format("%@ Copy", preset.name)),
             format: preset.format,
             sizeRule: preset.sizeRule,
             frameRate: preset.frameRate,

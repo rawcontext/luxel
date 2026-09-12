@@ -126,7 +126,7 @@ extension LuxelStatusItemController {
         primaryButton.keyEquivalent = "\r"
         primaryButton.keyEquivalentModifierMask = []
 
-        let cancelButton = alert.addButton(withTitle: "Cancel")
+        let cancelButton = alert.addButton(withTitle: LuxelLocalization.string("Cancel"))
         cancelButton.keyEquivalent = "\u{1b}"
         cancelButton.keyEquivalentModifierMask = []
 
@@ -138,16 +138,19 @@ extension LuxelStatusItemController {
 
         let alert = NSAlert()
         alert.alertStyle = .informational
-        alert.messageText = "Enable Replay Buffer?"
+        alert.messageText = LuxelLocalization.string("Enable Replay Buffer?")
         alert.informativeText =
-            "Luxel will continuously capture your display in the background so it can save recent "
-            + "moments on demand. Clips are saved only when you choose Clip Replay Buffer."
+            LuxelLocalization.string(
+                "replayBuffer.consent.message",
+                defaultValue: "Luxel will continuously capture your display in the background so it can "
+                    + "save recent moments on demand. Clips are saved only when you choose Clip "
+                    + "Replay Buffer.")
 
-        let primaryButton = alert.addButton(withTitle: "Enable Replay Buffer")
+        let primaryButton = alert.addButton(withTitle: LuxelLocalization.string("Enable Replay Buffer"))
         primaryButton.keyEquivalent = "\r"
         primaryButton.keyEquivalentModifierMask = []
 
-        let cancelButton = alert.addButton(withTitle: "Cancel")
+        let cancelButton = alert.addButton(withTitle: LuxelLocalization.string("Cancel"))
         cancelButton.keyEquivalent = "\u{1b}"
         cancelButton.keyEquivalentModifierMask = []
 

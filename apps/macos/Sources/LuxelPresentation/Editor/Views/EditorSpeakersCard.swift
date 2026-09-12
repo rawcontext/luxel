@@ -129,7 +129,7 @@ struct EditorSpeakersCard: View {
                 ),
                 in: 1...12
             ) {
-                speakerCountRangeLabel("Min \(model.minimumSpeakerCount)")
+                speakerCountRangeLabel(LuxelLocalization.format("Min %d", model.minimumSpeakerCount))
             }
             .controlSize(.small)
             .help("Set the minimum expected speaker count.")
@@ -141,14 +141,14 @@ struct EditorSpeakersCard: View {
                 ),
                 in: 1...12
             ) {
-                speakerCountRangeLabel("Max \(model.maximumSpeakerCount)")
+                speakerCountRangeLabel(LuxelLocalization.format("Max %d", model.maximumSpeakerCount))
             }
             .controlSize(.small)
             .help("Set the maximum expected speaker count.")
         }
     }
 
-    private func speakerCountRangeLabel(_ label: LocalizedStringKey) -> some View {
+    private func speakerCountRangeLabel(_ label: String) -> some View {
         Text(label)
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(.white.opacity(0.78))
@@ -382,19 +382,5 @@ extension EditorSpeakersCard {
         }
         .buttonStyle(.plain)
         .help("Play an example of this voice.")
-    }
-
-    private func voiceStats(_ voice: DetectedSpeakerVoice) -> String {
-        let turns = voice.turnCount == 1 ? "1 turn" : "\(voice.turnCount) turns"
-        return "\(formatDuration(voice.totalSpeakingTime)) · \(turns)"
-    }
-
-    private func speakerCountLabel(_ count: Int) -> String {
-        count == 1 ? "1 speaker" : "\(count) speakers"
-    }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let totalSeconds = max(0, Int(duration.rounded()))
-        return String(format: "%d:%02d", totalSeconds / 60, totalSeconds % 60)
     }
 }

@@ -97,9 +97,9 @@ extension LuxelSettingsView {
     ) -> LuxelShortcutSettingsCommand {
         LuxelShortcutSettingsCommand(
             id: metadata.id,
-            title: metadata.title,
-            detail: metadata.detail,
-            searchGroup: metadata.group,
+            title: LuxelLocalization.string(metadata.title),
+            detail: LuxelLocalization.string(metadata.detail),
+            searchGroup: LuxelLocalization.string(metadata.group),
             selection: selection,
             defaultRawValue: presets.first?.rawValue ?? ""
         )

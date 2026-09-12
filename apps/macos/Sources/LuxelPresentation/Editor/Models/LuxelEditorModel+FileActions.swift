@@ -147,7 +147,7 @@ extension LuxelEditorModel {
 
         exportProgress = ExportProgressSnapshot(
             phase: .completed,
-            actionTitle: "Exported \(exportedMedia.count) files",
+            actionTitle: LuxelLocalization.format("Exported %d files", exportedMedia.count),
             progress: 1
         )
         let fileURLs = exportedMedia.map(\.fileURL)
@@ -167,7 +167,7 @@ extension LuxelEditorModel {
         if exportProgress?.phase != .canceled {
             exportProgress = ExportProgressSnapshot(
                 phase: .canceled,
-                actionTitle: "Canceled Export",
+                actionTitle: LuxelLocalization.string("Canceled Export"),
                 progress: 1
             )
         }

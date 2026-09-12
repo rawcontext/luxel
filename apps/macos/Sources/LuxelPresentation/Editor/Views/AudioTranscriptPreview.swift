@@ -99,7 +99,7 @@ struct AudioTranscriptPreview: View {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Transcription unavailable", systemImage: "exclamationmark.triangle")
                     .font(.system(size: 13, weight: .semibold))
-                Text(model.transcriptFailureMessage ?? "Transcription failed.")
+                Text(model.transcriptFailureMessage ?? LuxelLocalization.string("Transcription failed."))
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.7))
                 Button("Retry") {
@@ -172,17 +172,17 @@ struct AudioTranscriptPreview: View {
 
     private func transcriptProgressTitle(at date: Date) -> String {
         if model.isSpeakerModelPreparing {
-            return "Preparing speaker model..."
+            return LuxelLocalization.string("Preparing speaker model...")
         }
 
         guard let elapsed = model.transcriptExtractionElapsedTime(at: date) else {
-            return "Preparing transcript..."
+            return LuxelLocalization.string("Preparing transcript...")
         }
 
         guard let progress = model.transcriptExtractionProgress else {
-            return "Transcribing audio... \(elapsed)"
+            return LuxelLocalization.format("Transcribing audio… %@", elapsed)
         }
 
-        return "Transcribing audio... \(Int((progress * 100).rounded()))% · \(elapsed)"
+        return LuxelLocalization.format("Transcribing audio… %d%% · %@", Int((progress * 100).rounded()), elapsed)
     }
 }

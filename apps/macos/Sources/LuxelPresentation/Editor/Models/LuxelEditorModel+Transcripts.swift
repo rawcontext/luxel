@@ -99,7 +99,7 @@ extension LuxelEditorModel {
                     minimumRetainedDuration: minimumTrimDuration
                 )
             else {
-                transcriptEditStatusMessage = "That word is already cut."
+                transcriptEditStatusMessage = LuxelLocalization.string("That word is already cut.")
                 return false
             }
 
@@ -109,17 +109,17 @@ extension LuxelEditorModel {
             transcriptWordSelectionAnchorID = nil
             transcriptEditStatusMessage =
                 selectedCount == 1
-                ? "Word cut"
-                : "\(selectedCount) words cut"
+                ? LuxelLocalization.string("Word cut")
+                : LuxelLocalization.format("%d words cut", selectedCount)
             exportEstimatesByFormat = [:]
             rebuildEditedPreview()
             recordEditorDraftChange()
             lastTranscriptCutID = cut.id
             return true
         } catch TimelineEditingError.insufficientRetainedDuration {
-            transcriptEditStatusMessage = "Keep at least part of the recording."
+            transcriptEditStatusMessage = LuxelLocalization.string("Keep at least part of the recording.")
         } catch {
-            transcriptEditStatusMessage = "Could not cut that word."
+            transcriptEditStatusMessage = LuxelLocalization.string("Could not cut that word.")
         }
         return false
     }
@@ -144,7 +144,7 @@ extension LuxelEditorModel {
         selectedTranscriptWordIDs = []
         transcriptWordSelectionAnchorID = nil
         exportEstimatesByFormat = [:]
-        rebuildEditedPreview(successMessage: "Cut restored")
+        rebuildEditedPreview(successMessage: LuxelLocalization.string("Cut restored"))
         recordEditorDraftChange()
     }
 

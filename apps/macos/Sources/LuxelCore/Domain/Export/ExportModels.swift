@@ -123,13 +123,13 @@ public enum ExportQuality: String, Codable, CaseIterable, Equatable, Hashable, S
     public var label: String {
         switch self {
         case .compact:
-            "Compact"
+            LuxelLocalization.string("Compact")
         case .balanced:
-            "Balanced"
+            LuxelLocalization.string("Balanced")
         case .high:
-            "High"
+            LuxelLocalization.string("High")
         case .lossless:
-            "Lossless"
+            LuxelLocalization.string("Lossless")
         }
     }
 

@@ -1,4 +1,5 @@
 import AppKit
+import LuxelCore
 
 @MainActor
 public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NSMenuItemValidation {
@@ -104,10 +105,10 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
     }
 
     private func exportedFileItem() -> NSMenuItem {
-        let exportedItem = NSMenuItem(title: "Exported File", action: nil, keyEquivalent: "")
+        let exportedItem = NSMenuItem(title: LuxelLocalization.string("Exported File"), action: nil, keyEquivalent: "")
         exportedItem.identifier = identifier("exportedFile")
 
-        let submenu = NSMenu(title: "Exported File")
+        let submenu = NSMenu(title: LuxelLocalization.string("Exported File"))
         submenu.addItem(item("Open", action: #selector(openExportedFile)))
         submenu.addItem(item("Reveal in Finder", action: #selector(revealExportedFile)))
         submenu.addItem(item("Save a Copy...", action: #selector(saveExportedFileAs)))
@@ -139,20 +140,24 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
     }
 
     private func menu(named title: String, in mainMenu: NSMenu) -> NSMenu {
-        if let item = mainMenu.items.first(where: { $0.title == title }) {
+        let localizedTitle = LuxelLocalization.string(title)
+        if let item = mainMenu.items.first(where: { $0.title == localizedTitle || $0.title == title }) {
             if let submenu = item.submenu {
                 return submenu
             }
 
-            let submenu = NSMenu(title: title)
+            let submenu = NSMenu(title: localizedTitle)
             item.submenu = submenu
             return submenu
         }
 
-        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-        let submenu = NSMenu(title: title)
+        let item = NSMenuItem(title: localizedTitle, action: nil, keyEquivalent: "")
+        let submenu = NSMenu(title: localizedTitle)
         item.submenu = submenu
-        if title == "File", let editIndex = mainMenu.items.firstIndex(where: { $0.title == "Edit" }) {
+        if title == "File",
+            let editIndex = mainMenu.items.firstIndex(where: {
+                $0.title == LuxelLocalization.string("Edit") || $0.title == "Edit"
+            }) {
             mainMenu.insertItem(item, at: editIndex)
         } else {
             mainMenu.addItem(item)
@@ -167,7 +172,8 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
     }
 
     private func removeItems(titled titles: Set<String>, from menu: NSMenu) {
-        for item in menu.items where titles.contains(item.title) {
+        let localizedTitles = Set(titles.map { LuxelLocalization.string($0) })
+        for item in menu.items where titles.contains(item.title) || localizedTitles.contains(item.title) {
             menu.removeItem(item)
         }
     }
@@ -177,7 +183,7 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
         action: Selector,
         keyEquivalent: String = ""
     ) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
+        let item = NSMenuItem(title: LuxelLocalization.string(title), action: action, keyEquivalent: keyEquivalent)
         item.target = self
         item.identifier = identifier(title)
         return item
@@ -276,13 +282,13 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
 
     private func confirmsDiscardRecording() -> Bool {
         let alert = NSAlert()
-        alert.messageText = "Discard Recording?"
-        alert.informativeText = "Move this recording to the Trash."
+        alert.messageText = LuxelLocalization.string("Discard Recording?")
+        alert.informativeText = LuxelLocalization.string("Move this recording to the Trash.")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "Discard Recording")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: LuxelLocalization.string("Discard Recording"))
+        alert.addButton(withTitle: LuxelLocalization.string("Cancel"))
         alert.showsSuppressionButton = true
-        alert.suppressionButton?.title = "Don't ask me again"
+        alert.suppressionButton?.title = LuxelLocalization.string("Don't ask me again")
 
         let response = alert.runModal()
         if alert.suppressionButton?.state == .on {

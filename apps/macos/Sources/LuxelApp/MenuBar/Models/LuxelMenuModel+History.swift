@@ -35,7 +35,8 @@ extension LuxelMenuModel {
             if selectedCaptureTarget == nil {
                 selectedCaptureTargetID = captureTargets.first?.id
             }
-            captureTargetStatusMessage = captureTargets.isEmpty ? "No capture targets found" : nil
+            captureTargetStatusMessage =
+                captureTargets.isEmpty ? LuxelLocalization.string("No capture targets found") : nil
             syncCameraPreviewSnapArea()
         } catch {
             captureTargets = []
@@ -136,7 +137,8 @@ private enum MenuDirectoryAccessError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .revoked(let url):
-            "Luxel no longer has permission to open \(url.lastPathComponent). Choose the recordings folder again."
+            LuxelLocalization.format(
+                "Luxel no longer has permission to open %@. Choose the recordings folder again.", url.lastPathComponent)
         }
     }
 }

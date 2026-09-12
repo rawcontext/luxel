@@ -80,9 +80,9 @@ public struct AudioInputDeviceResolution: Equatable, Sendable {
         }
 
         guard let missingDeviceName, !missingDeviceName.isEmpty else {
-            return "Selected microphone not found - using System Default."
+            return LuxelLocalization.string("Selected microphone not found - using System Default.")
         }
 
-        return "Mic '\(missingDeviceName)' not found - using System Default."
+        return LuxelLocalization.format("Mic '%@' not found - using System Default.", missingDeviceName)
     }
 }

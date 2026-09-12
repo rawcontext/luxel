@@ -15,12 +15,13 @@ extension LuxelEditorView {
                             metadataField(
                                 "Dimensions", "\(source.pixelSize.width)x\(source.pixelSize.height)")
                         } else {
-                            metadataField("Type", "Audio")
+                            metadataField("Type", LuxelLocalization.string("Audio"))
                         }
-                        metadataField("Audio", source.hasAudio ? "Yes" : "No")
+                        metadataField(
+                            "Audio", source.hasAudio ? LuxelLocalization.string("Yes") : LuxelLocalization.string("No"))
 
                         if source.hasVideo, source.hasAlpha {
-                            metadataField("Alpha", "Yes")
+                            metadataField("Alpha", LuxelLocalization.string("Yes"))
                         }
                     }
                 } else {
@@ -99,7 +100,7 @@ extension LuxelEditorView {
         lineLimit: Int = 1
     ) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.system(size: 10.5))
                 .foregroundStyle(.white.opacity(0.45))
 
@@ -305,7 +306,7 @@ extension LuxelEditorView {
                 Image(systemName: "square.and.arrow.down")
                     .font(.system(size: 11, weight: .semibold))
 
-                Text(model.isExporting ? "Exporting" : "Export")
+                Text(model.isExporting ? LuxelLocalization.string("Exporting") : "Export")
             }
         }
         .buttonStyle(LuxelGlassPillButtonStyle(isProminent: true))

@@ -59,10 +59,10 @@ public enum AutomationPolicy {
         for command: AutomationCommand,
         context: AutomationPolicyContext
     ) -> AutomationPolicyPrompt {
-        let callerName = context.callerDisplayName ?? "Another app"
+        let callerName = context.callerDisplayName ?? LuxelLocalization.string("Another app")
         return AutomationPolicyPrompt(
-            title: "Allow Automation Request?",
-            message: "\(callerName) wants to \(command.actionDescription)."
+            title: LuxelLocalization.string("Allow Automation Request?"),
+            message: command.confirmationMessage(callerName: callerName)
         )
     }
 }

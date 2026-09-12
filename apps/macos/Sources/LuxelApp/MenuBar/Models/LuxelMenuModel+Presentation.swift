@@ -170,7 +170,7 @@ extension LuxelMenuModel {
     }
 
     var pauseResumeButtonTitle: String {
-        recordingPresentation().secondaryActionTitle ?? "Pause"
+        recordingPresentation().secondaryActionTitle ?? LuxelLocalization.string("Pause")
     }
 
     var pauseResumeButtonSystemImage: String {
@@ -182,19 +182,19 @@ extension LuxelMenuModel {
         case .idle:
             nil
         case .starting:
-            "Starting recording"
+            LuxelLocalization.string("Starting recording")
         case .countingDown:
             recordingPresentation().statusMessage
         case .recording(let recording, _):
             recording.name
         case .pausing(let recording, _):
-            "Pausing \(recording.name)"
+            LuxelLocalization.format("Pausing %@", recording.name)
         case .paused(let recording, _):
-            "Paused \(recording.name)"
+            LuxelLocalization.format("Paused %@", recording.name)
         case .resuming(let recording, _):
-            "Resuming \(recording.name)"
+            LuxelLocalization.format("Resuming %@", recording.name)
         case .stopping:
-            "Finishing recording"
+            LuxelLocalization.string("Finishing recording")
         case .exporting(let snapshot):
             snapshot.actionTitle
         case .failed(let message):
@@ -215,11 +215,11 @@ extension LuxelMenuModel {
         case .none:
             nil
         case .recovered(let recording):
-            "Recovered \(recording.name)"
+            LuxelLocalization.format("Recovered %@", recording.name)
         case .knownCorrupt(let fileURL, _):
-            "Recovered repairable corrupt recording \(fileURL.lastPathComponent)"
+            LuxelLocalization.format("Recovered repairable corrupt recording %@", fileURL.lastPathComponent)
         case .unknownCorrupt(let fileURL, _):
-            "Recorded diagnostic for corrupt recording \(fileURL.lastPathComponent)"
+            LuxelLocalization.format("Recorded diagnostic for corrupt recording %@", fileURL.lastPathComponent)
         }
     }
 

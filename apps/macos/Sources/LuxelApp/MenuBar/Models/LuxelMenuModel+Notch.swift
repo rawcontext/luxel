@@ -215,7 +215,7 @@ extension LuxelMenuModel {
                 : .retry
             return
                 (try? NotchError(
-                    title: "Recording Failed",
+                    title: LuxelLocalization.string("Recording Failed"),
                     message: message,
                     recoveryAction: recoveryAction
                 )).map(NotchActivity.error) ?? .dormant

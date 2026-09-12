@@ -185,7 +185,7 @@ public struct SpeakerVoiceNamingService: Sendable {
         return try transcript.replacingSpeakerLabel(
             TranscriptSpeakerLabel(
                 id: speakerID,
-                displayName: "Speaker \(index + 1)",
+                displayName: LuxelLocalization.format("Speaker %d", index + 1),
                 knownSpeakerID: nil
             ))
     }

@@ -158,7 +158,7 @@ public struct ExportService: Sendable {
         }
         return ExportProgressSnapshot(
             phase: .preparing,
-            actionTitle: "Preparing \(request.format.prettyName)",
+            actionTitle: LuxelLocalization.format("Preparing %@", request.format.prettyName),
             progress: progress
         )
     }

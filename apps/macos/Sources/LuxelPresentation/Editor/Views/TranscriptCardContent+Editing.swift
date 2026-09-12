@@ -1,4 +1,5 @@
 import Foundation
+import LuxelCore
 import SwiftUI
 
 extension TranscriptCardContent {
@@ -53,7 +54,9 @@ extension TranscriptCardContent {
         .buttonStyle(LuxelGlassCircleButtonStyle(side: side))
         .help("Review and restore removed transcript ranges")
         .accessibilityLabel(
-            "Review \(cutReviewItems.count) \(cutReviewItems.count == 1 ? "cut" : "cuts")"
+            cutReviewItems.count == 1
+                ? LuxelLocalization.string("Review 1 cut")
+                : LuxelLocalization.format("Review %d cuts", cutReviewItems.count)
         )
         .accessibilityHint("Opens a menu of removed transcript ranges that can be restored.")
     }
@@ -70,7 +73,9 @@ extension TranscriptCardContent {
 
     func cutRestoreLabel(_ cut: TranscriptCutReviewItem) -> String {
         let range = "\(formattedTime(cut.sourceRange.start))–\(formattedTime(cut.sourceRange.end))"
-        return cut.text.isEmpty ? "Restore \(range)" : "Restore “\(cut.text)” (\(range))"
+        return cut.text.isEmpty
+            ? LuxelLocalization.format("Restore %@", range)
+            : LuxelLocalization.format("Restore “%@” (%@)", cut.text, range)
     }
 
     private func formattedTime(_ time: TimeInterval) -> String {

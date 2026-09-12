@@ -52,7 +52,8 @@ struct LocalizationTests {
                     return source.value == localized.value ? key : nil
                 }
             )
-            let expected = intentionalEnglishFallbackKeys[locale] ?? []
+            let expected = (intentionalEnglishFallbackKeys[locale] ?? [])
+                .union(sharedSpellingKeys[locale] ?? [])
 
             #expect(
                 fallbackKeys == expected,
@@ -127,10 +128,16 @@ struct LocalizationTests {
             "Sources/LuxelCore"
         ]
         let patternSources = [
-            #"(?:(?:Text|Button|Label|Toggle|Picker)\(\s*")([^"\\]*(?:\\.[^"\\]*)*)""#,
+            #"(?:(?:Text|Button|Label|Toggle|Picker|TextField|SecureField|Link|Menu|Section)\(\s*")"#
+                + #"([^"\\]*(?:\\.[^"\\]*)*)""#,
             #"\.(?:help|accessibilityLabel|accessibilityValue|accessibilityHint)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)""#,
             #"(?:(?:LocalizedStringResource|IntentDescription)\(\s*")([^"\\]*(?:\\.[^"\\]*)*)""#,
-            #"(?:title|shortTitle):\s*"([^"\\]*(?:\\.[^"\\]*)*)""#
+            #"(?:title|shortTitle):\s*"([^"\\]*(?:\\.[^"\\]*)*)""#,
+            #"LuxelLocalization\.(?:string|format)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)""#,
+            #"(?:LocalizedStringResource|TypeDisplayRepresentation)\s*=\s*"([^"\\]*(?:\\.[^"\\]*)*)""#,
+            #"(?:controlRow|timelineSliderRow|metadataField|editorDisclosureCard|SettingsRow|"#
+                + #"LuxelGlassSectionHeader|LuxelGlassSectionFooter|SettingsCapsuleButtonLabel|"#
+                + #"integerStepperField|doubleStepperField)\(\s*"([^"\\]*(?:\\.[^"\\]*)*)""#
         ]
         let patterns = try patternSources.map { try NSRegularExpression(pattern: $0) }
 
@@ -139,13 +146,15 @@ struct LocalizationTests {
             for fileURL in swiftFiles(under: packageRoot.appending(path: root)) {
                 let source = try String(contentsOf: fileURL, encoding: .utf8)
                 let range = NSRange(source.startIndex..<source.endIndex, in: source)
-                for pattern in patterns {
+                let factoryPatterns = try localizationFactoryPatterns(for: fileURL.lastPathComponent)
+                for pattern in patterns + factoryPatterns {
                     for match in pattern.matches(in: source, range: range) {
                         guard let matchRange = Range(match.range(at: 1), in: source) else {
                             continue
                         }
 
                         let key = String(source[matchRange])
+                            .replacingOccurrences(of: #"\n"#, with: "\n")
                         guard !key.contains(#"\("#),
                             !nonLocalizedLiteralAllowlist.contains(key),
                             !catalog.strings.keys.contains(key)
@@ -173,6 +182,50 @@ struct LocalizationTests {
         #expect(source.contains("return .module"))
         #expect(LuxelLocalization.string("common.ok", defaultValue: "OK") == "OK")
     }
+
+    @Test("App Shortcut phrases are manually localized for every supported language")
+    func shortcutPhrasesHaveCompleteLocalizations() throws {
+        let source = try String(
+            contentsOf: packageRoot.appending(path: "Sources/LuxelApp/Shortcuts/LuxelAutomationAppIntents.swift"),
+            encoding: .utf8)
+        let pattern = try NSRegularExpression(pattern: #""([^"\n]*\\\(\.applicationName\)[^"\n]*)""#)
+        let range = NSRange(source.startIndex..<source.endIndex, in: source)
+        let keys = Set(
+            pattern.matches(in: source, range: range).compactMap { match -> String? in
+                guard let range = Range(match.range(at: 1), in: source) else { return nil }
+                return String(source[range]).replacingOccurrences(
+                    of: #"\(.applicationName)"#, with: "${applicationName}")
+            })
+        #expect(keys.count == 10)
+        for locale in LuxelLocalization.supportedLocales {
+            let path = "Configuration/Luxel/Localizations/\(locale).lproj/AppShortcuts.strings"
+            let data = try Data(contentsOf: packageRoot.appending(path: path))
+            let phrases = try #require(
+                PropertyListSerialization.propertyList(from: data, format: nil) as? [String: String])
+            #expect(Set(phrases.keys) == keys)
+            for (key, phrase) in phrases {
+                #expect(!phrase.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                #expect(phrase.components(separatedBy: "${applicationName}").count == 2)
+                if locale != "en" { #expect(phrase != key) }
+            }
+        }
+    }
+}
+
+private func localizationFactoryPatterns(for fileName: String) throws -> [NSRegularExpression] {
+    let pattern: String? =
+        switch fileName {
+        case "LuxelEditorNativeMenuController.swift":
+            #"(?:item\(|menu\(named:)\s*"([^"\\]*(?:\\.[^"\\]*)*)""#
+        case "NotchActivityPresentation.swift":
+            #"action\([^,\n]+,\s*"([^"\\]*(?:\\.[^"\\]*)*)""#
+        case "AppKeyboardShortcut.swift":
+            #"systemConflict\([^,\n]+,\s*action:\s*"([^"\\]*(?:\\.[^"\\]*)*)""#
+        case "LuxelSettingsView+Support.swift":
+            #"(?:detail|group):\s*"([^"\\]*(?:\\.[^"\\]*)*)""#
+        default: nil
+        }
+    return try pattern.map { [try NSRegularExpression(pattern: $0)] } ?? []
 }
 
 private struct StringCatalog: Decodable {
@@ -225,7 +278,28 @@ private let packageRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
 
 private let nonLocalizedLiteralAllowlist: Set<String> = [
-    " "
+    "", " ", "luxel.media", "h:mm:ss"
+]
+
+private let sharedSpellingKeys: [String: Set<String>] = [
+    "de": [
+        "Alpha", "App", "Audio %@", "Beta", "Diffusion", "Editor", "Notch", "OK",
+        "Original", "Position", "Start", "Status", "System", "Version", "Version %@", "%.1f s", "%d min"
+    ],
+    "es": ["App", "Audio %@", "Beta", "Editor", "Error", "No", "Original", "%.1f s", "%d min"],
+    "fr": [
+        "Alpha", "App", "Audio %@", "Diffusion", "Dimensions", "Exact", "OK", "Original",
+        "Position", "Stable", "Type", "Version", "Version %@", "%.1f s", "%d min"
+    ],
+    "it": [
+        "App", "Area", "Audio %@", "Beta", "Buffer %@", "Continuity", "Editor", "File", "No",
+        "Notch", "OK", "Timeline", "%.1f s", "%d min"
+    ],
+    "ja": ["OK"],
+    "vi": ["Alpha", "Beta", "OK"],
+    "zh-Hans": ["App"],
+    "pt-BR": ["App", "Beta", "Buffer %@", "Editor", "OK", "Original", "Status", "%.1f s", "%d min"],
+    "pt-PT": ["Beta", "Editor", "OK", "Original", "%.1f s", "%d min"]
 ]
 
 private let infoPlistEnglishFallbackKeys: Set<String> = [
