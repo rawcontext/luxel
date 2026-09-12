@@ -90,7 +90,7 @@ jobs:
           ) &
           sampler_pid=$!
           trap 'kill "$sampler_pid" 2>/dev/null || true' EXIT
-          swift test --skip-build
+          swift test --skip-build --no-parallel
 
       - name: Upload stalled-test diagnostics
         if: failure() || cancelled()
