@@ -11,7 +11,7 @@ class WorkflowTrustTest < Minitest::Test
     "app-store-screenshots.yml" => ["workflow_dispatch"],
     "app-store-signing.yml" => ["workflow_dispatch"],
     "cli-package.yml" => ["push", "workflow_dispatch"],
-    "testflight.yml" => ["pull_request_target"],
+    "testflight.yml" => ["push"],
     "validate-automation.yml" => ["workflow_dispatch"]
   }.freeze
   IDENTITY_GATE = [
@@ -37,7 +37,7 @@ class WorkflowTrustTest < Minitest::Test
       end
       next unless name == "testflight.yml"
 
-      assert_equal({ "types" => ["closed"], "branches" => ["master"] }, triggers.fetch("pull_request_target"))
+      assert_equal({ "branches" => ["master"] }, triggers.fetch("push"))
     end
   end
 
@@ -45,7 +45,9 @@ class WorkflowTrustTest < Minitest::Test
     workflows.each do |name, workflow|
       expected_gate = "#{IDENTITY_GATE} && #{event_gate(name)}"
       workflow.fetch("jobs").each do |job_name, job|
-        assert_equal expected_gate, job.fetch("if").split.join(" "), "#{name}:#{job_name}"
+        gate = expected_gate
+        gate += " && needs.verify_merge.outputs.authorized == 'true'" if name == "testflight.yml" && job_name != "verify_merge"
+        assert_equal gate, job.fetch("if").split.join(" "), "#{name}:#{job_name}"
         assert_equal "macos-26", job.fetch("runs-on")
       end
     end
@@ -60,7 +62,7 @@ class WorkflowTrustTest < Minitest::Test
           options = step.fetch("with", {})
           refute options.key?("repository")
           if name == "testflight.yml"
-            assert_equal "${{ github.event.pull_request.merge_commit_sha }}", options.fetch("ref")
+            assert_equal "${{ github.sha }}", options.fetch("ref")
           else
             refute options.key?("ref")
           end
@@ -78,17 +80,11 @@ class WorkflowTrustTest < Minitest::Test
       [%w[actor_id], "999"],
       [%w[triggering_actor], "someone"],
       [%w[event_name], "pull_request"],
-      [%w[event_name], "push"],
+      [%w[event_name], "pull_request_target"],
       [%w[event_name], "workflow_dispatch"],
       [%w[ref], "refs/heads/contributor-branch"],
-      [%w[event action], "opened"],
-      [%w[event action], "synchronize"],
-      [%w[event pull_request merged], false],
-      [%w[event pull_request merged_by id], 999],
-      [%w[event pull_request base ref], "develop"],
-      [%w[event pull_request base repo id], 999],
-      [%w[event pull_request merge_commit_sha], ""],
-      [%w[event pull_request merge_commit_sha], nil]
+      [%w[needs verify_merge outputs authorized], "false"],
+      [%w[needs verify_merge outputs authorized], nil]
     ].each do |path, value|
       context = owner_merge_context
       parent = path[0...-1].reduce(context) { |object, key| object.fetch(key) }
@@ -99,14 +95,15 @@ class WorkflowTrustTest < Minitest::Test
 
   def test_unit_tests_run_only_after_merge_and_gate_testflight
     jobs = workflows.fetch("testflight.yml").fetch("jobs")
-    assert_equal "unit_tests", jobs.fetch("testflight").fetch("needs")
+    assert_equal ["verify_merge", "unit_tests"], jobs.fetch("testflight").fetch("needs")
+    assert_equal "verify_merge", jobs.fetch("unit_tests").fetch("needs")
     assert_equal jobs.fetch("testflight").fetch("if"), jobs.fetch("unit_tests").fetch("if")
 
     workflows.each do |name, workflow|
       workflow.fetch("jobs").each do |job_name, job|
         job.fetch("steps").each do |step|
           command = step.fetch("run", "")
-          next unless command.match?(/swift test|cargo test|node --test|turbo run [^\n]*\btest\b|_test\.rb/)
+          next unless command.match?(/swift test|cargo test|node --test|verify_owner_merge_test.py|turbo run [^\n]*\btest\b|_test\.rb/)
 
           assert_equal ["testflight.yml", "unit_tests"], [name, job_name]
         end
@@ -145,7 +142,9 @@ class WorkflowTrustTest < Minitest::Test
       match = comparison.match(/\A(\w+(?:\.\w+)+) (==|!=) ('[^']*'|true|false|\d+)\z/)
       raise "Unsupported comparison: #{comparison}" unless match
 
-      actual = context.dig(*match[1].split(".").drop(1))
+      path = match[1].split(".")
+      path.shift if path.first == "github"
+      actual = context.dig(*path)
       next false if actual.nil?
 
       expected = match[3].start_with?("'") ? match[3][1...-1] : JSON.parse(match[3])
@@ -157,15 +156,8 @@ class WorkflowTrustTest < Minitest::Test
     {
       "repository" => "rawcontext/luxel", "repository_id" => "1269656539",
       "actor_id" => "302437", "triggering_actor" => "ccheney",
-      "event_name" => "pull_request_target", "ref" => "refs/heads/master",
-      "event" => {
-        "action" => "closed",
-        "pull_request" => {
-          "merged" => true, "merged_by" => { "id" => 302437 },
-          "base" => { "ref" => "master", "repo" => { "id" => 1269656539 } },
-          "merge_commit_sha" => "a" * 40
-        }
-      }
+      "event_name" => "push", "ref" => "refs/heads/master",
+      "needs" => { "verify_merge" => { "outputs" => { "authorized" => "true" } } }
     }
   end
 
@@ -175,16 +167,7 @@ class WorkflowTrustTest < Minitest::Test
       "((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') || " \
         "(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/cli-v')))"
     when "testflight.yml"
-      [
-        "github.event_name == 'pull_request_target'",
-        "github.event.action == 'closed'",
-        "github.ref == 'refs/heads/master'",
-        "github.event.pull_request.merged == true",
-        "github.event.pull_request.merged_by.id == 302437",
-        "github.event.pull_request.base.ref == 'master'",
-        "github.event.pull_request.base.repo.id == 1269656539",
-        "github.event.pull_request.merge_commit_sha != ''"
-      ].join(" && ")
+      "github.event_name == 'push' && github.ref == 'refs/heads/master'"
     when "app-store-reviews.yml"
       "(github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && " \
         "github.ref == 'refs/heads/master'"
