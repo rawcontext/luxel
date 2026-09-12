@@ -100,6 +100,23 @@ describe("browser language negotiation", () => {
 });
 
 describe("static localized output", () => {
+  test("ships global and component styles for every public page", () => {
+    for (const output of ["dist/client", ".vercel/output/static"]) {
+      const outputRoot = path.join(webRoot, output);
+      for (const locale of supportedLocales) {
+        for (const pagePath of publicPagePaths) {
+          const html = readFileSync(path.join(outputRoot, localizedPath(locale, pagePath), "index.html"), "utf8");
+          const styles = [...html.matchAll(/<link\b(?=[^>]*\brel="stylesheet")[^>]*\bhref="([^"]+)"[^>]*>/g)];
+          expect(styles.length).toBeGreaterThan(0);
+          expect(html).toMatch(/<style\b[^>]*>[\s\S]+?<\/style>/);
+          for (const [, asset] of styles) {
+            expect(readFileSync(path.join(outputRoot, asset)).length).toBeGreaterThan(0);
+          }
+        }
+      }
+    }
+  });
+
   test("uses the appropriate Portuguese regional documentation", () => {
     const brazil = readBuiltPage("pt-BR", "/docs");
     const portugal = readBuiltPage("pt-PT", "/docs");
