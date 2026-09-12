@@ -11,6 +11,7 @@ struct ReplayBufferConsentPrompt: Equatable {
 @Observable
 final class LuxelMenuModel {
     var settings: AppSettings
+    var settingsDisplayFrameRate = 60
     var launchAtLogin: Bool
     var screenRecordingStatus: PermissionStatus = .unknown
     var microphoneStatus: PermissionStatus = .unknown

@@ -12,6 +12,7 @@ struct UserDefaultsSettingsStoreTests {
         let store = UserDefaultsSettingsStore(userDefaults: defaults, defaultSettings: defaultSettings)
 
         #expect(try store.load() == defaultSettings)
+        #expect(try store.load().matchDisplayFrameRate)
     }
 
     @Test("save persists settings")
@@ -262,6 +263,7 @@ extension UserDefaultsSettingsStoreTests {
         #expect(settings.cursorRenderOptions.isVisible == false)
         #expect(settings.cursorRenderOptions.clickStyle == .ringRipple)
         try expectDefaultKeystrokeAndFrameRateSettings(settings, loopExports: false)
+        #expect(!settings.matchDisplayFrameRate)
         #expect(settings.recordSystemAudio)
         #expect(settings.recordAudio)
         #expect(settings.audioInputDeviceID == "device-1")

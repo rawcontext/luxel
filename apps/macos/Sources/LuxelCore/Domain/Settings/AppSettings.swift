@@ -55,7 +55,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     }
 
     public static func defaults(recordingsDirectory: URL) -> AppSettings {
-        AppSettings(recordingsDirectory: recordingsDirectory)
+        AppSettings(recordingsDirectory: recordingsDirectory, matchDisplayFrameRate: true)
     }
 
     public var recordingsDirectory: URL

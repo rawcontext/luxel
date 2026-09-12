@@ -144,7 +144,9 @@ extension LuxelSettingsView {
 
     var recordingFrameRateSelection: Binding<Int> {
         Binding {
-            model.settings.recordingFrameRate.framesPerSecond
+            model.settings.matchDisplayFrameRate
+                ? model.settingsDisplayFrameRate
+                : model.settings.recordingFrameRate.framesPerSecond
         } set: { frameRate in
             do {
                 try model.settings.setRecordingFrameRate(frameRate)

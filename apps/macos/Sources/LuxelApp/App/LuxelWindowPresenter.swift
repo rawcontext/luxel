@@ -85,6 +85,7 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
     func settingsWindowDidAppear(_ window: NSWindow) {
         settingsWindow = window
         settingsPresentationInFlight = false
+        model.settingsDisplayFrameRate = (window.screen ?? NSScreen.main)?.maximumFramesPerSecond ?? 60
         refreshEditorMenusIfNeeded()
     }
 
@@ -303,6 +304,12 @@ final class LuxelSettingsWindowLifecycleView: NSView {
     ) {
         self.onWindowDidAppear = onWindowDidAppear
         super.init(frame: .zero)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(screenParametersDidChange(_:)),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
     }
 
     @available(*, unavailable)
@@ -320,11 +327,9 @@ final class LuxelSettingsWindowLifecycleView: NSView {
             return
         }
 
-        NotificationCenter.default.removeObserver(
-            self,
-            name: NSWindow.didBecomeKeyNotification,
-            object: observedWindow
-        )
+        for name in [NSWindow.didBecomeKeyNotification, NSWindow.didChangeScreenNotification] {
+            NotificationCenter.default.removeObserver(self, name: name, object: observedWindow)
+        }
         observedWindow = window
 
         guard let window else {
@@ -332,16 +337,26 @@ final class LuxelSettingsWindowLifecycleView: NSView {
         }
 
         onWindowDidAppear(window)
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(windowDidBecomeKey(_:)),
-            name: NSWindow.didBecomeKeyNotification,
-            object: window
-        )
+        for name in [NSWindow.didBecomeKeyNotification, NSWindow.didChangeScreenNotification] {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(windowDidUpdate(_:)),
+                name: name,
+                object: window
+            )
+        }
     }
 
-    @objc private func windowDidBecomeKey(_ notification: Notification) {
+    @objc private func windowDidUpdate(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else {
+            return
+        }
+
+        onWindowDidAppear(window)
+    }
+
+    @objc private func screenParametersDidChange(_: Notification) {
+        guard let window else {
             return
         }
 

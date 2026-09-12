@@ -38,6 +38,7 @@ extension SettingsTests {
         #expect(settings.cursorMode == .baked)
         #expect(settings.cursorRenderOptions == .standard)
         try expectDefaultKeystrokeAndFrameRateSettings(settings, loopExports: true)
+        #expect(settings.matchDisplayFrameRate)
         #expect(settings.recordSystemAudio)
         #expect(!settings.recordAudio)
         #expect(settings.audioInputDeviceID == "SYSTEM_DEFAULT")
@@ -349,20 +350,20 @@ extension SettingsTests {
         #expect(settings.recordingFrameRate == (try FrameRate(120)))
     }
 
-    @Test("recording display frame rate preference persists")
-    func recordingDisplayFrameRatePreferencePersists() throws {
+    @Test("recording display frame rate preference persists", arguments: [false, true])
+    func recordingDisplayFrameRatePreferencePersists(matchesDisplay: Bool) throws {
         let directory = URL(fileURLWithPath: "/Users/example/Movies/Luxel")
         let settings = AppSettings(
             recordingsDirectory: directory,
             recordingFrameRate: try FrameRate(120),
-            matchDisplayFrameRate: true
+            matchDisplayFrameRate: matchesDisplay
         )
 
         let data = try JSONEncoder().encode(settings)
         let decoded = try JSONDecoder().decode(AppSettings.self, from: data)
 
         #expect(decoded.recordingFrameRate == (try FrameRate(120)))
-        #expect(decoded.matchDisplayFrameRate)
+        #expect(decoded.matchDisplayFrameRate == matchesDisplay)
     }
 
     @Test("legacy record 60 FPS setting migrates to typed frame rate")
