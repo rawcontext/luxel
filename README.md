@@ -1,10 +1,9 @@
-<p align="right">
+<h1>
+  Luxel
   <a href="https://apps.apple.com/us/app/luxel/id6800438206?mt=12">
-    <img src="apps/web/public/app-store/mac-app-store-badge.svg" alt="Download on the Mac App Store" width="156" />
+    <img align="right" src="apps/web/public/app-store/mac-app-store-badge.svg" alt="Download on the Mac App Store" width="156" />
   </a>
-</p>
-
-# Luxel
+</h1>
 
 A native macOS menu bar recorder with screen and audio capture, replay buffer, local transcription, and video export.
 
