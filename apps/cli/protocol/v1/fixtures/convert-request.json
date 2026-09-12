@@ -1,0 +1,23 @@
+{
+  "arguments" : {
+    "convert" : {
+      "cropToFill" : false,
+      "format" : "webm",
+      "height" : 720,
+      "inputPath" : "/Users/example/Movies/Luxel/input.mp4",
+      "mute" : true,
+      "outputPath" : "/Users/example/Movies/Luxel/output.webm",
+      "overwrite" : true,
+      "speed" : 1,
+      "width" : 1280
+    }
+  },
+  "command" : "convert",
+  "output" : {
+    "json" : true,
+    "progress" : true,
+    "quiet" : false
+  },
+  "protocolVersion" : 1,
+  "requestID" : "90E7CB42-BB59-41D5-BC6C-8DF33CC702B9"
+}

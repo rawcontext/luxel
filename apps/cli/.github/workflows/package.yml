@@ -1,0 +1,44 @@
+name: Package universal binary
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - run: scripts/build-universal.sh
+      - name: Package release archive
+        run: |
+          mkdir -p dist
+          tar -czf dist/luxel-macos-universal.tar.gz \
+            -C target/universal-apple-darwin/release luxel
+          cd dist
+          shasum -a 256 luxel-macos-universal.tar.gz \
+            > luxel-macos-universal.tar.gz.sha256
+      - uses: actions/upload-artifact@v7
+        with:
+          name: luxel-universal-apple-darwin
+          path: |
+            dist/luxel-macos-universal.tar.gz
+            dist/luxel-macos-universal.tar.gz.sha256
+          if-no-files-found: error
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --generate-notes \
+            dist/luxel-macos-universal.tar.gz \
+            dist/luxel-macos-universal.tar.gz.sha256

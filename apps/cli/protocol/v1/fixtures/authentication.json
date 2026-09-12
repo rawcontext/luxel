@@ -1,0 +1,11 @@
+{
+  "clientID": "00000000-0000-0000-0000-000000000002",
+  "endpoint": "http://127.0.0.1:43123/session/0123456789abcdef0123456789abcdef",
+  "nonce": "0123456789abcdef",
+  "protocolVersion": 1,
+  "requestDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "requestID": "00000000-0000-0000-0000-000000000001",
+  "secret": "shared secret",
+  "signature": "7fe71cbd6308662514a8f9508e48940e06826c48cc53f00e22891f437ae6d067",
+  "timestamp": 1800000000
+}
