@@ -62,7 +62,7 @@ platform :mac do
     )
   end
 
-  desc "Update only App Review notes and submit an existing build for automatic release"
+  desc "Update App Review notes and submit an existing build for automatic release without a phased rollout"
   lane :submit_app_store_release do |options|
     app_version = app_store_version(options)
     build_number = app_store_build_number(options)
@@ -74,10 +74,11 @@ platform :mac do
 
     version = app.get_app_store_versions(
       filter: { versionString: app_version, platform: Spaceship::ConnectAPI::Platform::MAC_OS },
-      includes: nil
+      includes: "appStoreVersionPhasedRelease"
     ).find { |candidate| candidate.version_string == app_version }
     UI.user_error!("Could not find macOS App Store version #{app_version}") unless version
     update_app_review_notes!(version)
+    apply_app_store_release_policy!(version)
 
     upload_to_app_store(
       api_key: api_key,
@@ -90,8 +91,6 @@ platform :mac do
       skip_metadata: true,
       skip_app_version_update: true,
       submit_for_review: true,
-      automatic_release: true,
-      phased_release: false,
       force: true,
       run_precheck_before_submit: false
     )
@@ -182,6 +181,19 @@ def ensure_time_sensitive_notifications_capability!
     "v1/bundleIds/#{bundle_id.id}",
     body
   )
+end
+
+def apply_app_store_release_policy!(version)
+  release_type = Spaceship::ConnectAPI::AppStoreVersion::ReleaseType::AFTER_APPROVAL
+  version.update(attributes: { releaseType: release_type })
+  version.app_store_version_phased_release&.delete!
+
+  verified_version = Spaceship::ConnectAPI::AppStoreVersion.get(
+    app_store_version_id: version.id,
+    includes: "appStoreVersionPhasedRelease"
+  )
+  UI.user_error!("App Store version #{version.version_string} is not set for automatic release") unless verified_version.release_type == release_type
+  UI.user_error!("App Store version #{version.version_string} still has a phased release") if verified_version.app_store_version_phased_release
 end
 
 def update_app_review_notes!(version)

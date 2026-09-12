@@ -9,6 +9,7 @@ load("@rules_apple//apple:macos.bzl", "macos_application")
 load("@rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@rules_ruby//ruby:defs.bzl", "rb_test")
 load("@rules_swift//swift:swift_binary.bzl", "swift_binary")
 load("@rules_swift//swift:swift_interop_hint.bzl", "swift_interop_hint")
 load("@rules_swift//swift:swift_library.bzl", "swift_library")
@@ -462,10 +463,20 @@ swift_testing_test(
     snapshot = ":test_snapshot",
 )
 
+rb_test(
+    name = "app_store_release_test",
+    size = "small",
+    srcs = ["fastlane/app_store_release_test.rb"],
+    data = ["fastlane/Fastfile"],
+    main = "fastlane/app_store_release_test.rb",
+    deps = ["@automation_gems"],
+)
+
 test_suite(
     name = "tests",
     tests = [
         ":app_bundle_test",
+        ":app_store_release_test",
         ":app_tests",
         ":av1_tests",
         ":core_tests",
