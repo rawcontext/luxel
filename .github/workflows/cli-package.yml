@@ -36,6 +36,10 @@ jobs:
           version="$(python3 -c 'import tomllib; print(tomllib.load(open("apps/cli/Cargo.toml", "rb"))["package"]["version"])')"
           test "$GITHUB_REF_NAME" = "cli-v$version"
 
+      - name: Install pinned Rust toolchain before parallel tasks
+        working-directory: apps/cli
+        run: rustup toolchain install
+
       - name: Check and package CLI
         run: bunx turbo run lint package --filter=@luxel/cli
 

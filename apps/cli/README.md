@@ -126,6 +126,9 @@ The full command and option reference is also available at
 
 From the monorepo root, Bun and Turborepo run the package's tasks:
 
+When using rustup, first run `rustup toolchain install` from `apps/cli` to
+install the pinned compiler, components, and targets before parallel Turbo tasks.
+
 ```sh
 bun install --frozen-lockfile
 bun run lint --filter=@luxel/cli
