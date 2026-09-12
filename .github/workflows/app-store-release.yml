@@ -19,7 +19,13 @@ concurrency:
 jobs:
   submit:
     name: Update Review Instructions and Submit
-    runs-on: [self-hosted, macOS, ARM64, luxel-desktop]
+    if: >-
+      github.repository == 'ccheney/luxel' &&
+      github.repository_id == '1269656539' &&
+      github.actor_id == '302437' &&
+      github.triggering_actor == 'ccheney' &&
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+    runs-on: macos-26
     permissions:
       contents: read
     env:

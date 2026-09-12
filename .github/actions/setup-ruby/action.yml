@@ -1,5 +1,5 @@
 name: Set up Ruby
-description: Use the repository-pinned Ruby on the Mac Mini runner
+description: Use the repository-pinned Ruby on GitHub-hosted macOS
 
 inputs:
   bundle-install:
@@ -51,42 +51,23 @@ runs:
         echo "CXX=${toolchain_bin}/clang++" >> "${GITHUB_ENV}"
         echo "${toolchain_bin}" >> "${GITHUB_PATH}"
 
-    - name: Ensure pinned Ruby is installed
+    - name: Read pinned Ruby version
+      id: ruby
       shell: bash
       run: |
-        expected_version="$(awk '$1 == "ruby" { print $2 }' .tool-versions)"
+        ruby_version="$(awk '$1 == "ruby" { print $2 }' .tool-versions)"
+        test -n "$ruby_version"
+        echo "version=$ruby_version" >> "$GITHUB_OUTPUT"
 
-        if ! /opt/homebrew/bin/brew list --versions ruby >/dev/null 2>&1; then
-          HOMEBREW_NO_AUTO_UPDATE=1 /opt/homebrew/bin/brew install ruby
-        fi
+    - name: Set up pinned Ruby and Bundler
+      uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+      env:
+        DEVELOPER_DIR: /Library/Developer/CommandLineTools
+      with:
+        ruby-version: ${{ steps.ruby.outputs.version }}
+        working-directory: apps/macos
+        bundler-cache: ${{ inputs.bundle-install == 'true' }}
 
-        if ! /opt/homebrew/bin/brew list --versions gh >/dev/null 2>&1; then
-          HOMEBREW_NO_AUTO_UPDATE=1 /opt/homebrew/bin/brew install gh
-        fi
-
-        ruby_bin="$(/opt/homebrew/bin/brew --prefix ruby)/bin"
-        actual_version="$("${ruby_bin}/ruby" -e 'print RUBY_VERSION')"
-
-        if [[ "${actual_version}" != "${expected_version}" ]]; then
-          echo "Homebrew Ruby ${actual_version} does not match pinned Ruby ${expected_version}." >&2
-          exit 1
-        fi
-
-        bundler_version="$(awk '/^BUNDLED WITH$/ { getline; gsub(/^[[:space:]]+/, ""); print }' apps/macos/Gemfile.lock)"
-        user_gem_bin="$("${ruby_bin}/ruby" -e 'print Gem.user_dir')/bin"
-        "${ruby_bin}/gem" install --user-install bundler --version "${bundler_version}" --no-document
-
-        echo "/opt/homebrew/bin" >> "${GITHUB_PATH}"
-        echo "${ruby_bin}" >> "${GITHUB_PATH}"
-        echo "${user_gem_bin}" >> "${GITHUB_PATH}"
-
-    - name: Install Fastlane bundle
-      if: inputs.bundle-install == 'true'
+    - name: Verify GitHub CLI
       shell: bash
-      working-directory: apps/macos
-      run: |
-        bundle_path="${RUNNER_TEMP}/luxel-bundle"
-        echo "BUNDLE_PATH=${bundle_path}" >> "${GITHUB_ENV}"
-        DEVELOPER_DIR=/Library/Developer/CommandLineTools \
-          BUNDLE_PATH="${bundle_path}" \
-          bundle install --jobs 4 --retry 3
+      run: gh --version

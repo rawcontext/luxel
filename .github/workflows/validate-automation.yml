@@ -1,0 +1,55 @@
+name: Validate Automation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate GitHub-hosted macOS
+    if: >-
+      github.repository == 'ccheney/luxel' &&
+      github.repository_id == '1269656539' &&
+      github.actor_id == '302437' &&
+      github.triggering_actor == 'ccheney' &&
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Ruby and Fastlane
+        uses: ./.github/actions/setup-ruby
+        with:
+          bundle-install: "true"
+
+      - name: Verify toolchain
+        run: |
+          test "$RUNNER_ENVIRONMENT" = "github-hosted"
+          test "$(uname -m)" = "arm64"
+          xcodebuild -version
+          swift --version
+          ruby --version
+          gh --version
+
+      - name: Test workflow policy and App Store sync
+        run: |
+          gem install minitest --version 6.0.6 --no-document
+          ruby .github/scripts/workflow_trust_test.rb
+          ruby .github/scripts/sync_app_store_reviews_test.rb
+          ruby .github/scripts/sync_app_store_crashes_test.rb
+          ruby .github/scripts/sync_app_store_actionable_test.rb
+
+      - name: Verify Fastlane loads
+        working-directory: apps/macos
+        run: bundle exec fastlane lanes
+
+      - name: Test macOS package
+        working-directory: apps/macos
+        run: swift test

@@ -26,7 +26,13 @@ concurrency:
 jobs:
   testflight:
     name: Build and Upload to TestFlight
-    runs-on: [self-hosted, macOS, ARM64, luxel-desktop]
+    if: >-
+      github.repository == 'ccheney/luxel' &&
+      github.repository_id == '1269656539' &&
+      github.actor_id == '302437' &&
+      github.triggering_actor == 'ccheney' &&
+      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') || ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && startsWith(github.ref, 'refs/tags/v')))
+    runs-on: macos-26
     permissions:
       contents: read
     env:
