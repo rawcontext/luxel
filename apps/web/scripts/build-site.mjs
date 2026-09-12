@@ -7,4 +7,3 @@ process.env.LUXEL_SITE_URL = config.siteUrl;
 const { build } = await import("astro");
 await build({ root: new URL("../", import.meta.url), site: config.siteUrl });
 await import("./generate-llms.mjs");
-

@@ -82,6 +82,10 @@ bazel test //:tests //:lint --build_event_json_file=/tmp/luxel-events.json
 bazel build //:build --profile=/tmp/luxel-build.profile.json.gz
 ```
 
+The migration was checked from a fresh checkout: an unchanged repeat reused all
+23 standard test/lint results in 1.1 seconds, and a CSS-only edit reran only the
+three website checks. Timings depend on the machine and available cache.
+
 Repeat a command to confirm unchanged work is cached. Use
 `--nocache_test_results` only when deliberately rerunning an unchanged test.
 Do not routinely clear caches. No remote-cache service or credentials are
