@@ -10,6 +10,8 @@ bun run test --filter=@luxel/web
 
 The filtered build runs only the website and caches both `dist/` and `.vercel/output/`.
 It does not build the macOS app or the Rust CLI.
+Installer checks run in the website's `test` task after the build, alongside the
+localization tests. Vercel builds do not run the test suite.
 
 ## Vercel
 

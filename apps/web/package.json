@@ -4,10 +4,10 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/generate-llms.mjs && sh scripts/test-installer.sh dist/client/cli/install.sh",
+    "build": "astro build && node scripts/generate-llms.mjs",
     "i18n:extract": "node scripts/extract-i18n-sources.mjs",
     "generate:llms": "node scripts/generate-llms.mjs",
-    "test": "node scripts/extract-i18n-sources.mjs --check && bun test",
+    "test": "node scripts/extract-i18n-sources.mjs --check && bun test && sh scripts/test-installer.sh dist/client/cli/install.sh",
     "test:installer": "sh scripts/test-installer.sh dist/client/cli/install.sh",
     "preview": "astro preview"
   },
