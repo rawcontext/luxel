@@ -80,6 +80,9 @@ jobs:
           swift test --filter LocalizationTests
           swift test
 
+      - name: Test App Store metadata exporter
+        run: node --test app-store/export-listing-metadata.test.mjs
+
   testflight:
     needs: unit_tests
     name: Build and Upload to TestFlight

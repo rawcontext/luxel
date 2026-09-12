@@ -106,7 +106,7 @@ class WorkflowTrustTest < Minitest::Test
       workflow.fetch("jobs").each do |job_name, job|
         job.fetch("steps").each do |step|
           command = step.fetch("run", "")
-          next unless command.match?(/swift test|cargo test|turbo run [^\n]*\btest\b|_test\.rb/)
+          next unless command.match?(/swift test|cargo test|node --test|turbo run [^\n]*\btest\b|_test\.rb/)
 
           assert_equal ["testflight.yml", "unit_tests"], [name, job_name]
         end

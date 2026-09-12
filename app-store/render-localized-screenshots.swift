@@ -192,7 +192,7 @@ let repositoryRoot = URL(fileURLWithPath: fileManager.currentDirectoryPath, isDi
 let configPath =
     CommandLine.arguments.contains("--config")
     ? argument(after: "--config")
-    : "docs/ux/app-store/localized-screenshot-headings.json"
+    : "app-store/localized-screenshot-headings.json"
 let outputPath = argument(after: "--output")
 let manifestPath = argument(after: "--manifest")
 let configURL = URL(fileURLWithPath: configPath, relativeTo: repositoryRoot).standardizedFileURL

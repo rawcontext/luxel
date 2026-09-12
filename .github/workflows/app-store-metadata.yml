@@ -50,13 +50,11 @@ jobs:
       - name: Configure temporary metadata path
         run: echo "APP_STORE_METADATA_PATH=$RUNNER_TEMP/luxel-app-store-metadata" >> "$GITHUB_ENV"
 
-      - name: Validate metadata source and exporter
-        run: |
-          node docs/ux/app-store/validate-listing-metadata.mjs
-          node --test docs/ux/app-store/export-listing-metadata.test.mjs
+      - name: Validate metadata source
+        run: node app-store/validate-listing-metadata.mjs
 
       - name: Export temporary Fastlane metadata
-        run: node docs/ux/app-store/export-listing-metadata.mjs "$APP_STORE_METADATA_PATH"
+        run: node app-store/export-listing-metadata.mjs "$APP_STORE_METADATA_PATH"
 
       - name: Update App Store Connect metadata draft
         working-directory: apps/macos

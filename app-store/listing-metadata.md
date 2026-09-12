@@ -1,6 +1,6 @@
 # Luxel Mac App Store Listing Metadata
 
-This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026, the localized text metadata for version 1.3.1, and the localized screenshot gallery derived from the six English App Store masters in `docs/ux/app-store/screenshots`. Use the guarded App Store workflows to synchronize the editable App Store Connect version; do not edit the draft independently.
+This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026, the localized text metadata for version 1.3.1, and the localized screenshot gallery derived from the six English App Store masters in `app-store/screenshots`. Use the guarded App Store workflows to synchronize the editable App Store Connect version; do not edit the draft independently.
 
 ## Publication state
 
@@ -42,7 +42,7 @@ Authoritative references:
 Run the local validation after every metadata edit:
 
 ```sh
-bun docs/ux/app-store/validate-listing-metadata.mjs
+bun app-store/validate-listing-metadata.mjs
 ```
 
 The script validates every declared character count, the keyword byte counts, required locales, HTTPS URLs, the six English screenshot masters, and all localized screenshot headings.
@@ -124,12 +124,12 @@ This release replaces that English-only public description with the localized de
 
 The current public screenshot order is:
 
-1. `docs/ux/app-store/screenshots/app-store-05-menu-bar.png`
-2. `docs/ux/app-store/screenshots/app-store-01-area-capture.png`
-3. `docs/ux/app-store/screenshots/app-store-06-transcripts.png`
-4. `docs/ux/app-store/screenshots/app-store-04-export.png`
-5. `docs/ux/app-store/screenshots/app-store-03-recording-status.png`
-6. `docs/ux/app-store/screenshots/app-store-02-editor-trim.png`
+1. `app-store/screenshots/app-store-05-menu-bar.png`
+2. `app-store/screenshots/app-store-01-area-capture.png`
+3. `app-store/screenshots/app-store-06-transcripts.png`
+4. `app-store/screenshots/app-store-04-export.png`
+5. `app-store/screenshots/app-store-03-recording-status.png`
+6. `app-store/screenshots/app-store-02-editor-trim.png`
 
 Those six 2880 × 1800 PNG files are the English upload masters. The English storefront receives byte-for-byte copies in the order above. Every other storefront receives the same real app imagery with only the top marketing heading translated.
 
@@ -152,7 +152,7 @@ Those six 2880 × 1800 PNG files are the English upload masters. The English sto
 
 ## Localized screenshot gallery
 
-`docs/ux/app-store/localized-screenshot-headings.json` defines the six headings in all 11 App Store locales. `render-localized-screenshots.swift` removes the English heading band and draws the translated heading with the same layout while retaining the real screenshot, laptop frame, and background from each English master. It does not use AI-generated imagery. The 66 release assets are checked in under `docs/ux/app-store/screenshots/localized`, with their hashes recorded in `docs/ux/app-store/screenshots/localized-manifest.json`.
+`app-store/localized-screenshot-headings.json` defines the six headings in all 11 App Store locales. `render-localized-screenshots.swift` removes the English heading band and draws the translated heading with the same layout while retaining the real screenshot, laptop frame, and background from each English master. It does not use AI-generated imagery. The 66 release assets are checked in under `app-store/screenshots/localized`, with their hashes recorded in `app-store/screenshots/localized-manifest.json`.
 
 The renderer verifies 2880 × 1800 dimensions, absence of alpha, a complete locale/heading matrix, readable headline fit, and a deterministic manifest. App Store Connect has no separate screenshot-caption field; the visible localized heading is part of each uploaded image.
 
@@ -164,7 +164,7 @@ The renderer verifies 2880 × 1800 dimensions, absence of alpha, a complete loca
     "subject": "record from the menu bar",
     "headingId": "menu-bar",
     "referenceSize": "2880x1800",
-    "referencePath": "docs/ux/app-store/screenshots/app-store-05-menu-bar.png",
+    "referencePath": "app-store/screenshots/app-store-05-menu-bar.png",
     "uploadStatus": "ready"
   },
   {
@@ -172,7 +172,7 @@ The renderer verifies 2880 × 1800 dimensions, absence of alpha, a complete loca
     "subject": "pixel-perfect area capture",
     "headingId": "area-capture",
     "referenceSize": "2880x1800",
-    "referencePath": "docs/ux/app-store/screenshots/app-store-01-area-capture.png",
+    "referencePath": "app-store/screenshots/app-store-01-area-capture.png",
     "uploadStatus": "ready"
   },
   {
@@ -180,7 +180,7 @@ The renderer verifies 2880 × 1800 dimensions, absence of alpha, a complete loca
     "subject": "local transcription and speaker identification",
     "headingId": "transcripts",
     "referenceSize": "2880x1800",
-    "referencePath": "docs/ux/app-store/screenshots/app-store-06-transcripts.png",
+    "referencePath": "app-store/screenshots/app-store-06-transcripts.png",
     "uploadStatus": "ready"
   },
   {
@@ -188,7 +188,7 @@ The renderer verifies 2880 × 1800 dimensions, absence of alpha, a complete loca
     "subject": "fast clean export",
     "headingId": "export",
     "referenceSize": "2880x1800",
-    "referencePath": "docs/ux/app-store/screenshots/app-store-04-export.png",
+    "referencePath": "app-store/screenshots/app-store-04-export.png",
     "uploadStatus": "ready"
   },
   {
@@ -196,7 +196,7 @@ The renderer verifies 2880 × 1800 dimensions, absence of alpha, a complete loca
     "subject": "glanceable recording status",
     "headingId": "recording-status",
     "referenceSize": "2880x1800",
-    "referencePath": "docs/ux/app-store/screenshots/app-store-03-recording-status.png",
+    "referencePath": "app-store/screenshots/app-store-03-recording-status.png",
     "uploadStatus": "ready"
   },
   {
@@ -204,7 +204,7 @@ The renderer verifies 2880 × 1800 dimensions, absence of alpha, a complete loca
     "subject": "trim and tune before sharing",
     "headingId": "editor-trim",
     "referenceSize": "2880x1800",
-    "referencePath": "docs/ux/app-store/screenshots/app-store-02-editor-trim.png",
+    "referencePath": "app-store/screenshots/app-store-02-editor-trim.png",
     "uploadStatus": "ready"
   }
 ]
@@ -524,7 +524,7 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
 
 ## Shared App Review notes
 
-App Review notes are not a localized storefront field. Use the single English value in `docs/ux/app-store/review-notes.txt`, which stays below Apple's 4,000-byte limit and explains how to review version 1.3.1.
+App Review notes are not a localized storefront field. Use the single English value in `app-store/review-notes.txt`, which stays below Apple's 4,000-byte limit and explains how to review version 1.3.1.
 
 ## App Privacy decision
 
@@ -541,7 +541,7 @@ If any of those facts change, stop submission and re-answer App Privacy before r
 
 ## App Store Connect handoff
 
-1. Run `bun docs/ux/app-store/validate-listing-metadata.mjs`.
+1. Run `bun app-store/validate-listing-metadata.mjs`.
 2. Render the gallery locally to a temporary directory and inspect the complete output before changing App Store Connect.
 3. Dispatch App Store Localized Screenshots with the editable version number. The workflow verifies the checked-in asset hashes, exercises the renderer on the runner, and uploads all 11 committed locale directories.
 4. Confirm the workflow succeeded. It must not upload a binary, change text metadata, submit for review, or publish the version.

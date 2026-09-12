@@ -185,7 +185,7 @@ def ensure_time_sensitive_notifications_capability!
 end
 
 def update_app_review_notes!(version)
-  notes_path = File.join(REPO_ROOT, "../../docs/ux/app-store/review-notes.txt")
+  notes_path = File.join(REPO_ROOT, "../../app-store/review-notes.txt")
   notes = File.read(notes_path).strip
   UI.user_error!("App Review notes must not be empty") if notes == ""
   UI.user_error!("App Review notes exceed Apple's 4,000-byte limit") if notes.bytesize > 4_000

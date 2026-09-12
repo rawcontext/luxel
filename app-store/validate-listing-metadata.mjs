@@ -11,16 +11,16 @@ import {
 } from "./listing-metadata-support.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
-const repositoryRoot = resolve(scriptDirectory, "../../..");
+const repositoryRoot = resolve(scriptDirectory, "..");
 const metadataPath = resolve(scriptDirectory, "listing-metadata.md");
 const markdown = await readFile(metadataPath, "utf8");
-const reviewNotes = await readFile(resolve(repositoryRoot, "docs/ux/app-store/review-notes.txt"), "utf8");
+const reviewNotes = await readFile(resolve(repositoryRoot, "app-store/review-notes.txt"), "utf8");
 const screenshotConfiguration = JSON.parse(
   await readFile(resolve(scriptDirectory, "localized-screenshot-headings.json"), "utf8"),
 );
-const committedScreenshotRoot = resolve(repositoryRoot, "docs/ux/app-store/screenshots/localized");
+const committedScreenshotRoot = resolve(repositoryRoot, "app-store/screenshots/localized");
 const committedScreenshotManifest = JSON.parse(
-  await readFile(resolve(repositoryRoot, "docs/ux/app-store/screenshots/localized-manifest.json"), "utf8"),
+  await readFile(resolve(repositoryRoot, "app-store/screenshots/localized-manifest.json"), "utf8"),
 );
 
 const requiredFields = [
@@ -43,12 +43,12 @@ const characterLimits = {
   whatsNew: 4_000,
 };
 const screenshotReferences = [
-  ["docs/ux/app-store/screenshots/app-store-05-menu-bar.png", "menu-bar"],
-  ["docs/ux/app-store/screenshots/app-store-01-area-capture.png", "area-capture"],
-  ["docs/ux/app-store/screenshots/app-store-06-transcripts.png", "transcripts"],
-  ["docs/ux/app-store/screenshots/app-store-04-export.png", "export"],
-  ["docs/ux/app-store/screenshots/app-store-03-recording-status.png", "recording-status"],
-  ["docs/ux/app-store/screenshots/app-store-02-editor-trim.png", "editor-trim"],
+  ["app-store/screenshots/app-store-05-menu-bar.png", "menu-bar"],
+  ["app-store/screenshots/app-store-01-area-capture.png", "area-capture"],
+  ["app-store/screenshots/app-store-06-transcripts.png", "transcripts"],
+  ["app-store/screenshots/app-store-04-export.png", "export"],
+  ["app-store/screenshots/app-store-03-recording-status.png", "recording-status"],
+  ["app-store/screenshots/app-store-02-editor-trim.png", "editor-trim"],
 ];
 
 function characterCount(value) {
