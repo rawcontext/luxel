@@ -6,7 +6,10 @@ public struct AVFoundationMediaMetadataReader: MediaMetadataReader, MediaProbe, 
     public init() {}
 
     public func readSourceMedia(at fileURL: URL) async throws -> SourceMedia {
-        let asset = AVURLAsset(url: fileURL)
+        let asset = AVURLAsset(
+            url: fileURL,
+            options: [AVURLAssetPreferPreciseDurationAndTimingKey: true]
+        )
         let duration = try await asset.load(.duration)
         let durationSeconds = duration.seconds
 

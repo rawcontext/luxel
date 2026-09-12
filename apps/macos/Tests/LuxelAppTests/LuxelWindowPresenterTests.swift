@@ -150,9 +150,39 @@ struct LuxelWindowPresenterTests {
             #expect(application.activationPolicy() == .regular)
 
             window.close()
+            let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+            while application.activationPolicy() != .accessory && ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
             #expect(!window.isVisible)
             #expect(application.activationPolicy() == .accessory)
         }
+    }
+
+    @Test("closing during activation cannot reopen the editor later")
+    func closingDuringActivationCancelsDelayedPresentation() async throws {
+        let application = NSApplication.shared
+        let originalPolicy = application.activationPolicy()
+        let originalMenu = application.mainMenu
+        application.mainMenu = NSMenu()
+        let presenter = makePresenter()
+        defer {
+            for window in application.windows where window.delegate === presenter { window.close() }
+            application.mainMenu = originalMenu
+            _ = application.setActivationPolicy(originalPolicy)
+        }
+        _ = application.setActivationPolicy(.accessory)
+        presenter.openEditor()
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while !application.windows.contains(where: { $0.delegate === presenter && $0.isVisible }),
+            ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let window = try #require(application.windows.first { $0.delegate === presenter && $0.isVisible })
+        window.close()
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(!window.isVisible)
+        #expect(application.activationPolicy() == .accessory)
     }
 
     private func makePresenter() -> LuxelWindowPresenter {

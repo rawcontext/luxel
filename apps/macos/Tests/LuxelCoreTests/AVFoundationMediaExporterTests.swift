@@ -305,8 +305,8 @@ extension AVFoundationMediaExporterTests {
             #expect(exported.format == expectation.format)
             #expect(!exported.shouldMute)
             #expect(source.isAudioOnly)
-            #expect(source.duration > 0.35)
-            #expect(source.duration < 0.45)
+            #expect(source.duration > 0.35, "\(expectation.format): \(source.duration)")
+            #expect(source.duration < 0.45, "\(expectation.format): \(source.duration)")
             #expect(codecType == expectation.codecType)
         }
     }

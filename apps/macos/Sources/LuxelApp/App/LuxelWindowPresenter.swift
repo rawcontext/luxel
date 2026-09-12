@@ -13,6 +13,7 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
     private var pendingSettingsActivationSource: NSRunningApplication?
     private var settingsPresentationInFlight = false
     private var editorPresentationInFlight = false
+    private var editorPresentationTask: Task<Void, Never>?
 
     private var editorWindow: NSWindow?
     private weak var settingsWindow: NSWindow?
@@ -108,8 +109,9 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
         _ window: NSWindow,
         activationSource: NSRunningApplication?
     ) {
+        editorPresentationTask?.cancel()
         editorPresentationInFlight = true
-        Task { @MainActor [weak self, weak window, weak activationSource] in
+        editorPresentationTask = Task { @MainActor [weak self, weak window, weak activationSource] in
             guard let self, let window else {
                 return
             }
@@ -117,14 +119,17 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
             let promotedFromAccessory = await promoteToRegular(
                 activationSource: activationSource
             )
+            guard !Task.isCancelled else { return }
 
             present(window, activationSource: activationSource)
             editorPresentationInFlight = false
             await Task.yield()
+            guard !Task.isCancelled else { return }
             present(window, activationSource: activationSource)
 
             if promotedFromAccessory {
                 try? await Task.sleep(for: .milliseconds(120))
+                guard !Task.isCancelled else { return }
                 present(window, activationSource: activationSource)
             }
         }
@@ -261,8 +266,13 @@ final class LuxelWindowPresenter: NSObject, NSWindowDelegate {
     }
 
     @objc private func applicationWindowWillClose(_ notification: Notification) {
-        guard let closingWindow = notification.object as? NSWindow,
-            NSApplication.shared.activationPolicy() == .regular,
+        guard let closingWindow = notification.object as? NSWindow else { return }
+        if closingWindow === editorWindow {
+            editorPresentationTask?.cancel()
+            editorPresentationTask = nil
+            editorPresentationInFlight = false
+        }
+        guard NSApplication.shared.activationPolicy() == .regular,
             !settingsPresentationInFlight,
             !editorPresentationInFlight,
             !NSApplication.shared.windows.contains(where: { window in
