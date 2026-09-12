@@ -20,7 +20,8 @@ sync, and CLI packaging do not run unit tests.
 
 ## Branch access
 
-The repository is currently private in the `rawcontext` organization on GitHub Free. Branch rulesets are not enforced in that configuration. Once the repository is public, restore these rulesets for `master` and the default branch:
+The repository is public in the `rawcontext` organization. GitHub Free enforces
+the following active rulesets for `master` and the default branch:
 
 - [Owner-only master updates](rulesets/master-owner-updates.json) permits updates and PR merges only by `ccheney` (user ID `302437`). Normal owner pushes remain allowed.
 - [Protect master history](rulesets/master-history.json) blocks deletion and force pushes for everyone, including the owner.
@@ -29,17 +30,25 @@ The definitions are checked in under `.github/rulesets/`. `CODEOWNERS` routes re
 
 Keep outside contributors as fork-based contributors. Accepting their pull requests does not require granting collaborator write access.
 
-## Before making the repository public
+## Public repository controls
 
-Private-repository fork workflows are disabled, with no write tokens or secrets passed to forks. GitHub does not expose the public fork-approval policy while a repository is private. Keep Actions disabled during the visibility change, then require approval for **all external contributors** before re-enabling Actions.
+Workflow runs from **all external contributors** require approval. The default
+workflow token is read-only, and workflows cannot approve pull requests. No
+self-hosted runners are registered. Only `ccheney` currently has repository write
+access.
 
-Before changing visibility:
+After a repository transfer or visibility change, verify the bypass list as well
+as rule enforcement: GitHub removed the owner bypass during this repository's
+transfer. Keep Actions disabled while restoring controls:
 
 ```sh
 gh api --method PUT repos/rawcontext/luxel/actions/permissions -F enabled=false
 ```
 
-After the repository is public, restore or create the two rulesets from `.github/rulesets/` and verify that they are active. Then configure the fork-approval policy before re-enabling Actions:
+Restore the two definitions from `.github/rulesets/` and verify that they are
+active. The updates rule must allow only user `302437` to bypass it; the history
+rule must have no bypass actors. Then verify the fork policy before re-enabling
+Actions:
 
 ```sh
 gh api --method PUT repos/rawcontext/luxel/actions/permissions/fork-pr-contributor-approval \

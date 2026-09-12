@@ -157,7 +157,7 @@ The monorepo's CLI packaging workflow accepts manual runs from `master` and
 owner-created `cli-v<version>` tags. The tag version must match `Cargo.toml`.
 
 The website installer downloads the `cli-v1.0.0` release from this repository.
-Anonymous downloads become available when the repository is public.
+The repository and release downloads are public.
 
 ## License
 
