@@ -18,7 +18,7 @@ struct TranscriptCopyTextBuilderTests {
             exportedAt: Date(timeIntervalSince1970: 0)
         )
 
-        #expect(text.hasSuffix("# Demo\n\n`00:00`\n\nWait... what?\n"))
+        #expect(text.hasSuffix("# Demo\n\nWait... what?\n"))
         #expect(text.contains("edited: false"))
     }
 
@@ -42,7 +42,7 @@ struct TranscriptCopyTextBuilderTests {
             exportedAt: Date(timeIntervalSince1970: 0)
         )
 
-        #expect(text.hasSuffix("# Demo\n\n`00:00`\n\nWait...\n"))
+        #expect(text.hasSuffix("# Demo\n\nWait...\n"))
         #expect(text.contains("edited: true"))
     }
 
@@ -59,8 +59,65 @@ struct TranscriptCopyTextBuilderTests {
             exportedAt: Date(timeIntervalSince1970: 0)
         )
 
-        #expect(text.hasSuffix("**Speaker 1** · `00:00`\n\nWait... what?\n"))
+        #expect(text.hasSuffix("**Speaker 1**\n\nWait... what?\n"))
         #expect(!text.contains("Microphone"))
+        #expect(text.contains("known_speakers: []"))
+        #expect(text.contains("unknown_speaker_count: 1"))
+    }
+
+    @Test("timestamps can be included for original and edited transcripts", arguments: [false, true])
+    func timestampsAreOptional(hasCuts: Bool) throws {
+        let speaker = try TranscriptSpeakerLabel(id: "speaker", displayName: "Speaker 1")
+        let transcript = try sampleTranscript(speaker: speaker)
+        let words = try TranscriptWordIndex(transcript: transcript).words
+        let text = TranscriptCopyTextBuilder().text(
+            transcript: transcript,
+            visibleWords: words,
+            hasCuts: hasCuts,
+            metadata: metadata,
+            includesTimestamps: true,
+            exportedAt: Date(timeIntervalSince1970: 0)
+        )
+
+        #expect(text.hasSuffix("**Speaker 1** · `00:00`\n\nWait... what?\n"))
+    }
+
+    @Test("front matter lists known speaker names and counts anonymous speakers")
+    func frontMatterSummarizesSpeakers() throws {
+        let names = ["Mara O'Connor", "Jules \"JJ\" Cruz", "Noor \\ Kim"]
+        let knownSpeakers = try names.enumerated().map { index, name in
+            try TranscriptSpeakerLabel(id: "known-\(index)", displayName: name, knownSpeakerID: UUID())
+        }
+        let anonymous = try TranscriptSpeakerLabel(id: "unknown", displayName: "Speaker 4")
+        let transcript = try transcriptWithSpeakers(knownSpeakers + [anonymous])
+        let text = TranscriptCopyTextBuilder().text(
+            transcript: transcript, visibleWords: [], hasCuts: false, metadata: metadata
+        )
+
+        #expect(text.contains("speaker_count: 4\n"))
+        #expect(text.contains("known_speaker_count: 3\n"))
+        #expect(text.contains("unknown_speaker_count: 1\n"))
+        let namesLine = try #require(
+            text.components(separatedBy: .newlines).first {
+                $0.hasPrefix("known_speakers: ")
+            })
+        let namesJSON = Data(namesLine.dropFirst("known_speakers: ".count).utf8)
+        #expect(try JSONDecoder().decode([String].self, from: namesJSON) == names)
+    }
+
+    @Test("front matter omits the unknown count when every speaker is known")
+    func allKnownSpeakersOmitUnknownCount() throws {
+        let speaker = try TranscriptSpeakerLabel(
+            id: "known", displayName: "Mara O'Connor", knownSpeakerID: UUID()
+        )
+        let transcript = try sampleTranscript(speaker: speaker)
+        let text = TranscriptCopyTextBuilder().text(
+            transcript: transcript, visibleWords: [], hasCuts: false, metadata: metadata
+        )
+
+        #expect(text.contains("known_speaker_count: 1\n"))
+        #expect(text.contains("known_speakers: [\"Mara O'Connor\"]\n"))
+        #expect(!text.contains("unknown_speaker_count:"))
     }
 
     @Test("copy includes structured front matter")
@@ -90,6 +147,9 @@ struct TranscriptCopyTextBuilderTests {
         #expect(!text.contains("transcription_engine:"))
         #expect(!text.contains("configuration_revision:"))
         #expect(!text.contains("word_count:"))
+        #expect(text.contains("known_speaker_count: 0"))
+        #expect(text.contains("known_speakers: []"))
+        #expect(!text.contains("unknown_speaker_count:"))
     }
 
     @Test("copy escapes transcript Markdown syntax")
@@ -122,7 +182,7 @@ struct TranscriptCopyTextBuilderTests {
             exportedAt: Date(timeIntervalSince1970: 0)
         )
 
-        #expect(text.hasSuffix("`01:05`\n\n\\# Heading with \\*emphasis\\*\n"))
+        #expect(text.hasSuffix("# Demo\n\n\\# Heading with \\*emphasis\\*\n"))
     }
 
     private var metadata: TranscriptMarkdownMetadata {
@@ -132,6 +192,22 @@ struct TranscriptCopyTextBuilderTests {
             recordedAt: Date(timeIntervalSince1970: 0),
             duration: 65.5
         )
+    }
+
+    private func transcriptWithSpeakers(_ speakers: [TranscriptSpeakerLabel]) throws -> TurnSegmentedTranscript {
+        let spans = try speakers.enumerated().map { index, speaker in
+            try TimedTranscriptSpan(
+                id: "span-\(index)", text: "Hello.", start: Double(index), end: Double(index + 1),
+                speakerID: speaker.id
+            )
+        }
+        let turns = try spans.map { span in
+            try TranscriptTurn(
+                id: "turn-\(span.id)", spanIDs: [span.id], start: span.start, end: span.end,
+                text: span.text, speakerID: span.speakerID
+            )
+        }
+        return try TurnSegmentedTranscript(spans: spans, turns: turns, localeIdentifier: "en_US", speakers: speakers)
     }
 
     private func sampleTranscript(

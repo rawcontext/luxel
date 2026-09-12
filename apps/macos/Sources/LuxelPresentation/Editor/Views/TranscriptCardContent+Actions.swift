@@ -3,6 +3,16 @@ import LuxelCore
 import SwiftUI
 
 extension TranscriptCardContent {
+    func markdownTimestampToggle(side: CGFloat) -> some View {
+        Toggle(isOn: $includesMarkdownTimestamps) {
+            Image(systemName: includesMarkdownTimestamps ? "clock.fill" : "clock")
+        }
+        .toggleStyle(.button)
+        .buttonStyle(LuxelGlassCircleButtonStyle(side: side))
+        .help("Show a timestamp before each turn in copied Markdown transcripts.")
+        .accessibilityLabel("Include Timestamps in Markdown")
+    }
+
     var speakerCountChip: some View {
         HStack(spacing: 6) {
             HStack(spacing: -3) {
@@ -116,7 +126,8 @@ extension TranscriptCardContent {
             transcript: transcript,
             visibleWords: words,
             hasCuts: !cutReviewItems.isEmpty,
-            metadata: metadata
+            metadata: metadata,
+            includesTimestamps: includesMarkdownTimestamps
         )
         let item = NSPasteboardItem()
         item.setString(

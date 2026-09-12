@@ -39,6 +39,7 @@ struct TranscriptCopyTextBuilder {
         visibleWords: [TranscriptEditableWord],
         hasCuts: Bool,
         metadata: TranscriptMarkdownMetadata,
+        includesTimestamps: Bool = false,
         exportedAt: Date = Date()
     ) -> String {
         let renderedTurns = transcript.turns.compactMap { turn -> (TranscriptTurn, String)? in
@@ -63,12 +64,15 @@ struct TranscriptCopyTextBuilder {
         )
 
         let body = renderedTurns.map { turn, turnText in
-            let timestamp = formatTimestamp(turn.start)
-            let header =
+            let header = [
                 transcript.speaker(for: turn.speakerID).map { speaker in
-                    "**\(escapedMarkdown(speaker.displayName))** · `\(timestamp)`"
-                } ?? "`\(timestamp)`"
-            return "\(header)\n\n\(escapedMarkdown(turnText))"
+                    "**\(escapedMarkdown(speaker.displayName))**"
+                },
+                includesTimestamps ? "`\(formatTimestamp(turn.start))`" : nil
+            ].compactMap { $0 }.joined(separator: " · ")
+            return [header, escapedMarkdown(turnText)]
+                .filter { !$0.isEmpty }
+                .joined(separator: "\n\n")
         }
 
         return ([frontMatter.joined(separator: "\n"), "# \(escapedMarkdown(metadata.title))"] + body)
@@ -94,6 +98,14 @@ struct TranscriptCopyTextBuilder {
             "language: \(yamlString(transcript.localeIdentifier.replacingOccurrences(of: "_", with: "-")))"
         )
         lines.append("speaker_count: \(transcript.speakers.count)")
+        let knownSpeakers = transcript.speakers.filter { $0.knownSpeakerID != nil }
+        lines.append("known_speaker_count: \(knownSpeakers.count)")
+        let knownSpeakerNames = knownSpeakers.map { yamlString($0.displayName) }.joined(separator: ", ")
+        lines.append("known_speakers: [\(knownSpeakerNames)]")
+        let unknownSpeakerCount = transcript.speakers.count - knownSpeakers.count
+        if unknownSpeakerCount > 0 {
+            lines.append("unknown_speaker_count: \(unknownSpeakerCount)")
+        }
         lines.append("edited: \(hasCuts)")
         if let modelRevision = transcript.transcriptionProvenance?.modelRevision {
             lines.append("model_revision: \(yamlString(modelRevision))")

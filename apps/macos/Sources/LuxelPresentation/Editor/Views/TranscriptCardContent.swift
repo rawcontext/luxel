@@ -10,6 +10,10 @@ enum TranscriptPlaybackPreferences {
     static let autoPlayDefaultsKey = "transcriptAutoPlayEnabled"
 }
 
+enum TranscriptMarkdownPreferences {
+    static let includesTimestampsDefaultsKey = "transcriptMarkdownIncludesTimestamps"
+}
+
 struct TranscriptCardContent: View {
     let transcript: TurnSegmentedTranscript
     let words: [TranscriptEditableWord]
@@ -38,6 +42,7 @@ struct TranscriptCardContent: View {
     @FocusState var transcriptListIsFocused: Bool
     @AppStorage var isEditingGuidanceDismissed: Bool
     @AppStorage var isTranscriptAutoPlayEnabled: Bool
+    @AppStorage var includesMarkdownTimestamps: Bool
 
     init(
         transcript: TurnSegmentedTranscript,
@@ -88,6 +93,11 @@ struct TranscriptCardContent: View {
         _isTranscriptAutoPlayEnabled = AppStorage(
             wrappedValue: true,
             TranscriptPlaybackPreferences.autoPlayDefaultsKey,
+            store: guidanceDefaults
+        )
+        _includesMarkdownTimestamps = AppStorage(
+            wrappedValue: false,
+            TranscriptMarkdownPreferences.includesTimestampsDefaultsKey,
             store: guidanceDefaults
         )
     }
@@ -167,6 +177,8 @@ struct TranscriptCardContent: View {
             if canUndoLastCut {
                 undoCutButton(side: 30)
             }
+
+            markdownTimestampToggle(side: 30)
 
             Button {
                 copyTranscript(transcript, words: words)
@@ -288,6 +300,8 @@ extension TranscriptCardContent {
                     selectPrevious: selectPreviousSearchMatch,
                     selectNext: selectNextSearchMatch
                 )
+
+                markdownTimestampToggle(side: 24)
 
                 Button {
                     copyTranscript(transcript, words: words)

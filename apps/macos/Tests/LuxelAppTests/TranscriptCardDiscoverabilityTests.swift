@@ -217,6 +217,22 @@ struct TranscriptCardDiscoverabilityTests {
         #expect(cardSource.contains("isTranscriptAutoPlayEnabled"))
     }
 
+    @Test("Markdown timestamps default to off and remember the editor toggle")
+    func markdownTimestampPreference() throws {
+        let suiteName = "TranscriptMarkdownTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let initial = try content(guidanceDefaults: defaults, deleteSelectedWord: { false })
+        #expect(!initial.includesMarkdownTimestamps)
+        initial.includesMarkdownTimestamps = true
+
+        let reopened = try content(guidanceDefaults: defaults, deleteSelectedWord: { false })
+        #expect(reopened.includesMarkdownTimestamps)
+        reopened.includesMarkdownTimestamps = false
+        #expect(!defaults.bool(forKey: TranscriptMarkdownPreferences.includesTimestampsDefaultsKey))
+    }
+
     private func content(
         guidanceDefaults: UserDefaults = .standard,
         deleteSelectedWord: @escaping () -> Bool
