@@ -28,7 +28,11 @@ or Fish. Open a new terminal after installation.
 
 ## Build from source
 
+The CLI lives in `apps/cli` in the [Luxel monorepo](https://github.com/rawcontext/luxel).
+
 ```sh
+git clone https://github.com/rawcontext/luxel.git
+cd luxel/apps/cli
 cargo build --release
 install -m 755 target/release/luxel ~/.local/bin/luxel
 ```
@@ -120,11 +124,35 @@ The full command and option reference is also available at
 
 ## Development
 
+From the monorepo root, Bun and Turborepo run the package's tasks:
+
+```sh
+bun install --frozen-lockfile
+bun run lint --filter=@luxel/cli
+bun run test --filter=@luxel/cli
+bun run build --filter=@luxel/cli
+bun run package --filter=@luxel/cli
+```
+
+`build` produces the universal macOS binary. `package` creates the archive and
+checksum in `apps/cli/dist`. The web build is independent and does not compile the CLI.
+
+The equivalent native checks can be run from `apps/cli`:
+
 ```sh
 cargo fmt --check
-cargo clippy --all-targets --all-features -- -D warnings
-cargo test --all-targets --all-features
+cargo clippy --all-targets --all-features --locked -- -D warnings
+cargo test --all-targets --all-features --locked
 ```
 
 The fixtures under `protocol/v1/fixtures` are byte-for-schema peers of Luxel's Swift
 protocol fixtures.
+
+## Releases
+
+The monorepo's CLI packaging workflow accepts manual runs from `master` and
+owner-created `cli-v<version>` tags. The tag version must match `Cargo.toml`.
+
+While the monorepo is private, the website installer uses the existing public
+release feed in `rawcontext/luxel-cli`. Keep those release assets available until
+the monorepo is public and its CLI release assets have been published.

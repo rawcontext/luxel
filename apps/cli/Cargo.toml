@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.97"
 description = "Command-line controller for the Luxel macOS app"
 license = "MIT"
-repository = "https://github.com/rawcontext/luxel-cli"
+repository = "https://github.com/rawcontext/luxel"
 
 [[bin]]
 name = "luxel"

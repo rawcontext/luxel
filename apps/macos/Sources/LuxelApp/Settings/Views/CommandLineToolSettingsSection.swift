@@ -49,7 +49,7 @@ struct CommandLineToolSettingsSection: View {
                         "settings.commandLine.openGitHub",
                         defaultValue: "Open GitHub"
                     ),
-                    destination: URL(string: "https://github.com/rawcontext/luxel-cli")!
+                    destination: URL(string: "https://github.com/rawcontext/luxel/tree/master/apps/cli")!
                 )
             }
         }

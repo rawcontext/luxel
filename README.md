@@ -7,7 +7,7 @@
 
 A native macOS menu bar recorder with screen and audio capture, replay buffer, local transcription, and video export.
 
-[User docs](https://luxel.media/docs) · [Support](https://luxel.media/support) · [Standalone CLI](https://github.com/rawcontext/luxel-cli)
+[User docs](https://luxel.media/docs) · [Support](https://luxel.media/support) · [CLI](apps/cli)
 
 ## Run locally
 

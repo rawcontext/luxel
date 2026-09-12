@@ -1,0 +1,58 @@
+name: Package CLI
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["cli-v*"]
+
+jobs:
+  package:
+    name: Package universal CLI
+    if: >-
+      github.repository == 'rawcontext/luxel' &&
+      github.repository_id == '1269656539' &&
+      github.actor_id == '302437' &&
+      github.triggering_actor == 'ccheney' &&
+      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/cli-v')))
+    runs-on: macos-26
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+
+      - name: Install workspace dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Validate release tag
+        if: github.ref_type == 'tag'
+        run: |
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("apps/cli/Cargo.toml", "rb"))["package"]["version"])')"
+          test "$GITHUB_REF_NAME" = "cli-v$version"
+
+      - name: Check and package CLI
+        run: bunx turbo run lint test package --filter=@luxel/cli
+
+      - name: Upload CLI artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: luxel-universal-apple-darwin
+          path: apps/cli/dist/*
+          if-no-files-found: error
+
+      - name: Publish CLI release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Luxel CLI ${GITHUB_REF_NAME#cli-v}" \
+            --generate-notes \
+            apps/cli/dist/luxel-macos-universal.tar.gz \
+            apps/cli/dist/luxel-macos-universal.tar.gz.sha256

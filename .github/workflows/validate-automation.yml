@@ -50,6 +50,16 @@ jobs:
         working-directory: apps/macos
         run: bundle exec fastlane lanes
 
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+
+      - name: Test CLI workspace
+        run: |
+          bun install --frozen-lockfile
+          bunx turbo run lint test --filter=@luxel/cli
+
       - name: Test macOS package
         working-directory: apps/macos
         run: swift test

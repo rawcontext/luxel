@@ -1,0 +1,10 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "outputs": ["dist/**", ".vercel/output/**"],
+      "env": ["PUBLIC_TURNSTILE_SITE_KEY", "LUXEL_SITE_URL"],
+      "passThroughEnv": ["VERCEL", "VERCEL_ENV", "VERCEL_URL", "VERCEL_PROJECT_PRODUCTION_URL"]
+    }
+  }
+}

@@ -7,6 +7,7 @@ Every job checks the repository identity, the original actor's immutable account
 - Manual runs use `master`.
 - TestFlight uploads automatically after `ccheney` merges a pull request into `master`. It checks the merger, original actor, rerun actor, target repository, target branch, and merged state before allocating a runner. Tag pushes and manual dispatches cannot trigger TestFlight uploads.
 - App Store Feedback retains its owner-associated daily schedule on `master`.
+- CLI packaging accepts manual runs from `master`; owner-created `cli-v<version>` tags publish CLI releases. The version must match `apps/cli/Cargo.toml`.
 
 TestFlight uses `pull_request_target` only for the `closed` event so signing credentials are available after an owner-approved merge from a fork. Its job requires `merged == true` and checks out only GitHub's `merge_commit_sha`, never the contributor's head branch or head SHA. Opening, updating, or closing an unmerged pull request cannot start the publishing job. The marketing version comes from the merged `Info.plist`, and build numbers use UTC timestamps.
 
@@ -54,4 +55,4 @@ actionlint
 gh workflow run validate-automation.yml --ref master
 ```
 
-The manual validation workflow checks the hosted runner, Ruby/Fastlane setup, workflow trust policy, App Store sync tests, and macOS package tests. It does not require release credentials.
+The manual validation workflow checks the hosted runner, Ruby/Fastlane setup, workflow trust policy, App Store sync tests, CLI workspace checks, and macOS package tests. It does not require release credentials.

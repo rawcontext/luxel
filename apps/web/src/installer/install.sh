@@ -2,6 +2,7 @@
 set -eu
 
 asset="luxel-macos-universal.tar.gz"
+# Keep public downloads available while the monorepo is private.
 release_base_url="${LUXEL_RELEASE_BASE_URL:-https://github.com/rawcontext/luxel-cli/releases/latest/download}"
 default_install_dir="${HOME}/.local/bin"
 install_dir="${LUXEL_INSTALL_DIR:-$default_install_dir}"

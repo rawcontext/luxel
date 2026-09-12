@@ -10,6 +10,7 @@ class WorkflowTrustTest < Minitest::Test
     "app-store-reviews.yml" => ["schedule", "workflow_dispatch"],
     "app-store-screenshots.yml" => ["workflow_dispatch"],
     "app-store-signing.yml" => ["workflow_dispatch"],
+    "cli-package.yml" => ["push", "workflow_dispatch"],
     "testflight.yml" => ["pull_request_target"],
     "validate-automation.yml" => ["workflow_dispatch"]
   }.freeze
@@ -31,6 +32,9 @@ class WorkflowTrustTest < Minitest::Test
     workflows.each do |name, workflow|
       triggers = workflow.fetch(true) # Psych parses the unquoted YAML key "on" as true.
       assert_equal EVENTS.fetch(name), triggers.keys.sort, name
+      if name == "cli-package.yml"
+        assert_equal({ "tags" => ["cli-v*"] }, triggers.fetch("push"))
+      end
       next unless name == "testflight.yml"
 
       assert_equal({ "types" => ["closed"], "branches" => ["master"] }, triggers.fetch("pull_request_target"))
@@ -127,6 +131,9 @@ class WorkflowTrustTest < Minitest::Test
 
   def event_gate(name)
     case name
+    when "cli-package.yml"
+      "((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') || " \
+        "(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/cli-v')))"
     when "testflight.yml"
       [
         "github.event_name == 'pull_request_target'",

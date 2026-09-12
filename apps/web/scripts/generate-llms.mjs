@@ -87,7 +87,7 @@ const llmsIndex = normalizeMarkdown(`# Luxel
 - [Luxel documentation](${siteUrl}/docs): Canonical human-readable documentation for installation, permissions, capture, replay buffer, editing, export, transcripts, CLI, automation, localization, settings, and troubleshooting.
 - [Complete Luxel documentation Markdown](${siteUrl}/llms-full.txt): Complete text of the Luxel documentation.
 - [Install the Luxel CLI](${siteUrl}/cli/install.sh): Shell installer for the standalone Luxel command.
-- [Luxel CLI source and installation](https://github.com/rawcontext/luxel-cli): Standalone Rust command-line client for the Luxel Mac app.
+- [Luxel CLI source and installation](https://github.com/rawcontext/luxel/tree/master/apps/cli): Rust command-line client in the Luxel monorepo, with installation and development instructions.
 
 ## Website
 

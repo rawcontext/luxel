@@ -9,6 +9,9 @@
         "turbo": "2.10.11",
       },
     },
+    "apps/cli": {
+      "name": "@luxel/cli",
+    },
     "apps/macos": {
       "name": "@luxel/macos",
     },
@@ -205,6 +208,8 @@
     "@isaacs/fs-minipass": ["@isaacs/fs-minipass@4.0.1", "", { "dependencies": { "minipass": "^7.0.4" } }, "sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w=="],
 
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
+
+    "@luxel/cli": ["@luxel/cli@workspace:apps/cli"],
 
     "@luxel/macos": ["@luxel/macos@workspace:apps/macos"],
 

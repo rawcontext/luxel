@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "vercel-build": "bun run --cwd apps/web build && rm -rf .vercel/output && mkdir -p .vercel && cp -R apps/web/.vercel/output .vercel/output",
+    "vercel-build": "turbo run build --filter=@luxel/web",
+    "package": "turbo run package",
     "test": "turbo run test",
     "lint": "turbo run lint",
     "check:duplication": "jscpd apps/macos/Sources apps/macos/Tests apps/macos/Scripts apps/macos/fastlane apps/web/src apps/web/scripts apps/web/astro.config.mjs --exit-code",
