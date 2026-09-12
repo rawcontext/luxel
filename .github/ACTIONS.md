@@ -9,7 +9,12 @@ Every job checks the repository identity, the original actor's immutable account
 - App Store Feedback retains its owner-associated daily schedule on `master`.
 - CLI packaging accepts manual runs from `master`; owner-created `cli-v<version>` tags publish CLI releases. The version must match `apps/cli/Cargo.toml`.
 
-TestFlight uses `pull_request_target` only for the `closed` event so signing credentials are available after an owner-approved merge from a fork. Its job requires `merged == true` and checks out only GitHub's `merge_commit_sha`, never the contributor's head branch or head SHA. Opening, updating, or closing an unmerged pull request cannot start the publishing job. The marketing version comes from the merged `Info.plist`, and build numbers use UTC timestamps.
+TestFlight listens for owner pushes to `master`. A read-only verification job
+checks GitHub's pull-request API for a merged PR whose exact merge commit matches
+`github.sha`, whose target is this repository's `master`, and whose merger is
+`ccheney`. Only then may unit tests and TestFlight run. Direct pushes, unmerged PRs,
+and contributor events cannot pass that gate. Every checkout uses that exact SHA.
+The marketing version comes from `Info.plist`; build numbers use UTC timestamps.
 
 App Store review submission remains a separate manual workflow restricted to `ccheney` on `master`. No workflow subscribes to pull-request opening/update events, issue comments, or fork events.
 
@@ -23,6 +28,9 @@ architecture, exact Xcode build, package lock, native-codec manifest, and source
 hash. Rust dependency and target caches follow the pinned toolchain and lockfile.
 Cache hits never skip test execution. Cache paths exclude signing certificates,
 provisioning profiles, Fastlane credentials, and packaged App Store uploads.
+The trusted `push` trigger grants normal cache access without overriding GitHub's
+read-only cache policy for contributor-triggered events. Merge verification must
+succeed before any test or publishing job can read or write these caches.
 
 ## Branch access
 
