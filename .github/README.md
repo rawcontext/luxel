@@ -5,10 +5,23 @@ All jobs use GitHub-hosted Apple Silicon runners (`macos-26`). No self-hosted ru
 Every job checks the repository identity, the original actor's immutable account ID, the user initiating a rerun, the event, and the ref. GitHub evaluates these job conditions before allocating a runner. Only `ccheney` can run these workflows:
 
 - Manual runs use `master`.
-- TestFlight also accepts owner-created `v*` tags and manual runs on those tags.
+- TestFlight uploads automatically after `ccheney` merges a pull request into `master`. It checks the merger, original actor, rerun actor, target repository, target branch, and merged state before allocating a runner. Tag pushes and manual dispatches cannot trigger TestFlight uploads.
 - App Store Feedback retains its owner-associated daily schedule on `master`.
 
-The workflows do not subscribe to pull requests, pull-request target events, issue comments, or fork events. Checkout uses the trusted event ref, never a pull-request head supplied as an input.
+TestFlight uses `pull_request_target` only for the `closed` event so signing credentials are available after an owner-approved merge from a fork. Its job requires `merged == true` and checks out only GitHub's `merge_commit_sha`, never the contributor's head branch or head SHA. Opening, updating, or closing an unmerged pull request cannot start the publishing job. The marketing version comes from the merged `Info.plist`, and build numbers use UTC timestamps.
+
+App Store review submission remains a separate manual workflow restricted to `ccheney` on `master`. No workflow subscribes to pull-request opening/update events, issue comments, or fork events.
+
+## Branch access
+
+Two active repository rulesets protect `master` and the default branch:
+
+- [Owner-only master updates](https://github.com/ccheney/luxel/rules/22996583) permits updates and PR merges only by the owner account, `ccheney` (user ID `302437`). Normal owner pushes remain allowed.
+- [Protect master history](https://github.com/ccheney/luxel/rules/22996718) blocks deletion and force pushes for everyone, including the owner.
+
+The definitions are checked in under `.github/rulesets/`. `CODEOWNERS` routes reviews to `ccheney`, and repository auto-merge is disabled. Contributors can open pull requests from forks once the repository is public; opening a pull request does not grant write or merge access.
+
+Keep outside contributors as fork-based contributors. Accepting their pull requests does not require granting collaborator write access.
 
 ## Before making the repository public
 
