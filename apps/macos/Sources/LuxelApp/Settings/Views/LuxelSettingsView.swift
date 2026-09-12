@@ -9,7 +9,6 @@ struct LuxelSettingsView: View {
     static let replayBufferFrameRates = [24, 30]
     static let notchAutoCollapseDurations: [TimeInterval] = [0, 3, 6, 10]
 
-    @Environment(\.openWindow) var openWindow
     @State var isShowingAcknowledgements = false
     @State var isShowingSpeechDetectionDisclosure = false
     @State var recordingFrameRateMessage: String?
@@ -20,7 +19,7 @@ struct LuxelSettingsView: View {
     let editorModel: LuxelEditorModel
     let cropperPanelController: LuxelCropperPanelController
     let shortcutController: LuxelShortcutController
-    let openEditorWindowOverride: (@MainActor () -> Void)?
+    let openEditorWindow: @MainActor () -> Void
     let shortcutConflictDetector = AppKeyboardShortcutConflictDetector()
 
     init(
@@ -28,13 +27,13 @@ struct LuxelSettingsView: View {
         editorModel: LuxelEditorModel,
         cropperPanelController: LuxelCropperPanelController,
         shortcutController: LuxelShortcutController,
-        openEditorWindow: (@MainActor () -> Void)? = nil
+        openEditorWindow: @escaping @MainActor () -> Void
     ) {
         self.model = model
         self.editorModel = editorModel
         self.cropperPanelController = cropperPanelController
         self.shortcutController = shortcutController
-        openEditorWindowOverride = openEditorWindow
+        self.openEditorWindow = openEditorWindow
     }
 }
 

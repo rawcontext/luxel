@@ -122,6 +122,39 @@ struct LuxelWindowPresenterTests {
         #expect(application.activationPolicy() == .regular)
     }
 
+    @Test("repeated editor requests reuse one window, including after closing")
+    func repeatedEditorRequestsReuseOneWindow() async throws {
+        let application = NSApplication.shared
+        let originalPolicy = application.activationPolicy()
+        let originalMenu = application.mainMenu
+        application.mainMenu = NSMenu()
+        let presenter = makePresenter()
+        var editorWindow: NSWindow?
+        defer {
+            editorWindow?.close()
+            application.mainMenu = originalMenu
+            _ = application.setActivationPolicy(originalPolicy)
+        }
+
+        for _ in 0..<3 {
+            presenter.openEditor()
+            presenter.openEditor()
+            try await Task.sleep(for: .milliseconds(300))
+            let windows = application.windows.filter { $0.delegate === presenter && $0.isVisible }
+            #expect(windows.count == 1)
+            let window = try #require(windows.first)
+            if let editorWindow {
+                #expect(window === editorWindow)
+            }
+            editorWindow = window
+            #expect(application.activationPolicy() == .regular)
+
+            window.close()
+            #expect(!window.isVisible)
+            #expect(application.activationPolicy() == .accessory)
+        }
+    }
+
     private func makePresenter() -> LuxelWindowPresenter {
         LuxelWindowPresenter(
             model: LuxelMenuModel(settingsStore: WindowPresenterSettingsStore()),

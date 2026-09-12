@@ -152,7 +152,11 @@ public final class LuxelEditorNativeMenuController: NSObject, NSMenuDelegate, NS
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         let submenu = NSMenu(title: title)
         item.submenu = submenu
-        mainMenu.addItem(item)
+        if title == "File", let editIndex = mainMenu.items.firstIndex(where: { $0.title == "Edit" }) {
+            mainMenu.insertItem(item, at: editIndex)
+        } else {
+            mainMenu.addItem(item)
+        }
         return submenu
     }
 

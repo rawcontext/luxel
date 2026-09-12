@@ -68,18 +68,6 @@ struct LuxelApp: App {
             windowPresenter: windowPresenter,
             openSettingsAction: openSettings
         ) {
-            WindowGroup(id: LuxelEditorScene.id) {
-                LuxelEditorView(model: editorModel)
-            }
-            .defaultLaunchBehavior(.suppressed)
-            .commands {
-                CommandGroup(replacing: .appInfo) {
-                    Button("About \(model.appMetadata.displayName)") {
-                        aboutWindowPresenter.open()
-                    }
-                }
-            }
-
             Settings {
                 LuxelSettingsView(
                     model: model,
@@ -101,6 +89,13 @@ struct LuxelApp: App {
             .defaultSize(width: 920, height: 760)
             .windowResizability(.contentMinSize)
             .windowBackgroundDragBehavior(.enabled)
+            .commands {
+                CommandGroup(replacing: .appInfo) {
+                    Button("About \(model.appMetadata.displayName)") {
+                        aboutWindowPresenter.open()
+                    }
+                }
+            }
         }
     }
 }

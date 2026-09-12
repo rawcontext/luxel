@@ -176,15 +176,6 @@ extension LuxelSettingsView {
             )
         }
     }
-
-    func openEditorWindow() {
-        if let openEditorWindowOverride {
-            openEditorWindowOverride()
-        } else {
-            openWindow(id: LuxelEditorScene.id)
-            NSApplication.shared.activate(ignoringOtherApps: true)
-        }
-    }
 }
 
 struct ShortcutCommandMetadata {
