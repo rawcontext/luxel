@@ -18,12 +18,6 @@ Direct pushes, unmerged PRs, and contributor events cannot pass that gate.
 Every checkout uses the event's exact SHA. The marketing version comes from the
 validated tag; build numbers use UTC timestamps.
 
-After the merge tests pass, create and push an annotated version tag on that merge
-commit. A tag created before its merge tests finish fails verification; rerun the
-tag workflow after the tests pass. An existing release tag must not be moved to a
-newer commit. Tags pointing to older commits use the workflow stored at those
-commits, so restored historical tags do not retroactively use the new trigger.
-
 App Store review submission remains a separate manual workflow restricted to `ccheney` on `master`. No workflow subscribes to pull-request opening/update events, issue comments, or fork events.
 
 Unit tests run only after an owner merge into `master`. The TestFlight workflow
@@ -43,6 +37,60 @@ Signing, credential preparation, and publication remain outside Bazel's cacheabl
 build actions. Only unsigned app bundles and declared build/test outputs enter
 the action cache. The trusted `push` trigger grants normal cache access; merge
 verification must succeed before test or publishing jobs can use these caches.
+
+## macOS release runbook
+
+A release requires both a pushed Git tag and a published GitHub Release. Pushing
+the tag triggers TestFlight but does not create an entry on GitHub's Releases page.
+
+1. Merge the release preparation PR into `master` and wait for its merge tests to
+   pass. Record that exact merge SHA and verify its `Info.plist` marketing version.
+2. Set `RELEASE_VERSION` to that version and `RELEASE_SHA` to the verified merge
+   SHA, then create and push the annotated tag:
+
+   ```sh
+   : "${RELEASE_VERSION:?Set the release version}"
+   : "${RELEASE_SHA:?Set the tested merge SHA}"
+   RELEASE_TAG="v${RELEASE_VERSION}"
+   git tag -a "$RELEASE_TAG" "$RELEASE_SHA" -m "Luxel ${RELEASE_VERSION}"
+   git push origin "refs/tags/${RELEASE_TAG}"
+   git ls-remote --tags origin "refs/tags/${RELEASE_TAG}*"
+   ```
+
+   Confirm the remote tag's peeled `^{}` SHA equals `RELEASE_SHA`. An existing
+   release tag must not be moved to newer code.
+3. Wait for the tag's **Build and Upload to TestFlight** job to succeed, and
+   confirm its source SHA and uploaded version/build number. If the tag was
+   pushed before merge tests finished, rerun the tag workflow after they pass.
+4. Write concise release notes from the tagged version's checked-in What's New
+   text in `app-store/listing-metadata.md`. Set `RELEASE_NOTES` to that Markdown
+   file, then publish the matching GitHub Release:
+
+   ```sh
+   : "${RELEASE_NOTES:?Set the release notes file}"
+   gh release create "$RELEASE_TAG" --repo rawcontext/luxel --verify-tag \
+     --title "Luxel ${RELEASE_VERSION}" --notes-file "$RELEASE_NOTES" --latest
+   ```
+
+   `--verify-tag` prevents GitHub from silently creating a tag at the current
+   default-branch head. For a historical release older than the current release,
+   use `--latest=false` instead. If the GitHub Release already exists, verify it
+   rather than creating a duplicate.
+5. Read back the published release and confirm it appears on the
+   [Releases page](https://github.com/rawcontext/luxel/releases):
+
+   ```sh
+   gh release view "$RELEASE_TAG" --repo rawcontext/luxel \
+     --json url,tagName,name,isDraft,body
+   ```
+
+   The release must have the intended tag, title and notes, with `isDraft: false`.
+   Report its release URL when handing off; a tag URL alone is not completion.
+
+Historical tags use the workflow stored at their source commits. When restoring
+a missing tag for an already-uploaded build, verify the original successful
+upload and its source SHA, then create the GitHub Release without moving the tag
+or uploading another binary. App Store review submission remains a separate step.
 
 ## Branch access
 
