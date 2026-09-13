@@ -29,6 +29,7 @@ rb_test(
         "//.github/actions:sources",
         "//.github/workflows:sources",
     ],
+    main = "workflow_trust_test.rb",
     deps = ["@automation_gems"],
 )
 
