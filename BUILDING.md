@@ -104,8 +104,9 @@ launch the unsigned Bazel app or replace `/Applications/Luxel.app`.
 
 The App Store packaging script selects `--//apps/macos:app_store=true`, signs
 with the distribution profile, and produces the upload package outside Bazel's
-cache. Owner merges into `master` run checks and upload to TestFlight; App Review
-submission remains separately controlled. Pull requests do not run unit tests.
+cache. Owner merges into `master` run checks. Owner-pushed version tags upload the
+tested commit to TestFlight; App Review submission remains separately controlled.
+Pull requests and tag pushes do not run unit tests.
 
 ## Dependencies
 

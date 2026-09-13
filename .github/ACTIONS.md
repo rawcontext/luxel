@@ -5,23 +5,32 @@ All jobs use GitHub-hosted Apple Silicon runners (`macos-26`). No self-hosted ru
 Every job checks the repository identity, the original actor's immutable account ID, the user initiating a rerun, the event, and the ref. GitHub evaluates these job conditions before allocating a runner. Only `ccheney` can run these workflows:
 
 - Manual runs use `master`.
-- TestFlight uploads automatically after `ccheney` merges a pull request into `master`. It checks the merger, original actor, rerun actor, target repository, target branch, and merged state before allocating a runner. Tag pushes and manual dispatches cannot trigger TestFlight uploads.
+- Tests run after `ccheney` merges a pull request into `master`. TestFlight uploads only when `ccheney` pushes a `v<major>.<minor>[.<patch>]` tag whose version matches the tagged commit's `Info.plist`.
 - App Store Feedback retains its owner-associated daily schedule on `master`.
 - CLI packaging accepts manual runs from `master`; owner-created `cli-v<version>` tags publish CLI releases. The version must match `apps/cli/Cargo.toml`.
 
-TestFlight listens for owner pushes to `master`. A read-only verification job
+The TestFlight workflow listens for owner pushes to `master` and `v*` tags. A read-only verification job
 checks GitHub's pull-request API for a merged PR whose exact merge commit matches
 `github.sha`, whose target is this repository's `master`, and whose merger is
-`ccheney`. Only then may unit tests and TestFlight run. Direct pushes, unmerged PRs,
-and contributor events cannot pass that gate. Every checkout uses that exact SHA.
-The marketing version comes from `Info.plist`; build numbers use UTC timestamps.
+`ccheney`. Branch pushes run unit tests; tag pushes additionally require a successful
+`Unit tests after merge` job for that exact SHA before uploading to TestFlight.
+Direct pushes, unmerged PRs, and contributor events cannot pass that gate.
+Every checkout uses the event's exact SHA. The marketing version comes from the
+validated tag; build numbers use UTC timestamps.
+
+After the merge tests pass, create and push an annotated version tag on that merge
+commit. A tag created before its merge tests finish fails verification; rerun the
+tag workflow after the tests pass. An existing release tag must not be moved to a
+newer commit. Tags pointing to older commits use the workflow stored at those
+commits, so restored historical tags do not retroactively use the new trigger.
 
 App Store review submission remains a separate manual workflow restricted to `ccheney` on `master`. No workflow subscribes to pull-request opening/update events, issue comments, or fork events.
 
 Unit tests run only after an owner merge into `master`. The TestFlight workflow
-tests the exact merge commit (Swift, CLI, website, and automation scripts), then
-uploads only if that test job succeeds. Manual validation, scheduled feedback
-sync, and CLI packaging do not run unit tests.
+tests the exact merge commit (Swift, CLI, website, and automation scripts).
+Tag pushes, manual validation, scheduled feedback sync, and CLI packaging do not
+run unit tests. App Store review submission remains separate from the tag-driven
+TestFlight upload.
 
 Bazel builds and tests the Swift app, Rust CLI, TypeScript website, metadata,
 and automation checks. Repository archive caches and the content-addressed action

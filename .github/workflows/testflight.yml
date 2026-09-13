@@ -3,6 +3,7 @@ name: TestFlight
 on:
   push:
     branches: [master]
+    tags: ["v*"]
 
 concurrency:
   group: testflight
@@ -10,25 +11,28 @@ concurrency:
 
 jobs:
   verify_merge:
-    name: Verify owner merge
+    name: Verify owner merge and release tag
     if: >-
       github.repository == 'rawcontext/luxel' &&
       github.repository_id == '1269656539' &&
       github.actor_id == '302437' &&
       github.triggering_actor == 'ccheney' &&
-      github.event_name == 'push' && github.ref == 'refs/heads/master'
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: macos-26
     permissions:
       contents: read
       pull-requests: read
+      actions: read
     outputs:
       authorized: ${{ steps.merge.outputs.authorized }}
+      marketing_version: ${{ steps.merge.outputs.marketing_version }}
     steps:
-      - name: Check out pushed master commit
+      - name: Check out pushed commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
-      - name: Verify this commit was merged by the owner
+      - name: Verify owner merge and passing tests for release tags
         id: merge
         env:
           GH_TOKEN: ${{ github.token }}
@@ -108,7 +112,7 @@ jobs:
           if-no-files-found: ignore
 
   testflight:
-    needs: [verify_merge, unit_tests]
+    needs: verify_merge
     name: Build and Upload to TestFlight
     if: >-
       github.repository == 'rawcontext/luxel' &&
@@ -116,13 +120,14 @@ jobs:
       github.actor_id == '302437' &&
       github.triggering_actor == 'ccheney' &&
       github.event_name == 'push' &&
-      github.ref == 'refs/heads/master' &&
+      startsWith(github.ref, 'refs/tags/v') &&
       needs.verify_merge.outputs.authorized == 'true'
     runs-on: macos-26
     permissions:
       contents: read
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      MARKETING_VERSION: ${{ needs.verify_merge.outputs.marketing_version }}
       FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
       APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
       APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
@@ -134,7 +139,7 @@ jobs:
       MAC_APP_STORE_PROVISIONING_PROFILE_BASE64: ${{ secrets.MAC_APP_STORE_PROVISIONING_PROFILE_BASE64 }}
 
     steps:
-      - name: Check out owner-merged commit
+      - name: Check out tagged commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}

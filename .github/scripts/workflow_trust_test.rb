@@ -37,7 +37,7 @@ class WorkflowTrustTest < Minitest::Test
       end
       next unless name == "testflight.yml"
 
-      assert_equal({ "branches" => ["master"] }, triggers.fetch("push"))
+      assert_equal({ "branches" => ["master"], "tags" => ["v*"] }, triggers.fetch("push"))
     end
   end
 
@@ -45,8 +45,11 @@ class WorkflowTrustTest < Minitest::Test
     workflows.each do |name, workflow|
       expected_gate = "#{IDENTITY_GATE} && #{event_gate(name)}"
       workflow.fetch("jobs").each do |job_name, job|
-        gate = expected_gate
-        gate += " && needs.verify_merge.outputs.authorized == 'true'" if name == "testflight.yml" && job_name != "verify_merge"
+        gate = if name == "testflight.yml"
+                 "#{IDENTITY_GATE} && #{testflight_event_gate(job_name)}"
+               else
+                 expected_gate
+               end
         assert_equal gate, job.fetch("if").split.join(" "), "#{name}:#{job_name}"
         assert_equal "macos-26", job.fetch("runs-on")
       end
@@ -71,8 +74,8 @@ class WorkflowTrustTest < Minitest::Test
     end
   end
 
-  def test_testflight_only_accepts_an_owner_merge_into_master
-    assert testflight_allowed?(owner_merge_context)
+  def test_tests_only_accept_an_owner_merge_into_master
+    assert job_allowed?("unit_tests", owner_merge_context)
 
     [
       [%w[repository], "someone/luxel"],
@@ -89,15 +92,32 @@ class WorkflowTrustTest < Minitest::Test
       context = owner_merge_context
       parent = path[0...-1].reduce(context) { |object, key| object.fetch(key) }
       parent[path.last] = value
-      refute testflight_allowed?(context), "Unexpectedly accepted #{path.join('.')}=#{value.inspect}"
+      refute job_allowed?("unit_tests", context), "Unexpectedly accepted #{path.join('.')}=#{value.inspect}"
     end
   end
 
-  def test_unit_tests_run_only_after_merge_and_gate_testflight
+  def test_testflight_only_accepts_owner_release_tags
+    context = owner_merge_context.merge("ref" => "refs/tags/v1.4.0")
+    assert job_allowed?("testflight", context)
+    refute job_allowed?("unit_tests", context)
+    refute job_allowed?("testflight", owner_merge_context)
+
+    {
+      "repository" => "someone/luxel", "repository_id" => "999",
+      "actor_id" => "999", "triggering_actor" => "someone",
+      "event_name" => "workflow_dispatch", "ref" => "refs/tags/cli-v1.0.0",
+      "needs" => { "verify_merge" => { "outputs" => { "authorized" => "false" } } }
+    }.each do |key, value|
+      refute job_allowed?("testflight", context.merge(key => value)), key
+    end
+  end
+
+  def test_unit_tests_run_only_after_merge_and_tags_use_verified_test_results
     jobs = workflows.fetch("testflight.yml").fetch("jobs")
-    assert_equal ["verify_merge", "unit_tests"], jobs.fetch("testflight").fetch("needs")
+    assert_equal "verify_merge", jobs.fetch("testflight").fetch("needs")
     assert_equal "verify_merge", jobs.fetch("unit_tests").fetch("needs")
-    assert_equal jobs.fetch("testflight").fetch("if"), jobs.fetch("unit_tests").fetch("if")
+    assert_equal "read", jobs.fetch("verify_merge").fetch("permissions").fetch("actions")
+    assert_equal "${{ needs.verify_merge.outputs.marketing_version }}", jobs.fetch("testflight").fetch("env").fetch("MARKETING_VERSION")
 
     workflows.each do |name, workflow|
       workflow.fetch("jobs").each do |job_name, job|
@@ -146,9 +166,12 @@ class WorkflowTrustTest < Minitest::Test
 
   private
 
-  def testflight_allowed?(context)
-    expression = workflows.fetch("testflight.yml").fetch("jobs").fetch("testflight").fetch("if")
+  def job_allowed?(job_name, context)
+    expression = workflows.fetch("testflight.yml").fetch("jobs").fetch(job_name).fetch("if")
     expression.split.join(" ").split(" && ").all? do |comparison|
+      if comparison == "startsWith(github.ref, 'refs/tags/v')"
+        next context.fetch("ref").start_with?("refs/tags/v")
+      end
       match = comparison.match(/\A(\w+(?:\.\w+)+) (==|!=) ('[^']*'|true|false|\d+)\z/)
       raise "Unsupported comparison: #{comparison}" unless match
 
@@ -183,6 +206,19 @@ class WorkflowTrustTest < Minitest::Test
         "github.ref == 'refs/heads/master'"
     else
       "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'"
+    end
+  end
+
+  def testflight_event_gate(job_name)
+    case job_name
+    when "verify_merge"
+      "github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))"
+    when "unit_tests"
+      "github.event_name == 'push' && github.ref == 'refs/heads/master' && needs.verify_merge.outputs.authorized == 'true'"
+    when "testflight"
+      "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.verify_merge.outputs.authorized == 'true'"
+    else
+      raise "Unexpected TestFlight job: #{job_name}"
     end
   end
 end
