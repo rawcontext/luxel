@@ -1,17 +1,16 @@
 import Foundation
-import LuxelCore
 
-struct TranscriptMarkdownMetadata: Equatable {
+public struct TranscriptMarkdownMetadata: Equatable {
     let title: String
     let sourceFileName: String?
     let recordedAt: Date?
-    let duration: TimeInterval
+    let duration: TimeInterval?
 
-    init(
+    public init(
         title: String,
         sourceFileName: String?,
         recordedAt: Date?,
-        duration: TimeInterval
+        duration: TimeInterval?
     ) {
         self.title = title
         self.sourceFileName = sourceFileName
@@ -19,22 +18,28 @@ struct TranscriptMarkdownMetadata: Equatable {
         self.duration = duration
     }
 
-    init(source: SourceMedia) {
-        let fileName = source.fileURL.lastPathComponent
-        let title = source.fileURL.deletingPathExtension().lastPathComponent
-        let resourceValues = try? source.fileURL.resourceValues(forKeys: [.creationDateKey])
+    public init(source: SourceMedia) {
+        self.init(sourceURL: source.fileURL, duration: source.duration)
+    }
+
+    public init(sourceURL: URL, duration: TimeInterval? = nil) {
+        let fileName = sourceURL.lastPathComponent
+        let title = sourceURL.deletingPathExtension().lastPathComponent
+        let resourceValues = try? sourceURL.resourceValues(forKeys: [.creationDateKey])
 
         self.init(
             title: title.isEmpty ? fileName : title,
             sourceFileName: fileName,
             recordedAt: resourceValues?.creationDate,
-            duration: source.duration
+            duration: duration
         )
     }
 }
 
-struct TranscriptCopyTextBuilder {
-    func text(
+public struct TranscriptCopyTextBuilder {
+    public init() {}
+
+    public func text(
         transcript: TurnSegmentedTranscript,
         visibleWords: [TranscriptEditableWord],
         hasCuts: Bool,
@@ -93,7 +98,9 @@ struct TranscriptCopyTextBuilder {
             lines.append("recorded_at: \(yamlString(iso8601(recordedAt)))")
         }
         lines.append("exported_at: \(yamlString(iso8601(exportedAt)))")
-        lines.append("duration_seconds: \(decimal(metadata.duration))")
+        if let duration = metadata.duration {
+            lines.append("duration_seconds: \(decimal(duration))")
+        }
         lines.append(
             "language: \(yamlString(transcript.localeIdentifier.replacingOccurrences(of: "_", with: "-")))"
         )
