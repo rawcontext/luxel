@@ -24,11 +24,12 @@ extension LuxelCompositionRoot {
     static func localAudioTranscriptService(
         turnSegmentationModeOverride: TranscriptTurnSegmentationMode? = nil,
         speakerDiarizationModeOverride: TranscriptSpeakerDiarizationMode? = nil,
-        transcriptLocaleOverride: (@Sendable () -> Locale?)? = nil
+        transcriptLocaleOverride: (@Sendable () -> Locale?)? = nil,
+        onTranscriptUpdate: TimedTranscriptUpdateHandler? = nil
     ) -> LocalAudioTranscriptService {
         let settingsStore = settingsStore()
         return LocalAudioTranscriptService(
-            transcriber: AppleSpeechTranscriptExtractor(),
+            transcriber: AppleSpeechTranscriptExtractor(onUpdate: onTranscriptUpdate),
             turnSegmenter: AppleIntelligenceTurnSegmenter(),
             turnSegmentationMode: {
                 if let turnSegmentationModeOverride {
@@ -54,7 +55,17 @@ extension LuxelCompositionRoot {
             transcriptionProvenance: {
                 .appleSpeech
             },
-            cache: ApplicationSupportTranscriptCache(cacheDirectory: transcriptCacheDirectory),
+            cache: ApplicationSupportTranscriptCache(
+                cacheDirectory: transcriptCacheDirectory,
+                markdownWriter: AdjacentMarkdownTranscriptWriter(
+                    directoryBookmarks: {
+                        let settings = (try? settingsStore.load()) ?? defaultSettings
+                        return [settings.recordingsDirectoryBookmark].compactMap { $0 }
+                            + settings.commandLineFolderGrants.map(\.directory)
+                    },
+                    directoryAccessService: bookmarkedDirectoryAccessService()
+                )
+            ),
             audioTrackInspector: AVFoundationAudioTrackInspector(),
             speakerDiarizer: FluidAudioSpeakerDiarizer(
                 modelsDirectory: speakerDiarizationModelsDirectory),

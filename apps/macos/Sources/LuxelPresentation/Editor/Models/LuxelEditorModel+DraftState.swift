@@ -10,6 +10,7 @@ extension LuxelEditorModel {
         lastTranscriptCutID = nil
         editorUndoStack.push(currentEditorDraftState, coalescingToken: coalescingToken)
         exportProgress = nil
+        persistRecordingEditState()
     }
 
     var currentEditorDraftState: EditorDraftState {
@@ -88,6 +89,17 @@ extension LuxelEditorModel {
             rebuildEditedPreview()
         } else {
             seekPlaybackIntoTrimRangeIfNeeded()
+        }
+        persistRecordingEditState()
+    }
+
+    private func persistRecordingEditState() {
+        guard let source else { return }
+        let edit = RecordingEditState(trimStart: trimStart, trimEnd: trimEnd, transcriptEditPlan: transcriptEditPlan)
+        try? withSourceDirectoryAccess(for: source.fileURL) {
+            _ = try RecordingDocumentStore().update(nextTo: source.fileURL) {
+                $0.editState = edit
+            }
         }
     }
 

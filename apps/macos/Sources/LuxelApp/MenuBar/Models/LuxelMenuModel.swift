@@ -49,6 +49,12 @@ final class LuxelMenuModel {
     var automationPrompt: AutomationURLPrompt?
     var knownSpeakers: [KnownSpeakerProfile] = []
     var expandedKnownSpeakerID: UUID?
+    var recordingTitleModelAvailability = AppleIntelligenceRecordingTitleGenerator().availability
+    @ObservationIgnored var recordingTitleGenerator: any RecordingTitleGenerator =
+        AppleIntelligenceRecordingTitleGenerator()
+    @ObservationIgnored var recordingSourceApplications: [URL: String] = [:]
+    @ObservationIgnored var recordingTitleTasks: [UUID: Task<Void, Never>] = [:]
+    @ObservationIgnored var recordingTranscriptTasks: [UUID: Task<Void, Never>] = [:]
     let appMetadata: AppMetadata
 
     @ObservationIgnored let speakerDiarizationModelStore: any SpeakerDiarizationModelStore =

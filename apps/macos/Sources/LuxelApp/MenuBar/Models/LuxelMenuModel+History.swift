@@ -4,7 +4,11 @@ import LuxelCore
 @MainActor
 extension LuxelMenuModel {
     func refreshRecentRecordings() {
-        recentRecordings = recordingHistoryService.getPastRecordings()
+        withRecordingsDirectoryAccess { root in
+            recordingHistoryService.refreshOrganizedRecordings(in: root)
+            recentRecordings = recordingHistoryService.getPastRecordings()
+
+        }
 
         if recentRecordingFilter != .all,
             !recentRecordings.contains(where: recentRecordingFilter.includes) {
@@ -99,12 +103,13 @@ extension LuxelMenuModel {
     }
 
     func transcriptSourceContext(for mediaURL: URL) -> TranscriptSourceContext {
-        let standardizedURL = mediaURL.standardizedFileURL
+        let standardizedURL = RecordingDocumentStore.currentMediaURL(for: mediaURL).standardizedFileURL
+            .resolvingSymlinksInPath()
         let recordings = recentRecordings + recordingHistoryService.getPastRecordings()
         guard
             let recording = recordings.first(where: { recording in
-                recording.fileURL.standardizedFileURL == standardizedURL
-                    || recording.primaryMediaURL.standardizedFileURL == standardizedURL
+                recording.fileURL.standardizedFileURL.resolvingSymlinksInPath() == standardizedURL
+                    || recording.primaryMediaURL.standardizedFileURL.resolvingSymlinksInPath() == standardizedURL
             })
         else {
             return .unknown

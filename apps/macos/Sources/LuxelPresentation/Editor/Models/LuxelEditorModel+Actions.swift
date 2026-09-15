@@ -188,6 +188,11 @@ extension LuxelEditorModel {
         ) { [weak self] snapshot in
             await self?.handleSingleExportProgress(snapshot)
         }
+        try? RecordingDocumentStore().recordExport(
+            RecordingExport(
+                fileURL: exported.fileURL, format: exported.format,
+                fileSizeBytes: exported.fileSizeBytes, date: Date()),
+            sourceURL: request.inputFileURL)
         finishExport(
             with: exported,
             remembering: operation.memoryByFormat[exported.format]
@@ -205,6 +210,14 @@ extension LuxelEditorModel {
             defaultName: operation.defaultName
         ) { [weak self] snapshot in
             await self?.handleBatchExportProgress(snapshot)
+        }
+        if let sourceURL = operation.requests.first?.inputFileURL {
+            for media in exported {
+                try? RecordingDocumentStore().recordExport(
+                    RecordingExport(
+                        fileURL: media.fileURL, format: media.format,
+                        fileSizeBytes: media.fileSizeBytes, date: Date()), sourceURL: sourceURL)
+            }
         }
         finishBatchExport(with: exported, remembering: operation.memoryByFormat)
     }
@@ -306,6 +319,12 @@ extension LuxelEditorModel {
             let wasPlaying = playbackRequested
             try withSourceDirectoryAccess(for: source.fileURL) {
                 try fileSystem.moveFile(from: source.fileURL, to: destinationURL)
+                do {
+                    try onSourceFileRenamed?(source.fileURL, destinationURL)
+                } catch {
+                    try? fileSystem.moveFile(from: destinationURL, to: source.fileURL)
+                    throw error
+                }
             }
 
             let renamedSource = try source.replacingFileURL(destinationURL)
@@ -324,7 +343,6 @@ extension LuxelEditorModel {
             if wasPlaying {
                 startPlayback()
             }
-            try onSourceFileRenamed?(source.fileURL, destinationURL)
             status = .ready
         } catch {
             status = .failed(errorMessage(error))

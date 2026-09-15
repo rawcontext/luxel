@@ -223,7 +223,7 @@ extension LuxelEditorModel {
             let authorizationState = await load()
             await MainActor.run {
                 guard !Task.isCancelled,
-                    self?.source?.fileURL == sourceURL
+                    self?.transcriptSourceMatches(sourceURL) == true
                 else {
                     return
                 }
@@ -249,6 +249,8 @@ extension LuxelEditorModel {
         }
 
         let sourceURL = source.fileURL
+        onTranscriptExtractionStarted?(sourceURL)
+        isAutomaticTitlePending = RecordingDocumentStore.isTitlePending(for: sourceURL)
         let speakerCountHint = selectedSpeakerCountHint
         transcriptTask?.cancel()
         transcriptFailureMessage = nil
@@ -291,7 +293,7 @@ extension LuxelEditorModel {
         { [weak self] progress in
             Task { @MainActor in
                 guard let self,
-                    self.source?.fileURL == sourceURL,
+                    self.transcriptSourceMatches(sourceURL),
                     self.isTranscriptExtractionActive
                 else {
                     return
@@ -310,7 +312,7 @@ extension LuxelEditorModel {
         sourceURL: URL,
         speakerCountHint: TranscriptSpeakerCountHint
     ) {
-        guard !Task.isCancelled, source?.fileURL == sourceURL else { return }
+        guard !Task.isCancelled, transcriptSourceMatches(sourceURL) else { return }
         self.transcript = transcript
         transcriptFailureMessage = nil
         appliedSpeakerCountHint = speakerCountHint
@@ -318,10 +320,16 @@ extension LuxelEditorModel {
     }
 
     private func applyTranscriptFailure(_ error: any Error, sourceURL: URL) {
-        guard !Task.isCancelled, source?.fileURL == sourceURL else { return }
+        guard !Task.isCancelled, transcriptSourceMatches(sourceURL) else { return }
         transcript = nil
         transcriptFailureMessage = error.localizedDescription
         finishTranscriptExtraction()
+    }
+
+    private func transcriptSourceMatches(_ url: URL) -> Bool {
+        guard let source else { return false }
+        return RecordingDocumentStore.currentMediaURL(for: source.fileURL).resolvingSymlinksInPath()
+            == RecordingDocumentStore.currentMediaURL(for: url).resolvingSymlinksInPath()
     }
 
     private func finishTranscriptExtraction() {

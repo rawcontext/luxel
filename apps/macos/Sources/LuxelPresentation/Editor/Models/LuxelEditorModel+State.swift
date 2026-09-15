@@ -249,11 +249,11 @@ extension LuxelEditorModel {
     }
 
     var canExport: Bool {
-        hasSource && !isExporting && isEditedPreviewReady
+        hasSource && !isExporting && isEditedPreviewReady && !isAutomaticTitlePending
     }
 
     var canSaveOriginal: Bool {
-        hasSource && !isExporting
+        hasSource && !isExporting && !isAutomaticTitlePending
     }
 
     var canDiscard: Bool {
@@ -261,7 +261,7 @@ extension LuxelEditorModel {
     }
 
     var canGrabFrame: Bool {
-        hasVideoSource && !isExporting && !isGrabbingFrame && player.rate == 0
+        hasVideoSource && !isExporting && !isGrabbingFrame && player.rate == 0 && !isAutomaticTitlePending
     }
 
     var canCancelExport: Bool {

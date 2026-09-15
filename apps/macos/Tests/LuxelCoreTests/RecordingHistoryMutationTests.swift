@@ -73,7 +73,7 @@ extension RecordingHistoryTests {
                 PastRecording(
                     fileURL: fileURL,
                     name: "Renamed",
-                    date: stopDate,
+                    date: activeRecording.date,
                     options: activeRecording.options
                 )
             ])

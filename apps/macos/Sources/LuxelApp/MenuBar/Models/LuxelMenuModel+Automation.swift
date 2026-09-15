@@ -178,8 +178,9 @@ extension LuxelMenuModel {
             throw LuxelAutomationError.replayBufferUnavailable
         }
 
-        let recording = try await replayBufferClipService.clip(
+        let clip = try await replayBufferClipService.clip(
             lastSeconds: seconds.map(TimeInterval.init))
+        let recording = await prepareOrganizedRecording(clip, captureKind: "replay")
         refreshRecentRecordings()
 
         switch settings.replayClipDestination {

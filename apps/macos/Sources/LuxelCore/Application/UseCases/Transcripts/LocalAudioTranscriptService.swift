@@ -91,13 +91,16 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
         for request: AudioTranscriptRequest,
         progress: @escaping SpeechTranscriptionProgressHandler
     ) async throws -> TurnSegmentedTranscript? {
-        let effectiveRequest = try await effectiveRequest(for: request)
+        var effectiveRequest = try await effectiveRequest(for: request)
         if let cached = try cache.load(for: effectiveRequest) {
             return completedTranscript(cached, progress: progress)
         }
 
-        let audioTrackLayout = try await audioTrackInspector.audioTrackLayout(
-            in: effectiveRequest.audioURL)
+        let lease = try TranscriptionSourceLease(
+            sourceURL: RecordingDocumentStore.currentMediaURL(for: effectiveRequest.audioURL),
+            temporaryDirectory: FileManager.default.temporaryDirectory)
+        defer { lease.release() }
+        let audioTrackLayout = try await audioTrackInspector.audioTrackLayout(in: lease.url)
         let extractionPlans = effectiveRequest.sourceContext.extractionPlans(
             audioTrackLayout: audioTrackLayout)
         guard !extractionPlans.isEmpty else {
@@ -105,10 +108,12 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
         }
 
         let spans = try await extractSpans(
-            request: effectiveRequest,
+            request: effectiveRequest.replacingAudioURL(lease.url),
             extractionPlans: extractionPlans,
             progress: progress
         )
+        effectiveRequest = effectiveRequest.replacingAudioURL(
+            RecordingDocumentStore.currentMediaURL(for: effectiveRequest.audioURL))
         progress(SpeechTranscriptionProgress(fractionCompleted: 0.92))
         let stableSpans = try Self.stableSortedSpans(spans)
         guard !stableSpans.isEmpty else {
@@ -119,14 +124,9 @@ public struct LocalAudioTranscriptService: AudioTranscriptService {
             let speakerDiarizer,
             let speakerModelStore
         else {
-            let segmented = try await segmentedTranscript(
-                spans: stableSpans,
-                mode: effectiveRequest.turnSegmentationMode,
-                locale: effectiveRequest.locale
-            )
-            let transcript = try segmented.replacingTranscriptionProvenance(
-                effectiveRequest.transcriptionProvenance
-            )
+            let transcript = try await segmentedTranscript(
+                spans: stableSpans, mode: effectiveRequest.turnSegmentationMode, locale: effectiveRequest.locale
+            ).replacingTranscriptionProvenance(effectiveRequest.transcriptionProvenance)
             try cache.save(transcript, for: effectiveRequest)
             return completedTranscript(transcript, progress: progress)
         }

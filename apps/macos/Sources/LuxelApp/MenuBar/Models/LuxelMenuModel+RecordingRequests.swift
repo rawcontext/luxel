@@ -174,10 +174,10 @@ extension LuxelMenuModel {
     }
 
     func nextRecordingFileURL(now: Date, directory: URL? = nil) throws -> URL {
-        let recordingName = RecordingName.timestamped(now: now).value
-        return (directory ?? settings.recordingsDirectory)
-            .appending(path: recordingName)
-            .appendingPathExtension("mp4")
+        RecordingFileLayout.mediaURL(
+            in: directory ?? settings.recordingsDirectory, date: now,
+            title: LuxelLocalization.string("Screen recording"), fileExtension: "mp4"
+        )
     }
 
     func recordingOutputFinalizationPlan(
@@ -197,12 +197,12 @@ extension LuxelMenuModel {
         )
     }
 
-    private func finalDirectoryBookmark(for finalFileURL: URL) -> BookmarkedDirectory? {
+    func finalDirectoryBookmark(for finalFileURL: URL) -> BookmarkedDirectory? {
         let outputDirectory = finalFileURL.deletingLastPathComponent()
             .standardizedFileURL.resolvingSymlinksInPath()
         let recordingsDirectory = settings.recordingsDirectory
             .standardizedFileURL.resolvingSymlinksInPath()
-        if outputDirectory == recordingsDirectory {
+        if outputDirectory == recordingsDirectory || outputDirectory.path.hasPrefix(recordingsDirectory.path + "/") {
             return settings.recordingsDirectoryBookmark
         }
         return settings.commandLineFolderGrants.first { grant in
@@ -212,10 +212,10 @@ extension LuxelMenuModel {
     }
 
     func nextAudioRecordingFileURL(now: Date, format: AudioRecordingFormat) throws -> URL {
-        let recordingName = RecordingName.timestamped(now: now).value
-        return settings.recordingsDirectory
-            .appending(path: recordingName)
-            .appendingPathExtension(format.fileExtension)
+        RecordingFileLayout.mediaURL(
+            in: settings.recordingsDirectory, date: now,
+            title: LuxelLocalization.string("Audio recording"), fileExtension: format.fileExtension
+        )
     }
 }
 

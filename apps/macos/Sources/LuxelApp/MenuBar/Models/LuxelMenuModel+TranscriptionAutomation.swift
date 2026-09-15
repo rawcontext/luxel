@@ -28,6 +28,7 @@ extension LuxelMenuModel {
     ) async throws -> AutomationExecutionResult {
         try validateAutomationTranscriptionOptions(options)
         try await authorizeAutomationTranscription()
+        prepareTitleForTranscription(of: options.inputURL, localeIdentifier: options.localeIdentifier)
         let locale = Locale(identifier: options.localeIdentifier ?? Locale.current.identifier)
         let mode: TranscriptTurnSegmentationMode = options.semanticTurns ? .semantic : .raw
         let transcript = try await automationTranscript(

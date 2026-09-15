@@ -13,21 +13,28 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
     private let temporaryDirectory: URL
     private let speechAuthorizationStatus: @Sendable () async -> SFSpeechRecognizerAuthorizationStatus
     private let assetReadinessGate: AppleSpeechAssetReadinessGate
+    private let onUpdate: TimedTranscriptUpdateHandler?
 
-    public init(temporaryDirectory: URL = FileManager.default.temporaryDirectory) {
+    public init(
+        temporaryDirectory: URL = FileManager.default.temporaryDirectory,
+        onUpdate: TimedTranscriptUpdateHandler? = nil
+    ) {
         self.init(
             temporaryDirectory: temporaryDirectory,
-            speechAuthorizationStatus: Self.currentSpeechAuthorization
+            speechAuthorizationStatus: Self.currentSpeechAuthorization,
+            onUpdate: onUpdate
         )
     }
 
     public init(
         temporaryDirectory: URL = FileManager.default.temporaryDirectory,
-        speechAuthorizationStatus: @escaping @Sendable () async -> SFSpeechRecognizerAuthorizationStatus
+        speechAuthorizationStatus: @escaping @Sendable () async -> SFSpeechRecognizerAuthorizationStatus,
+        onUpdate: TimedTranscriptUpdateHandler? = nil
     ) {
         self.temporaryDirectory = temporaryDirectory
         self.speechAuthorizationStatus = speechAuthorizationStatus
         self.assetReadinessGate = AppleSpeechAssetReadinessGate()
+        self.onUpdate = onUpdate
     }
 
     public func transcribe(_ request: TimedSpeechTranscriptionRequest) async throws
@@ -51,17 +58,12 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
             try await ensureAssetsInstalled(for: [transcriber], locale: locale)
         }
 
-        let preparedAudioURL: URL
-        if let audioTrackIndex = request.audioTrackIndex {
-            preparedAudioURL = try await isolatedAudioURL(
-                from: request.audioURL,
-                audioTrackIndex: audioTrackIndex
-            )
-        } else {
-            preparedAudioURL = request.audioURL
-        }
+        let sourceURL = RecordingDocumentStore.currentMediaURL(for: request.audioURL)
+        let lease = try TranscriptionSourceLease(sourceURL: sourceURL, temporaryDirectory: temporaryDirectory)
+        defer { lease.release() }
+        let preparedAudioURL = try await preparedAudioURL(for: request, sourceURL: lease.url)
         defer {
-            if preparedAudioURL != request.audioURL {
+            if request.audioTrackIndex != nil {
                 try? FileManager.default.removeItem(at: preparedAudioURL)
             }
         }
@@ -71,7 +73,8 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
         let collectionTask = Task {
             try await Self.collectSpans(
                 from: transcriber,
-                source: request.source
+                source: request.source,
+                onUpdate: { spans, completed in self.onUpdate?(request, spans, completed) }
             )
         }
 
@@ -84,6 +87,13 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
             collectionTask.cancel()
             throw error
         }
+    }
+
+    private func preparedAudioURL(for request: TimedSpeechTranscriptionRequest, sourceURL: URL) async throws -> URL {
+        if let audioTrackIndex = request.audioTrackIndex {
+            return try await isolatedAudioURL(from: sourceURL, audioTrackIndex: audioTrackIndex)
+        }
+        return sourceURL
     }
 
     private func ensureSpeechAuthorization() async throws {
@@ -193,7 +203,8 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
 
     private static func collectSpans(
         from transcriber: Speech.SpeechTranscriber,
-        source: TranscriptSourceLabel?
+        source: TranscriptSourceLabel?,
+        onUpdate: @escaping @Sendable ([TimedTranscriptSpan], Bool) -> Void
     ) async throws -> [TimedTranscriptSpan] {
         var resultSpans: [TimedTranscriptSpan] = []
 
@@ -203,8 +214,10 @@ public struct AppleSpeechTranscriptExtractor: TimedSpeechTranscriber {
             }
 
             resultSpans.append(contentsOf: try spans(from: result, source: source))
+            onUpdate(resultSpans, false)
         }
 
+        onUpdate(resultSpans, true)
         return resultSpans
     }
 

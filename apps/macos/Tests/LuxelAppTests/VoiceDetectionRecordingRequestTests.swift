@@ -36,7 +36,10 @@ struct VoiceDetectionRecordingRequestTests {
                     : .microphone(deviceID: "mic-1")))
         #expect(request.format == .alac)
         #expect(!request.captureKeystrokes)
-        #expect(request.outputFileURL.deletingLastPathComponent().path == recordingsDirectory.path)
+        #expect(
+            request.outputFileURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+                .path
+                == recordingsDirectory.path)
         #expect(request.outputFileURL.pathExtension == "m4a")
     }
 

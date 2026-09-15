@@ -48,7 +48,8 @@ struct RecordingBundleSidecarStore: Sendable {
         let manifest = try BundleManifest(
             schemaVersion: bundle.manifest.schemaVersion,
             primaryFileName: bundle.manifest.primaryFileName,
-            sidecars: bundle.manifest.sidecars + [BundleSidecarManifest(kind: kind)]
+            sidecars: bundle.manifest.sidecars + [BundleSidecarManifest(kind: kind)],
+            organization: bundle.manifest.organization
         )
         return RecordingBundle(rootURL: bundle.rootURL, manifest: manifest)
     }

@@ -96,6 +96,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var speechDetectionDisclosureAccepted: Bool
     public var transcriptTurnSegmentationEnabled: Bool
     public var transcriptSpeakerDiarizationEnabled: Bool
+    public var automaticRecordingTitles: Bool?
     public var transcriptLanguageIdentifier: String?
     public var cameraDeviceID: String?
     public var cameraSeparateTrack: Bool

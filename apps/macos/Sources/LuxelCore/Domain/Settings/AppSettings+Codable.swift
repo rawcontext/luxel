@@ -24,6 +24,7 @@ extension AppSettings {
             recordingsDirectory: recordingsDirectory,
             recordingsDirectoryBookmark: recordingsDirectoryBookmark
         )
+        settings.automaticRecordingTitles = try container.decodeIfPresent(Bool.self, forKey: .automaticRecordingTitles)
         settings.apply(cursor)
         settings.apply(recording, audioInput: audioInput)
         settings.apply(

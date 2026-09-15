@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecked Sendable {
     public static let schemaVersion = 4
@@ -7,13 +8,16 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
     private let fileManager: FileManager
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
+    private let markdownWriter: AdjacentMarkdownTranscriptWriter?
 
     public init(
         cacheDirectory: URL,
-        fileManager: FileManager = .default
+        fileManager: FileManager = .default,
+        markdownWriter: AdjacentMarkdownTranscriptWriter? = nil
     ) {
         self.cacheDirectory = cacheDirectory
         self.fileManager = fileManager
+        self.markdownWriter = markdownWriter
         encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         decoder = JSONDecoder()
@@ -31,13 +35,15 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
             return nil
         }
 
-        return try TurnSegmentedTranscript(
+        let transcript = try TurnSegmentedTranscript(
             spans: document.transcript.spans,
             turns: document.transcript.turns,
             localeIdentifier: document.transcript.localeIdentifier,
             speakers: document.transcript.speakers,
             transcriptionProvenance: document.transcript.transcriptionProvenance
         )
+        saveMarkdown(transcript, for: request, overwrite: false)
+        return transcript
     }
 
     public func save(_ transcript: TurnSegmentedTranscript, for request: AudioTranscriptRequest)
@@ -54,6 +60,22 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
         )
         let data = try encoder.encode(document)
         try data.write(to: fileURL, options: .atomic)
+        saveMarkdown(transcript, for: request, overwrite: true)
+    }
+
+    private func saveMarkdown(
+        _ transcript: TurnSegmentedTranscript,
+        for request: AudioTranscriptRequest,
+        overwrite: Bool
+    ) {
+        do {
+            try markdownWriter?.save(
+                transcript, sourceURL: RecordingDocumentStore.currentMediaURL(for: request.audioURL),
+                overwrite: overwrite)
+        } catch {
+            Logger(subsystem: "com.rawcontext.luxel", category: "transcripts")
+                .warning("Could not save Markdown transcript: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func cacheFileURL(for request: AudioTranscriptRequest) throws -> URL {
@@ -61,12 +83,14 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
     }
 
     private func cacheKey(for request: AudioTranscriptRequest) throws -> String {
-        let attributes = try fileManager.attributesOfItem(atPath: request.audioURL.path)
+        let audioURL = RecordingDocumentStore.currentMediaURL(for: request.audioURL)
+        let attributes = try fileManager.attributesOfItem(atPath: audioURL.path)
         let size = attributes[.size] as? NSNumber
         let modificationDate = attributes[.modificationDate] as? Date
         let rawKey = [
             "v\(Self.schemaVersion)",
-            request.audioURL.standardizedFileURL.path,
+            RecordingDocumentStore.identifier(for: audioURL)?.uuidString
+                ?? audioURL.standardizedFileURL.path,
             "\(size?.int64Value ?? 0)",
             "\(modificationDate?.timeIntervalSince1970 ?? 0)",
             request.locale.identifier,

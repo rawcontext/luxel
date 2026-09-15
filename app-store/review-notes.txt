@@ -1,16 +1,16 @@
-VERSION 1.4.0
+VERSION 1.5.0
 
 1. ACCESS
 Luxel is a native Mac menu-bar recorder for macOS 26.0+. It has no Dock icon or initial window. Launch it from Applications and use its menu-bar icon. No account, credentials, subscription, demo data, or sample file is required.
 
-2. VERSION 1.4.0 CHANGES
-Show or hide timestamps in Markdown transcripts directly from the editor. Also includes bug fixes and performance improvements.
+2. VERSION 1.5.0 CHANGES
+Automatic titles for new recordings. New recordings are organized into folders with their transcripts and exports.
 
 3. REVIEW STEPS
-1) Start a screen or audio-only recording from the menu bar.
-2) Stop the recording after a short interval.
-3) Confirm the saved recording opens and plays normally.
-4) Transcribe the recording, then use the timestamp toggle beside Copy as Markdown in the editor to show or hide timestamps in the copied transcript. Timestamps are hidden by default.
+1) Start a screen or audio-only recording from the menu bar, then stop it.
+2) Confirm the recording opens and plays normally. New recordings are saved in a month folder with a separate folder for each recording. Existing files stay in place.
+3) Automatic recording titles are configured in Settings > Transcripts. When enabled and available, a title is generated from the first 200 transcript words, or when a shorter transcript finishes. The filename updates automatically. Otherwise, recordings keep a capture-type name and timestamp.
+4) Transcribe the recording and confirm a matching Markdown file is saved beside it. Exports using the default destination are saved in that recording's Exports folder. Explicitly chosen export destinations are respected.
 
 4. PRIVACY AND PERMISSIONS
-This update adds no account, network service, data collection, or new permission. Recording, transcription, editing, and export remain local to the Mac.
+This update adds no account, network service, data collection, or new permission. Recording, transcription, title generation, editing, and export remain local to the Mac.
