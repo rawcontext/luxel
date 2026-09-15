@@ -266,21 +266,27 @@ public func runTestProcess(
     let process = Process()
     process.executableURL = URL(fileURLWithPath: executable)
     process.arguments = arguments
-    let outputPipe = Pipe()
-    let errorPipe = Pipe()
-    process.standardOutput = outputPipe
-    process.standardError = errorPipe
+    let directory = FileManager.default.temporaryDirectory.appending(path: "LuxelTestProcess-\(UUID().uuidString)")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let outputURL = directory.appending(path: "stdout")
+    let errorURL = directory.appending(path: "stderr")
+    try Data().write(to: outputURL)
+    try Data().write(to: errorURL)
+    let output = try FileHandle(forWritingTo: outputURL)
+    let error = try FileHandle(forWritingTo: errorURL)
+    defer {
+        try? output.close()
+        try? error.close()
+    }
+    // Files let either stream exceed a pipe buffer while the parent waits for exit.
+    process.standardOutput = output
+    process.standardError = error
     try process.run()
     process.waitUntilExit()
     return TestProcessResult(
-        output: String(
-            bytes: outputPipe.fileHandleForReading.readDataToEndOfFile(),
-            encoding: .utf8
-        ) ?? "",
-        error: String(
-            bytes: errorPipe.fileHandleForReading.readDataToEndOfFile(),
-            encoding: .utf8
-        ) ?? "",
+        output: String(bytes: try Data(contentsOf: outputURL), encoding: .utf8) ?? "",
+        error: String(bytes: try Data(contentsOf: errorURL), encoding: .utf8) ?? "",
         terminationStatus: process.terminationStatus
     )
 }
