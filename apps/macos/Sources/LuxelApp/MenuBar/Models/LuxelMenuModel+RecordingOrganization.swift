@@ -123,6 +123,7 @@ extension LuxelMenuModel {
             guard automaticRecordingTitlesEnabled else { return }
             try await withRecordingFolderAccess(recording) { [self] in
                 let updated = try RecordingDocumentStore().applyingAutomaticTitle(title, to: recording)
+                guard updated.primaryMediaURL != recording.primaryMediaURL else { return }
                 recordingHistoryService.replaceRecording(updated, previousURL: recording.fileURL)
                 configuredEditorModel?.applyAutomaticRecordingRename(
                     from: recording.primaryMediaURL, to: updated.primaryMediaURL)
