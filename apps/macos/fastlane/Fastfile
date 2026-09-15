@@ -98,11 +98,13 @@ platform :mac do
 
   desc "Upload localized metadata to an editable App Store Connect version"
   lane :sync_app_store_metadata do |options|
+    app_version = app_store_version(options)
+    metadata_path = app_store_metadata_path(options)
     upload_to_app_store(
       api_key: app_store_connect_api_key_from_env,
       app_identifier: APP_IDENTIFIER,
-      app_version: app_store_version(options),
-      metadata_path: app_store_metadata_path(options),
+      app_version: app_version,
+      metadata_path: metadata_path,
       platform: "osx",
       skip_binary_upload: true,
       skip_screenshots: true,
@@ -114,6 +116,14 @@ platform :mac do
       force: true,
       run_precheck_before_submit: false
     )
+
+    app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+    version = app.get_app_store_versions(
+      filter: { versionString: app_version, platform: Spaceship::ConnectAPI::Platform::MAC_OS },
+      includes: "appStoreVersionLocalizations"
+    ).find { |candidate| candidate.version_string == app_version }
+    UI.user_error!("Could not read back App Store version #{app_version}") unless version
+    verify_app_store_release_notes!(version, metadata_path)
   end
 
   desc "Upload localized screenshots to an editable App Store Connect version"
@@ -137,6 +147,21 @@ platform :mac do
       run_precheck_before_submit: false
     )
   end
+end
+
+def verify_app_store_release_notes!(version, metadata_path)
+  expected = Dir.glob(File.join(metadata_path, "*", "release_notes.txt")).to_h do |path|
+    [File.basename(File.dirname(path)), File.read(path).strip]
+  end
+  UI.user_error!("Localized release notes must not be empty") if expected.empty? || expected.values.any?(&:empty?)
+  actual = version.get_app_store_version_localizations.to_h { |localization| [localization.locale, localization.whats_new.to_s.strip] }
+  unless actual.keys.sort == expected.keys.sort
+    UI.user_error!("App Store locale mismatch: expected #{expected.keys.sort.join(', ')}, found #{actual.keys.sort.join(', ')}")
+  end
+  expected.each do |locale, notes|
+    UI.user_error!("App Store release notes differ for #{locale}") unless actual.fetch(locale) == notes
+  end
+  UI.success("Verified What's New in #{actual.length} App Store locales: #{actual.keys.sort.join(', ')}")
 end
 
 def ensure_time_sensitive_notifications_capability!

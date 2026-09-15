@@ -1,12 +1,15 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "tmpdir"
 
 class ReleaseLaneHarness
   module UI
     def self.user_error!(message)
       raise message
     end
+
+    def self.success(_message) = nil
   end
 
   module Spaceship
@@ -82,6 +85,44 @@ class ReleaseLaneHarness
 
   def submit
     instance_exec({ app_version: "1.4.0", build_number: "202609120001" }, &self.class.lanes.fetch(:submit_app_store_release))
+  end
+end
+
+class AppStoreReleaseNotesTest < Minitest::Test
+  Localization = Struct.new(:locale, :whats_new)
+  Version = Struct.new(:localizations) do
+    def get_app_store_version_localizations = localizations
+  end
+
+  def setup
+    @directory = Dir.mktmpdir("luxel-release-notes")
+    @notes = { "en-US" => "Automatic recording titles.", "de-DE" => "Automatische Aufnahmetitel." }
+    @notes.each do |locale, notes|
+      FileUtils.mkdir_p(File.join(@directory, locale))
+      File.write(File.join(@directory, locale, "release_notes.txt"), notes)
+    end
+    @version = Version.new(@notes.map { |locale, notes| Localization.new(locale, notes) })
+    @lane = ReleaseLaneHarness.new
+  end
+
+  def teardown
+    FileUtils.remove_entry(@directory)
+  end
+
+  def test_every_localized_release_note_is_verified
+    @lane.verify_app_store_release_notes!(@version, @directory)
+  end
+
+  def test_an_unexpected_storefront_cannot_keep_stale_notes
+    @version.localizations << Localization.new("fr-FR", "Previous release")
+    error = assert_raises(RuntimeError) { @lane.verify_app_store_release_notes!(@version, @directory) }
+    assert_match(/locale mismatch/, error.message)
+  end
+
+  def test_a_missing_or_stale_translation_fails_verification
+    @version.localizations[1].whats_new = "Previous release"
+    error = assert_raises(RuntimeError) { @lane.verify_app_store_release_notes!(@version, @directory) }
+    assert_match(/differ for de-DE/, error.message)
   end
 end
 
