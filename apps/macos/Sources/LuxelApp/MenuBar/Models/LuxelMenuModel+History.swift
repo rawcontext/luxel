@@ -7,11 +7,7 @@ extension LuxelMenuModel {
         withRecordingsDirectoryAccess { root in
             recordingHistoryService.refreshOrganizedRecordings(in: root)
             recentRecordings = recordingHistoryService.getPastRecordings()
-            recordingTranscriptSearchText = Dictionary(
-                recentRecordings.map { recording in
-                    let url = recording.primaryMediaURL.deletingPathExtension().appendingPathExtension("md")
-                    return (recording.fileURL, (try? String(contentsOf: url, encoding: .utf8)) ?? "")
-                }, uniquingKeysWith: { first, _ in first })
+
         }
 
         if recentRecordingFilter != .all,
@@ -21,15 +17,7 @@ extension LuxelMenuModel {
     }
 
     var filteredRecentRecordings: [PastRecording] {
-        Array(
-            recentRecordings.filter {
-                recentRecordingFilter.includes($0)
-                    && recordingDateFilter.includes($0.date)
-                    && (!recordingFavoritesOnly || $0.bundleManifest?.organization?.isFavorite == true)
-                    && RecordingSearch.matches(
-                        $0, query: recordingSearchQuery,
-                        transcript: recordingTranscriptSearchText[$0.fileURL] ?? "")
-            })
+        Array(recentRecordings.filter(recentRecordingFilter.includes).prefix(5))
     }
 
     var canFilterRecentRecordings: Bool {
@@ -103,18 +91,6 @@ extension LuxelMenuModel {
         withRecordingsDirectoryAccess { _ in
             fileWorkflowService.revealInFinder(recording.fileURL)
         }
-    }
-
-    func toggleRecordingFavorite(_ recording: PastRecording) {
-        withRecordingsDirectoryAccess { _ in
-            do {
-                try recordingHistoryService.setFavorite(
-                    recording.bundleManifest?.organization?.isFavorite != true, for: recording)
-            } catch {
-                recordingActionErrorMessage = errorMessage(error)
-            }
-        }
-        refreshRecentRecordings()
     }
 
     func removeKeystrokeData(from recording: PastRecording) {

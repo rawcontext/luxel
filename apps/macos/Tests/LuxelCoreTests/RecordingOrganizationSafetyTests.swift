@@ -84,17 +84,4 @@ struct RecordingOrganizationSafetyTests {
         #expect(document.manifest.organization?.pathsLocked == true)
         #expect(document.manifest.organization?.isFavorite == true)
     }
-
-    @Test("search matches titles, dates, source apps and transcript words")
-    func searchFields() throws {
-        let fixture = try OrganizedRecordingFixture()
-        defer { fixture.remove() }
-        let recording = try fixture.organized()
-        for query in ["Screen", "Safari", "checkout", "2026"] {
-            #expect(RecordingSearch.matches(recording, query: query, transcript: "Review checkout validation"))
-        }
-        #expect(!RecordingSearch.matches(recording, query: "unrelated", transcript: "Review checkout validation"))
-        #expect(RecordingDateFilter.today.includes(recording.date, now: fixture.date))
-        #expect(!RecordingDateFilter.week.includes(recording.date, now: fixture.date.addingTimeInterval(9 * 86_400)))
-    }
 }

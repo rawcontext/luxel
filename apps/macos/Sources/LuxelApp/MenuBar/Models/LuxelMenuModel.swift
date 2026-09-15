@@ -27,10 +27,6 @@ final class LuxelMenuModel {
     var notchDisplays: [NotchDisplayDescriptor] = []
     var recentRecordings: [PastRecording] = []
     var recentRecordingFilter: RecordingHistoryFilter = .all
-    var recordingSearchQuery = ""
-    var recordingDateFilter: RecordingDateFilter = .all
-    var recordingFavoritesOnly = false
-    @ObservationIgnored var recordingTranscriptSearchText: [URL: String] = [:]
     var captureTargets: [CaptureTargetOption] = []
     var selectedCaptureTargetID: String?
     var captureTargetStatusMessage: String?
@@ -54,7 +50,6 @@ final class LuxelMenuModel {
     var knownSpeakers: [KnownSpeakerProfile] = []
     var expandedKnownSpeakerID: UUID?
     var recordingTitleModelAvailability = AppleIntelligenceRecordingTitleGenerator().availability
-    var preparingRecordingIDs: Set<UUID> = []
     @ObservationIgnored var recordingTitleGenerator: any RecordingTitleGenerator =
         AppleIntelligenceRecordingTitleGenerator()
     @ObservationIgnored var recordingSourceApplications: [URL: String] = [:]

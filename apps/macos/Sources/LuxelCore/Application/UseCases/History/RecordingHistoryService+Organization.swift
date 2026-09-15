@@ -47,17 +47,4 @@ extension RecordingHistoryService {
         store.recordings = (updated + discovered.filter { !existingIDs.contains($0.bundleManifest!.organization!.id) })
             .sorted { $0.date > $1.date }
     }
-
-    public func setFavorite(_ isFavorite: Bool, for recording: PastRecording) throws {
-        organizationLock.lock()
-        defer { organizationLock.unlock() }
-        guard
-            let manifest = try RecordingDocumentStore().update(
-                nextTo: recording.primaryMediaURL,
-                {
-                    $0.isFavorite = isFavorite
-                })
-        else { return }
-        replaceRecording(recording.replacingBundleManifest(manifest), previousURL: recording.fileURL)
-    }
 }

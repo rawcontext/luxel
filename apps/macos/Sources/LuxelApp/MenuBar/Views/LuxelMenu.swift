@@ -147,33 +147,8 @@ extension LuxelMenu {
 
     private var libraryIsland: some View {
         VStack(spacing: 8) {
-            TextField("Search recordings", text: $model.recordingSearchQuery)
-                .textFieldStyle(.roundedBorder)
-                .padding(.horizontal, 5)
-            HStack {
-                Picker("All dates", selection: $model.recordingDateFilter) {
-                    ForEach(RecordingDateFilter.allCases, id: \.self) { filter in
-                        Text(LocalizedStringKey(filter.rawValue)).tag(filter)
-                    }
-                }
-                .labelsHidden()
-                .pickerStyle(.menu)
-                Spacer()
-                Toggle("Favorites", isOn: $model.recordingFavoritesOnly)
-                    .toggleStyle(.button)
-            }
-            .font(.caption)
-            .padding(.horizontal, 5)
-
-            if !model.filteredRecentRecordings.isEmpty {
-                ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(model.filteredRecentRecordings, id: \.fileURL) { recording in
-                            latestRecordingRow(recording)
-                        }
-                    }
-                }
-                .frame(height: min(CGFloat(model.filteredRecentRecordings.count) * 64, 230))
+            if let recording = model.recentRecordings.first {
+                latestRecordingRow(recording)
 
                 Rectangle()
                     .fill(.white.opacity(0.08))
@@ -181,12 +156,6 @@ extension LuxelMenu {
                     .padding(.horizontal, 8)
             }
 
-            if model.filteredRecentRecordings.isEmpty && !model.recentRecordings.isEmpty {
-                Text("No matching recordings")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(8)
-            }
             footerControls
                 .padding(.horizontal, 3)
                 .padding(.bottom, 2)
@@ -210,7 +179,6 @@ extension LuxelMenu {
                             .lineLimit(1)
                             .minimumScaleFactor(0.78)
 
-                        recordingPreparationLabel(recording)
                         RecentRecordingMetadataLabel(recording: recording)
                             .font(.system(size: 10.5, weight: .medium, design: .rounded))
                             .foregroundStyle(.white.opacity(0.5))
@@ -228,7 +196,6 @@ extension LuxelMenu {
             .frame(maxWidth: .infinity, alignment: .leading)
             .help(recentRecordingOpenTitle(for: recording))
 
-            recordingFavoriteButton(recording)
             Button {
                 revealRecentRecording(recording)
             } label: {
@@ -248,31 +215,6 @@ extension LuxelMenu {
                     model.removeKeystrokeData(from: recording)
                 }
             }
-        }
-    }
-
-    @ViewBuilder
-    private func recordingFavoriteButton(_ recording: PastRecording) -> some View {
-        if let organization = recording.bundleManifest?.organization {
-            Button {
-                model.toggleRecordingFavorite(recording)
-            } label: {
-                Image(systemName: organization.isFavorite ? "star.fill" : "star")
-                    .foregroundStyle(organization.isFavorite ? .yellow : .secondary)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(
-                LuxelLocalization.string(organization.isFavorite ? "Remove from favorites" : "Add to favorites"))
-        }
-    }
-
-    @ViewBuilder
-    private func recordingPreparationLabel(_ recording: PastRecording) -> some View {
-        if let id = recording.bundleManifest?.organization?.id,
-            model.preparingRecordingIDs.contains(id) {
-            Text("Preparing recording…")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
         }
     }
 

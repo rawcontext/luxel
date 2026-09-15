@@ -54,7 +54,6 @@ extension LuxelMenuModel {
         else { return }
         let id = organization.id
         let (prefixes, continuation) = AsyncStream<String>.makeStream(bufferingPolicy: .bufferingNewest(1))
-        preparingRecordingIDs.insert(id)
         RecordingDocumentStore.setTitlePending(true, id: id)
         recordingTitleTasks[id] = Task { [weak self] in
             for await prefix in prefixes {
@@ -136,7 +135,6 @@ extension LuxelMenuModel {
 
     private func finishRecordingTitle(_ recording: PastRecording) {
         guard let id = recording.bundleManifest?.organization?.id else { return }
-        preparingRecordingIDs.remove(id)
         RecordingDocumentStore.setTitlePending(false, id: id)
         let url = RecordingDocumentStore.currentMediaURL(for: recording.primaryMediaURL)
         configuredEditorModel?.refreshAutomaticTitleState(for: url)
@@ -157,7 +155,6 @@ extension LuxelMenuModel {
         guard let id = RecordingDocumentStore.identifier(for: url) else { return }
         recordingTitleTasks[id]?.cancel()
         recordingTitleTasks[id] = nil
-        preparingRecordingIDs.remove(id)
         RecordingDocumentStore.setTitlePending(false, id: id)
         configuredEditorModel?.refreshAutomaticTitleState(for: url)
     }
