@@ -47,7 +47,7 @@ extension LuxelMenuModel {
         } catch { return original }
     }
 
-    private func startRecordingTitleGeneration(_ recording: PastRecording) {
+    private func startRecordingTitleGeneration(_ recording: PastRecording, localeIdentifier: String? = nil) {
         guard let organization = recording.bundleManifest?.organization,
             organization.titleOrigin == .context, !organization.pathsLocked,
             recordingTitleTasks[organization.id] == nil
@@ -70,7 +70,8 @@ extension LuxelMenuModel {
             }
             do {
                 try await withRecordingFolderAccess(recording) { [self] in
-                    await streamRecordingTranscript(recording, continuation: continuation)
+                    await streamRecordingTranscript(
+                        recording, localeIdentifier: localeIdentifier, continuation: continuation)
                 }
             } catch { continuation.finish() }
             recordingTranscriptTasks[id] = nil
@@ -78,13 +79,14 @@ extension LuxelMenuModel {
     }
 
     private func streamRecordingTranscript(
-        _ recording: PastRecording, continuation: AsyncStream<String>.Continuation
+        _ recording: PastRecording, localeIdentifier: String?, continuation: AsyncStream<String>.Continuation
     ) async {
         defer { continuation.finish() }
         guard await AppleSpeechAuthorizationService().currentAuthorizationState() == .authorized else { return }
         let url = RecordingDocumentStore.currentMediaURL(for: recording.primaryMediaURL)
         let context = TranscriptSourceContext(recordingAudioMode: recording.options.audio)
-        let locale = Locale(identifier: settings.transcriptLanguageIdentifier ?? Locale.current.identifier)
+        let locale = Locale(
+            identifier: localeIdentifier ?? settings.transcriptLanguageIdentifier ?? Locale.current.identifier)
         do {
             if let source = try? await AVFoundationMediaMetadataReader().readSourceMedia(at: url) {
                 _ = try? RecordingDocumentStore().update(nextTo: url) { $0.duration = source.duration }
@@ -142,13 +144,13 @@ extension LuxelMenuModel {
         refreshRecentRecordings()
     }
 
-    func prepareTitleForTranscription(of url: URL) {
+    func prepareTitleForTranscription(of url: URL, localeIdentifier: String? = nil) {
         refreshRecordingTitleModel()
         guard automaticRecordingTitlesEnabled, recordingTitleModelAvailability == .available,
             let id = RecordingDocumentStore.identifier(for: url),
             let recording = recordingHistoryService.recording(withID: id)
         else { return }
-        startRecordingTitleGeneration(recording)
+        startRecordingTitleGeneration(recording, localeIdentifier: localeIdentifier)
     }
 
     func cancelAutomaticRecordingTitle(for url: URL) {
