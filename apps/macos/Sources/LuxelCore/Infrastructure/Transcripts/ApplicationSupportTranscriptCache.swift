@@ -69,7 +69,9 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
         overwrite: Bool
     ) {
         do {
-            try markdownWriter?.save(transcript, sourceURL: request.audioURL, overwrite: overwrite)
+            try markdownWriter?.save(
+                transcript, sourceURL: RecordingDocumentStore.currentMediaURL(for: request.audioURL),
+                overwrite: overwrite)
         } catch {
             Logger(subsystem: "com.rawcontext.luxel", category: "transcripts")
                 .warning("Could not save Markdown transcript: \(error.localizedDescription, privacy: .public)")
@@ -81,12 +83,14 @@ public final class ApplicationSupportTranscriptCache: TranscriptCache, @unchecke
     }
 
     private func cacheKey(for request: AudioTranscriptRequest) throws -> String {
-        let attributes = try fileManager.attributesOfItem(atPath: request.audioURL.path)
+        let audioURL = RecordingDocumentStore.currentMediaURL(for: request.audioURL)
+        let attributes = try fileManager.attributesOfItem(atPath: audioURL.path)
         let size = attributes[.size] as? NSNumber
         let modificationDate = attributes[.modificationDate] as? Date
         let rawKey = [
             "v\(Self.schemaVersion)",
-            request.audioURL.standardizedFileURL.path,
+            RecordingDocumentStore.identifier(for: audioURL)?.uuidString
+                ?? audioURL.standardizedFileURL.path,
             "\(size?.int64Value ?? 0)",
             "\(modificationDate?.timeIntervalSince1970 ?? 0)",
             request.locale.identifier,

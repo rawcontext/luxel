@@ -54,7 +54,8 @@ public struct PastRecording: Codable, Equatable, Sendable {
             return nil
         }
 
-        return RecordingBundle(rootURL: fileURL, manifest: bundleManifest)
+        let rootURL = bundleManifest.organization == nil ? fileURL : fileURL.deletingLastPathComponent()
+        return RecordingBundle(rootURL: rootURL, manifest: bundleManifest)
     }
 
     public var primaryMediaURL: URL {

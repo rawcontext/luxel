@@ -44,6 +44,10 @@ extension LuxelMenuModel {
         }
     }
     func beginRecording(_ request: RecordingRequest) async throws -> ActiveRecording {
+        recordingSourceApplications[request.outputFileURL] =
+            captureTargets.first {
+                $0.target == request.target
+            }?.owningApplicationBundleIdentifier
         if request.captureKeystrokes {
             await keystrokeLivePreviewPanelController.prepareForCapture(
                 isEnabled: settings.keystrokeLivePreviewEnabled
@@ -189,11 +193,12 @@ extension LuxelMenuModel {
     }
 
     func finishAudioRecordingStop() async throws -> RecordingStopAction {
-        let recording = try await audioRecordingLifecycleService.stopRecording()
+        var recording = try await audioRecordingLifecycleService.stopRecording()
         await finishKeystrokeCapture(for: recording)
         refreshRecentRecordings()
         recordingState = .idle
         syncCameraPreviewHoverControls()
+        recording = await prepareOrganizedRecording(recording, captureKind: "audio")
         luxelRecordingLogger.info(
             "Audio recording stop completed output=\(recording.fileURL.lastPathComponent, privacy: .private)"
         )
@@ -205,10 +210,13 @@ extension LuxelMenuModel {
     ) async throws -> PastRecording {
         luxelRecordingLogger.info("Stop recording closing camera preview")
         await closeCameraPreviewForRecordingStop()
-        let recording = try await recordingLifecycleService.stopRecording()
+        var recording = try await recordingLifecycleService.stopRecording()
         await finishKeystrokeCapture(for: recording)
         await recordingFramePanelController.close()
         closeCameraPreviewForFinishedRecording()
+        recordingState = .idle
+        syncCameraPreviewHoverControls()
+        recording = await prepareOrganizedRecording(recording, captureKind: "screen")
         refreshRecentRecordings()
         luxelRecordingLogger.info(
             """
@@ -237,7 +245,6 @@ extension LuxelMenuModel {
     ) async -> RecordingStopAction? {
         switch captureKind {
         case .standard:
-            recordingState = .idle
             syncCameraPreviewHoverControls()
             return .openEditor(recording.primaryMediaURL)
         case .quick(let presetID):
@@ -354,9 +361,11 @@ extension LuxelMenuModel {
         closeCameraPreviewForFinishedRecording()
         refreshRecentRecordings()
 
+        recordingState = .idle
+        let recording = await prepareOrganizedRecording(recording, captureKind: "screen")
+
         switch recording.options.captureKind {
         case .standard:
-            recordingState = .idle
             syncCameraPreviewHoverControls()
             openRecording(recording.primaryMediaURL)
         case .quick(let presetID):

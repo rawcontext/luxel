@@ -48,8 +48,7 @@ public struct AdjacentMarkdownTranscriptWriter: Sendable {
         overwrite: Bool
     ) throws {
         let outputURL = sourceURL.deletingPathExtension().appendingPathExtension("md")
-        let sourceIdentifier = Data(sourceURL.lastPathComponent.utf8).base64EncodedString()
-        let marker = "\n<!-- luxel-transcript-source: \(sourceIdentifier) -->\n"
+        let marker = Self.ownershipMarker(for: sourceURL)
         let exists = FileManager.default.fileExists(atPath: outputURL.path)
         if exists {
             guard overwrite,
@@ -64,12 +63,23 @@ public struct AdjacentMarkdownTranscriptWriter: Sendable {
                 transcript: transcript,
                 visibleWords: [],
                 hasCuts: false,
-                metadata: TranscriptMarkdownMetadata(sourceURL: sourceURL),
+                metadata: TranscriptMarkdownMetadata(
+                    sourceURL: sourceURL,
+                    duration: (try? RecordingDocumentStore().load(nextTo: sourceURL))?.manifest.organization?.duration
+                ),
                 includesTimestamps: true
             ) + marker
         try Data(markdown.utf8).write(
             to: outputURL,
             options: exists ? .atomic : .withoutOverwriting
         )
+        _ = try? RecordingDocumentStore().update(nextTo: sourceURL) {
+            $0.transcriptFileName = outputURL.lastPathComponent
+        }
+    }
+
+    static func ownershipMarker(for sourceURL: URL) -> String {
+        let identifier = Data(sourceURL.lastPathComponent.utf8).base64EncodedString()
+        return "\n<!-- luxel-transcript-source: \(identifier) -->\n"
     }
 }

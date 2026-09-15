@@ -139,6 +139,24 @@ struct BookmarkedDirectoryAccessServiceTests {
         #expect(access.stoppedURLs.isEmpty)
     }
 
+    @Test("nested recording and export directories remain inside the resolved folder")
+    func nestedRecordingDirectoryAccess() async throws {
+        let bookmark = makeDirectory()
+        let resolved = URL(fileURLWithPath: "/tmp/resolved")
+        let access = SpySecurityScopedResourceAccess()
+        let service = BookmarkedDirectoryAccessService(
+            resolver: StubBookmarkedDirectoryResolver(
+                resolution: BookmarkedDirectoryResolution(
+                    url: resolved, bookmarkData: bookmark.bookmarkData, isStale: false)), access: access)
+        let output = bookmark.url.appending(path: "2026-09/Session/Exports")
+        let actual = try await withBookmarkedDirectoryAccess(
+            outputDirectory: output, bookmark: bookmark, service: service,
+            revokedError: { _ in StubError.revoked }, operation: { $0 })
+        #expect(actual == resolved.appending(path: "2026-09/Session/Exports"))
+        #expect(access.startedURLs == [resolved])
+        #expect(access.stoppedURLs == [resolved])
+    }
+
     private func makeDirectory() -> BookmarkedDirectory {
         BookmarkedDirectory(
             url: URL(fileURLWithPath: "/tmp/selected"),

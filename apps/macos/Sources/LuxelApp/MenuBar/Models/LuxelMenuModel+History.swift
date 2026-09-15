@@ -4,7 +4,15 @@ import LuxelCore
 @MainActor
 extension LuxelMenuModel {
     func refreshRecentRecordings() {
-        recentRecordings = recordingHistoryService.getPastRecordings()
+        withRecordingsDirectoryAccess { root in
+            recordingHistoryService.refreshOrganizedRecordings(in: root)
+            recentRecordings = recordingHistoryService.getPastRecordings()
+            recordingTranscriptSearchText = Dictionary(
+                recentRecordings.map { recording in
+                    let url = recording.primaryMediaURL.deletingPathExtension().appendingPathExtension("md")
+                    return (recording.fileURL, (try? String(contentsOf: url, encoding: .utf8)) ?? "")
+                }, uniquingKeysWith: { first, _ in first })
+        }
 
         if recentRecordingFilter != .all,
             !recentRecordings.contains(where: recentRecordingFilter.includes) {
@@ -13,7 +21,15 @@ extension LuxelMenuModel {
     }
 
     var filteredRecentRecordings: [PastRecording] {
-        Array(recentRecordings.filter(recentRecordingFilter.includes).prefix(5))
+        Array(
+            recentRecordings.filter {
+                recentRecordingFilter.includes($0)
+                    && recordingDateFilter.includes($0.date)
+                    && (!recordingFavoritesOnly || $0.bundleManifest?.organization?.isFavorite == true)
+                    && RecordingSearch.matches(
+                        $0, query: recordingSearchQuery,
+                        transcript: recordingTranscriptSearchText[$0.fileURL] ?? "")
+            })
     }
 
     var canFilterRecentRecordings: Bool {
@@ -89,6 +105,18 @@ extension LuxelMenuModel {
         }
     }
 
+    func toggleRecordingFavorite(_ recording: PastRecording) {
+        withRecordingsDirectoryAccess { _ in
+            do {
+                try recordingHistoryService.setFavorite(
+                    recording.bundleManifest?.organization?.isFavorite != true, for: recording)
+            } catch {
+                recordingActionErrorMessage = errorMessage(error)
+            }
+        }
+        refreshRecentRecordings()
+    }
+
     func removeKeystrokeData(from recording: PastRecording) {
         do {
             try recordingHistoryService.removeKeystrokeData(from: recording)
@@ -99,12 +127,13 @@ extension LuxelMenuModel {
     }
 
     func transcriptSourceContext(for mediaURL: URL) -> TranscriptSourceContext {
-        let standardizedURL = mediaURL.standardizedFileURL
+        let standardizedURL = RecordingDocumentStore.currentMediaURL(for: mediaURL).standardizedFileURL
+            .resolvingSymlinksInPath()
         let recordings = recentRecordings + recordingHistoryService.getPastRecordings()
         guard
             let recording = recordings.first(where: { recording in
-                recording.fileURL.standardizedFileURL == standardizedURL
-                    || recording.primaryMediaURL.standardizedFileURL == standardizedURL
+                recording.fileURL.standardizedFileURL.resolvingSymlinksInPath() == standardizedURL
+                    || recording.primaryMediaURL.standardizedFileURL.resolvingSymlinksInPath() == standardizedURL
             })
         else {
             return .unknown

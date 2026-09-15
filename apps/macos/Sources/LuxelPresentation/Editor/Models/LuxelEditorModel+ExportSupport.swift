@@ -31,6 +31,9 @@ extension LuxelEditorModel {
 
         let recordingURLs =
             (directoryURLs.compactMap(recordingNavigationCandidate)
+            + RecordingDocumentStore().recordings(in: outputDirectory).compactMap {
+                recordingNavigationCandidate(for: $0.primaryMediaURL)
+            }
             + [
                 recordingNavigationCandidate(for: selectedFileURL)
                     ?? (selectedFileURL.standardizedFileURL, .distantPast)
@@ -250,7 +253,7 @@ extension LuxelEditorModel {
             return try operation()
         }
 
-        let outputDirectoryPath = outputDirectory.standardizedFileURL.path
+        let outputDirectoryPath = outputDirectoryBookmark.url.standardizedFileURL.path + "/"
         guard sourceURL.standardizedFileURL.path.hasPrefix(outputDirectoryPath) else {
             return try operation()
         }

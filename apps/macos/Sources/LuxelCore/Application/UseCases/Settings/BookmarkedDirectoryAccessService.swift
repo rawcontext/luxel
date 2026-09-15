@@ -113,7 +113,17 @@ public func withBookmarkedDirectoryAccess<Result: Sendable>(
     return try await service.withRequiredAccess(
         to: bookmark,
         revokedError: revokedError,
-        operation: operation
+        operation: { resolvedRoot in
+            let root = bookmark.url.standardizedFileURL.path
+            let destination = outputDirectory.standardizedFileURL.path
+            if destination == root {
+                return try await operation(resolvedRoot)
+            }
+            guard destination.hasPrefix(root + "/") else {
+                throw revokedError(outputDirectory)
+            }
+            return try await operation(resolvedRoot.appending(path: String(destination.dropFirst(root.count + 1))))
+        }
     )
 }
 

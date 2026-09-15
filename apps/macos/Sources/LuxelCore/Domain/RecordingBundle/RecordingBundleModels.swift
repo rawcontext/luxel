@@ -47,11 +47,13 @@ public struct BundleManifest: Codable, Equatable, Sendable {
     public let schemaVersion: Int
     public let primaryFileName: String
     public let sidecars: [BundleSidecarManifest]
+    public var organization: RecordingOrganization?
 
     public init(
         schemaVersion: Int = BundleManifest.currentSchemaVersion,
         primaryFileName: String = BundleManifest.defaultPrimaryFileName,
-        sidecars: [BundleSidecarManifest] = []
+        sidecars: [BundleSidecarManifest] = [],
+        organization: RecordingOrganization? = nil
     ) throws {
         guard schemaVersion == Self.currentSchemaVersion else {
             throw RecordingBundleError.unsupportedSchemaVersion
@@ -63,6 +65,7 @@ public struct BundleManifest: Codable, Equatable, Sendable {
         self.schemaVersion = schemaVersion
         self.primaryFileName = primaryFileName
         self.sidecars = sidecars
+        self.organization = organization
     }
 
     public func sidecar(for kind: SidecarKind) -> BundleSidecarManifest? {
@@ -75,7 +78,8 @@ public struct BundleManifest: Codable, Equatable, Sendable {
         try BundleManifest(
             schemaVersion: schemaVersion,
             primaryFileName: primaryFileName,
-            sidecars: sidecars.filter(isIncluded)
+            sidecars: sidecars.filter(isIncluded),
+            organization: organization
         )
     }
 

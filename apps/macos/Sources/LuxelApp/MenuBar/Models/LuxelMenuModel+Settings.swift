@@ -19,6 +19,9 @@ extension LuxelMenuModel {
 
     func configureEditor(_ editorModel: LuxelEditorModel) {
         configuredEditorModel = editorModel
+        editorModel.configureAutomaticTitles { [weak self] url in
+            self?.prepareTitleForTranscription(of: url)
+        }
         editorModel.configureExportMemory(settings.perFormatExportMemory) { [weak self] format, memory in
             self?.rememberExportMemory(memory, for: format)
         }
@@ -42,6 +45,7 @@ extension LuxelMenuModel {
         )
         editorModel.configureSourceFileRename { [weak self] oldURL, newURL in
             try self?.recordingHistoryService.renameRecordingSource(from: oldURL, to: newURL)
+            self?.cancelAutomaticRecordingTitle(for: newURL)
             self?.refreshRecentRecordings()
         }
     }

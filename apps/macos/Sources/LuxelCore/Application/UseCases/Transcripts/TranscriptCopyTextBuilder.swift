@@ -121,7 +121,7 @@ public struct TranscriptCopyTextBuilder {
         return lines
     }
 
-    private func escapedMarkdown(_ text: String) -> String {
+    func escapedMarkdown(_ text: String) -> String {
         let escapableCharacters = Set<Character>("\\`*_[]<>#~")
         let escaped = text.reduce(into: "") { result, character in
             if escapableCharacters.contains(character) {
@@ -146,7 +146,7 @@ public struct TranscriptCopyTextBuilder {
             .joined(separator: "\n")
     }
 
-    private func yamlString(_ value: String) -> String {
+    func yamlString(_ value: String) -> String {
         guard let data = try? JSONEncoder().encode(value),
             let encoded = String(data: data, encoding: .utf8)
         else {

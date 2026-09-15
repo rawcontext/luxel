@@ -1,7 +1,8 @@
 import Foundation
 
 public final class RecordingHistoryService: Sendable {
-    private let store: any RecordingHistoryStore
+    let organizationLock = NSRecursiveLock()
+    let store: any RecordingHistoryStore
     private let fileSystem: any FileSystem
     private let dateProvider: any DateProvider
     private let mediaProbe: any MediaProbe
@@ -28,6 +29,8 @@ public final class RecordingHistoryService: Sendable {
     }
 
     public func getPastRecordings(matching filter: RecordingHistoryFilter = .all) -> [PastRecording] {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         let validRecordings = store.recordings.compactMap { recording -> PastRecording? in
             guard recordingExists(recording) else {
                 return nil
@@ -39,10 +42,6 @@ public final class RecordingHistoryService: Sendable {
         }
         store.recordings = validRecordings
         return validRecordings.filter(filter.includes)
-    }
-
-    public func getCurrentRecording() -> ActiveRecording? {
-        store.activeRecording
     }
 
     public func materializeRecordingBundle(
@@ -63,6 +62,8 @@ public final class RecordingHistoryService: Sendable {
 
     @discardableResult
     public func addRecording(_ recording: PastRecording) -> [PastRecording] {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         let recordings = [recording] + store.recordings
         let validRecordings = recordings.compactMap { recording -> PastRecording? in
             guard recordingExists(recording) else {
@@ -77,6 +78,8 @@ public final class RecordingHistoryService: Sendable {
 
     @discardableResult
     public func addReplayClip(fileURL: URL, name: String? = nil) -> PastRecording? {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         let now = dateProvider.now()
         let replayName =
             name
@@ -102,6 +105,8 @@ public final class RecordingHistoryService: Sendable {
         presetName: String? = nil,
         for recording: PastRecording
     ) -> [PastRecording] {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         let validRecordings = getPastRecordings()
 
         guard fileSystem.fileExists(at: exportedMedia.fileURL),
@@ -119,6 +124,7 @@ public final class RecordingHistoryService: Sendable {
         )
         var updatedRecordings = validRecordings
         updatedRecordings[recordingIndex] = validRecordings[recordingIndex].addingExport(export)
+        try? RecordingDocumentStore().recordExport(export, sourceURL: recording.primaryMediaURL)
         store.recordings = updatedRecordings
         return updatedRecordings
     }
@@ -130,6 +136,8 @@ public final class RecordingHistoryService: Sendable {
         options: RecordingOptions,
         bundleManifest: BundleManifest? = nil
     ) -> ActiveRecording {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         let now = dateProvider.now()
         let recordingName = name ?? RecordingName.timestamped(now: now, calendar: calendar).value
         let recording = ActiveRecording(
@@ -148,6 +156,8 @@ public final class RecordingHistoryService: Sendable {
         finalFileURL: URL? = nil,
         recordingName: String? = nil
     ) -> PastRecording? {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         guard let activeRecording = store.activeRecording else {
             return nil
         }
@@ -155,7 +165,7 @@ public final class RecordingHistoryService: Sendable {
         let recording = PastRecording(
             fileURL: finalFileURL ?? activeRecording.fileURL,
             name: recordingName ?? activeRecording.name,
-            date: dateProvider.now(),
+            date: activeRecording.date,
             options: activeRecording.options,
             bundleManifest: activeRecording.bundleManifest
         )
@@ -166,10 +176,14 @@ public final class RecordingHistoryService: Sendable {
     }
 
     public func clearCurrentRecording() {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         store.activeRecording = nil
     }
 
     public func cleanPastRecordings() throws {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         let validRecordings = getPastRecordings()
 
         for recording in validRecordings {
@@ -182,6 +196,8 @@ public final class RecordingHistoryService: Sendable {
 
     @discardableResult
     public func discardRecording(_ recording: PastRecording) throws -> [PastRecording] {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         let validRecordings = getPastRecordings()
 
         guard validRecordings.contains(where: { $0.fileURL == recording.fileURL }) else {
@@ -196,6 +212,8 @@ public final class RecordingHistoryService: Sendable {
     }
 
     public func removeKeystrokeData(from recording: PastRecording) throws {
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
         let updatedManifest = try removeKeystrokeSidecar(for: recording)
         guard let updatedManifest else {
             return
@@ -207,29 +225,39 @@ public final class RecordingHistoryService: Sendable {
         }
     }
 
+}
+
+extension RecordingHistoryService {
     @discardableResult
     public func renameRecordingSource(
         from oldSourceURL: URL,
         to newSourceURL: URL
     ) throws -> [PastRecording] {
-        let oldSourceURL = oldSourceURL.standardizedFileURL
-        let newSourceURL = newSourceURL.standardizedFileURL
+        organizationLock.lock()
+        defer { organizationLock.unlock() }
+        let oldSourceURL = oldSourceURL.standardizedFileURL.resolvingSymlinksInPath()
+        let newSourceURL = newSourceURL.standardizedFileURL.resolvingSymlinksInPath()
         let renamedDisplayName = newSourceURL.deletingPathExtension().lastPathComponent
         var didRename = false
 
         let recordings = try store.recordings.map { recording in
-            if recording.fileURL.standardizedFileURL == oldSourceURL, recording.bundle == nil {
+            if recording.primaryMediaURL.standardizedFileURL.resolvingSymlinksInPath() == oldSourceURL,
+                recording.bundleManifest?.organization != nil,
+                let manifest = try RecordingDocumentStore().synchronizeUserRename(
+                    from: oldSourceURL, to: newSourceURL) {
                 didRename = true
-                return recording.replacingFileURL(
-                    newSourceURL,
-                    name: renamedDisplayName
-                )
+                return recording.replacingFileURL(newSourceURL, name: renamedDisplayName, bundleManifest: manifest)
+            }
+            if recording.bundle == nil,
+                recording.fileURL.standardizedFileURL.resolvingSymlinksInPath() == oldSourceURL {
+                didRename = true
+                return recording.replacingFileURL(newSourceURL, name: renamedDisplayName)
             }
 
             guard let bundle = recording.bundle,
-                bundle.primaryURL.standardizedFileURL == oldSourceURL,
+                bundle.primaryURL.standardizedFileURL.resolvingSymlinksInPath() == oldSourceURL,
                 newSourceURL.deletingLastPathComponent().standardizedFileURL
-                    == bundle.rootURL.standardizedFileURL
+                    == bundle.rootURL.standardizedFileURL.resolvingSymlinksInPath()
             else {
                 return recording
             }

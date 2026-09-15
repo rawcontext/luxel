@@ -9,6 +9,7 @@ extension LuxelEditorModel {
         outputDirectoryBookmark: BookmarkedDirectory? = nil,
         transcriptSourceContext: TranscriptSourceContext = .unknown
     ) async {
+        let fileURL = RecordingDocumentStore.currentMediaURL(for: fileURL)
         prepareToOpen(
             fileURL: fileURL,
             outputDirectory: outputDirectory,
@@ -17,10 +18,19 @@ extension LuxelEditorModel {
         )
 
         do {
-            let media = try await metadataReader.readSourceMedia(at: fileURL)
+            let media: SourceMedia
+            do {
+                media = try await metadataReader.readSourceMedia(at: fileURL)
+            } catch {
+                let currentURL = RecordingDocumentStore.currentMediaURL(for: fileURL)
+                guard currentURL != fileURL else { throw error }
+                media = try await metadataReader.readSourceMedia(at: currentURL)
+            }
+            let currentURL = RecordingDocumentStore.currentMediaURL(for: fileURL)
+            self.outputDirectory = RecordingDocumentStore.currentMediaURL(for: self.outputDirectory)
             applyOpenedMedia(
-                media,
-                fileURL: fileURL,
+                try media.replacingFileURL(currentURL),
+                fileURL: currentURL,
                 transcriptSourceContext: transcriptSourceContext
             )
         } catch {
@@ -34,7 +44,9 @@ extension LuxelEditorModel {
         outputDirectoryBookmark: BookmarkedDirectory?,
         transcriptSourceContext: TranscriptSourceContext
     ) {
-        self.outputDirectory = outputDirectory
+        self.outputDirectory =
+            fileURL.standardizedFileURL.path.hasPrefix(outputDirectory.standardizedFileURL.path + "/")
+            ? RecordingDocumentStore.exportsDirectory(for: fileURL) ?? outputDirectory : outputDirectory
         self.outputDirectoryBookmark = outputDirectoryBookmark
         refreshRecordingNavigation(selectedFileURL: fileURL, outputDirectory: outputDirectory)
         status = .loading(fileURL.lastPathComponent)
@@ -61,6 +73,7 @@ extension LuxelEditorModel {
             for: media
         )
         source = media
+        isAutomaticTitlePending = RecordingDocumentStore.isTitlePending(for: media.fileURL)
         keystrokeTimeline = try? KeystrokeSidecarFileLoader().load(nextTo: fileURL)
         keystrokeOptions = keystrokeTimeline == nil ? nil : .standard
         self.transcriptSourceContext = resolvedTranscriptSourceContext
@@ -82,6 +95,14 @@ extension LuxelEditorModel {
         isTranscriptPanelVisible = media.isAudioOnly
         if media.isAudioOnly {
             prepareTranscriptExtraction(sourceContext: resolvedTranscriptSourceContext)
+        }
+        if let edit = (try? RecordingDocumentStore().load(nextTo: media.fileURL))?.manifest.organization?.editState,
+            edit.trimStart >= 0, edit.trimEnd <= media.duration, edit.trimEnd > edit.trimStart {
+            trimStart = edit.trimStart
+            trimEnd = edit.trimEnd
+            transcriptEditPlan = edit.transcriptEditPlan
+            resetEditorUndoStack()
+            if !edit.transcriptEditPlan.cuts.isEmpty { rebuildEditedPreview() }
         }
     }
 

@@ -25,6 +25,7 @@ extension AppSettings {
         case speechDetectionDisclosureAccepted
         case transcriptTurnSegmentationEnabled
         case transcriptSpeakerDiarizationEnabled
+        case automaticRecordingTitles
         case transcriptLanguageIdentifier
         case cameraDeviceID
         case cameraSeparateTrack

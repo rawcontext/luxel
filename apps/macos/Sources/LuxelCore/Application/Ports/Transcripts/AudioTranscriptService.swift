@@ -79,6 +79,14 @@ public struct AudioTranscriptRequest: Equatable, Sendable {
         self.transcriptionProvenance = transcriptionProvenance
     }
 
+    public func replacingAudioURL(_ url: URL) -> AudioTranscriptRequest {
+        AudioTranscriptRequest(
+            audioURL: url, locale: locale, sourceContext: sourceContext,
+            turnSegmentationMode: turnSegmentationMode, speakerDiarizationMode: speakerDiarizationMode,
+            speakerCountHint: speakerCountHint, speakerModelRevision: speakerModelRevision,
+            speakerLibraryRevision: speakerLibraryRevision, transcriptionProvenance: transcriptionProvenance)
+    }
+
     public func replacingTurnSegmentationMode(
         _ turnSegmentationMode: TranscriptTurnSegmentationMode
     ) -> AudioTranscriptRequest {
@@ -197,6 +205,9 @@ public protocol TimedSpeechTranscriber: Sendable {
         progress: @escaping SpeechTranscriptionProgressHandler
     ) async throws -> [TimedTranscriptSpan]
 }
+
+public typealias TimedTranscriptUpdateHandler =
+    @Sendable (TimedSpeechTranscriptionRequest, [TimedTranscriptSpan], Bool) -> Void
 
 extension TimedSpeechTranscriber {
     public func transcribe(

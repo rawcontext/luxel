@@ -31,11 +31,14 @@ public final class QuickExportService {
         progress: ExportService.ProgressHandler? = nil
     ) async throws -> QuickExportResult {
         let preset = try preset(withID: presetID, in: presets)
-        let source = try await metadataReader.readSourceMedia(at: recording.fileURL)
+        let source = try await metadataReader.readSourceMedia(at: recording.primaryMediaURL)
         let request = try preset.resolvedRequest(source: source)
 
         let exported = try await withOutputDirectoryAccess(
-            outputDirectory: outputDirectory(for: preset, recordingsDirectory: recordingsDirectory),
+            outputDirectory: outputDirectory(
+                for: preset,
+                recordingsDirectory: RecordingDocumentStore.exportsDirectory(for: recording.primaryMediaURL)
+                    ?? recordingsDirectory),
             bookmark: outputDirectoryBookmark(
                 for: preset, recordingsDirectoryBookmark: recordingsDirectoryBookmark)
         ) { outputDirectory in

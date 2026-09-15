@@ -24,11 +24,12 @@ extension LuxelCompositionRoot {
     static func localAudioTranscriptService(
         turnSegmentationModeOverride: TranscriptTurnSegmentationMode? = nil,
         speakerDiarizationModeOverride: TranscriptSpeakerDiarizationMode? = nil,
-        transcriptLocaleOverride: (@Sendable () -> Locale?)? = nil
+        transcriptLocaleOverride: (@Sendable () -> Locale?)? = nil,
+        onTranscriptUpdate: TimedTranscriptUpdateHandler? = nil
     ) -> LocalAudioTranscriptService {
         let settingsStore = settingsStore()
         return LocalAudioTranscriptService(
-            transcriber: AppleSpeechTranscriptExtractor(),
+            transcriber: AppleSpeechTranscriptExtractor(onUpdate: onTranscriptUpdate),
             turnSegmenter: AppleIntelligenceTurnSegmenter(),
             turnSegmentationMode: {
                 if let turnSegmentationModeOverride {

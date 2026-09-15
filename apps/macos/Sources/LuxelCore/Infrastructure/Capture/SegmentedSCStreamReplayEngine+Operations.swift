@@ -245,25 +245,11 @@ extension SegmentedSCStreamReplayEngine {
     }
 
     func makeClipOutputURL() throws -> URL {
-        let clipDirectory = clipDirectoryProvider()
-        try fileManager.createDirectory(at: clipDirectory, withIntermediateDirectories: true)
-
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd 'at' HH.mm.ss"
-        let fileName = "Luxel Replay \(formatter.string(from: dateProvider.now()))"
-        var outputURL =
-            clipDirectory
-            .appending(path: fileName)
-            .appendingPathExtension("mp4")
-        var suffix = 2
-        while fileManager.fileExists(atPath: outputURL.path) {
-            outputURL =
-                clipDirectory
-                .appending(path: "\(fileName) \(suffix)")
-                .appendingPathExtension("mp4")
-            suffix += 1
-        }
+        let outputURL = RecordingFileLayout.mediaURL(
+            in: clipDirectoryProvider(), date: dateProvider.now(),
+            title: LuxelLocalization.string("Replay clip"), fileExtension: "mp4"
+        )
+        try fileManager.createDirectory(at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         return outputURL
     }
 

@@ -303,7 +303,8 @@ extension LuxelMenu {
     }
 
     func recentRecordingTitle(for recording: PastRecording) -> String {
-        recording.name.components(separatedBy: " at ").first ?? recording.name
+        recording.bundleManifest?.organization?.title
+            ?? recording.name.components(separatedBy: " at ").first ?? recording.name
     }
 
     func refreshMenuState() async {

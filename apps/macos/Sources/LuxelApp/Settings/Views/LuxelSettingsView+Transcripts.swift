@@ -18,6 +18,7 @@ extension LuxelSettingsView {
 
     @ViewBuilder
     var transcriptsSettingsForm: some View {
+        recordingNamesSettingsGroup
         SettingsIslandGroup(
             "Transcription",
             footer:
