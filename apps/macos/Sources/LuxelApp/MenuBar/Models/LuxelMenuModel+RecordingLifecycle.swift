@@ -264,6 +264,7 @@ extension LuxelMenuModel {
         if error.isTerminalRecordingStopFailure {
             keystrokeRecordingSession.cancel()
             await keystrokeLivePreviewPanelController.close()
+            await recordingFramePanelController.close()
             closeCameraPreviewForFinishedRecording()
             recordingState = .idle
             refreshRecentRecordings()
@@ -271,19 +272,29 @@ extension LuxelMenuModel {
             recordingState = context.previousState
         }
         syncCameraPreviewHoverControls()
+        let details = (error as? RecordingStopFailure)?.diagnosticDescription ?? "none"
         luxelRecordingLogger.error(
             """
             Stop recording failed previous_state=\(context.previousState.loggingDescription, privacy: .public) \
             restored_state=\(self.recordingState.loggingDescription, privacy: .public) \
             error_domain=\(nsError.domain, privacy: .public) error_code=\(nsError.code, privacy: .public) \
-            message=\(message, privacy: .public)
+            message=\(message, privacy: .public) details=\(details, privacy: .public)
             """
         )
     }
 
     func watchRecordingAutoStops(openRecording: @escaping @MainActor (URL) -> Void) async {
-        for await recording in recordingLifecycleService.autoStoppedRecordings {
-            await handleAutoStoppedRecording(recording, openRecording: openRecording)
+        for await event in recordingLifecycleService.autoStopResults {
+            guard recordingState.activeRecording?.fileURL == event.fileURL else {
+                refreshRecentRecordings()
+                continue
+            }
+            switch event.result {
+            case .success(let recording):
+                await handleAutoStoppedRecording(recording, openRecording: openRecording)
+            case .failure(let error):
+                await handleRecordingStopFailure(error, context: prepareRecordingStop())
+            }
         }
     }
 

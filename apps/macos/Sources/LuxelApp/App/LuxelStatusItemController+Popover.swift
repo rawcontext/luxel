@@ -308,7 +308,7 @@ extension LuxelStatusItemController {
             return
         }
 
-        Task {
+        Task { [model, windowPresenter] in
             await model.handleAutomationURL(
                 url,
                 openSettings: { [weak windowPresenter] in

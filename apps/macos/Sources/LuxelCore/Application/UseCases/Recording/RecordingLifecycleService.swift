@@ -37,7 +37,7 @@ public final class RecordingLifecycleService: Sendable {
         self.terminationProtection = terminationProtection
     }
 
-    public var autoStoppedRecordings: AsyncStream<PastRecording> {
+    public var autoStopResults: AsyncStream<RecordingAutoStopResult> {
         autoStopEvents.stream()
     }
 
@@ -116,7 +116,12 @@ public final class RecordingLifecycleService: Sendable {
             }
             try? await replayBufferService?.recordingDidStop()
         } catch {
-            await finishStop(succeeded: false)
+            if let failure = error as? RecordingStopFailure, failure.isTerminal {
+                try? await replayBufferService?.recordingDidStop()
+                await clearStoppedRecordingState()
+            } else {
+                await finishStop(succeeded: false)
+            }
             throw error
         }
 
@@ -170,16 +175,17 @@ public final class RecordingLifecycleService: Sendable {
         }
 
         let task = autoStopScheduler.schedule(after: timing.remaining) { [weak self] in
-            guard let self else {
+            guard let self, let fileURL = await self.outputState.plan?.finalFileURL else {
                 return
             }
 
-            guard let recording = try? await self.stopRecording() else {
-                return
+            do {
+                let recording = try await self.stopRecording()
+                self.autoStopEvents.yield(RecordingAutoStopResult(fileURL: fileURL, result: .success(recording)))
+                try? await self.userNotifier?.notifyRecordingAutoStopped(duration: timing.maxRecordedDuration)
+            } catch {
+                self.autoStopEvents.yield(RecordingAutoStopResult(fileURL: fileURL, result: .failure(error)))
             }
-
-            self.autoStopEvents.yield(recording)
-            try? await self.userNotifier?.notifyRecordingAutoStopped(duration: timing.maxRecordedDuration)
         }
         await autoStopState.setTask(task)
     }
@@ -237,9 +243,9 @@ private struct RecordingLifecycleAutoStopTiming: Sendable {
 
 private final class RecordingLifecycleAutoStopEvents: @unchecked Sendable {
     private let lock = NSLock()
-    private var continuations: [UUID: AsyncStream<PastRecording>.Continuation] = [:]
+    private var continuations: [UUID: AsyncStream<RecordingAutoStopResult>.Continuation] = [:]
 
-    func stream() -> AsyncStream<PastRecording> {
+    func stream() -> AsyncStream<RecordingAutoStopResult> {
         AsyncStream(bufferingPolicy: .unbounded) { continuation in
             let id = UUID()
             lock.withLock {
@@ -251,13 +257,13 @@ private final class RecordingLifecycleAutoStopEvents: @unchecked Sendable {
         }
     }
 
-    func yield(_ recording: PastRecording) {
+    func yield(_ result: RecordingAutoStopResult) {
         let continuations = lock.withLock {
             Array(self.continuations.values)
         }
 
         for continuation in continuations {
-            continuation.yield(recording)
+            continuation.yield(result)
         }
     }
 

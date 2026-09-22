@@ -62,9 +62,7 @@ public struct AppleIntelligenceTurnSegmenter: TranscriptTurnSegmenter {
             response = try await session.respond(
                 to: Self.prompt(for: spans, locale: locale, retrying: retrying),
                 generating: GeneratedTurnSegmentedTranscript.self,
-                options: GenerationOptions(
-                    sampling: .greedy,
-                    temperature: 0,
+                options: AppleIntelligenceGenerationOptions.greedy(
                     maximumResponseTokens: max(256, spans.count * 24)
                 )
             )

@@ -1,16 +1,15 @@
-VERSION 1.5.0
+VERSION 1.5.1
 
 1. ACCESS
 Luxel is a native Mac menu-bar recorder for macOS 26.0+. It has no Dock icon or initial window. Launch it from Applications and use its menu-bar icon. No account, credentials, subscription, demo data, or sample file is required.
 
-2. VERSION 1.5.0 CHANGES
-Automatic titles for new recordings. New recordings are organized into folders with their transcripts and exports.
+2. VERSION 1.5.1 CHANGES
+This maintenance update improves recording stop error handling and diagnostics. If saving a screen recording fails after capture has stopped, the recording controls now return to idle on the first Stop instead of incorrectly showing an active recording. It also includes compiler compatibility updates.
 
 3. REVIEW STEPS
-1) Start a screen or audio-only recording from the menu bar, then stop it.
-2) Confirm the recording opens and plays normally. New recordings are saved in a month folder with a separate folder for each recording. Existing files stay in place.
-3) Automatic recording titles are configured in Settings > Transcripts. When enabled and available, a title is generated from the first 200 transcript words, or when a shorter transcript finishes. The filename updates automatically. Otherwise, recordings keep a capture-type name and timestamp.
-4) Transcribe the recording and confirm a matching Markdown file is saved beside it. Exports using the default destination are saved in that recording's Exports folder. Explicitly chosen export destinations are respected.
+1) Record a display, window, or selected area for at least 30 seconds, then click Stop once.
+2) Confirm a successful recording opens in the editor and plays normally. Start another recording to confirm the controls remain available.
+3) Make and stop an audio-only recording, then confirm it opens and plays normally.
 
 4. PRIVACY AND PERMISSIONS
 This update adds no account, network service, data collection, or new permission. Recording, transcription, title generation, editing, and export remain local to the Mac.

@@ -125,6 +125,7 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
             throw ScreenCaptureKitRecorderError.notRecording
         }
 
+        var stage = RecordingStopFailure.Stage.stoppingCapture
         do {
             await waitForCurrentSegmentToStartWritingIfNeeded()
 
@@ -133,10 +134,12 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
                 isStreamCapturing = false
             }
 
+            stage = .finishingWriter
             if let segmentFileURL = try await finishStoppedCurrentSegment() {
                 segmentFileURLs.append(segmentFileURL)
             }
 
+            stage = .composingSegments
             if let outputFileURL = request?.outputFileURL {
                 try await finalizeSegments(to: outputFileURL)
                 clearRecordingState(removeTemporarySegments: true, preserving: outputFileURL)
@@ -144,7 +147,12 @@ public final class ScreenCaptureKitRecorder: NSObject, CaptureRecorder, @uncheck
                 clearRecordingState(removeTemporarySegments: true)
             }
         } catch {
-            throw ScreenCaptureKitRecorderError.stopFailed(String(describing: error))
+            let failure = RecordingStopFailure(stage: stage, underlyingError: error)
+            if failure.isTerminal {
+                // Keep captured segments available when finalization fails.
+                clearRecordingState()
+            }
+            throw failure
         }
     }
 
