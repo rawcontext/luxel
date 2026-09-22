@@ -30,7 +30,7 @@ public struct AppleIntelligenceRecordingTitleGenerator: RecordingTitleGenerator 
         let response = try await session.respond(
             to: transcriptPrefix,
             generating: GeneratedRecordingTitle.self,
-            options: GenerationOptions(sampling: .greedy, temperature: 0, maximumResponseTokens: 80)
+            options: AppleIntelligenceGenerationOptions.greedy(maximumResponseTokens: 80)
         )
         guard let title = RecordingTitlePolicy.validatedTitle(response.content.title) else {
             throw RecordingTitleGenerationError.invalidTitle

@@ -1,4 +1,4 @@
-@_spi(ForToolsIntegration) import Testing
+import Testing
 
 @main
 enum SwiftTestingMain {
