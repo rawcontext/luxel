@@ -338,6 +338,9 @@ extension LuxelMenuModel {
 
 extension Error {
     var isTerminalRecordingStopFailure: Bool {
+        if let failure = self as? RecordingStopFailure {
+            return failure.isTerminal
+        }
         guard let lifecycleError = self as? RecordingLifecycleError else {
             return false
         }

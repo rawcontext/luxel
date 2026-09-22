@@ -115,16 +115,16 @@ extension RecordingLifecycleServiceTests {
     @Test("auto stop publishes stopped recording")
     func autoStopPublishesStoppedRecording() async throws {
         let context = try makeAutoStopContext()
-        let stream = context.service.autoStoppedRecordings
-        let eventTask = Task<PastRecording?, Never> {
+        let stream = context.service.autoStopResults
+        let eventTask = Task<PastRecording?, any Error> {
             var iterator = stream.makeAsyncIterator()
-            return await iterator.next()
+            return try await iterator.next()?.result.get()
         }
 
         let activeRecording = try await context.service.startRecording(context.request)
         await context.scheduler.fireScheduledTask(at: 0)
 
-        #expect(await eventTask.value == activeRecording.pastRecording)
+        #expect(try await eventTask.value == activeRecording.pastRecording)
     }
 
     @Test("pause suspends auto stop and resume schedules remaining recorded time")
