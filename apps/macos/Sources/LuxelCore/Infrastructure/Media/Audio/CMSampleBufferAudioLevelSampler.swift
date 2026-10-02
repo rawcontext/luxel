@@ -27,6 +27,7 @@ enum CMSampleBufferAudioLevelSampler {
     ) -> AudioStreamBasicDescription? {
         guard
             let formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer),
+            CMFormatDescriptionGetMediaType(formatDescription) == kCMMediaType_Audio,
             let streamDescription = CMAudioFormatDescriptionGetStreamBasicDescription(
                 formatDescription
             )?.pointee,

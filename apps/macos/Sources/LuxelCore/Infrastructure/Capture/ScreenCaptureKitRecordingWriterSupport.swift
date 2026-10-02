@@ -97,12 +97,14 @@ struct RecordingAudioLevelMixer {
         outputType: SCStreamOutputType,
         to handler: (@Sendable (AudioLevelSample) -> Void)?
     ) {
-        guard let sample = CMSampleBufferAudioLevelSampler.sample(from: sampleBuffer),
+        guard let handler,
+            outputType == .audio || outputType == .microphone,
+            let sample = CMSampleBufferAudioLevelSampler.sample(from: sampleBuffer),
             let combinedSample = update(sample, outputType: outputType)
         else {
             return
         }
-        handler?(combinedSample)
+        handler(combinedSample)
     }
 }
 
