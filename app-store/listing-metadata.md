@@ -1,6 +1,6 @@
 # Luxel Mac App Store Listing Metadata
 
-This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026, the localized text metadata for version 1.5.1, and the localized screenshot gallery derived from the six English App Store masters in `app-store/screenshots`. Use the guarded App Store workflows to synchronize the editable App Store Connect version; do not edit the draft independently.
+This file is the checked-in source of truth for Luxel's Mac App Store product-page metadata. It records the verified public listing as of August 22, 2026, the localized text metadata for version 1.5.2, and the localized screenshot gallery derived from the six English App Store masters in `app-store/screenshots`. Use the guarded App Store workflows to synchronize the editable App Store Connect version; do not edit the draft independently.
 
 ## Publication state
 
@@ -524,7 +524,7 @@ The JSON blocks are deliberately machine-readable so the validator can enforce A
 
 ## Shared App Review notes
 
-App Review notes are not a localized storefront field. Use the single English value in `app-store/review-notes.txt`, which stays below Apple's 4,000-byte limit and explains how to review version 1.5.1.
+App Review notes are not a localized storefront field. Use the single English value in `app-store/review-notes.txt`, which stays below Apple's 4,000-byte limit and explains how to review version 1.5.2.
 
 ## App Privacy decision
 

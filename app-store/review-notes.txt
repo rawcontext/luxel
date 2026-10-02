@@ -1,13 +1,13 @@
-VERSION 1.5.1
+VERSION 1.5.2
 
 1. ACCESS
 Luxel is a native Mac menu-bar recorder for macOS 26.0+. It has no Dock icon or initial window. Launch it from Applications and use its menu-bar icon. No account, credentials, subscription, demo data, or sample file is required.
 
-2. VERSION 1.5.1 CHANGES
-This maintenance update improves recording stop error handling and diagnostics. If saving a screen recording fails after capture has stopped, the recording controls now return to idle on the first Stop instead of incorrectly showing an active recording. It also includes compiler compatibility updates.
+2. VERSION 1.5.2 CHANGES
+This maintenance update fixes screen recordings failing to save when screen content remains static and then changes. It improves reliable saving of display, window, and selected-area recordings.
 
 3. REVIEW STEPS
-1) Record a display, window, or selected area for at least 30 seconds, then click Stop once.
+1) Record a display, window, or selected area for at least 30 seconds. Leave the recorded content still for a few seconds, then move or scroll content inside the capture. Click Stop once.
 2) Confirm a successful recording opens in the editor and plays normally. Start another recording to confirm the controls remain available.
 3) Make and stop an audio-only recording, then confirm it opens and plays normally.
 
