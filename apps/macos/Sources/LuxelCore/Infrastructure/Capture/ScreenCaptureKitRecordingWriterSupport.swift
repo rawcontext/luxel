@@ -38,15 +38,19 @@ enum ScreenCaptureKitAssetWriterSession {
 enum ScreenCaptureKitRecordingVideoSettings {
     static func outputSettings(for request: RecordingRequest) -> [String: Any] {
         let pixelSize = (try? request.pixelSize.roundedToEvenDimensions) ?? request.pixelSize
+        var compression: [String: Any] = [
+            AVVideoExpectedSourceFrameRateKey: request.encoderFrameRateHint.framesPerSecond
+        ]
+        if request.videoCodec == .h264 {
+            // Reordered H.264 frames can break recovery fragments when static screens pause frame delivery.
+            compression[AVVideoAllowFrameReorderingKey] = false
+        }
 
         return [
             AVVideoCodecKey: request.videoCodec.avVideoCodecType,
             AVVideoWidthKey: pixelSize.width,
             AVVideoHeightKey: pixelSize.height,
-            AVVideoCompressionPropertiesKey: [
-                AVVideoExpectedSourceFrameRateKey:
-                    request.encoderFrameRateHint.framesPerSecond
-            ]
+            AVVideoCompressionPropertiesKey: compression
         ]
     }
 }
